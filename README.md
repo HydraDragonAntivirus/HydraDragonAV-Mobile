@@ -25,7 +25,7 @@ HydraDragonAV Mobile operates on three core pillars:
 1. **GuardService:** A persistent Foreground Service acting as the brain of the active defense system, monitoring threats 24/7.
 2. **DynamicAnalysisService:** An Accessibility Service that prevents automated UI hijacking (Clickjacking) and blocks overlay attacks.
 3. **ScanEngine:** The core analysis engine evaluating X.509 Certificates, SHA-256 Hashes, Dangerous Permissions, and App Install Sources.
-
+*Designed with 💻 by @elnureisayeva1-cloud & @Siradankullanici*
 ## ⚙️ How to Build & Install
 
 1. Clone the repository:
