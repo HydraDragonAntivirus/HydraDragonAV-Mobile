@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DOSYA: app/src/main/res/layout/fragment_network.xml -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary"
+    android:padding="16dp">
+
+    <!-- Başlık -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/network_activity"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tv_network_type"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="WiFi"
+            android:textColor="@color/neon_green"
+            android:textSize="12sp"
+            android:fontFamily="monospace"/>
+    </LinearLayout>
+
+    <!-- Canlı Grafik -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_card_dark"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/live_traffic"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="8dp"/>
+
+        <com.hydradragon.antivirus.views.LiveNetworkChart
+            android:id="@+id/live_network_chart"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:background="@color/bg_secondary"/>
+    </LinearLayout>
+
+    <!-- İstatistikler -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <!-- Gelen -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_dark"
+            android:padding="12dp"
+            android:gravity="center"
+            android:layout_marginEnd="4dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/incoming" android:textColor="@color/neon_cyan"
+                android:textSize="9sp" android:fontFamily="monospace"/>
+            <TextView android:id="@+id/tv_bytes_in" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="0 B/s"
+                android:textColor="@color/text_primary" android:textSize="14sp"
+                android:fontFamily="monospace" android:textStyle="bold"/>
+        </LinearLayout>
+
+        <!-- Giden -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_dark"
+            android:padding="12dp"
+            android:gravity="center"
+            android:layout_marginEnd="4dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/outgoing" android:textColor="@color/warning_orange"
+                android:textSize="9sp" android:fontFamily="monospace"/>
+            <TextView android:id="@+id/tv_bytes_out" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="0 B/s"
+                android:textColor="@color/text_primary" android:textSize="14sp"
+                android:fontFamily="monospace" android:textStyle="bold"/>
+        </LinearLayout>
+
+        <!-- Engellenen -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_dark"
+            android:padding="12dp"
+            android:gravity="center"
+            android:layout_marginEnd="4dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="🛡 @string/blocked" android:textColor="@color/threat_red"
+                android:textSize="9sp" android:fontFamily="monospace"/>
+            <TextView android:id="@+id/tv_blocked_count" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="0"
+                android:textColor="@color/threat_red" android:textSize="14sp"
+                android:fontFamily="monospace" android:textStyle="bold"/>
+        </LinearLayout>
+
+        <!-- İzin verilen -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_dark"
+            android:padding="12dp"
+            android:gravity="center">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="✓ @string/allowed" android:textColor="@color/neon_green"
+                android:textSize="9sp" android:fontFamily="monospace"/>
+            <TextView android:id="@+id/tv_allowed_count" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="0"
+                android:textColor="@color/neon_green" android:textSize="14sp"
+                android:fontFamily="monospace" android:textStyle="bold"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Olay Akışı Başlığı -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/realtime_packet_flow"
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp"
+        android:fontFamily="monospace"
+        android:letterSpacing="0.1"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Olay Listesi -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_network_events"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_card_dark"/>
+
+</LinearLayout>

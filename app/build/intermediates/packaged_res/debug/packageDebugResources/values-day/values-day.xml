@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_primary">#F0F0F8</color>
+    <color name="bg_secondary">#DCDCEC</color>
+    <color name="card_bg">#E8E8F8</color>
+    <color name="hydra_red_light">#CC0033</color>
+    <color name="nav_bg">#E0E0F0</color>
+    <color name="neon_cyan">#0055AA</color>
+    <color name="neon_green">#007744</color>
+    <color name="text_dim">#777788</color>
+    <color name="text_primary">#111111</color>
+    <color name="text_secondary">#333355</color>
+    <color name="threat_red">#CC0033</color>
+    <color name="warning_orange">#CC6600</color>
+</resources>

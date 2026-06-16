@@ -1,0 +1,26 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.hydradragon.antivirus.app-mergeDebugResources-49:/values-day/values-day.xml",
+            "map": [
+                {
+                    "source": "/root/Desktop/HydraDragon/app/src/main/res/values-day/colors.xml",
+                    "from": {
+                        "startLines": "2,3,13,7,4,6,5,12,10,11,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,100,560,277,147,233,188,517,421,468,327,372",
+                        "endColumns": "44,46,41,49,40,43,44,42,46,48,44,48",
+                        "endOffsets": "95,142,597,322,183,272,228,555,463,512,367,416"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,100,147,189,239,280,324,369,412,459,508,553",
+                        "endColumns": "44,46,41,49,40,43,44,42,46,48,44,48",
+                        "endOffsets": "95,142,184,234,275,319,364,407,454,503,548,597"
+                    }
+                }
+            ]
+        }
+    ]
+}

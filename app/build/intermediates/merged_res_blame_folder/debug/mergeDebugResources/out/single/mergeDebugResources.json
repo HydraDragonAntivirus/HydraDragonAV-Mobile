@@ -1,0 +1,150 @@
+[
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_bg_card.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/bg_card.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/layout_fragment_network.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/layout/fragment_network.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/color_nav_selector.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/color/nav_selector.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_nav_settings.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_nav_settings.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/anim_slide_out_left.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/anim/slide_out_left.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/layout_fragment_scan.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/layout/fragment_scan.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_bg_tag.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/bg_tag.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_bg_card_dark.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/bg_card_dark.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/anim_slide_in_right.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/anim/slide_in_right.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_hydra_logo.png.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_hydra_logo.png"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_shield_alert.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_shield_alert.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/xml_network_security_config.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/xml/network_security_config.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_bg_threat_row.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/bg_threat_row.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/layout_item_network_event.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/layout/item_network_event.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_scanner.png.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_scanner.png"
+    },
+    {
+        "merged": "com.hydradragon.antivirus.app-debug-51:/xml_accessibility_service_config.xml.flat",
+        "source": "com.hydradragon.antivirus.app-main-53:/xml/accessibility_service_config.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/layout_fragment_dashboard.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/layout/fragment_dashboard.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_nav_scan.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_nav_scan.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/mipmap-xxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_bg_scan_button.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/bg_scan_button.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_launcher.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_launcher.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_process_alert.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_process_alert.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/anim_slide_out_right.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/anim/slide_out_right.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_threat.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_threat.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_launcher_round.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_launcher_round.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_nav_threats.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_nav_threats.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_nav_dashboard.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_nav_dashboard.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/layout_activity_main.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_network_alert.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_network_alert.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_shield_secure.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_shield_secure.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/anim_slide_in_left.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/anim/slide_in_left.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/layout_item_threat.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/layout/item_threat.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/color_nav_item_colors.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/color/nav_item_colors.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_ic_nav_network.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/ic_nav_network.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/drawable_bg_status_dot_green.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/drawable/bg_status_dot_green.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-debug-51:/menu_bottom_nav_menu.xml.flat",
+        "source": "/root/.gradle/daemon/8.6/com.hydradragon.antivirus.app-main-53:/menu/bottom_nav_menu.xml"
+    }
+]

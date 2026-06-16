@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">HydraDragon Antivirus</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_scan">Scan</string>
+    <string name="nav_network">Network</string>
+    <string name="nav_threats">Threats</string>
+    <string name="nav_settings">Settings</string>
+    <string name="system_safe">SYSTEM SAFE</string>
+    <string name="developers">Developers: Musayev Yusif and Emirhan Ucan</string>
+    <string name="accessibility_desc">HydraDragon monitors browser URLs to protect you from malicious websites.</string>
+</resources>

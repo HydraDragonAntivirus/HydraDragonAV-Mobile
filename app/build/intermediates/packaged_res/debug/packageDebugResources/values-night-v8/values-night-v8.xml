@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_card">#1A202C</color>
+    <color name="bg_primary">#0A0F1A</color>
+    <color name="bg_secondary">#151A22</color>
+    <color name="card_bg">#151A22</color>
+    <color name="colorAccent">#00FF88</color>
+    <color name="colorPrimary">#0A0F1A</color>
+    <color name="colorPrimaryDark">#05080E</color>
+    <color name="hydra_red">#FF0040</color>
+    <color name="hydra_red_light">#FF3366</color>
+    <color name="nav_bg">#0C1017</color>
+    <color name="neon_cyan">#00E5FF</color>
+    <color name="neon_green">#00FF88</color>
+    <color name="text_dim">#8892B0</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#A0A0A0</color>
+    <color name="threat_red">#FF0040</color>
+    <color name="warning_orange">#FF9900</color>
+    <style name="Theme.HydraDragon" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">#00FF88</item>
+        <item name="colorPrimaryDark">#0A0A0F</item>
+        <item name="colorAccent">#00CFFF</item>
+        <item name="android:windowBackground">#0A0A0F</item>
+        <item name="android:statusBarColor">#0A0A0F</item>
+    </style>
+</resources>

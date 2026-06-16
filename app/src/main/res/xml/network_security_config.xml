@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DOSYA: app/src/main/res/xml/network_security_config.xml -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+
+    <!-- Threat intelligence feed için HTTPS zorunlu -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">hydradragon.security</domain>
+    </domain-config>
+</network-security-config>
+

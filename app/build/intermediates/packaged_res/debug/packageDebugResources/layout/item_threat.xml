@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DOSYA: app/src/main/res/layout/item_threat.xml -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_card_dark"
+    android:padding="12dp"
+    android:layout_marginBottom="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="4dp">
+
+        <!-- Uygulama İkonu -->
+        <ImageView
+            android:id="@+id/iv_app_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="8dp"
+            android:src="@mipmap/ic_launcher"/>
+
+        <!-- Uygulama adı -->
+        <TextView
+            android:id="@+id/tv_app_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="App Name"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"/>
+
+        <!-- Tehdit seviyesi -->
+        <TextView
+            android:id="@+id/tv_threat_level"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/level_critical"
+            android:textColor="@color/threat_red"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:background="@drawable/bg_tag"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"/>
+    </LinearLayout>
+
+    <!-- Paket adı -->
+    <TextView
+        android:id="@+id/tv_package"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="com.example.app"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="4dp"/>
+
+    <!-- Sebep -->
+    <TextView
+        android:id="@+id/tv_reason"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="► Bilinen malware imzası"
+        android:textColor="@color/neon_cyan"
+        android:textSize="12sp"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="4dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- Risk skoru -->
+        <TextView
+            android:id="@+id/tv_risk_score"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Risk: 85/100"
+            android:textColor="@color/warning_orange"
+            android:textSize="11sp"
+            android:fontFamily="monospace"/>
+
+        <!-- Zaman -->
+        <TextView
+            android:id="@+id/tv_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12:34:56"
+            android:textColor="@color/text_dim"
+            android:textSize="11sp"
+            android:fontFamily="monospace"/>
+    </LinearLayout>
+</LinearLayout>

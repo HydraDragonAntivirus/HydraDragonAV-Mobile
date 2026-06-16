@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HydraDragon Antivirüs</string>
+    <string name="app_title">ANTİVİRÜS v1.0</string>
+    <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_scan">Tara</string>
+    <string name="nav_network">Ağ</string>
+    <string name="nav_threats">Tehditler</string>
+    <string name="nav_settings">Ayarlar</string>
+    <string name="auth_failed">Kimlik doğrulanamadı</string>
+    <string name="auth_error">Giriş başarısız: %1$s</string>
+    <string name="auth_title">HydraDragon Güvenlik Kilidi</string>
+    <string name="auth_subtitle">Erişim için kimliğinizi doğrulayın</string>
+    <string name="system_safe_status">● SİSTEM GÜVENLİ</string>
+    <string name="security_overview">GÜVENLİK GENEL BAKIŞ</string>
+    <string name="system_is_safe">Sisteminiz Güvende</string>
+    <string name="system_safe_desc">• Gerçek zamanlı izleme aktif
+• Ağ kuralları uygulanıyor
+• Tehdit istihbaratı senkronize</string>
+    <string name="threat_detected">TEHDİT TESPİT EDİLDİ!</string>
+    <string name="live_network_activity">CANLI AĞ AKTİVİTESİ</string>
+    <string name="total_traffic">TOPLAM TRAFİK</string>
+    <string name="blocked">ENGELLENDİ</string>
+    <string name="allowed">İZİN VERİLDİ</string>
+    <string name="realtime_intelligence">GERÇEK ZAMANLI İSTİHBARAT</string>
+    <string name="engine_active">Engine AKTİF</string>
+    <string name="system_waiting">[Sistem bekleniyor...]</string>
+    <string name="network_activity">AĞ AKTİVİTESİ</string>
+    <string name="live_traffic">CANLI TRAFİK</string>
+    <string name="incoming">▼ GELEN</string>
+    <string name="outgoing">▲ GİDEN</string>
+    <string name="realtime_packet_flow">GERÇEK ZAMANLI PAKET AKIŞI</string>
+    <string name="network_connected">Bağlı</string>
+    <string name="network_disconnected">Bağlı Değil</string>
+    <string name="apk_scanner">APK TARAYICI</string>
+    <string name="scan_prompt">Taramayı başlatmak için TARA butonuna basın</string>
+    <string name="scan_system">SİSTEMİ TARA</string>
+    <string name="rescan">YENİDEN TARA</string>
+    <string name="scanning">TARANIYOR...</string>
+    <string name="scanned">TARANAN</string>
+    <string name="threat">TEHDİT</string>
+    <string name="found_threats">⚠ BULUNAN TEHDİTLER</string>
+    <string name="threat_found_dialog_title">⚠ Tehdit Tespit Edildi</string>
+    <string name="threat_found_dialog_msg">%1$s
+
+Risk Skoru: %2$d/100
+
+Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
+    <string name="btn_destroy">EVET, YOK ET</string>
+    <string name="btn_ignore">YOKSAY</string>
+    <string name="threat_destroyed">Zehirli Dosya İmha Edildi!</string>
+    <string name="file_deleted_safe">DOSYA SİLİNDİ (GÜVENLİ)</string>
+    <string name="file_delete_failed">Dosya silinemedi! (İzinleri kontrol edin)</string>
+    <string name="scan_type_title">Tarama Türünü Seçin</string>
+    <string name="scan_type_msg">🚀 HIZLI TARAMA: Sadece yüklü uygulamaları ve İndirilenler (Download) klasöründeki dosyaları tarar.
+
+🔍 TAM TARAMA: Tüm depolama birimini (SD Kart dâhil) derinlemesine didik didik eder (Uzun sürebilir).</string>
+    <string name="btn_full_scan">🔍 TAM TARA</string>
+    <string name="btn_quick_scan">🚀 HIZLI TARA</string>
+    <string name="btn_cancel">İptal</string>
+    <string name="system_clean">Sistem Temiz</string>
+        <string name="risk_critical">KRİTİK</string>
+    <string name="risk_high">YÜKSEK RİSK (%1$d)</string>
+    <string name="risk_medium">ORTA RİSK (%1$d)</string>
+    <string name="risk_low">DÜŞÜK RİSK (%1$d)</string>
+    <string name="settings_title">⚙ Ayarlar</string>
+    <string name="sys_language">Sistem Dili</string>
+    <string name="appearance">GÖRÜNÜM</string>
+    <string name="dark_light_mode">🌙 Karanlık  /  ☀ Aydınlık Mod</string>
+    <string name="system">SİSTEM</string>
+    <string name="bloatware_cleaner">🧹 Bloatware Temizleyici</string>
+    <string name="about">HAKKINDA</string>
+    <string name="engine_version">Engine Sürümü</string>
+    <string name="scanning_bloatware">🔍 Taranıyor...</string>
+    <string name="scanning_bloatware_msg">Arka planda çalışan gereksiz uygulamalar aranıyor...</string>
+    <string name="clean_no_bloatware">✅ Temiz! Bloatware yok.</string>
+    <string name="all_apps_processed">Tüm uygulamalar işlendi!</string>
+    <string name="bg_app_found">⚠ Arka Plan Uygulaması Bulundu</string>
+    <string name="btn_uninstall_disable">KALDIR / DEVRE DIŞI</string>
+    <string name="disabled_success">✅ Devre dışı bırakıldı!</string>
+    <string name="btn_skip">ATLA →</string>
+    <string name="btn_close">Kapat</string>
+    <string name="ram_usage">💾 %1$d MB RAM
+
+⏳ Kalan: %2$d</string>
+
+    <string name="scan_btn">TARA</string>
+    <string name="scan_initial_status">Taramayı başlatmak için TARA butonuna basın</string>
+    <string name="scan_scanning_btn">TARANIYOR...</string>
+    <string name="scan_rescan_btn">YENİDEN TARA</string>
+    <string name="scan_clean_system">✓ Tarama tamamlandı - Sistem temiz!</string>
+    <string name="scan_threat_found">⚠ %1$s tehdit bulundu!</string>
+    <string name="scan_progress_status">Taranıyor: %1$s</string>
+    <string name="scan_error">Hata: %1$s</string>
+    <string name="threat_log_title">--- TEHDİT GÜNLÜKLERİ ---</string>
+    <string name="threat_log_empty">Henüz kaydedilmiş bir tehdit günlüğü yok.</string>
+    <string name="app_lock">Uygulama Kilidi</string>
+
+
+    <string name="lock_sub">Bu uygulama kilitli. Lütfen PIN girin:</string>
+    <string name="lock_unlock">KİLİDİ AÇ</string>
+    <string name="lock_wrong">Yanlış Şifre!</string>
+    <string name="lock_wait_sec">Lütfen %1$s saniye bekleyin</string>
+    <string name="lock_wait_min">Lütfen %1$s dakika bekleyin</string>
+    <string name="lock_set_pin">🔑 PIN ŞİFRESİ BELİRLE / DEĞİŞTİR</string>
+    <string name="lock_permission_req">Lütfen Kullanım Verilerine Erişim izni verin!</string>
+    <string name="lock_enter_pin">Yeni PIN Girin</string>
+    <string name="lock_save">KAYDET</string>
+    <string name="lock_saved">PIN Kaydedildi!</string>
+
+    <string name="language_settings">Dil Seçimi</string>
+    <string name="scan_custom">📁 Özel Dosya Taraması</string>
+    <string name="threat_logs_title">--- TEHDİT GÜNLÜKLERİ ---</string>
+    <string name="safe_download_title">✅ Güvenli Dosya</string>
+    <string name="safe_download_desc">temizdir.</string>
+    <string name="danger_download_title">⚠ DİKKAT: VİRÜS TESPİT EDİLDİ!</string>
+    <string name="danger_download_desc">Bu uygulama yüksek ihtimalle virüstür, indirmeyin!</string>
+    <string name="no_threat_logs">Henüz kaydedilmiş bir tehdit günlüğü yok.</string>
+    <string name="untrusted_cert">GÜVENSİZ SERTİFİKA (Test Anahtarı)</string>
+    <string name="critical_no_signature">KRİTİK: Dijital imza bulunamadı!</string>
+    <string name="suspicious_apk_file">Dosya Sistemindeki Şüpheli APK!</string>
+    <string name="risky_permissions">Riskli izinler!</string>
+    <string name="signature_prefix">İmza</string>
+    <string name="sd_card">SD KART</string>
+    <string name="level_critical">KRİTİK</string>
+    <string name="level_high">YÜKSEK RİSK</string>
+    <string name="level_medium">ORTA RİSK</string>
+    <string name="level_low">DÜŞÜK RİSK</string>
+    <string name="level_clean">TEMİZ</string>
+    <string name="threats_found_count">⚠ %1$d zehirli dosya bulundu! Üzerine tıklayıp yokedin.</string>
+    <string name="threat_obfuscation">⚠ KOD GİZLEME: Dinamik Yükleme Tespit Edildi!</string>
+    <string name="threat_ransomware">FİDYE YAZILIMI TESPİTİ: Dosya Şifreleme!</string>
+    <string name="threat_spyware">CASUS YAZILIM / RAT TESPİTİ: Arka Plan İzlemesi!</string>
+    <string name="threat_banking_trojan">BANKACILIK TRUVA ATI TESPİTİ: Finansal Bindirme!</string>
+    <string name="threat_keylogger">KEYLOGGER TESPİTİ: Klavye Kaydı!</string>
+    <string name="threat_suspicious_behavior">Şüpheli API davranışı tespit edildi</string>
+    <string name="threat_clean_code">Kod analizi temiz - Zararlı imza bulunamadı.</string>
+    <string name="threat_screen_locker">EKRAN KİLİTLEYİCİ TESPİTİ: Kapatılamayan Pencere!</string>
+    <string name="cert_untrusted">GÜVENSİZ SERTİFİKA (Test Anahtarı)</string>
+    <string name="cert_signature">✍️ İmza: %1$s</string>
+    <string name="threat_adware">ADWARE TESPİTİ: Aşırı Reklam İçeriyor!</string>
+</resources>

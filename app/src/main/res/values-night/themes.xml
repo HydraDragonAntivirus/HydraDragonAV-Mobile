@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.HydraDragon" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">#00FF88</item>
+        <item name="colorPrimaryDark">#0A0A0F</item>
+        <item name="colorAccent">#00CFFF</item>
+        <item name="android:windowBackground">#0A0A0F</item>
+        <item name="android:statusBarColor">#0A0A0F</item>
+    </style>
+</resources>

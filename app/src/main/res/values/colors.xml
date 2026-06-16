@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#FFFFFF</color>
+    <color name="colorPrimaryDark">#F2F2F2</color>
+    <color name="colorAccent">#00CC66</color>
+    
+    <color name="bg_primary">#FFFFFF</color>
+    <color name="bg_secondary">#F5F5F5</color>
+    <color name="bg_card">#E0E0E0</color>
+    <color name="text_primary">#111111</color>
+    <color name="text_secondary">#444444</color>
+    <color name="text_dim">#666666</color>
+    <color name="neon_green">#00CC66</color>
+    <color name="neon_cyan">#0099FF</color>
+    <color name="hydra_red">#CC0000</color>
+    <color name="hydra_red_light">#FF3333</color>
+
+    <color name="nav_bg">#0C1017</color>
+    <color name="card_bg">#151A22</color>
+    <color name="threat_red">#FF0040</color>
+    <color name="warning_orange">#FF9900</color>
+</resources>
