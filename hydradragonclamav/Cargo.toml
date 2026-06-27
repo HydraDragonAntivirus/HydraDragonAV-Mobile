@@ -1,0 +1,28 @@
+[package]
+name = "hydradragonclamav"
+version = "0.1.0"
+edition = "2021"
+description = "Pure-Rust ClamAV-compatible non-hash signature loader and scanner for HydraDragon"
+license = "GPL-2.0-or-later"
+
+[dependencies]
+hydradragonextractor = { path = "../hydradragonextractor" }
+
+# PCRE subsignatures and .cdb/.ftm regex fields (linear-time, no catastrophic backtracking)
+regex = "1"
+
+# gzip decompression for ClamAV .cvd/.cld bytecode containers (old V7 tar inside)
+flate2 = "1"
+
+# SIMD substring search for the per-pattern literal pre-check (pure Rust).
+memchr = "2"
+
+# Compact double-array Aho-Corasick (same matcher yara-x uses) over short 2-3
+# byte signature atoms — ClamAV-style shallow trie, cheap to build.
+daachorse = "3.0.2"
+
+# Image decoding for `fuzzy_img#` logical subsignatures (ClamAV's image fuzzy
+# hash). Same crates ClamAV's libclamav_rust uses, so the perceptual hash is
+# byte-identical. Only the common raster formats are enabled.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "webp"] }
+rustdct = "0.7"

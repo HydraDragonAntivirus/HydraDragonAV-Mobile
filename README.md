@@ -16,7 +16,7 @@ HydraDragonAV Mobile is a state-of-the-art Android Antivirus and Security suite 
 - **🔍 On-Install & On-Demand Scanner:** Actively monitors the device using BroadcastReceivers to automatically intercept malicious APKs the exact second they are installed.
 - **🧬 Deep Bytecode Analysis (DEX):** Advanced static code inspection to detect hardcoded malicious IPs, suspicious Base64 payloads, and obfuscated malware signatures.
 - **🌐 Network Security Monitor:** Tracks active connections and warns against insecure or malicious domains.
-- **🗃️ Bloom Filter Whitelisting:** O(1) instantaneous verification of safe developer signatures (e.g., Open Source apps from GitHub and Termux) using Google Guava's Bloom Filter.
+- **🗃️ Bloom Filter Whitelisting:** O(1) instantaneous verification of safe developer signatures (e.g., Open Source apps from GitHub and Termux) using Google Guava's Bloom Filter with https://www.nist.gov/itl/csd/secure-systems-and-applications/national-software-reference-library-nsrl/nsrl-download-0. and MalwareBazaar Android malware samples with using custom yargen to create signatures.
 - **🌍 Multilingual Support:** Fully localized and supports both **English** and **Turkish** languages seamlessly.
 
 ## 🛠️ Technical Architecture
@@ -32,3 +32,12 @@ HydraDragonAV Mobile operates on three core pillars:
    ```bash
    git clone https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile.git
    cd HydraDragonAV-Mobile
+   ```
+
+## 🗄️ Database Filtering
+
+Filter ClamAV signatures to keep only Android-relevant platforms (Andr, Pdf, Html, Unix, Linux, Email, PUA) plus all Phishing; excludes Win, Osx, Java:
+
+```bash
+python clam_juice.py --directory database_non_filtered --output database_filtered --profile cross-platform
+```

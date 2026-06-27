@@ -1,0 +1,24 @@
+# False positives from Clamav Official
+PUA.Html.Exploit.CVE_2014_0322-1
+PUA.Html.Trojan.Agent-37075
+PUA.Html.Trojan.Crypt-347
+PUA.Pdf.Trojan.OpenActionObjectwithJavascript-1
+PUA.Pdf.Trojan.EmbeddedJavaScript-1
+PUA.Pdf.Trojan.OpenActionObjectwithJS-1
+PUA.Html.Trojan.Agent-37084
+Html.Exploit.CVE_2016_7241-1
+Html.Exploit.CVE_2017_0011-5752098-0
+PUA.Html.Trojan.Agent-37075
+PUA.Pdf.Trojan.EmbeddedJavaScript-1
+Unix.Trojan.Mirai-5932143-0
+PUA.Pdf.Trojan.EmbeddedJavaScript-1
+Unix.Trojan.Mirai-7640640-0
+PUA.Html.Trojan.Agent-37075
+#detects "enigma protector developer" executables https://enigmaprotector.com/en/about.html
+# False positives from SaneSecurity and other 3rd parties
+Porcupine.Phishing.52077
+# False positives other 3rd parties signatures
+# False positives YARA
+# False positives from SecuriteInfo.com
+SecuriteInfo.com.JS.Phishing-FI.11304.1816
+SecuriteInfo.com.JS.Phishing-FT.6047.23367
