@@ -3,11 +3,30 @@ import argparse
 import os
 import re
 
-DEFAULT_EXCLUDE_TERMS = {"win", "windows", "osx", "macho", "peid", "java", "mz", "pe", "powershell"}
+DEFAULT_EXCLUDE_TERMS = {"win", "windows", "osx", "macho", "peid", "java", "mz", "pe",
+                         "powershell", "susp", "suspicious"}
 
 # Terms matched ONLY against the first underscore-segment of the rule name.
 # Use for short/ambiguous terms that would cause false positives elsewhere.
-DEFAULT_PREFIX_ONLY_TERMS = {"ttp"}
+DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape"}
+
+# Excluded terms allowed to match via startswith() even though they are shorter
+# than the 5-char startswith guard. "susp" intentionally catches the whole
+# suspicious-family (suspicious, and misspellings like suspicous/suspicoius).
+PREFIX_MATCH_TERMS = {"susp"}
+
+# Rule names CONTAINING any of these (case-insensitive, anywhere — start,
+# middle or end) are dropped outright. Used for compiler/platform substrings
+# that tokenisation does not otherwise catch, e.g. win32 / win64 (token
+# "win32"/"win64", not "win") and borland_delphi (Windows-only Delphi binaries).
+DEFAULT_EXCLUDE_NAME_SUBSTRINGS = {"borland_delphi", "win32", "win64", "windows"}
+
+# Exact metadata values that cause a rule to be dropped, matched
+# case-insensitively against the WHOLE meta value (not tokenised). Used for
+# multi-word category tags whose individual words are otherwise harmless,
+# e.g.  rule_category = "greyware_tool_keyword"  (greyware = legitimate tools
+# that trip false positives on Android).
+DEFAULT_EXCLUDE_META_VALUES = {"greyware_tool_keyword"}
 
 # YARA modules whose usage makes a rule non-Android-compatible.
 # hash / math / time / console are portable — not listed here.
@@ -63,7 +82,7 @@ def matches_exclude(tokens, raw_parts, exclude_terms):
         return True
     for part in raw_parts:
         for term in exclude_terms:
-            if len(term) >= 5 and part.startswith(term):
+            if part.startswith(term) and (len(term) >= 5 or term in PREFIX_MATCH_TERMS):
                 return True
     return False
 
@@ -161,44 +180,53 @@ def extract_rule_name(header):
     return "".join(name_chars)
 
 
-def condition_identifiers(block):
+def body_identifiers(block):
     """
-    Return the set of bare identifiers appearing in the rule's condition
-    section. YARA lets a condition reference other rules by name, so these
-    identifiers include any rule-to-rule dependencies.
+    Return the set of bare identifiers appearing anywhere in the rule body
+    (meta, strings, condition and comments) — excluding the rule's own name.
+
+    A condition can reference other rules by name, but a removed rule may also
+    be referenced indirectly elsewhere in the body; any rule that mentions a
+    removed rule's name is treated as related and dropped too.
     """
     ids = set()
-    in_cond = False
     for line in block[1:]:
-        stripped = line.strip()
-        if stripped == "condition:":
-            in_cond = True
-            continue
-        if stripped in ("meta:", "strings:"):
-            in_cond = False
-            continue
-        if in_cond:
-            ids.update(_IDENT_RE.findall(line))
+        ids.update(_IDENT_RE.findall(line))
+    ids.discard(extract_rule_name(block[0]))
     return ids
 
 
-def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules):
+def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
+                exclude_meta_values=frozenset(), exclude_name_substrings=frozenset()):
     """
     Return False if any of these signals fires:
 
+      0. "macos" string      — case-insensitive check of the entire rule block content
       1. Rule name tokens    — camelCase + underscore split
          prefix_only_terms checked against first underscore-segment only
       2. Rule tags           — space-separated after colon on header line
-      3. Metadata values     — strings inside the meta: section
+      3. Metadata values     — strings inside the meta: section, plus exact
+                                whole-value matches against exclude_meta_values
       4. Module usage        — pe. / macho. / dotnet. / elf. in rule body,
-                               or import "pe" / import "macho" inside the block
+                                or import "pe" / import "macho" inside the block
       5. Comments            — excluded term in a // or /* */ comment, e.g.
-                               a "//Windows" note above the rule body
+                                a "//Windows" note above the rule body
+      6. String contents     — name substring (win32/win64/...) appearing
+                                anywhere in the strings: section
     """
+    block_text = "".join(block).lower()
+    if "macos" in block_text:
+        return False
+
     header = block[0].lstrip()
 
     # ── 1. Rule name ────────────────────────────────────────────────────────
     name = extract_rule_name(header)
+
+    name_lower = name.lower()
+    for sub in exclude_name_substrings:
+        if sub in name_lower:
+            return False
 
     name_tokens, name_parts = tokenise(name)
     if matches_exclude(name_tokens, name_parts, exclude_terms):
@@ -229,6 +257,8 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules):
         if not m:
             continue
         value = m.group(1).strip()
+        if value.lower() in exclude_meta_values:
+            return False
         for word in re.split(r'[\s,;/\\|]+', value):
             word_tokens, word_parts = tokenise(word)
             if matches_exclude(word_tokens, word_parts, exclude_terms):
@@ -245,6 +275,20 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules):
         word_tokens, word_parts = tokenise(word)
         if matches_exclude(word_tokens, word_parts, exclude_terms):
             return False
+
+    # ── 6. String contents (name substrings, e.g. win32 / win64) ─────────────
+    if exclude_name_substrings:
+        in_strings = False
+        for line in block[1:]:
+            stripped = line.strip()
+            if stripped in ("meta:", "strings:", "condition:"):
+                in_strings = stripped == "strings:"
+                continue
+            if not in_strings:
+                continue
+            low = line.lower()
+            if any(sub in low for sub in exclude_name_substrings):
+                return False
 
     return True
 
@@ -275,13 +319,16 @@ def parse_args():
 Default excluded terms: {sorted(DEFAULT_EXCLUDE_TERMS)}
 Default non-Android modules: {sorted(NON_ANDROID_MODULES)}
 
-Six signals are checked per rule — if any matches, the rule is dropped:
-  1. Rule name tokens   (camelCase + underscore split, e.g. OSXDropper -> osx)
+Seven signals are checked per rule — if any matches, the rule is dropped:
+  1. Rule name          (camelCase/underscore tokens, e.g. OSXDropper -> osx;
+                         plus name substrings anywhere, e.g. win32 / win64 /
+                         borland_delphi)
   2. Rule tags          (e.g.  rule Foo : windows macho {{ ... }})
-  3. Metadata values    (e.g.  os = "windows",  platform = "macho")
+  3. Metadata values    (e.g.  os = "windows",  rule_category = "greyware_tool_keyword")
   4. Module usage       (e.g.  pe.entry_point,  macho.headers,  import "dotnet")
   5. Comments           (e.g.  //Windows  or  /* PE loader */ above the body)
-  6. Rule references    (condition references a rule dropped by 1-5; cascades)
+  6. String contents    (name substrings win32/win64/... in the strings: section)
+  7. Rule references    (body mentions any rule dropped by 1-6; cascades)
 
 Portable modules (hash, math, time, console) are NOT filtered.
 
@@ -339,6 +386,30 @@ Examples:
         help="Start from an empty exclusion list instead of the built-in defaults.",
     )
     parser.add_argument(
+        "--exclude-meta-value",
+        metavar="VALUE",
+        action="append",
+        default=[],
+        help=(
+            "Drop a rule when any meta value equals VALUE exactly "
+            "(case-insensitive, repeatable). Added on top of defaults unless "
+            "--reset-defaults is given. Default: "
+            f"{sorted(DEFAULT_EXCLUDE_META_VALUES)}"
+        ),
+    )
+    parser.add_argument(
+        "--exclude-name-substring",
+        metavar="SUB",
+        action="append",
+        default=[],
+        help=(
+            "Drop a rule when its name contains SUB anywhere (start, middle or "
+            "end; case-insensitive, repeatable). Added on top of defaults "
+            "unless --reset-defaults is given. Default: "
+            f"{sorted(DEFAULT_EXCLUDE_NAME_SUBSTRINGS)}"
+        ),
+    )
+    parser.add_argument(
         "--drop-module",
         metavar="MODULE",
         action="append",
@@ -368,6 +439,18 @@ def main():
     for t in args.exclude:
         exclude_terms.add(t.lower())
 
+    exclude_meta_values = (
+        set() if args.reset_defaults else set(DEFAULT_EXCLUDE_META_VALUES)
+    )
+    for v in args.exclude_meta_value:
+        exclude_meta_values.add(v.lower())
+
+    exclude_name_substrings = (
+        set() if args.reset_defaults else set(DEFAULT_EXCLUDE_NAME_SUBSTRINGS)
+    )
+    for p in args.exclude_name_substring:
+        exclude_name_substrings.add(p.lower())
+
     non_android_modules = set(NON_ANDROID_MODULES)
     for m in args.drop_module:
         non_android_modules.add(m.lower())
@@ -376,6 +459,8 @@ def main():
 
     print(f"Excluded terms:       {sorted(exclude_terms)}")
     print(f"Non-Android modules:  {sorted(non_android_modules)}")
+    print(f"Excluded meta values: {sorted(exclude_meta_values)}")
+    print(f"Excluded name subs:   {sorted(exclude_name_substrings)}")
     print(f"Reading {src}...")
 
     with open(src, "r", encoding="utf-8", errors="replace") as f:
@@ -397,15 +482,16 @@ def main():
 
     # Pass 1: direct signals (name, tags, meta, modules, comments).
     keep = [
-        should_keep(b, exclude_terms, prefix_only_terms, non_android_modules)
+        should_keep(b, exclude_terms, prefix_only_terms, non_android_modules,
+                    exclude_meta_values, exclude_name_substrings)
         for b in blocks
     ]
     direct_removed = keep.count(False)
 
-    # Pass 2: drop rules that reference an excluded rule in their condition.
-    # Cascades to a fixpoint — if rule C references B and B was dropped for
-    # referencing excluded A, then C is dropped too. A rule referencing a
-    # dropped rule would otherwise fail to compile (undefined identifier).
+    # Pass 2: drop every rule related to a removed rule — i.e. any rule whose
+    # body references a removed rule's name (condition, strings, meta or
+    # comments). Cascades to a fixpoint: if C references B and B was dropped
+    # for referencing excluded A, then C is dropped too.
     dropped_names = {names[i] for i in range(total) if not keep[i] and names[i]}
     changed = True
     while changed:
@@ -413,7 +499,7 @@ def main():
         for i, b in enumerate(blocks):
             if not keep[i]:
                 continue
-            if condition_identifiers(b) & dropped_names:
+            if body_identifiers(b) & dropped_names:
                 keep[i] = False
                 if names[i]:
                     dropped_names.add(names[i])
@@ -424,7 +510,7 @@ def main():
     ref_removed = (total - kept) - direct_removed
 
     print(f"Total rules: {total}, Kept: {kept}, Removed: {total - kept} "
-          f"({direct_removed} direct, {ref_removed} via excluded-rule references)")
+          f"({direct_removed} direct, {ref_removed} related via rule references)")
 
     with open(dst, "w", encoding="utf-8") as f:
         f.writelines(prelude)

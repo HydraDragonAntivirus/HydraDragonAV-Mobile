@@ -123,6 +123,9 @@ class ComprehensiveFilter:
     def __init__(self, verbose=False):
         self.verbose = verbose
         self.stats = defaultdict(lambda: {"original": 0, "filtered": 0})
+        # Signature names listed in .ign / .ign2 ignore files — any signature
+        # with one of these names is dropped during filtering.
+        self.ignore_names = set()
 
     def log(self, message):
         """Log an informational message if verbose mode is enabled."""
@@ -158,8 +161,34 @@ class ComprehensiveFilter:
             return parts[1]
         return parts[0]
 
+    def _load_ignore_file(self, file_path, is_ign2=False):
+        """Read signature ignore list from .ign or .ign2 file."""
+        if not os.path.exists(file_path):
+            return
+        self.log(f"Loading ignore file: {os.path.basename(file_path)}")
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if is_ign2:
+                        self.ignore_names.add(line)
+                    else:
+                        # Format is dbname:lineno:signaturename
+                        parts = line.split(":", 2)
+                        if len(parts) >= 3:
+                            self.ignore_names.add(parts[2].strip())
+                        else:
+                            self.ignore_names.add(parts[-1].strip())
+        except Exception as e:
+            self.error(f"Failed to read ignore file {file_path}: {e}")
+
     def should_keep_signature(self, name, exclude_platforms, include_platforms, keep_if_contains=None):
         """Determine if a signature should be kept based on its name."""
+        if name and name in self.ignore_names:
+            return False
+
         if name and ("eicar" in name.lower() or "test.eicar" in name.lower()):
             return True
 
@@ -475,6 +504,15 @@ class ComprehensiveFilter:
         """Filter files in src_dir and copy results to dst_dir."""
         os.makedirs(dst_dir, exist_ok=True)
 
+        # Load ignore list from .ign and .ign2 files in the source directory
+        self.ignore_names = set()
+        for item in os.listdir(src_dir):
+            item_lower = item.lower()
+            if item_lower.endswith(".ign") or item_lower.endswith(".ign2"):
+                file_path = os.path.join(src_dir, item)
+                if os.path.isfile(file_path):
+                    self._load_ignore_file(file_path, is_ign2=item_lower.endswith(".ign2"))
+
         # Copy all files first, skipping databases that are dropped entirely.
         # javascript.ndb / phish.ndb are excluded: JavaScript and email/phish
         # formats are not meaningfully scannable on Android.
@@ -548,6 +586,18 @@ class ComprehensiveFilter:
 
         # Remove empty database files
         self._remove_empty_dbs(dst_dir)
+
+        # Remove .ign and .ign2 files from the filtered output directory
+        self.log("Removing ignore files from the filtered output directory")
+        for item in os.listdir(dst_dir):
+            item_lower = item.lower()
+            if item_lower.endswith(".ign") or item_lower.endswith(".ign2"):
+                file_path = os.path.join(dst_dir, item)
+                if os.path.isfile(file_path):
+                    try:
+                        os.unlink(file_path)
+                    except Exception as e:
+                        self.error(f"Failed to remove ignore file {file_path}: {e}")
 
     def _remove_empty_dbs(self, directory):
         """Delete database files that contain no real signatures."""
