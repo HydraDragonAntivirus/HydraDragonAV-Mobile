@@ -8,9 +8,16 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.util.Log;
 
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -31,7 +38,7 @@ import okhttp3.Response;
  * Ağ trafiğini izler, şüpheli bağlantıları tespit eder.
  *
  * Özellikler:
- * - Şüpheli IP/domain tespiti
+ * - Şüpheli IP/domain tespiti (bloom filter + hardcoded rules)
  * - C2 (Command & Control) server bağlantısı tespiti
  * - Tor/VPN kullanım tespiti
  * - DNS leak tespiti
@@ -57,12 +64,15 @@ public class NetworkMonitor {
         31337, 12345, 54321           // Bilinen backdoor portları
     ));
 
-    // Şüpheli domain kalıpları
-    private static final List<String> SUSPICIOUS_DOMAINS = Arrays.asList(
+    // Şüpheli domain anahtar kelimeleri (bloom filter yedeği)
+    private static final List<String> SUSPICIOUS_DOMAIN_PATTERNS = Arrays.asList(
         ".onion", "tor2web", "i2p",
         "ngrok.io", "serveo.net",    // Tünel servisleri - malware sıkça kullanır
         "dyndns", "no-ip", "ddns"    // Dynamic DNS - C2 sıkça kullanır
     );
+
+    // Bloom filter asset
+    private static final String MALICIOUS_DOMAIN_BLOOM = "malicious.bloom";
 
     private final Context context;
     private final ConnectivityManager connectivityManager;
@@ -71,6 +81,9 @@ public class NetworkMonitor {
     private final CopyOnWriteArrayList<NetworkEvent> eventLog;
     private NetworkCallback networkCallback;
     private boolean isMonitoring = false;
+
+    // Domain bloom filter
+    private BloomFilter<CharSequence> maliciousDomainFilter;
 
     private long bytesReceived = 0;
     private long bytesSent = 0;
@@ -112,6 +125,51 @@ public class NetworkMonitor {
         this.scheduler = Executors.newScheduledThreadPool(2);
         this.executor = Executors.newFixedThreadPool(3);
         this.eventLog = new CopyOnWriteArrayList<>();
+        loadDomainFilters();
+    }
+
+    /**
+     * Malicious/whitelist domain bloom filter'larını assets'ten yükle.
+     * BloomFilter.readFrom başarısız olursa text dosyadan doldurmayı dene.
+     */
+    private void loadDomainFilters() {
+        // Malicious domain bloom filter
+        maliciousDomainFilter = loadBloomFromAssets(MALICIOUS_DOMAIN_BLOOM);
+        if (maliciousDomainFilter == null) {
+            Log.w(TAG, "Failed to load " + MALICIOUS_DOMAIN_BLOOM);
+        } else {
+            Log.i(TAG, "Loaded " + MALICIOUS_DOMAIN_BLOOM);
+        }
+
+        // Domain whitelist bloom filter (opsiyonel)
+        domainWhitelistFilter = loadBloomFromAssets(DOMAIN_WHITELIST_BLOOM);
+        if (domainWhitelistFilter != null) {
+            Log.i(TAG, "Loaded " + DOMAIN_WHITELIST_BLOOM);
+        }
+    }
+
+    private BloomFilter<CharSequence> loadBloomFromAssets(String assetName) {
+        try {
+            InputStream is = context.getAssets().open(assetName);
+            try {
+                return BloomFilter.readFrom(is, Funnels.stringFunnel(StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                // readFrom failed — try loading from text
+                is.close();
+                is = context.getAssets().open(assetName);
+                BloomFilter<CharSequence> fallback = BloomFilter.create(
+                    Funnels.stringFunnel(StandardCharsets.UTF_8), 5000000, 0.01);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (!line.trim().isEmpty()) fallback.put(line.trim());
+                }
+                reader.close();
+                return fallback;
+            }
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public void setCallback(NetworkCallback callback) {
@@ -208,12 +266,27 @@ public class NetworkMonitor {
     }
 
     /**
-     * Domain şüpheli mi kontrol et
+     * Domain'i bloom filter + pattern listesine karşı kontrol et.
+     * @return true: şüpheli/zararlı domain
      */
     public boolean isSuspiciousDomain(String domain) {
-        for (String pattern : SUSPICIOUS_DOMAINS) {
-            if (domain.toLowerCase().contains(pattern)) return true;
+        if (domain == null || domain.isEmpty()) return false;
+        String lower = domain.toLowerCase();
+
+        // İlk olarak hardcoded pattern'leri kontrol et (hızlı)
+        for (String pattern : SUSPICIOUS_DOMAIN_PATTERNS) {
+            if (lower.contains(pattern)) return true;
         }
+
+        // Bloom filter kontrolü
+        if (maliciousDomainFilter != null && maliciousDomainFilter.mightContain(lower)) {
+            // Domain whitelist'te varsa false positive olabilir, pas geç
+            if (domainWhitelistFilter != null && domainWhitelistFilter.mightContain(lower)) {
+                return false;
+            }
+            return true;
+        }
+
         return false;
     }
 
@@ -237,7 +310,7 @@ public class NetworkMonitor {
      */
     private void checkThreatIntelligence() {
         // TODO: HydraDragon cloud threat feed'den güncelleme al
-        // Şimdilik local blacklist kullanıyor
+        // Şimdilik local bloom filter + blacklist kullanıyor
     }
 
     private void logEvent(String destIp, int port, String protocol,

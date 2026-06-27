@@ -1,6 +1,6 @@
-//! ClamAV bytecode (`.cbc` / `bytecode.cvd` / `bytecode.cld`).
+//! ClamAV bytecode (`.cbc`).
 //!
-//! **Stage 1 — container unpacking + `.cbc` header/trigger parsing.**
+//! **Stage 1 — `.cbc` header/trigger parsing.**
 //!
 //! ClamAV bytecode is a compiled program (ClamAV's own bytecode, derived from
 //! LLVM bitcode) that runs inside a virtual machine to make complex detection
@@ -10,12 +10,12 @@
 //!   * line 2 — a standard *logical-signature trigger* that decides when the
 //!     bytecode runs, followed by the encoded program body.
 //!
-//! This module unpacks the bytecode container and parses each program's header
-//! and trigger so they can be enumerated and later executed. It does **not**
-//! execute bytecode yet — that is a follow-on stage (a bytecode VM). Crucially,
-//! a trigger match alone is *not* a detection: the trigger is a coarse prefilter
-//! and the program body makes the real verdict, so triggers must never be wired
-//! as standalone detections (that would false-positive).
+//! This module parses each program's header and trigger so they can be
+//! enumerated and later executed. It does **not** execute bytecode yet — that
+//! is a follow-on stage (a bytecode VM). Crucially, a trigger match alone is
+//! *not* a detection: the trigger is a coarse prefilter and the program body
+//! makes the real verdict, so triggers must never be wired as standalone
+//! detections (that would false-positive).
 
 use std::fs;
 use std::path::Path;
@@ -50,19 +50,9 @@ pub struct BytecodeSet {
 }
 
 impl BytecodeSet {
-    /// Load `bytecode.cvd` / `bytecode.cld` containers and any loose `*.cbc`
-    /// files found directly in `dir`.
+    /// Load loose `*.cbc` files found directly in `dir`.
     pub fn load_from_dir(dir: &Path) -> Self {
         let mut set = BytecodeSet::default();
-
-        for name in ["bytecode.cvd", "bytecode.cld"] {
-            let p = dir.join(name);
-            if p.exists() {
-                if let Ok(data) = fs::read(&p) {
-                    set.load_container(&data);
-                }
-            }
-        }
 
         if let Ok(rd) = fs::read_dir(dir) {
             for entry in rd.flatten() {
@@ -84,86 +74,6 @@ impl BytecodeSet {
 
         set
     }
-
-    /// Unpack a `.cvd`/`.cld` container (512-byte ASCII header + gzipped tar) and
-    /// parse every `ClamBC` entry inside. ClamAV uses old V7 tar (no `ustar`
-    /// magic), so the tar is parsed directly rather than via the generic
-    /// archive extractor.
-    fn load_container(&mut self, data: &[u8]) {
-        // `.cvd`/`.cld` start with a fixed 512-byte ASCII header; the gzipped tar
-        // follows. A raw `.cbc` (no container) is handled by the loose-file path.
-        let body = if data.starts_with(b"ClamAV-VDB:") && data.len() > 512 {
-            &data[512..]
-        } else {
-            data
-        };
-
-        let Some(tar) = gunzip(body) else {
-            return;
-        };
-
-        for entry in untar(&tar) {
-            // `.cbc` files are ASCII text beginning with "ClamBC"; the container
-            // also holds COPYING / bytecode.info, which we ignore.
-            if !entry.starts_with(b"ClamBC") {
-                continue;
-            }
-            self.report.files_seen += 1;
-            match String::from_utf8(entry).ok().as_deref().and_then(parse_cbc) {
-                Some(bc) => {
-                    self.bytecodes.push(bc);
-                    self.report.loaded += 1;
-                }
-                None => self.report.skipped += 1,
-            }
-        }
-    }
-}
-
-/// Decompress a gzip stream fully into memory.
-fn gunzip(data: &[u8]) -> Option<Vec<u8>> {
-    use std::io::Read;
-    let mut decoder = flate2::read::GzDecoder::new(data);
-    let mut out = Vec::new();
-    decoder.read_to_end(&mut out).ok()?;
-    Some(out)
-}
-
-/// Minimal tar reader for the old V7 / ustar layout ClamAV emits: 512-byte
-/// header blocks, file size as octal ASCII at offset 124..136, data padded to
-/// 512-byte boundaries, terminated by zero blocks. Returns each member's bytes.
-fn untar(data: &[u8]) -> Vec<Vec<u8>> {
-    let mut files = Vec::new();
-    let mut pos = 0;
-    while pos + 512 <= data.len() {
-        let header = &data[pos..pos + 512];
-        // A header whose name starts with NUL marks the end-of-archive blocks.
-        if header[0] == 0 {
-            break;
-        }
-        let size = parse_octal(&header[124..136]);
-        pos += 512;
-        if pos + size > data.len() {
-            break;
-        }
-        files.push(data[pos..pos + size].to_vec());
-        // Advance past the data, rounded up to the next 512-byte block.
-        pos += size.div_ceil(512) * 512;
-    }
-    files
-}
-
-/// Parse a tar octal numeric field (space/NUL padded).
-fn parse_octal(field: &[u8]) -> usize {
-    let digits: Vec<u8> = field
-        .iter()
-        .copied()
-        .filter(|b| (b'0'..=b'7').contains(b))
-        .collect();
-    std::str::from_utf8(&digits)
-        .ok()
-        .and_then(|s| usize::from_str_radix(s, 8).ok())
-        .unwrap_or(0)
 }
 
 /// Parse a single `.cbc`'s header line and trigger line. Returns `None` if the

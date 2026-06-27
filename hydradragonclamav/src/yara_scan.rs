@@ -4,10 +4,12 @@ use std::sync::Arc;
 
 /// Android-relevant ClamAV target types that get YARA scanning.
 ///
-/// Excludes PE (1), OLE2 (2), Mach-O (9), SWF (11), Java (12) and other
-/// desktop-only formats. Unknown types (None) are scanned by default since
-/// they could be APK/ZIP archives or other Android-relevant containers.
-const ALLOWED_TARGETS: [u32; 6] = [3, 4, 5, 6, 7, 10];
+/// Includes HTML (3), Graphics (5), ELF (6), ASCII text (7), PDF (10).
+/// Excludes PE (1), OLE2 (2), Mail (4), Mach-O (9), SWF (11), Java (12) and
+/// other desktop-only formats. Email formats are unsupported on Android.
+/// Unknown types (None) are scanned by default since they could be APK/ZIP
+/// archives or other Android-relevant containers.
+const ALLOWED_TARGETS: [u32; 5] = [3, 5, 6, 7, 10];
 
 /// Returns `true` if files matching the given ClamAV target should be
 /// scanned with YARA rules.

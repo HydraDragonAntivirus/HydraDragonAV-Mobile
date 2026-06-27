@@ -7,6 +7,9 @@ license = "GPL-2.0-or-later"
 
 [dependencies]
 
+# Archive unpacker for embedded-object extraction — zip, tar, gzip, xz, lzma, 7z
+hydradragonextractor = { path = "../hydradragonextractor" }
+
 # YARA-x engine for Android-focused YARA rule scanning
 yara-x = "1.19"
 
@@ -14,7 +17,6 @@ yara-x = "1.19"
 regex = "1"
 
 # gzip decompression for ClamAV .cvd/.cld bytecode containers (old V7 tar inside)
-flate2 = "1"
 
 # SIMD substring search for the per-pattern literal pre-check (pure Rust).
 memchr = "2"

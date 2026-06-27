@@ -36,15 +36,23 @@ from pathlib import Path
 class ComprehensiveFilter:
     """Filter all ClamAV signature file formats."""
 
+    # Signature database files dropped entirely (matched case-insensitively by
+    # filename). JavaScript and phish/email formats are not meaningfully
+    # scannable on Android.
+    EXCLUDE_FILES = {"javascript.ndb", "phish.ndb"}
+
     # Predefined filtering profiles
     PROFILES = {
         "cross-platform": {
-            "description": "Keep Andr, Unix, Linux, Email, PUA + all Phishing; drop Win, Osx, Java",
-            "include_platforms": ["Andr", "Unix", "Linux", "Email"],
-            "exclude_platforms": ["Win", "Osx", "Java"],
+            "description": "Keep Andr, Unix, Linux, PUA + all Phishing; drop Win, Osx, Java, Email (email formats unsupported on Android)",
+            "include_platforms": ["Andr", "Unix", "Linux"],
+            "exclude_platforms": ["Win", "Osx", "Java", "Email"],
             "keep_if_contains": ["Phishing"],
             "exclude_types": [],
-            "ndb_types": None,
+            # NDB target types kept: 0 Any, 3 HTML, 5 Graphics, 6 ELF,
+            # 7 ASCII, 10 PDF. Dropped: 1 PE, 2 OLE2, 4 Mail, 9 Mach-O,
+            # 11 Flash, 12 Java.
+            "ndb_types": ["0", "3", "5", "6", "7", "10"],
         },
         "android-only": {
             "description": "Android-only antivirus — keep only Andr-prefixed signatures",
@@ -467,8 +475,12 @@ class ComprehensiveFilter:
         """Filter files in src_dir and copy results to dst_dir."""
         os.makedirs(dst_dir, exist_ok=True)
 
-        # Copy all files first
+        # Copy all files first, skipping databases that are dropped entirely.
+        # javascript.ndb / phish.ndb are excluded: JavaScript and email/phish
+        # formats are not meaningfully scannable on Android.
         for item in os.listdir(src_dir):
+            if item.lower() in self.EXCLUDE_FILES:
+                continue
             src = os.path.join(src_dir, item)
             dst = os.path.join(dst_dir, item)
             if os.path.isfile(src):

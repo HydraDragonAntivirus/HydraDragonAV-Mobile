@@ -1,3 +1,0 @@
-# There must always be one line in the file
-Email.Trojan.Toa-1:CL_TYPE_ZIP:*:Courrt.{1,15}\.scr$:*:*:*:*:*:
-Email.Trojan.Toa-2:CL_TYPE_ZIP:*:(?i)shipment.{0,50}\.exe\.doc$:*:*:*:*:*:
