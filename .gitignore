@@ -1,4 +1,5 @@
 database_non_filtered/
 yara-x/clean_rules.yar
 yara-x/valhalla-rules.yar
+yara-x/AndroidOS.yar
 yara-x/yr.exe

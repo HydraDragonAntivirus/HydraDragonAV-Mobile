@@ -4,11 +4,18 @@ import os
 import re
 
 DEFAULT_EXCLUDE_TERMS = {"win", "windows", "osx", "macho", "peid", "java", "mz", "pe",
-                         "powershell", "susp", "suspicious"}
+                         "powershell", "susp", "suspicious", "lnk", "packer"}
 
 # Terms matched ONLY against the first underscore-segment of the rule name.
 # Use for short/ambiguous terms that would cause false positives elsewhere.
 DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape", "devcpp"}
+
+# Terms matched as an exact TOKEN in the rule NAME only (any camelCase or
+# underscore segment), never in tags/meta/strings/comments. Use for short words
+# that are meaningful in a rule name but common elsewhere, e.g. "net" (=dotnet)
+# which should drop korna_net_korna / MyNetThing but not match "internet" in a
+# comment or the word "net" in a string.
+DEFAULT_NAME_ONLY_TERMS = {"net"}
 
 # Excluded terms allowed to match via startswith() even though they are shorter
 # than the 5-char startswith guard. "susp" intentionally catches the whole
@@ -19,7 +26,7 @@ PREFIX_MATCH_TERMS = {"susp"}
 # middle or end) are dropped outright. Used for compiler/platform substrings
 # that tokenisation does not otherwise catch, e.g. win32 / win64 (token
 # "win32"/"win64", not "win") and borland_delphi (Windows-only Delphi binaries).
-DEFAULT_EXCLUDE_NAME_SUBSTRINGS = {"borland_delphi", "win32", "win64", "windows", "exe"}
+DEFAULT_EXCLUDE_NAME_SUBSTRINGS = {"borland_delphi", "win32", "win64", "windows", "exe", "anti_debug"}
 
 # Exact metadata values that cause a rule to be dropped, matched
 # case-insensitively against the WHOLE meta value (not tokenised). Used for
@@ -197,7 +204,8 @@ def body_identifiers(block):
 
 
 def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
-                exclude_meta_values=frozenset(), exclude_name_substrings=frozenset()):
+                exclude_meta_values=frozenset(), exclude_name_substrings=frozenset(),
+                name_only_terms=frozenset()):
     """
     Return False if any of these signals fires:
 
@@ -218,7 +226,7 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
     """
     block_text = "".join(block).lower()
     # Raw full-block substring checks (catch strings in literals, comments, meta)
-    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# "):
+    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# ", "autoit"):
         if _raw_term in block_text:
             return False
 
@@ -234,6 +242,11 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
 
     name_tokens, name_parts = tokenise(name)
     if matches_exclude(name_tokens, name_parts, exclude_terms):
+        return False
+
+    # Name-only token terms (e.g. "net" = dotnet): match any name segment but
+    # never tags/meta/strings/comments.
+    if name_tokens & name_only_terms:
         return False
 
     first_segment = name.split("_")[0].lower() if name else ""
@@ -445,6 +458,7 @@ def main():
 
     exclude_terms = set() if args.reset_defaults else set(DEFAULT_EXCLUDE_TERMS)
     prefix_only_terms = set() if args.reset_defaults else set(DEFAULT_PREFIX_ONLY_TERMS)
+    name_only_terms = set() if args.reset_defaults else set(DEFAULT_NAME_ONLY_TERMS)
     for t in args.exclude:
         exclude_terms.add(t.lower())
 
@@ -470,6 +484,7 @@ def main():
     print(f"Non-Android modules:  {sorted(non_android_modules)}")
     print(f"Excluded meta values: {sorted(exclude_meta_values)}")
     print(f"Excluded name subs:   {sorted(exclude_name_substrings)}")
+    print(f"Name-only terms:      {sorted(name_only_terms)}")
     print(f"Reading {src}...")
 
     with open(src, "r", encoding="utf-8", errors="replace") as f:
@@ -492,7 +507,7 @@ def main():
     # Pass 1: direct signals (name, tags, meta, modules, comments).
     keep = [
         should_keep(b, exclude_terms, prefix_only_terms, non_android_modules,
-                    exclude_meta_values, exclude_name_substrings)
+                    exclude_meta_values, exclude_name_substrings, name_only_terms)
         for b in blocks
     ]
     direct_removed = keep.count(False)
