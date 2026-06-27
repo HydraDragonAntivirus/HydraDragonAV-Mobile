@@ -8,7 +8,7 @@ DEFAULT_EXCLUDE_TERMS = {"win", "windows", "osx", "macho", "peid", "java", "mz",
 
 # Terms matched ONLY against the first underscore-segment of the rule name.
 # Use for short/ambiguous terms that would cause false positives elsewhere.
-DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape"}
+DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape", "devcpp"}
 
 # Excluded terms allowed to match via startswith() even though they are shorter
 # than the 5-char startswith guard. "susp" intentionally catches the whole
@@ -19,7 +19,7 @@ PREFIX_MATCH_TERMS = {"susp"}
 # middle or end) are dropped outright. Used for compiler/platform substrings
 # that tokenisation does not otherwise catch, e.g. win32 / win64 (token
 # "win32"/"win64", not "win") and borland_delphi (Windows-only Delphi binaries).
-DEFAULT_EXCLUDE_NAME_SUBSTRINGS = {"borland_delphi", "win32", "win64", "windows"}
+DEFAULT_EXCLUDE_NAME_SUBSTRINGS = {"borland_delphi", "win32", "win64", "windows", "exe"}
 
 # Exact metadata values that cause a rule to be dropped, matched
 # case-insensitively against the WHOLE meta value (not tokenised). Used for
@@ -201,22 +201,26 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
     """
     Return False if any of these signals fires:
 
-      0. "macos" string      — case-insensitive check of the entire rule block content
+      0. Raw content strings — case-insensitive full-block scan for: "macos",
+                               "microsoft". Catches these substrings anywhere in
+                               the rule (strings, comments, meta, etc.).
       1. Rule name tokens    — camelCase + underscore split
          prefix_only_terms checked against first underscore-segment only
       2. Rule tags           — space-separated after colon on header line
       3. Metadata values     — strings inside the meta: section, plus exact
-                                whole-value matches against exclude_meta_values
+                               whole-value matches against exclude_meta_values
       4. Module usage        — pe. / macho. / dotnet. / elf. in rule body,
-                                or import "pe" / import "macho" inside the block
+                               or import "pe" / import "macho" inside the block
       5. Comments            — excluded term in a // or /* */ comment, e.g.
-                                a "//Windows" note above the rule body
+                               a "//Windows" note above the rule body
       6. String contents     — name substring (win32/win64/...) appearing
-                                anywhere in the strings: section
+                               anywhere in the strings: section
     """
     block_text = "".join(block).lower()
-    if "macos" in block_text:
-        return False
+    # Raw full-block substring checks (catch strings in literals, comments, meta)
+    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys"):
+        if _raw_term in block_text:
+            return False
 
     header = block[0].lstrip()
 
@@ -433,6 +437,11 @@ def main():
     src = args.src or os.path.join(script_dir, "clean_rules.yar")
     src_base, src_ext = os.path.splitext(src)
     dst = args.dst or f"{src_base}_filtered{src_ext}"
+
+    if os.path.basename(src).startswith("AndroidOS"):
+        print(f"Skipping '{src}': AndroidOS files are excluded from filtering.")
+        return
+
 
     exclude_terms = set() if args.reset_defaults else set(DEFAULT_EXCLUDE_TERMS)
     prefix_only_terms = set() if args.reset_defaults else set(DEFAULT_PREFIX_ONLY_TERMS)
