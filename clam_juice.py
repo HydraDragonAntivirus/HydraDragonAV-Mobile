@@ -39,8 +39,8 @@ class ComprehensiveFilter:
     # Predefined filtering profiles
     PROFILES = {
         "cross-platform": {
-            "description": "Keep Andr, Pdf, Html, Unix, Linux, Email, PUA + all Phishing; drop Win, Osx, Java",
-            "include_platforms": ["Andr", "Pdf", "Html", "Unix", "Linux", "Email"],
+            "description": "Keep Andr, Unix, Linux, Email, PUA + all Phishing; drop Win, Osx, Java",
+            "include_platforms": ["Andr", "Unix", "Linux", "Email"],
             "exclude_platforms": ["Win", "Osx", "Java"],
             "keep_if_contains": ["Phishing"],
             "exclude_types": [],

@@ -1,0 +1,71 @@
+use crate::scanner::ScanMatch;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+/// Android-relevant ClamAV target types that get YARA scanning.
+///
+/// Excludes PE (1), OLE2 (2), Mach-O (9), SWF (11), Java (12) and other
+/// desktop-only formats. Unknown types (None) are scanned by default since
+/// they could be APK/ZIP archives or other Android-relevant containers.
+const ALLOWED_TARGETS: [u32; 6] = [3, 4, 5, 6, 7, 10];
+
+/// Returns `true` if files matching the given ClamAV target should be
+/// scanned with YARA rules.
+pub fn is_target_allowed(target: Option<u32>) -> bool {
+    match target {
+        None => true,
+        Some(t) => ALLOWED_TARGETS.contains(&t),
+    }
+}
+
+/// A compiled YARA ruleset ready for scanning.
+#[derive(Debug)]
+pub struct YaraEngine {
+    rules: yara_x::Rules,
+}
+
+impl YaraEngine {
+    /// Compile a YARA source file and build the engine.
+    ///
+    /// Returns `None` if the file does not exist or compilation fails
+    /// (the caller should degrade gracefully rather than abort the scan).
+    pub fn from_source_file(path: impl AsRef<Path>) -> Option<Self> {
+        let src = std::fs::read_to_string(path.as_ref()).ok()?;
+        let mut compiler = yara_x::Compiler::new();
+        compiler.add_source(src.as_str()).ok()?;
+        let rules = compiler.build();
+        Some(Self { rules })
+    }
+
+    /// Compile YARA source directly.
+    pub fn from_source(source: &str) -> Option<Self> {
+        let mut compiler = yara_x::Compiler::new();
+        compiler.add_source(source).ok()?;
+        let rules = compiler.build();
+        Some(Self { rules })
+    }
+
+    /// Scan `data` with the compiled rules and return any matches.
+    pub fn scan(&self, data: &[u8], object_path: &str) -> Vec<ScanMatch> {
+        let mut scanner = yara_x::Scanner::new(&self.rules);
+        let results = match scanner.scan(data) {
+            Ok(r) => r,
+            Err(_) => return Vec::new(),
+        };
+        let mut matches = Vec::new();
+        for rule in results.matching_rules() {
+            matches.push(ScanMatch {
+                name: format!("YARA.{}", rule.identifier()),
+                kind: crate::scanner::SignatureKind::Yara,
+                source: crate::database::SourceLocation {
+                    path: Arc::from(PathBuf::from("yara")),
+                    line: 0,
+                },
+                object_path: object_path.to_string(),
+                view: crate::scanner::ScanView::Raw,
+                arenas: Vec::new(),
+            });
+        }
+        matches
+    }
+}

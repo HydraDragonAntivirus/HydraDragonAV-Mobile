@@ -2,7 +2,7 @@
 import os
 import sys
 
-EXCLUDE_PREFIXES = {"win", "osx", "macho", "peid", "java"}
+EXCLUDE_PREFIXES = {"win", "osx", "macho", "peid", "java", "ttp"}
 
 
 def prefix(name):

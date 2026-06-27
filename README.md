@@ -36,7 +36,7 @@ HydraDragonAV Mobile operates on three core pillars:
 
 ## 🗄️ Database Filtering
 
-Filter ClamAV signatures to keep only Android-relevant platforms (Andr, Pdf, Html, Unix, Linux, Email, PUA) plus all Phishing; excludes Win, Osx, Java:
+Filter ClamAV signatures to keep only Android-relevant platforms (Andr, Unix, Linux, Email, PUA) plus all Phishing; excludes Win, Osx, Java:
 
 ```bash
 python clam_juice.py --directory database_non_filtered --output database_filtered --profile cross-platform

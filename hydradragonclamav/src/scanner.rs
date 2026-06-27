@@ -1,7 +1,5 @@
-use crate::database::{ContainerType, Database, OffsetAnchor, OffsetSpec, SourceLocation};
+use crate::database::{Database, OffsetAnchor, OffsetSpec, SourceLocation};
 use crate::logical::Subsignature;
-use crate::pe::{parse_pe, PeInfo};
-use hydradragonextractor::{detect_format, extract_archive_from_bytes};
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -16,6 +14,9 @@ pub struct Engine {
     /// subsignature is exactly the one whose atoms were indexed — that alignment
     /// is what makes threading the gate's offsets correct.
     prefilter: crate::prefilter::AtomPrefilter,
+    /// Optional YARA-x engine for scanning with compiled YARA rules (Android-
+    /// relevant types only, see `yara_scan::is_target_allowed`).
+    pub yara: Option<crate::yara_scan::YaraEngine>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -74,6 +75,8 @@ pub enum SignatureKind {
     Container,
     /// Phishing heuristic (`.pdb`/`.gdb`/`.wdb` driven spoofed-domain check).
     Phishing,
+    /// YARA-x rule match.
+    Yara,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -87,10 +90,6 @@ pub enum ScanView {
 
 pub(crate) struct ScanContext<'a> {
     pub data: &'a [u8],
-    /// PE info, parsed **lazily** on first access (the common case is a non-PE
-    /// file, so calling `parse_pe` for every object is pure waste — the quick MZ
-    /// check in the `is_pe` guard handles the "skip normalized views" decision).
-    pe: std::cell::OnceCell<Option<PeInfo>>,
     /// Target forced by a normalized view (text=7, html=3).
     pub target_hint: Option<u32>,
     /// Target derived from `.ftm` file-type magic (used only in strict mode).
@@ -114,21 +113,6 @@ pub(crate) struct ScanContext<'a> {
 }
 
 impl ScanContext<'_> {
-    /// Lazily parse (and cache) PE info. Non-PE files return `None` after a
-    /// quick magic check; PE files pay the full parse cost once on first access.
-    pub(crate) fn pe(&self) -> Option<&PeInfo> {
-        self.pe
-            .get_or_init(|| parse_pe(self.data))
-            .as_ref()
-    }
-
-    /// Fast magic-byte PE sniff (just the MZ signature) — no full parse.
-    /// Used by the top-level `scan_object` to decide whether to skip normalized
-    /// views and phishing heuristics on PE files.
-    pub(crate) fn is_pe_magic(&self) -> bool {
-        self.data.len() >= 2 && self.data[..2] == *b"MZ"
-    }
-
     /// Lazily build (and cache) this buffer's 3-gram presence filter.
     pub(crate) fn presence(&self) -> Option<&crate::presence::PresenceFilter> {
         self.presence
@@ -228,7 +212,15 @@ impl Engine {
         // Build the Aho-Corasick automata in memory from the loaded rules (no
         // on-disk `.bin` cache); the load high-water-mark is trimmed afterwards.
         let prefilter = crate::prefilter::AtomPrefilter::build(&database);
-        Ok((Self { database, prefilter }, report))
+        Ok((Self { database, prefilter, yara: None }, report))
+    }
+
+    /// Set (or replace) the YARA-x engine for scanning with compiled rules.
+    /// Returns `None` when the rules file cannot be loaded or compiled.
+    pub fn load_yara_rules(&mut self, path: impl AsRef<Path>) -> Option<()> {
+        let engine = crate::yara_scan::YaraEngine::from_source_file(path)?;
+        self.yara = Some(engine);
+        Some(())
     }
 
     pub fn scan_path(
@@ -265,7 +257,7 @@ impl Engine {
         data: &[u8],
         object_path: &str,
         container_type: Option<&'static str>,
-        depth: usize,
+        _depth: usize,
         options: ScanOptions,
         state: &mut ScanState,
     ) {
@@ -288,7 +280,6 @@ impl Engine {
 
         let ctx = ScanContext {
             data,
-            pe: std::cell::OnceCell::new(),
             target_hint: None,
             detected_target,
             object_path,
@@ -297,120 +288,46 @@ impl Engine {
             image_fuzzy_hash: Default::default(),
             presence: Default::default(),
         };
-        let is_pe = ctx.is_pe_magic();
 
         // Skip raw scan for archives we cannot extract — scanning compressed
         // random bytes against 500k+ signatures triggers pathological backtracking
         // in the gap-matching loop. The actual unpacker in hydradragonextractor
         // handles only gz/zip/xz/lzma/tar/asar/nsis; everything else (RAR, 7z,
         // BZ2, ...) is skipped here.
-        if !is_pe && is_unsupported_archive(data) {
+        if is_unsupported_archive(data) {
             return;
         }
 
         self.scan_context(&ctx, options, &mut state.matches);
 
+        // YARA-x scan for Android-relevant file types.
+        if let Some(yara) = &self.yara {
+            if state.matches.len() < options.max_matches
+                && crate::yara_scan::is_target_allowed(ctx.detected_target)
+            {
+                for m in yara.scan(data, object_path) {
+                    if state.matches.len() >= options.max_matches {
+                        break;
+                    }
+                    state.matches.push(m);
+                }
+            }
+        }
+
         // Normalized text/HTML views exist to catch text-like malware (scripts,
-        // HTML). A PE executable is neither text nor HTML, so generating and
-        // rescanning up to four derived copies of it is pure waste — skip it.
-        // (Text/HTML files still go through the views below.)
-        if options.scan_normalized && !is_pe && state.matches.len() < options.max_matches {
+        // HTML).
+        if options.scan_normalized && state.matches.len() < options.max_matches {
             self.scan_normalized_views(data, object_path, container_type, options, state);
         }
 
         // Phishing heuristic: harvest `<a href>` link pairs from HTML/email and
         // flag spoofed protected domains (.pdb/.gdb gated by .wdb allow list).
         // Only meaningful for HTML, and only when a protected-domain DB is loaded.
-        if !is_pe
-            && !self.database.phishing.protected.is_empty()
+        if !self.database.phishing.protected.is_empty()
             && state.matches.len() < options.max_matches
             && looks_like_html(data)
         {
             self.scan_phishing(data, object_path, options, &mut state.matches);
-        }
-
-        if options.scan_archives
-            && state.matches.len() < options.max_matches
-            && looks_like_supported_archive(data)
-        {
-            if let Ok(children) = extract_archive_from_bytes(data) {
-                if !self.database.container.is_empty() {
-                    self.scan_containers(data, &children, object_path, options, &mut state.matches);
-                }
-                if depth < options.max_recursion {
-                    // Children's immediate parent container is THIS archive.
-                    let child_container = clamav_container_type(data);
-                    for (index, child) in children.iter().enumerate() {
-                        if state.matches.len() >= options.max_matches
-                            || state.objects_seen >= options.max_child_objects
-                        {
-                            break;
-                        }
-                        let child_path = format!("{object_path}#archive[{index}]");
-                        self.scan_object(
-                            child,
-                            &child_path,
-                            child_container,
-                            depth + 1,
-                            options,
-                            state,
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    /// Match container metadata (`.cdb`) signatures against an extracted archive.
-    fn scan_containers(
-        &self,
-        data: &[u8],
-        children: &[Vec<u8>],
-        object_path: &str,
-        options: ScanOptions,
-        matches: &mut Vec<ScanMatch>,
-    ) {
-        let container_format = detect_container_format(data);
-        let container_size = data.len() as u64;
-
-        for sig in &self.database.container {
-            if matches.len() >= options.max_matches {
-                return;
-            }
-            // Skip signatures that constrain metadata we cannot observe, so we
-            // never false-positive on unknowable fields.
-            if sig.has_filename
-                || sig.encrypted.is_some()
-                || sig.size_in_container.is_constrained()
-            {
-                continue;
-            }
-            match sig.container_type {
-                ContainerType::Any => {}
-                ContainerType::Format(fmt) => {
-                    if container_format != Some(fmt) {
-                        continue;
-                    }
-                }
-                ContainerType::Unsupported => continue,
-            }
-            if !sig.container_size.matches(container_size) {
-                continue;
-            }
-            let member_match = children.iter().enumerate().any(|(index, child)| {
-                sig.file_pos.matches((index + 1) as u64)
-                    && sig.size_real.matches(child.len() as u64)
-            });
-            if member_match {
-                matches.push(ScanMatch {
-                    name: sig.name.to_string(),
-                    kind: SignatureKind::Container,
-                    source: sig.source.clone(),
-                    object_path: object_path.to_string(),
-                    view: ScanView::Raw,
-                    arenas: Vec::new(),
-                });
-            }
         }
     }
 
@@ -441,7 +358,7 @@ impl Engine {
     /// Identify the ClamAV file type (`CL_TYPE_*`) of `data` via `.ftm` magic.
     fn detect_clamav_type(&self, data: &[u8]) -> Option<&str> {
         for magic in &self.database.file_type_magic {
-            let ranges = magic.offset.scan_ranges(data.len(), None);
+            let ranges = magic.offset.scan_ranges(data.len());
             if ranges.is_empty() {
                 continue;
             }
@@ -570,7 +487,6 @@ impl Engine {
         }
         let ctx = ScanContext {
             data,
-            pe: std::cell::OnceCell::new(),
             target_hint: Some(target_hint),
             detected_target: None,
             object_path,
@@ -632,25 +548,14 @@ impl Engine {
         if matches!(
             signature.offset.anchor,
             OffsetAnchor::Unsupported(_) | OffsetAnchor::MacroGroup(_)
+            | OffsetAnchor::VersionInfo
         ) {
             return;
         }
-        // `VI:` (CLI_OFF_VERSION) scans anywhere, then keeps only matches starting
-        // inside the PE's version-info string offsets (same as the logical path).
-        let is_vinfo = matches!(signature.offset.anchor, OffsetAnchor::VersionInfo);
-        let ranges = if is_vinfo {
-            vec![(0, ctx.data.len())]
-        } else {
-            signature.offset.scan_ranges(ctx.data.len(), ctx.pe())
-        };
+        let ranges = signature.offset.scan_ranges(ctx.data.len());
         if ranges.is_empty() {
             return;
         }
-        let vinfo: &[u32] = if is_vinfo {
-            ctx.pe().map(|p| p.vinfo.as_slice()).unwrap_or(&[])
-        } else {
-            &[]
-        };
         let prof = prof_enabled().then(std::time::Instant::now);
         let mut arenas: Vec<(usize, usize)> = Vec::new();
         for pattern in &signature.patterns {
@@ -659,9 +564,6 @@ impl Engine {
                 None => pattern.find_all(ctx.data, &ranges, ARENA_CAP),
             };
             for hit in hits {
-                if is_vinfo && vinfo.binary_search(&(hit.start as u32)).is_err() {
-                    continue; // VI: match must start at a version-info offset
-                }
                 if arenas.len() >= ARENA_CAP {
                     break;
                 }
@@ -792,45 +694,10 @@ impl Engine {
                 return;
             }
         }
-        if let Some((min, max)) = signature.nos {
-            // NumberOfSections applies to PE files; without PE info it can't hold.
-            let n = match ctx.pe() {
-                Some(pe) => pe.sections.len() as u32,
-                None => return,
-            };
-            if n < min || n > max {
-                return;
-            }
-        }
-        if let Some((min, max)) = signature.ep {
-            // EntryPoint compares against the PE entry point's RAW file offset
-            // (ClamAV exeinfo.ep = cli_rawaddr(vep,...)); requires a parsed PE.
-            let ep = match ctx.pe().and_then(|pe| pe.entry_point_offset) {
-                Some(e) => e as u32,
-                None => return,
-            };
-            if ep < min || ep > max {
-                return;
-            }
-        }
-        // IconGroup1/2 (ClamAV matchicon): the PE must carry an icon matching an
-        // `.idb` fingerprint in the requested groups, else the signature can't fire.
-        if signature.icongrp1.is_some() || signature.icongrp2.is_some() {
-            let pe = match ctx.pe() {
-                Some(pe) => pe,
-                None => return,
-            };
-            if !crate::icon_match::matchicon(
-                ctx.data,
-                &pe.sections,
-                pe.size_of_headers,
-                pe.res_rva,
-                &self.database.icons,
-                signature.icongrp1.as_deref(),
-                signature.icongrp2.as_deref(),
-            ) {
-                return;
-            }
+        if signature.nos.is_some() || signature.ep.is_some()
+            || signature.icongrp1.is_some() || signature.icongrp2.is_some()
+        {
+            return;
         }
         let subsigs = &signature.subsignatures;
         let n = subsigs.len();
@@ -874,7 +741,7 @@ impl Engine {
             if let Some(Subsignature::Body { offset, patterns }) = subsigs.get(gi) {
                 let default_offset = OffsetSpec::any();
                 let offset = offset.as_deref().unwrap_or(&default_offset);
-                let ranges = offset.scan_ranges(ctx.data.len(), ctx.pe());
+                let ranges = offset.scan_ranges(ctx.data.len());
                 if !ranges.is_empty() {
                     let gate_hints = if g.threadable { hints } else { None };
                     let prof = prof_enabled().then(std::time::Instant::now);
@@ -941,15 +808,7 @@ impl Engine {
                         continue;
                     }
                 }
-                // `VI:` (ClamAV `CLI_OFF_VERSION`) scans anywhere, then keeps only
-                // matches starting inside the PE's version-info string offsets
-                // (matcher-ac.c: `cli_hashset_contains(mdata->vinfo, realoff)`).
-                let is_vinfo = matches!(offset.anchor, OffsetAnchor::VersionInfo);
-                let base_ranges = if is_vinfo {
-                    vec![(0, ctx.data.len())]
-                } else {
-                    offset.scan_ranges(ctx.data.len(), ctx.pe())
-                };
+                let base_ranges = offset.scan_ranges(ctx.data.len());
                 if base_ranges.is_empty() {
                     continue;
                 }
@@ -960,7 +819,7 @@ impl Engine {
                 // (most of which belong to other subsigs and just fail to verify).
                 // `None` max length (open gap) can't be bounded → keep the full scan.
                 let restricted;
-                let ranges: &[(usize, usize)] = if all_indexed && !is_vinfo {
+                let ranges: &[(usize, usize)] = if all_indexed {
                     match subsig_max_match_len(patterns) {
                         Some(ml) => {
                             restricted =
@@ -972,18 +831,13 @@ impl Engine {
                 } else {
                     &base_ranges
                 };
-                let (mut count, mut arenas) = body_matches(
+                let (count, arenas) = body_matches(
                     patterns,
                     ctx.data,
                     ranges,
                     options.max_subsignature_matches,
                     None,
                 );
-                if is_vinfo {
-                    let vinfo = ctx.pe().map(|p| p.vinfo.as_slice()).unwrap_or(&[]);
-                    arenas.retain(|&(s, _)| vinfo.binary_search(&(s as u32)).is_ok());
-                    count = arenas.len();
-                }
                 counts[i] = count;
                 last_offsets[i] = arenas.iter().map(|a| a.0).max();
                 body_arenas[i] = arenas;
@@ -1091,7 +945,7 @@ impl Engine {
     }
 
     /// Run a ClamBC program for a matched trigger, building its context from the
-    /// scan (file buffer, trigger subsig match counts, PE info). Returns the
+    /// scan (file buffer, trigger subsig match counts). Returns the
     /// program's `setvirusname`, or `None` on no-detection / VM error.
     fn run_bytecode(
         &self,
@@ -1103,25 +957,6 @@ impl Engine {
         let mut bctx = crate::bytecode_vm::BcCtx::new(ctx.data);
         for (i, &c) in counts.iter().take(64).enumerate() {
             bctx.lsigcnt[i] = c as u32;
-        }
-        if let Some(pe) = ctx.pe() {
-            bctx.ep = pe.entry_point_offset.unwrap_or(0) as u32;
-            bctx.nsections = pe.sections.len() as u16;
-            bctx.sections = pe
-                .sections
-                .iter()
-                .map(|s| crate::bytecode_vm::PeSection {
-                    rva: s.virtual_address,
-                    vsz: s.virtual_size,
-                    raw: s.raw_start as u32,
-                    rsz: s.raw_size as u32,
-                    chr: 0,
-                    urva: s.virtual_address,
-                    uvsz: s.virtual_size,
-                    uraw: s.raw_start as u32,
-                    ursz: s.raw_size as u32,
-                })
-                .collect();
         }
         match bc.run(&mut bctx) {
             Ok(_) => bctx.virname,
@@ -1250,7 +1085,6 @@ fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>, strict: bool) -> b
     // can; non-strict stays permissive.
     if strict {
         match want {
-            1 => ctx.pe().is_some(),
             3 => looks_like_html(ctx.data),
             7 => looks_like_ascii_text(ctx.data),
             _ => true,
@@ -1265,9 +1099,6 @@ fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>, strict: bool) -> b
 /// cross-type mismatches); `None` when indeterminate (callers stay permissive).
 fn detect_builtin_target(ctx: &ScanContext<'_>) -> Option<u32> {
     let d = ctx.data;
-    if ctx.pe().is_some() {
-        return Some(1); // CL_TYPE_MSEXE (PE)
-    }
     if d.starts_with(b"\x7fELF") {
         return Some(6); // CL_TYPE_ELF
     }
@@ -1280,18 +1111,6 @@ fn detect_builtin_target(ctx: &ScanContext<'_>) -> Option<u32> {
     if d.starts_with(b"FWS") || d.starts_with(b"CWS") || d.starts_with(b"ZWS") {
         return Some(11); // CL_TYPE_SWF
     }
-    // Mach-O thin (the fat magic 0xcafebabe collides with a Java class, so skip it).
-    if d.len() >= 4
-        && matches!(
-            d[..4],
-            [0xfe, 0xed, 0xfa, 0xce]
-                | [0xce, 0xfa, 0xed, 0xfe]
-                | [0xfe, 0xed, 0xfa, 0xcf]
-                | [0xcf, 0xfa, 0xed, 0xfe]
-        )
-    {
-        return Some(9); // CL_TYPE_MACHO
-    }
     if d.starts_with(b"GIF8")
         || d.starts_with(&[0x89, b'P', b'N', b'G'])
         || d.starts_with(&[0xff, 0xd8, 0xff])
@@ -1301,44 +1120,16 @@ fn detect_builtin_target(ctx: &ScanContext<'_>) -> Option<u32> {
     None
 }
 
-/// Detect the container format for `.cdb` matching (extractor formats plus 7z).
-fn detect_container_format(data: &[u8]) -> Option<&'static str> {
-    if data.starts_with(b"7z\xbc\xaf\x27\x1c") {
-        return Some("7z");
-    }
-    detect_format(data)
-}
-
-/// ClamAV `CL_TYPE_*` for the container format of `data`, used to evaluate
-/// logical signatures' `Container:` TDB constraint on extracted children. Only
-/// the formats we actually extract are mapped; any other container type yields
-/// `None`, so a signature requiring it simply never matches (no false positive),
-/// exactly as if the file weren't inside that container.
-fn clamav_container_type(data: &[u8]) -> Option<&'static str> {
-    match detect_container_format(data) {
-        Some("zip") => Some("CL_TYPE_ZIP"),
-        Some("gz") => Some("CL_TYPE_GZ"),
-        Some("xz") => Some("CL_TYPE_XZ"),
-        Some("7z") => Some("CL_TYPE_7Z"),
-        Some("tar") => Some("CL_TYPE_POSIX_TAR"),
-        _ => None,
-    }
-}
-
-/// Map a ClamAV `CL_TYPE_*` string to a ClamAV logical/extended target number.
 fn clamav_type_to_target(clamav_type: &str) -> Option<u32> {
     Some(match clamav_type {
-        "CL_TYPE_MSEXE" => 1,
         "CL_TYPE_OLE2" | "CL_TYPE_MSOLE2" => 2,
         "CL_TYPE_HTML" => 3,
         "CL_TYPE_MAIL" => 4,
         "CL_TYPE_GRAPHICS" | "CL_TYPE_GIF" | "CL_TYPE_PNG" | "CL_TYPE_JPEG" => 5,
         "CL_TYPE_ELF" => 6,
         "CL_TYPE_TEXT_ASCII" => 7,
-        "CL_TYPE_MACHO" | "CL_TYPE_MACHO_UNIBIN" => 9,
         "CL_TYPE_PDF" => 10,
         "CL_TYPE_SWF" => 11,
-        "CL_TYPE_JAVA" => 12,
         _ => return None,
     })
 }
@@ -1391,10 +1182,6 @@ fn looks_like_html(data: &[u8]) -> bool {
         }
     }
     false
-}
-
-fn looks_like_supported_archive(data: &[u8]) -> bool {
-    detect_format(data).is_some() || data.starts_with(b"7z\xbc\xaf\x27\x1c")
 }
 
 fn is_unsupported_archive(data: &[u8]) -> bool {
@@ -2109,43 +1896,13 @@ mod tests {
             .any(|m| m.name == "Test.InZip"));
     }
 
-    /// Build a minimal but `parse_pe`-valid PE32 (MZ + PE header + 1 section).
-    fn minimal_pe() -> Vec<u8> {
-        let mut d = vec![0u8; 0x160];
-        d[0] = b'M';
-        d[1] = b'Z';
-        d[0x3c..0x40].copy_from_slice(&0x40u32.to_le_bytes()); // e_lfanew
-        d[0x40..0x44].copy_from_slice(b"PE\0\0");
-        let coff = 0x44;
-        d[coff + 2..coff + 4].copy_from_slice(&1u16.to_le_bytes()); // NumberOfSections
-        d[coff + 16..coff + 18].copy_from_slice(&0xE0u16.to_le_bytes()); // SizeOfOptionalHeader
-        let opt = coff + 20; // 0x58
-        d[opt..opt + 2].copy_from_slice(&0x10bu16.to_le_bytes()); // PE32 magic
-        d[opt + 16..opt + 20].copy_from_slice(&0x1000u32.to_le_bytes()); // AddressOfEntryPoint
-        let sect = opt + 0xE0; // 0x138
-        d[sect + 8..sect + 12].copy_from_slice(&0x1000u32.to_le_bytes()); // VirtualSize
-        d[sect + 12..sect + 16].copy_from_slice(&0x1000u32.to_le_bytes()); // VirtualAddress
-        d[sect + 16..sect + 20].copy_from_slice(&0x200u32.to_le_bytes()); // SizeOfRawData
-        d[sect + 20..sect + 24].copy_from_slice(&0x200u32.to_le_bytes()); // PointerToRawData
-        d
-    }
-
     #[test]
-    fn swf_target_signature_does_not_match_pe() {
-        // Regression: a Target:11 (SWF) signature must NOT fire on a PE file even
-        // in non-strict mode (the MiscreantPunch.SWF.Exploit false positive on DLLs
-        // that merely contain "VirtualProtect"+"Kernel32").
+    fn swf_target_signature_matches_swf() {
+        // A Target:11 (SWF) signature matches actual SWF content.
         let (engine, _) = engine_with_logical(
             "Test.Swf;Engine:81-255,Target:11;(0&1);5669727475616c50726f74656374::i;4b65726e656c3332::i",
         );
-        // A minimal but valid PE that contains both strings.
-        let mut pe = minimal_pe();
-        pe.extend_from_slice(b"...VirtualProtect...Kernel32...");
-        assert!(
-            engine.scan_bytes(&pe, ScanOptions::default()).is_empty(),
-            "SWF-targeted signature must not match a PE file"
-        );
-        // The same strings inside an actual SWF (FWS magic) DO match.
+        // SWF with both strings present → match.
         let mut swf = b"FWS\x06\x00\x00\x00\x00".to_vec();
         swf.extend_from_slice(b"...VirtualProtect...Kernel32...");
         assert!(engine
@@ -2181,16 +1938,14 @@ mod tests {
     }
 
     #[test]
-    fn tdb_icongroup_evaluated_no_false_positive() {
-        // IconGroup is now evaluated by the icon matcher (matchicon). It is no
-        // longer an "unsupported" TDB, so it produces no warning; and on a non-PE
-        // buffer the icon constraint can't hold, so the sig does NOT fire even
-        // though its body "AB" is present — still no false positive.
+    fn tdb_icongroup_never_matches_without_pe() {
+        // IconGroup was PE-specific; without PE detection it never matches.
+        // No unsupported-TDB warning is produced.
         let (engine, warnings) =
             engine_with_logical("Test.Icon;Engine:1-255,IconGroup1:BROWSER,Target:0;0;4142");
         assert!(
             warnings.is_empty(),
-            "IconGroup is supported now; no unsupported-TDB warning"
+            "IconGroup parsed normally; no unsupported-TDB warning"
         );
         assert!(engine.scan_bytes(b"xxAByy", ScanOptions::default()).is_empty());
     }

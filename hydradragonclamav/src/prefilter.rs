@@ -287,6 +287,10 @@ impl AtomPrefilter {
                 OffsetAnchor::Unsupported(_)
                     | OffsetAnchor::MacroGroup(_)
                     | OffsetAnchor::VersionInfo
+                    | OffsetAnchor::EntryPoint(_)
+                    | OffsetAnchor::SectionStart { .. }
+                    | OffsetAnchor::SectionEntire { .. }
+                    | OffsetAnchor::LastSectionStart { .. }
             )
         }
 
