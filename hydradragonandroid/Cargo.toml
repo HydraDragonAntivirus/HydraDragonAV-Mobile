@@ -1,0 +1,20 @@
+[package]
+name = "hydradragonandroid"
+version = "0.1.0"
+edition = "2024"
+description = "JNI bridge: scans APKs on-device with HydraDragon YARA rulesets (clamav engine) + the one-class ML model."
+license = "GPL-2.0-or-later"
+
+[lib]
+# cdylib -> libhydradragonandroid.so loaded by the Android app via JNI.
+crate-type = ["cdylib"]
+
+[dependencies]
+hydradragonclamav = { path = "../hydradragonclamav" }
+hydradragonml = { path = "../hydradragonml" }
+jni = "0.21"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true

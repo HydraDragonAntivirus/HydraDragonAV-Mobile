@@ -76,6 +76,17 @@ public class ScanEngine {
         this.codeAnalyzer = new CodeAnalyzer(context);
         this.scanExecutor = Executors.newFixedThreadPool(4);
         loadBloomFilter();
+        // Load YARA rulesets + ML model into the native engine (non-fatal).
+        try { NativeScanner.init(context); } catch (Throwable t) { /* degrade gracefully */ }
+    }
+
+    /**
+     * Scan an APK file with the native YARA + ML engine.
+     *
+     * @return JSON verdict string, or {@code {"error":...}} if unavailable.
+     */
+    public String nativeScanApk(String apkPath) {
+        return NativeScanner.scanApk(apkPath);
     }
 
     private void loadBloomFilter() {

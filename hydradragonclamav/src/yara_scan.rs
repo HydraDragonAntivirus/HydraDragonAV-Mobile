@@ -47,6 +47,22 @@ impl YaraEngine {
         Some(Self { rules })
     }
 
+    /// Load a pre-compiled `.yrc` ruleset (produced by `Rules::serialize`).
+    ///
+    /// Far faster than compiling source on-device — the Android app bundles
+    /// compiled `.yrc` assets and deserialises them at startup instead of
+    /// compiling thousands of rules every launch.
+    pub fn from_compiled(bytes: &[u8]) -> Option<Self> {
+        let rules = yara_x::Rules::deserialize(bytes).ok()?;
+        Some(Self { rules })
+    }
+
+    /// Load a pre-compiled `.yrc` file from disk.
+    pub fn from_compiled_file(path: impl AsRef<Path>) -> Option<Self> {
+        let bytes = std::fs::read(path.as_ref()).ok()?;
+        Self::from_compiled(&bytes)
+    }
+
     /// Scan `data` with the compiled rules and return any matches.
     pub fn scan(&self, data: &[u8], object_path: &str) -> Vec<ScanMatch> {
         let mut scanner = yara_x::Scanner::new(&self.rules);
