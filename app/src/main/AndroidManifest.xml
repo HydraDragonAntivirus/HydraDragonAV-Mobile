@@ -90,6 +90,15 @@
         </receiver>
 
         <receiver
+            android:name=".service.UserActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.hydradragon.antivirus.IGNORE_THREAT" />
+                <action android:name="com.hydradragon.antivirus.DISMISS_REDIRECT" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".service.BootReceiver"
             android:exported="true">
             <intent-filter>

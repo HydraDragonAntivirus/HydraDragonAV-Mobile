@@ -59,7 +59,18 @@ public class ScanEngine {
     private final AIEngine aiEngine;
     private final CodeAnalyzer codeAnalyzer;
     private final ExecutorService scanExecutor;
-    private final java.util.concurrent.ConcurrentHashMap<String, ThreatResult> photonCache = new java.util.concurrent.ConcurrentHashMap<>();
+    // Static so invalidation from receivers reaches the live GuardService cache.
+    private static final java.util.concurrent.ConcurrentHashMap<String, ThreatResult> photonCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Drop a cached scan result so the package is re-scanned fresh (e.g. after
+     *  uninstall/update — otherwise a removed virus keeps "coming back"). */
+    public static void invalidateCache(String packageName) {
+        if (packageName != null) photonCache.remove(packageName);
+    }
+
+    public static void clearCache() {
+        photonCache.clear();
+    }
     private ScanCallback callback;
     private BloomFilter<CharSequence> whitelistBloomFilter;
 
@@ -231,6 +242,11 @@ public class ScanEngine {
         }
 
         if (isWhitelisted || isFromStore) { builder.setRiskScore(0); return builder.build(); }
+
+        // User previously marked this app safe ("Safe (ignore)") -> never flag.
+        if (app.packageName != null && UserDecisions.isThreatAllowed(context, app.packageName)) {
+            builder.setRiskScore(0); return builder.build();
+        }
 
         int riskScore = 0;
         List<String> reasons = new ArrayList<>();

@@ -26,6 +26,10 @@ public class InstallReceiver extends BroadcastReceiver {
             String packageName = data.getEncodedSchemeSpecificPart();
             Log.i(TAG, "On-Install scan triggered for: " + packageName);
 
+            // New install / update -> drop any stale cached result so this exact
+            // (possibly changed) APK is scanned fresh, not served from cache.
+            ScanEngine.invalidateCache(packageName);
+
             new Thread(() -> {
                 try {
                     PackageManager pm = context.getPackageManager();

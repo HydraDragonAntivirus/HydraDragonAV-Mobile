@@ -38,6 +38,12 @@ public class DynamicAnalysisService extends AccessibilityService {
     /** Foreground package of the event currently being processed. */
     private volatile String fgPackage = "";
 
+    // Single, self-replacing alert notification (no spam).
+    private static final int ALERT_NOTIF_ID = 0xA1E7;
+    private volatile String lastUrlAlert = "";
+    private long lastAlertTime = 0;
+    private String lastAlertMsg = "";
+
     /** Browsers: a flagged URL HERE is actually being navigated to -> hard block. */
     private static final java.util.Set<String> BROWSERS = new java.util.HashSet<>(java.util.Arrays.asList(
         "com.android.chrome", "com.chrome.beta", "com.chrome.dev",
@@ -102,10 +108,10 @@ public class DynamicAnalysisService extends AccessibilityService {
 
             if (rapidClickCount >= 3 && (isInstaller || isSettings)) {
                 Log.w(TAG, "DETECTED: Automated Clickjacking/Permission granting!");
-                sendAlert("CRITICAL: Automated UI Hijacking Detected", "Malware is trying to auto-click permissions. Action blocked!");
-                
-                performGlobalAction(GLOBAL_ACTION_BACK);
-                performGlobalAction(GLOBAL_ACTION_HOME);
+                sendAlert("CRITICAL: Automated UI Hijacking Detected", "Malware is trying to auto-click permissions. Action blocked!", pkg);
+
+                performGlobalAction(GLOBAL_ACTION_BACK);   // dismiss the overlay
+                redirectIfNotDismissed(pkg);                // -> antivirus screen, not home
                 rapidClickCount = 0;
             }
         }
@@ -139,8 +145,10 @@ public class DynamicAnalysisService extends AccessibilityService {
                 // browser is almost always an article/tech-support-scam page ->
                 // warn only, don't close the browser.
                 if (!BROWSERS.contains(fgPackage)) {
-                    sendAlert("RANSOMWARE BLOCKED", "Ransomware lock screen detected. Sent to home screen!");
-                    performGlobalAction(GLOBAL_ACTION_HOME);
+                    if (!com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, fgPackage)) {
+                        sendAlert("RANSOMWARE BLOCKED", "Ransomware lock screen detected — opened HydraDragon.", fgPackage);
+                        redirectIfNotDismissed(fgPackage);
+                    }
                 } else {
                     sendAlert("Possible scam page", "Ransom/scam text on a web page.");
                 }
@@ -152,33 +160,33 @@ public class DynamicAnalysisService extends AccessibilityService {
                 Log.d(TAG, "Device Admin activation screen visible.");
             }
 
-            // Website scan: pull http(s):// URLs from on-screen text (browser bar
-            // etc.) and check the malware/phishing blooms. Passive read of the
-            // URL the browser already shows — no MITM/TLS interception.
-            try {
-                com.hydradragon.antivirus.engine.UrlThreatScanner scanner =
-                    com.hydradragon.antivirus.engine.UrlThreatScanner.get(this);
-                for (String url : com.hydradragon.antivirus.engine.UrlThreatScanner
-                        .extractUrls(text.toString())) {
-                    String cat = scanner.scanUrl(url);
-                    if (cat != null) {
-                        Log.e(TAG, "MALICIOUS URL (" + cat + "): " + url + " in " + fgPackage);
-                        sendAlert("MALICIOUS WEBSITE", cat + ": " + url);
-                        // Only hard-block (kick home) when the foreground app is
-                        // actually RELATED to the threat: a browser navigating to
-                        // it, or an app already flagged for malicious behaviour.
-                        // A legit app merely displaying the URL as text isn't the
-                        // virus — just warn there (the DNS VPN blocks navigation).
-                        boolean related = BROWSERS.contains(fgPackage)
-                            || BehaviorFlags.isFlagged(this, fgPackage);
-                        if (related) {
-                            performGlobalAction(GLOBAL_ACTION_HOME);
+            // Website scan: ONLY in a real browser (or an already-flagged malware
+            // app), where the URL is actually being VISITED. We don't scan URLs
+            // that merely appear as text elsewhere (a scan result showing a URL
+            // found inside an APK, a chat message, a note) — that's not a visit,
+            // so calling it "blocked" would be wrong.
+            boolean urlContext = BROWSERS.contains(fgPackage)
+                || BehaviorFlags.isFlagged(this, fgPackage);
+            if (urlContext) {
+                try {
+                    com.hydradragon.antivirus.engine.UrlThreatScanner scanner =
+                        com.hydradragon.antivirus.engine.UrlThreatScanner.get(this);
+                    for (String url : com.hydradragon.antivirus.engine.UrlThreatScanner
+                            .extractUrls(text.toString())) {
+                        String cat = scanner.scanUrl(url);
+                        if (cat != null && !url.equals(lastUrlAlert)
+                                && !com.hydradragon.antivirus.engine.UserDecisions
+                                        .isThreatAllowed(this, url)) {
+                            lastUrlAlert = url;   // dedup: don't re-alert same URL
+                            Log.e(TAG, "MALICIOUS URL (" + cat + "): " + url + " in " + fgPackage);
+                            sendAlert("MALICIOUS WEBSITE BLOCKED", cat + ": " + url, url);
+                            redirectIfNotDismissed(url);
+                            break;
                         }
-                        break;
                     }
+                } catch (Throwable t) {
+                    Log.w(TAG, "url scan failed", t);
                 }
-            } catch (Throwable t) {
-                Log.w(TAG, "url scan failed", t);
             }
         }
         
@@ -214,15 +222,15 @@ public class DynamicAnalysisService extends AccessibilityService {
                 if (c[1] >= SPAM_THRESHOLD) {
                     // Rate-limit alerts per package to once per window.
                     Long last = spamFlagged.get(pkg);
-                    if (last == null || now - last > SPAM_WINDOW_MS) {
+                    if ((last == null || now - last > SPAM_WINDOW_MS)
+                            && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg)) {
                         spamFlagged.put(pkg, now);
                         String reason = "Spam behaviour: same UI event x" + c[1]
                             + " in " + (SPAM_WINDOW_MS / 1000) + "s";
                         Log.e(TAG, "BEHAVIOUR MALWARE (" + pkg + "): " + reason);
                         BehaviorFlags.flag(this, pkg, reason);
-                        sendAlert("MALWARE BEHAVIOUR BLOCKED",
-                            pkg + " — " + reason);
-                        performGlobalAction(GLOBAL_ACTION_HOME);
+                        sendAlert("MALWARE BEHAVIOUR BLOCKED", pkg + " — " + reason, pkg);
+                        redirectIfNotDismissed(pkg);
                     }
                     spamCounters.put(sig, new long[]{now, 1});  // reset window
                 }
@@ -246,12 +254,14 @@ public class DynamicAnalysisService extends AccessibilityService {
                 notifCounters.put(pkg, new long[]{now, 1});
             } else {
                 c[1]++;
-                if (c[1] >= NOTIF_THRESHOLD) {
+                if (c[1] >= NOTIF_THRESHOLD
+                        && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg)) {
                     String reason = "Notification spam: " + c[1] + " notifications in "
                         + (NOTIF_WINDOW_MS / 1000) + "s";
                     Log.e(TAG, "BEHAVIOUR MALWARE (" + pkg + "): " + reason);
                     BehaviorFlags.flag(this, pkg, reason);
-                    sendAlert("NOTIFICATION SPAM (malware)", pkg + " — " + reason);
+                    sendAlert("NOTIFICATION SPAM (malware)", pkg + " — " + reason, pkg);
+                    redirectIfNotDismissed(pkg);
                     notifCounters.put(pkg, new long[]{now, 1});  // reset window
                 }
             }
@@ -264,8 +274,22 @@ public class DynamicAnalysisService extends AccessibilityService {
     public void onInterrupt() {}
 
     private void sendAlert(String title, String message) {
+        sendAlert(title, message, null);
+    }
+
+    private void sendAlert(String title, String message, String threatId) {
         NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
+
+        // Anti-spam: drop a repeat of the same message within 5s, and always
+        // reuse one notification id so a new alert REPLACES the previous one
+        // instead of stacking dozens.
+        long now = System.currentTimeMillis();
+        if (message != null && message.equals(lastAlertMsg) && now - lastAlertTime < 5_000) {
+            return;
+        }
+        lastAlertMsg = message;
+        lastAlertTime = now;
 
         // Bring HydraDragon to the foreground (popup + redirect), not just a
         // silent notification: open MainActivity with the alert details.
@@ -292,11 +316,56 @@ public class DynamicAnalysisService extends AccessibilityService {
                 .setContentIntent(pi)
                 .setFullScreenIntent(pi, true);   // heads-up / full-screen popup
 
-        nm.notify((int) System.currentTimeMillis(), builder.build());
+        if (threatId != null && !threatId.isEmpty()) {
+            // "Safe (ignore)" -> allowlist this package/URL, never flag again.
+            android.content.Intent ig = new android.content.Intent(
+                    this, UserActionReceiver.class)
+                    .setAction(UserActionReceiver.ACTION_IGNORE)
+                    .putExtra(UserActionReceiver.EXTRA_ID, threatId)
+                    .putExtra(UserActionReceiver.EXTRA_NOTIF, ALERT_NOTIF_ID);
+            android.app.PendingIntent igPi = android.app.PendingIntent.getBroadcast(
+                    this, threatId.hashCode(), ig,
+                    android.app.PendingIntent.FLAG_IMMUTABLE
+                            | android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(R.drawable.ic_threat, "Safe (ignore)", igPi);
 
-        // Also try to redirect immediately (accessibility services can usually
-        // start activities even from the background).
+            // Swiping the alert away records a redirect dismissal for this id.
+            android.content.Intent dm = new android.content.Intent(
+                    this, UserActionReceiver.class)
+                    .setAction(UserActionReceiver.ACTION_DISMISS)
+                    .putExtra(UserActionReceiver.EXTRA_ID, threatId);
+            android.app.PendingIntent dmPi = android.app.PendingIntent.getBroadcast(
+                    this, threatId.hashCode() + 1, dm,
+                    android.app.PendingIntent.FLAG_IMMUTABLE
+                            | android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.setDeleteIntent(dmPi);
+        }
+
+        nm.notify(ALERT_NOTIF_ID, builder.build());   // fixed id -> replaces previous
+    }
+
+    /** Redirect to the antivirus screen unless the user dismissed it for this id. */
+    private void redirectIfNotDismissed(String threatId) {
+        if (threatId == null
+                || !com.hydradragon.antivirus.engine.UserDecisions
+                        .isRedirectDismissed(this, threatId)) {
+            redirectToApp();
+        }
+    }
+
+    /**
+     * Bring the HydraDragon screen to the foreground — used INSTEAD of kicking
+     * the user to the home screen. We never send the device home from the UI;
+     * we redirect to the antivirus screen so the user lands on protection, not
+     * an empty launcher.
+     */
+    private void redirectToApp() {
         try {
+            android.content.Intent open = new android.content.Intent(this,
+                    com.hydradragon.antivirus.MainActivity.class);
+            open.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                    | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(open);
         } catch (Throwable ignore) {
         }
