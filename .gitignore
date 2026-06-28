@@ -3,3 +3,4 @@ yara-x/clean_rules.yar
 yara-x/valhalla-rules.yar
 yara-x/AndroidOS.yar
 yara-x/yr.exe
+__pycache__/
