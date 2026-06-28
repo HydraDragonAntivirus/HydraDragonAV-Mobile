@@ -31,6 +31,23 @@ public class NetworkSecurityScanner {
     }
 
     public SecurityReport scanCurrentNetwork() {
+        // TLS interception (MITM) check: device trust store vs known-good Android
+        // roots. A rogue/user-installed CA can MITM even mobile data, so first.
+        try {
+            MitmDetector.Result mitm = MitmDetector.get(context).scan();
+            if (mitm.mitmSuspected) {
+                StringBuilder sb = new StringBuilder(
+                    "CRITICAL: TLS interception (MITM) — untrusted CA installed");
+                if (!mitm.userInstalledCas.isEmpty()) {
+                    sb.append(" [user CA: ").append(mitm.userInstalledCas.get(0)).append("]");
+                } else if (!mitm.unknownTrustedCas.isEmpty()) {
+                    sb.append(" [unknown root: ").append(mitm.unknownTrustedCas.get(0)).append("]");
+                }
+                return new SecurityReport(false, sb.toString(), true);
+            }
+        } catch (Throwable ignore) {
+        }
+
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm != null) {
             NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
