@@ -4,3 +4,4 @@ yara-x/valhalla-rules.yar
 yara-x/AndroidOS.yar
 yara-x/yr.exe
 __pycache__/
+allblooms/MalwareDomains.optimized.csv

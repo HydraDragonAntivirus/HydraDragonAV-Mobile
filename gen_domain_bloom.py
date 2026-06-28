@@ -165,34 +165,55 @@ def main():
     categories["malwareurl"] = mal_urls
 
     categories["malware"] = extract_from_optimized("MalwareSubDomains", "MWDOM")
+    # MalwareDomains.csv is a plain (non-optimized) CSV: header "entry,reference"
+    # with the domain in column 0.
+    malware_csv = BLOOMS_DIR / "MalwareDomains.csv"
+    if malware_csv.exists():
+        mw_domains = extract_domains_from_csv(str(malware_csv))
+        mw_domains.discard("entry")  # drop the CSV header value
+        print(f"  [MWDOM] MalwareDomains.csv: {len(mw_domains):,} domains")
+        categories["malware"] |= mw_domains
     categories["abuse"] = extract_from_optimized("AbuseDomains", "ABUSE") | extract_from_optimized("AbuseSubDomains", "ABUSE")
     categories["mining"] = extract_from_optimized("MiningDomains", "MINE") | extract_from_optimized("MiningSubDomains", "MINE")
     categories["spam"] = extract_from_optimized("SpamDomains", "SPAM") | extract_from_optimized("SpamSubDomains", "SPAM")
     categories["malicious_mail"] = extract_from_optimized("MaliciousMailDomains", "MAIL") | extract_from_optimized("MaliciousMailSubDomains", "MAIL")
 
-    # phishing_links.json → phishing_urls
+    # phishing_links.json → phishingurl  (URLs live under the "data" key)
     phish_urls = set()
     phish_json = BLOOMS_DIR / "phishing_links.json"
     if phish_json.exists():
         try:
             with open(str(phish_json), "r", encoding="utf-8", errors="ignore") as f:
                 data = json.load(f)
-            for entry in (data if isinstance(data, list) else []):
+            if isinstance(data, dict):
+                entries = data.get("data", [])
+            elif isinstance(data, list):
+                entries = data
+            else:
+                entries = []
+            for entry in entries:
                 if isinstance(entry, str):
                     url = entry.strip().lower()
-                    if "://" in url:
-                        host = url.split("://", 1)[1].split("/")[0].split(":")[0]
-                        if host:
-                            phish_urls.add(host)
+                    host = url.split("://", 1)[1] if "://" in url else url
+                    host = host.split("/")[0].split(":")[0]
+                    if host:
+                        phish_urls.add(host)
             if phish_urls:
                 print(f"  [PHURL] phishing_links.json: {len(phish_urls):,} domains")
         except Exception as e:
             print(f"  [SKIP] phishing_links.json: {e}")
-    categories["phishing_urls"] = phish_urls
+    categories["phishingurl"] = phish_urls
+
+    # Categories that feed the combined malicious set but get NO standalone
+    # .bloom of their own. "malware" is huge (~8M) and fully covered by the
+    # combined malicious.bloom, so we don't ship a separate malware.bloom.
+    COMBINED_ONLY = {"malware"}
 
     # ── Write category text files ───────────────────────────────────
     print("\n=== Writing category text files ===")
     for name, domains in sorted(categories.items()):
+        if name in COMBINED_ONLY:
+            continue
         txt_path = ASSETS_DIR / f"{name}_domains.txt"
         with open(str(txt_path), "w", encoding="utf-8") as f:
             for d in sorted(domains):
