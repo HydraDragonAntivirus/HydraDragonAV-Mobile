@@ -198,7 +198,7 @@ public class GuardService extends Service {
 
     private void sendThreatNotification(ThreatResult threat) {
         NotificationManager nm = getSystemService(NotificationManager.class);
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_threat)
             .setContentTitle(getString(R.string.threat_detected))
             .setContentText(threat.getAppName() + " - Risk: " + threat.getRiskScore() + "/100")
@@ -208,9 +208,26 @@ public class GuardService extends Service {
                     + "Sebep: " + (threat.getReasons().isEmpty() ? "-" : threat.getReasons().get(0))))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
-            .setColor(0xFF0040)
-            .build();
-        nm.notify(alertNotificationId++, notification);
+            .setColor(0xFF0040);
+
+        // "Remove" -> system uninstall dialog for THIS exact package (only for an
+        // installed app, not an .apk file on disk). User confirms; we can't
+        // silently uninstall. Targets the related app only.
+        String pkg = threat.getPackageName();
+        if (pkg != null && !pkg.isEmpty() && (threat.getApkPath() == null
+                || !threat.getApkPath().toLowerCase().endsWith(".apk"))) {
+            Intent del = new Intent(Intent.ACTION_DELETE,
+                    android.net.Uri.parse("package:" + pkg));
+            del.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
+                    this, pkg.hashCode(), del,
+                    android.app.PendingIntent.FLAG_IMMUTABLE
+                            | android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.setContentIntent(pi)
+                   .addAction(R.drawable.ic_threat, "Remove", pi);
+        }
+
+        nm.notify(alertNotificationId++, builder.build());
     }
 
     private void sendNetworkAlert(NetworkMonitor.NetworkEvent event) {

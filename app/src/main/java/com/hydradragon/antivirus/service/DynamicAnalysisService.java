@@ -26,9 +26,27 @@ public class DynamicAnalysisService extends AccessibilityService {
     /** Same event signature N+ times within the window => spam => malware. */
     private static final int SPAM_THRESHOLD = 30;
     private static final long SPAM_WINDOW_MS = 8_000;
+    /** Notification spam: N+ notifications from one app in the window => malware. */
+    private static final int NOTIF_THRESHOLD = 20;
+    private static final long NOTIF_WINDOW_MS = 10_000;
     /** signature -> [windowStartMs, count]. */
     private final Map<String, long[]> spamCounters = new HashMap<>();
     private final Map<String, Long> spamFlagged = new HashMap<>();
+    /** package -> [windowStartMs, notificationCount]. */
+    private final Map<String, long[]> notifCounters = new HashMap<>();
+
+    /** Foreground package of the event currently being processed. */
+    private volatile String fgPackage = "";
+
+    /** Browsers: a flagged URL HERE is actually being navigated to -> hard block. */
+    private static final java.util.Set<String> BROWSERS = new java.util.HashSet<>(java.util.Arrays.asList(
+        "com.android.chrome", "com.chrome.beta", "com.chrome.dev",
+        "org.mozilla.firefox", "org.mozilla.focus",
+        "com.opera.browser", "com.opera.mini.native", "com.opera.gx",
+        "com.brave.browser", "com.microsoft.emmx",
+        "com.sec.android.app.sbrowser", "com.android.browser",
+        "com.duckduckgo.mobile.android", "com.kiwibrowser.browser",
+        "com.vivaldi.browser", "com.yandex.browser", "mark.via.gp"));
 
     @Override
     protected void onServiceConnected() {
@@ -53,13 +71,23 @@ public class DynamicAnalysisService extends AccessibilityService {
             return;
         }
 
-        // Behavioural detection: an app that repeats the SAME event/content far
-        // too often (overlay/dialog/toast/click spam) is acting maliciously.
-        checkSpamBehavior(event, pkg);
-
         int eventType = event.getEventType();
 
-        boolean isInstaller = packageName.toString().contains("packageinstaller") || 
+        // Whitelist: never flag trusted apps (Google/OEM/system) as behavioural
+        // malware — keeps legit apps from being called a virus.
+        boolean trusted = com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, pkg);
+
+        // Notification spam: an app firing many notifications in a short window.
+        if (eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
+            if (!trusted) checkNotificationSpam(pkg);
+            return;
+        }
+
+        // Behavioural detection: an app that repeats the SAME event/content far
+        // too often (overlay/dialog/toast/click spam) is acting maliciously.
+        if (!trusted) checkSpamBehavior(event, pkg);
+
+        boolean isInstaller = packageName.toString().contains("packageinstaller") ||
                               packageName.toString().contains("permissioncontroller");
         boolean isSettings = packageName.toString().equals("com.android.settings");
 
@@ -82,9 +110,10 @@ public class DynamicAnalysisService extends AccessibilityService {
             }
         }
 
-        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || 
+        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
             eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-            
+
+            fgPackage = pkg;   // remember which app's content we're scanning
             AccessibilityNodeInfo rootNode = getRootInActiveWindow();
             if (rootNode != null) {
                 checkNodesForSuspiciousKeywords(rootNode);
@@ -104,9 +133,17 @@ public class DynamicAnalysisService extends AccessibilityService {
                 lowerText.contains("pay bitcoin") ||
                 lowerText.contains("recover your files") ||
                 lowerText.contains("bitcoin address")) {
-                Log.e(TAG, "RANSOMWARE LOCK SCREEN DETECTED!");
-                sendAlert("RANSOMWARE BLOCKED", "Ransomware locked screen detected. Device locked down to home screen!");
-                performGlobalAction(GLOBAL_ACTION_HOME);
+                Log.e(TAG, "RANSOMWARE TEXT DETECTED in " + fgPackage);
+                // Relatedness: a standalone app showing a full-screen "files
+                // encrypted" lock IS ransomware -> nuke. The same text inside a
+                // browser is almost always an article/tech-support-scam page ->
+                // warn only, don't close the browser.
+                if (!BROWSERS.contains(fgPackage)) {
+                    sendAlert("RANSOMWARE BLOCKED", "Ransomware lock screen detected. Sent to home screen!");
+                    performGlobalAction(GLOBAL_ACTION_HOME);
+                } else {
+                    sendAlert("Possible scam page", "Ransom/scam text on a web page.");
+                }
             }
 
             if (lowerText.contains("activate device admin") ||
@@ -125,10 +162,18 @@ public class DynamicAnalysisService extends AccessibilityService {
                         .extractUrls(text.toString())) {
                     String cat = scanner.scanUrl(url);
                     if (cat != null) {
-                        Log.e(TAG, "MALICIOUS URL (" + cat + "): " + url);
-                        sendAlert("MALICIOUS WEBSITE BLOCKED",
-                            cat + ": " + url);
-                        performGlobalAction(GLOBAL_ACTION_HOME);
+                        Log.e(TAG, "MALICIOUS URL (" + cat + "): " + url + " in " + fgPackage);
+                        sendAlert("MALICIOUS WEBSITE", cat + ": " + url);
+                        // Only hard-block (kick home) when the foreground app is
+                        // actually RELATED to the threat: a browser navigating to
+                        // it, or an app already flagged for malicious behaviour.
+                        // A legit app merely displaying the URL as text isn't the
+                        // virus — just warn there (the DNS VPN blocks navigation).
+                        boolean related = BROWSERS.contains(fgPackage)
+                            || BehaviorFlags.isFlagged(this, fgPackage);
+                        if (related) {
+                            performGlobalAction(GLOBAL_ACTION_HOME);
+                        }
                         break;
                     }
                 }
@@ -189,6 +234,32 @@ public class DynamicAnalysisService extends AccessibilityService {
         }
     }
 
+    /**
+     * Flag an app that posts a flood of notifications in a short window
+     * (notification-spam adware). Trusted apps are filtered out by the caller.
+     */
+    private void checkNotificationSpam(String pkg) {
+        try {
+            long now = System.currentTimeMillis();
+            long[] c = notifCounters.get(pkg);
+            if (c == null || now - c[0] > NOTIF_WINDOW_MS) {
+                notifCounters.put(pkg, new long[]{now, 1});
+            } else {
+                c[1]++;
+                if (c[1] >= NOTIF_THRESHOLD) {
+                    String reason = "Notification spam: " + c[1] + " notifications in "
+                        + (NOTIF_WINDOW_MS / 1000) + "s";
+                    Log.e(TAG, "BEHAVIOUR MALWARE (" + pkg + "): " + reason);
+                    BehaviorFlags.flag(this, pkg, reason);
+                    sendAlert("NOTIFICATION SPAM (malware)", pkg + " — " + reason);
+                    notifCounters.put(pkg, new long[]{now, 1});  // reset window
+                }
+            }
+            if (notifCounters.size() > 400) notifCounters.clear();
+        } catch (Throwable ignore) {
+        }
+    }
+
     @Override
     public void onInterrupt() {}
 
@@ -196,15 +267,39 @@ public class DynamicAnalysisService extends AccessibilityService {
         NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
 
+        // Bring HydraDragon to the foreground (popup + redirect), not just a
+        // silent notification: open MainActivity with the alert details.
+        android.content.Intent open = new android.content.Intent(this,
+                com.hydradragon.antivirus.MainActivity.class);
+        open.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        open.putExtra("alert_title", title);
+        open.putExtra("alert_message", message);
+        android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
+                this, (int) System.currentTimeMillis(), open,
+                android.app.PendingIntent.FLAG_IMMUTABLE
+                        | android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_threat)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setColor(0xFF0000)
-                .setAutoCancel(true);
+                .setAutoCancel(true)
+                .setContentIntent(pi)
+                .setFullScreenIntent(pi, true);   // heads-up / full-screen popup
 
         nm.notify((int) System.currentTimeMillis(), builder.build());
+
+        // Also try to redirect immediately (accessibility services can usually
+        // start activities even from the background).
+        try {
+            startActivity(open);
+        } catch (Throwable ignore) {
+        }
     }
 
     private void createNotificationChannel() {
