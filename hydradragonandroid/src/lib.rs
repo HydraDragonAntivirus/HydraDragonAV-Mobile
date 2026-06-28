@@ -85,7 +85,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         Err(_) => return JNI_FALSE,
     };
     let engine = do_init(&dir);
-    let ok = !engine.yara.is_empty() || engine.model.is_some();
+    let ok = engine.clamav.is_some() || engine.model.is_some();
     let _ = ENGINE.set(engine);
     if ok && ENGINE.get().is_some() {
         JNI_TRUE
