@@ -188,7 +188,14 @@ public class ScanEngine {
 
         ThreatResult.Builder builder = new ThreatResult.Builder(app.packageName);
 
-        if (app.packageName != null && app.packageName.equals(context.getPackageName())) {
+        // Never flag ourselves — exact match against our release + debug package
+        // (debug build's packageName has a ".debug" suffix; a scanned own-APK
+        // file reports the release id). equals(), not startsWith(), so malware
+        // can't self-whitelist with a "com.hydradragon.antivirus.evil" prefix.
+        if (app.packageName != null
+            && (app.packageName.equals(context.getPackageName())
+                || app.packageName.equals("com.hydradragon.antivirus")
+                || app.packageName.equals("com.hydradragon.antivirus.debug"))) {
             builder.setRiskScore(0); return builder.build();
         }
 
@@ -325,6 +332,18 @@ public class ScanEngine {
                     }
                 }
             } catch (Exception e) { }
+        }
+
+        // Runtime behaviour flag (set by the dynamic-analysis accessibility
+        // service when this app spammed UI events). Behaviour overrides — a
+        // benign-looking package that misbehaves at runtime is malware.
+        if (!isWhitelisted && app.packageName != null) {
+            String behaviour = BehaviorFlags.reasonFor(context, app.packageName);
+            if (behaviour != null) {
+                riskScore = 100;
+                builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                reasons.add("🧠 [BEHAVIOUR] " + behaviour);
+            }
         }
 
         if (riskScore > 0 && !isWhitelisted) {

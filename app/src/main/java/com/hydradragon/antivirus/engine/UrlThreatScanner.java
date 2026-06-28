@@ -88,16 +88,22 @@ public final class UrlThreatScanner {
     }
 
     /**
-     * Normalise a URL for bloom lookup: trim, lowercase, and rewrite
-     * {@code https://} to {@code http://}. Returns null if not an http(s) URL.
+     * Normalise a URL for bloom lookup: trim, lowercase, and strip ONLY the
+     * leading scheme ({@code http://} / {@code https://}). The blooms store
+     * scheme-less {@code host[:port]/path} entries, so we keep the rest as-is.
+     * Returns null if the string isn't an http(s):// URL.
      */
     public static String normalize(String url) {
         if (url == null) return null;
         String u = url.trim().toLowerCase(Locale.US);
         if (u.startsWith("https://")) {
-            u = "http://" + u.substring("https://".length());
+            u = u.substring("https://".length());
+        } else if (u.startsWith("http://")) {
+            u = u.substring("http://".length());
+        } else {
+            return null;
         }
-        return u.startsWith("http://") ? u : null;
+        return u.isEmpty() ? null : u;
     }
 
     /** Extract every http(s):// URL from arbitrary text. */
@@ -130,7 +136,7 @@ public final class UrlThreatScanner {
         if (norm == null) return null;
 
         List<String> candidates = new ArrayList<>();
-        // Full URL forms (URL blooms).
+        // Scheme-less full URL forms (URL blooms: malwareurl/phishingurl).
         candidates.add(norm);
         candidates.add(norm.endsWith("/") ? norm.substring(0, norm.length() - 1) : norm + "/");
         // Plain host -> domain forms (domain blooms).
@@ -148,13 +154,13 @@ public final class UrlThreatScanner {
     }
 
     /**
-     * Derive plain-text host candidates from a normalised http:// URL: the full
-     * host plus each suffix obtained by stripping leftmost labels, down to the
-     * last two labels (the registrable domain in the common case).
+     * Derive plain-text host candidates from a scheme-less {@code host[:port]/path}
+     * string: the full host plus each suffix obtained by stripping leftmost
+     * labels, down to the last two labels (the registrable domain).
      */
-    static List<String> hostCandidates(String normUrl) {
+    static List<String> hostCandidates(String schemeless) {
         List<String> out = new ArrayList<>();
-        String rest = normUrl.substring("http://".length());
+        String rest = schemeless;
         int slash = rest.indexOf('/');
         String host = (slash >= 0) ? rest.substring(0, slash) : rest;
         int at = host.indexOf('@');                 // strip userinfo

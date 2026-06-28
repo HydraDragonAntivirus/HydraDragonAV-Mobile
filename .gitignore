@@ -8,3 +8,4 @@ allblooms/MalwareDomains.optimized.csv
 downloads/
 # YARA-X compiled files
 *.yrc
+whitelist/

@@ -10,13 +10,25 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import androidx.core.app.NotificationCompat;
 import com.hydradragon.antivirus.R;
+import com.hydradragon.antivirus.engine.BehaviorFlags;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class DynamicAnalysisService extends AccessibilityService {
     private static final String TAG = "HydraDragon-Dynamic";
     private static final String CHANNEL_ID = "hydradragon_dynamic_alert";
-    
+
     private long lastClickTime = 0;
     private int rapidClickCount = 0;
+
+    // ── Behavioural spam detection ──────────────────────────────────────────
+    /** Same event signature N+ times within the window => spam => malware. */
+    private static final int SPAM_THRESHOLD = 30;
+    private static final long SPAM_WINDOW_MS = 8_000;
+    /** signature -> [windowStartMs, count]. */
+    private final Map<String, long[]> spamCounters = new HashMap<>();
+    private final Map<String, Long> spamFlagged = new HashMap<>();
 
     @Override
     protected void onServiceConnected() {
@@ -30,6 +42,20 @@ public class DynamicAnalysisService extends AccessibilityService {
         if (event == null) return;
         CharSequence packageName = event.getPackageName();
         if (packageName == null) return;
+
+        // Don't scan our OWN UI: the scan report shows malicious URLs/keywords as
+        // text, which would otherwise re-trigger the URL/ransomware detector and
+        // falsely "block" + kick to home. Skip our own package entirely.
+        String pkg = packageName.toString();
+        if (pkg.equals(getPackageName())
+            || pkg.equals("com.hydradragon.antivirus")
+            || pkg.equals("com.hydradragon.antivirus.debug")) {
+            return;
+        }
+
+        // Behavioural detection: an app that repeats the SAME event/content far
+        // too often (overlay/dialog/toast/click spam) is acting maliciously.
+        checkSpamBehavior(event, pkg);
 
         int eventType = event.getEventType();
 
@@ -117,6 +143,49 @@ public class DynamicAnalysisService extends AccessibilityService {
                 checkNodesForSuspiciousKeywords(child);
                 child.recycle();
             }
+        }
+    }
+
+    /**
+     * Flag an app whose accessibility events repeat the same signature far more
+     * than any legitimate UI would in a short window (overlay/dialog/toast/click
+     * spam = classic adware/clicker/ransomware behaviour).
+     */
+    private void checkSpamBehavior(AccessibilityEvent event, String pkg) {
+        try {
+            int type = event.getEventType();
+            CharSequence cls = event.getClassName();
+            CharSequence txt = (event.getText() != null && !event.getText().isEmpty())
+                ? event.getText().get(0) : null;
+            String sig = pkg + "|" + type + "|" + (cls != null ? cls : "") + "|"
+                + (txt != null ? txt : "");
+
+            long now = System.currentTimeMillis();
+            long[] c = spamCounters.get(sig);
+            if (c == null || now - c[0] > SPAM_WINDOW_MS) {
+                spamCounters.put(sig, new long[]{now, 1});
+            } else {
+                c[1]++;
+                if (c[1] >= SPAM_THRESHOLD) {
+                    // Rate-limit alerts per package to once per window.
+                    Long last = spamFlagged.get(pkg);
+                    if (last == null || now - last > SPAM_WINDOW_MS) {
+                        spamFlagged.put(pkg, now);
+                        String reason = "Spam behaviour: same UI event x" + c[1]
+                            + " in " + (SPAM_WINDOW_MS / 1000) + "s";
+                        Log.e(TAG, "BEHAVIOUR MALWARE (" + pkg + "): " + reason);
+                        BehaviorFlags.flag(this, pkg, reason);
+                        sendAlert("MALWARE BEHAVIOUR BLOCKED",
+                            pkg + " — " + reason);
+                        performGlobalAction(GLOBAL_ACTION_HOME);
+                    }
+                    spamCounters.put(sig, new long[]{now, 1});  // reset window
+                }
+            }
+
+            // Bound memory: drop the map if it grows large.
+            if (spamCounters.size() > 600) spamCounters.clear();
+        } catch (Throwable ignore) {
         }
     }
 

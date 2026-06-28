@@ -343,7 +343,7 @@ private void scanCustomFile(android.net.Uri uri) {
                         btnScan.setText(getString(R.string.rescan));
                         btnScan.setEnabled(true);
                         
-                        if (result != null ) {
+                        if (result != null && result.isThreat()) {
                             foundThreats.add(result);
                             threatAdapter.notifyItemInserted(0);
                             tvThreats.setText("1");
