@@ -5,6 +5,7 @@ use yara_x::Compiler;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let check_only = args.iter().any(|a| a == "--check");
+    let filtered_only = args.iter().any(|a| a == "--filtered");
 
     // Filter out flags for positional args
     let pos_args: Vec<&String> = args.iter().filter(|a| !a.starts_with("--")).collect();
@@ -15,6 +16,7 @@ fn main() {
         eprintln!("Usage: hydradragon_yara_x_compile [--check] <source_dir> [<output_dir>]");
         eprintln!();
         eprintln!("  --check       Only validate compilation, do not write .yrc files");
+        eprintln!("  --filtered    Only compile *_filtered.yar files");
         eprintln!("  <source_dir>  Directory to scan for .yar files (recursive)");
         eprintln!("  <output_dir>  Directory for output .yrc files (required unless --check)");
         std::process::exit(if need_help { 0 } else { 1 });
@@ -40,6 +42,15 @@ fn main() {
 
     let mut yar_files: Vec<PathBuf> = Vec::new();
     collect_yar_files(src_dir, &mut yar_files);
+
+    if filtered_only {
+        yar_files.retain(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.ends_with("_filtered.yar"))
+                .unwrap_or(false)
+        });
+    }
 
     if yar_files.is_empty() {
         eprintln!("No .yar files found in {}", src_dir.display());
