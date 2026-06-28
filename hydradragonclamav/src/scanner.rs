@@ -14,9 +14,10 @@ pub struct Engine {
     /// subsignature is exactly the one whose atoms were indexed — that alignment
     /// is what makes threading the gate's offsets correct.
     prefilter: crate::prefilter::AtomPrefilter,
-    /// Optional YARA-x engine for scanning with compiled YARA rules (Android-
-    /// relevant types only, see `yara_scan::is_target_allowed`).
-    pub yara: Option<crate::yara_scan::YaraEngine>,
+    /// YARA-x engines for scanning with compiled YARA rules (Android-relevant
+    /// types only, see `yara_scan::is_target_allowed`). Multiple rulesets can be
+    /// loaded (e.g. clean / valhalla / AndroidOS); all are run.
+    pub yara: Vec<crate::yara_scan::YaraEngine>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -212,14 +213,29 @@ impl Engine {
         // Build the Aho-Corasick automata in memory from the loaded rules (no
         // on-disk `.bin` cache); the load high-water-mark is trimmed afterwards.
         let prefilter = crate::prefilter::AtomPrefilter::build(&database);
-        Ok((Self { database, prefilter, yara: None }, report))
+        Ok((Self { database, prefilter, yara: Vec::new() }, report))
     }
 
-    /// Set (or replace) the YARA-x engine for scanning with compiled rules.
+    /// Replace all YARA rulesets with a single one compiled from source.
     /// Returns `None` when the rules file cannot be loaded or compiled.
     pub fn load_yara_rules(&mut self, path: impl AsRef<Path>) -> Option<()> {
         let engine = crate::yara_scan::YaraEngine::from_source_file(path)?;
-        self.yara = Some(engine);
+        self.yara = vec![engine];
+        Some(())
+    }
+
+    /// Add a YARA ruleset compiled from source (keeps existing ones).
+    pub fn add_yara_source_file(&mut self, path: impl AsRef<Path>) -> Option<()> {
+        self.yara
+            .push(crate::yara_scan::YaraEngine::from_source_file(path)?);
+        Some(())
+    }
+
+    /// Add a pre-compiled `.yrc` YARA ruleset (keeps existing ones). Far faster
+    /// on-device than compiling source.
+    pub fn add_compiled_yara_file(&mut self, path: impl AsRef<Path>) -> Option<()> {
+        self.yara
+            .push(crate::yara_scan::YaraEngine::from_compiled_file(path)?);
         Some(())
     }
 
@@ -299,14 +315,17 @@ impl Engine {
 
         self.scan_context(&ctx, options, &mut state.matches);
 
-        // YARA-x scan for Android-relevant file types.
-        if let Some(yara) = &self.yara {
-            if state.matches.len() < options.max_matches
-                && crate::yara_scan::is_target_allowed(ctx.detected_target)
-            {
+        // YARA-x scan for Android-relevant file types — run every loaded ruleset.
+        if !self.yara.is_empty()
+            && crate::yara_scan::is_target_allowed(ctx.detected_target)
+        {
+            'rulesets: for yara in &self.yara {
+                if state.matches.len() >= options.max_matches {
+                    break;
+                }
                 for m in yara.scan(data, object_path) {
                     if state.matches.len() >= options.max_matches {
-                        break;
+                        break 'rulesets;
                     }
                     state.matches.push(m);
                 }
@@ -355,6 +374,16 @@ impl Engine {
     }
 
     /// Identify the ClamAV file type (`CL_TYPE_*`) of `data` via `.ftm` magic.
+    /// Detect the ClamAV target type of `data` using the loaded file-type magic
+    /// database — the exact same detection the scanner uses internally. Returns
+    /// the ClamAV target number, or `None` for "any file"/unrecognised.
+    ///
+    /// Combine with [`crate::yara_scan::is_target_allowed`] to decide whether a
+    /// file is a supported/scannable type before scanning it.
+    pub fn detect_target(&self, data: &[u8]) -> Option<u32> {
+        self.detect_clamav_type(data).and_then(clamav_type_to_target)
+    }
+
     fn detect_clamav_type(&self, data: &[u8]) -> Option<&str> {
         for magic in &self.database.file_type_magic {
             let ranges = magic.offset.scan_ranges(data.len());

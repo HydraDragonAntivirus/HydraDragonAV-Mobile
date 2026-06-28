@@ -14,7 +14,7 @@
 
 use std::sync::OnceLock;
 
-use hydradragonclamav::YaraEngine;
+use hydradragonclamav::{Engine as ClamavEngine, ScanOptions};
 use hydradragonml::Model;
 
 use jni::objects::{JClass, JString};
@@ -30,7 +30,11 @@ const YRC_FILES: &[&str] = &[
 const MODEL_FILE: &str = "apk_model.json";
 
 struct Engine {
-    yara: Vec<(String, YaraEngine)>,
+    /// ClamAV engine: loaded from the bundled signature DB with the compiled
+    /// `.yrc` YARA rulesets added. It does the whole scan — file-type detection,
+    /// supported-type gating (`is_target_allowed`), clamav signatures AND YARA,
+    /// all in one pass. `None` if no clamav DB was bundled.
+    clamav: Option<ClamavEngine>,
     model: Option<Model>,
 }
 
@@ -54,14 +58,19 @@ fn json_escape(s: &str) -> String {
 
 fn do_init(dir: &str) -> Engine {
     let base = std::path::Path::new(dir);
-    let mut yara = Vec::new();
-    for name in YRC_FILES {
-        if let Some(eng) = YaraEngine::from_compiled_file(base.join(name)) {
-            yara.push((name.to_string(), eng));
+    // ClamAV engine from the bundled DB, then add the compiled .yrc rulesets
+    // (compiled only — never .yar source on-device).
+    let clamav = match ClamavEngine::from_database_dir(base) {
+        Ok((mut eng, _report)) => {
+            for name in YRC_FILES {
+                let _ = eng.add_compiled_yara_file(base.join(name));
+            }
+            Some(eng)
         }
-    }
+        Err(_) => None,
+    };
     let model = Model::load_json(&base.join(MODEL_FILE)).ok();
-    Engine { yara, model }
+    Engine { clamav, model }
 }
 
 /// `boolean nativeInit(String dir)`
@@ -112,15 +121,23 @@ fn scan_apk(env: &mut JNIEnv, path: JString) -> String {
         Err(e) => return format!(r#"{{"error":"{}"}}"#, json_escape(&e.to_string())),
     };
 
-    // 1-3: YARA rulesets.
+    // Scan fully through the clamav engine: it detects the file type, applies
+    // clamav's supported-type gate (PE/OLE2/mail/Mach-O/Flash/Java-class are
+    // skipped), then runs clamav signatures AND all loaded .yrc YARA rulesets,
+    // extracting archives along the way. strict_targets enables the type gate.
     let mut yara_hits: Vec<String> = Vec::new();
-    for (set, eng) in &engine.yara {
-        for m in eng.scan(&bytes, &path) {
-            yara_hits.push(format!("{}::{}", set, m.name));
+    if let Some(clamav) = &engine.clamav {
+        let opts = ScanOptions {
+            strict_targets: true,
+            max_matches: 64,
+            ..ScanOptions::default()
+        };
+        for m in clamav.scan_bytes_named(&bytes, &path, opts) {
+            yara_hits.push(m.name);
         }
     }
 
-    // 4: one-class ML model.
+    // one-class ML model (independent of clamav's type gate).
     let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest) = match &engine.model {
         Some(model) => match model.scan(&bytes) {
             Some(r) => (r.malicious, r.best_jaccard, r.anomaly_score, r.nearest),
@@ -142,7 +159,7 @@ fn scan_apk(env: &mut JNIEnv, path: JString) -> String {
     };
 
     format!(
-        r#"{{"malicious":{},"yara":[{}],"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}}}"#,
+        r#"{{"malicious":{},"matches":[{}],"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}}}"#,
         malicious, hits_json, ml_malicious, ml_jaccard, ml_anomaly, nearest_json
     )
 }
