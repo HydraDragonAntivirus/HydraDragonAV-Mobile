@@ -45,6 +45,19 @@
             android:foregroundServiceType="dataSync"/>
 
         <service
+            android:name=".service.DnsVpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:foregroundServiceType="specialUse">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Malicious DNS/website filtering (local web shield)" />
+        </service>
+
+        <service
             android:name=".service.DynamicAnalysisService"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
