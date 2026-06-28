@@ -256,7 +256,7 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
     """
     block_text = "".join(block).lower()
     # Raw full-block substring checks (catch strings in literals, comments, meta)
-    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# ", "autoit", "mach-o", "mimikatz", "nullsoft", "c:\\", "c:/"):
+    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# ", "autoit", "mach-o", "mimikatz", "nullsoft", "c:\\", "c:/", "guloader", "vbscript", "visual basic", ".vbs"):
         if _raw_term in block_text:
             return False
 

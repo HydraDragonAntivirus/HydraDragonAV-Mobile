@@ -6,3 +6,5 @@ yara-x/yr.exe
 __pycache__/
 allblooms/MalwareDomains.optimized.csv
 downloads/
+# YARA-X compiled files
+*.yrc

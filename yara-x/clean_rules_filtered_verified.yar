@@ -103,6 +103,45 @@ rule MALWARE_Linux_RansomExx {
     uint16(0) == 0x457f and (5 of ($s*) or 6 of ($s*) or (3 of ($c*) and 3 of ($s*)))
 }
 
+private rule ESET_Apachemodule_PRIVATE {
+  meta:
+    description = "Apache 2.4 module ELF shared library"
+    author      = "ESET, spol. s r.o."
+    id          = "2082e50e-1726-5540-a962-e0aeca1ebaaf"
+    date        = "2024-04-27"
+    modified    = "2024-04-27"
+    reference   = "https://github.com/eset/malware-ioc/"
+    source_url  = "https://github.com/eset/malware-ioc/blob/21381c70ad030105cf9edb092dfd1cae29753286/windigo/helimod.yar#L3-L30"
+    license_url = "https://github.com/eset/malware-ioc/blob/21381c70ad030105cf9edb092dfd1cae29753286/LICENSE"
+    hash        = "e39667aa137e315bc26eaef791ccab52938fd809"
+    logic_hash  = "213fe381aa0bf9f148e488f7af74ac63073776c2868e42d2dcca7fdbca55fabb"
+    score       = 75
+    quality     = 80
+    tags        = ""
+    license     = "BSD 2-Clause"
+    version     = 1
+
+  strings:
+    $magic = "42PA"
+
+  condition:
+    for any s in elf.dynsym: (s.type == elf.STT_OBJECT and for any seg in elf.segments: (seg.type == elf.PT_LOAD and s.value >= seg.virtual_address and s.value < (seg.virtual_address + seg.file_size) and $magic at (s.value - seg.virtual_address + seg.offset) + 0x28))
+}
+
+rule P2PinfectBash {
+  meta:
+    author      = "nbill@cadosecurity.com"
+    description = "Detects P2Pinfect bash payload"
+
+  strings:
+    $h1 = { 4C 89 EF 48 89 DE 48 8D 15 ?? ?? ?? 00 6A 0A 59 E8 17 6C 01 00 84 C0 0F 85 0F 03 00 00 }
+    $h2 = { 48 8B 9C 24 ?? ?? 00 00 4C 89 EF 48 89 DE 48 8D 15 ?? ?? ?? 00 6A 09 59 E8 34 6C 01 00 84 C0 0F 85 AC 02 00 00 }
+    $h3 = { 4C 89 EF 48 89 DE 48 8D 15 ?? ?? ?? 00 6A 03 59 E8 DD 6B 01 00 84 C0 0F 85 DF 03 00 00 }
+
+  condition:
+    uint16(0) == 0x457f and all of them
+}
+
 rule Linux_Trojan_Pumakit {
   meta:
     author        = "Elastic Security"
@@ -146,6 +185,62 @@ rule ELF_Chaos_RAT {
     uint32(0) == 0x464c457f and  // ELF magic number in little-endian
     filesize < 10MB and $chaos and
     2 of ($library*)
+}
+
+rule EquationGroup_cryptTool {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file cryptTool"
+    author      = "Florian Roth"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    date        = "2017-04-08"
+    hash1       = "96947ad30a2ab15ca5ef53ba8969b9d9a89c48a403e8b22dd5698145ac6695d2"
+
+  strings:
+    $s1 = "The encryption key is " fullword ascii
+    $s2 = "___tempFile2.out" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 200KB and all of them)
+}
+
+rule EquationGroup_slugger2 {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file slugger2"
+    author      = "Florian Roth"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    date        = "2017-04-08"
+    hash1       = "a6a9ab66d73e4b443a80a69ef55a64da7f0af08dfaa7e17eb19c327301a70bdf"
+
+  strings:
+    $x1 = "usage: %s hostip port cmd [printer_name]" fullword ascii
+    $x2 = "command must be less than 61 chars" fullword ascii
+
+    $s1 = "__rw_read_waiting" fullword ascii
+    $s2 = "completed.1" fullword ascii
+    $s3 = "__mutexkind" fullword ascii
+    $s4 = "__rw_pshared" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 50KB and (4 of them and 1 of ($x*))) or (all of them)
+}
+
+rule EQGRP_bo {
+  meta:
+    description = "EQGRP Toolset Firewall - file bo"
+    author      = "Florian Roth"
+    reference   = "Research"
+    date        = "2016-08-16"
+    hash1       = "aa8b363073e8ae754b1836c30f440d7619890ded92fb5b97c73294b15d22441d"
+
+  strings:
+    $s1 = "ERROR: failed to open %s: %d" fullword ascii
+    $s2 = "__libc_start_main@@GLIBC_2.0" fullword ascii
+    $s3 = "serial number: %s" fullword ascii
+    $s4 = "strerror@@GLIBC_2.0" fullword ascii
+    $s5 = "ERROR: mmap failed: %d" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 20KB and all of them)
 }
 
 rule Hajime_generic_ARCH: MALW {
@@ -700,6 +795,79 @@ rule android_tempting_cedar_spyware {
     $PK_HEADER in (0..4) and $MANIFEST and $DEX_FILE and any of ($string*)
 }
 
+rule single_load_rwe {
+  meta:
+    description = "Flags binaries with a single LOAD segment marked as RWE."
+    family      = "Stager"
+    filetype    = "ELF"
+    hash        = "711a06265c71a7157ef1732c56e02a992e56e9d9383ca0f6d98cd96a30e37299"
+
+  condition:
+    elf.segments.len() == 1 and
+    elf.segments[0].type == elf.PT_LOAD and
+    elf.segments[0].flags == elf.PF_R | elf.PF_W | elf.PF_X
+}
+
+rule fake_section_headers_conflicting_entry_point_address {
+  meta:
+    description = "A fake sections header has been added to the binary."
+    family      = "Obfuscation"
+    filetype    = "ELF"
+    hash        = "a2301180df014f216d34cec8a6a6549638925ae21995779c2d7d2827256a8447"
+
+  condition:
+    elf.type == elf.ET_EXEC and
+    elf.entry_point < filesize and  // file scanning only
+    elf.segments.len() > 0 and
+    elf.sections.len() > 0 and
+    not
+    (
+      for any i in (0..elf.segments.len()):
+      (
+        (elf.segments[i].offset <= elf.entry_point) and
+        ((elf.segments[i].offset + elf.segments[i].file_size) >= elf.entry_point) and
+        for any j in (0..elf.sections.len()):
+        (
+          elf.sections[j].offset <= elf.entry_point and
+          ((elf.sections[j].offset + elf.sections[j].size) >= elf.entry_point) and
+          (elf.segments[i].virtual_address + (elf.entry_point - elf.segments[i].offset)) ==
+          (elf.sections[j].address + (elf.entry_point - elf.sections[j].offset))
+        )
+      )
+    )
+}
+
+rule fake_dynamic_symbols {
+  meta:
+    description = "A fake dynamic symbol table has been added to the binary"
+    family      = "Obfuscation"
+    filetype    = "ELF"
+    hash        = "51676ae7e151a0b906c3a8ad34f474cb5b65eaa3bf40bb09b00c624747bcb241"
+
+  condition:
+    elf.type == elf.ET_EXEC and
+    elf.entry_point < filesize and  // file scanning only
+    elf.sections.len() > 0 and
+    elf.dynamic_section_entries > 0 and
+    for any i in (0..elf.dynamic_section_entries):
+    (
+      elf.dynamic[i].type == elf.DT_SYMTAB and
+      not
+      (
+        for any j in (0..elf.sections.len()):
+        (
+          elf.sections[j].type == elf.SHT_DYNSYM and
+          for any k in (0..elf.segments.len()):
+          (
+            (elf.segments[k].virtual_address <= elf.dynamic[i].val) and
+            ((elf.segments[k].virtual_address + elf.segments[k].file_size) >= elf.dynamic[i].val) and
+            (elf.segments[k].offset + (elf.dynamic[i].val - elf.segments[k].virtual_address)) == elf.sections[j].offset
+          )
+        )
+      )
+    )
+}
+
 rule venom {
   meta:
     description = "Venom Linux Rootkit"
@@ -821,6 +989,118 @@ rule Mirai_Botnet_Malware {
     )
 }
 
+rule miner_g_p_0 {
+  meta:
+    description = "miner-exe - from files g, p"
+    author      = "Brian Laskowski"
+    reference   = "https://github.com/Hestat/lw-yara/"
+    date        = "2018-08-22"
+    hash1       = "7fe9d6d8b9390020862ca7dc9e69c1e2b676db5898e4bfad51d66250e9af3eaf"
+    hash2       = "63210b24f42c05b2c5f8fd62e98dba6de45c7d751a2e55700d22983772886017"
+
+  strings:
+    $s1  = "TLS generation counter wrapped!  Please report as described in <http://www.debian.org/Bugs/>." fullword ascii
+    $s2  = "%s: Symbol `%s' has different size in shared object, consider re-linking" fullword ascii
+    $s3  = "relocation processing: %s%s" fullword ascii
+    $s4  = "ELF load command address/offset not properly aligned" fullword ascii
+    $s5  = "version == ((void *)0) || (flags & ~(DL_LOOKUP_ADD_DEPENDENCY | DL_LOOKUP_GSCOPE_LOCK)) == 0" fullword ascii
+    $s6  = "%s%s%s:%u: %s%sAssertion `%s' failed." fullword ascii
+    $s7  = "__pthread_mutex_lock" fullword ascii
+    $s8  = "lead_zero <= (uintmax_t) ((9223372036854775807L) - 16384 - 3) / 4" fullword ascii
+    $s9  = "lead_zero <= (uintmax_t) ((9223372036854775807L) - 1024 - 3) / 4" fullword ascii
+    $s10 = "int_no <= (uintmax_t) ((9223372036854775807L) + (-1021) - 53) / 4" fullword ascii
+    $s11 = "int_no <= (uintmax_t) ((9223372036854775807L) + (-125) - 24) / 4" fullword ascii
+    $s12 = "int_no <= (uintmax_t) ((9223372036854775807L) + (-16381) - 64) / 4" fullword ascii
+    $s13 = "headmap.len == archive_stat.st_size" fullword ascii
+    $s14 = "lead_zero <= (uintmax_t) ((9223372036854775807L) - 4932 - 1)" fullword ascii
+    $s15 = "lead_zero <= (uintmax_t) ((9223372036854775807L) - 38 - 1)" fullword ascii
+    $s16 = "lead_zero <= (uintmax_t) ((9223372036854775807L) - 308 - 1)" fullword ascii
+    $s17 = "int_no <= (uintmax_t) ((9223372036854775807L) + (-307) - 53)" fullword ascii
+    $s18 = "int_no <= (uintmax_t) ((9223372036854775807L) + (-4931) - 64)" fullword ascii
+    $s19 = "int_no <= (uintmax_t) ((9223372036854775807L) + (-37) - 24)" fullword ascii
+    $s20 = "(char *) ((void*)((char*)(p) + 2*(sizeof(size_t)))) + 4 * (sizeof(size_t)) <= paligned_mem" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and
+      filesize < 9000KB and (8 of them)
+    ) or (all of them)
+}
+
+rule miner_s_m_1 {
+  meta:
+    description = "miner-exe - from files s, m"
+    author      = "Brian Laskowski"
+    reference   = "https://github.com/Hestat/lw-yara/"
+    date        = "2018-08-22"
+    hash1       = "1fd02c046f386f0c8779cef3d207613f3ecaa1aac27b88d0898fa145f584dc22"
+    hash2       = "c3ef8a6eb848c99b8239af46b46376193388c6e5fe55980d00f65818dba0b047"
+
+  strings:
+    $s1  = "hash > target (false positive)" fullword ascii
+    $s2  = "rpc2_login_decode" fullword ascii
+    $s3  = "hash <= target" fullword ascii
+    $s4  = "Skein1024_Process_Block" fullword ascii
+    $s5  = "Skein_512_Process_Block" fullword ascii
+    $s6  = "Skein_256_Process_Block" fullword ascii
+    $s7  = "[X]^WTQRC@EFOLIJkhmngdabspuv" fullword ascii  /* reversed goodware string 'vupsbadgnmhkJILOFE@CRQTW^]X[' */
+    $s8  = "|yz;8=>7412# %&/,)*" fullword ascii  /* reversed goodware string '*),/&% #2147>=8;zy|' */
+    $s9  = "dump_to_strbuffer" fullword ascii
+    $s10 = "rpc2_login_lock" fullword ascii
+    $s11 = "rpc2_login" fullword ascii
+    $s12 = "num_processors" fullword ascii
+    $s13 = "Target: %s" fullword ascii
+    $s14 = "json_dump_file" fullword ascii
+    $s15 = "dump_string" fullword ascii
+    $s16 = "|ungXQJC4=&/" fullword ascii  /* reversed goodware string '/&=4CJQXgnu|' */
+    $s17 = "rpc2_target" fullword ascii
+    $s18 = "AO]Sywek1?-#" fullword ascii  /* reversed goodware string '#-?1kewyS]OA' */
+    $s19 = "dump_to_file" fullword ascii
+    $s20 = "diff_to_target" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and
+      filesize < 700KB and (8 of them)
+    ) or (all of them)
+}
+
+rule miner_s_m_p_2 {
+  meta:
+    description = "miner-exe - from files s, m, p"
+    author      = "Brian Laskowski"
+    reference   = "https://github.com/Hestat/lw-yara/"
+    date        = "2018-08-22"
+    hash1       = "1fd02c046f386f0c8779cef3d207613f3ecaa1aac27b88d0898fa145f584dc22"
+    hash2       = "c3ef8a6eb848c99b8239af46b46376193388c6e5fe55980d00f65818dba0b047"
+    hash3       = "63210b24f42c05b2c5f8fd62e98dba6de45c7d751a2e55700d22983772886017"
+
+  strings:
+    $x1  = "{\"method\": \"login\", \"params\": {\"login\": \"%s\", \"pass\": \"%s\", \"agent\": \"cpuminer-multi/0.1\"}, \"id\": 1}" fullword ascii
+    $s2  = "-x, --proxy=[PROTOCOL://]HOST[:PORT]  connect through a proxy" fullword ascii
+    $s3  = "-P, --protocol-dump   verbose dump of protocol-level activities" fullword ascii
+    $s4  = "-t, --threads=N       number of miner threads (default: number of processors)" fullword ascii
+    $s5  = "{\"method\": \"submit\", \"params\": {\"id\": \"%s\", \"job_id\": \"%s\", \"nonce\": \"%s\", \"result\": \"%s\"}, \"id\":1}" fullword ascii
+    $s6  = "User-Agent: cpuminer/2.3.3" fullword ascii
+    $s7  = "{\"method\": \"getjob\", \"params\": {\"id\": \"%s\"}, \"id\":1}" fullword ascii
+    $s8  = "{\"method\": \"getwork\", \"params\": [ \"%s\" ], \"id\":1}" fullword ascii
+    $s9  = "getwork failed, retry after %d seconds" fullword ascii
+    $s10 = "Failed to call rpc command after %i tries" fullword ascii
+    $s11 = "Failed to get Stratum session id" fullword ascii
+    $s12 = "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\"%s\", \"%s\"]}" fullword ascii
+    $s13 = "-O, --userpass=U:P    username:password pair for mining server" fullword ascii
+    $s14 = "-S, --syslog          use system log for output messages" fullword ascii
+    $s15 = "{\"method\": \"mining.submit\", \"params\": [\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"], \"id\":4}" fullword ascii
+    $s16 = "%s: unsupported non-option argument '%s'" fullword ascii
+    $s17 = "-p, --pass=PASSWORD   password for mining server" fullword ascii
+    $s18 = "client.get_version" fullword ascii
+    $s19 = "Tried to call rpc2 command before authentication" fullword ascii
+    $s20 = "-s, --scantime=N      upper bound on time spent scanning current work when" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and
+      filesize < 9000KB and (1 of ($x*) and 4 of them)
+    ) or (all of them)
+}
+
 rule Rana_Android_resources {
   meta:
     author    = "ReversingLabs"
@@ -869,6 +1149,554 @@ rule AndroidKotlinDebugProbesKt {
       0x20 <= (uint16be(11 + i) & 0xff) and (uint16be(11 + i) & 0xff) < 127
     )
     and $constant at 13
+}
+
+rule elf_babuk_auto {
+  meta:
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    date               = "2023-07-11"
+    version            = "1"
+    description        = "Detects elf.babuk."
+    info               = "autogenerated rule brought to you by yara-signator"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_reference = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.babuk"
+    malpedia_rule_date = "20230705"
+    malpedia_hash      = "42d0574f4405bd7d2b154d321d345acb18834a41"
+    malpedia_version   = "20230715"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+  /* DISCLAIMER
+   * The strings used in this rule have been automatically selected from the
+   * disassembly of memory dumps and unpacked files, using YARA-Signator.
+   * The code and documentation is published here:
+   * https://github.com/fxb-cocacoding/yara-signator
+   * As Malpedia is used as data source, please note that for a given
+   * number of families, only single samples are documented.
+   * This likely impacts the degree of generalization these rules will offer.
+   * Take the described generation method also into consideration when you
+   * apply the rules in your use cases and assign them confidence levels.
+   */
+
+  strings:
+    $sequence_0 = { 8b 8c 24 6c 01 00 00 01 e9 89 8c 24 d4 03 00 00 8b ac 24 40 01 00 00 01 cd 89 ac 24 d0 03 00 00 8b 8c 24 18 01 00 00 }
+    // n = 7, score = 200
+    //   8b8c246c010000       | mov                 ecx, dword ptr [esp + 0x16c]
+    //   01e9                 | add                 ecx, ebp
+    //   898c24d4030000       | mov                 dword ptr [esp + 0x3d4], ecx
+    //   8bac2440010000       | mov                 ebp, dword ptr [esp + 0x140]
+    //   01cd                 | add                 ebp, ecx
+    //   89ac24d0030000       | mov                 dword ptr [esp + 0x3d0], ebp
+    //   8b8c2418010000       | mov                 ecx, dword ptr [esp + 0x118]
+    $sequence_1 = { e8 ?? ?? ?? ?? 8b 48 18 8b 89 c8 00 00 00 c7 01 00 00 00 00 8b 48 18 84 01 81 c1 c4 00 00 00 }
+    // n = 7, score = 200
+    //   e8????????           |                     
+    //   8b4818               | mov                 ecx, dword ptr [eax + 0x18]
+    //   8b89c8000000         | mov                 ecx, dword ptr [ecx + 0xc8]
+    //   c70100000000         | mov                 dword ptr [ecx], 0
+    //   8b4818               | mov                 ecx, dword ptr [eax + 0x18]
+    //   8401                 | test                byte ptr [ecx], al
+    //   81c1c4000000         | add                 ecx, 0xc4
+    $sequence_2 = { 90 ff 81 94 00 00 00 8b 48 18 8b 49 70 85 c9 0f 84 31 02 00 00 8b 0d ?? ?? ?? ?? }
+    // n = 7, score = 200
+    //   90                   | nop                 
+    //   ff8194000000         | inc                 dword ptr [ecx + 0x94]
+    //   8b4818               | mov                 ecx, dword ptr [eax + 0x18]
+    //   8b4970               | mov                 ecx, dword ptr [ecx + 0x70]
+    //   85c9                 | test                ecx, ecx
+    //   0f8431020000         | je                  0x237
+    //   8b0d????????         |                     
+    $sequence_3 = { 0f 85 7d 01 00 00 8d 7c 24 24 31 c0 e8 ?? ?? ?? ?? 8b 8c 24 88 00 00 00 8b 11 89 d3 }
+    // n = 7, score = 200
+    //   0f857d010000         | jne                 0x183
+    //   8d7c2424             | lea                 edi, [esp + 0x24]
+    //   31c0                 | xor                 eax, eax
+    //   e8????????           |                     
+    //   8b8c2488000000       | mov                 ecx, dword ptr [esp + 0x88]
+    //   8b11                 | mov                 edx, dword ptr [ecx]
+    //   89d3                 | mov                 ebx, edx
+    $sequence_4 = { c7 44 24 08 00 00 00 00 c7 44 24 0c 22 00 00 00 c7 44 24 10 ff ff ff ff c7 44 24 14 00 00 00 00 e8 ?? ?? ?? ?? 8b 44 24 1c 8b 4c 24 18 }
+    // n = 7, score = 200
+    //   c744240800000000     | mov                 dword ptr [esp + 8], 0
+    //   c744240c22000000     | mov                 dword ptr [esp + 0xc], 0x22
+    //   c7442410ffffffff     | mov                 dword ptr [esp + 0x10], 0xffffffff
+    //   c744241400000000     | mov                 dword ptr [esp + 0x14], 0
+    //   e8????????           |                     
+    //   8b44241c             | mov                 eax, dword ptr [esp + 0x1c]
+    //   8b4c2418             | mov                 ecx, dword ptr [esp + 0x18]
+    $sequence_5 = { 85 c0 75 0c 8b 44 24 28 89 88 c8 00 00 00 eb d4 8b 54 24 28 8d ba c8 00 00 00 }
+    // n = 7, score = 200
+    //   85c0                 | test                eax, eax
+    //   750c                 | jne                 0xe
+    //   8b442428             | mov                 eax, dword ptr [esp + 0x28]
+    //   8988c8000000         | mov                 dword ptr [eax + 0xc8], ecx
+    //   ebd4                 | jmp                 0xffffffd6
+    //   8b542428             | mov                 edx, dword ptr [esp + 0x28]
+    //   8dbac8000000         | lea                 edi, [edx + 0xc8]
+    $sequence_6 = { 8b 89 fc ff ff ff 3b 61 08 0f 86 e3 00 00 00 83 ec 24 8b 44 24 28 8b 88 1c 03 00 00 89 4c 24 14 }
+    // n = 7, score = 200
+    //   8b89fcffffff         | mov                 ecx, dword ptr [ecx - 4]
+    //   3b6108               | cmp                 esp, dword ptr [ecx + 8]
+    //   0f86e3000000         | jbe                 0xe9
+    //   83ec24               | sub                 esp, 0x24
+    //   8b442428             | mov                 eax, dword ptr [esp + 0x28]
+    //   8b881c030000         | mov                 ecx, dword ptr [eax + 0x31c]
+    //   894c2414             | mov                 dword ptr [esp + 0x14], ecx
+    $sequence_7 = { 8b 54 24 44 f7 e2 89 94 24 48 02 00 00 89 44 24 3c 8b 44 24 34 8b 54 24 38 f7 e2 }
+    // n = 7, score = 200
+    //   8b542444             | mov                 edx, dword ptr [esp + 0x44]
+    //   f7e2                 | mul                 edx
+    //   89942448020000       | mov                 dword ptr [esp + 0x248], edx
+    //   8944243c             | mov                 dword ptr [esp + 0x3c], eax
+    //   8b442434             | mov                 eax, dword ptr [esp + 0x34]
+    //   8b542438             | mov                 edx, dword ptr [esp + 0x38]
+    //   f7e2                 | mul                 edx
+    $sequence_8 = { c3 0f b6 98 7c 01 00 00 84 db 75 89 89 0c 24 e8 ?? ?? ?? ?? 83 c4 28 }
+    // n = 7, score = 200
+    //   c3                   | ret                 
+    //   0fb6987c010000       | movzx               ebx, byte ptr [eax + 0x17c]
+    //   84db                 | test                bl, bl
+    //   7589                 | jne                 0xffffff8b
+    //   890c24               | mov                 dword ptr [esp], ecx
+    //   e8????????           |                     
+    //   83c428               | add                 esp, 0x28
+    $sequence_9 = { 8b bc 24 b8 03 00 00 01 fe 11 d1 8b 94 24 94 02 00 00 0f af d5 8d 3c d2 }
+  // n = 6, score = 200
+  //   8bbc24b8030000       | mov                 edi, dword ptr [esp + 0x3b8]
+  //   01fe                 | add                 esi, edi
+  //   11d1                 | adc                 ecx, edx
+  //   8b942494020000       | mov                 edx, dword ptr [esp + 0x294]
+  //   0fafd5               | imul                edx, ebp
+  //   8d3cd2               | lea                 edi, [edx + edx*8]
+
+  condition:
+    7 of them and filesize < 4186112
+}
+
+rule elf_bashlite_auto {
+  meta:
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    date               = "2023-07-11"
+    version            = "1"
+    description        = "Detects elf.bashlite."
+    info               = "autogenerated rule brought to you by yara-signator"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_reference = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.bashlite"
+    malpedia_rule_date = "20230705"
+    malpedia_hash      = "42d0574f4405bd7d2b154d321d345acb18834a41"
+    malpedia_version   = "20230715"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+  /* DISCLAIMER
+   * The strings used in this rule have been automatically selected from the
+   * disassembly of memory dumps and unpacked files, using YARA-Signator.
+   * The code and documentation is published here:
+   * https://github.com/fxb-cocacoding/yara-signator
+   * As Malpedia is used as data source, please note that for a given
+   * number of families, only single samples are documented.
+   * This likely impacts the degree of generalization these rules will offer.
+   * Take the described generation method also into consideration when you
+   * apply the rules in your use cases and assign them confidence levels.
+   */
+
+  strings:
+    $sequence_0 = { f7 d0 21 d0 33 45 fc c9 c3 }
+    // n = 5, score = 300
+    //   f7d0                 | not                 eax
+    //   21d0                 | and                 eax, edx
+    //   3345fc               | xor                 eax, dword ptr [ebp - 4]
+    //   c9                   | leave               
+    //   c3                   | ret                 
+    $sequence_1 = { 89 45 ec 83 7d ec 00 75 0b 8b 45 ec }
+    // n = 4, score = 300
+    //   8945ec               | mov                 dword ptr [ebp - 0x14], eax
+    //   837dec00             | cmp                 dword ptr [ebp - 0x14], 0
+    //   750b                 | jne                 0xd
+    //   8b45ec               | mov                 eax, dword ptr [ebp - 0x14]
+    $sequence_2 = { e8 ?? ?? ?? ?? 89 c2 89 d0 c1 e8 1f }
+    // n = 4, score = 300
+    //   e8????????           |                     
+    //   89c2                 | mov                 edx, eax
+    //   89d0                 | mov                 eax, edx
+    //   c1e81f               | shr                 eax, 0x1f
+    $sequence_3 = { 76 0f e8 ?? ?? ?? ?? c7 00 1c 00 00 00 31 c0 }
+    // n = 4, score = 300
+    //   760f                 | jbe                 0x11
+    //   e8????????           |                     
+    //   c7001c000000         | mov                 dword ptr [eax], 0x1c
+    //   31c0                 | xor                 eax, eax
+    $sequence_4 = { eb 19 e8 ?? ?? ?? ?? c7 00 16 00 00 00 e8 ?? ?? ?? ?? c7 00 16 00 00 00 }
+    // n = 5, score = 300
+    //   eb19                 | jmp                 0x1b
+    //   e8????????           |                     
+    //   c70016000000         | mov                 dword ptr [eax], 0x16
+    //   e8????????           |                     
+    //   c70016000000         | mov                 dword ptr [eax], 0x16
+    $sequence_5 = { eb 0a c7 85 ec ef ff ff 00 00 00 00 8b 85 ec ef ff ff c9 }
+    // n = 4, score = 300
+    //   eb0a                 | jmp                 0xc
+    //   c785ecefffff00000000     | mov    dword ptr [ebp - 0x1014], 0
+    //   8b85ecefffff         | mov                 eax, dword ptr [ebp - 0x1014]
+    //   c9                   | leave               
+    $sequence_6 = { 75 0c e8 ?? ?? ?? ?? 8b 00 83 f8 73 }
+    // n = 4, score = 300
+    //   750c                 | jne                 0xe
+    //   e8????????           |                     
+    //   8b00                 | mov                 eax, dword ptr [eax]
+    //   83f873               | cmp                 eax, 0x73
+    $sequence_7 = { 85 c0 75 0c c7 85 ec ef ff ff 01 00 00 00 eb 0a }
+  // n = 4, score = 300
+  //   85c0                 | test                eax, eax
+  //   750c                 | jne                 0xe
+  //   c785ecefffff01000000     | mov    dword ptr [ebp - 0x1014], 1
+  //   eb0a                 | jmp                 0xc
+
+  condition:
+    7 of them and filesize < 2310144
+}
+
+rule elf_blackcat_auto {
+  meta:
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    date               = "2023-07-11"
+    version            = "1"
+    description        = "Detects elf.blackcat."
+    info               = "autogenerated rule brought to you by yara-signator"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_reference = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.blackcat"
+    malpedia_rule_date = "20230705"
+    malpedia_hash      = "42d0574f4405bd7d2b154d321d345acb18834a41"
+    malpedia_version   = "20230715"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+  /* DISCLAIMER
+   * The strings used in this rule have been automatically selected from the
+   * disassembly of memory dumps and unpacked files, using YARA-Signator.
+   * The code and documentation is published here:
+   * https://github.com/fxb-cocacoding/yara-signator
+   * As Malpedia is used as data source, please note that for a given
+   * number of families, only single samples are documented.
+   * This likely impacts the degree of generalization these rules will offer.
+   * Take the described generation method also into consideration when you
+   * apply the rules in your use cases and assign them confidence levels.
+   */
+
+  strings:
+    $sequence_0 = { 0f 0b 0f 0b 90 90 90 }
+    // n = 5, score = 200
+    //   0f0b                 | mov                 byte ptr [esp + 0xd], al
+    //   0f0b                 | mov                 eax, ebp
+    //   90                   | shr                 eax, 6
+    //   90                   | and                 al, 0x3f
+    //   90                   | or                  al, 0x80
+    $sequence_1 = { 83 e1 3f 09 f1 09 d1 81 f9 ?? ?? ?? ?? }
+    // n = 4, score = 200
+    //   83e13f               | je                  0x4be
+    //   09f1                 | and                 eax, 0xfffffff0
+    //   09d1                 | add                 ecx, eax
+    //   81f9????????         |                     
+    $sequence_2 = { f2 0f 5c c3 f2 0f 59 c1 f2 0f 58 c3 f2 0f 5d c2 }
+    // n = 4, score = 200
+    //   f20f5cc3             | movsd               qword ptr [esp + 0x60], xmm4
+    //   f20f59c1             | addsd               xmm2, xmm4
+    //   f20f58c3             | movd                xmm4, eax
+    //   f20f5dc2             | lea                 eax, [edi + 0x10]
+    $sequence_3 = { 89 c1 c1 e9 02 69 d1 ?? ?? ?? ?? c1 ea 11 6b ca 64 }
+    // n = 5, score = 200
+    //   89c1                 | mov                 ebx, edx
+    //   c1e902               | imul                ebp, eax
+    //   69d1????????         |                     
+    //   c1ea11               | mul                 edi
+    //   6bca64               | add                 edx, ebp
+    $sequence_4 = { 66 0f 70 c9 00 66 0f 6f d1 66 0f 74 d0 66 0f d7 ea 66 0f 6f d0 }
+    // n = 5, score = 200
+    //   660f70c900           | or                  edi, esi
+    //   660f6fd1             | test                eax, 0xc000000
+    //   660f74d0             | movd                esi, xmm1
+    //   660fd7ea             | jne                 0x434
+    //   660f6fd0             | pshufd              xmm1, xmm0, 0x55
+    $sequence_5 = { 66 0f 2e c1 0f b6 db 0f 43 dd 80 fb ff }
+    // n = 4, score = 200
+    //   660f2ec1             | test                dh, dh
+    //   0fb6db               | jne                 0x126
+    //   0f43dd               | jae                 0x145
+    //   80fbff               | inc                 eax
+    $sequence_6 = { d1 e9 01 d1 c1 e9 02 8d 14 cd 00 00 00 00 29 ca }
+    // n = 5, score = 200
+    //   d1e9                 | mov                 edx, dword ptr [ebx + 0x26c]
+    //   01d1                 | lea                 ecx, [ebx - 0x3348]
+    //   c1e902               | lea                 edi, [ebx - 0x38884]
+    //   8d14cd00000000       | mov                 dword ptr [esp + 0x1fc], 0
+    //   29ca                 | mov                 dword ptr [esp + 0x200], edx
+    $sequence_7 = { 09 f2 c1 e2 06 83 e0 3f 09 d0 3d ?? ?? ?? ?? }
+    // n = 5, score = 200
+    //   09f2                 | je                  0x75
+    //   c1e206               | dec                 eax
+    //   83e03f               | add                 edx, 4
+    //   09d0                 | or                  edi, ebp
+    //   3d????????           |                     
+    $sequence_8 = { 5b c3 e8 ?? ?? ?? ?? 89 c2 }
+    // n = 4, score = 200
+    //   5b                   | mov                 esi, ecx
+    //   c3                   | xchg                byte ptr [ecx + 0x54], al
+    //   e8????????           |                     
+    //   89c2                 | pop                 ebx
+    $sequence_9 = { e9 ?? ?? ?? ?? b8 ?? ?? ?? ?? eb 59 b8 ?? ?? ?? ?? eb 52 b8 ?? ?? ?? ?? eb 4b }
+  // n = 7, score = 200
+  //   e9????????           |                     
+  //   b8????????           |                     
+  //   eb59                 | mov                 byte ptr [esp + 0x1c], 1
+  //   b8????????           |                     
+  //   eb52                 | mov                 dword ptr [esp + 0xf4], 0
+  //   b8????????           |                     
+  //   eb4b                 | lea                 ecx, [ebx - 0x3a3a7]
+
+  condition:
+    7 of them and filesize < 8011776
+}
+
+rule elf_gobrat_auto {
+  meta:
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    date               = "2023-07-11"
+    version            = "1"
+    description        = "Detects elf.gobrat."
+    info               = "autogenerated rule brought to you by yara-signator"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_reference = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.gobrat"
+    malpedia_rule_date = "20230705"
+    malpedia_hash      = "42d0574f4405bd7d2b154d321d345acb18834a41"
+    malpedia_version   = "20230715"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+  /* DISCLAIMER
+   * The strings used in this rule have been automatically selected from the
+   * disassembly of memory dumps and unpacked files, using YARA-Signator.
+   * The code and documentation is published here:
+   * https://github.com/fxb-cocacoding/yara-signator
+   * As Malpedia is used as data source, please note that for a given
+   * number of families, only single samples are documented.
+   * This likely impacts the degree of generalization these rules will offer.
+   * Take the described generation method also into consideration when you
+   * apply the rules in your use cases and assign them confidence levels.
+   */
+
+  strings:
+    $sequence_0 = { e8 ?? ?? ?? ?? 48 8b 54 24 78 48 8b 5c 24 60 48 89 ce 48 8b 4c 24 58 c6 04 18 00 0f 1f 44 00 00 }
+    // n = 7, score = 100
+    //   e8????????           |                     
+    //   488b542478           | cmp                 esp, dword ptr [esi + 0x10]
+    //   488b5c2460           | jbe                 0x16f7
+    //   4889ce               | dec                 eax
+    //   488b4c2458           | sub                 esp, 0x228
+    //   c6041800             | dec                 eax
+    //   0f1f440000           | mov                 dword ptr [esp + 0x220], ebp
+    $sequence_1 = { ff d1 0f 1f 00 48 85 ff 0f 85 92 01 00 00 48 85 db 0f 86 a2 01 00 00 0f b6 10 }
+    // n = 7, score = 100
+    //   ffd1                 | mov                 ecx, eax
+    //   0f1f00               | dec                 eax
+    //   4885ff               | mov                 eax, 0xfffffffe
+    //   0f8592010000         | dec                 eax
+    //   4885db               | mov                 ebp, dword ptr [esp + 0x138]
+    //   0f86a2010000         | jne                 0x10d
+    //   0fb610               | cmp                 byte ptr [edi + 2], 0x70
+    $sequence_2 = { e8 ?? ?? ?? ?? 48 8b 44 24 38 48 8b 4c 24 18 4c 8b 4c 24 20 48 85 c9 75 1f 4d 85 c9 }
+    // n = 7, score = 100
+    //   e8????????           |                     
+    //   488b442438           | jbe                 0xacc
+    //   488b4c2418           | dec                 eax
+    //   4c8b4c2420           | sub                 esp, 0x90
+    //   4885c9               | dec                 eax
+    //   751f                 | mov                 dword ptr [esp + 0x88], ebp
+    //   4d85c9               | dec                 eax
+    $sequence_3 = { e8 ?? ?? ?? ?? 48 89 c7 48 8b 73 10 48 8d 56 01 4c 8b 43 08 4c 8b 4b 18 49 39 d1 }
+    // n = 7, score = 100
+    //   e8????????           |                     
+    //   4889c7               | mov                 dword ptr [eax + esi], edx
+    //   488b7310             | dec                 ecx
+    //   488d5601             | lea                 edi, [eax + esi]
+    //   4c8b4308             | dec                 eax
+    //   4c8b4b18             | lea                 edi, [edi + 8]
+    //   4939d1               | dec                 esp
+    $sequence_4 = { e9 ?? ?? ?? ?? 84 06 48 8b 86 10 12 00 00 48 85 c0 74 0c 0f 1f 00 48 39 d8 }
+    // n = 7, score = 100
+    //   e9????????           |                     
+    //   8406                 | dec                 eax
+    //   488b8610120000       | lea                 eax, [0x1c6bd4]
+    //   4885c0               | dec                 eax
+    //   740c                 | mov                 dword ptr [eax + 8], 0x13
+    //   0f1f00               | mov                 word ptr [eax + 0x10], 1
+    //   4839d8               | xor                 ecx, ecx
+    $sequence_5 = { 75 15 41 38 d1 74 08 44 0f b6 5c 24 37 eb 1d 44 0f b6 5c 24 37 eb 2f }
+    // n = 7, score = 100
+    //   7515                 | cmp                 eax, esi
+    //   4138d1               | jae                 0xa98
+    //   7408                 | dec                 eax
+    //   440fb65c2437         | mov                 dword ptr [esp + 0x68], edi
+    //   eb1d                 | dec                 esp
+    //   440fb65c2437         | mov                 dword ptr [esp + 0xb8], edx
+    //   eb2f                 | dec                 esp
+    $sequence_6 = { e8 ?? ?? ?? ?? 48 8b 6d 00 4c 8b 94 24 d0 02 00 00 4c 89 94 24 88 01 00 00 48 8d bc 24 90 01 00 00 48 8d b4 24 d8 02 00 00 66 0f 1f 84 00 00 00 00 00 }
+    // n = 7, score = 100
+    //   e8????????           |                     
+    //   488b6d00             | dec                 ebp
+    //   4c8b9424d0020000     | adc                 eax, ebx
+    //   4c89942488010000     | dec                 ebp
+    //   488dbc2490010000     | add                 eax, ebp
+    //   488db424d8020000     | dec                 esp
+    //   660f1f840000000000     | mov    eax, dword ptr [esp + 0x5d8]
+    $sequence_7 = { e9 ?? ?? ?? ?? 48 83 f8 07 0f 85 5b 01 00 00 48 83 f9 04 74 14 66 0f 1f 84 00 00 00 00 00 90 }
+    // n = 7, score = 100
+    //   e9????????           |                     
+    //   4883f807             | nop                 
+    //   0f855b010000         | dec                 eax
+    //   4883f904             | test                ebx, ebx
+    //   7414                 | jne                 0x5bd
+    //   660f1f840000000000     | dec    eax
+    //   90                   | lea                 eax, [0x1861c8]
+    $sequence_8 = { eb 14 48 8d 57 18 48 89 f9 48 89 d7 66 90 e8 ?? ?? ?? ?? 48 89 cf }
+    // n = 7, score = 100
+    //   eb14                 | cmp                 ecx, 3
+    //   488d5718             | jbe                 0x15d3
+    //   4889f9               | mov                 dword ptr [ebx], esi
+    //   4889d7               | dec                 eax
+    //   6690                 | mov                 ebp, dword ptr [esp + 0x10]
+    //   e8????????           |                     
+    //   4889cf               | dec                 eax
+    $sequence_9 = { e8 ?? ?? ?? ?? b8 05 00 00 00 48 89 c1 66 90 e8 ?? ?? ?? ?? b8 04 00 00 00 48 89 c1 }
+  // n = 7, score = 100
+  //   e8????????           |                     
+  //   b805000000           | dec                 ebp
+  //   4889c1               | test                esp, esp
+  //   6690                 | je                  0x163d
+  //   e8????????           |                     
+  //   b804000000           | dec                 edi
+  //   4889c1               | lea                 edi, [edx + ebp]
+
+  condition:
+    7 of them and filesize < 12853248
+}
+
+rule elf_hideandseek_auto {
+  meta:
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    date               = "2023-07-11"
+    version            = "1"
+    description        = "Detects elf.hideandseek."
+    info               = "autogenerated rule brought to you by yara-signator"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_reference = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.hideandseek"
+    malpedia_rule_date = "20230705"
+    malpedia_hash      = "42d0574f4405bd7d2b154d321d345acb18834a41"
+    malpedia_version   = "20230715"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+  /* DISCLAIMER
+   * The strings used in this rule have been automatically selected from the
+   * disassembly of memory dumps and unpacked files, using YARA-Signator.
+   * The code and documentation is published here:
+   * https://github.com/fxb-cocacoding/yara-signator
+   * As Malpedia is used as data source, please note that for a given
+   * number of families, only single samples are documented.
+   * This likely impacts the degree of generalization these rules will offer.
+   * Take the described generation method also into consideration when you
+   * apply the rules in your use cases and assign them confidence levels.
+   */
+
+  strings:
+    $sequence_0 = { 8b 44 24 24 39 74 24 20 75 04 89 c6 eb 21 39 44 24 20 }
+    // n = 6, score = 100
+    //   8b442424             | mov                 eax, dword ptr [esp + 0x24]
+    //   39742420             | cmp                 dword ptr [esp + 0x20], esi
+    //   7504                 | jne                 6
+    //   89c6                 | mov                 esi, eax
+    //   eb21                 | jmp                 0x23
+    //   39442420             | cmp                 dword ptr [esp + 0x20], eax
+    $sequence_1 = { 40 66 3b 47 f0 66 89 47 ee 72 38 52 52 }
+    // n = 6, score = 100
+    //   40                   | inc                 eax
+    //   663b47f0             | cmp                 ax, word ptr [edi - 0x10]
+    //   668947ee             | mov                 word ptr [edi - 0x12], ax
+    //   7238                 | jb                  0x3a
+    //   52                   | push                edx
+    //   52                   | push                edx
+    $sequence_2 = { 50 e8 ?? ?? ?? ?? 58 5a 6a 40 8d 84 24 b0 21 00 00 50 }
+    // n = 7, score = 100
+    //   50                   | push                eax
+    //   e8????????           |                     
+    //   58                   | pop                 eax
+    //   5a                   | pop                 edx
+    //   6a40                 | push                0x40
+    //   8d8424b0210000       | lea                 eax, [esp + 0x21b0]
+    //   50                   | push                eax
+    $sequence_3 = { be 04 00 00 00 83 c4 10 84 c0 75 19 e9 ?? ?? ?? ?? }
+    // n = 5, score = 100
+    //   be04000000           | mov                 esi, 4
+    //   83c410               | add                 esp, 0x10
+    //   84c0                 | test                al, al
+    //   7519                 | jne                 0x1b
+    //   e9????????           |                     
+    $sequence_4 = { 89 c3 85 c0 0f 85 25 01 00 00 8b 44 24 30 8d 74 24 28 f6 00 01 0f 84 54 ff ff ff }
+    // n = 7, score = 100
+    //   89c3                 | mov                 ebx, eax
+    //   85c0                 | test                eax, eax
+    //   0f8525010000         | jne                 0x12b
+    //   8b442430             | mov                 eax, dword ptr [esp + 0x30]
+    //   8d742428             | lea                 esi, [esp + 0x28]
+    //   f60001               | test                byte ptr [eax], 1
+    //   0f8454ffffff         | je                  0xffffff5a
+    $sequence_5 = { 8b 45 f4 8a 4d f0 d3 e8 89 d7 8a 4d e4 09 c7 8b 75 f4 }
+    // n = 7, score = 100
+    //   8b45f4               | mov                 eax, dword ptr [ebp - 0xc]
+    //   8a4df0               | mov                 cl, byte ptr [ebp - 0x10]
+    //   d3e8                 | shr                 eax, cl
+    //   89d7                 | mov                 edi, edx
+    //   8a4de4               | mov                 cl, byte ptr [ebp - 0x1c]
+    //   09c7                 | or                  edi, eax
+    //   8b75f4               | mov                 esi, dword ptr [ebp - 0xc]
+    $sequence_6 = { 56 57 e8 ?? ?? ?? ?? 83 c4 10 85 c0 75 10 50 }
+    // n = 7, score = 100
+    //   56                   | push                esi
+    //   57                   | push                edi
+    //   e8????????           |                     
+    //   83c410               | add                 esp, 0x10
+    //   85c0                 | test                eax, eax
+    //   7510                 | jne                 0x12
+    //   50                   | push                eax
+    $sequence_7 = { 53 83 ec 1c 8b 5c 24 30 8b 7c 24 38 8b 6c 24 3c 8b 74 24 40 85 db }
+    // n = 7, score = 100
+    //   53                   | push                ebx
+    //   83ec1c               | sub                 esp, 0x1c
+    //   8b5c2430             | mov                 ebx, dword ptr [esp + 0x30]
+    //   8b7c2438             | mov                 edi, dword ptr [esp + 0x38]
+    //   8b6c243c             | mov                 ebp, dword ptr [esp + 0x3c]
+    //   8b742440             | mov                 esi, dword ptr [esp + 0x40]
+    //   85db                 | test                ebx, ebx
+    $sequence_8 = { 8b 1f 89 d8 0f af 06 85 c0 79 2c 56 57 }
+    // n = 7, score = 100
+    //   8b1f                 | mov                 ebx, dword ptr [edi]
+    //   89d8                 | mov                 eax, ebx
+    //   0faf06               | imul                eax, dword ptr [esi]
+    //   85c0                 | test                eax, eax
+    //   792c                 | jns                 0x2e
+    //   56                   | push                esi
+    //   57                   | push                edi
+    $sequence_9 = { e8 ?? ?? ?? ?? eb 09 50 57 56 56 e8 ?? ?? ?? ?? }
+  // n = 7, score = 100
+  //   e8????????           |                     
+  //   eb09                 | jmp                 0xb
+  //   50                   | push                eax
+  //   57                   | push                edi
+  //   56                   | push                esi
+  //   56                   | push                esi
+  //   e8????????           |                     
+
+  condition:
+    7 of them and filesize < 196608
 }
 
 rule elf_mirai_auto {
@@ -953,6 +1781,262 @@ rule elf_mirai_auto {
 
   condition:
     7 of them and filesize < 2228224
+}
+
+rule elf_persirai_auto {
+  meta:
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    date               = "2023-07-11"
+    version            = "1"
+    description        = "Detects elf.persirai."
+    info               = "autogenerated rule brought to you by yara-signator"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_reference = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.persirai"
+    malpedia_rule_date = "20230705"
+    malpedia_hash      = "42d0574f4405bd7d2b154d321d345acb18834a41"
+    malpedia_version   = "20230715"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+  /* DISCLAIMER
+   * The strings used in this rule have been automatically selected from the
+   * disassembly of memory dumps and unpacked files, using YARA-Signator.
+   * The code and documentation is published here:
+   * https://github.com/fxb-cocacoding/yara-signator
+   * As Malpedia is used as data source, please note that for a given
+   * number of families, only single samples are documented.
+   * This likely impacts the degree of generalization these rules will offer.
+   * Take the described generation method also into consideration when you
+   * apply the rules in your use cases and assign them confidence levels.
+   */
+
+  strings:
+    $sequence_0 = { eb 0f 31 db eb 2f 0d ff ff 1f 00 8d b0 21 fe ff ff 8d 6c 24 0c 8b 5e 3c }
+    // n = 7, score = 100
+    //   eb0f                 | jmp                 0x11
+    //   31db                 | xor                 ebx, ebx
+    //   eb2f                 | jmp                 0x31
+    //   0dffff1f00           | or                  eax, 0x1fffff
+    //   8db021feffff         | lea                 esi, [eax - 0x1df]
+    //   8d6c240c             | lea                 ebp, [esp + 0xc]
+    //   8b5e3c               | mov                 ebx, dword ptr [esi + 0x3c]
+    $sequence_1 = { 75 24 eb 0a 8b 40 1c 89 da e8 ?? ?? ?? ?? 89 b3 bc 01 00 00 85 f6 }
+    // n = 7, score = 100
+    //   7524                 | jne                 0x26
+    //   eb0a                 | jmp                 0xc
+    //   8b401c               | mov                 eax, dword ptr [eax + 0x1c]
+    //   89da                 | mov                 edx, ebx
+    //   e8????????           |                     
+    //   89b3bc010000         | mov                 dword ptr [ebx + 0x1bc], esi
+    //   85f6                 | test                esi, esi
+    $sequence_2 = { 6a 02 e8 ?? ?? ?? ?? 83 c4 10 83 c4 0c c3 83 ec 0c 8b 44 24 14 }
+    // n = 7, score = 100
+    //   6a02                 | push                2
+    //   e8????????           |                     
+    //   83c410               | add                 esp, 0x10
+    //   83c40c               | add                 esp, 0xc
+    //   c3                   | ret                 
+    //   83ec0c               | sub                 esp, 0xc
+    //   8b442414             | mov                 eax, dword ptr [esp + 0x14]
+    $sequence_3 = { e8 ?? ?? ?? ?? 83 c4 0c 57 8d 44 24 3c 50 56 e8 ?? ?? ?? ?? }
+    // n = 7, score = 100
+    //   e8????????           |                     
+    //   83c40c               | add                 esp, 0xc
+    //   57                   | push                edi
+    //   8d44243c             | lea                 eax, [esp + 0x3c]
+    //   50                   | push                eax
+    //   56                   | push                esi
+    //   e8????????           |                     
+    $sequence_4 = { 5f 5d c3 a1 ?? ?? ?? ?? 53 89 c3 8b 15 ?? ?? ?? ?? }
+    // n = 7, score = 100
+    //   5f                   | pop                 edi
+    //   5d                   | pop                 ebp
+    //   c3                   | ret                 
+    //   a1????????           |                     
+    //   53                   | push                ebx
+    //   89c3                 | mov                 ebx, eax
+    //   8b15????????         |                     
+    $sequence_5 = { 50 6a 02 e8 ?? ?? ?? ?? a1 ?? ?? ?? ?? 5f ff 70 18 e8 ?? ?? ?? ?? }
+    // n = 7, score = 100
+    //   50                   | push                eax
+    //   6a02                 | push                2
+    //   e8????????           |                     
+    //   a1????????           |                     
+    //   5f                   | pop                 edi
+    //   ff7018               | push                dword ptr [eax + 0x18]
+    //   e8????????           |                     
+    $sequence_6 = { 83 ec 10 8b 5c 24 18 ff 74 24 1c 53 e8 ?? ?? ?? ?? 83 c4 10 83 ca ff }
+    // n = 7, score = 100
+    //   83ec10               | sub                 esp, 0x10
+    //   8b5c2418             | mov                 ebx, dword ptr [esp + 0x18]
+    //   ff74241c             | push                dword ptr [esp + 0x1c]
+    //   53                   | push                ebx
+    //   e8????????           |                     
+    //   83c410               | add                 esp, 0x10
+    //   83caff               | or                  edx, 0xffffffff
+    $sequence_7 = { 74 13 8d 43 10 89 74 24 10 89 44 24 14 59 5b 5e }
+    // n = 7, score = 100
+    //   7413                 | je                  0x15
+    //   8d4310               | lea                 eax, [ebx + 0x10]
+    //   89742410             | mov                 dword ptr [esp + 0x10], esi
+    //   89442414             | mov                 dword ptr [esp + 0x14], eax
+    //   59                   | pop                 ecx
+    //   5b                   | pop                 ebx
+    //   5e                   | pop                 esi
+    $sequence_8 = { 85 c0 74 36 8d 43 04 51 51 50 }
+    // n = 6, score = 100
+    //   85c0                 | test                eax, eax
+    //   7436                 | je                  0x38
+    //   8d4304               | lea                 eax, [ebx + 4]
+    //   51                   | push                ecx
+    //   51                   | push                ecx
+    //   50                   | push                eax
+    $sequence_9 = { 50 e8 ?? ?? ?? ?? 89 5e 08 eb 0d 8d 46 10 51 51 }
+  // n = 7, score = 100
+  //   50                   | push                eax
+  //   e8????????           |                     
+  //   895e08               | mov                 dword ptr [esi + 8], ebx
+  //   eb0d                 | jmp                 0xf
+  //   8d4610               | lea                 eax, [esi + 0x10]
+  //   51                   | push                ecx
+  //   51                   | push                ecx
+
+  condition:
+    7 of them and filesize < 229376
+}
+
+rule elf_satori_auto {
+  meta:
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    date               = "2023-07-11"
+    version            = "1"
+    description        = "Detects elf.satori."
+    info               = "autogenerated rule brought to you by yara-signator"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_reference = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.satori"
+    malpedia_rule_date = "20230705"
+    malpedia_hash      = "42d0574f4405bd7d2b154d321d345acb18834a41"
+    malpedia_version   = "20230715"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+  /* DISCLAIMER
+   * The strings used in this rule have been automatically selected from the
+   * disassembly of memory dumps and unpacked files, using YARA-Signator.
+   * The code and documentation is published here:
+   * https://github.com/fxb-cocacoding/yara-signator
+   * As Malpedia is used as data source, please note that for a given
+   * number of families, only single samples are documented.
+   * This likely impacts the degree of generalization these rules will offer.
+   * Take the described generation method also into consideration when you
+   * apply the rules in your use cases and assign them confidence levels.
+   */
+
+  strings:
+    $sequence_0 = { ba 01 00 00 00 eb bb 5b 5b 5e c3 55 }
+    // n = 7, score = 100
+    //   ba01000000           | mov                 edx, 1
+    //   ebbb                 | jmp                 0xffffffbd
+    //   5b                   | pop                 ebx
+    //   5b                   | pop                 ebx
+    //   5e                   | pop                 esi
+    //   c3                   | ret                 
+    //   55                   | push                ebp
+    $sequence_1 = { e8 ?? ?? ?? ?? 89 1c 24 e8 ?? ?? ?? ?? 68 00 40 00 00 50 53 ff b5 1c 04 00 00 }
+    // n = 7, score = 100
+    //   e8????????           |                     
+    //   891c24               | mov                 dword ptr [esp], ebx
+    //   e8????????           |                     
+    //   6800400000           | push                0x4000
+    //   50                   | push                eax
+    //   53                   | push                ebx
+    //   ffb51c040000         | push                dword ptr [ebp + 0x41c]
+    $sequence_2 = { 83 ec 0c 56 8b 10 e9 ?? ?? ?? ?? 80 f9 64 75 2b 8b 44 24 08 }
+    // n = 7, score = 100
+    //   83ec0c               | sub                 esp, 0xc
+    //   56                   | push                esi
+    //   8b10                 | mov                 edx, dword ptr [eax]
+    //   e9????????           |                     
+    //   80f964               | cmp                 cl, 0x64
+    //   752b                 | jne                 0x2d
+    //   8b442408             | mov                 eax, dword ptr [esp + 8]
+    $sequence_3 = { 6a 03 56 53 e8 ?? ?? ?? ?? 0f b7 c0 }
+    // n = 5, score = 100
+    //   6a03                 | push                3
+    //   56                   | push                esi
+    //   53                   | push                ebx
+    //   e8????????           |                     
+    //   0fb7c0               | movzx               eax, ax
+    $sequence_4 = { e8 ?? ?? ?? ?? c7 04 24 07 6c 00 00 e8 ?? ?? ?? ?? e8 ?? ?? ?? ?? eb 0f 50 50 }
+    // n = 7, score = 100
+    //   e8????????           |                     
+    //   c70424076c0000       | mov                 dword ptr [esp], 0x6c07
+    //   e8????????           |                     
+    //   e8????????           |                     
+    //   eb0f                 | jmp                 0x11
+    //   50                   | push                eax
+    //   50                   | push                eax
+    $sequence_5 = { c7 44 24 50 00 00 00 00 88 44 24 17 6a 04 0f b6 44 24 1b }
+    // n = 4, score = 100
+    //   c744245000000000     | mov                 dword ptr [esp + 0x50], 0
+    //   88442417             | mov                 byte ptr [esp + 0x17], al
+    //   6a04                 | push                4
+    //   0fb644241b           | movzx               eax, byte ptr [esp + 0x1b]
+    $sequence_6 = { 85 c0 0f 8f ae 00 00 00 40 0f 84 a7 00 00 00 c7 84 24 3c 05 00 00 01 00 00 00 50 }
+    // n = 6, score = 100
+    //   85c0                 | test                eax, eax
+    //   0f8fae000000         | jg                  0xb4
+    //   40                   | inc                 eax
+    //   0f84a7000000         | je                  0xad
+    //   c784243c05000001000000     | mov    dword ptr [esp + 0x53c], 1
+    //   50                   | push                eax
+    $sequence_7 = { 89 54 24 08 74 0c 8b 10 8b 44 24 08 88 02 ff 01 }
+    // n = 6, score = 100
+    //   89542408             | mov                 dword ptr [esp + 8], edx
+    //   740c                 | je                  0xe
+    //   8b10                 | mov                 edx, dword ptr [eax]
+    //   8b442408             | mov                 eax, dword ptr [esp + 8]
+    //   8802                 | mov                 byte ptr [edx], al
+    //   ff01                 | inc                 dword ptr [ecx]
+    $sequence_8 = { 66 89 43 14 8b 44 24 2c 66 c1 c8 08 66 89 46 02 8b 44 24 10 }
+    // n = 5, score = 100
+    //   66894314             | mov                 word ptr [ebx + 0x14], ax
+    //   8b44242c             | mov                 eax, dword ptr [esp + 0x2c]
+    //   66c1c808             | ror                 ax, 8
+    //   66894602             | mov                 word ptr [esi + 2], ax
+    //   8b442410             | mov                 eax, dword ptr [esp + 0x10]
+    $sequence_9 = { c7 03 00 00 00 00 68 02 40 00 00 0f b7 84 24 4a 05 00 00 50 8d 74 24 18 56 }
+  // n = 6, score = 100
+  //   c70300000000         | mov                 dword ptr [ebx], 0
+  //   6802400000           | push                0x4002
+  //   0fb784244a050000     | movzx               eax, word ptr [esp + 0x54a]
+  //   50                   | push                eax
+  //   8d742418             | lea                 esi, [esp + 0x18]
+  //   56                   | push                esi
+
+  condition:
+    7 of them and filesize < 122880
+}
+
+rule Hunting_qemu_plugin {
+  meta:
+    author      = "@captainGeech42"
+    description = "Hunt for QEMU plugins"
+    date        = "2024-01-13"
+    version     = "1"
+    DaysofYARA  = "13/100"
+
+  condition:
+    uint32be(0) == 0x7f454c46 and
+    for 2 sym in elf.symtab: (
+      (
+        sym.name == "qemu_plugin_install" and
+        sym.type == elf.STT_FUNC
+      ) or (
+        sym.name == "qemu_plugin_version" and
+        sym.type == elf.STT_OBJECT
+      )
+    )
 }
 
 private rule elf_dyn {
@@ -1044,6 +2128,177 @@ rule Rootkit_a669 {
 
   condition:
     elf_dyn and all of them
+}
+
+rule Kinsing_ccef {
+  // meta:
+  //   md5 = "ccef46c7edf9131ccffc47bd69eb743b"
+  //   sha256 = "c38c21120d8c17688f9aeb2af5bdafb6b75e1d2673b025b720e50232f888808a"
+  //   description = "Kinsing rootkit from malwareBazaar"
+
+  strings:
+    $ = "is_hidden_file.c" fullword ascii
+    $ = "%d (%[^)]s" fullword ascii
+    $ = "chopN" fullword ascii
+
+  condition:
+    elf_dyn and
+    (
+      for 2 i in (0..elf.dynsym_entries):
+      (
+        elf.dynsym[i].type == elf.STT_FUNC and
+        (
+          elf.dynsym[i].name == "is_hidden_file" or
+          elf.dynsym[i].name == "is_attacker" or
+          elf.dynsym[i].name == "hide_tcp_ports"
+        )
+      ) or
+      all of them
+    )
+}
+
+rule Winnti_1acb {
+  // meta:
+  //   md5 = "1acb326773d6ba28d916871cb91af844"
+  //   sha256 = "3b378846bc429fdf9bec08b9635885267d8d269f6d941ab1d6e526a03304331b"
+
+  strings:
+    $ = "Yi-!*" fullword ascii
+    $ = { (7c | 3d) (42 | 43) 66 4b }
+    $ = "get_our_sockets" fullword ascii
+    $ = "cmdlineH" fullword ascii
+    $ = "is_invisible_with_pids" fullword ascii
+
+  condition:
+    elf_dyn and
+    (
+      for 2 i in (0..elf.dynsym_entries):
+      (
+        elf.dynsym[i].type == elf.STT_FUNC and
+        (
+          elf.dynsym[i].name == "is_invisible_with_pids" or
+          elf.dynsym[i].name == "get_our_pids" or
+          elf.dynsym[i].name == "get_our_sockets" or
+          elf.dynsym[i].name == "check_is_our_proc_dir"
+        )
+      ) or
+      2 of them
+    )
+}
+
+rule LDPreload_ImpFuncs {
+  // meta:
+  //   description = "Find DYN ELF bins that imports common function LD_PRELOAD rootkits hook"
+
+  condition:
+    // The limitation of dynsym_entries number is to avoid false positive detecting libc
+    elf_dyn and elf.dynsym_entries < 300 and (
+      for 7 i in (0..elf.dynsym_entries):
+      (
+        elf.dynsym[i].type == elf.STT_FUNC and
+        (
+          elf.dynsym[i].name == "access" or
+          elf.dynsym[i].name == "dlsym" or
+          elf.dynsym[i].name == "fopen" or
+          elf.dynsym[i].name == "lstat" or
+          elf.dynsym[i].name == "strstr" or
+          elf.dynsym[i].name == "tmpfile" or
+          elf.dynsym[i].name == "unlink"
+        )
+      )
+    )
+}
+
+rule SSHDoor_Generic {
+  strings:
+    // TODO need to test runtime
+    $ = "backdoor.h" fullword ascii
+    $ = "backdoor_active" fullword ascii
+
+  condition:
+    file_elf_header and
+    (
+      for 1 i in (0..elf.symtab_entries):
+      (
+        elf.symtab[i].name == "backdoor_active" and elf.symtab[i].type == elf.STT_OBJECT
+      ) or
+      all of them
+    )
+}
+
+rule Keylog_Xspy {
+  // meta:
+  //   descriptions = "Rule to detect X11 Keylogger"
+  // Yara failed to detect running process because it can't load elf information such as elf.type
+
+  strings:
+    $ = "DISPLAY" fullword ascii
+    $ = "for snoopng" fullword ascii
+
+  condition:
+    file_elf_header and all of them
+}
+
+rule Exploit_DirtyCow {
+  // meta:
+  //   hash = "0b22cdc1b1b1f944e4ca8fced2e234d14aeeef830970e8ae7491cbdcb3e11460"
+  //   reference = "https://www.virustotal.com/gui/file/0b22cdc1b1b1f944e4ca8fced2e234d14aeeef830970e8ae7491cbdcb3e11460"
+
+  strings:
+    $ = "/tmp/passwd.bak" ascii
+    $ = "madvise %d" fullword ascii
+    $ = "ptrace %d" fullword ascii
+    $ = "DON'T FORGET TO RESTORE!" ascii
+
+  condition:
+    elf.type == elf.ET_EXEC and
+    (
+      for 6 i in (0..elf.dynsym_entries):
+      (
+        elf.dynsym[i].type == elf.STT_FUNC and (
+          elf.dynsym[i].name == "crypt" or
+          elf.dynsym[i].name == "madvise" or
+          elf.dynsym[i].name == "ptrace" or
+          elf.dynsym[i].name == "waitpid" or
+          elf.dynsym[i].name == "getpass" or
+          elf.dynsym[i].name == "pthread_create"
+        )
+      ) or
+      all of them
+    )
+}
+
+rule HUNT_ELF_FREEBSD_GOLANG_KERNEL_MODULE_1 {
+  meta:
+    author      = "@qutluch@infosec.exchange"
+    description = "Rule to surface FreeBSD kernel modules built with Golang."
+    DaysofYARA  = "30/100"
+    license     = "BSD-2-Clause"
+    date        = "2024-01-31"
+    version     = "1.0"
+
+  strings:
+    // Thanks to captainGeech42 for his Golang rule.
+    // https://github.com/100DaysofYARA/2024/blob/main/captainGeech/day002_golang.yara
+    $golang1 = " Go build ID: "
+    $golang2 = "CGO_ENABLED"
+    $golang3 = "GOOS"
+    $golang4 = "GOARCH"
+    $golang5 = "runtime.morestack_noctxt"
+    $golang6 = "gopkg.in"
+    $f1      = "module_register_init"
+
+  condition:
+    uint32(0) == 0x464c457f
+    and uint16(0x7) == 0x9
+    and
+    (
+      for any section in elf.sections: (
+        section.name == ".gopclntab" or section.name == ".go.buildinfo"
+      ) or
+      4 of ($golang*)
+    )
+    and $f1
 }
 
 rule REVERSINGLABS_Linux_Trojan_Bibiwiper: TC_DETECTION MALICIOUS MALWARE FILE {
@@ -2259,6 +3514,31 @@ rule ESET_Linux_Rakos {
     3 of them
 }
 
+rule ESET_Libkeyutils_With_Ctor {
+  meta:
+    description = "This rule detects if a libkeyutils.so shared library has a potentially malicious function to be called when loaded, either via a glibc constructor (DT_INIT + .ctors) or an initializer function in DT_INIT_ARRAY."
+    author      = "ESET, spol. s r.o."
+    id          = "7b466bf7-f895-569d-99b0-eca95a6ebc83"
+    date        = "2024-02-01"
+    modified    = "2024-04-29"
+    reference   = "https://github.com/eset/malware-ioc/"
+    source_url  = "https://github.com/eset/malware-ioc/blob/21381c70ad030105cf9edb092dfd1cae29753286/windigo/ebury.yar#L3-L54"
+    license_url = "https://github.com/eset/malware-ioc/blob/21381c70ad030105cf9edb092dfd1cae29753286/LICENSE"
+    hash        = "e7debd6e453192ad8376db5bab03ed0d87566591"
+    logic_hash  = "c6172aebc67a05fb044b0450aafcc71c7d1fd2831985587d1a9ad53f59e14214"
+    score       = 75
+    quality     = 80
+    tags        = ""
+    license     = "BSD 2-Clause"
+    version     = 2
+
+  strings:
+    $libname = "libkeyutils.so.1"
+
+  condition:
+    for any ptr_size in (4, 8): (((ptr_size == 4 and elf.machine == elf.EM_386) or (ptr_size == 8 and elf.machine == elf.EM_X86_64)) and for any d in elf.dynamic: (d.type == elf.DT_SONAME and (for any s in elf.sections: (s.name == ".dynstr" and $libname at (s.offset + d.val)) or for any s in elf.dynamic: (s.type == elf.DT_STRTAB and $libname at (s.val + d.val)))) and (for any s in elf.sections: (s.name == ".ctors" and s.size > 2 * ptr_size) or for any d in elf.dynamic: (d.type == elf.DT_INIT_ARRAYSZ and d.val > ptr_size)))
+}
+
 rule ESET_Onimiki: LINUX_ONIMIKI {
   meta:
     description = "Linux/Onimiki malicious DNS server"
@@ -2330,6 +3610,336 @@ rule MALPEDIA_Elf_Mirai_Auto: FILE {
     7 of them and filesize < 2228224
 }
 
+rule MALPEDIA_Elf_Blackcat_Auto: FILE {
+  meta:
+    description        = "autogenerated rule brought to you by yara-signator"
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    id                 = "8a7e13ba-9ed1-59ed-8fb9-9aaa610fbd94"
+    date               = "2023-12-06"
+    modified           = "2023-12-08"
+    reference          = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.blackcat"
+    source_url         = "https://github.com/malpedia/signator-rules//blob/fbacfc09b84d53d410385e66a8e56f25016c588a/rules/elf.blackcat_auto.yar#L1-L113"
+    license_url        = "N/A"
+    logic_hash         = "1ac97428ed273512eef4209d87a29f49ce26e88d11cb15b15e2f2687ea017381"
+    score              = 60
+    quality            = 45
+    tags               = "FILE"
+    version            = "1"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_rule_date = "20231130"
+    malpedia_hash      = "fc8a0e9f343f6d6ded9e7df1a64dac0cc68d7351"
+    malpedia_version   = "20230808"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+
+  strings:
+    $sequence_0 = { e8 ?? ?? ?? ?? 0f 0b 90 90 90 90 53 }
+    $sequence_1 = { 69 c0 ?? ?? ?? ?? c1 e8 11 6b f0 64 29 f2 0f b7 d2 }
+    $sequence_2 = { e8 ?? ?? ?? ?? 0f 0b 90 53 }
+    $sequence_3 = { 89 c1 3d ?? ?? ?? ?? 73 19 c1 e9 06 }
+    $sequence_4 = { 66 0f 7f 84 24 f0 01 00 00 66 0f 7f 84 24 e0 01 00 00 66 0f 7f 84 24 d0 01 00 00 66 0f 7f 84 24 c0 01 00 00 66 0f 7f 84 24 b0 01 00 00 }
+    $sequence_5 = { d1 e9 01 d1 c1 e9 02 8d 14 cd 00 00 00 00 }
+    $sequence_6 = { b8 01 00 00 00 81 f9 ?? ?? ?? ?? 0f 82 3f ff ff ff b8 02 00 00 00 }
+    $sequence_7 = { 69 c0 ?? ?? ?? ?? c1 e8 10 29 c2 0f b7 d2 d1 ea }
+    $sequence_8 = { 76 2a 0f b6 c8 8d 14 89 8d 0c d1 }
+    $sequence_9 = { e8 ?? ?? ?? ?? 0f 0b e8 ?? ?? ?? ?? 0f 0b 90 90 90 }
+
+  condition:
+    7 of them and filesize < 8011776
+}
+
+rule MALPEDIA_Elf_Bashlite_Auto: FILE {
+  meta:
+    description        = "autogenerated rule brought to you by yara-signator"
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    id                 = "ca6414ba-2b9c-5f1f-bb06-5810c9d01c02"
+    date               = "2023-12-06"
+    modified           = "2023-12-08"
+    reference          = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.bashlite"
+    source_url         = "https://github.com/malpedia/signator-rules//blob/fbacfc09b84d53d410385e66a8e56f25016c588a/rules/elf.bashlite_auto.yar#L1-L113"
+    license_url        = "N/A"
+    logic_hash         = "38a010b68cee7bf4f221088e2245d1e5d0f927b085c409c35c3789c20373d434"
+    score              = 75
+    quality            = 75
+    tags               = "FILE"
+    version            = "1"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_rule_date = "20231130"
+    malpedia_hash      = "fc8a0e9f343f6d6ded9e7df1a64dac0cc68d7351"
+    malpedia_version   = "20230808"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+
+  strings:
+    $sequence_0 = { eb 19 e8 ?? ?? ?? ?? c7 00 16 00 00 00 e8 ?? ?? ?? ?? c7 00 16 00 00 00 }
+    $sequence_1 = { 21 d0 33 45 fc c9 c3 55 }
+    $sequence_2 = { 75 0c e8 ?? ?? ?? ?? 8b 00 83 f8 73 }
+    $sequence_3 = { 8b 85 ec ef ff ff c9 c3 55 }
+    $sequence_4 = { 76 0f e8 ?? ?? ?? ?? c7 00 1c 00 00 00 31 c0 }
+    $sequence_5 = { 31 c0 eb 19 e8 ?? ?? ?? ?? c7 00 16 00 00 00 }
+    $sequence_6 = { e8 ?? ?? ?? ?? 89 c2 89 d0 c1 e8 1f 01 d0 d1 f8 }
+    $sequence_7 = { 85 c0 75 0c c7 85 ec ef ff ff 01 00 00 00 eb 0a c7 85 ec ef ff ff 00 00 00 00 }
+    $sequence_8 = { 85 c0 75 0c c7 85 ec ef ff ff 01 00 00 00 eb 0a c7 85 ec ef ff ff 00 00 00 00 8b 85 ec ef ff ff }
+    $sequence_9 = { c7 85 ec ef ff ff 01 00 00 00 eb 0a c7 85 ec ef ff ff 00 00 00 00 8b 85 ec ef ff ff c9 c3 }
+
+  condition:
+    7 of them and filesize < 2310144
+}
+
+rule MALPEDIA_Elf_Persirai_Auto: FILE {
+  meta:
+    description        = "autogenerated rule brought to you by yara-signator"
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    id                 = "a8d888a8-efae-5fcd-8298-ba3399d89281"
+    date               = "2023-12-06"
+    modified           = "2023-12-08"
+    reference          = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.persirai"
+    source_url         = "https://github.com/malpedia/signator-rules//blob/fbacfc09b84d53d410385e66a8e56f25016c588a/rules/elf.persirai_auto.yar#L1-L132"
+    license_url        = "N/A"
+    logic_hash         = "091433f152a0a1932173079b7afa5457b62363ecd6425f8d1d7de8df73a8fbb4"
+    score              = 75
+    quality            = 75
+    tags               = "FILE"
+    version            = "1"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_rule_date = "20231130"
+    malpedia_hash      = "fc8a0e9f343f6d6ded9e7df1a64dac0cc68d7351"
+    malpedia_version   = "20230808"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+
+  strings:
+    $sequence_0 = { c3 c3 53 83 ec 08 e8 ?? ?? ?? ?? 31 d2 8b 5c 24 14 }
+    $sequence_1 = { 8b 5c 24 10 83 7c 24 14 00 74 0b 83 ec 0c ff 73 04 ff 13 83 c4 10 }
+    $sequence_2 = { 50 52 e8 ?? ?? ?? ?? 58 8d 84 24 d8 17 00 00 50 e8 ?? ?? ?? ?? }
+    $sequence_3 = { 8d 44 00 e0 50 e8 ?? ?? ?? ?? 89 c2 a3 ?? ?? ?? ?? 83 c4 10 83 c8 ff }
+    $sequence_4 = { 81 7c 24 14 ff 03 00 00 0f 87 70 03 00 00 8b 44 24 14 c1 e0 04 83 b8 88 a2 05 08 00 0f 85 df 00 00 00 8b 0d ?? ?? ?? ?? }
+    $sequence_5 = { c7 04 24 08 00 00 00 50 a1 ?? ?? ?? ?? 6a 1a 6a 01 50 e8 ?? ?? ?? ?? }
+    $sequence_6 = { 83 c4 18 5b c3 81 ec ac 00 00 00 31 d2 a1 ?? ?? ?? ?? }
+    $sequence_7 = { 85 c0 74 cb e8 ?? ?? ?? ?? 52 52 8b 00 }
+    $sequence_8 = { c6 80 b9 01 00 00 00 8b 45 f0 e8 ?? ?? ?? ?? 89 f0 8b 55 f0 e8 ?? ?? ?? ?? 8b 45 f0 }
+    $sequence_9 = { 83 c0 04 89 44 24 18 e9 ?? ?? ?? ?? bf 0a 00 00 00 e9 ?? ?? ?? ?? bf 10 00 00 00 e9 ?? ?? ?? ?? }
+
+  condition:
+    7 of them and filesize < 229376
+}
+
+rule MALPEDIA_Elf_Satori_Auto: FILE {
+  meta:
+    description        = "autogenerated rule brought to you by yara-signator"
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    id                 = "ef9a3def-11bf-57c1-9abe-eaf3ea87bbf4"
+    date               = "2023-12-06"
+    modified           = "2023-12-08"
+    reference          = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.satori"
+    source_url         = "https://github.com/malpedia/signator-rules//blob/fbacfc09b84d53d410385e66a8e56f25016c588a/rules/elf.satori_auto.yar#L1-L128"
+    license_url        = "N/A"
+    logic_hash         = "acc91f43f84cb8d9ebcbacb4d453867e5ba0d238d6255f05df970cd0ecb540bb"
+    score              = 75
+    quality            = 75
+    tags               = "FILE"
+    version            = "1"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_rule_date = "20231130"
+    malpedia_hash      = "fc8a0e9f343f6d6ded9e7df1a64dac0cc68d7351"
+    malpedia_version   = "20230808"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+
+  strings:
+    $sequence_0 = { 85 c0 78 04 8b 54 24 14 89 d0 83 c4 1c }
+    $sequence_1 = { e8 ?? ?? ?? ?? b9 ?? ?? ?? ?? b8 02 00 00 00 89 ca e8 ?? ?? ?? ?? }
+    $sequence_2 = { 89 c6 53 89 d3 83 ec 10 52 e8 ?? ?? ?? ?? }
+    $sequence_3 = { b8 02 00 00 00 e8 ?? ?? ?? ?? b9 05 00 00 00 ba ?? ?? ?? ?? b8 02 00 00 00 e8 ?? ?? ?? ?? b9 08 00 00 00 }
+    $sequence_4 = { c7 44 24 48 00 00 00 00 e9 ?? ?? ?? ?? 8b 54 24 04 8b 34 82 6b c0 18 03 44 24 64 }
+    $sequence_5 = { e8 ?? ?? ?? ?? 83 c4 14 6a 1f e8 ?? ?? ?? ?? c7 04 24 20 00 00 00 e8 ?? ?? ?? ?? c7 85 28 04 00 00 1e 00 00 00 }
+    $sequence_6 = { 85 c0 74 16 83 ec 0c ff 35 ?? ?? ?? ?? e8 ?? ?? ?? ?? 59 6a 00 }
+    $sequence_7 = { 3b 41 0c 74 7c 8b 45 bc 83 ec 0c 8b 55 cc 8d 5d ef 89 45 e0 }
+    $sequence_8 = { 6a 04 56 53 e8 ?? ?? ?? ?? 88 44 24 3a 83 c4 20 6a 00 }
+    $sequence_9 = { 6a 15 68 ?? ?? ?? ?? 6a 1d e8 ?? ?? ?? ?? 83 c4 0c 6a 15 68 ?? ?? ?? ?? }
+
+  condition:
+    7 of them and filesize < 122880
+}
+
+rule MALPEDIA_Elf_Gobrat_Auto: FILE {
+  meta:
+    description        = "autogenerated rule brought to you by yara-signator"
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    id                 = "4556c50c-642d-5e08-a37f-0bca17aca318"
+    date               = "2023-12-06"
+    modified           = "2023-12-08"
+    reference          = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.gobrat"
+    source_url         = "https://github.com/malpedia/signator-rules//blob/fbacfc09b84d53d410385e66a8e56f25016c588a/rules/elf.gobrat_auto.yar#L1-L134"
+    license_url        = "N/A"
+    logic_hash         = "d983e645d32d0df64baf254a8f8a69a3323d191b1dd7ae64a36bbf4746335d3e"
+    score              = 60
+    quality            = 35
+    tags               = "FILE"
+    version            = "1"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_rule_date = "20231130"
+    malpedia_hash      = "fc8a0e9f343f6d6ded9e7df1a64dac0cc68d7351"
+    malpedia_version   = "20230808"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+
+  strings:
+    $sequence_0 = { e8 ?? ?? ?? ?? 48 83 38 00 0f 8f 28 02 00 00 48 8b 94 24 28 01 00 00 48 85 d2 75 08 e8 ?? ?? ?? ?? }
+    $sequence_1 = { 84 c0 74 5c 48 8b 54 24 30 48 8b 5a 30 48 8b 74 24 28 48 8b 46 30 48 8b 4e 38 }
+    $sequence_2 = { c6 44 24 29 03 48 8d 05 5a ca 32 00 48 8d 5c 24 18 e8 ?? ?? ?? ?? 48 89 c3 48 8d 05 46 ca 32 00 e8 ?? ?? ?? ?? }
+    $sequence_3 = { eb 41 48 8d 05 9c 31 1e 00 e8 ?? ?? ?? ?? 48 c7 40 08 1c 00 00 00 48 8d 0d 39 a6 23 00 48 89 08 31 db }
+    $sequence_4 = { e8 ?? ?? ?? ?? 48 8b 94 24 60 02 00 00 48 8b 72 18 48 89 70 20 48 83 7a 70 00 75 42 48 8d 1d f7 fc 32 00 }
+    $sequence_5 = { c3 31 c0 48 8b 6c 24 78 48 83 ec 80 c3 48 8b 8c 24 88 00 00 00 48 8b 41 10 }
+    $sequence_6 = { f7 da 41 0f af d1 89 d2 48 0f af d3 48 c1 ea 2f 44 89 c6 41 c1 e0 08 }
+    $sequence_7 = { ff d2 b9 1a 00 00 00 48 89 c7 48 89 de 31 c0 48 8d 1d d7 ce 2d 00 e8 ?? ?? ?? ?? }
+    $sequence_8 = { b8 25 01 00 00 e8 ?? ?? ?? ?? 48 85 c9 74 5d 48 83 f9 02 77 12 75 3c }
+    $sequence_9 = { e8 ?? ?? ?? ?? 48 c7 40 08 22 00 00 00 48 8d 0d e4 21 22 00 48 89 08 31 db 48 89 d9 48 8d 3d 24 4d 2a 00 }
+
+  condition:
+    7 of them and filesize < 12853248
+}
+
+rule MALPEDIA_Elf_Hideandseek_Auto: FILE {
+  meta:
+    description        = "autogenerated rule brought to you by yara-signator"
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    id                 = "8886e955-536d-56f5-a630-bf2b9ef8b07e"
+    date               = "2023-12-06"
+    modified           = "2023-12-08"
+    reference          = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.hideandseek"
+    source_url         = "https://github.com/malpedia/signator-rules//blob/fbacfc09b84d53d410385e66a8e56f25016c588a/rules/elf.hideandseek_auto.yar#L1-L133"
+    license_url        = "N/A"
+    logic_hash         = "c312d2a4b534a00f51e15be6e1572c868a1bf84ffb4d93cf13ce0449e347f5bb"
+    score              = 75
+    quality            = 75
+    tags               = "FILE"
+    version            = "1"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_rule_date = "20231130"
+    malpedia_hash      = "fc8a0e9f343f6d6ded9e7df1a64dac0cc68d7351"
+    malpedia_version   = "20230808"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+
+  strings:
+    $sequence_0 = { 53 83 ec 14 8b 44 24 2c 8a 5c 24 30 ff 70 04 ff 74 24 2c e8 ?? ?? ?? ?? }
+    $sequence_1 = { e8 ?? ?? ?? ?? 83 c4 10 84 c0 75 2e 83 ec 0c 8d 84 24 1c 12 00 00 50 }
+    $sequence_2 = { 8d 44 24 4c 50 e8 ?? ?? ?? ?? 5b 8d 44 24 40 50 e8 ?? ?? ?? ?? }
+    $sequence_3 = { 89 ca 8b 04 24 0f a4 d9 1e 31 c8 8b 4c 24 30 0f a4 d3 1e 8b 54 24 04 }
+    $sequence_4 = { 74 11 0f 82 1e 04 00 00 83 f8 02 0f 85 08 04 00 00 eb 04 50 50 }
+    $sequence_5 = { be 00 00 00 00 b8 00 00 00 00 c1 e2 10 09 c6 c1 e7 18 31 db 0f b6 45 04 }
+    $sequence_6 = { 50 e8 ?? ?? ?? ?? 83 c4 10 84 c0 74 1a 8b 54 24 14 c7 43 44 03 00 00 00 }
+    $sequence_7 = { 81 7e 0c 00 01 00 00 75 1a 8d 56 10 8d 46 50 53 68 c0 00 00 00 50 }
+    $sequence_8 = { 56 53 8b 7c 24 10 80 3d ?? ?? ?? ?? 00 75 61 83 ec 0c 68 00 00 00 11 }
+    $sequence_9 = { 50 8b 84 24 ec 00 00 00 ff 70 08 e8 ?? ?? ?? ?? 89 f2 8b 84 24 f0 00 00 00 }
+
+  condition:
+    7 of them and filesize < 196608
+}
+
+rule MALPEDIA_Elf_Babuk_Auto: FILE {
+  meta:
+    description        = "autogenerated rule brought to you by yara-signator"
+    author             = "Felix Bilstein - yara-signator at cocacoding dot com"
+    id                 = "0f03a128-b2bf-587f-bb2c-939b9b8a07cd"
+    date               = "2023-12-06"
+    modified           = "2023-12-08"
+    reference          = "https://malpedia.caad.fkie.fraunhofer.de/details/elf.babuk"
+    source_url         = "https://github.com/malpedia/signator-rules//blob/fbacfc09b84d53d410385e66a8e56f25016c588a/rules/elf.babuk_auto.yar#L1-L133"
+    license_url        = "N/A"
+    logic_hash         = "1ffac28a8690c44fcc8b3792df7481d8deebcbe27a55524336d71b5e562fe261"
+    score              = 75
+    quality            = 75
+    tags               = "FILE"
+    version            = "1"
+    tool               = "yara-signator v0.6.0"
+    signator_config    = "callsandjumps;datarefs;binvalue"
+    malpedia_rule_date = "20231130"
+    malpedia_hash      = "fc8a0e9f343f6d6ded9e7df1a64dac0cc68d7351"
+    malpedia_version   = "20230808"
+    malpedia_license   = "CC BY-SA 4.0"
+    malpedia_sharing   = "TLP:WHITE"
+
+  strings:
+    $sequence_0 = { f7 e2 89 94 24 88 02 00 00 89 84 24 a4 00 00 00 89 e8 f7 e1 89 94 24 84 02 00 00 89 84 24 a0 00 00 00 }
+    $sequence_1 = { 89 5c 24 04 e8 ?? ?? ?? ?? eb a0 0f b6 c1 3d 88 00 00 00 0f 83 74 02 00 00 c1 e0 07 }
+    $sequence_2 = { e8 ?? ?? ?? ?? 31 c0 eb 08 89 8c 84 90 00 00 00 40 83 f8 06 7d 5a }
+    $sequence_3 = { 8b 9c 24 90 00 00 00 8d 2c 18 8d 4c 03 14 8b 94 24 00 01 00 00 8b 84 24 fc 00 00 00 8b 9c 24 f8 00 00 00 39 c1 }
+    $sequence_4 = { e8 ?? ?? ?? ?? e8 ?? ?? ?? ?? 8b 44 24 58 8b 40 18 c6 80 b5 00 00 00 02 8b 44 24 7c 8b 4c 24 78 }
+    $sequence_5 = { e8 ?? ?? ?? ?? 0f b6 44 24 0c 84 c0 75 39 90 65 8b 05 00 00 00 00 8b 80 fc ff ff ff }
+    $sequence_6 = { 8b 49 2c 8b 5c 24 14 01 d3 89 59 04 8b 48 18 8b 49 2c }
+    $sequence_7 = { e8 ?? ?? ?? ?? e8 ?? ?? ?? ?? 65 8b 05 00 00 00 00 8b 80 fc ff ff ff 8b 40 18 8b 0c 24 89 48 24 }
+    $sequence_8 = { c1 fd 1f 21 dd 8d 3c 2e 89 bc 24 f8 00 00 00 8b 6c 24 50 e9 ?? ?? ?? ?? 39 f5 }
+    $sequence_9 = { 89 44 24 08 e8 ?? ?? ?? ?? 8b 44 24 0c 8b 4c 24 10 89 0d ?? ?? ?? ?? 89 0d ?? ?? ?? ?? 8b 15 ?? ?? ?? ?? }
+
+  condition:
+    7 of them and filesize < 4186112
+}
+
+rule TRELLIX_ARC_MALW_Fritzfrog: BOTNET FILE {
+  meta:
+    description    = "Rule to detect Fritzfrog"
+    author         = "Marc Rivero | McAfee ATR Team"
+    id             = "4c553279-7e0c-5602-944d-ad8a47edf4ea"
+    date           = "2020-08-20"
+    modified       = "2020-08-20"
+    reference      = "https://github.com/advanced-threat-research/Yara-Rules/"
+    source_url     = "https://github.com/advanced-threat-research/Yara-Rules//blob/fc51a3fe3b450838614a5a5aa327c6bd8689cbb2/malware/MALW_fritzfrog.yar#L1-L26"
+    license_url    = "https://github.com/advanced-threat-research/Yara-Rules//blob/fc51a3fe3b450838614a5a5aa327c6bd8689cbb2/LICENSE"
+    logic_hash     = "488c807ecf0a9e981b2c1f2f5bb2e3072952d11f7cbf3a354bc85dc8e88b8b09"
+    score          = 75
+    quality        = 70
+    tags           = "BOTNET, FILE"
+    rule_version   = "v1"
+    malware_type   = "botnet"
+    malware_family = "Botnet:W32/Fritzfrog"
+    actor_type     = "Cybercrime"
+    hash1          = "103b8404dc64c9a44511675981a09fd01395ee837452d114f1350c295357c046"
+    actor_type     = "Cybercrime"
+    actor_group    = "Unknown"
+
+  strings:
+    $pattern = { 7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 02 00 3E 00 01 00 00 00 90 D3 45 00 00 00 00 00 40 00 00 00 00 00 00 00 C8 01 00 00 00 00 00 00 00 00 00 00 40 00 38 00 07 00 40 00 0D 00 03 00 06 00 00 00 04 00 00 00 40 00 00 00 00 00 00 00 40 00 40 00 00 00 00 00 40 00 40 00 00 00 00 00 88 01 00 00 00 00 00 00 88 01 00 00 00 00 00 00 00 10 00 00 00 00 00 00 04 00 00 00 04 00 00 00 9C 0F 00 00 00 00 00 00 9C 0F 40 00 00 00 00 00 9C 0F 40 00 00 00 00 00 64 00 00 00 00 00 00 00 64 00 00 00 00 00 00 00 04 00 00 00 00 00 00 00 01 00 00 00 05 00 00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00 00 00 00 00 40 00 00 00 00 00 83 F2 3E 00 00 00 00 00 83 F2 3E 00 00 00 00 00 00 10 00 00 00 00 00 00 01 00 00 00 04 00 00 00 00 00 3F 00 00 00 00 00 00 00 7F 00 00 00 00 00 00 00 7F 00 00 00 00 00 6C 83 45 00 00 00 00 00 6C 83 45 00 00 00 00 00 00 10 00 00 00 00 00 00 01 00 00 00 06 00 00 00 00 90 84 00 00 00 00 00 00 90 C4 00 00 00 00 00 00 90 C4 00 00 00 00 00 60 EC 04 00 00 00 00 00 58 09 07 00 00 00 00 00 00 10 00 00 00 00 00 00 51 E5 74 64 06 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00 80 15 04 65 00 2A 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 06 00 00 00 00 00 00 00 00 10 40 00 00 00 00 00 00 10 00 00 00 00 00 00 83 E2 3E 00 00 00 00 00 00 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 41 00 00 00 01 00 00 00 02 00 00 00 00 00 00 00 00 00 7F 00 00 00 00 00 00 00 3F 00 00 00 00 00 C0 27 1B 00 00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 72 00 00 00 03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C0 27 5A 00 00 00 00 00 7C 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 49 00 00 00 01 00 00 00 02 00 00 00 00 00 00 00 40 28 9A 00 00 00 00 00 40 28 5A 00 00 00 00 00 D8 36 00 00 00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 53 00 00 00 01 00 00 00 02 00 00 00 00 00 00 00 18 5F 9A 00 00 00 00 00 18 5F 5A 00 00 00 00 00 38 0D 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 5D 00 00 00 01 00 00 00 02 00 00 00 00 00 00 00 50 6C 9A 00 00 00 00 00 50 6C 5A 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 67 00 00 00 01 00 00 00 02 00 00 00 00 00 00 00 60 6C 9A 00 00 00 00 00 60 6C 5A 00 00 00 00 00 0C 17 2A 00 00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 00 00 00 01 00 00 00 03 00 00 00 00 00 00 00 00 90 C4 00 00 00 00 00 00 90 84 00 00 00 00 00 00 4B 03 00 00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 12 00 00 00 01 00 00 00 03 00 00 00 00 00 00 00 00 DB C7 00 00 00 00 00 00 DB 87 00 00 00 00 00 50 A1 01 00 00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00 08 00 00 00 03 00 00 00 00 00 00 00 60 7C C9 00 00 00 00 00 60 7C 89 00 00 00 00 00 D0 E8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1D 00 00 00 08 00 00 00 03 00 00 00 00 00 00 00 40 65 CB 00 00 00 00 00 40 65 8B 00 00 00 00 00 18 34 00 00 00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 27 00 00 00 07 00 00 00 02 00 00 00 00 00 00 00 9C 0F 40 00 00 00 00 00 9C 0F 00 00 00 00 00 00 64 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 }
+
+  condition:
+    uint16(0) == 0x457f and filesize < 26000KB and all of them
+}
+
+rule TRELLIX_ARC_MALW_Liquorbot: MALWARE FILE {
+  meta:
+    description    = "Rule to detect LiquorBot malware"
+    author         = "Marc Rivero | McAfee ATR Team"
+    id             = "73898df8-b5eb-50ac-a2fe-ef9233c251c5"
+    date           = "2020-08-19"
+    modified       = "2020-08-19"
+    reference      = "https://github.com/advanced-threat-research/Yara-Rules/"
+    source_url     = "https://github.com/advanced-threat-research/Yara-Rules//blob/fc51a3fe3b450838614a5a5aa327c6bd8689cbb2/malware/MALW_liquorbot.yar#L1-L23"
+    license_url    = "https://github.com/advanced-threat-research/Yara-Rules//blob/fc51a3fe3b450838614a5a5aa327c6bd8689cbb2/LICENSE"
+    logic_hash     = "2448e3ede809331b2370fe9d42d603ad6508be6531a1a8764e0e0621867b6e89"
+    score          = 75
+    quality        = 70
+    tags           = "MALWARE, FILE"
+    rule_version   = "v1"
+    malware_type   = "malware"
+    malware_family = "Botnet:W32/LiquorBot"
+    actor_type     = "Cybercrime"
+    actor_group    = "Unknown"
+    hash1          = "5b2a9cbda99ed903f75c3b37f0a6b1b9f6c39671a76ed652f3ddba117fd43bc9"
+
+  strings:
+    $pattern = { 7F 45 4C 46 02 01 01 00 00 00 00 00 00 00 00 00 02 00 3E 00 01 00 00 00 60 5A 46 00 00 00 00 00 40 00 00 00 00 00 00 00 70 02 00 00 00 00 00 00 00 00 00 00 40 00 38 00 0A 00 40 00 1B 00 09 00 06 00 00 00 04 00 00 00 40 00 00 00 00 00 00 00 40 00 40 00 00 00 00 00 40 00 40 00 00 00 00 00 30 02 00 00 00 00 00 00 30 02 00 00 00 00 00 00 00 10 00 00 00 00 00 00 03 00 00 00 04 00 00 00 E0 0F 00 00 00 00 00 00 E0 0F 40 00 00 00 00 00 E0 0F 40 00 00 00 00 00 20 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 04 00 00 00 04 00 00 00 7C 0F 00 00 00 00 00 00 7C 0F 40 00 00 00 00 00 7C 0F 40 00 00 00 00 00 64 00 00 00 00 00 00 00 64 00 00 00 00 00 00 00 04 00 00 00 00 00 00 00 01 00 00 00 05 00 00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00 00 00 00 00 40 00 00 00 00 00 40 FB 29 00 00 00 00 00 40 FB 29 00 00 00 00 00 00 10 00 00 00 00 00 00 01 00 00 00 04 00 00 00 00 00 2A 00 00 00 00 00 00 00 6A 00 00 00 00 00 00 00 6A 00 00 00 00 00 E4 49 2C 00 00 00 00 00 E4 49 2C 00 00 00 00 00 00 10 00 00 00 00 00 00 01 00 00 00 06 00 00 00 00 50 56 00 00 00 00 00 00 50 96 00 00 00 00 00 00 50 96 00 00 00 00 00 E0 14 04 00 00 00 00 00 68 13 07 00 00 00 00 00 00 10 00 00 00 00 00 00 02 00 00 00 06 00 00 00 40 51 56 00 00 00 00 00 40 51 96 00 00 00 00 00 40 51 96 00 00 00 00 00 30 01 00 00 00 00 00 00 30 01 00 00 00 00 00 00 08 00 00 00 00 00 00 00 07 00 00 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00 51 E5 74 64 06 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00 80 15 04 65 00 2A 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 06 00 00 00 00 00 00 00 00 10 40 00 00 00 00 00 00 10 00 00 00 00 00 00 1F E9 29 00 00 00 00 00 00 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 F0 00 00 00 01 00 00 00 06 00 00 00 00 00 00 00 20 F9 69 00 00 00 00 00 20 F9 29 00 00 00 00 00 20 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00 70 00 00 00 01 00 00 00 02 00 00 00 00 00 00 00 00 00 6A 00 00 00 00 00 00 00 2A 00 00 00 00 00 A6 78 11 00 00 00 00 00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 E0 00 00 00 04 00 00 00 02 00 00 00 00 00 00 00 A8 78 7B 00 00 00 00 00 A8 78 3B 00 00 00 00 00 18 00 00 00 00 00 00 00 0B 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00 18 00 00 00 00 00 00 00 E6 00 00 00 04 00 00 00 02 00 00 00 00 00 00 00 C0 78 7B 00 00 00 00 00 C0 78 3B 00 00 00 00 00 18 03 00 00 00 00 00 00 0B 00 00 00 02 00 00 00 08 00 00 00 00 00 00 00 18 00 00 00 00 00 00 00 F5 00 00 00 FF }
+
+  condition:
+    uint16(0) == 0x457f and all of them
+}
+
 rule TRELLIX_ARC_Ransom_Linux_Hellokitty_0721: RANSOMWARE FILE {
   meta:
     description    = "rule to detect Linux variant of the Hello Kitty Ransomware"
@@ -2365,6 +3975,42 @@ rule TRELLIX_ARC_Ransom_Linux_Hellokitty_0721: RANSOMWARE FILE {
 
   condition:
     (uint16(0) == 0x457f and filesize < 200KB and (8 of them)) or (all of them)
+}
+
+rule ARKBIRD_SOLG_Ran_ELF_EXX_Nov_2020_1: FILE {
+  meta:
+    description = "Detect EXX variant ELF ransomware"
+    author      = "Arkbird_SOLG"
+    id          = "fe85d480-317a-51c3-a817-fc9034e2944f"
+    date        = "2020-12-09"
+    modified    = "2020-12-09"
+    reference   = "Internal Research"
+    source_url  = "https://github.com/StrangerealIntel/DailyIOC/blob/a873ff1298c43705e9c67286f3014f4300dd04f7/2020-12-09/EXX/Ran_ELF_EXX_Nov_2020_1.yar#L1-L28"
+    license_url = "N/A"
+    logic_hash  = "4508a0cf79d0d85959009f59e1471cbf123fa24f5c21da5801e91ed0bbe8a085"
+    score       = 50
+    quality     = 73
+    tags        = "FILE"
+    level       = "experimental"
+    hash1       = "cb408d45762a628872fa782109e8fcfc3a5bf456074b007de21e9331bb3c5849"
+
+  strings:
+    $dbg1 = "Unexpected error, return code = %08X\n"
+    $dbg2 = { 47 72 65 65 74 69 6e 67 73 20 [3-10] 21 }
+    $dbg3 = "cycles=%lu ratio=%lu millisecs=%lu secs=%lu hardfail=%d a=%lu b=%lu\n"
+    $dbg4 = "SHA-%d test #%d:"
+    $lib1 = "pthread_mutex_unlock@@GLIBC_2.2.5" fullword ascii
+    $lib2 = "pthread_mutex_lock@@GLIBC_2.2.5" fullword ascii
+    $lib3 = "mbedtls_rsa_import" fullword ascii
+    $lib4 = "mbedtls_rsa_export" fullword ascii
+    $lib5 = "mbedtls_oid_get_extended_key_usage" fullword ascii
+    $lib6 = "mbedtls_sha256_process" fullword ascii
+    $seq1 = { 48 83 ec 20 89 7d ec 48 89 75 e0 b8 00 00 00 00 e8 77 00 00 00 48 8d 45 f0 b9 00 00 00 00 48 8d 15 b5 ff ff ff be 00 00 00 00 48 89 c7 e8 d6 fb ff ff c7 45 fc 01 00 00 00 eb }
+    $seq2 = { 00 00 00 00 e8 b2 fe ff ff 48 8b 45 e8 48 89 c7 e8 92 ed ff ff 48 83 c0 01 48 89 c7 e8 c6 ee ff ff 48 89 45 f8 48 83 7d f8 00 74 3a 48 8b 55 e8 48 8b 45 f8 48 89 d6 48 89 c7 e8 f8 ec ff ff 48 8b 45 f8 48 89 c7 e8 12 fd ff ff 48 8b 45 f8 48 89 c7 e8 90 ec ff ff b8 00 00 00 00 e8 95 fc ff ff }
+    $seq3 = { e5 41 55 41 54 53 48 81 ec 18 18 00 00 c7 45 dc 00 00 00 00 48 c7 45 d0 00 00 00 00 bf 00 00 00 00 e8 13 fd ff ff 89 c7 e8 7c fc ff ff e8 d7 fd ff ff 41 89 c5 e8 cf fd ff ff 41 89 c4 e8 c7 fd ff ff 89 c3 e8 c0 fd ff ff 89 c2 48 8d 85 d0 e7 ff ff 4d 89 e9 4d 89 e0 48 89 d9 48 8d 35 bf 0a 02 00 48 89 }
+
+  condition:
+    uint16(0) == 0x457f and filesize > 80KB and 3 of ($dbg*) and 4 of ($lib*) and 2 of ($seq*)
 }
 
 rule TELEKOM_SECURITY_Android_Teabot: FILE {
@@ -2640,6 +4286,63 @@ rule SIGNATURE_BASE_APT_MAL_LNX_Hunting_Linux_WHIRLPOOL_1: FILE {
     uint32(0) == 0x464c457f and filesize < 15MB and (all of ($s*) or all of ($c*))
 }
 
+rule SIGNATURE_BASE_APT_LNX_Academic_Camp_May20_Eraser_1: FILE {
+  meta:
+    description = "Detects malware used in attack on academic data centers"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "36d17887-9844-5fa4-8a0d-89cc41b2d876"
+    date        = "2020-05-16"
+    modified    = "2023-12-05"
+    reference   = "https://csirt.egi.eu/academic-data-centers-abused-for-crypto-currency-mining/"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/crime_academic_data_centers_camp_may20.yar#L1-L18"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "9a0410e86fa8fb8b599e5b8a6508d6889eb6e26600f0ecf222561ac4a169676d"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "552245645cc49087dfbc827d069fa678626b946f4b71cb35fa4a49becd971363"
+
+  strings:
+    $sc2 = {
+      E6 FF FF 48 89 45 D0 8B 45 E0 BA 00 00 00 00 BE
+      00 00 00 00 89 C7 E8
+    }
+    $sc3 = {
+      E6 FF FF 89 45 DC 8B 45 DC 83 C0 01 48 98 BE 01
+      00 00 00 48 89 C7 E8
+    }
+
+  condition:
+    uint16(0) == 0x457f and filesize < 60KB and all of them
+}
+
+rule SIGNATURE_BASE_APT_LNX_Academic_Camp_May20_Loader_1: FILE {
+  meta:
+    description = "Detects malware used in attack on academic data centers"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "cda65abd-d918-5ee6-8f4a-554d47532d76"
+    date        = "2020-05-16"
+    modified    = "2023-12-05"
+    reference   = "https://csirt.egi.eu/academic-data-centers-abused-for-crypto-currency-mining/"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/crime_academic_data_centers_camp_may20.yar#L20-L35"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "a73883f9fdf3d53694d9f9efec5f8f15994c5fd80c5f2a87b1741db6b954a023"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "0efdd382872f0ff0866e5f68f0c66c01fcf4f9836a78ddaa5bbb349f20353897"
+
+  strings:
+    $sc1 = {
+      C6 45 F1 00 C6 45 F2 0A C6 45 F3 0A C6 45 F4 4A
+      C6 45 F5 04 C6 45 F6 06 C6 45 F7 1B C6 45 F8 01
+    }
+    $sc2 = { 01 48 39 EB 75 EA 48 83 C4 08 5B 5D 41 5C 41 5D }
+
+  condition:
+    uint16(0) == 0x457f and filesize < 10KB and all of them
+}
+
 rule SIGNATURE_BASE_CN_Honker_Linux_Bin: FILE {
   meta:
     description = "Script from disclosed CN Honker Pentest Toolset - file linux_bin"
@@ -2743,6 +4446,92 @@ rule SIGNATURE_BASE_APT_MAL_LNX_Turla_Apr202004_1_Opcode: FILE {
     uint16(0) == 0x457f and filesize < 5000KB and 2 of them
 }
 
+rule SIGNATURE_BASE_APT_MAL_LNX_Kobalos: FILE {
+  meta:
+    description = "Kobalos malware"
+    author      = "Marc-Etienne M.Leveille"
+    id          = "dfa47e30-c093-57f6-af01-72a2534cc6f4"
+    date        = "2020-11-02"
+    modified    = "2023-12-05"
+    reference   = "https://github.com/eset/malware-ioc/"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_lnx_kobalos.yar#L32-L57"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "48aec47b70633d4c8cb55d90a2e168f3c2027ef27cfe1cd5d30dcdc08a2ff717"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "BSD 2-Clause"
+    version     = "1"
+
+  strings:
+    $encrypted_strings_sizes = {
+      05 00 00 00 09 00 00 00 04 00 00 00 06 00 00 00
+      08 00 00 00 08 00 00 00 02 00 00 00 02 00 00 00
+      01 00 00 00 01 00 00 00 05 00 00 00 07 00 00 00
+      05 00 00 00 05 00 00 00 05 00 00 00 0A 00 00 00
+    }
+    $password_md5_digest     = { 3A DD 48 19 26 54 BD 55 8A 4A 4C ED 9C 25 5C 4C }
+    $rsa_512_mod_header      = { 10 11 02 00 09 02 00 }
+    $strings_rc4_key         = { AE 0E 05 09 0F 3A C2 B5 0B 1B C6 E9 1D 2F E3 CE }
+
+  condition:
+    uint16(0) == 0x457f and any of them
+}
+
+rule SIGNATURE_BASE_APT_MAL_LNX_Kobalos_SSH_Credential_Stealer: FILE {
+  meta:
+    description = "Kobalos SSH credential stealer seen in OpenSSH client"
+    author      = "Marc-Etienne M.Leveille"
+    id          = "0f923f92-c5d8-500d-9a2e-634ca7945c5c"
+    date        = "2020-11-02"
+    modified    = "2023-12-05"
+    reference   = "https://github.com/eset/malware-ioc/"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_lnx_kobalos.yar#L59-L76"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "fdabaea0c838e43b8716bcd102bdeebf2f08fc041b0b909333e3d9d6f94391fc"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "BSD 2-Clause"
+    version     = "1"
+
+  strings:
+    $ = "user: %.128s host: %.128s port %05d user: %.128s password: %.128s"
+
+  condition:
+    uint16(0) == 0x457f and any of them
+}
+
+rule SIGNATURE_BASE_MAL_RANSOM_ELF_Esxi_Attacks_Feb23_1: FILE {
+  meta:
+    description = "Detects ransomware exploiting and encrypting ESXi servers"
+    author      = "Florian Roth"
+    id          = "d0a813aa-41f8-57df-b708-18ccb0d7a3e5"
+    date        = "2023-02-04"
+    modified    = "2023-12-05"
+    reference   = "https://www.bleepingcomputer.com/forums/t/782193/esxi-ransomware-help-and-support-topic-esxiargs-args-extension/page-14"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/mal_ransom_esxi_attacks_feb23.yar#L30-L56"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "27ff018574323c10821993c30cf74de15121caa92a308fbcae4eceae954e63b6"
+    score       = 85
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "11b1b2375d9d840912cfd1f0d0d04d93ed0cddb0ae4ddb550a5b62cd044d6b66"
+
+  strings:
+    $x1  = "usage: encrypt <public_key> <file_to_encrypt> [<enc_step>] [<enc_size>] [<file_size>]" ascii fullword
+    $x2  = "[ %s ] - FAIL { Errno: %d }" ascii fullword
+    $s1  = "lPEM_read_bio_RSAPrivateKey" ascii fullword
+    $s2  = "lERR_get_error" ascii fullword
+    $s3  = "get_pk_data: key file is empty!" ascii fullword
+    $op1 = { 8b 45 a8 03 45 d0 89 45 d4 8b 45 a4 69 c0 07 53 65 54 89 45 a8 8b 45 a8 c1 c8 19 }
+    $op2 = { 48 89 95 40 fd ff ff 48 83 bd 40 fd ff ff 00 0f 85 2e 01 00 00 48 8b 9d 50 ff ff ff 48 89 9d 30 fd ff ff 48 83 bd 30 fd ff ff 00 78 13 f2 48 0f 2a 85 30 fd ff ff }
+    $op3 = { 31 55 b4 f7 55 b8 8b 4d ac 09 4d b8 8b 45 b8 31 45 bc c1 4d bc 13 c1 4d b4 1d }
+
+  condition:
+    uint16(0) == 0x457f and filesize < 200KB and (1 of ($x*) or 3 of them) or 4 of them
+}
+
 rule SIGNATURE_BASE_Apt_Nix_Elf_Derusbi_Linux_Sharedmemcreation_1: FILE {
   meta:
     description = "Detects Derusbi Backdoor ELF Shared Memory Creation"
@@ -2789,6 +4578,492 @@ rule SIGNATURE_BASE_CN_Honker_Webshell_Linux_2_6_Exploit: FILE {
     filesize < 56KB and all of them
 }
 
+rule SIGNATURE_BASE_MAL_LNX_Camarodragon_Sheel_Oct23: FILE {
+  meta:
+    description = "Detects CamaroDragon's tool named sheel"
+    author      = "Florian Roth"
+    id          = "f6f08c0e-236c-5194-9369-da8fdef4aa21"
+    date        = "2023-10-06"
+    modified    = "2023-12-05"
+    reference   = "https://research.checkpoint.com/2023/the-dragon-who-sold-his-camaro-analyzing-custom-router-implant/"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_camaro_dragon_oct23.yar#L2-L25"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "b06f645b766a099adb71c144bdced70c130735e75d5be6451f71077c7d3a5d19"
+    score       = 85
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "7985f992dcc6fcce76ee2892700c8538af075bd991625156bf2482dbfebd5a5a"
+
+  strings:
+    $x1 = "-h server_ip -p server_port -i update_index[0-4] [-r]" ascii fullword
+    $s1 = "read_ip" ascii fullword
+    $s2 = "open fail.%m" ascii fullword
+    $s3 = "ri:h:p:" ascii fullword
+    $s4 = "update server list success!" ascii fullword
+
+  condition:
+    uint16(0) == 0x457f and filesize < 30KB and (1 of ($x*) or 3 of them) or 4 of them
+}
+
+rule SIGNATURE_BASE_Equationgroup_Crypttool: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file cryptTool"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "e1f4e010-9c42-5b8a-8feb-2885b99307fe"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L50-L64"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "ae2d5eda038326376511450e1f5bd2bbf6264d23df013b005b322d70eb6266a0"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "96947ad30a2ab15ca5ef53ba8969b9d9a89c48a403e8b22dd5698145ac6695d2"
+
+  strings:
+    $s1 = "The encryption key is " fullword ascii
+    $s2 = "___tempFile2.out" ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 200KB and all of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Tnmunger: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file tnmunger"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "c95dd24f-ffc9-5e58-aed7-205daa001b8c"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L120-L134"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "ddb957ca9350288d0fa98ba20847a99dcba931b5a03d0ae94cd3409f82f728eb"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "1ab985d84871c54d36ba4d2abd9168c2a468f1ba06994459db06be13ee3ae0d2"
+
+  strings:
+    $s1 = "TEST: mungedport=%6d  pp=%d  unmunged=%6d" fullword ascii
+    $s2 = "mungedport=%6d  pp=%d  unmunged=%6d" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 10KB and 1 of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Eh_1_1_0: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file eh.1.1.0.0"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "a6f0ec1f-b0e5-5913-970d-9cdadf647c44"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L153-L168"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "d0972bb57076606b3c84f3cbbb0be85cd5663c7cd6f6d9f09a2991cb6532bfa9"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "0f8dd094516f1be96da5f9addc0f97bcac8f2a348374bd9631aa912344559628"
+
+  strings:
+    $x1 = "usage: %s -e -v -i target IP [-c Cert File] [-k Key File]" fullword ascii
+    $x2 = "TYPE=licxfer&ftp=%s&source=/var/home/ftp/pub&version=NA&licfile=" ascii
+    $x3 = "[-l Log File] [-m save MAC time file(s)] [-p Server Port]" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 100KB and 1 of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Sshobo: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file sshobo"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "b9392aec-34a8-5ad2-b3fd-eea907d19701"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L207-L223"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "90c892e06ccedb6a3208d728e9f3c27c14bbe1b4c13b63d4a350bbbf38efbe9d"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "c7491898a0a77981c44847eb00fb0b186aa79a219a35ebbca944d627eefa7d45"
+
+  strings:
+    $x1 = "Requested forwarding of port %d but user is not root." fullword ascii
+    $x2 = "internal error: we do not read, but chan_read_failed for istate" fullword ascii
+    $x3 = "~#  - list forwarded connections" fullword ascii
+    $x4 = "packet_inject_ignore: block" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 600KB and all of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Electricslide: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file electricslide"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "5b1e5293-806a-58e6-b865-66025c8d8c32"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L310-L326"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "0803b61afc592d4fba523dc54d8f856a557b916a9f6e256efccd50178e8e024c"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "d27814b725568fa73641e86fa51850a17e54905c045b8b31a9a5b6d2bdc6f014"
+
+  strings:
+    $x1 = "Firing with the same hosts, on altername ports (target is on 8080, listener on 443)" fullword ascii
+    $x2 = "Recieved Unknown Command Payload: 0x%x" fullword ascii
+    $x3 = "Usage: eslide   [options] <-t profile> <-l listenerip> <targetip>" fullword ascii
+    $x4 = "-------- Delete Key - Remove a *closed* tab" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 2000KB and 1 of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Cmsd: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file cmsd"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "9cdd3562-fed4-5b79-b056-049279404eeb"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L380-L397"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "2b9c7ef750c2e45df7839395db51c93204bc9855f5de05bd59c50bb6a964bc8b"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "634c50614e1f5f132f49ae204c4a28f62a32a39a3446084db5b0b49b564034b8"
+
+  strings:
+    $x1 = "usage: %s address [-t][-s|-c command] [-p port] [-v 5|6|7]" fullword ascii
+    $x2 = "error: not vulnerable" fullword ascii
+    $s1 = "port=%d connected! " fullword ascii
+    $s2 = "xxx.XXXXXX" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 30KB and 1 of ($x*)) or (2 of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Eggbasket: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file eggbasket"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "3fb1388a-e6b8-5c7a-ad23-ddbfc9d33d56"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L417-L432"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "e4800d5c820a18d3483dc5c055c0e2f5374ce3b160ecb4d940a00ec4a90ca50d"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "b078a02963610475217682e6e1d6ae0b30935273ed98743e47cc2553fbfd068f"
+
+  strings:
+    $x1 = "# Building Shellcode into exploit." fullword ascii
+    $x2 = "%s -w /index.html -v 3.5 -t 10 -c \"/usr/openwin/bin/xterm -d 555.1.2.2:0&\"  -d 10.0.0.1 -p 80" fullword ascii
+    $x3 = "# STARTING EXHAUSTIVE ATTACK AGAINST " fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 90KB and 1 of them) or (2 of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Exze: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file exze"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "d452b952-0c4a-501b-93f5-064d13f2c08e"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L522-L537"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "b8678f58da689be9507a345b6b80ece6cdb7a78d73db339bdc15ad0a66b4a2e6"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "1af6dde6d956db26c8072bf5ff26759f1a7fa792dd1c3498ba1af06426664876"
+
+  strings:
+    $s1 = "shellFile" fullword ascii
+    $s2 = "completed.1" fullword ascii
+    $s3 = "zeke_remove" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 80KB and all of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_DUL: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file DUL"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "6dd90b30-30cb-531c-b8e2-fc208b21e8e6"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L539-L553"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "55df9a844352babf0c30075139e2a62cbf9db898280546d27b172e4d611ce1c0"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "24d1d50960d4ebf348b48b4db4a15e50f328ab2c0e24db805b106d527fc5fe8e"
+
+  strings:
+    $x1 = "?Usage: %s <shellcode> <output_file>" fullword ascii
+    $x2 = "Here is the decoder+(encoded-decoder)+payload" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 80KB and 1 of them) or (all of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Slugger2: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file slugger2"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "3787a39e-0123-5b46-90c9-6b772b1fd96c"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L555-L574"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "3c736fdfa96d5e99bc4d093c03a81b8a4f58501ec8c03a2891f9f694d88b5284"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "a6a9ab66d73e4b443a80a69ef55a64da7f0af08dfaa7e17eb19c327301a70bdf"
+
+  strings:
+    $x1 = "usage: %s hostip port cmd [printer_name]" fullword ascii
+    $x2 = "command must be less than 61 chars" fullword ascii
+    $s1 = "__rw_read_waiting" ascii
+    $s2 = "completed.1" fullword ascii
+    $s3 = "__mutexkind" ascii
+    $s4 = "__rw_pshared" ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 50KB and (4 of them and 1 of ($x*))) or (all of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Jackpop: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file jackpop"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "7c650752-200b-51e7-95c2-4d385bfd5844"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L596-L614"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "6efc4ccd2727f93713ad35dc1f054fa25e976e8c3d95f00226fbd56d7f1ce30b"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "0b208af860bb2c7ef6b1ae1fcef604c2c3d15fc558ad8ea241160bf4cbac1519"
+
+  strings:
+    $x1 = "%x:%d  --> %x:%d %d bytes" fullword ascii
+    $s1 = "client: can't bind to local address, are you root?" fullword ascii
+    $s2 = "Unable to register port" fullword ascii
+    $s3 = "Could not resolve destination" fullword ascii
+    $s4 = "raw troubles" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 30KB and 3 of them) or (all of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Epoxyresin_V1_0_0: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file epoxyresin.v1.0.0.1"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "390a13b0-3246-5bf7-8841-775a43045172"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L664-L681"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "c1cbc18f05b299837463aa27a9c47ea0355ca5974b2c6ab1e0a18cc9ad1b26a1"
+    score       = 75
+    quality     = 83
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "eea8a6a674d5063d7d6fc9fe07060f35b16172de6d273748d70576b01bf01c73"
+
+  strings:
+    $x1 = "[-] kernel not vulnerable" fullword ascii
+    $s1 = ".tmp.%d.XXXXXX" fullword ascii
+    $s2 = "[-] couldn't create temp file" fullword ascii
+    $s3 = "/boot/System.map-%s" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 30KB and $x1) or (all of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Ewok: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file ewok"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "379c233f-86f8-5116-a15c-8a80b27daea6"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L768-L784"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "d10d75885daa8cd20e5d7d7e142d1e7a2dbc10a50debf7892629f67b948bbdbe"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "567da502d7709b7814ede9c7954ccc13d67fc573f3011db04cf212f8e8a95d72"
+
+  strings:
+    $x1 = "Example: ewok -t target public" fullword ascii
+    $x2 = "Usage:  cleaner host community fake_prog" fullword ascii
+    $x3 = "-g  - Subset of -m that Green Spirit hits " fullword ascii
+    $x4 = "--- ewok version" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 80KB and 1 of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup_Xspy: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- file xspy"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "fcb7246a-d613-51d7-a4f7-f767fa5f79e1"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L786-L799"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "94ab45d6c94c63c5c9c68ee3d509143af4eb574058c0cd4f26eed8058dbd9213"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "841e065c9c340a1e522b281a39753af8b6a3db5d9e7d8f3d69e02fdbd662f4cf"
+
+  strings:
+    $s1 = "USAGE: xspy -display <display> -delay <usecs> -up" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 60KB and all of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup__Scanner_Scanner_V2_1_2: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- from files scanner, scanner.v2.1.2"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "bf1f2119-f742-5106-96f0-de88755275ef"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L873-L892"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "3c42aaacea1347fd64d7f91421f692e77e33e273d4c2e71806ef7f5f086aba11"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    super_rule  = 1
+    hash1       = "dcbcd8a98ec93a4e877507058aa26f0c865b35b46b8e6de809ed2c4b3db7e222"
+    hash2       = "9807aaa7208ed6c5da91c7c30ca13d58d16336ebf9753a5cea513bcb59de2cff"
+
+  strings:
+    $s1 = "Welcome to the network scanning tool" fullword ascii
+    $s2 = "Scanning port %d" fullword ascii
+    $s3 = "/current/down/cmdout/scans" fullword ascii
+    $s4 = "Scan for SSH version" fullword ascii
+    $s5 = "program vers proto   port  service" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 100KB and 2 of them) or (all of them)
+}
+
+rule SIGNATURE_BASE_Equationgroup__Ghost_Sparc_Ghost_X86_3: FILE {
+  meta:
+    description = "Equation Group hack tool leaked by ShadowBrokers- from files ghost_sparc, ghost_x86"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "ccc9c9be-8f78-5071-a11e-47f994cf8f08"
+    date        = "2017-04-08"
+    modified    = "2023-12-05"
+    reference   = "https://medium.com/@shadowbrokerss/dont-forget-your-base-867d304a94b1"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp_apr17.yar#L894-L912"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "c4ad8e06934c1ece520863951f14cbf86d1bc4bba97aede1d58def1e5c7df4eb"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    super_rule  = 1
+    hash1       = "d5ff0208d9532fc0c6716bd57297397c8151a01bf4f21311f24e7a72551f9bf1"
+    hash2       = "82c899d1f05b50a85646a782cddb774d194ef85b74e1be642a8be2c7119f4e33"
+
+  strings:
+    $x1 = "Usage: %s [-v os] [-p] [-r] [-c command] [-a attacker] target" fullword ascii
+    $x2 = "Sending shellcode as part of an open command..." fullword ascii
+    $x3 = "cmdshellcode" fullword ascii
+    $x4 = "You will not be able to run the shellcode. Exiting..." fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 70KB and 1 of them) or (2 of them)
+}
+
+rule SIGNATURE_BASE_BKDR_Xzutil_Binary_CVE_2024_3094_Mar24_1: CVE_2024_3094 FILE {
+  meta:
+    description = "Detects injected code used by the backdoored XZ library (xzutil) CVE-2024-3094."
+    author      = "Florian Roth"
+    id          = "6ccdeb6d-67c4-5358-a76b-aef7f047c997"
+    date        = "2024-03-30"
+    modified    = "2024-04-24"
+    reference   = "https://www.openwall.com/lists/oss-security/2024/03/29/4"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/bkdr_xz_util_cve_2024_3094.yar#L19-L46"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "ed364484ff598b0818f9b3249673e684b52394c25b14e47fbca25a5f96ecc970"
+    score       = 75
+    quality     = 85
+    tags        = "CVE-2024-3094, FILE"
+    hash1       = "319feb5a9cddd81955d915b5632b4a5f8f9080281fb46e2f6d69d53f693c23ae"
+    hash2       = "605861f833fc181c7cdcabd5577ddb8989bea332648a8f498b4eef89b8f85ad4"
+    hash3       = "8fa641c454c3e0f76de73b7cc3446096b9c8b9d33d406d38b8ac76090b0344fd"
+    hash4       = "b418bfd34aa246b2e7b5cb5d263a640e5d080810f767370c4d2c24662a274963"
+    hash5       = "cbeef92e67bf41ca9c015557d81f39adaba67ca9fb3574139754999030b83537"
+    hash6       = "5448850cdc3a7ae41ff53b433c2adbd0ff492515012412ee63a40d2685db3049"
+
+  strings:
+    $op1 = { 48 8d 7c 24 08 f3 ab 48 8d 44 24 08 48 89 d1 4c 89 c7 48 89 c2 e8 ?? ?? ?? ?? 89 c2 }
+    $op2 = { 31 c0 49 89 ff b9 16 00 00 00 4d 89 c5 48 8d 7c 24 48 4d 89 ce f3 ab 48 8d 44 24 48 }
+    $op3 = { 4d 8b 6c 24 08 45 8b 3c 24 4c 8b 63 10 89 85 78 f1 ff ff 31 c0 83 bd 78 f1 ff ff 00 f3 ab 79 07 }
+    $xc1 = { F3 0F 1E FA 55 48 89 F5 4C 89 CE 53 89 FB 81 E7 00 00 00 80 48 83 EC 28 48 89 54 24 18 48 89 4C 24 10 }
+
+  condition:
+    uint16(0) == 0x457f and (all of ($op*) or $xc1)
+}
+
 rule SIGNATURE_BASE_VULN_LNX_OMI_RCE_CVE_2021_386471_Sep21: CVE_2021_38647 FILE {
   meta:
     description = "Detects a Linux OMI version vulnerable to CVE-2021-38647 (OMIGOD) which enables an unauthenticated RCE"
@@ -2828,6 +5103,106 @@ rule SIGNATURE_BASE_VULN_LNX_OMI_RCE_CVE_2021_386471_Sep21: CVE_2021_38647 FILE 
 
   condition:
     uint32be(0) == 0x7f454c46 and $a1 and 1 of ($s*)
+}
+
+rule SIGNATURE_BASE_APT_MAL_LNX_Redmenshen_Bpfdoor_Controller_May22_2: FILE {
+  meta:
+    description = "Detects BPFDoor implants used by Chinese actor Red Menshen"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "d5c3d530-ed6f-563e-a3b0-55d4c82e4899"
+    date        = "2022-05-07"
+    modified    = "2023-12-05"
+    reference   = "https://doublepulsar.com/bpfdoor-an-active-chinese-global-surveillance-tool-54b078f1a896"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/mal_lnx_implant_may22.yar#L78-L100"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "7525c675dbba6eb480f1d28fc6db05bd9907725c291e64ee6dc2453fd42892a0"
+    score       = 85
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "76bf736b25d5c9aaf6a84edd4e615796fffc338a893b49c120c0b4941ce37925"
+    hash2       = "96e906128095dead57fdc9ce8688bb889166b67c9a1b8fdb93d7cff7f3836bb9"
+    hash3       = "c80bd1c4a796b4d3944a097e96f384c85687daeedcdcf05cc885c8c9b279b09c"
+    hash4       = "f47de978da1dbfc5e0f195745e3368d3ceef034e964817c66ba01396a1953d72"
+
+  strings:
+    $opx1 = { 48 83 c0 0c 48 8b 95 e8 fe ff ff 48 83 c2 0c 8b 0a 8b 55 f0 01 ca 89 10 c9 }
+    $opx2 = { 48 01 45 e0 83 45 f4 01 8b 45 f4 3b 45 dc 7c cd c7 45 f4 00 00 00 00 eb 2? 48 8b 05 ?? ?? 20 00 }
+    $op1  = { 48 8d 14 c5 00 00 00 00 48 8b 45 d0 48 01 d0 48 8b 00 48 89 c7 e8 ?? ?? ff ff 48 83 c0 01 48 01 45 e0 }
+    $op2  = { 89 c2 8b 85 fc fe ff ff 01 c2 8b 45 f4 01 d0 2d 7b cf 10 2b 89 45 f4 c1 4d f4 10 }
+    $op3  = { e8 ?? d? ff ff 8b 45 f0 eb 12 8b 85 3c ff ff ff 89 c7 e8 ?? d? ff ff b8 ff ff ff ff c9 }
+
+  condition:
+    uint16(0) == 0x457f and filesize < 100KB and 2 of ($opx*) or 4 of them
+}
+
+rule SIGNATURE_BASE_APT_MAL_LNX_Redmenshen_Bpfdoor_Controller_May22_3: FILE {
+  meta:
+    description = "Detects BPFDoor implants used by Chinese actor Red Menshen"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "91c2153a-a6e0-529e-852c-61f799838798"
+    date        = "2022-05-08"
+    modified    = "2023-12-05"
+    reference   = "https://doublepulsar.com/bpfdoor-an-active-chinese-global-surveillance-tool-54b078f1a896"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/mal_lnx_implant_may22.yar#L102-L119"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "afec0bfeddf5c5c2abc1a3173f636c385437e5d7c0b68665f6274011113a6a9c"
+    score       = 85
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "144526d30ae747982079d5d340d1ff116a7963aba2e3ed589e7ebc297ba0c1b3"
+    hash2       = "fa0defdabd9fd43fe2ef1ec33574ea1af1290bd3d763fdb2bed443f2bd996d73"
+
+  strings:
+    $s1 = "hald-addon-acpi: listening on acpi kernel interface /proc/acpi/event" ascii fullword
+    $s2 = "/sbin/mingetty /dev" ascii fullword
+    $s3 = "pickup -l -t fifo -u" ascii fullword
+
+  condition:
+    uint16(0) == 0x457f and filesize < 200KB and 2 of them or all of them
+}
+
+rule SIGNATURE_BASE_APT_MAL_LNX_Redmenshen_Bpfdoor_Controller_Generic_May22_1: FILE {
+  meta:
+    description = "Detects BPFDoor malware"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "d30df2ae-7008-53c0-9a61-8346a9c9f465"
+    date        = "2022-05-09"
+    modified    = "2023-12-05"
+    reference   = "https://doublepulsar.com/bpfdoor-an-active-chinese-global-surveillance-tool-54b078f1a896"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/mal_lnx_implant_may22.yar#L121-L156"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "57ae5f7dc1d202fe66d6626ef2bf2278b92bec0310449ce049bdaeaec5657c77"
+    score       = 90
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "07ecb1f2d9ffbd20a46cd36cd06b022db3cc8e45b1ecab62cd11f9ca7a26ab6d"
+    hash2       = "1925e3cd8a1b0bba0d297830636cdb9ebf002698c8fa71e0063581204f4e8345"
+    hash3       = "4c5cf8f977fc7c368a8e095700a44be36c8332462c0b1e41bff03238b2bf2a2d"
+    hash4       = "591198c234416c6ccbcea6967963ca2ca0f17050be7eed1602198308d9127c78"
+    hash5       = "599ae527f10ddb4625687748b7d3734ee51673b664f2e5d0346e64f85e185683"
+    hash6       = "5b2a079690efb5f4e0944353dd883303ffd6bab4aad1f0c88b49a76ddcb28ee9"
+    hash7       = "5faab159397964e630c4156f8852bcc6ee46df1cdd8be2a8d3f3d8e5980f3bb3"
+    hash8       = "76bf736b25d5c9aaf6a84edd4e615796fffc338a893b49c120c0b4941ce37925"
+    hash9       = "93f4262fce8c6b4f8e239c35a0679fbbbb722141b95a5f2af53a2bcafe4edd1c"
+    hash10      = "96e906128095dead57fdc9ce8688bb889166b67c9a1b8fdb93d7cff7f3836bb9"
+    hash11      = "97a546c7d08ad34dfab74c9c8a96986c54768c592a8dae521ddcf612a84fb8cc"
+    hash12      = "c796fc66b655f6107eacbe78a37f0e8a2926f01fecebd9e68a66f0e261f91276"
+    hash13      = "c80bd1c4a796b4d3944a097e96f384c85687daeedcdcf05cc885c8c9b279b09c"
+    hash14      = "f47de978da1dbfc5e0f195745e3368d3ceef034e964817c66ba01396a1953d72"
+    hash15      = "f8a5e735d6e79eb587954a371515a82a15883cf2eda9d7ddb8938b86e714ea27"
+    hash16      = "fa0defdabd9fd43fe2ef1ec33574ea1af1290bd3d763fdb2bed443f2bd996d73"
+    hash17      = "fd1b20ee5bd429046d3c04e9c675c41e9095bea70e0329bd32d7edd17ebaf68a"
+
+  strings:
+    $op1 = { c6 80 01 01 00 00 00 48 8b 45 ?8 0f b6 90 01 01 00 00 48 8b 45 ?8 88 90 00 01 00 00 c6 45 ?? 00 0f b6 45 ?? 88 45 }
+    $op2 = { 48 89 55 c8 48 8b 45 c8 48 89 45 ?? 48 8b 45 c8 0f b6 80 00 01 00 00 88 45 f? 48 8b 45 c8 0f b6 80 01 01 00 00 }
+    $op3 = { 48 89 45 ?? 48 8b 45 c8 0f b6 80 00 01 00 00 88 45 f? 48 8b 45 c8 0f b6 80 01 01 00 00 88 45 f? c7 45 f8 00 00 00 00 }
+    $op4 = { 48 89 7d d8 89 75 d4 48 89 55 c8 48 8b 45 c8 48 89 45 ?? 48 8b 45 c8 0f b6 80 00 01 00 00 88 45 f? }
+    $op5 = { 48 8b 45 ?8 c6 80 01 01 00 00 00 48 8b 45 ?8 0f b6 90 01 01 00 00 48 8b 45 ?8 88 90 00 01 00 00 c6 45 ?? 00 0f b6 45 }
+    $op6 = { 89 75 d4 48 89 55 c8 48 8b 45 c8 48 89 45 ?? 48 8b 45 c8 0f b6 80 00 01 00 00 88 45 f? 48 8b 45 c8 }
+
+  condition:
+    uint16(0) == 0x457f and filesize < 200KB and 2 of them or 4 of them
 }
 
 rule SIGNATURE_BASE_Mirai_Botnet_Malware: FILE {
@@ -2991,6 +5366,60 @@ rule SIGNATURE_BASE_MAL_ARM_LNX_Mirai_Mar13_2022: FILE {
     uint16(0) == 0x457f and (3 of ($str*) or 4 of ($attck*))
 }
 
+rule SIGNATURE_BASE_MAL_ELF_Vpnfilter_1: FILE {
+  meta:
+    description = "Detects VPNFilter malware"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "dc50cb37-a6e7-5eb5-9581-31d7fd005e47"
+    date        = "2018-05-24"
+    modified    = "2023-12-05"
+    reference   = "Internal Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_vpnfilter.yar#L11-L31"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "aff7b1f3d4afaf883c2702287ef7d6e13e01e80222ba336978d13deb21a93614"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "f8286e29faa67ec765ae0244862f6b7914fcdde10423f96595cb84ad5cc6b344"
+
+  strings:
+    $s1 = "Login=" fullword ascii
+    $s2 = "Password=" fullword ascii
+    $s3 = "%s/rep_%u.bin" fullword ascii
+    $s4 = "%s:%uh->%s:%hu" fullword ascii
+    $s5 = "Password required" fullword ascii
+    $s6 = "password=" fullword ascii
+    $s7 = "Authorization: Basic" fullword ascii
+    $s8 = "/tmUnblock.cgi" fullword ascii
+
+  condition:
+    uint16(0) == 0x457f and filesize < 100KB and all of them
+}
+
+rule SIGNATURE_BASE_HKTL_EXPL_POC_Libssh_Auth_Bypass_CVE_2023_2283_Jun23_1: CVE_2023_2283 FILE {
+  meta:
+    description = "Detects POC code used in attacks against libssh vulnerability CVE-2023-2283"
+    author      = "Florian Roth"
+    id          = "e72eba33-686f-5fca-bca3-2b875d1ec224"
+    date        = "2023-06-08"
+    modified    = "2023-12-05"
+    reference   = "https://github.com/github/securitylab/tree/1786eaae7f90d87ce633c46bbaa0691d2f9bf449/SecurityExploits/libssh/pubkey-auth-bypass-CVE-2023-2283"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/expl_libssh_cve_2023_2283_jun23.yar#L2-L15"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "4c3d54d7f4902c1da664e41096b5931e6534aaaf63243f12e05b81af63d8b28f"
+    score       = 85
+    quality     = 85
+    tags        = "CVE-2023-2283, FILE"
+
+  strings:
+    $s1 = "nprocs = %d" ascii fullword
+    $s2 = "fork failed: %s" ascii fullword
+
+  condition:
+    uint16(0) == 0x457f and all of them
+}
+
 rule SIGNATURE_BASE_APT_MAL_LNX_Turla_Apr20_1: FILE {
   meta:
     description = "Detects Turla Linux malware"
@@ -3047,6 +5476,451 @@ rule SIGNATURE_BASE_APT_MAL_Winntilinux_Dropper_Azazelfork_May19: AZAZEL_FORK FI
     uint16(0) == 0x457f and all of them
 }
 
+rule SIGNATURE_BASE_MAL_ELF_SALTWATER_Jun23_1: CVE_2023_2868 FILE {
+  meta:
+    description = "Detects SALTWATER malware used in Barracuda ESG exploitations (CVE-2023-2868)"
+    author      = "Florian Roth"
+    id          = "10a038f6-6096-5d3a-aaf5-db441685102b"
+    date        = "2023-06-07"
+    modified    = "2023-12-05"
+    reference   = "https://www.barracuda.com/company/legal/esg-vulnerability"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/mal_lnx_barracuda_cve_2023_2868.yar#L21-L46"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "cb35898c0ee726170da93b4364920ac065f083f9f02db8eb5d293b1ce127cb78"
+    score       = 80
+    quality     = 85
+    tags        = "CVE-2023-2868, FILE"
+    hash1       = "601f44cc102ae5a113c0b5fe5d18350db8a24d780c0ff289880cc45de28e2b80"
+
+  strings:
+    $x1 = "libbindshell.so"
+    $s1 = "ShellChannel"
+    $s2 = "MyWriteAll"
+    $s3 = "CheckRemoteIp"
+    $s4 = "run_cmd"
+    $s5 = "DownloadByProxyChannel"
+    $s6 = "[-] error: popen failed"
+    $s7 = "/home/product/code/config/ssl_engine_cert.pem"
+
+  condition:
+    uint16(0) == 0x457f and filesize < 6000KB and ((1 of ($x*) and 2 of them) or 3 of them) or all of them
+}
+
+rule SIGNATURE_BASE_APT_APT41_CN_ELF_Speculoos_Backdoor: FILE {
+  meta:
+    description = "Detects Speculoos Backdoor used by APT41"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "efe2b368-33af-5382-a5f0-0e7dd7f4dea4"
+    date        = "2020-04-14"
+    modified    = "2023-12-05"
+    reference   = "https://unit42.paloaltonetworks.com/apt41-using-new-speculoos-backdoor-to-target-organizations-globally/"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_apt41.yar#L233-L267"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "ee4cbbc5fc51fb24cbf6017dfb4763ac72a0b23a3b6e794b909e678ebfbabc03"
+    score       = 90
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "6943fbb194317d344ca9911b7abb11b684d3dca4c29adcbcff39291822902167"
+    hash2       = "99c5dbeb545af3ef1f0f9643449015988c4e02bf8a7164b5d6c86f67e6dc2d28"
+
+  strings:
+    $xc1 = {
+      2F 70 72 69 76 61 74 65 2F 76 61 72 00 68 77 2E
+      70 68 79 73 6D 65 6D 00 68 77 2E 75 73 65 72 6D
+      65 6D 00 4E 41 2D 4E 41 2D 4E 41 2D 4E 41 2D 4E
+      41 2D 4E 41 00 6C 6F 30 00 00 00 00 25 30 32 78
+      2D 25 30 32 78 2D 25 30 32 78 2D 25 30 32 78 2D
+      25 30 32 78 2D 25 30 32 78 0A 00 72 00 4E 41 00
+      75 6E 61 6D 65 20 2D 76
+    }
+    $s1  = "badshell" ascii fullword
+    $s2  = "hw.physmem" ascii fullword
+    $s3  = "uname -v" ascii fullword
+    $s4  = "uname -s" ascii fullword
+    $s5  = "machdep.tsc_freq" ascii fullword
+    $s6  = "/usr/sbin/config.bak" ascii fullword
+    $s7  = "enter MessageLoop..." ascii fullword
+    $s8  = "exit StartCBProcess..." ascii fullword
+    $sc1 = {
+      72 6D 20 2D 72 66 20 22 25 73 22 00 2F 70 72 6F
+      63 2F
+    }
+
+  condition:
+    uint16(0) == 0x457f and filesize < 600KB and 1 of ($x*) or 4 of them
+}
+
+rule SIGNATURE_BASE_EQGRP_Durablenapkin_Solaris_2_0_1: FILE {
+  meta:
+    description = "Detects tool from EQGRP toolset - file durablenapkin.solaris.2.0.1.1"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "7b49a26d-9ee3-5aff-93fc-509239daef28"
+    date        = "2016-08-15"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L75-L92"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "113f9451d6792511baa168957c643de02f37826b32944ef882f49b68496ec596"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+
+  strings:
+    $s1 = "recv_ack: %s: Service not supplied by provider" fullword ascii
+    $s2 = "send_request: putmsg \"%s\": %s" fullword ascii
+    $s3 = "port undefined" fullword ascii
+    $s4 = "recv_ack: %s getmsg: %s" fullword ascii
+    $s5 = ">> %d -- %d" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 40KB and 2 of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_Bc_Parser: FILE {
+  meta:
+    description = "Detects tool from EQGRP toolset - file bc-parser"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "ed4523de-b126-503a-83bd-aafd8533b0e5"
+    date        = "2016-08-15"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L172-L187"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "e8911acc1173e1149fd11dd795b72ba26bc654cbc7f9d95053ce420663fcafe9"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "879f2f1ae5d18a3a5310aeeafec22484607649644e5ecb7d8a72f0877ac19cee"
+
+  strings:
+    $s1 = "*** Target may be susceptible to FALSEMOREL      ***" fullword ascii
+    $s2 = "*** Target is susceptible to FALSEMOREL          ***" fullword ascii
+
+  condition:
+    uint16(0) == 0x457f and 1 of them
+}
+
+rule SIGNATURE_BASE_Install_Get_Persistent_Filenames: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall - file install_get_persistent_filenames"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "cf74b479-4b78-537a-878c-2f3ce004b775"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L237-L250"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "be07e3e3e96dd4676a76b32eb8fc47b2ab1f66ebbd6c2a3f1c88fc224f9f39ef"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "4a50ec4bf42087e932e9e67e0ea4c09e52a475d351981bb4c9851fda02b35291"
+
+  strings:
+    $s1 = "Generates the persistence file name and prints it out." fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and all of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_Bo: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall - file bo"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "6aa71528-3ce6-5597-bb1a-e44cff3856d6"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L435-L452"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "48c2d3f13283d2a1b7e1010c724f1e68e6002dd9a9779025dfc3a4952bec95bc"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "aa8b363073e8ae754b1836c30f440d7619890ded92fb5b97c73294b15d22441d"
+
+  strings:
+    $s1 = "ERROR: failed to open %s: %d" fullword ascii
+    $s2 = "__libc_start_main@@GLIBC_2.0" ascii
+    $s3 = "serial number: %s" fullword ascii
+    $s4 = "strerror@@GLIBC_2.0" fullword ascii
+    $s5 = "ERROR: mmap failed: %d" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 20KB and all of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_Bpfcreator_RHEL4: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall - file BpfCreator-RHEL4"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "476185f2-b093-5fb9-8604-891e96fe52a9"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L825-L842"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "8586425b13355170137d66fe8d52ed98982d7c5699b26a8c0132f107b4af43d8"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "bd7303393409623cabf0fcf2127a0b81fae52fe40a0d2b8db0f9f092902bbd92"
+
+  strings:
+    $s1 = "usage %s \"<tcpdump pcap string>\" <outfile>" fullword ascii
+    $s2 = "error reading dump file: %s" fullword ascii
+    $s3 = "truncated dump file; tried to read %u captured bytes, only got %lu" fullword ascii
+    $s4 = "%s: link-layer type %d isn't supported in savefiles" fullword ascii
+    $s5 = "DLT %d is not one of the DLTs supported by this device" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 2000KB and all of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_BARPUNCH_BPICKER: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall - from files BARPUNCH-3110, BPICKER-3100"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "7e88ba9d-1f15-533a-b388-a2a027ddb07c"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L902-L921"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "f5d0cc881bedad736a90109933da8dbd32c4435aa255676c68ae3541bbb61e74"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    super_rule  = 1
+    hash1       = "830538fe8c981ca386c6c7d55635ac61161b23e6e25d96280ac2fc638c2d82cc"
+    hash2       = "d859ce034751cac960825268a157ced7c7001d553b03aec54e6794ff66185e6f"
+
+  strings:
+    $x1 = "--cmd %x --idkey %s --sport %i --dport %i --lp %s --implant %s --bsize %hu --logdir %s --lptimeout %u" fullword ascii
+    $x2 = "%s -c <cmdtype> -l <lp> -i <implant> -k <ikey> -s <port> -d <port> [operation] [options]" fullword ascii
+    $x3 = "* [%lu] 0x%x is marked as stateless (the module will be persisted without its configuration)" fullword ascii
+    $x4 = "%s version %s already has persistence installed. If you want to uninstall," fullword ascii
+    $x5 = "The active module(s) on the target are not meant to be persisted" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 6000KB and 1 of them) or (3 of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_Implants_Gen6: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "1b1c6426-7274-5fd4-9ea2-ef10bda769d4"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L923-L951"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "9f0aa1994199c8cef543b7602b574726171dd96df159a0c496db0c60c339c4d0"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    super_rule  = 1
+    hash1       = "3366b4bbf265716869a487203a8ac39867920880990493dd4dd8385e42b0c119"
+    hash2       = "05031898f3d52a5e05de119868c0ec7caad3c9f3e9780e12f6f28b02941895a4"
+    hash3       = "d9756e3ba272cd4502d88f4520747e9e69d241dee6561f30423840123c1a7939"
+    hash4       = "8e4a76c4b50350b67cabbb2fed47d781ee52d8d21121647b0c0356498aeda2a2"
+    hash5       = "6059bec5cf297266079d52dbb29ab9b9e0b35ce43f718022b5b5f760c1976ec3"
+    hash6       = "d859ce034751cac960825268a157ced7c7001d553b03aec54e6794ff66185e6f"
+    hash7       = "464b4c01f93f31500d2d770360d23bdc37e5ad4885e274a629ea86b2accb7a5c"
+
+  strings:
+    $s1 = "LP.c:pixSecurity - Improper number of bytes read in Security/Interface Information" fullword ascii
+    $s2 = "LP.c:pixSecurity - Not in Session" fullword ascii
+    $s3 = "getModInterface__preloadedModules" fullword ascii
+    $s4 = "showCommands" fullword ascii
+    $s5 = "readModuleInterface" fullword ascii
+    $s6 = "Wrapping_Not_Necessary_Or_Wrapping_Ok" fullword ascii
+    $s7 = "Get_CMD_List" fullword ascii
+    $s8 = "LP_Listen2" fullword ascii
+    $s9 = "killCmdList" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 6000KB and all of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_Implants_Gen5: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "e35748ee-d530-5e73-a74d-5675d05725e9"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L953-L978"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "d4bbd9dbde4ca1da80d49157363ade3ec47d55828529ec7e1a46b64d07c991f0"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    super_rule  = 1
+    hash1       = "3366b4bbf265716869a487203a8ac39867920880990493dd4dd8385e42b0c119"
+    hash2       = "830538fe8c981ca386c6c7d55635ac61161b23e6e25d96280ac2fc638c2d82cc"
+    hash3       = "05031898f3d52a5e05de119868c0ec7caad3c9f3e9780e12f6f28b02941895a4"
+    hash4       = "d9756e3ba272cd4502d88f4520747e9e69d241dee6561f30423840123c1a7939"
+    hash5       = "8e4a76c4b50350b67cabbb2fed47d781ee52d8d21121647b0c0356498aeda2a2"
+    hash6       = "6059bec5cf297266079d52dbb29ab9b9e0b35ce43f718022b5b5f760c1976ec3"
+    hash7       = "d859ce034751cac960825268a157ced7c7001d553b03aec54e6794ff66185e6f"
+    hash8       = "464b4c01f93f31500d2d770360d23bdc37e5ad4885e274a629ea86b2accb7a5c"
+
+  strings:
+    $x1 = "Module and Implant versions do not match.  This module is not compatible with the target implant" fullword ascii
+    $s1 = "%s/BF_READ_%08x_%04d%02d%02d_%02d%02d%02d.log" fullword ascii
+    $s2 = "%s/BF_%04d%02d%02d.log" fullword ascii
+    $s3 = "%s/BF_READ_%08x_%04d%02d%02d_%02d%02d%02d.bin" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and 1 of ($x*)) or (all of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_Bananausurper_Writejetplow: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall - from files BananaUsurper-2120, writeJetPlow-2130"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "901af182-cbfa-533a-a055-565d95005d62"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L1009-L1028"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "101e75800291a7603e03145bff298d7587c9b5f19102e7ba9ed3bf2b544fa5cf"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    super_rule  = 1
+    hash1       = "3366b4bbf265716869a487203a8ac39867920880990493dd4dd8385e42b0c119"
+    hash2       = "464b4c01f93f31500d2d770360d23bdc37e5ad4885e274a629ea86b2accb7a5c"
+
+  strings:
+    $x1 = "Implant Version-Specific Values:" fullword ascii
+    $x2 = "This function should not be used with a Netscreen, something has gone horribly wrong" fullword ascii
+    $s1 = "createSendRecv: recv'd an error from the target." fullword ascii
+    $s2 = "Error: WatchDogTimeout read returned %d instead of 4" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 2000KB and 1 of ($x*)) or (3 of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_Implants_Gen4: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall - from files BLIAR-2110, BLIQUER-2230, BLIQUER-3030, BLIQUER-3120"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "8b2061f0-862d-51de-a7d0-7a36d3e71d61"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L1030-L1051"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "3bfcef33e9a0a1753fd21458ee3173284f98942d30a496c5183c79a7df960208"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    super_rule  = 1
+    hash1       = "05031898f3d52a5e05de119868c0ec7caad3c9f3e9780e12f6f28b02941895a4"
+    hash2       = "d9756e3ba272cd4502d88f4520747e9e69d241dee6561f30423840123c1a7939"
+    hash3       = "8e4a76c4b50350b67cabbb2fed47d781ee52d8d21121647b0c0356498aeda2a2"
+    hash4       = "6059bec5cf297266079d52dbb29ab9b9e0b35ce43f718022b5b5f760c1976ec3"
+
+  strings:
+    $s1 = "Command has not yet been coded" fullword ascii
+    $s2 = "Beacon Domain  : www.%s.com" fullword ascii
+    $s3 = "This command can only be run on a PIX/ASA" fullword ascii
+    $s4 = "Warning! Bad or missing Flash values (in section 2 of .dat file)" fullword ascii
+    $s5 = "Printing the interface info and security levels. PIX ONLY." fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 3000KB and 3 of them) or (all of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_Implants_Gen3: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "ec64bb2b-566b-50b6-a518-222afc88d400"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L1053-L1076"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "32d4dd0e35ea480199f5b2032145326c3eef73243783c580605a4de6877df982"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    super_rule  = 1
+    hash1       = "830538fe8c981ca386c6c7d55635ac61161b23e6e25d96280ac2fc638c2d82cc"
+    hash2       = "05031898f3d52a5e05de119868c0ec7caad3c9f3e9780e12f6f28b02941895a4"
+    hash3       = "d9756e3ba272cd4502d88f4520747e9e69d241dee6561f30423840123c1a7939"
+    hash4       = "8e4a76c4b50350b67cabbb2fed47d781ee52d8d21121647b0c0356498aeda2a2"
+    hash5       = "6059bec5cf297266079d52dbb29ab9b9e0b35ce43f718022b5b5f760c1976ec3"
+    hash6       = "d859ce034751cac960825268a157ced7c7001d553b03aec54e6794ff66185e6f"
+
+  strings:
+    $x1 = "incomplete and must be removed manually.)" fullword ascii
+    $s1 = "%s: recv'd an error from the target." fullword ascii
+    $s2 = "Unable to fetch the address to the get_uptime_secs function for this OS version" fullword ascii
+    $s3 = "upload/activate/de-activate/remove/cmd function failed" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 6000KB and 2 of them) or (all of them)
+}
+
+rule SIGNATURE_BASE_EQGRP_Implants_Gen2: FILE {
+  meta:
+    description = "EQGRP Toolset Firewall"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "58b0b51d-d1f8-5ee2-a4af-491c49dd0573"
+    date        = "2016-08-16"
+    modified    = "2023-12-05"
+    reference   = "Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_eqgrp.yar#L1137-L1168"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "c3cbe11ae38f5affffab247cdc618d0afb5a0feda6ea4b2f43dd8edb2fbf2b11"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    super_rule  = 1
+    hash1       = "3366b4bbf265716869a487203a8ac39867920880990493dd4dd8385e42b0c119"
+    hash2       = "05031898f3d52a5e05de119868c0ec7caad3c9f3e9780e12f6f28b02941895a4"
+    hash3       = "d9756e3ba272cd4502d88f4520747e9e69d241dee6561f30423840123c1a7939"
+    hash4       = "8e4a76c4b50350b67cabbb2fed47d781ee52d8d21121647b0c0356498aeda2a2"
+    hash5       = "6059bec5cf297266079d52dbb29ab9b9e0b35ce43f718022b5b5f760c1976ec3"
+    hash6       = "464b4c01f93f31500d2d770360d23bdc37e5ad4885e274a629ea86b2accb7a5c"
+
+  strings:
+    $x1 = "Modules persistence file written successfully" fullword ascii
+    $x2 = "Modules persistence data successfully removed" fullword ascii
+    $x3 = "No Modules are active on the firewall, nothing to persist" fullword ascii
+    $s1 = "--cmd %x --idkey %s --sport %i --dport %i --lp %s --implant %s --bsize %hu --logdir %s " fullword ascii
+    $s2 = "Error while attemping to persist modules:" fullword ascii
+    $s3 = "Error while reading interface info from PIX" fullword ascii
+    $s4 = "LP.c:pixFree - Failed to get response" fullword ascii
+    $s5 = "WARNING: LP Timeout specified (%lu seconds) less than default (%u seconds).  Setting default" fullword ascii
+    $s6 = "Unable to fetch config address for this OS version" fullword ascii
+    $s7 = "LP.c: interface information not available for this session" fullword ascii
+    $s8 = "[%s:%s:%d] ERROR: " fullword ascii
+    $s9 = "extract_fgbg" fullword ascii
+
+  condition:
+    (uint16(0) == 0x457f and filesize < 3000KB and 1 of ($x*)) or (5 of them)
+}
+
 rule android_rat_androidTester: Android RAT {
   meta:
     author      = "@_lubiedo"
@@ -3086,6 +5960,20 @@ rule linux_miner_doki {
 
   condition:
     uint32(0) == 0x464c457f and filesize < 1MB and all of them
+}
+
+rule apt_apt31_rekoobe {
+  meta:
+    id             = "b1461a72-76ce-4cc5-ac84-3cc87454d288"
+    version        = "1.0"
+    description    = "Find Rekoobe sample via Trend Elf Hash (telfhash)"
+    author         = "Sekoia.io"
+    creation_date  = "2023-07-10"
+    classification = "TLP:CLEAR"
+
+  condition:
+    uint32be(0) == 0x7f454c46 and
+    filesize < 100KB and elf.telfhash() == "T18FC080C7C6B56A34A7F32538AC7C407982035E1581561B207F50C955D93B408404C5EF"
 }
 
 rule apt_spynote_android_dex_strings {
@@ -3263,6 +6151,39 @@ rule ransomware_lin_avoslocker_strings {
 
   condition:
     uint32(0) == 0x464c457f and all of them
+}
+
+rule rootkit_lin_winnti {
+  meta:
+    id             = "c800038e-7f8a-4f24-bf0b-06aba6a828cb"
+    version        = "1.0"
+    description    = "Rootkit used by Winnti"
+    author         = "Sekoia.io"
+    creation_date  = "2024-05-22"
+    classification = "TLP:CLEAR"
+    reference      = "https://x.com/naumovax/status/1792902386295394629"
+    hash1          = "161344ae61278e09eacb1c76508cda45555eee109e6d6a031716a096ab5c84f3"
+    hash2          = "bb56e088739b281c9f56b4fa3fa4d285e45b32c4f9f06b647d7e8cb916054e1a"
+    hash3          = "777c1fda4008f122ff3aef9e80b5b5720c9f2dbc3d7e708277e2ccad1afd8cc5"
+    hash4          = "9c770b12a2da76c41f921f49a22d7bc6b5a1166875b9dc732bc7c05b6ae39241"
+
+  strings:
+    $ = "[CDATA[%s]]></name><type>%o</type><perm>%o</perm><user>%s:%s</user><size>%llu</size><time>%s</time></LIST>"
+    $ = "HideFile"
+    $ = "DownThread"
+    $ = "PortforwardThread"
+    $ = "HidePidPort"
+    $ = "DownFile"
+    $ = "ReadReConnConf"
+    $ = "DecRemotePort"
+    $ = "DecRemoteIP"
+
+  condition:
+    uint32(0) == 0x464c457f
+    and 6 of them
+    and for any i in (0..elf.sections.len() - 1): (
+      hash.md5(elf.sections[i].offset, elf.sections[i].size) == "7dea362b3fac8e00956a4952a3d4f474"
+    )
 }
 
 rule spyware_and_bahamut {
@@ -3607,6 +6528,30 @@ rule Kaiten {
   condition:
     elf.type == elf.ET_EXEC and $irc and
     2 of ($kill, $subnet, $version, $flood)
+}
+
+rule apt_CN_31_sowat_code {
+  meta:
+    author      = "@imp0rtp3"
+    description = "Apt31 router implant (SoWaT) unique code (relevant only for MIPS)"
+    reference   = "https://imp0rtp3.wordpress.com/2021/11/25/sowat/"
+
+  strings:
+    $c1 = { 25 38 00 00 [8] 38 00 1? 9A 09 F8 20 03 2? 20 A0 02 10 40 92 8E }
+    $c2 = { 06 00 30 12 25 20 00 02 04 00 70 12 00 00 00 00 09 F8 20 03 00 00 00 00 ?? 00 BC 8F 01 00 10 26 }
+    $c3 = { 00 01 02 24 25 38 00 00 02 00 06 24 ?? 00 A2 A7 09 F8 20 03 ?? 00 A5 27 }
+    $c4 = { 09 F8 20 03 25 20 ?0 02 0B 00 02 24 0? 00 22 12 ?? 00 BC 8F }
+    $c5 = { ?5 26 ?? 00 BC 8F ?? ?? 99 8F 09 F8 20 03 10 00 04 24 ?? ?? ?5 26 ?? 00 BC 8F ?? ?? 99 8F 09 F8 20 03 0F 00 04 24 01 00 05 24 ?? 00 BC 8F ?? ?? 99 8F 09 F8 20 03 0D 00 04 24 ?? ?? ?5 26 ?? 00 BC 8F ?? ?? 99 8F 09 F8 20 03 0A 00 04 24 }
+    $c6 = { 08 00 03 3C ?? ?? 99 8F 04 00 05 24 80 00 63 24 25 20 00 0? 09 F8 20 03 25 30 43 00 ?? 00 40 04 ?? 00 BC 8F ?? ?? 99 8F 01 00 05 24 09 F8 20 03 0D 00 04 24 }
+
+  condition:
+    uint32(0) == 0x464c457f and
+    filesize < 2MB and
+    (
+      elf.machine == elf.EM_MIPS_RS3_LE or
+      elf.machine == elf.EM_MIPS
+    ) and 4 of ($c*)
+
 }
 
 rule ELF_RANSOMWARE_BLACKCAT: LinuxMalware {
@@ -4117,6 +7062,82 @@ rule Trojan {
 
   condition:
     any of them
+}
+
+rule esxi_commands_ransomware {
+  meta:
+    author      = "Marius 'f0wL' Genheimer <hello@dissectingmalwa.re>"
+    description = "Detects commands issued by Ransomware to interact with ESXi VMs"
+    date        = "2021-12-20"
+    tlp         = "WHITE"
+
+    // AvosLocker
+    hash0 = "e9a7b43acdddc3d2101995a2e2072381449054a7d8d381e6dc6ed64153c9c96a"
+    // BlackCat
+    hash1 = "f8c08d00ff6e8c6adb1a93cd133b19302d0b651afd73ccb54e3b6ac6c60d99c6"
+    // BlackMatter 
+    hash2 = "d4645d2c29505cf10d1b201826c777b62cbf9d752cb1008bef1192e0dd545a82"
+    // HelloKitty  
+    hash3 = "ca607e431062ee49a21d69d722750e5edbd8ffabcb54fa92b231814101756041"
+    // Hive
+    hash4 = "822d89e7917d41a90f5f65bee75cad31fe13995e43f47ea9ea536862884efc25"
+    // REvil
+    hash5 = "ea1872b2835128e3cb49a0bc27e4727ca33c4e6eba1e80422db19b505f965bc4"
+
+  strings:
+    $keyword0 = "esxi" ascii nocase
+    $keyword1 = "vm" ascii nocase
+    $keyword2 = "process" ascii nocase
+    $keyword3 = "kill" ascii nocase
+    $keyword4 = "list" ascii nocase
+    $keyword5 = "stop" ascii nocase
+
+    // observed in: BlackMatter
+    $keyword6 = "firewall" ascii nocase
+
+    // VMware commandline tools
+    $command0 = "esxcli" ascii
+    $command1 = "esxcfg" ascii
+    $command2 = "vicfg" ascii
+    $command3 = "vmware-cmd" ascii
+    $command4 = "vim-cmd" ascii
+
+    // observed in: Hive, Python ESXi Ransomware, BlackCat
+    $command5 = "vmsvc/getallvms" ascii
+    $command6 = "vmsvc/power.off" ascii
+
+    // observed in: BlackCat
+    $command7 = "vmsvc/snapshot.removeall" ascii
+
+    // observed in: BlackMatter, AvosLocker, REvil
+    $argument0 = "--type=force" ascii
+    $argument1 = "--world-id=" ascii
+
+    // observed in: AvosLocker, Revil
+    $argument2 = "--formatter=csv" ascii
+    $argument3 = "--format-param=fields==\"WorldID,DisplayName\"" ascii
+
+    // observed in: HelloKitty
+    $argument4 = "-t=soft" ascii
+    $argument5 = "-t=hard" ascii
+    $argument6 = "-t=force" ascii
+
+    $path0 = "/vmfs"
+
+    // common VMware related file extensions
+    $extension0 = "vmx"
+    $extension1 = "vmdk"
+    $extension2 = "vmsd"
+    $extension3 = "vmsn"
+    $extension5 = "vmem"
+    $extension6 = "vswp"
+
+  condition:
+    uint16(0) == 0x457F
+    and filesize < 10MB
+    and any of ($keyword*)
+    and any of ($command*)
+    and (any of ($argument*) or (any of ($path*)) or (any of ($extension*)))
 }
 
 rule EzuriLoader_revised: LinuxMalware {
