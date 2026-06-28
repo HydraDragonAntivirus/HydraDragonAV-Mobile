@@ -275,6 +275,16 @@ public class ScanEngine {
                         if (!finding.startsWith("✅")) reasons.add("💻 [CODE] " + finding);
                     }
                 }
+
+                // Native engine: clamav (type-gated YARA + signatures) + ML model.
+                if (apkPath != null && NativeScanner.isReady()) {
+                    String verdict = NativeScanner.scanApk(apkPath);
+                    if (verdict != null && verdict.contains("\"malicious\":true")) {
+                        riskScore = 100;
+                        builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                        reasons.add("🛡️ [ENGINE] " + verdict);
+                    }
+                }
             } catch (Exception e) { }
         }
 
