@@ -17,7 +17,8 @@ public class ThreatResult {
         RANSOMWARE,     // Fidye yazılımı
         ADWARE,         // Reklam yazılımı
         TROJAN,         // Truva atı
-        BACKDOOR        // Arka kapı
+        BACKDOOR,       // Arka kapı
+        PUA             // Potansiyel istenmeyen uygulama (PUA.* / PUA_*)
     }
 
     private final String packageName;

@@ -89,6 +89,13 @@ public class ScanEngine {
         return NativeScanner.scanApk(apkPath);
     }
 
+    /** True for ClamAV/YARA names denoting a Potentially-Unwanted App (PUA.* / PUA_*). */
+    private static boolean isPuaName(String name) {
+        if (name == null) return false;
+        String u = name.toUpperCase(java.util.Locale.US);
+        return u.contains("PUA.") || u.contains("PUA_");
+    }
+
     private void loadBloomFilter() {
         try {
             InputStream is = context.getAssets().open("whitelist.bloom");
@@ -278,11 +285,31 @@ public class ScanEngine {
 
                 // Native engine: clamav (type-gated YARA + signatures) + ML model.
                 if (apkPath != null && NativeScanner.isReady()) {
-                    String verdict = NativeScanner.scanApk(apkPath);
-                    if (verdict != null && verdict.contains("\"malicious\":true")) {
-                        riskScore = 100;
-                        builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                        reasons.add("🛡️ [ENGINE] " + verdict);
+                    NativeScanner.Verdict v = NativeScanner.scan(apkPath);
+                    if (v.malicious) {
+                        // Split PUA.* / PUA_* hits (potentially-unwanted) from real
+                        // malware. Only-PUA (and no ML flag) => PUA, lower risk.
+                        boolean hasRealThreat = v.mlMalicious;
+                        for (String m : v.matches) {
+                            boolean isPua = isPuaName(m);
+                            if (!isPua) hasRealThreat = true;
+                            reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + m);
+                        }
+                        if (hasRealThreat) {
+                            riskScore = 100;
+                            builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                        } else {
+                            // Only PUA signatures matched.
+                            riskScore = Math.max(riskScore, 50);
+                            builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
+                        }
+                        if (v.mlMalicious) {
+                            String near = v.nearest != null ? "  ~" + v.nearest : "";
+                            reasons.add(String.format(java.util.Locale.US,
+                                "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
+                        }
+                    } else if (v.isError()) {
+                        Log.w(TAG, "native scan error: " + v.error);
                     }
                 }
             } catch (Exception e) { }

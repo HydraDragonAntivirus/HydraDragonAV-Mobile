@@ -3,11 +3,17 @@ package com.hydradragon.antivirus.engine;
 import android.content.Context;
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Bridge to the native libhydradragonandroid.so scanner.
@@ -96,6 +102,73 @@ public final class NativeScanner {
             return "{\"error\":\"not initialised\"}";
         }
         return nativeScanApk(apkPath);
+    }
+
+    /** Parsed scan verdict. */
+    public static final class Verdict {
+        /** Overall: malicious if any clamav/YARA match OR the ML model flagged it. */
+        public boolean malicious;
+        /** clamav signature + YARA rule names that matched (empty if none). */
+        public final List<String> matches = new ArrayList<>();
+        /** ML one-class model sub-result. */
+        public boolean mlMalicious;
+        public double jaccard;
+        public double anomaly;
+        /** Closest known-malware sample (nullable). */
+        public String nearest;
+        /** Non-null ClamAV target number if the file type was skipped (PE/OLE2/…). */
+        public Integer skippedTarget;
+        /** Non-null if the native scan errored. */
+        public String error;
+
+        public boolean isError() { return error != null; }
+        public boolean isSkipped() { return skippedTarget != null; }
+    }
+
+    /**
+     * Scan an APK and return a fully-parsed {@link Verdict}.
+     */
+    public static Verdict scan(String apkPath) {
+        Verdict v = new Verdict();
+        if (!ready) {
+            v.error = "not initialised";
+            return v;
+        }
+        String json = scanApk(apkPath);
+        if (json == null) {
+            v.error = "null native result";
+            return v;
+        }
+        try {
+            JSONObject o = new JSONObject(json);
+            if (o.has("error")) {
+                v.error = o.optString("error", "unknown");
+                return v;
+            }
+            v.malicious = o.optBoolean("malicious", false);
+            if (o.has("skipped") && !o.isNull("skipped")) {
+                v.skippedTarget = o.optInt("skipped");
+            }
+            JSONArray arr = o.optJSONArray("matches");
+            if (arr != null) {
+                for (int i = 0; i < arr.length(); i++) {
+                    String m = arr.optString(i, null);
+                    if (m != null && !m.isEmpty()) v.matches.add(m);
+                }
+            }
+            JSONObject ml = o.optJSONObject("ml");
+            if (ml != null) {
+                v.mlMalicious = ml.optBoolean("malicious", false);
+                v.jaccard = ml.optDouble("jaccard", 0.0);
+                v.anomaly = ml.optDouble("anomaly", 0.0);
+                if (ml.has("nearest") && !ml.isNull("nearest")) {
+                    v.nearest = ml.optString("nearest", null);
+                }
+            }
+        } catch (JSONException e) {
+            v.error = "parse: " + e.getMessage();
+        }
+        return v;
     }
 
     public static boolean isReady() {
