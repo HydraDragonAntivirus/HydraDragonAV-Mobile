@@ -4,11 +4,11 @@ import os
 import re
 
 DEFAULT_EXCLUDE_TERMS = {"win", "windows", "osx", "macho", "peid", "java", "mz", "pe",
-                         "powershell", "susp", "suspicious", "lnk", "packer"}
+                         "powershell", "susp", "suspicious", "lnk", "packer", "nsis"}
 
 # Terms matched ONLY against the first underscore-segment of the rule name.
 # Use for short/ambiguous terms that would cause false positives elsewhere.
-DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape", "devcpp"}
+DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape", "devcpp", "pptx"}
 
 # Terms matched as an exact TOKEN in the rule NAME only (any camelCase or
 # underscore segment), never in tags/meta/strings/comments. Use for short words
@@ -56,6 +56,14 @@ _MODULE_USAGE_RE = re.compile(r'\b(\w+)\.')
 
 # Any identifier token (used to find rule references inside a condition).
 _IDENT_RE = re.compile(r'[A-Za-z_]\w*')
+
+# PE/DOS "MZ" magic-header check, e.g.  uint16(0) == 0x5A4D  (a Windows-PE
+# indicator). Whitespace-insensitive (\s* matches newlines) so it still fires
+# when the expression is split across multiple lines, and order-agnostic so
+# 0x5A4D == uint16(0) is caught too. Matched against the lowercased block.
+_MZ_MAGIC_RE = re.compile(
+    r'uint16\s*\(\s*0\s*\)\s*==\s*0x5a4d|0x5a4d\s*==\s*uint16\s*\(\s*0\s*\)'
+)
 
 
 def tokenise(text):
@@ -174,6 +182,11 @@ def extract_comments(lines):
     return " ".join(out)
 
 
+def is_private_rule(header):
+    """Return True if the rule header declares a private rule."""
+    return header.lstrip().startswith("private rule ")
+
+
 def extract_rule_name(header):
     """Return the rule identifier from a rule header line."""
     h = header.lstrip()
@@ -226,9 +239,14 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
     """
     block_text = "".join(block).lower()
     # Raw full-block substring checks (catch strings in literals, comments, meta)
-    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# ", "autoit"):
+    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# ", "autoit", "mach-o", "mimikatz", "nullsoft", "c:\\", "c:/"):
         if _raw_term in block_text:
             return False
+
+    # PE/DOS "MZ" magic header check (uint16(0) == 0x5A4D), even if split
+    # across multiple lines or written in reverse order.
+    if _MZ_MAGIC_RE.search(block_text):
+        return False
 
     header = block[0].lstrip()
 
@@ -529,12 +547,34 @@ def main():
                     dropped_names.add(names[i])
                 changed = True
 
+    removed_after_refs = total - keep.count(True)
+    ref_removed = removed_after_refs - direct_removed
+
+    # Pass 3: drop unused private rules — a private rule only exists to be
+    # referenced by other rules, so if no kept rule references it, it is dead
+    # code. Cascades to a fixpoint: removing one private rule can leave another
+    # private rule (that only the first referenced) unused in turn.
+    private_removed = 0
+    changed = True
+    while changed:
+        changed = False
+        # Names referenced by any currently-kept rule.
+        referenced = set()
+        for i, b in enumerate(blocks):
+            if keep[i]:
+                referenced |= body_identifiers(b)
+        for i, b in enumerate(blocks):
+            if keep[i] and is_private_rule(b[0]) and names[i] not in referenced:
+                keep[i] = False
+                private_removed += 1
+                changed = True
+
     kept_blocks = [b for i, b in enumerate(blocks) if keep[i]]
     kept = len(kept_blocks)
-    ref_removed = (total - kept) - direct_removed
 
     print(f"Total rules: {total}, Kept: {kept}, Removed: {total - kept} "
-          f"({direct_removed} direct, {ref_removed} related via rule references)")
+          f"({direct_removed} direct, {ref_removed} related via rule references, "
+          f"{private_removed} unused private)")
 
     with open(dst, "w", encoding="utf-8") as f:
         f.writelines(prelude)

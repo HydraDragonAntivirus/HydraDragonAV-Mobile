@@ -1123,7 +1123,6 @@ fn clamav_type_to_target(clamav_type: &str) -> Option<u32> {
     Some(match clamav_type {
         "CL_TYPE_OLE2" | "CL_TYPE_MSOLE2" => 2,
         "CL_TYPE_HTML" => 3,
-        // CL_TYPE_MAIL (target 4) intentionally omitted: email formats are unsupported on Android.
         "CL_TYPE_GRAPHICS" | "CL_TYPE_GIF" | "CL_TYPE_PNG" | "CL_TYPE_JPEG" => 5,
         "CL_TYPE_ELF" => 6,
         "CL_TYPE_TEXT_ASCII" => 7,
