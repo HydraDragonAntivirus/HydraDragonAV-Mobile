@@ -1,0 +1,5 @@
+// Top-level build file. Plugin versions are declared here and applied in :app.
+// AGP 8.7.x supports compileSdk 35 (Android 15) and requires Gradle 8.9 + JDK 17.
+plugins {
+    id 'com.android.application' version '8.7.3' apply false
+}
