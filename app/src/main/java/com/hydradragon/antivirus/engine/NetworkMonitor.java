@@ -140,12 +140,6 @@ public class NetworkMonitor {
         } else {
             Log.i(TAG, "Loaded " + MALICIOUS_DOMAIN_BLOOM);
         }
-
-        // Domain whitelist bloom filter (opsiyonel)
-        domainWhitelistFilter = loadBloomFromAssets(DOMAIN_WHITELIST_BLOOM);
-        if (domainWhitelistFilter != null) {
-            Log.i(TAG, "Loaded " + DOMAIN_WHITELIST_BLOOM);
-        }
     }
 
     private BloomFilter<CharSequence> loadBloomFromAssets(String assetName) {
@@ -280,10 +274,6 @@ public class NetworkMonitor {
 
         // Bloom filter kontrolü
         if (maliciousDomainFilter != null && maliciousDomainFilter.mightContain(lower)) {
-            // Domain whitelist'te varsa false positive olabilir, pas geç
-            if (domainWhitelistFilter != null && domainWhitelistFilter.mightContain(lower)) {
-                return false;
-            }
             return true;
         }
 
