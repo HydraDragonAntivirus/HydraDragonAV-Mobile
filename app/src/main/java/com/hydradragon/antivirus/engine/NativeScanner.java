@@ -41,9 +41,22 @@ public final class NativeScanner {
     private static final String ASSET_DIR = "scan";
 
     private static volatile boolean ready = false;
+    /** Whether libhydradragonandroid.so loaded. If false, all calls no-op safely. */
+    private static final boolean LIB_LOADED;
 
     static {
-        System.loadLibrary("hydradragonandroid");
+        boolean loaded;
+        try {
+            System.loadLibrary("hydradragonandroid");
+            loaded = true;
+        } catch (Throwable t) {
+            // .so missing for this ABI or not built yet — degrade gracefully
+            // instead of throwing UnsatisfiedLinkError/ExceptionInInitializerError
+            // (which is an Error, not caught by callers' catch(Exception)).
+            loaded = false;
+            Log.e(TAG, "libhydradragonandroid not loaded; native scan disabled", t);
+        }
+        LIB_LOADED = loaded;
     }
 
     private NativeScanner() {
@@ -62,6 +75,9 @@ public final class NativeScanner {
     public static synchronized boolean init(Context context) {
         if (ready) {
             return true;
+        }
+        if (!LIB_LOADED) {
+            return false;   // native lib unavailable — stay disabled
         }
         File dir = new File(context.getFilesDir(), "hydra-scan");
         if (!dir.exists() && !dir.mkdirs()) {
