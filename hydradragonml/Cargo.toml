@@ -1,0 +1,26 @@
+[package]
+name = "hydradragonml"
+version = "0.1.0"
+edition = "2024"
+description = "Pure-Rust one-class APK malware detector for HydraDragon: feature extraction + MinHash/LSH near-duplicate matching + Isolation Forest anomaly scoring. No benign set required."
+license = "GPL-2.0-or-later"
+
+[dependencies]
+# Pure-Rust zip reader to walk APK (zip) entries and pull AndroidManifest / DEX.
+zip = { version = "2", default-features = false, features = ["deflate"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Parallel feature extraction over the 1000-sample corpus during training.
+rayon = "1"
+
+[lib]
+name = "hydradragonml"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hydra-ml-train"
+path = "src/bin/train.rs"
+
+[[bin]]
+name = "hydra-ml-scan"
+path = "src/bin/scan.rs"

@@ -35,6 +35,15 @@ DEFAULT_EXCLUDE_NAME_SUBSTRINGS = {"borland_delphi", "win32", "win64", "windows"
 # that trip false positives on Android).
 DEFAULT_EXCLUDE_META_VALUES = {"greyware_tool_keyword"}
 
+# Terms that mark a KEPT rule as Android/Linux-related and therefore "verified"
+# for the mobile target. Matched case-insensitively as whole words anywhere in
+# the rule block (name, tags, meta, strings, condition, comments). Mirai is the
+# canonical Linux/IoT/Android botnet family; Valhalla is the Nextron rule feed
+# whose Linux/Android coverage we trust. Rules hitting any of these go to
+# clean_rules_filtered_verified.yar; everything else kept goes to
+# clean_rules_filtered_unverified.yar.
+DEFAULT_VERIFY_TERMS = {"android", "linux", "mirai", "valhalla"}
+
 # YARA modules whose usage makes a rule non-Android-compatible.
 # hash / math / time / console are portable — not listed here.
 # elf is included because native .so Android rules rarely use pe/macho/dotnet
@@ -63,6 +72,14 @@ _IDENT_RE = re.compile(r'[A-Za-z_]\w*')
 # 0x5A4D == uint16(0) is caught too. Matched against the lowercased block.
 _MZ_MAGIC_RE = re.compile(
     r'uint16\s*\(\s*0\s*\)\s*==\s*0x5a4d|0x5a4d\s*==\s*uint16\s*\(\s*0\s*\)'
+)
+
+# ELF "\x7fELF" magic-header check via uint16(0), e.g. uint16(0) == 0x457f
+# (little-endian read of the first two header bytes 0x7f 0x45). Order-agnostic
+# and whitespace-insensitive. A hit marks the rule as native/Linux-related and
+# therefore "verified" for the Android/Linux target. Matched on lowercased text.
+_ELF_MAGIC_RE = re.compile(
+    r'uint16\s*\(\s*0\s*\)\s*==\s*0x457f|0x457f\s*==\s*uint16\s*\(\s*0\s*\)'
 )
 
 
@@ -328,6 +345,26 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
     return True
 
 
+def is_android_related(block, verify_terms):
+    """
+    Return True if the rule block contains any verify term (android / linux /
+    mirai / valhalla, ...) as a substring anywhere in the block, case-
+    insensitively. A bare substring match (not whole-word) is intentional: any
+    rule mentioning these terms in any part — name, tags, meta, strings,
+    condition or comments — is treated as Android/Linux-verified.
+    """
+    text = "".join(block).lower()
+    if verify_terms and any(term in text for term in verify_terms):
+        return True
+    # ELF native/Linux signals: elf module usage (elf. namespace or import "elf")
+    # and the ELF uint16 magic header pattern.
+    if _ELF_MAGIC_RE.search(text):
+        return True
+    if uses_non_android_module(block, {"elf"}):
+        return True
+    return False
+
+
 def split_blocks(lines):
     prelude, blocks, current = [], [], None
     for line in lines:
@@ -445,6 +482,19 @@ Examples:
         ),
     )
     parser.add_argument(
+        "--verify-term",
+        metavar="TERM",
+        action="append",
+        default=[],
+        help=(
+            "Add a whole-word term that marks a kept rule as Android/Linux-"
+            "verified (repeatable, case-insensitive). Verified rules are written "
+            "to <dst>_verified.yar, the rest to <dst>_unverified.yar. Added on "
+            f"top of defaults unless --reset-defaults is given. Default: "
+            f"{sorted(DEFAULT_VERIFY_TERMS)}"
+        ),
+    )
+    parser.add_argument(
         "--drop-module",
         metavar="MODULE",
         action="append",
@@ -492,6 +542,10 @@ def main():
     for p in args.exclude_name_substring:
         exclude_name_substrings.add(p.lower())
 
+    verify_terms = set() if args.reset_defaults else set(DEFAULT_VERIFY_TERMS)
+    for t in args.verify_term:
+        verify_terms.add(t.lower())
+
     non_android_modules = set(NON_ANDROID_MODULES)
     for m in args.drop_module:
         non_android_modules.add(m.lower())
@@ -503,6 +557,7 @@ def main():
     print(f"Excluded meta values: {sorted(exclude_meta_values)}")
     print(f"Excluded name subs:   {sorted(exclude_name_substrings)}")
     print(f"Name-only terms:      {sorted(name_only_terms)}")
+    print(f"Verify terms:         {sorted(verify_terms)}")
     print(f"Reading {src}...")
 
     with open(src, "r", encoding="utf-8", errors="replace") as f:
@@ -576,12 +631,45 @@ def main():
           f"({direct_removed} direct, {ref_removed} related via rule references, "
           f"{private_removed} unused private)")
 
-    with open(dst, "w", encoding="utf-8") as f:
+    # Split kept rules: Android/Linux/Mirai/Valhalla-related -> verified,
+    # everything else kept -> unverified. A verified rule's private dependencies
+    # must travel with it, so private rules referenced (transitively) by any
+    # verified rule are forced into the verified bucket too.
+    verified_flags = [is_android_related(b, verify_terms) for b in kept_blocks]
+    kept_names = [extract_rule_name(b[0]) for b in kept_blocks]
+
+    changed = True
+    while changed:
+        changed = False
+        verified_refs = set()
+        for i, b in enumerate(kept_blocks):
+            if verified_flags[i]:
+                verified_refs |= body_identifiers(b)
+        for i, b in enumerate(kept_blocks):
+            if (not verified_flags[i] and is_private_rule(b[0])
+                    and kept_names[i] in verified_refs):
+                verified_flags[i] = True
+                changed = True
+
+    verified_blocks = [b for i, b in enumerate(kept_blocks) if verified_flags[i]]
+    unverified_blocks = [b for i, b in enumerate(kept_blocks) if not verified_flags[i]]
+
+    verified_dst = f"{src_base}_filtered_verified{src_ext}"
+    unverified_dst = f"{src_base}_filtered_unverified{src_ext}"
+
+    with open(verified_dst, "w", encoding="utf-8") as f:
         f.writelines(prelude)
-        for b in kept_blocks:
+        for b in verified_blocks:
             f.writelines(b)
 
-    print(f"Written to {dst}")
+    with open(unverified_dst, "w", encoding="utf-8") as f:
+        f.writelines(prelude)
+        for b in unverified_blocks:
+            f.writelines(b)
+
+    print(f"Verified (android/linux/mirai/valhalla): {len(verified_blocks)} "
+          f"-> {verified_dst}")
+    print(f"Unverified: {len(unverified_blocks)} -> {unverified_dst}")
 
 
 if __name__ == "__main__":
