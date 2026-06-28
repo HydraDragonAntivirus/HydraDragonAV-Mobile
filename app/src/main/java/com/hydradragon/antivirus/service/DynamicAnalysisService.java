@@ -83,10 +83,31 @@ public class DynamicAnalysisService extends AccessibilityService {
                 performGlobalAction(GLOBAL_ACTION_HOME);
             }
 
-            if (lowerText.contains("activate device admin") || 
+            if (lowerText.contains("activate device admin") ||
                 lowerText.contains("cihaz yöneticisini etkinleştir") ||
                 lowerText.contains("cihaz yöneticisi")) {
                 Log.d(TAG, "Device Admin activation screen visible.");
+            }
+
+            // Website scan: pull http(s):// URLs from on-screen text (browser bar
+            // etc.) and check the malware/phishing blooms. Passive read of the
+            // URL the browser already shows — no MITM/TLS interception.
+            try {
+                com.hydradragon.antivirus.engine.UrlThreatScanner scanner =
+                    com.hydradragon.antivirus.engine.UrlThreatScanner.get(this);
+                for (String url : com.hydradragon.antivirus.engine.UrlThreatScanner
+                        .extractUrls(text.toString())) {
+                    String cat = scanner.scanUrl(url);
+                    if (cat != null) {
+                        Log.e(TAG, "MALICIOUS URL (" + cat + "): " + url);
+                        sendAlert("MALICIOUS WEBSITE BLOCKED",
+                            cat + ": " + url);
+                        performGlobalAction(GLOBAL_ACTION_HOME);
+                        break;
+                    }
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "url scan failed", t);
             }
         }
         

@@ -272,9 +272,18 @@ public class NetworkMonitor {
             if (lower.contains(pattern)) return true;
         }
 
-        // Bloom filter kontrolü
+        // Bloom filter kontrolü (eski tekil filtre)
         if (maliciousDomainFilter != null && maliciousDomainFilter.mightContain(lower)) {
             return true;
+        }
+
+        // Tüm bloom'lara karşı kontrol et — domain'i http:// formuna çevirip
+        // (URL bloom'ları http:// string'lerinden üretildi) tüm kategorilere bak.
+        try {
+            if (UrlThreatScanner.get(context).scanUrl("http://" + lower) != null) {
+                return true;
+            }
+        } catch (Throwable ignore) {
         }
 
         return false;

@@ -312,6 +312,18 @@ public class ScanEngine {
                         Log.w(TAG, "native scan error: " + v.error);
                     }
                 }
+
+                // Extract embedded http(s):// URLs from the APK and check them
+                // against the malware/phishing URL blooms (https -> http normalised).
+                java.util.Map<String, String> urlHits =
+                    UrlThreatScanner.get(context).scanApk(apkPath);
+                if (!urlHits.isEmpty()) {
+                    riskScore = Math.max(riskScore, 80);
+                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                    for (java.util.Map.Entry<String, String> e : urlHits.entrySet()) {
+                        reasons.add("🌐 [URL/" + e.getValue() + "] " + e.getKey());
+                    }
+                }
             } catch (Exception e) { }
         }
 
