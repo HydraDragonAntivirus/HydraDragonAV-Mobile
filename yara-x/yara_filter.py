@@ -9,14 +9,14 @@ DEFAULT_EXCLUDE_TERMS = {"win", "windows", "osx", "macho", "peid", "java", "mz",
 
 # Terms matched ONLY against the first underscore-segment of the rule name.
 # Use for short/ambiguous terms that would cause false positives elsewhere.
-DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape", "devcpp", "pptx", "md5"}
+DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape", "pptx", "md5", "vc6"}
 
 # Terms matched as an exact TOKEN in the rule NAME only (any camelCase or
 # underscore segment), never in tags/meta/strings/comments. Use for short words
 # that are meaningful in a rule name but common elsewhere, e.g. "net" (=dotnet)
 # which should drop korna_net_korna / MyNetThing but not match "internet" in a
 # comment or the word "net" in a string.
-DEFAULT_NAME_ONLY_TERMS = {"net"}
+DEFAULT_NAME_ONLY_TERMS = {"net", "devcpp"}
 
 # False-positive rules to drop, matched ONLY as an exact rule-name segment
 # (never in strings/meta/condition/comments). These name benign Android
@@ -24,6 +24,17 @@ DEFAULT_NAME_ONLY_TERMS = {"net"}
 #   androidkotlindebugprobeskt -> Kotlin coroutines DebugProbesKt marker
 #   androidresourcearsc        -> the resources.arsc table every APK ships
 DEFAULT_NAME_FP_TERMS = {"androidkotlindebugprobeskt", "androidresourcearsc"}
+
+# Terms matched ONLY against the rule NAME, case-aware: the lowercase form
+# matches only as a full underscore segment (dll_/_dll/_dll_/dll), NOT inside a
+# word like "mydllthing"; the high-case forms (Dll, DLL) match anywhere in the
+# name. Never scans strings/meta/condition/comments.
+DEFAULT_NAME_SEGMENTS = {"dll"}
+
+# Case-SENSITIVE substrings matched anywhere in the WHOLE rule block (name,
+# strings, meta, condition, comments). Unlike the lowercased raw checks, these
+# match the literal case only — "DLL"/"Dll" fire, a lowercase "dll" does not.
+CASE_SENSITIVE_RAW_TERMS = ("DLL", "Dll")
 
 # Excluded terms allowed to match via startswith() even though they are shorter
 # than the 5-char startswith guard. "susp" intentionally catches the whole
@@ -50,7 +61,7 @@ DEFAULT_EXCLUDE_META_VALUES = {"greyware_tool_keyword"}
 # whose Linux/Android coverage we trust. Rules hitting any of these go to
 # clean_rules_filtered_verified.yar; everything else kept goes to
 # clean_rules_filtered_unverified.yar.
-DEFAULT_VERIFY_TERMS = {"android", "linux", "mirai", "valhalla"}
+DEFAULT_VERIFY_TERMS = {"android", "linux", "mirai", "koodous", "unix", "freebsd"}
 
 # YARA modules whose usage makes a rule non-Android-compatible.
 # hash / math / time / console are portable — not listed here.
@@ -243,7 +254,8 @@ def body_identifiers(block):
 
 def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
                 exclude_meta_values=frozenset(), exclude_name_substrings=frozenset(),
-                name_only_terms=frozenset(), name_fp_terms=frozenset()):
+                name_only_terms=frozenset(), name_fp_terms=frozenset(),
+                name_segments=frozenset()):
     """
     Return False if any of these signals fires:
 
@@ -262,9 +274,15 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
       6. String contents     — name substring (win32/win64/...) appearing
                                anywhere in the strings: section
     """
-    block_text = "".join(block).lower()
+    block_raw = "".join(block)
+    # Case-sensitive whole-block substrings (e.g. high-case DLL / Dll anywhere).
+    for _cs_term in CASE_SENSITIVE_RAW_TERMS:
+        if _cs_term in block_raw:
+            return False
+
+    block_text = block_raw.lower()
     # Raw full-block substring checks (catch strings in literals, comments, meta)
-    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# ", "autoit", "mach-o", "mimikatz", "nullsoft", "c:\\", "c:/", "guloader", "vbscript", "visual basic", ".vbs", "registry", "regedit", "frombase64", ".ps1", "heavensgate", "dotnet"):
+    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# ", "autoit", "mach-o", "mimikatz", "nullsoft", "c:\\", "c:/", "guloader", "vbscript", "visual basic", ".vbs", "registry", "regedit", "frombase64", ".ps1", "heavensgate", "dotnet", "https://github.com/xen0ph0n/yaragenerator", "yargen rule generator", "upx", "system32", "installshield", "wannacry", "wannacrypt", "wcry", "remcos", "formbook", "auto-generated rule", "ntdll", "dll ", " dll", "dlls", "dllinject", '"dll"', "darkcomet", "dllname", "chaos ransomware", "chaos_ransomware", "ntkrnl"):
         if _raw_term in block_text:
             return False
 
@@ -282,9 +300,16 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
     for sub in exclude_name_substrings:
         if sub in name_lower:
             return False
-
     name_tokens, name_parts = tokenise(name)
     if matches_exclude(name_tokens, name_parts, exclude_terms):
+        return False
+
+    # Name-only segment terms (e.g. lowercase "dll"): match only as a full
+    # underscore segment (dll_/_dll/_dll_/dll), never inside a word like
+    # "mydllthing". High-case Dll/DLL are handled by the whole-block
+    # case-sensitive check above, so they are not repeated here.
+    name_us_segments = name.split("_")
+    if name_segments & set(name_us_segments):
         return False
 
     # False-positive name terms: drop when any name segment exactly equals an FP
@@ -368,6 +393,10 @@ def is_android_related(block, verify_terms):
     """
     text = "".join(block).lower()
     if verify_terms and any(term in text for term in verify_terms):
+        return True
+    # ZIP "PK" magic (uint16(0) == 0x4b50): APKs are ZIP archives, so any rule
+    # keying on this header is Android-relevant.
+    if "0x4b50" in text:
         return True
     # ELF native/Linux signals: elf module usage (elf. namespace or import "elf")
     # and the ELF uint16 magic header pattern.
@@ -556,6 +585,7 @@ def main():
         exclude_name_substrings.add(p.lower())
 
     name_fp_terms = set() if args.reset_defaults else set(DEFAULT_NAME_FP_TERMS)
+    name_segments = set() if args.reset_defaults else set(DEFAULT_NAME_SEGMENTS)
 
     verify_terms = set() if args.reset_defaults else set(DEFAULT_VERIFY_TERMS)
     for t in args.verify_term:
@@ -573,6 +603,7 @@ def main():
     print(f"Excluded name subs:   {sorted(exclude_name_substrings)}")
     print(f"Name-only terms:      {sorted(name_only_terms)}")
     print(f"Name FP terms:        {sorted(name_fp_terms)}")
+    print(f"Name segments:        {sorted(name_segments)}")
     print(f"Verify terms:         {sorted(verify_terms)}")
     print(f"Reading {src}...")
 
@@ -601,7 +632,7 @@ def main():
     keep = [
         should_keep(b, exclude_terms, prefix_only_terms, non_android_modules,
                     exclude_meta_values, exclude_name_substrings, name_only_terms,
-                    name_fp_terms)
+                    name_fp_terms, name_segments)
         for b in blocks
     ]
     direct_removed = keep.count(False)
@@ -646,11 +677,25 @@ def main():
                 changed = True
 
     kept_blocks = [b for i, b in enumerate(blocks) if keep[i]]
+
+    # Pass 4: drop duplicate rule identifiers — YARA refuses to compile two rules
+    # with the same name. Keep the first occurrence, drop later duplicates.
+    seen_names = set()
+    deduped = []
+    dup_removed = 0
+    for b in kept_blocks:
+        nm = extract_rule_name(b[0])
+        if nm and nm in seen_names:
+            dup_removed += 1
+            continue
+        seen_names.add(nm)
+        deduped.append(b)
+    kept_blocks = deduped
     kept = len(kept_blocks)
 
     print(f"Total rules: {total}, Kept: {kept}, Removed: {total - kept} "
           f"({direct_removed} direct, {ref_removed} related via rule references, "
-          f"{private_removed} unused private)")
+          f"{private_removed} unused private, {dup_removed} duplicate names)")
 
     # Split kept rules: Android/Linux/Mirai/Valhalla-related -> verified,
     # everything else kept -> unverified. A verified rule's private dependencies
@@ -688,7 +733,7 @@ def main():
         for b in unverified_blocks:
             f.writelines(b)
 
-    print(f"Verified (android/linux/mirai/valhalla): {len(verified_blocks)} "
+    print(f"Verified ({'/'.join(sorted(verify_terms))}/elf): {len(verified_blocks)} "
           f"-> {verified_dst}")
     print(f"Unverified: {len(unverified_blocks)} -> {unverified_dst}")
 

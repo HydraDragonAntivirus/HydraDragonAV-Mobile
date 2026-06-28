@@ -13,7 +13,6 @@
     All rules are licensed under CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/.
 */
 
-import "pe"
 
 rule EXPL_LNX_DirtyFrag_ForensicArtefacts_May26_RID36A9 : DEMO EXPLOIT LINUX {
    meta:
@@ -261,6 +260,26 @@ rule MAL_LNX_CamaroDragon_Sheel_Oct23_RID3283 : DEMO G0129 LINUX MAL {
       $s4 = "update server list success!" ascii fullword
    condition: 
       uint16 ( 0 ) == 0x457f and filesize < 30KB and ( 1 of ( $x* ) or 3 of them ) or 4 of them
+}
+
+rule MAL_WAR_Ivanti_EPMM_MobileIron_Mi_War_Aug23_RID365A : CVE_2023_35078 DEMO FILE MAL {
+   meta:
+      description = "Detects WAR file found in the Ivanti EPMM / MobileIron Core compromises exploiting CVE-2023-35078"
+      author = "Florian Roth"
+      reference = "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-213a"
+      date = "2023-08-01 16:52:11"
+      score = 85
+      customer = "demo"
+      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
+      hash1 = "6255c75e2e52d779da39367e7a7d4b8d1b3c9c61321361952dcc05819251a127"
+      tags = "CVE_2023_35078, DEMO, FILE, MAL"
+      minimum_yara = "3.5.0"
+      
+   strings:
+      $s1 = "logsPaths.txt" ascii fullword
+      $s2 = "keywords.txtFirefox" ascii
+   condition: 
+      uint16 ( 0 ) == 0x4b50 and filesize < 20KB and all of them
 }
 
 rule APT_MAL_UNC4841_SEASPY_Jun23_1_RID2FFA : APT CVE_2023_2868 DEMO MAL {
@@ -604,6 +623,36 @@ rule HKTL_LNX_Pnscan_RID2C57 : DEMO HKTL LINUX T1046 {
       filesize < 6000KB and 1 of them
 }
 
+rule WebShell_JexBoss_WAR_1_RID2F1D : DEMO FILE T1505_003 WEBSHELL {
+   meta:
+      description = "Detects JexBoss versions in WAR form"
+      author = "Florian Roth"
+      reference = "Internal Research"
+      date = "2018-11-08 11:43:21"
+      score = 75
+      customer = "demo"
+      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
+      hash1 = "6271775ab144ce9bb9138bf054b149b5813d3beb96338993c6de35330f566092"
+      hash2 = "6f14a63c3034d3762da8b3ad4592a8209a0c88beebcb9f9bd11b40e879f74eaf"
+      tags = "DEMO, FILE, T1505_003, WEBSHELL"
+      minimum_yara = "3.5.0"
+      
+   strings:
+      $ = "jbossass" fullword ascii
+      $ = "jexws.jsp" fullword ascii
+      $ = "jexws.jspPK" fullword ascii
+      $ = "jexws1.jsp" fullword ascii
+      $ = "jexws1.jspPK" fullword ascii
+      $ = "jexws2.jsp" fullword ascii
+      $ = "jexws2.jspPK" fullword ascii
+      $ = "jexws3.jsp" fullword ascii
+      $ = "jexws3.jspPK" fullword ascii
+      $ = "jexws4.jsp" fullword ascii
+      $ = "jexws4.jspPK" fullword ascii
+   condition: 
+      uint16 ( 0 ) == 0x4b50 and filesize < 4KB and 1 of them
+}
+
 rule MAL_ELF_LNX_Mirai_Oct10_2_RID2F3A : DEMO FILE LINUX MAL {
    meta:
       description = "Detects ELF malware Mirai related"
@@ -621,6 +670,25 @@ rule MAL_ELF_LNX_Mirai_Oct10_2_RID2F3A : DEMO FILE LINUX MAL {
       $c01 = { 50 4F 53 54 20 2F 63 64 6E 2D 63 67 69 2F 00 00 20 48 54 54 50 2F 31 2E 31 0D 0A 55 73 65 72 2D 41 67 65 6E 74 3A 20 00 0D 0A 48 6F 73 74 3A } 
    condition: 
       uint16 ( 0 ) == 0x457f and filesize < 200KB and all of them
+}
+
+rule MAL_JRAT_Oct18_1_RID2BF9 : DEMO FILE MAL {
+   meta:
+      description = "Detects JRAT malware"
+      author = "Florian Roth"
+      reference = "Internal Research"
+      date = "2018-10-11 09:29:21"
+      score = 75
+      customer = "demo"
+      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
+      hash1 = "ce190c37a6fdb2632f4bc5ea0bb613b3fbe697d04e68e126b41910a6831d3411"
+      tags = "DEMO, FILE, MAL"
+      minimum_yara = "3.5.0"
+      
+   strings:
+      $x1 = "/JRat.class" ascii
+   condition: 
+      uint16 ( 0 ) == 0x4b50 and filesize < 700KB and 1 of them
 }
 
 rule PUA_LNX_XMRIG_CryptoMiner_RID3009 : DEMO FILE LINUX MAL xmrig {
@@ -672,6 +740,45 @@ rule MAL_ELF_VPNFilter_1_RID2D6A : APT DEMO FILE LINUX MAL {
       uint16 ( 0 ) == 0x457f and filesize < 100KB and all of them
 }
 
+rule MAL_BurningUmbrella_Sample_11_RID31D5 : APT DEMO FILE MAL {
+   meta:
+      description = "Detects malware sample from Burning Umbrella report"
+      author = "Florian Roth"
+      reference = "https://401trg.pw/burning-umbrella/"
+      date = "2018-05-04 13:39:21"
+      score = 75
+      customer = "demo"
+      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
+      hash1 = "278e9d130678615d0fee4d7dd432f0dda6d52b0719649ee58cbdca097e997c3f"
+      tags = "APT, DEMO, FILE, MAL"
+      minimum_yara = "3.5.0"
+      
+   strings:
+      $s1 = "Resume.app/Contents/Java/Resume.jarPK" fullword ascii
+   condition: 
+      uint16 ( 0 ) == 0x4b50 and filesize < 700KB and 1 of them
+}
+
+rule Exp_EPS_CVE20152545_RID2C5A : DEMO EXPLOIT FILE OFFICE {
+   meta:
+      description = "Detects EPS Word Exploit"
+      author = "Florian Roth"
+      reference = "Internal Research - ME"
+      date = "2017-07-19 09:45:31"
+      score = 90
+      customer = "demo"
+      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
+      
+      tags = "DEMO, EXPLOIT, FILE, OFFICE"
+      minimum_yara = "3.5.0"
+      
+   strings:
+      $s1 = "word/media/image1.eps" ascii
+      $s2 = "-la;7(la+" ascii
+   condition: 
+      uint16 ( 0 ) == 0x4b50 and ( $s1 and #s2 > 20 )
+}
+
 rule Mirai_1_May17_RID2B81 : DEMO FILE MAL {
    meta:
       description = "Detects Mirai Malware"
@@ -691,6 +798,26 @@ rule Mirai_1_May17_RID2B81 : DEMO FILE MAL {
       $s1 = "GET /bins/mirai.x86 HTTP/1.0" fullword ascii
    condition: 
       ( uint16 ( 0 ) == 0x457f and filesize < 5000KB and all of them )
+}
+
+rule SnakeTurla_Malware_May17_4_RID30B4 : DEMO FILE G0010 MAL RUSSIA {
+   meta:
+      description = "Detects Snake / Turla Sample"
+      author = "Florian Roth"
+      reference = "https://blog.fox-it.com/2017/05/03/snake-coming-soon-in-mac-os-x-flavour/"
+      date = "2017-05-04 12:51:11"
+      score = 75
+      customer = "demo"
+      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
+      modified = "2024-07-19"
+      hash1 = "d5ea79632a1a67abbf9fb1c2813b899c90a5fb9442966ed4f530e92715087ee2"
+      tags = "DEMO, FILE, G0010, MAL, RUSSIA"
+      minimum_yara = "3.5.0"
+      
+   strings:
+      $s1 = "Install Adobe Flash Player.app/com.adobe.updatePK" fullword ascii
+   condition: 
+      ( uint16 ( 0 ) == 0x4b50 and filesize < 5000KB and all of them )
 }
 
 rule EquationGroup_store_linux_i386_v_3_3_0_RID3570 : APT DEMO FILE G0020 LINUX {
@@ -1934,6 +2061,51 @@ rule CN_Honker_Webshell_Linux_2_6_Exploit_RID34D6 : CHINA DEMO EXPLOIT LINUX T15
       filesize < 56KB and all of them
 }
 
+rule Webshell_jsp_cmd_2_RID2E17 : DEMO FILE T1505_003 WEBSHELL {
+   meta:
+      description = "Laudanum Injector Tools - file cmd.war"
+      author = "Florian Roth"
+      reference = "http://laudanum.inguardians.com/"
+      date = "2015-06-22 10:59:41"
+      score = 75
+      customer = "demo"
+      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
+      
+      tags = "DEMO, FILE, T1505_003, WEBSHELL"
+      minimum_yara = "3.5.0"
+      
+   strings:
+      $s0 = "cmd.jsp}" fullword ascii
+      $s1 = "cmd.jspPK" fullword ascii
+      $s2 = "WEB-INF/web.xml" fullword ascii
+      $s3 = "WEB-INF/web.xmlPK" fullword ascii
+      $s4 = "META-INF/MANIFEST.MF" fullword ascii
+   condition: 
+      uint16 ( 0 ) == 0x4b50 and filesize < 2KB and all of them
+}
+
+rule CN_Tools_Temp_RID2C07 : APT CHINA DEMO FILE {
+   meta:
+      description = "Chinese Hacktool Set - file Temp.war"
+      author = "Florian Roth"
+      reference = "http://tools.zjqhr.com/"
+      date = "2015-06-13 09:31:41"
+      score = 60
+      customer = "demo"
+      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
+      
+      tags = "APT, CHINA, DEMO, FILE"
+      minimum_yara = "3.5.0"
+      
+   strings:
+      $s0 = "META-INF/context.xml<?xml version=\"1.0\" encoding=\"UTF-8\"?>" fullword ascii
+      $s1 = "browser.jsp" fullword ascii
+      $s3 = "cmd.jsp" fullword ascii
+      $s4 = "index.jsp" fullword ascii
+   condition: 
+      uint16 ( 0 ) == 0x4b50 and filesize < 203KB and all of them
+}
+
 rule LinuxHacktool_eyes_a_RID2F2B : DEMO HKTL LINUX {
    meta:
       description = "Linux hack tools - file a"
@@ -1973,6 +2145,30 @@ rule Webshell_Worse_Linux_Shell_1_RID320C : DEMO LINUX SCRIPT T1505_003 WEBSHELL
       
    strings:
       $s0 = "system(\"mv \".$_FILES['_upl']['tmp_name'].\" \".$currentWD" 
+   condition: 
+      all of them
+}
+
+rule Webshell_phpspy_2006_arabicspy_RID328E : DEMO SCRIPT T1505_003 WEBSHELL {
+   meta:
+      description = "Web Shell - from files 2008.php, 2009mssql.php, phpspy_2005_full.php, phpspy_2006.php, arabicspy.php, hkrkoz.php"
+      author = "Florian Roth"
+      reference = "-"
+      date = "2014-01-28 14:10:11"
+      score = 70
+      customer = "demo"
+      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
+      hash1 = "aa17b71bb93c6789911bd1c9df834ff9"
+      hash2 = "b68bfafc6059fd26732fa07fb6f7f640"
+      hash3 = "40a1f840111996ff7200d18968e42cfe"
+      tags = "DEMO, SCRIPT, T1505_003, WEBSHELL"
+      minimum_yara = "3.5.0"
+      
+   strings:
+      $s0 = "$this -> addFile($content, $filename);" fullword
+      $s3 = "function addFile($data, $name, $time = 0) {" fullword
+      $s8 = "function unix2DosTime($unixtime = 0) {" fullword
+      $s9 = "foreach($filelist as $filename){" fullword
    condition: 
       all of them
 }

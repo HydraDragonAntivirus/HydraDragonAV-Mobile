@@ -13,7 +13,6 @@
     All rules are licensed under CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/.
 */
 
-import "pe"
 
 rule MAL_Backdoor_May26_RID2D5D : DEMO MAL SCRIPT {
    meta:
@@ -291,26 +290,6 @@ rule MAL_Python_Backdoor_Script_Nov23_RID331B : CVE_2023_4966 DEMO MAL RANSOM SC
       $s3 = "Windwoscmd.run_cmd(str(cmd))" ascii
    condition: 
       filesize < 50KB and all of them
-}
-
-rule MAL_WAR_Ivanti_EPMM_MobileIron_Mi_War_Aug23_RID365A : CVE_2023_35078 DEMO FILE MAL {
-   meta:
-      description = "Detects WAR file found in the Ivanti EPMM / MobileIron Core compromises exploiting CVE-2023-35078"
-      author = "Florian Roth"
-      reference = "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-213a"
-      date = "2023-08-01 16:52:11"
-      score = 85
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "6255c75e2e52d779da39367e7a7d4b8d1b3c9c61321361952dcc05819251a127"
-      tags = "CVE_2023_35078, DEMO, FILE, MAL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "logsPaths.txt" ascii fullword
-      $s2 = "keywords.txtFirefox" ascii
-   condition: 
-      uint16 ( 0 ) == 0x4b50 and filesize < 20KB and all of them
 }
 
 rule LOG_EXPL_Citrix_Netscaler_ADC_Exploitation_Attempt_CVE_2023_3519_Jul23_1_RID4034 : CVE_2023_3519 DEMO EXPLOIT LOG {
@@ -605,30 +584,6 @@ rule MAL_Shellcode_Loader_Apr23_RID307A : DEMO MAL {
       $op2 = { B9 49 F7 02 78 4C 8B E8 E8 ?? ?? ?? ?? B9 58 A4 53 E5 48 89 44 24 ?? E8 ?? ?? ?? ?? B9 10 E1 8A C3 48 8B F0 E8 ?? ?? ?? ?? B9 AF B1 5C 94 48 89 44 24 ?? E8 } 
    condition: 
       all of them
-}
-
-rule APT_MAL_NK_3CX_Malicious_Samples_Mar23_3_RID3503 : APT DEMO MAL NK {
-   meta:
-      description = "Detects malicious DLLs related to 3CX compromise (decrypted payload)"
-      author = "Florian Roth , X__Junior (Nextron Systems)"
-      reference = "https://www.reddit.com/r/crowdstrike/comments/125r3uu/20230329_situational_awareness_crowdstrike/"
-      date = "2023-03-29 15:55:01"
-      score = 80
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "aa4e398b3bd8645016d8090ffc77d15f926a8e69258642191deb4e68688ff973"
-      tags = "APT, DEMO, MAL, NK"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $opa1 = { 41 81 C0 ?? ?? ?? ?? 02 C8 49 C1 E9 ?? 41 88 4B ?? 4D 03 D1 8B C8 45 8B CA C1 E1 ?? 33 C1 41 69 D0 ?? ?? ?? ?? 8B C8 C1 E9 ?? 33 C1 8B C8 C1 E1 ?? 81 C2 ?? ?? ?? ?? 33 C1 43 8D 0C 02 02 C8 49 C1 EA ?? 41 88 0B 8B C8 C1 E1 ?? 33 C1 44 69 C2 ?? ?? ?? ?? 8B C8 C1 E9 ?? 33 C1 8B C8 C1 E1 ?? 41 81 C0 } 
-      $opa2 = { 8B C8 41 69 D1 ?? ?? ?? ?? C1 E1 ?? 33 C1 45 8B CA 8B C8 C1 E9 ?? 33 C1 81 C2 ?? ?? ?? ?? 8B C8 C1 E1 ?? 33 C1 41 8B C8 4C 0F AF CF 44 69 C2 ?? ?? ?? ?? 4C 03 C9 45 8B D1 4C 0F AF D7 } 
-      $opb1 = { 45 33 C9 48 89 6C 24 ?? 48 8D 44 24 ?? 48 89 6C 24 ?? 8B D3 48 89 B4 24 ?? ?? ?? ?? 48 89 44 24 ?? 45 8D 41 ?? FF 15 } 
-      $opb2 = { 44 8B 0F 45 8B C6 48 8B 4D ?? 49 8B D7 44 89 64 24 ?? 48 89 7C 24 ?? 44 89 4C 24 ?? 4C 8D 4D ?? 48 89 44 24 ?? 44 89 64 24 ?? 4C 89 64 24 ?? FF 15 } 
-      $opb3 = { 48 FF C2 66 44 39 2C 56 75 ?? 4C 8D 4C 24 ?? 45 33 C0 48 8B CE FF 15 ?? ?? ?? ?? 85 C0 0F 84 ?? ?? ?? ?? 44 0F B7 44 24 ?? 33 F6 48 8B 54 24 ?? 45 33 C9 48 8B 0B 48 89 74 24 ?? 89 74 24 ?? C7 44 24 ?? ?? ?? ?? ?? 48 89 74 24 ?? FF 15 } 
-      $opb4 = { 33 C0 48 8D 6B ?? 4C 8D 4C 24 ?? 89 44 24 ?? BA ?? ?? ?? ?? 48 89 44 24 ?? 48 8B CD 89 44 24 ?? 44 8D 40 ?? 8B F8 FF 15 } 
-   condition: 
-      ( all of ( $opa* ) ) or ( 1 of ( $opa* ) and 1 of ( $opb* ) ) or ( 3 of ( $opb* ) )
 }
 
 rule MAL_RANSOM_SH_ESXi_Attacks_Feb23_2_RID3258 : CRIME DEMO MAL RANSOM SCRIPT {
@@ -1153,32 +1108,6 @@ rule APT_SH_CodeCov_Hack_Apr21_1_RID303D : APT DEMO FILE SCRIPT T1059_004 {
       uint16 ( 0 ) == 0x2123 and filesize < 70KB and all of them
 }
 
-rule WEBSHELL_ASPX_FileExplorer_Mar21_1_RID32A4 : DEMO T1505_003 WEBSHELL {
-   meta:
-      description = "Detects Chopper like ASPX Webshells"
-      author = "Florian Roth"
-      reference = "Internal Research"
-      date = "2021-03-31 14:13:51"
-      score = 80
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "a8c63c418609c1c291b3e731ca85ded4b3e0fba83f3489c21a3199173b176a75"
-      tags = "DEMO, T1505_003, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $x1 = "<span style=\"background-color: #778899; color: #fff; padding: 5px; cursor: pointer\" onclick=" ascii
-      $xc1 = { 3C 61 73 70 3A 48 69 64 64 65 6E 46 69 65 6C 64 20 72 75 6E 61 74 3D 22 73 65 72 76 65 72 22 20 49 44 3D 22 ?? ?? ?? ?? ?? 22 20 2F 3E 3C 62 72 20 2F 3E 3C 62 72 20 2F 3E 20 50 72 6F 63 65 73 73 20 4E 61 6D 65 3A 3C 61 73 70 3A 54 65 78 74 42 6F 78 20 49 44 3D } 
-      $xc2 = { 22 3E 43 6F 6D 6D 61 6E 64 3C 2F 6C 61 62 65 6C 3E 3C 69 6E 70 75 74 20 69 64 3D 22 ?? ?? ?? ?? ?? 22 20 74 79 70 65 3D 22 72 61 64 69 6F 22 20 6E 61 6D 65 3D 22 74 61 62 73 22 3E 3C 6C 61 62 65 6C 20 66 6F 72 3D 22 ?? ?? ?? ?? ?? 22 3E 46 69 6C 65 20 45 78 70 6C 6F 72 65 72 3C 2F 6C 61 62 65 6C 3E 3C 25 2D 2D } 
-      $r1 = "(Request.Form[" ascii
-      $s1 = ".Text + \" Created!\";" ascii
-      $s2 = "DriveInfo.GetDrives()" ascii
-      $s3 = "Encoding.UTF8.GetString(FromBase64String(str.Replace(" ascii
-      $s4 = "encodeURIComponent(btoa(String.fromCharCode.apply(null, new Uint8Array(bytes))));;" 
-   condition: 
-      uint16 ( 0 ) == 0x253c and filesize < 100KB and ( 1 of ( $x* ) or 2 of them ) or 4 of them
-}
-
 rule WEBSHELL_ASPX_Chopper_Like_Mar21_1_RID3288 : DEMO T1505_003 WEBSHELL {
    meta:
       description = "Detects Chopper like ASPX Webshells"
@@ -1484,30 +1413,6 @@ rule HKTL_FRP_INI_Apr20_1_RID2D3E : DEMO FILE HKTL T1090 {
       uint16 ( 0 ) == 0x635b and filesize < 1KB and $h1 at 0 and all of them
 }
 
-rule WEBSHELL_ASPX_XslTransform_Aug21_RID3233 : DEMO T1505_003 WEBSHELL {
-   meta:
-      description = "Detects an ASPX webshell utilizing XSL Transformations"
-      author = "Max Altgelt"
-      reference = "https://gist.github.com/JohnHammond/cdae03ca5bc2a14a735ad0334dcb93d6"
-      date = "2020-02-23 13:55:01"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      
-      tags = "DEMO, T1505_003, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $csharpshell = "Language=\"C#\"" nocase
-      $x1 = "<root>1</root>" 
-      $x2 = ".LoadXml(System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(" 
-      $s1 = "XsltSettings.TrustedXslt" 
-      $s2 = "Xml.XmlUrlResolver" 
-      $s3 = "FromBase64String(Request[\"" 
-   condition: 
-      filesize < 500KB and $csharpshell and ( 1 of ( $x* ) or all of ( $s* ) )
-}
-
 rule MAL_Emotet_JS_Dropper_Oct19_1_RID316E : DEMO FILE MAL T1059_007 {
    meta:
       description = "Detects Emotet JS dropper"
@@ -1606,93 +1511,6 @@ rule APT_WebShell_Tiny_1_RID2DFE : APT DEMO FILE T1505_003 WEBSHELL {
       ( uint16 ( 0 ) == 0x3f3c or uint16 ( 0 ) == 0x253c ) and filesize < 40 and $x1
 }
 
-rule APT_WebShell_AUS_Tiny_2_RID2F47 : APT DEMO FILE T1505_003 WEBSHELL {
-   meta:
-      description = "Detetcs a tiny webshell involved in the Australian Parliament House network compromise"
-      author = "Florian Roth"
-      reference = "https://twitter.com/cyb3rops/status/1097423665472376832"
-      date = "2019-02-18 11:50:21"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "0d6209d86f77a0a69451b0f27b476580c14e0cda15fa6a5003aab57a93e7e5a5"
-      tags = "APT, DEMO, FILE, T1505_003, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $x1 = "Request.Item[System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(\"[password]\"))];" ascii
-      $x2 = "eval(arguments,System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(\"" ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x3f3c or uint16 ( 0 ) == 0x253c ) and filesize < 1KB and 1 of them
-}
-
-rule APT_WebShell_AUS_JScript_3_RID3063 : APT DEMO FILE T1505_003 WEBSHELL {
-   meta:
-      description = "Detetcs a webshell involved in the Australian Parliament House network compromise"
-      author = "Florian Roth"
-      reference = "https://twitter.com/cyb3rops/status/1097423665472376832"
-      date = "2019-02-18 12:37:41"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "7ac6f973f7fccf8c3d58d766dec4ab7eb6867a487aa71bc11d5f05da9322582d"
-      tags = "APT, DEMO, FILE, T1505_003, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "<%@ Page Language=\"Jscript\" validateRequest=\"false\"%><%try{eval(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String" ascii
-      $s2 = ".Item[\"[password]\"])),\"unsafe\");}" ascii
-   condition: 
-      uint16 ( 0 ) == 0x6568 and filesize < 1KB and all of them
-}
-
-rule APT_WebShell_AUS_4_RID2D46 : APT DEMO FILE T1505_003 WEBSHELL {
-   meta:
-      description = "Detetcs a webshell involved in the Australian Parliament House network compromise"
-      author = "Florian Roth"
-      reference = "https://twitter.com/cyb3rops/status/1097423665472376832"
-      date = "2019-02-18 10:24:51"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "83321c02339bb51735fbcd9a80c056bd3b89655f3dc41e5fef07ca46af09bb71"
-      tags = "APT, DEMO, FILE, T1505_003, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "wProxy.Credentials = new System.Net.NetworkCredential(pusr, ppwd);" fullword ascii
-      $s2 = "{return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(" ascii
-      $s3 = ".Equals('User-Agent', StringComparison.OrdinalIgnoreCase))" ascii
-      $s4 = "gen.Emit(System.Reflection.Emit.OpCodes.Ret);" fullword ascii
-   condition: 
-      uint16 ( 0 ) == 0x7566 and filesize < 10KB and 3 of them
-}
-
-rule APT_WebShell_AUS_5_RID2D47 : APT DEMO FILE T1505_003 WEBSHELL {
-   meta:
-      description = "Detetcs a webshell involved in the Australian Parliament House network compromise"
-      author = "Florian Roth"
-      reference = "https://twitter.com/cyb3rops/status/1097423665472376832"
-      date = "2019-02-18 10:25:01"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "54a17fb257db2d09d61af510753fd5aa00537638a81d0a8762a5645b4ef977e4"
-      tags = "APT, DEMO, FILE, T1505_003, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $a1 = "function DEC(d){return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(d));}" fullword ascii
-      $a2 = "function ENC(d){return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(d));}" fullword ascii
-      $s1 = "var hash=DEC(Request.Item['" ascii
-      $s2 = "Response.Write(ENC(SET_ASS_SUCCESS));" fullword ascii
-      $s3 = "hashtable[hash] = assCode;" fullword ascii
-      $s4 = "Response.Write(ss);" fullword ascii
-      $s5 = "var hashtable = Application[CachePtr];" fullword ascii
-   condition: 
-      uint16 ( 0 ) == 0x7566 and filesize < 2KB and 4 of them
-}
-
 rule HKTL_PowerKatz_Feb19_1_RID2EB0 : DEMO HKTL powerkatz {
    meta:
       description = "Detetcs a tool used in the Australian Parliament House network compromise"
@@ -1782,36 +1600,6 @@ rule WebShell_JexBoss_JSP_1_RID2F20 : DEMO T1505_003 WEBSHELL {
       uint16 ( 0 ) == 0x253c and filesize < 1KB and 1 of ( $x* ) or 2 of them
 }
 
-rule WebShell_JexBoss_WAR_1_RID2F1D : DEMO FILE T1505_003 WEBSHELL {
-   meta:
-      description = "Detects JexBoss versions in WAR form"
-      author = "Florian Roth"
-      reference = "Internal Research"
-      date = "2018-11-08 11:43:21"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "6271775ab144ce9bb9138bf054b149b5813d3beb96338993c6de35330f566092"
-      hash2 = "6f14a63c3034d3762da8b3ad4592a8209a0c88beebcb9f9bd11b40e879f74eaf"
-      tags = "DEMO, FILE, T1505_003, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $ = "jbossass" fullword ascii
-      $ = "jexws.jsp" fullword ascii
-      $ = "jexws.jspPK" fullword ascii
-      $ = "jexws1.jsp" fullword ascii
-      $ = "jexws1.jspPK" fullword ascii
-      $ = "jexws2.jsp" fullword ascii
-      $ = "jexws2.jspPK" fullword ascii
-      $ = "jexws3.jsp" fullword ascii
-      $ = "jexws3.jspPK" fullword ascii
-      $ = "jexws4.jsp" fullword ascii
-      $ = "jexws4.jspPK" fullword ascii
-   condition: 
-      uint16 ( 0 ) == 0x4b50 and filesize < 4KB and 1 of them
-}
-
 rule VULN_JQuery_FileUpload_CVE_2018_9206_Oct18_RID34DE : CVE_2018_9206 DEMO VULN {
    meta:
       description = "Detects JQuery File Upload vulnerability CVE-2018-9206"
@@ -1831,25 +1619,6 @@ rule VULN_JQuery_FileUpload_CVE_2018_9206_Oct18_RID34DE : CVE_2018_9206 DEMO VUL
       $s3 = "$upload_handler = new UploadHandler();" ascii fullword
    condition: 
       all of them
-}
-
-rule MAL_JRAT_Oct18_1_RID2BF9 : DEMO FILE MAL {
-   meta:
-      description = "Detects JRAT malware"
-      author = "Florian Roth"
-      reference = "Internal Research"
-      date = "2018-10-11 09:29:21"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "ce190c37a6fdb2632f4bc5ea0bb613b3fbe697d04e68e126b41910a6831d3411"
-      tags = "DEMO, FILE, MAL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $x1 = "/JRat.class" ascii
-   condition: 
-      uint16 ( 0 ) == 0x4b50 and filesize < 700KB and 1 of them
 }
 
 rule HKTL_SqlMap_RID2AF1 : DEMO HKTL {
@@ -1950,46 +1719,6 @@ rule HKTL_shellpop_Telnet_TCP_RID301B : DEMO HKTL SCRIPT {
       filesize < 3KB and 1 of them
 }
 
-rule MAL_BurningUmbrella_Sample_11_RID31D5 : APT DEMO FILE MAL {
-   meta:
-      description = "Detects malware sample from Burning Umbrella report"
-      author = "Florian Roth"
-      reference = "https://401trg.pw/burning-umbrella/"
-      date = "2018-05-04 13:39:21"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "278e9d130678615d0fee4d7dd432f0dda6d52b0719649ee58cbdca097e997c3f"
-      tags = "APT, DEMO, FILE, MAL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "Resume.app/Contents/Java/Resume.jarPK" fullword ascii
-   condition: 
-      uint16 ( 0 ) == 0x4b50 and filesize < 700KB and 1 of them
-}
-
-rule Lazagne_PW_Dumper_RID2DA5 : DEMO HKTL T1003 {
-   meta:
-      description = "Detects Lazagne PW Dumper"
-      author = "Markus Neis, Florian Roth"
-      reference = "https://github.com/AlessandroZ/LaZagne/releases/"
-      date = "2018-03-22 10:40:41"
-      score = 70
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      
-      tags = "DEMO, HKTL, T1003"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "Crypto.Hash" fullword ascii
-      $s2 = "laZagne" fullword ascii
-      $s3 = "impacket.winregistry" fullword ascii
-   condition: 
-      3 of them
-}
-
 rule TA18_074A_scripts_RID2CB1 : APT DEMO {
    meta:
       description = "Detects malware mentioned in TA18-074A"
@@ -2047,28 +1776,6 @@ rule GoldDragon_Aux_File_RID2E5E : APT CHINA CRIME DEMO {
       $x1 = "/////////////////////regkeyenum////////////" ascii
    condition: 
       filesize < 500KB and 1 of them
-}
-
-rule TopHat_BAT_RID2A97 : APT DEMO SCRIPT {
-   meta:
-      description = "Semiautomatically generated YARA rule - file cgen.bat"
-      author = "Florian Roth"
-      reference = "https://researchcenter.paloaltonetworks.com/2018/01/unit42-the-tophat-campaign-attacks-within-the-middle-east-region-using-popular-third-party-services/#appendix"
-      date = "2018-01-29 07:03:21"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "f998271c4140caad13f0674a192093092e2a9f7794a7fbbdaa73ae8f2496c387"
-      hash2 = "0fbc6fd653b971c8677aa17ecd2749200a4a563f9dd5409cfb26d320618db3e2"
-      tags = "APT, DEMO, SCRIPT"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "= New-Object IO.MemoryStream(,[Convert]::FromBase64String(\"" ascii
-      $s2 = "goto Start" fullword ascii
-      $s3 = ":Start" fullword ascii
-   condition: 
-      filesize < 5KB and all of them
 }
 
 rule Turla_Mal_Script_Jan18_1_RID2FD7 : DEMO G0010 MAL RUSSIA SCRIPT T1059 {
@@ -2298,46 +2005,6 @@ rule ALFA_SHELL_RID29FC : DEMO SCRIPT T1505_003 WEBSHELL {
       ( filesize < 900KB and 2 of ( $x* ) or $f1 at ( filesize - 22 ) )
 }
 
-rule KeeTheft_Out_Shellcode_RID2FAA : DEMO HKTL SCRIPT T1059_001 {
-   meta:
-      description = "Detects component of KeeTheft - KeePass dump tool - file Out-Shellcode.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/HarmJ0y/KeeThief"
-      date = "2017-08-29 12:06:51"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "2afb1c8c82363a0ae43cad9d448dd20bb7d2762aa5ed3672cd8e14dee568e16b"
-      tags = "DEMO, HKTL, SCRIPT, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $x1 = "Write-Host \"Shellcode length: 0x$(($ShellcodeLength + 1).ToString('X4'))\"" fullword ascii
-      $x2 = "$TextSectionInfo = @($MapContents | Where-Object { $_ -match '\\.text\\W+CODE' })[0]" fullword ascii
-   condition: 
-      ( filesize < 2KB and 1 of them )
-}
-
-rule Exp_EPS_CVE20152545_RID2C5A : DEMO EXPLOIT FILE OFFICE {
-   meta:
-      description = "Detects EPS Word Exploit"
-      author = "Florian Roth"
-      reference = "Internal Research - ME"
-      date = "2017-07-19 09:45:31"
-      score = 90
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      
-      tags = "DEMO, EXPLOIT, FILE, OFFICE"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "word/media/image1.eps" ascii
-      $s2 = "-la;7(la+" ascii
-   condition: 
-      uint16 ( 0 ) == 0x4b50 and ( $s1 and #s2 > 20 )
-}
-
 rule PAS_Webshell_Encoded_RID2E9B : DEMO FILE T1505_003 WEBSHELL {
    meta:
       description = "Detects a PAS webshell"
@@ -2475,27 +2142,6 @@ rule TA459_Malware_May17_1_RID2DEE : DEMO FILE G0062 MAL {
       ( uint16 ( 0 ) == 0x6152 and filesize < 800KB and all of them )
 }
 
-rule WannaCry_RansomNote_RID2E99 : CRIME DEMO FILE MAL RANSOM {
-   meta:
-      description = "Detects WannaCry Ransomware Note"
-      author = "Florian Roth"
-      reference = "https://www.hybrid-analysis.com/sample/ed01ebfbc9eb5bbea545af4d01bf5f1071661840480439c6e5babe8e080e41aa?environmentId=100"
-      date = "2017-05-12 11:21:21"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      modified = "2024-07-19"
-      hash1 = "4a25d98c121bb3bd5b54e0b6a5348f7b09966bffeec30776e5a731813f05d49e"
-      tags = "CRIME, DEMO, FILE, MAL, RANSOM"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "A:  Don't worry about decryption." fullword ascii
-      $s2 = "Q:  What's wrong with my files?" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x3a51 and filesize < 2KB and all of them )
-}
-
 rule SnakeTurla_Malware_May17_1_RID30B1 : DEMO FILE G0010 MAL RUSSIA {
    meta:
       description = "Detects Snake / Turla Sample"
@@ -2514,26 +2160,6 @@ rule SnakeTurla_Malware_May17_1_RID30B1 : DEMO FILE G0010 MAL RUSSIA {
       $s1 = "/Users/vlad/Desktop/install/install/" ascii
    condition: 
       ( uint16 ( 0 ) == 0xfacf and filesize < 200KB and all of them )
-}
-
-rule SnakeTurla_Malware_May17_4_RID30B4 : DEMO FILE G0010 MAL RUSSIA {
-   meta:
-      description = "Detects Snake / Turla Sample"
-      author = "Florian Roth"
-      reference = "https://blog.fox-it.com/2017/05/03/snake-coming-soon-in-mac-os-x-flavour/"
-      date = "2017-05-04 12:51:11"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      modified = "2024-07-19"
-      hash1 = "d5ea79632a1a67abbf9fb1c2813b899c90a5fb9442966ed4f530e92715087ee2"
-      tags = "DEMO, FILE, G0010, MAL, RUSSIA"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "Install Adobe Flash Player.app/com.adobe.updatePK" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x4b50 and filesize < 5000KB and all of them )
 }
 
 rule SnakeTurla_Installd_SH_RID2F9F : DEMO FILE G0010 MAL RUSSIA SCRIPT {
@@ -3454,330 +3080,6 @@ rule p0wnedShell_outputs_RID2EDA : DEMO HKTL {
       1 of them
 }
 
-rule Empire_Exploit_Jenkins_RID2FE8 : DEMO EXPLOIT SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Exploit-Jenkins.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 12:17:11"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "a5182cccd82bb9984b804b365e07baba78344108f225b94bd12a59081f680729"
-      tags = "DEMO, EXPLOIT, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$postdata=\"script=println+new+ProcessBuilder%28%27\"+$($Cmd)+\"" ascii
-      $s2 = "$url = \"http://\"+$($Rhost)+\":\"+$($Port)+\"/script\"" fullword ascii
-      $s3 = "$Cmd = [System.Web.HttpUtility]::UrlEncode($Cmd)" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x6620 and filesize < 7KB and 1 of them ) or all of them
-}
-
-rule Empire_Get_SecurityPackages_RID31C8 : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Get-SecurityPackages.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 13:37:11"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "5d06e99121cff9b0fce74b71a137501452eebbcd1e901b26bde858313ee5a9c1"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$null = $EnumBuilder.DefineLiteral('LOGON', 0x2000)" fullword ascii
-      $s2 = "$EnumBuilder = $ModuleBuilder.DefineEnum('SSPI.SECPKG_FLAG', 'Public', [Int32])" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7566 and filesize < 20KB and 1 of them ) or all of them
-}
-
-rule Empire_Invoke_PowerDump_RID3040 : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Invoke-PowerDump.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 12:31:51"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "095c5cf5c0c8a9f9b1083302e2ba1d4e112a410e186670f9b089081113f5e0e1"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $x16 = "$enc = Get-PostHashdumpScript" fullword ascii
-      $x19 = "$lmhash = DecryptSingleHash $rid $hbootkey $enc_lm_hash $almpassword;" fullword ascii
-      $x20 = "$rc4_key = $md5.ComputeHash($hbootkey[0..0x0f] + [BitConverter]::GetBytes($rid) + $lmntstr);" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x2023 and filesize < 60KB and 1 of them ) or all of them
-}
-
-rule Empire_Invoke_ShellcodeMSIL_RID3165 : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Invoke-ShellcodeMSIL.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 13:20:41"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "9a9c6c9eb67bde4a8ce2c0858e353e19627b17ee2a7215fa04a19010d3ef153f"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$FinalShellcode.Length" fullword ascii
-      $s2 = "@(0x60,0xE8,0x04,0,0,0,0x61,0x31,0xC0,0xC3)" fullword ascii
-      $s3 = "@(0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57," fullword ascii
-      $s4 = "$TargetMethod.Invoke($null, @(0x11112222)) | Out-Null" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7566 and filesize < 30KB and 1 of them ) or all of them
-}
-
-rule Empire_Get_GPPPassword_RID2F8B : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Get-GPPPassword.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 12:01:41"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "55a4519c4f243148a971e4860225532a7ce730b3045bde3928303983ebcc38b0"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$Base64Decoded = [Convert]::FromBase64String($Cpassword)" fullword ascii
-      $s2 = "$XMlFiles += Get-ChildItem -Path \"\\\\$DomainController\\SYSVOL\" -Recurse" ascii
-      $s3 = "function Get-DecryptedCpassword {" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7566 and filesize < 30KB and 1 of them ) or all of them
-}
-
-rule Empire_Invoke_SmbScanner_RID3089 : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Invoke-SmbScanner.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 12:44:01"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "9a705f30766279d1e91273cfb1ce7156699177a109908e9a986cc2d38a7ab1dd"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$up = Test-Connection -count 1 -Quiet -ComputerName $Computer " fullword ascii
-      $s2 = "$out | add-member Noteproperty 'Password' $Password" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7566 and filesize < 10KB and 1 of them ) or all of them
-}
-
-rule Empire_Invoke_EgressCheck_RID30E4 : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Invoke-EgressCheck.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 12:59:11"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "e2d270266abe03cfdac66e6fc0598c715e48d6d335adf09a9ed2626445636534"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "egress -ip $ip -port $c -delay $delay -protocol $protocol" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x233c and filesize < 10KB and 1 of them ) or all of them
-}
-
-rule Empire_Out_Minidump_RID2EAC : DEMO SCRIPT T1003_001 T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Out-Minidump.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 11:24:31"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "7803ae7ba5d4e7d38e73745b3f321c2ca714f3141699d984322fa92e0ff037a1"
-      tags = "DEMO, SCRIPT, T1003_001, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$Result = $MiniDumpWriteDump.Invoke($null, @($ProcessHandle," fullword ascii
-      $s2 = "$ProcessFileName = \"$($ProcessName)_$($ProcessId).dmp\"" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7566 and filesize < 10KB and 1 of them ) or all of them
-}
-
-rule Empire_Invoke_PostExfil_RID303B : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Invoke-PostExfil.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 12:31:01"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "00c0479f83c3dbbeff42f4ab9b71ca5fe8cd5061cb37b7b6861c73c54fd96d3e"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "# upload to a specified exfil URI" fullword ascii
-      $s2 = "Server path to exfil to." fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x490a and filesize < 2KB and 1 of them ) or all of them
-}
-
-rule Empire_Invoke_SMBAutoBrute_RID311A : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Invoke-SMBAutoBrute.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 13:08:11"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "7950f8abdd8ee09ed168137ef5380047d9d767a7172316070acc33b662f812b2"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "[*] PDC: LAB-2008-DC1.lab.com" fullword ascii
-      $s2 = "$attempts = Get-UserBadPwdCount $userid $dcs" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7566 and filesize < 30KB and 1 of them ) or all of them
-}
-
-rule Empire_KeePassConfig_RID2ED4 : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file KeePassConfig.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 11:31:11"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "5a76e642357792bb4270114d7cd76ce45ba24b0d741f5c6b916aeebd45cff2b3"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$UserMasterKeyFiles = @(, $(Get-ChildItem -Path $UserMasterKeyFolder -Force | Select-Object -ExpandProperty FullName) )" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7223 and filesize < 80KB and 1 of them ) or all of them
-}
-
-rule Empire_Invoke_SSHCommand_RID304A : DEMO SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - file Invoke-SSHCommand.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 12:33:31"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "cbaf086b14d5bb6a756cbda42943d4d7ef97f8277164ce1f7dd0a1843e9aa242"
-      tags = "DEMO, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$Base64 = 'TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAA" ascii
-      $s2 = "Invoke-SSHCommand -ip 192.168.1.100 -Username root -Password test -Command \"id\"" fullword ascii
-      $s3 = "Write-Verbose \"[*] Error loading dll\"" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x660a and filesize < 2000KB and 1 of them ) or all of them
-}
-
-rule Empire_Agent_Gen_RID2D3A : DEMO GEN SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - from files agent.ps1, agent.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 10:22:51"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "380fd09bfbe47d5c8c870c1c97ff6f44982b699b55b61e7c803d3423eb4768db"
-      tags = "DEMO, GEN, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$wc.Headers.Add(\"User-Agent\",$script:UserAgent)" fullword ascii
-      $s2 = "$min = [int]((1-$script:AgentJitter)*$script:AgentDelay)" fullword ascii
-      $s3 = "if ($script:AgentDelay -ne 0){" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x660a and filesize < 100KB and 1 of them ) or all of them
-}
-
-rule Empire_Invoke_InveighRelay_Gen_RID32DD : DEMO GEN SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - from files Invoke-InveighRelay.ps1, Invoke-InveighRelay.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 14:23:21"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash2 = "21b90762150f804485219ad36fa509aeda210d46453307a9761c816040312f41"
-      tags = "DEMO, GEN, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$inveigh.SMBRelay_failed_list.Add(\"$HTTP_NTLM_domain_string\\$HTTP_NTLM_user_string $SMBRelayTarget\")" fullword ascii
-      $s2 = "$NTLM_challenge_base64 = [System.Convert]::ToBase64String($HTTP_NTLM_bytes)" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7566 and filesize < 200KB and 1 of them ) or all of them
-}
-
-rule Empire_KeePassConfig_Gen_RID304D : DEMO GEN SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - from files KeePassConfig.ps1, KeePassConfig.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 12:34:01"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash2 = "5a76e642357792bb4270114d7cd76ce45ba24b0d741f5c6b916aeebd45cff2b3"
-      tags = "DEMO, GEN, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$KeePassXML = [xml](Get-Content -Path $KeePassXMLPath)" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7223 and filesize < 80KB and 1 of them ) or all of them
-}
-
-rule Empire_Invoke_Portscan_Gen_RID3160 : DEMO GEN SCRIPT T1059 T1059_001 {
-   meta:
-      description = "Detects Empire component - from files Invoke-Portscan.ps1, Invoke-Portscan.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/adaptivethreat/Empire"
-      date = "2016-11-05 13:19:51"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash2 = "cf7030be01fab47e79e4afc9e0d4857479b06a5f68654717f3bc1bc67a0f38d3"
-      tags = "DEMO, GEN, SCRIPT, T1059, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "Test-Port -h $h -p $Port -timeout $Timeout" fullword ascii
-      $s2 = "1 {$nHosts=10;  $Threads = 32;   $Timeout = 5000 }" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0x7566 and filesize < 100KB and 1 of them ) or all of them
-}
-
 rule OilRig_Campaign_Reconnaissance_RID32E1 : DEMO G0049 MAL MIDDLE_EAST T1016 T1033 T1087_002 {
    meta:
       description = "Detects Oilrig malware samples"
@@ -3798,28 +3100,6 @@ rule OilRig_Campaign_Reconnaissance_RID32E1 : DEMO G0049 MAL MIDDLE_EAST T1016 T
       $s3 = "net group \"domain admins\" /domain 2>&1 & " ascii
    condition: 
       ( filesize < 1KB and 1 of them )
-}
-
-rule OilRig_Malware_Campaign_Mal3_RID31AA : DEMO G0049 MAL MIDDLE_EAST {
-   meta:
-      description = "Detects Oilrig malware samples"
-      author = "Florian Roth"
-      reference = "https://www.paloaltonetworks.com/blog/2016/10/unit42-oilrig-malware-campaign-updates-toolset-and-expands-targets/"
-      date = "2016-10-12 13:32:11"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      modified = "2024-07-19"
-      hash1 = "02226181f27dbf59af5377e39cf583db15200100eea712fcb6f55c0a2245a378"
-      tags = "DEMO, G0049, MAL, MIDDLE_EAST"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $x1 = "(Get-Content $env:Public\\Libraries\\dns.ps1) -replace ('#'+'##'),$botid | Set-Content $env:Public\\Libraries\\dns.ps1" fullword ascii
-      $x2 = "Invoke-Expression ($global:myhome+'tp\\'+$global:filename+'.bat > '+$global:myhome+'tp\\'+$global:filename+'.txt')" fullword ascii
-      $x3 = "('00000000'+(convertTo-Base36(Get-Random -Maximum 46655)))" fullword ascii
-   condition: 
-      ( filesize < 10KB and 1 of them )
 }
 
 rule UploadShell_98038f1efa4203432349badabad76d44337319a6_RID3657 : DEMO FILE SCRIPT T1505_003 WEBSHELL {
@@ -3986,125 +3266,6 @@ rule WebShell_Generic_1609_A_RID2F12 : DEMO FILE GEN T1505_003 WEBSHELL {
       $s1 = "return $qwery45234dws($b);" fullword ascii
    condition: 
       ( uint16 ( 0 ) == 0x3f3c and 1 of them )
-}
-
-rule ps1_toolkit_Inveigh_BruteForce_RID3303 : DEMO FILE HKTL SCRIPT T1059_001 T1110 {
-   meta:
-      description = "Semiautomatically generated YARA rule - file Inveigh-BruteForce.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/vysec/ps1-toolkit"
-      date = "2016-09-04 14:29:41"
-      score = 80
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "a2ae1e02bcb977cd003374f551ed32218dbcba3120124e369cc150b9a63fe3b8"
-      tags = "DEMO, FILE, HKTL, SCRIPT, T1059_001, T1110"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "Import-Module .\\Inveigh.psd1;Invoke-InveighBruteForce -SpooferTarget 192.168.1.11 " fullword ascii
-      $s2 = "$(Get-Date -format 's') - Attempting to stop HTTP listener\")|Out-Null" fullword ascii
-      $s3 = "Invoke-InveighBruteForce -SpooferTarget 192.168.1.11 -Hostname server1" fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0xbbef and filesize < 300KB and 1 of them ) or ( 2 of them )
-}
-
-rule ps1_toolkit_Inveigh_BruteForce_2_RID3394 : DEMO FILE HKTL SCRIPT T1059_001 T1110 {
-   meta:
-      description = "Semiautomatically generated YARA rule - from files Inveigh-BruteForce.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/vysec/ps1-toolkit"
-      date = "2016-09-04 14:53:51"
-      score = 80
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "a2ae1e02bcb977cd003374f551ed32218dbcba3120124e369cc150b9a63fe3b8"
-      tags = "DEMO, FILE, HKTL, SCRIPT, T1059_001, T1110"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "}.NTLMv2_file_queue[0]|Out-File ${" ascii
-      $s2 = "}.NTLMv2_file_queue.RemoveRange(0,1)" ascii
-      $s3 = "}.NTLMv2_file_queue.Count -gt 0)" ascii
-      $s4 = "}.relay_running = $false" ascii
-   condition: 
-      ( uint16 ( 0 ) == 0xbbef and filesize < 200KB and 2 of them ) or ( 4 of them )
-}
-
-rule ps1_toolkit_PowerUp_2_RID2F4C : DEMO FILE HKTL SCRIPT T1059_001 T1087_001 {
-   meta:
-      description = "Semiautomatically generated YARA rule - from files PowerUp.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/vysec/ps1-toolkit"
-      date = "2016-09-04 11:51:11"
-      score = 80
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "fc65ec85dbcd49001e6037de9134086dd5559ac41ac4d1adf7cab319546758ad"
-      tags = "DEMO, FILE, HKTL, SCRIPT, T1059_001, T1087_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "if($MyConString -like $([Text.Encoding]::Unicode.GetString([Convert]::" ascii
-      $s2 = "FromBase64String('KgBwAGEAcwBzAHcAbwByAGQAKgA=')))) {" ascii
-      $s3 = "$Null = Invoke-ServiceStart" ascii
-      $s4 = "Write-Warning \"[!] Access to service $" ascii
-      $s5 = "} = $MyConString.Split(\"=\")[1].Split(\";\")[0]" ascii
-      $s6 = "} += \"net localgroup ${" ascii
-   condition: 
-      ( uint16 ( 0 ) == 0xbbef and filesize < 2000KB and 2 of them ) or ( 4 of them )
-}
-
-rule ps1_toolkit_Persistence_2_RID30FF : DEMO FILE HKTL SCRIPT T1059_001 {
-   meta:
-      description = "Semiautomatically generated YARA rule - from files Persistence.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/vysec/ps1-toolkit"
-      date = "2016-09-04 13:03:41"
-      score = 80
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "e1a4dd18b481471fc25adea6a91982b7ffed1c2d393c8c17e6e542c030ac6cbd"
-      tags = "DEMO, FILE, HKTL, SCRIPT, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "FromBase64String('UwBjAGgAZQBkAHUAbABlAGQAVABhAHMAawBPAG4ASQBkAGwAZQA=')" ascii
-      $s2 = "FromBase64String('UwBjAGgAZQBkAHUAbABlAGQAVABhAHMAawBEAGEAaQBsAHkA')" ascii
-      $s3 = "FromBase64String('UAB1AGIAbABpAGMALAAgAFMAdABhAHQAaQBjAA==')" ascii
-      $s4 = "[Parameter( ParameterSetName = 'ScheduledTaskAtLogon', Mandatory = $True )]" ascii
-      $s5 = "FromBase64String('UwBjAGgAZQBkAHUAbABlAGQAVABhAHMAawBBAHQATABvAGcAbwBuAA==')))" ascii
-      $s6 = "[Parameter( ParameterSetName = 'PermanentWMIAtStartup', Mandatory = $True )]" fullword ascii
-      $s7 = "FromBase64String('TQBlAHQAaABvAGQA')" ascii
-      $s8 = "FromBase64String('VAByAGkAZwBnAGUAcgA=')" ascii
-      $s9 = "[Runtime.InteropServices.CallingConvention]::Winapi," fullword ascii
-   condition: 
-      ( uint16 ( 0 ) == 0xbbef and filesize < 200KB and 2 of them ) or ( 4 of them )
-}
-
-rule ps1_toolkit_Inveigh_BruteForce_3_RID3395 : DEMO FILE HKTL SCRIPT T1059_001 T1110 {
-   meta:
-      description = "Semiautomatically generated YARA rule - from files Inveigh-BruteForce.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/vysec/ps1-toolkit"
-      date = "2016-09-04 14:54:01"
-      score = 80
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash3 = "a2ae1e02bcb977cd003374f551ed32218dbcba3120124e369cc150b9a63fe3b8"
-      tags = "DEMO, FILE, HKTL, SCRIPT, T1059_001, T1110"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "::FromBase64String('TgBUAEwATQA=')" ascii
-      $s2 = "::FromBase64String('KgBTAE0AQgAgAHIAZQBsAGEAeQAgACoA')))" ascii
-      $s3 = "::FromBase64String('KgAgAGYAbwByACAAcgBlAGwAYQB5ACAAKgA=')))" ascii
-      $s4 = "::FromBase64String('KgAgAHcAcgBpAHQAdABlAG4AIAB0AG8AIAAqAA==')))" ascii
-      $s5 = "[Byte[]] $HTTP_response = (0x48,0x54,0x54,0x50,0x2f,0x31,0x2e,0x31,0x20)`" fullword ascii
-      $s6 = "KgAgAGwAbwBjAGEAbAAgAGEAZABtAGkAbgBpAHMAdAByAGEAdABvAHIAIAAqAA" ascii
-      $s7 = "}.bruteforce_running)" ascii
-   condition: 
-      ( uint16 ( 0 ) == 0xbbef and filesize < 200KB and 2 of them ) or ( 4 of them )
 }
 
 rule APT_EQGRP_RC5_RC6_Opcode_RID2EE0 : APT DEMO {
@@ -4899,28 +4060,6 @@ rule RUAG_Exfil_Config_File_RID2F2B : APT DEMO FILE T1020 {
       uint32 ( 0 ) == 0x4152545b and filesize < 1KB and $h1 at 0 and all of ( $s* )
 }
 
-rule GetUserSPNs_PS1_RID2C67 : DEMO HKTL SCRIPT T1059_001 {
-   meta:
-      description = "Semiautomatically generated YARA rule - file GetUserSPNs.ps1"
-      author = "Florian Roth"
-      reference = "https://github.com/skelsec/PyKerberoast"
-      date = "2016-05-21 09:47:41"
-      score = 80
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "1b69206b8d93ac86fe364178011723f4b1544fff7eb1ea544ab8912c436ddc04"
-      tags = "DEMO, HKTL, SCRIPT, T1059_001"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "$ForestInfo = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()" fullword ascii
-      $s2 = "@{Name=\"PasswordLastSet\";      Expression={[datetime]::fromFileTime($result.Properties[\"pwdlastset\"][0])} } #, `" fullword ascii
-      $s3 = "Write-Host \"No Global Catalogs Found!\"" fullword ascii
-      $s4 = "$searcher.PropertiesToLoad.Add(\"pwdlastset\") | Out-Null" fullword ascii
-   condition: 
-      2 of them
-}
-
 rule kerberoast_PY_RID2C4B : DEMO HKTL SCRIPT T1558_003 {
    meta:
       description = "Semiautomatically generated YARA rule - file kerberoast.py"
@@ -5432,26 +4571,6 @@ rule CN_Honker_Webshell_JSP_jsp_RID30F5 : CHINA DEMO T1505_003 WEBSHELL {
       $s2 = "<font color=red>www.i0day.com  By:" fullword ascii
    condition: 
       filesize < 3KB and all of them
-}
-
-rule CN_Honker_Webshell_T00ls_Lpk_Sethc_v4_mail_RID36D6 : CHINA DEMO T1505_003 T1546_008 WEBSHELL {
-   meta:
-      description = "Webshell from CN Honker Pentest Toolset - file mail.php"
-      author = "Florian Roth"
-      reference = "Disclosed CN Honker Pentest Toolset"
-      date = "2015-06-23 17:12:51"
-      score = 70
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      
-      tags = "CHINA, DEMO, T1505_003, T1546_008, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "if (!$this->smtp_putcmd(\"AUTH LOGIN\", base64_encode($this->user)))" fullword ascii
-      $s2 = "$this->smtp_debug(\"> \".$cmd.\"\\n\");" fullword ascii
-   condition: 
-      filesize < 39KB and all of them
 }
 
 rule CN_Honker_Webshell_phpwebbackup_RID3358 : CHINA DEMO FILE T1505_003 WEBSHELL {
@@ -6245,29 +5364,6 @@ rule Webshell_php_dns_RID2D92 : DEMO T1505_003 WEBSHELL {
       filesize < 15KB and all of them
 }
 
-rule Webshell_jsp_cmd_2_RID2E17 : DEMO FILE T1505_003 WEBSHELL {
-   meta:
-      description = "Laudanum Injector Tools - file cmd.war"
-      author = "Florian Roth"
-      reference = "http://laudanum.inguardians.com/"
-      date = "2015-06-22 10:59:41"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      
-      tags = "DEMO, FILE, T1505_003, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s0 = "cmd.jsp}" fullword ascii
-      $s1 = "cmd.jspPK" fullword ascii
-      $s2 = "WEB-INF/web.xml" fullword ascii
-      $s3 = "WEB-INF/web.xmlPK" fullword ascii
-      $s4 = "META-INF/MANIFEST.MF" fullword ascii
-   condition: 
-      uint16 ( 0 ) == 0x4b50 and filesize < 2KB and all of them
-}
-
 rule Webshell_laudanum_RID2DFD : DEMO T1505_003 WEBSHELL {
    meta:
       description = "Laudanum Injector Tools - file laudanum.php"
@@ -6499,28 +5595,6 @@ rule Webshell_Txt_aspxlcx_RID2F48 : CHINA DEMO FILE T1505_003 WEBSHELL {
       $s4 = "public class PortForward" ascii
    condition: 
       uint16 ( 0 ) == 0x253c and filesize < 18KB and all of them
-}
-
-rule CN_Tools_Temp_RID2C07 : APT CHINA DEMO FILE {
-   meta:
-      description = "Chinese Hacktool Set - file Temp.war"
-      author = "Florian Roth"
-      reference = "http://tools.zjqhr.com/"
-      date = "2015-06-13 09:31:41"
-      score = 60
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      
-      tags = "APT, CHINA, DEMO, FILE"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s0 = "META-INF/context.xml<?xml version=\"1.0\" encoding=\"UTF-8\"?>" fullword ascii
-      $s1 = "browser.jsp" fullword ascii
-      $s3 = "cmd.jsp" fullword ascii
-      $s4 = "index.jsp" fullword ascii
-   condition: 
-      uint16 ( 0 ) == 0x4b50 and filesize < 203KB and all of them
 }
 
 rule sql1433_Start_RID2B99 : APT CHINA DEMO SCRIPT {
@@ -14873,30 +13947,6 @@ rule Webshell_C99_w4cking_Shell_RID30C8 : DEMO SCRIPT T1505_003 WEBSHELL {
       2 of them
 }
 
-rule Webshell_phpspy_2006_arabicspy_RID328E : DEMO SCRIPT T1505_003 WEBSHELL {
-   meta:
-      description = "Web Shell - from files 2008.php, 2009mssql.php, phpspy_2005_full.php, phpspy_2006.php, arabicspy.php, hkrkoz.php"
-      author = "Florian Roth"
-      reference = "-"
-      date = "2014-01-28 14:10:11"
-      score = 70
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      hash1 = "aa17b71bb93c6789911bd1c9df834ff9"
-      hash2 = "b68bfafc6059fd26732fa07fb6f7f640"
-      hash3 = "40a1f840111996ff7200d18968e42cfe"
-      tags = "DEMO, SCRIPT, T1505_003, WEBSHELL"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s0 = "$this -> addFile($content, $filename);" fullword
-      $s3 = "function addFile($data, $name, $time = 0) {" fullword
-      $s8 = "function unix2DosTime($unixtime = 0) {" fullword
-      $s9 = "foreach($filelist as $filename){" fullword
-   condition: 
-      all of them
-}
-
 rule Webshell_c99_c99shell_RID2EC7 : DEMO SCRIPT T1505_003 WEBSHELL {
    meta:
       description = "Web Shell - from files c99.php, c66.php, c99-shadows-mod.php, c99shell.php"
@@ -15158,28 +14208,5 @@ rule Webshell_r57shell127_r57_kartal_r57_RID338E : DEMO SCRIPT T1505_003 WEBSHEL
       $s5 = "if (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER']!==$name || $_" 
    condition: 
       2 of them
-}
-
-rule StoneDrill_BAT_1_RID2CD7 : APT DEMO FILE MIDDLE_EAST SCRIPT {
-   meta:
-      description = "Rule to detect Batch file from StoneDrill report"
-      author = "Florian Roth"
-      reference = "https://securelist.com/blog/research/77725/from-shamoon-to-stonedrill/"
-      date = "2013-01-01 10:06:21"
-      score = 75
-      customer = "demo"
-      license = "CC-BY-NC https://creativecommons.org/licenses/by-nc/4.0/"
-      modified = "2026-03-12"
-      tags = "APT, DEMO, FILE, MIDDLE_EAST, SCRIPT"
-      minimum_yara = "3.5.0"
-      
-   strings:
-      $s1 = "set u100=" ascii
-      $s2 = "set u200=service" ascii fullword
-      $s3 = "set u800=%~dp0" ascii fullword
-      $s4 = "\"%systemroot%\\system32\\%u100%\"" ascii
-      $s5 = "%\" start /b %systemroot%\\system32\\%" ascii
-   condition: 
-      uint32 ( 0 ) == 0x68636540 and filesize < 500 and 2 of them
 }
 

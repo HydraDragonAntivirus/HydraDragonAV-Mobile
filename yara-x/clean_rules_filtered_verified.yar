@@ -184,6 +184,19 @@ rule ELF_Chaos_RAT {
     2 of ($library*)
 }
 
+rule Check_Wine {
+  meta:
+    Author      = "Nick Hoffman"
+    Description = "Checks for the existence of Wine"
+    Sample      = "de1af0e97e94859d372be7fcf3a5daa5"
+
+  strings:
+    $ = "wine_get_unix_file_name"
+
+  condition:
+    any of them
+}
+
 rule EquationGroup_cryptTool {
   meta:
     description = "Equation Group hack tool leaked by ShadowBrokers- file cryptTool"
@@ -219,6 +232,23 @@ rule EquationGroup_slugger2 {
 
   condition:
     (uint16(0) == 0x457f and filesize < 50KB and (4 of them and 1 of ($x*))) or (all of them)
+}
+
+rule EquationGroup_Toolset_Apr17_FullThreadDump {
+  meta:
+    description = "Detects EquationGroup Tool - April Leak"
+    author      = "Florian Roth"
+    reference   = "https://steemit.com/shadowbrokers/@theshadowbrokers/lost-in-translation"
+    date        = "2017-04-15"
+    hash1       = "b68f3f32bfa6cf11145c9fb9bf0075a5ca3938ea218b1cc29ad62f7b9e043255"
+
+  strings:
+    $s1 = "FullThreadDump.class" fullword ascii
+    $s2 = "ThreadMonitor.class" fullword ascii
+    $s3 = "Deadlock$DeadlockThread.class" fullword ascii
+
+  condition:
+    (uint16(0) == 0x4b50 and filesize < 30KB and all of them)
 }
 
 rule EQGRP_bo {
@@ -545,6 +575,39 @@ rule ELF_Linux_Torte_domains {
     any of them
 }
 
+rule Adwind_JAR_PACKA: binary RAT Frutas Unrecom AlienSpy {
+  meta:
+    author        = "Vitaly Kamluk, Vitaly.Kamluk@kaspersky.com"
+    reference     = "https://securelist.com/securelist/files/2016/02/KL_AdwindPublicReport_2016.pdf"
+    last_modified = "2015-11-30"
+
+  strings:
+    $b1 = ".class" ascii
+    $b2 = "c/a/a/" ascii
+    $b3 = "b/a/" ascii
+    $b4 = "a.dat" ascii
+    $b5 = "META-INF/MANIFEST.MF" ascii
+
+  condition:
+    int16(0) == 0x4B50 and ($b1 and $b2 and $b3 and $b4 and $b5)
+}
+
+rule Adwind_JAR_PACKB: binary RAT Frutas Unrecom AlienSpy {
+  meta:
+    author        = "Vitaly Kamluk, Vitaly.Kamluk@kaspersky.com"
+    reference     = "https://securelist.com/securelist/files/2016/02/KL_AdwindPublicReport_2016.pdf"
+    last_modified = "2015-11-30"
+
+  strings:
+    $c1 = "META-INF/MANIFEST.MF" ascii
+    $c2 = "main/Start.class" ascii
+    $a1 = "con g/con g.perl" ascii
+    $b1 = "java/textito.isn" ascii
+
+  condition:
+    int16(0) == 0x4B50 and ($c1 and $c2 and ($a1 or $b1))
+}
+
 rule ggupdate_linux {
   meta:
     description = "ggupdate keylogger (Linux)"
@@ -727,6 +790,24 @@ rule venom_20170125: malware linux {
     all of ($venom_*)
 }
 
+rule adware: ads {
+  meta:
+    author      = "Fernando Denis Ramirez https://twitter.com/fdrg21"
+    reference   = "https://koodous.com/"
+    description = "Adware"
+    sample      = "5a331231f997decca388ba2d73b7dec1554e966a0795b0cb8447a336bdafd71b"
+
+  strings:
+    $string_a = "banner_layout"
+    $string_b = "activity_adpath_sms"
+    $string_c = "adpath_title_one"
+    $string_d = "7291-2ec9362bd699d0cd6f53a5ca6cd"
+
+  condition:
+    all of ($string_*)
+
+}
+
 rule dropperMapin {
   meta:
     author      = "https://twitter.com/plutec_net"
@@ -763,6 +844,112 @@ rule Mapin {
 
 }
 
+rule Dendroid_2 {
+  meta:
+    author      = "https://twitter.com/jsmesa"
+    reference   = "https://koodous.com/"
+    description = "Dendroid evidences via Droidian service"
+
+  strings:
+    $a = "Droidian"
+    $b = "DroidianService"
+
+  condition:
+    all of them
+
+}
+
+rule Dendroid_3 {
+  meta:
+    author      = "https://twitter.com/jsmesa"
+    reference   = "https://koodous.com/"
+    description = "Dendroid evidences via ServiceReceiver"
+
+  strings:
+    $1 = "ServiceReceiver"
+    $2 = "Dendroid"
+
+  condition:
+    all of them
+
+}
+
+rule moscow_fake: banker {
+  meta:
+    author       = "Fernando Denis"
+    reference    = "https://koodous.com/ https://twitter.com/fdrg21"
+    description  = "Moskow Droid Development"
+    thread_level = 3
+    in_the_wild  = true
+
+  strings:
+    $string_a = "%ioperator%"
+    $string_b = "%imodel%"
+    $string_c = "%ideviceid%"
+    $string_d = "%ipackname%"
+    $string_e = "VILLLLLL"
+
+  condition:
+    all of ($string_*)
+}
+
+rule dowgin: adware {
+  meta:
+    author    = "https://twitter.com/plutec_net"
+    reference = "https://koodous.com/"
+    sample    = "4d7f2d6ff4ed8ced6f8f7f96e9899273cc3090ea108f2cc3b32dd1a06e63cf70"
+    sample2   = "cde8160d09c486bdd6d96b2ed81bd52390d77094d13ff9cfbc6949ed00206a83"
+    sample3   = "d2e81e6db5f4964246d10241588e0e97cde524815c4de7c0ea1c34a48da1bcaf"
+    sample4   = "cc2d0b3d8f00690298b0e5813f6ace8f4d4b04c9704292407c2b83a12c69617b"
+
+  strings:
+    $a = "http://112.74.111.42:8000"
+    $b = "SHA1-Digest: oIx4iYWeTtKib4fBH7hcONeHuaE="
+    $c = "ONLINEGAMEPROCEDURE_WHICH_WAP_ID"
+    $d = "http://da.mmarket.com/mmsdk/mmsdk?func=mmsdk:posteventlog"
+
+  condition:
+    all of them
+
+}
+
+rule genericSMS: smsFraud {
+  meta:
+    author    = "https://twitter.com/plutec_net"
+    reference = "https://koodous.com/"
+    sample    = "3fc533d832e22dc3bc161e5190edf242f70fbc4764267ca073de5a8e3ae23272"
+    sample2   = "3d85bdd0faea9c985749c614a0676bb05f017f6bde3651f2b819c7ac40a02d5f"
+
+  strings:
+    $a = "SHA1-Digest: +RsrTx5SNjstrnt7pNaeQAzY4kc="
+    $b = "SHA1-Digest: Rt2oRts0wWTjffGlETGfFix1dfE="
+    $c = "http://image.baidu.com/wisebrowse/index?tag1=%E6%98%8E%E6%98%9F&tag2=%E5%A5%B3%E6%98%8E%E6%98%9F&tag3=%E5%85%A8%E9%83%A8&pn=0&rn=10&fmpage=index&pos=magic#/channel"
+    $d = "pitchfork=022D4"
+
+  condition:
+    all of them
+
+}
+
+rule genericSMS2: smsFraud {
+  meta:
+    author    = "https://twitter.com/plutec_net"
+    reference = "https://koodous.com/"
+    sample    = "1f23524e32c12c56be0c9a25c69ab7dc21501169c57f8d6a95c051397263cf9f"
+    sample2   = "2cf073bd8de8aad6cc0d6ad5c98e1ba458bd0910b043a69a25aabdc2728ea2bd"
+    sample3   = "20575a3e5e97bcfbf2c3c1d905d967e91a00d69758eb15588bdafacb4c854cba"
+
+  strings:
+    $a = "NotLeftTriangleEqual=022EC"
+    $b = "SHA1-Digest: X27Zpw9c6eyXvEFuZfCL2LmumtI="
+    $c = "_ZNSt12_Vector_baseISsSaISsEE13_M_deallocateEPSsj"
+    $d = "FBTP2AHR3WKC6LEYON7D5GZXVISMJ4QU"
+
+  condition:
+    all of them
+
+}
+
 rule koler_D {
   meta:
     description = "Koler.D class"
@@ -774,6 +961,35 @@ rule koler_D {
   condition:
     ($0 and $a)
 
+}
+
+rule ransomware: svpeng {
+  meta:
+    author      = "Fernando Denis https://twitter.com/fdrg21"
+    reference   = "https://koodous.com/"
+    description = "Ransomware"
+    in_the_wild = true
+
+  strings:
+    $a = "nd your's device will reboot and"
+    $b = "ADD_DEVICE_ADMI"
+
+  condition:
+    $a and $b
+}
+
+rule smspay_chinnese: hejupay {
+  meta:
+    author    = "Fernando Denis https://twitter.com/fdrg21"
+    reference = "https://koodous.com/"
+
+  strings:
+    $a = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/Jvgb0/jSRWi7i4J9IwO72KZw404kj02A97ExbUefVeE7yyWSTbKw5sYlKXCtaoQwWr19j0Y+xb6+h2BRuNx307BV/QpG6DnPg+Lx8fPPvhbhOudgKb/XuZPaz/GJbTpwzTbBmT+mI1QTRLyAKDxSjGWYvoPFVz82RxcAblV/twIDAQAB"
+
+    $b = "MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAL8m+BvT+NJFaLuLgn0jA7vYpnDjTiSPTYD3sTFtR59V4TvLJZJNsrDmxiUpcK1qhDBavX2PRj7Fvr6HYFG43HfTsFX9CkboOc+D4vHx88++FuE652Apv9e5k9rP8YltOnDNNsGZP6YjVBNEvIAoPFKMZZi+g8VXPzZHFwBuVX+3AgMBAAECgYBLYR6uOqUApoZqjtVia5BpX0Ijej+ygyBZH1Qs3Z9E4iTz42RpkWJKCHdS6Eia2kpOlznqbbmRv4E8uT3ufCvUFexjR5ClGVKJ+XHXxqS75+KT38wGZZ1bW0pK4sT1/aGLrt5/netwuzMi/YFNfAKRPqvRXuNcxNLhMhs2efLKIQJBAPGea2UXVWd0Ti8ClA8hiWPSNCPtcp41Dh2H0YczrFmO2zafPPJih2GQY5txszwBLbjxFCY8/WhrYAqx0itMrgsCQQDKh5U1NfpRvk0Hu8iBRB/LPyGimz+WM/chFSC65SlS/cml3U7hUOj2lRGPz+bm68624H0KLviqpBJpmayvbbyFAkEA1NNFJ9uAx8rDn1b3EcjpmvqqIMdjwYVcNJjQ7/WNJ6nU3+0toxc0xrSHeIGTbhRfsNrxc6kfUV3bUDBHvwog9wJBAI+fRH1ekOwlAqVIUnDw6YcNdwHEDHysz0TDodlHp112Ieign06DPSGYJsMQURNTB92CJsnw82C3R2Nhmicxr60CQQCN466JF9GJRZipO64OYw/ElMac7vXgTeGMvYZ2/yfX5CRCLua4DygD1Ju0eMXpea9og/EtwCTV0RVpFc9SSN8V"
+
+  condition:
+    $a or $b
 }
 
 rule android_tempting_cedar_spyware {
@@ -986,6 +1202,30 @@ rule Mirai_Botnet_Malware {
     )
 }
 
+rule MAL_ZIP_SocGholish_Mar21_1: zip js socgholish {
+  meta:
+    description = "Triggers on small zip files with typical SocGholish JS files in it"
+    author      = "Nils Kuhnert"
+    date        = "2021-03-29"
+    hash        = "4f6566c145be5046b6be6a43c64d0acae38cada5eb49b2f73135b3ac3d6ba770"
+    hash        = "54f756fbf8c20c76af7c9f538ff861690800c622d1c9db26eb3afedc50835b09"
+    hash        = "dfdbec1846b74238ba3cfb8c7580c64a0fa8b14b6ed2b0e0e951cc6a9202dd8d"
+
+  strings:
+    $a1 = /\.[a-z0-9]{6}\.js/ ascii
+    $a2 = "Chrome" ascii
+    $a3 = "Opera" ascii
+
+    $b1 = "Firefox.js" ascii
+    $b2 = "Edge.js" ascii
+
+  condition:
+    uint16(0) == 0x4b50 and filesize > 1300 and filesize < 1600 and (
+      2 of ($a*) or
+      any of ($b*)
+    )
+}
+
 rule miner_g_p_0 {
   meta:
     description = "miner-exe - from files g, p"
@@ -1095,6 +1335,34 @@ rule miner_s_m_p_2 {
   condition:
     (uint16(0) == 0x457f and
       filesize < 9000KB and (1 of ($x*) and 4 of them)
+    ) or (all of them)
+}
+
+rule _home_hawk_infected_12_22_19_shell1_work1_34esd23 {
+  meta:
+    description = "work1 - file 34esd23.zip"
+    author      = "Brian Laskowski"
+    reference   = "https://github.com/Hestat/lw-yara/"
+    date        = "2019-12-22"
+    hash1       = "8862eefed0ef325212a49f8617a396a7ef3b6e5d05cddeda998dbf1ae834be91"
+
+  strings:
+    $s1  = "papkaa17/g336803.txt" fullword ascii
+    $s2  = "papkaa17/g757230.txt" fullword ascii
+    $s3  = "papkaa17/g554038.txt" fullword ascii
+    $s4  = "papkaa17/g864401.txt" fullword ascii
+    $s5  = "papkaa17/g380118.txt" fullword ascii
+    $s6  = "papkaa17/g200125.txt" fullword ascii
+    $s7  = "papkaa17/g365278.txt" fullword ascii
+    $s8  = "papkaa17/g895434.txt" fullword ascii
+    $s9  = "papkaa17/g554066.txt" fullword ascii
+    $s10 = "system.phpu" fullword ascii
+    $s11 = "system.phpPK" fullword ascii
+
+  condition:
+    (uint16(0) == 0x4b50 and
+      filesize < 200KB and
+      (8 of them)
     ) or (all of them)
 }
 
@@ -2227,6 +2495,32 @@ rule Exploit_DirtyCow {
       ) or
       all of them
     )
+}
+
+rule HUNT_ELF_FREEBSD_RUST_KERNEL_MODULE_1 {
+  meta:
+    author      = "@qutluch@infosec.exchange"
+    description = "Rule to surface FreeBSD kernel modules built with Rust."
+    reference   = "https://research.nccgroup.com/2022/08/31/writing-freebsd-kernel-modules-in-rust/"
+    DaysofYARA  = "29/100"
+    license     = "BSD-2-Clause"
+    date        = "2024-01-31"
+    version     = "1.0"
+
+  strings:
+    // Thanks to captainGeech42 for his Rust rule.
+    // https://github.com/100DaysofYARA/2024/pull/23/commits/2332616aeaca4651b1c8ad064f9f60a9a9b9e8d9
+    $rust1 = "/rustc/"
+    $rust2 = "/library/core/src/"
+    $rust3 = "/library/std/src/"
+    $rust4 = "/rust/deps"
+    $f1    = "module_register_init"
+
+  condition:
+    uint32(0) == 0x464c457f
+    and uint16(0x7) == 0x9
+    and (#rust1 + #rust2 + #rust3 + #rust4) > 15
+    and $f1
 }
 
 rule HUNT_ELF_FREEBSD_GOLANG_KERNEL_MODULE_1 {
@@ -3938,6 +4232,37 @@ rule TRELLIX_ARC_Ransom_Linux_Hellokitty_0721: RANSOMWARE FILE {
     (uint16(0) == 0x457f and filesize < 200KB and (8 of them)) or (all of them)
 }
 
+rule ARKBIRD_SOLG_Exp_CVE_2021_40444_Sep_2021_1: FILE {
+  meta:
+    description = "Detect the maldocs with a structure like used for CVE_2021_40444 exploit"
+    author      = "Arkbird_SOLG"
+    id          = "acaba73d-f744-5d3f-9617-e976832f3577"
+    date        = "2021-09-09"
+    modified    = "2021-09-09"
+    reference   = "https://github.com/StrangerealIntel/DailyIOC"
+    source_url  = "https://github.com/StrangerealIntel/DailyIOC/blob/a873ff1298c43705e9c67286f3014f4300dd04f7/2021-09-09/Exp_CVE_2021_40444_Sep_2021_1.yara#L2-L20"
+    license_url = "N/A"
+    logic_hash  = "ba1b256c9caad3371d57e6ecbe54721038c819c7c081edf2443523109c25b184"
+    score       = 50
+    quality     = 75
+    tags        = "FILE"
+    reference1  = "-"
+    hash1       = "199b9e9a7533431731fbb08ff19d437de1de6533f3ebbffc1e13eeffaa4fd455"
+    hash2       = "3bddb2e1a85a9e06b9f9021ad301fdcde33e197225ae1676b8c6d0b416193ecf"
+    hash3       = "5b85dbe49b8bc1e65e01414a0508329dc41dc13c92c08a4f14c71e3044b06185"
+    hash4       = "938545f7bbe40738908a95da8cdeabb2a11ce2ca36b0f6a74deda9378d380a52"
+    tlp         = "White"
+    level       = "experimental"
+    adversary   = "-"
+
+  strings:
+    $x1 = { 2f 5f 72 65 6c 73 2f 64 6f 63 75 6d 65 6e 74 2e 78 6d 6c 2e 72 65 6c 73 55 54 09 00 03 [3] 61 [3] 61 75 78 0b 00 01 04 00 00 00 00 04 00 00 00 00 ?? 94 ?? 4e c2 [3] ef 4d 7c 87 }
+    $x2 = { 77 6d 66 55 54 09 00 03 00 a6 ce 12 00 a6 ce 12 75 78 0b 00 01 04 00 00 00 00 04 00 00 00 00 bb 7e f6 d8 2c 06 38 48 00 93 85 e1 8c 0c 9c 0c 0c cc 52 60 1e 2b 98 64 01 62 66 46 0e 30 8f 9b 09 26 ce 03 66 31 83 55 00 00 50 4b 03 04 ?? 00 00 00 ?? 00 [10] 00 00 [2] 00 00 ?? 00 1c 00 }
+
+  condition:
+    uint16(0) == 0x4B50 and filesize > 5KB and all of ($x*)
+}
+
 rule ARKBIRD_SOLG_Ran_ELF_EXX_Nov_2020_1: FILE {
   meta:
     description = "Detect EXX variant ELF ransomware"
@@ -4218,6 +4543,35 @@ rule HARFANGLAB_Samecoin_Campaign_Nativewiper: FILE {
     filesize < 500KB and uint32(0) == 0x464C457F and ($native_export or all of ($f*) or all of ($s*))
 }
 
+rule SIGNATURE_BASE_MAL_ZIP_Socgholish_Mar21_1: ZIP JS SOCGHOLISH FILE {
+  meta:
+    description = "Triggers on small zip files with typical SocGholish JS files in it"
+    author      = "Nils Kuhnert"
+    id          = "da35eefd-b34d-59cd-8afc-da9c78ace96e"
+    date        = "2021-03-29"
+    modified    = "2023-12-05"
+    reference   = "https://github.com/Neo23x0/signature-base"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/crime_socgholish.yar#L1-L22"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    hash        = "4f6566c145be5046b6be6a43c64d0acae38cada5eb49b2f73135b3ac3d6ba770"
+    hash        = "54f756fbf8c20c76af7c9f538ff861690800c622d1c9db26eb3afedc50835b09"
+    hash        = "dfdbec1846b74238ba3cfb8c7580c64a0fa8b14b6ed2b0e0e951cc6a9202dd8d"
+    logic_hash  = "6621b029f65720e468bd167fcd7429a1f7ba8975298ddbd913b13fbe9e117df2"
+    score       = 75
+    quality     = 60
+    tags        = "ZIP, JS, SOCGHOLISH, FILE"
+
+  strings:
+    $a1 = /\.[a-z0-9]{6}\.js/ ascii
+    $a2 = "Chrome" ascii
+    $a3 = "Opera" ascii
+    $b1 = "Firefox.js" ascii
+    $b2 = "Edge.js" ascii
+
+  condition:
+    uint16(0) == 0x4b50 and filesize < 1600 and (2 of ($a*) or any of ($b*))
+}
+
 rule SIGNATURE_BASE_APT_MAL_LNX_Hunting_Linux_WHIRLPOOL_1: FILE {
   meta:
     description = "Hunting rule looking for strings observed in WHIRLPOOL samples."
@@ -4327,6 +4681,57 @@ rule SIGNATURE_BASE_CN_Honker_Linux_Bin: FILE {
 
   condition:
     filesize < 20KB and all of them
+}
+
+rule SIGNATURE_BASE_Jsp_Cmd: FILE {
+  meta:
+    description = "Laudanum Injector Tools - file cmd.war"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "74db62b8-82d5-5a34-aa72-2f85053715a4"
+    date        = "2015-06-22"
+    modified    = "2023-12-05"
+    reference   = "http://laudanum.inguardians.com/"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_laudanum_webshells.yar#L209-L226"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    hash        = "55e4c3dc00cfab7ac16e7cfb53c11b0c01c16d3d"
+    logic_hash  = "ab5b013a385549322bcb2811fa1a2d14b5633e2c41b9486b1e1c50c02437b8e6"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+
+  strings:
+    $s0 = "cmd.jsp}" fullword ascii
+    $s1 = "cmd.jspPK" fullword ascii
+    $s2 = "WEB-INF/web.xml" fullword ascii
+    $s3 = "WEB-INF/web.xmlPK" fullword ascii
+    $s4 = "META-INF/MANIFEST.MF" fullword ascii
+
+  condition:
+    uint16(0) == 0x4b50 and filesize < 2KB and all of them
+}
+
+rule SIGNATURE_BASE_MAL_JRAT_Oct18_1: FILE {
+  meta:
+    description = "Detects JRAT malware"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "f211ef1c-8def-55f0-8817-d01ebd9c2947"
+    date        = "2018-10-11"
+    modified    = "2023-12-05"
+    reference   = "Internal Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_rats_malwareconfig.yar#L1060-L1072"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "7c652f3943ae7639633b82663f639adb7dea1bae9e617a14710fb6e448cfdbee"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "ce190c37a6fdb2632f4bc5ea0bb613b3fbe697d04e68e126b41910a6831d3411"
+
+  strings:
+    $x1 = "/JRat.class" ascii
+
+  condition:
+    uint16(0) == 0x4b50 and filesize < 700KB and 1 of them
 }
 
 rule SIGNATURE_BASE_APT_MAL_LNX_Turla_Apr202004_1: FILE {
@@ -4515,6 +4920,30 @@ rule SIGNATURE_BASE_Apt_Nix_Elf_Derusbi_Linux_Sharedmemcreation_1: FILE {
     uint32(0) == 0x464C457F and any of them
 }
 
+rule SIGNATURE_BASE_MAL_Burningumbrella_Sample_11: FILE {
+  meta:
+    description = "Detects malware sample from Burning Umbrella report"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "9762c68c-4d69-5d38-aaf4-0048e7404147"
+    date        = "2018-05-04"
+    modified    = "2023-12-05"
+    reference   = "https://401trg.pw/burning-umbrella/"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_winnti_burning_umbrella.yar#L165-L178"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "847681b3e9d4fc38c483663f5a7e16e7f8f95cfa77728d7316edbe6fbf5fe2c1"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+    hash1       = "278e9d130678615d0fee4d7dd432f0dda6d52b0719649ee58cbdca097e997c3f"
+
+  strings:
+    $s1 = "Resume.app/Contents/Java/Resume.jarPK" fullword ascii
+
+  condition:
+    uint16(0) == 0x4b50 and filesize < 700KB and 1 of them
+}
+
 rule SIGNATURE_BASE_CN_Honker_Webshell_Linux_2_6_Exploit: FILE {
   meta:
     description = "Webshell from CN Honker Pentest Toolset - file 2.6.9"
@@ -4564,6 +4993,40 @@ rule SIGNATURE_BASE_MAL_LNX_Camarodragon_Sheel_Oct23: FILE {
 
   condition:
     uint16(0) == 0x457f and filesize < 30KB and (1 of ($x*) or 3 of them) or 4 of them
+}
+
+rule SIGNATURE_BASE_Webshell_Jexboss_WAR_1: FILE {
+  meta:
+    description = "Detects JexBoss versions in WAR form"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "0973f6cf-8a5f-5449-812e-36aa6b9939df"
+    date        = "2018-11-08"
+    modified    = "2023-12-05"
+    reference   = "Internal Research"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-webshells.yar#L9874-L9897"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "ee9cb22496d2e36d215caa9c7e295b41cb8434322a0097bbc3d1a365dce0c156"
+    score       = 75
+    quality     = 85
+    tags        = "FILE"
+    hash1       = "6271775ab144ce9bb9138bf054b149b5813d3beb96338993c6de35330f566092"
+    hash2       = "6f14a63c3034d3762da8b3ad4592a8209a0c88beebcb9f9bd11b40e879f74eaf"
+
+  strings:
+    $ = "jbossass" fullword ascii
+    $ = "jexws.jsp" fullword ascii
+    $ = "jexws.jspPK" fullword ascii
+    $ = "jexws1.jsp" fullword ascii
+    $ = "jexws1.jspPK" fullword ascii
+    $ = "jexws2.jsp" fullword ascii
+    $ = "jexws2.jspPK" fullword ascii
+    $ = "jexws3.jsp" fullword ascii
+    $ = "jexws3.jspPK" fullword ascii
+    $ = "jexws4.jsp" fullword ascii
+    $ = "jexws4.jspPK" fullword ascii
+
+  condition:
+    uint16(0) == 0x4b50 and filesize < 4KB and 1 of them
 }
 
 rule SIGNATURE_BASE_Equationgroup_Crypttool: FILE {
@@ -4994,6 +5457,30 @@ rule SIGNATURE_BASE_Equationgroup__Ghost_Sparc_Ghost_X86_3: FILE {
     (uint16(0) == 0x457f and filesize < 70KB and 1 of them) or (2 of them)
 }
 
+rule SIGNATURE_BASE_MAL_WAR_Ivanti_EPMM_Mobileiron_Mi_War_Aug23: CVE_2023_35078 FILE {
+  meta:
+    description = "Detects WAR file found in the Ivanti EPMM / MobileIron Core compromises exploiting CVE-2023-35078"
+    author      = "Florian Roth"
+    id          = "cd16cf29-a90d-5c3f-b66f-e9264dbf79fb"
+    date        = "2023-08-01"
+    modified    = "2023-12-05"
+    reference   = "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-213a"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/expl_ivanti_epmm_mobileiron_cve_2023_35078.yar#L16-L32"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "0083727e34118d628c8507459bfb7f949f11af8197e201066e29e263e2c3f944"
+    score       = 85
+    quality     = 85
+    tags        = "CVE-2023-35078, FILE"
+    hash1       = "6255c75e2e52d779da39367e7a7d4b8d1b3c9c61321361952dcc05819251a127"
+
+  strings:
+    $s1 = "logsPaths.txt" ascii fullword
+    $s2 = "keywords.txtFirefox" ascii
+
+  condition:
+    uint16(0) == 0x4b50 and filesize < 20KB and all of them
+}
+
 rule SIGNATURE_BASE_BKDR_Xzutil_Binary_CVE_2024_3094_Mar24_1: CVE_2024_3094 FILE {
   meta:
     description = "Detects injected code used by the backdoored XZ library (xzutil) CVE-2024-3094."
@@ -5358,6 +5845,30 @@ rule SIGNATURE_BASE_MAL_ELF_Vpnfilter_1: FILE {
     uint16(0) == 0x457f and filesize < 100KB and all of them
 }
 
+rule SIGNATURE_BASE_Exp_EPS_CVE20152545: CVE_2015_2545 FILE {
+  meta:
+    description = "Detects EPS Word Exploit CVE-2015-2545"
+    author      = "Florian Roth (Nextron Systems)"
+    id          = "9a5f0554-b588-5b82-93df-0fdfba2af2da"
+    date        = "2017-07-19"
+    modified    = "2023-12-05"
+    reference   = "Internal Research - ME"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/exploit_cve_2015_2545.yar#L2-L16"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "e1aac80a06dd71352d2776b4dfccce901d47363459853a37669af69be6e962c7"
+    score       = 70
+    quality     = 85
+    tags        = "CVE-2015-2545, FILE"
+    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
+
+  strings:
+    $s1 = "word/media/image1.eps" ascii
+    $s2 = "-la;7(la+" ascii
+
+  condition:
+    uint16(0) == 0x4b50 and ($s1 and #s2 > 20)
+}
+
 rule SIGNATURE_BASE_HKTL_EXPL_POC_Libssh_Auth_Bypass_CVE_2023_2283_Jun23_1: CVE_2023_2283 FILE {
   meta:
     description = "Detects POC code used in attacks against libssh vulnerability CVE-2023-2283"
@@ -5379,6 +5890,28 @@ rule SIGNATURE_BASE_HKTL_EXPL_POC_Libssh_Auth_Bypass_CVE_2023_2283_Jun23_1: CVE_
 
   condition:
     uint16(0) == 0x457f and all of them
+}
+
+rule SIGNATURE_BASE_APT_MAL_Sandworm_Exaramel_Socket_Path {
+  meta:
+    description = "Detects path of the unix socket created to prevent concurrent executions in Exaramel malware"
+    author      = "FR/ANSSI/SDO"
+    id          = "3aab84c9-9748-5d11-9cd7-efa9151036cf"
+    date        = "2021-02-15"
+    modified    = "2024-05-25"
+    reference   = "https://www.cert.ssi.gouv.fr/uploads/CERTFR-2021-CTI-005.pdf"
+    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_sandworm_centreon.yar#L134-L146"
+    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
+    logic_hash  = "8c049b5a7b508ca0f160d166f3c726e4a23a2c5b3105d075d7bf7a301a1c58f6"
+    score       = 80
+    quality     = 85
+    tags        = ""
+
+  strings:
+    $ = "/tmp/.applocktx"
+
+  condition:
+    all of them
 }
 
 rule SIGNATURE_BASE_APT_MAL_LNX_Turla_Apr20_1: FILE {
@@ -6309,6 +6842,36 @@ rule dropper_ren: realshell android {
 
 
 
+rule marcher1 {
+  meta:
+    author      = "Antonio S. <asanchez@koodous.com>"
+    source      = "https://analyst.koodous.com/rulesets/890"
+    description = "This rule detects is to detect a type of banking malware"
+    sample      = "33b1a9e4a1591c1a39fdd5295874e365dbde9448098254a938525385498da070"
+
+  strings:
+    $a = "cmVudCYmJg=="
+    $b = "dXNzZCYmJg=="
+
+  condition:
+    all of them
+
+}
+
+rule marcher2 {
+  meta:
+    author = "Antonio S. <asanchez@koodous.com>"
+    source = "https://analyst.koodous.com/rulesets/890"
+
+  strings:
+    $a = "HDNRQ2gOlm"
+    $b = "lElvyohc9Y1X+nzVUEjW8W3SbUA"
+
+  condition:
+    all of them
+
+}
+
 rule marcher3 {
   meta:
     author  = "Antonio S. <asanchez@koodous.com>"
@@ -6322,6 +6885,23 @@ rule marcher3 {
 
   condition:
     all of them
+}
+
+rule marcher_v2 {
+  meta:
+    description = "This rule detects a new variant of Marcher"
+    sample      = "27c3b0aaa2be02b4ee2bfb5b26b2b90dbefa020b9accc360232e0288ac34767f"
+    author      = "Antonio S. <asanchez@koodous.com>"
+    source      = "https://analyst.koodous.com/rulesets/1301"
+
+  strings:
+    $a = /assets\/[a-z]{1,12}.datPK/
+    $b = "mastercard_img"
+    $c = "visa_verifed"
+
+  condition:
+    all of them
+
 }
 
 rule android_metasploit: android {
@@ -6468,6 +7048,22 @@ rule Linux_x86_64_Mirai_shellcode_Variant_2022_03_17 {
 
   condition:
     uint16(0) == 0x457f and ((3 or all of ($mstr*)) and (all of ($ppp*)))
+}
+
+rule EXT_HKTL_MAL_TinyShell_Backdoor_SPARC {
+  meta:
+    author      = "Mandiant"
+    description = "Detects Tiny Shell variant for SPARC - an open-source UNIX backdoor"
+    date        = "2022-03-17"
+    reference   = "https://www.mandiant.com/resources/blog/unc2891-overview"
+    score       = 80
+
+  strings:
+    $sb_xor_1 = { DA 0A 80 0C 82 18 40 0D C2 2A 00 0B 96 02 E0 01 98 03 20 01 82 1B 20 04 80 A0 00 01 82 60 20 00 98 0B 00 01 C2 4A 00 0B 80 A0 60 00 32 BF FF F5 C2 0A 00 0B 81 C3 E0 08 }
+    $sb_xor_2 = { C6 4A 00 00 80 A0 E0 00 02 40 00 0B C8 0A 00 00 85 38 60 00 C4 09 40 02 84 18 80 04 C4 2A 00 00 82 00 60 01 80 A0 60 04 83 64 60 00 10 6F FF F5 90 02 20 01 81 C3 E0 08 }
+
+  condition:
+    uint32(0) == 0x464C457F and (uint16(0x10) & 0x0200 == 0x0200) and (uint16(0x12) & 0x0200 == 0x0200) and 1 of them
 }
 
 rule Kaiten {
