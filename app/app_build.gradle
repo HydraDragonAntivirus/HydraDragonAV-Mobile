@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'com.hydradragon.antivirus'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.hydradragon.antivirus"
         minSdk 26           // Android 8.0+ (Oreo)
-        targetSdk 34
+        targetSdk 35        // Android 15 (API 35)
         versionCode 1
         versionName "1.0.0"
 

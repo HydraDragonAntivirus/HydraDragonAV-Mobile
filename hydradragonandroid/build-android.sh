@@ -19,12 +19,14 @@ JNILIBS="../app/src/main/jniLibs"
 API=26
 
 # arm64-v8a, armeabi-v7a, x86_64, x86 — covers phones + emulators.
+# NOTE: cargo-ndk 4.x renamed the API-level flag — it is now `--platform`
+# (the old short `-p` is forwarded to cargo as `--package`, which fails).
 cargo ndk \
   -t arm64-v8a \
   -t armeabi-v7a \
   -t x86_64 \
   -t x86 \
-  -p "$API" \
+  --platform "$API" \
   -o "$JNILIBS" \
   build --release
 
