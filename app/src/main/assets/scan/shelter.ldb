@@ -1,0 +1,15 @@
+Sanesecurity.Shelter.Phishing.Fake.Coin.0Space;Engine:51-255,Target:3;(0>200&1);262378323030623b;636861727365743d7574662d38223e3c2f686561643e3c626f64793e
+Sanesecurity.Shelter.Phishing.Fake.Coin.wfont;Engine:51-255,Target:7;(0>200&1);3c2f666f6e743e203c666f6e7420636f6c6f723d227768697465223e;53654e536954695665::i
+Sanesecurity.Shelter.Phishing.Fake.Coin.imagev1;Engine:51-255,Target:3;(0&1);3C626F64793E3C696D67207372633D226369643A6174745F696D675F{3-8}223e3c2f626f64793e3c2f68746d6c3e;0/"cid:att_img_[0-9]{3,8}"></body></html>$/
+Sanesecurity.Shelter.Phishing.Fake.Coin.0Space3;Engine:51-255,FileSize:5000-80000,Target:7;(0>400);2623383230333b
+Sanesecurity.Shelter.Phishing.Fake.Coin.Png;Engine:51-255,FileSize:75000-90000,Target:4;(0&1=0&2=0);4d6573736167652d49443a203c{32}406d61696c2e3e*436f6e74656e742d547970653a20494d4147452f504e473b206e616d653d2250696374757265;557365722d4167656e743a;2d4d61696c6572
+Sanesecurity.Shelter.Phishing.Fake.Coin.Png2;Engine:51-255,FileSize:75000-90000,Target:4;(0&1=0&2=0);436f6e74656e742d547970653a20494d4147452f504e473b206e616d653d2250696374757265*4d6573736167652d49443a203c{32}406d61696c2e3e;557365722d4167656e743a;2d4d61696c6572
+Sanesecurity.Shelter.Phishing.Fake.Coin.ff;Engine:51-255,FileSize:10000-11000,Target:3;(0>30);3c666f6e7420636f6c6f723d22236666666666666666223e??3c2f666f6e743e
+Sanesecurity.Shelter.Phishing.Fake.Coin.imagev2;Engine:51-255,FileSize:200-500,Target:3;(0&1);3c68746d6c3e3c626f64793e3c696d67207372633d226369643a6174745f696d675f;0/<html><body><img src="cid:att_img_[0-9]{3,8}"><br/
+Sanesecurity.Shelter.Phishing.Fake.Coin.imagev3;Engine:51-255,FileSize:100-511100,Target:3;(0&1);3c7469746c653e6865696768743c2f7469746c653e3c7374796c653e2e2374656723;0/</style></head><body><img src="cid:att_img_[0-9]{3,8}"><div class="#teg#"></div></body></html>/
+Sanesecurity.Shelter.Phishing.Fake.Coin.imagev4;Engine:51-255,FileSize:100-511100,Target:3;(0&1);3e3c626f64793e3c!(2f);0/><img src="cid:att_img_[0-9]{3,8}"><[^/]/
+Sanesecurity.Shelter.Phishing.Fake.Coin.0Space5;Engine:51-255,FileSize:2000-90000,Target:7;(0>50&1=0);26233233373b;6F70656E786D6C666F726D6174732E6F72672F
+Sanesecurity.Shelter.Phishing.Fake.Coin.0Space6;Engine:51-255,FileSize:2000-90000,Target:7;(0>50&1&2=0);2623783362;227965732122;6F70656E786D6C666F726D6174732E6F72672F
+Sanesecurity.Shelter.Phishing.Fake.Coin.0Space7;Engine:51-255,FileSize:2000-90000,Target:7;(0>50&1>50&2=0);2623323438;26233136313b;6F70656E786D6C666F726D6174732E6F72672F
+Sanesecurity.Shelter.Phishing.Fake.Coin.0Space8;Engine:51-255,FileSize:2000-90000,Target:7;(0>50&1=0);26233533373b;6F70656E786D6C666F726D6174732E6F72672F
+Sanesecurity.Shelter.Phishing.Fake.Coin.0Space9;Engine:51-255,FileSize:2000-90000,Target:7;(0>50&1=0);2623323533;6F70656E786D6C666F726D6174732E6F72672F

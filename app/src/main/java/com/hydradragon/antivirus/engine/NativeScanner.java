@@ -26,13 +26,13 @@ public final class NativeScanner {
 
     private static final String TAG = "NativeScanner";
 
-    /** Assets copied to internal storage so native code can mmap/read them. */
-    private static final String[] ASSETS = {
-            "clean_rules_filtered_verified.yrc",
-            "valhalla-rules_filtered_verified.yrc",
-            "AndroidOS_filtered.yrc",
-            "apk_model.json",
-    };
+    /**
+     * Assets sub-folder holding the full scan bundle (copied flat to internal
+     * storage so native code can read it): compiled {@code .yrc} YARA rulesets,
+     * the ML model, the clamav signature DBs (.ndb/.ldb/.ldu/.db), the file-type
+     * magics (.ftm) needed for the supported-type gate, and the bytecode (.cbc).
+     */
+    private static final String ASSET_DIR = "scan";
 
     private static volatile boolean ready = false;
 
@@ -63,10 +63,15 @@ public final class NativeScanner {
             return false;
         }
         try {
-            for (String name : ASSETS) {
+            String[] names = context.getAssets().list(ASSET_DIR);
+            if (names == null || names.length == 0) {
+                Log.e(TAG, "no assets under " + ASSET_DIR);
+                return false;
+            }
+            for (String name : names) {
                 File out = new File(dir, name);
                 if (!out.exists() || out.length() == 0) {
-                    copyAsset(context, name, out);
+                    copyAsset(context, ASSET_DIR + "/" + name, out);
                 }
             }
         } catch (IOException e) {
