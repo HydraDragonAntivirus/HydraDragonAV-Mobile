@@ -4,11 +4,12 @@ import os
 import re
 
 DEFAULT_EXCLUDE_TERMS = {"win", "windows", "osx", "macho", "peid", "java", "mz", "pe",
-                         "powershell", "susp", "suspicious", "lnk", "packer", "nsis"}
+                         "powershell", "susp", "suspicious", "lnk", "packer", "nsis",
+                         "mail"}
 
 # Terms matched ONLY against the first underscore-segment of the rule name.
 # Use for short/ambiguous terms that would cause false positives elsewhere.
-DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape", "devcpp", "pptx"}
+DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape", "devcpp", "pptx", "md5"}
 
 # Terms matched as an exact TOKEN in the rule NAME only (any camelCase or
 # underscore segment), never in tags/meta/strings/comments. Use for short words
@@ -16,6 +17,13 @@ DEFAULT_PREFIX_ONLY_TERMS = {"ttp", "cape", "devcpp", "pptx"}
 # which should drop korna_net_korna / MyNetThing but not match "internet" in a
 # comment or the word "net" in a string.
 DEFAULT_NAME_ONLY_TERMS = {"net"}
+
+# False-positive rules to drop, matched ONLY as an exact rule-name segment
+# (never in strings/meta/condition/comments). These name benign Android
+# artifacts that appear in nearly every legitimate APK:
+#   androidkotlindebugprobeskt -> Kotlin coroutines DebugProbesKt marker
+#   androidresourcearsc        -> the resources.arsc table every APK ships
+DEFAULT_NAME_FP_TERMS = {"androidkotlindebugprobeskt", "androidresourcearsc"}
 
 # Excluded terms allowed to match via startswith() even though they are shorter
 # than the 5-char startswith guard. "susp" intentionally catches the whole
@@ -26,7 +34,7 @@ PREFIX_MATCH_TERMS = {"susp"}
 # middle or end) are dropped outright. Used for compiler/platform substrings
 # that tokenisation does not otherwise catch, e.g. win32 / win64 (token
 # "win32"/"win64", not "win") and borland_delphi (Windows-only Delphi binaries).
-DEFAULT_EXCLUDE_NAME_SUBSTRINGS = {"borland_delphi", "win32", "win64", "windows", "exe", "anti_debug"}
+DEFAULT_EXCLUDE_NAME_SUBSTRINGS = {"borland_delphi", "win32", "win64", "windows", "exe", "anti_debug", "ps1"}
 
 # Exact metadata values that cause a rule to be dropped, matched
 # case-insensitively against the WHOLE meta value (not tokenised). Used for
@@ -235,7 +243,7 @@ def body_identifiers(block):
 
 def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
                 exclude_meta_values=frozenset(), exclude_name_substrings=frozenset(),
-                name_only_terms=frozenset()):
+                name_only_terms=frozenset(), name_fp_terms=frozenset()):
     """
     Return False if any of these signals fires:
 
@@ -256,7 +264,7 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
     """
     block_text = "".join(block).lower()
     # Raw full-block substring checks (catch strings in literals, comments, meta)
-    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# ", "autoit", "mach-o", "mimikatz", "nullsoft", "c:\\", "c:/", "guloader", "vbscript", "visual basic", ".vbs"):
+    for _raw_term in ("macos", "microsoft", ".exe", ".dll", ".sys", "hash.md5(0,", "c# ", "autoit", "mach-o", "mimikatz", "nullsoft", "c:\\", "c:/", "guloader", "vbscript", "visual basic", ".vbs", "registry", "regedit", "frombase64", ".ps1", "heavensgate", "dotnet"):
         if _raw_term in block_text:
             return False
 
@@ -277,6 +285,11 @@ def should_keep(block, exclude_terms, prefix_only_terms, non_android_modules,
 
     name_tokens, name_parts = tokenise(name)
     if matches_exclude(name_tokens, name_parts, exclude_terms):
+        return False
+
+    # False-positive name terms: drop when any name segment exactly equals an FP
+    # term (e.g. AndroidResourceArsc). Name-only — never inspects the body.
+    if name_tokens & name_fp_terms:
         return False
 
     # Name-only token terms (e.g. "net" = dotnet): match any name segment but
@@ -542,6 +555,8 @@ def main():
     for p in args.exclude_name_substring:
         exclude_name_substrings.add(p.lower())
 
+    name_fp_terms = set() if args.reset_defaults else set(DEFAULT_NAME_FP_TERMS)
+
     verify_terms = set() if args.reset_defaults else set(DEFAULT_VERIFY_TERMS)
     for t in args.verify_term:
         verify_terms.add(t.lower())
@@ -557,6 +572,7 @@ def main():
     print(f"Excluded meta values: {sorted(exclude_meta_values)}")
     print(f"Excluded name subs:   {sorted(exclude_name_substrings)}")
     print(f"Name-only terms:      {sorted(name_only_terms)}")
+    print(f"Name FP terms:        {sorted(name_fp_terms)}")
     print(f"Verify terms:         {sorted(verify_terms)}")
     print(f"Reading {src}...")
 
@@ -565,14 +581,18 @@ def main():
 
     prelude, blocks = split_blocks(lines)
 
-    # Warn if the prelude itself imports non-Android modules — the filtered
-    # output will still contain those import lines, which YARA will complain
-    # about if no remaining rule uses that module. Informational only.
-    prelude_imports = imported_modules(prelude)
-    bad_prelude = prelude_imports & non_android_modules
-    if bad_prelude:
-        print(f"Note: prelude imports non-Android modules {sorted(bad_prelude)} — "
-              "these import lines are kept as-is in the output.")
+    # Strip prelude import lines for dropped (non-Android) modules — no kept rule
+    # uses them, so leaving the imports in would make YARA error on the output.
+    dropped_prelude = imported_modules(prelude) & non_android_modules
+    if dropped_prelude:
+        kept_prelude = []
+        for line in prelude:
+            m = _IMPORT_RE.match(line)
+            if m and m.group(1).lower() in non_android_modules:
+                continue
+            kept_prelude.append(line)
+        prelude = kept_prelude
+        print(f"Removed prelude imports for non-Android modules {sorted(dropped_prelude)}.")
 
     total = len(blocks)
     names = [extract_rule_name(b[0]) for b in blocks]
@@ -580,7 +600,8 @@ def main():
     # Pass 1: direct signals (name, tags, meta, modules, comments).
     keep = [
         should_keep(b, exclude_terms, prefix_only_terms, non_android_modules,
-                    exclude_meta_values, exclude_name_substrings, name_only_terms)
+                    exclude_meta_values, exclude_name_substrings, name_only_terms,
+                    name_fp_terms)
         for b in blocks
     ]
     direct_removed = keep.count(False)

@@ -1,9 +1,6 @@
-import "pe"
 import "hash"
 import "elf"
 import "console"
-import "dotnet"
-import "macho"
 import "math"
 import "time"
 
@@ -182,26 +179,6 @@ private rule file_zip {
     $end_of_central_directory
 }
 
-rule MAL_FIN13_BLUEAGAVE_Perl {
-  meta:
-    description   = "Matches strings found in BLUEAGAVE Perl webshell used by FIN13 (AKA: ElephantBeetle, SQUAB SPIDER)"
-    last_modified = "2024-04-02"
-    author        = "@petermstewart"
-    DaysofYara    = "93/100"
-    ref           = "https://www.netwitness.com/wp-content/uploads/FIN13-Elephant-Beetle-NetWitness.pdf"
-
-  strings:
-    $a1 = "'[cpuset]';" ascii wide
-    $a2 = "$key == \"kmd\"" ascii wide
-    $a3 = "SOMAXCONN,"
-    $a4 = "(/\\s*(\\w+)\\s*([^\\s]+)\\s*HTTP\\/(\\d.\\d)/)" ascii wide
-    $a5 = "s/^\\s+//; s/\\s+$//;" ascii wide
-
-  condition:
-    filesize < 5KB and
-    all of them
-}
-
 rule MAL_FIN13_CLOSEWATCH {
   meta:
     description   = "Matches strings found in CLOSEWATCH JSP webshell and scanner used by FIN13 (AKA: ElephantBeetle, SQUAB SPIDER)"
@@ -288,14 +265,6 @@ rule MAL_FIN13_SWEARJAR {
     filesize < 20KB and
     file_zip and
     all of them
-}
-
-private rule MSI {
-  strings:
-    $r1 = { 52 00 6F 00 6F 00 74 00 20 00 45 00 6E 00 74 00 72 00 79 }
-
-  condition:
-    uint16(0) == 0xCFD0 and $r1
 }
 
 private rule LZMA {
@@ -931,49 +900,6 @@ rule Check_Qemu_Description {
     all of them
 }
 
-rule Check_VBox_DeviceMap {
-  meta:
-    Author      = "Nick Hoffman"
-    Description = "Checks Vbox registry keys"
-    Sample      = "de1af0e97e94859d372be7fcf3a5daa5"
-
-  strings:
-    $key   = "HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0" nocase wide ascii
-    $value = "Identifier" nocase wide ascii
-    $data  = "VBOX" nocase wide ascii
-
-  condition:
-    all of them
-}
-
-rule Check_VBox_Guest_Additions {
-  meta:
-    Author      = "Nick Hoffman"
-    Description = "Checks for the existence of the guest additions registry key"
-    Sample      = "de1af0e97e94859d372be7fcf3a5daa5"
-
-  strings:
-    $key = "SOFTWARE\\Oracle\\VirtualBox Guest Additions" wide ascii nocase
-
-  condition:
-    any of them
-}
-
-rule Check_VMWare_DeviceMap {
-  meta:
-    Author      = "Nick Hoffman"
-    Description = "Checks for the existence of VmWare Registry Keys"
-    Sample      = "de1af0e97e94859d372be7fcf3a5daa5"
-
-  strings:
-    $key   = "HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0" wide ascii nocase
-    $value = "Identifier" wide nocase ascii
-    $data  = "VMware" wide nocase ascii
-
-  condition:
-    all of them
-}
-
 rule Check_Wine {
   meta:
     Author      = "Nick Hoffman"
@@ -1033,27 +959,6 @@ rule BOUNCER_DLL_APT1 {
 
   condition:
     all of them
-}
-
-rule CALENDAR_APT1 {
-  meta:
-    author = "AlienVault Labs"
-    info   = "CommentCrew-threat-apt1"
-
-  strings:
-    $s1  = "content" wide ascii
-    $s2  = "title" wide ascii
-    $s3  = "entry" wide ascii
-    $s4  = "feed" wide ascii
-    $s5  = "DownRun success" wide ascii
-    $s6  = "%s@gmail.com" wide ascii
-    $s7  = "<!--%s-->" wide ascii
-    $b8  = "W4qKihsb+So=" wide ascii
-    $b9  = "PoqKigY7ggH+VcnqnTcmhFCo9w==" wide ascii
-    $b10 = "8oqKiqb5880/uJLzAsY=" wide ascii
-
-  condition:
-    all of ($s*) or all of ($b*)
 }
 
 rule DAIRY_APT1 {
@@ -1193,22 +1098,6 @@ rule CCREWBACK1 {
 
   condition:
     4 of ($a, $b, $c, $d, $e) or $f or 3 of ($g, $h, $i, $j) or $k
-}
-
-rule TrojanCookies_CCREW {
-  meta:
-    author = "AlienVault Labs"
-    info   = "CommentCrew-threat-apt1"
-
-  strings:
-    $a = "sleep:" wide ascii
-    $b = "content=" wide ascii
-    $c = "reqpath=" wide ascii
-    $d = "savepath=" wide ascii
-    $e = "command=" wide ascii
-
-  condition:
-    4 of ($a, $b, $c, $d, $e)
 }
 
 rule Elise {
@@ -1597,21 +1486,6 @@ rule dragos_crashoverride_serviceStomper {
   strings:
     $s0 = { 33 c9 51 51 51 51 51 51 ?? ?? ?? }
     $s1 = { 6a ff 6a ff 6a ff 50 ff 15 24 ?? 40 00 ff ?? ?? ff 15 20 ?? 40 00 }
-
-  condition:
-    all of them
-}
-
-rule dragos_crashoverride_wiperModuleRegistry {
-  meta:
-    description = "Registry Wiper functionality assoicated with CRASHOVERRIDE"
-    author      = "Dragos Inc"
-    reference   = "https://dragos.com/blog/crashoverride/CrashOverride-01.pdf"
-
-  strings:
-    $s0 = { 8d 85 a0 ?? ?? ?? 46 50 8d 85 a0 ?? ?? ?? 68 68 0d ?? ?? 50 }
-    $s1 = { 6a 02 68 78 0b ?? ?? 6a 02 50 68 b4 0d ?? ?? ff b5 98 ?? ?? ?? ff 15 04 ?? ?? ?? }
-    $s2 = { 68 00 02 00 00 8d 85 a0 ?? ?? ?? 50 56 ff b5 9c ?? ?? ?? ff 15 00 ?? ?? ?? 85 c0 }
 
   condition:
     all of them
@@ -3207,22 +3081,6 @@ rule MacControlCode: MacControl Family {
     all of ($L4*) or $GEThgif
 }
 
-rule md5_64651cede2467fdeb1b3b7e6ff3f81cb {
-  strings:
-    $ = "rUl6QttVEP5eqf9usxfJjgoOvdNWFSGoHDgluk+4ONwXQNbGniQLttfyrgkB8d9"
-
-  condition:
-    any of them
-}
-
-rule md5_6bf4910b01aa4f296e590b75a3d25642 {
-  strings:
-    $ = "base64_decode('b25lcGFnZXxnY19hZG1pbg==')"
-
-  condition:
-    any of them
-}
-
 rule fopo_webshell {
   strings:
     $ = "DNEcHdQbWtXU3dSMDA1VmZ1c29WUVFXdUhPT0xYb0k3ZDJyWmFVZlF5Y0ZEeHV4K2FnVmY0OUtjbzhnc0"
@@ -3238,90 +3096,6 @@ rule eval_post {
     $ = "eval(base64_decode($_POST"
     $ = "eval($undecode($tongji))"
     $ = "eval($_POST"
-
-  condition:
-    any of them
-}
-
-rule md5_0105d05660329704bdb0ecd3fd3a473b {
-  /*
-  	)){eval (${ $njap58}['q9e5e25' ])
-  	) ) { eval ( ${$yed7 }['
-  */
-
-  strings:
-    $ = /\)\s*\)\s*\{\s*eval\s*\(\s*\$\{/
-
-  condition:
-    any of them
-}
-
-rule md5_0b1bfb0bdc7e017baccd05c6af6943ea {
-  /*
-  	eval(hnsqqh($llmkuhieq, $dbnlftqgr));?>
-  	eval(vW91692($v7U7N9K, $v5N9NGE));?>
-  */
-
-  strings:
-    $ = /eval\([\w\d]+\(\$[\w\d]+, \$[\w\d]+\)\);/
-
-  condition:
-    any of them
-}
-
-rule md5_3ccdd51fe616c08daafd601589182d38 {
-  strings:
-    $ = "eval(xxtea_decrypt"
-
-  condition:
-    any of them
-}
-
-rule md5_4b69af81b89ba444204680d506a8e0a1 {
-  strings:
-    $ = "** Scam Redirector"
-
-  condition:
-    any of them
-}
-
-rule md5_71a7c769e644d8cf3cf32419239212c7 {
-  /*
-  // $GLOBALS['ywanc2']($GLOBALS['ggbdg61']
-  */
-
-  strings:
-    $ = /\$GLOBALS\['[\w\d]+'\]\(\$GLOBALS\['[\w\d]+'\]/
-
-  condition:
-    any of them
-}
-
-rule md5_825a3b2a6abbe6abcdeda64a73416b3d {
-  /*
-  // $ooooo00oo0000oo0oo0oo00ooo0ooo0o0o0 = gethostbyname($_SERVER["SERVER_NAME"]);
-  // if(!oo00o0OOo0o00O("fsockopen"))
-  // strings: $ = "$ooooo00oo0000oo0"
-  */
-
-  strings:
-    $ = /[o0O]{3}\("fsockopen"\)/
-
-  condition:
-    any of them
-}
-
-rule md5_87cf8209494eedd936b28ff620e28780 {
-  strings:
-    $ = "curl_close($cu);eval($o);};die();"
-
-  condition:
-    any of them
-}
-
-rule md5_fb9e35bf367a106d18eb6aa0fe406437 {
-  strings:
-    $ = "0B6KVua7D2SLCNDN2RW1ORmhZRWs/sp_tilang.js"
 
   condition:
     any of them
@@ -3344,38 +3118,6 @@ rule obfuscated_eval {
     any of them
 }
 
-rule md5_50be694a82a8653fa8b31d049aac721a {
-  strings:
-    $ = "(preg_match('/\\/admin\\/Cms_Wysiwyg\\/directive\\/index\\//', $_SERVER['REQUEST_URI']))"
-
-  condition:
-    any of them
-}
-
-rule md5_ab63230ee24a988a4a9245c2456e4874 {
-  strings:
-    $ = "eval(gzinflate(base64_decode(str_rot13(strrev("
-
-  condition:
-    any of them
-}
-
-rule md5_d30b23d1224438518d18e90c218d7c8b {
-  strings:
-    $ = "attribute_code=0x70617373776f72645f68617368"
-
-  condition:
-    any of them
-}
-
-rule md5_24f2df1b9d49cfb02d8954b08dba471f {
-  strings:
-    $ = "))unlink('../media/catalog/category/'.basename($"
-
-  condition:
-    any of them
-}
-
 rule base64_hidden_in_image {
   strings:
     $ = /JPEG-1\.1[a-zA-Z0-9\-\/]{32}/
@@ -3392,14 +3134,6 @@ rule hide_data_in_jpeg {
     any of them
 }
 
-rule md5_fd141197c89d27b30821f3de8627ac38 {
-  strings:
-    $ = "if(isset($_GET['do'])){$g0='adminhtml/default/default/images'"
-
-  condition:
-    any of them
-}
-
 rule visbot {
   strings:
     $ = "stripos($buf, 'Visbot')!==false && stripos($buf, 'Pong')!==false"
@@ -3409,43 +3143,9 @@ rule visbot {
     any of them
 }
 
-rule md5_d201d61510f7889f1a47257d52b15fa2 {
-  strings:
-    $ = "@eval(stripslashes($_REQUEST[q]));"
-
-  condition:
-    any of them
-}
-
-rule md5_06e3ed58854daeacf1ed82c56a883b04 {
-  strings:
-    $ = "$log_entry = serialize($ARINFO)"
-
-  condition:
-    any of them
-}
-
-rule md5_28690a72362e021f65bb74eecc54255e {
-  strings:
-    $ = "curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query(array('data'=>$data,'utmp'=>$id)));"
-
-  condition:
-    any of them
-}
-
 rule overwrite_globals_hack {
   strings:
     $ = /\$GLOBALS\['[^']{,20}'\]=Array\(/
-
-  condition:
-    any of them
-}
-
-rule md5_4adef02197f50b9cc6918aa06132b2f6 {
-  /* { eval($cco37(${ $kasd1}[ 'n46b398' ] ) );} */
-
-  strings:
-    $ = /\{\s*eval\s*\(\s*\$.{1,5}\s*\(\$\{\s*\$.{1,5}\s*\}\[\s*'.{1,10}'\s*\]\s*\)\s*\);\}/
 
   condition:
     any of them
@@ -3472,40 +3172,6 @@ rule ld_preload_backdoor {
 rule fake_magentoupdate_site {
   strings:
     $ = "magentopatchupdate.com"
-
-  condition:
-    any of them
-}
-
-rule md5_b3ee7ea209d2ff0d920dfb870bad8ce5 {
-  strings:
-    $ = /\$mysql_key\s*=\s*@?base64_decode/
-    $ = /eval\(\s*\$mysql_key\s*\)/
-
-  condition:
-    all of them
-}
-
-rule md5_e03b5df1fa070675da8b6340ff4a67c2 {
-  strings:
-    $ = /if\(preg_match\("\/onepage\|admin\/",\s*\$_SERVER\['REQUEST_URI'\]\)\)\{\s*@?file_put_contents/
-    $ = /@?base64_encode\(serialize\(\$_REQUEST\)\."--"\.serialize\(\$_COOKIE\)\)\."\\n",\s*FILE_APPEND\)/
-
-  condition:
-    any of them
-}
-
-rule md5_023a80d10d10d911989e115b477e42b5 {
-  strings:
-    $ = /chr\(\d{,3}\)\.\"\"\.chr\(\d{,3}\)/
-
-  condition:
-    any of them
-}
-
-rule md5_4aa900ddd4f1848a15c61a9b7acd5035 {
-  strings:
-    $ = "'base'.(128/2).'_de'.'code'"
 
   condition:
     any of them
@@ -3657,14 +3323,6 @@ rule mag_php_js {
 rule thetech_org_js {
   strings:
     $ = "|RegExp|onepage|checkout|"
-
-  condition:
-    any of them
-}
-
-rule md5_cdn_js_link_js {
-  strings:
-    $ = "grelos_v= null"
 
   condition:
     any of them
@@ -4752,42 +4410,6 @@ rule DMALocker4: ransom {
 
 }
 
-rule DoublePulsarXor_Petya {
-  meta:
-    description = "Rule to hit on the XORed DoublePulsar shellcode"
-    author      = "Patrick Jones"
-    company     = "Booz Allen Hamilton"
-    reference1  = "https://www.boozallen.com/s/insight/publication/the-petya-ransomware-outbreak.html"
-    reference2  = "https://www.boozallen.com/content/dam/boozallen_site/sig/pdf/white-paper/rollup-of-booz-allen-petya-research.pdf"
-    date        = "2017-06-28"
-    hash        = "027cc450ef5f8c5f653329641ec1fed91f694e0d229928963b30f6b0d7d3a745"
-    hash        = "64b0b58a2c030c77fdb2b537b2fcc4af432bc55ffb36599a31d418c7c69e94b1"
-
-  strings:
-    $DoublePulsarXor_Petya = { FD 0C 8C 5C B8 C4 24 C5 CC CC CC 0E E8 CC 24 6B CC CC CC 0F 24 CD CC CC CC 27 5C 97 75 BA CD CC CC C3 FE }
-
-  condition:
-    $DoublePulsarXor_Petya
-}
-
-rule DoublePulsarDllInjection_Petya {
-  meta:
-    description = "Rule to hit on the XORed DoublePulsar DLL injection shellcode"
-    author      = "Patrick Jones"
-    company     = "Booz Allen Hamilton"
-    reference1  = "https://www.boozallen.com/s/insight/publication/the-petya-ransomware-outbreak.html"
-    reference2  = "https://www.boozallen.com/content/dam/boozallen_site/sig/pdf/white-paper/rollup-of-booz-allen-petya-research.pdf"
-    date        = "2017-06-28"
-    hash        = "027cc450ef5f8c5f653329641ec1fed91f694e0d229928963b30f6b0d7d3a745"
-    hash        = "64b0b58a2c030c77fdb2b537b2fcc4af432bc55ffb36599a31d418c7c69e94b1"
-
-  strings:
-    $DoublePulsarDllInjection_Petya = { 45 20 8D 93 8D 92 8D 91 8D 90 92 93 91 97 0F 9F 9E 9D 99 84 45 29 84 4D 20 CC CD CC CC 9B 84 45 03 84 45 14 84 45 49 CC 33 33 33 24 77 CC CC CC 84 45 49 C4 33 33 33 24 84 CD CC CC 84 45 49 DC 33 33 33 84 47 49 CC 33 33 33 84 47 41 }
-
-  condition:
-    $DoublePulsarDllInjection_Petya
-}
-
 rule Locky_Ransomware_2: ransom {
   meta:
     description = "Regla para detectar RANSOM.LOCKY"
@@ -4947,62 +4569,6 @@ rule Adwind_JAR_PACKB: binary RAT Frutas Unrecom AlienSpy {
 
   condition:
     int16(0) == 0x4B50 and ($c1 and $c2 and ($a1 or $b1))
-}
-
-rule BlackShades_3: Trojan RAT {
-  meta:
-    description = "BlackShades RAT"
-    author      = "botherder https://github.com/botherder"
-
-  strings:
-    $mod1  = /(m)odAPI/
-    $mod2  = /(m)odAudio/
-    $mod3  = /(m)odBtKiller/
-    $mod4  = /(m)odCrypt/
-    $mod5  = /(m)odFuctions/
-    $mod6  = /(m)odHijack/
-    $mod7  = /(m)odICallBack/
-    $mod8  = /(m)odIInet/
-    $mod9  = /(m)odInfect/
-    $mod10 = /(m)odInjPE/
-    $mod11 = /(m)odLaunchWeb/
-    $mod12 = /(m)odOS/
-    $mod13 = /(m)odPWs/
-    $mod14 = /(m)odRegistry/
-    $mod15 = /(m)odScreencap/
-    $mod16 = /(m)odSniff/
-    $mod17 = /(m)odSocketMaster/
-    $mod18 = /(m)odSpread/
-    $mod19 = /(m)odSqueezer/
-    $mod20 = /(m)odSS/
-    $mod21 = /(m)odTorrentSeed/
-
-    $tmr1  = /(t)mrAlarms/
-    $tmr2  = /(t)mrAlive/
-    $tmr3  = /(t)mrAnslut/
-    $tmr4  = /(t)mrAudio/
-    $tmr5  = /(t)mrBlink/
-    $tmr6  = /(t)mrCheck/
-    $tmr7  = /(t)mrCountdown/
-    $tmr8  = /(t)mrCrazy/
-    $tmr9  = /(t)mrDOS/
-    $tmr10 = /(t)mrDoWork/
-    $tmr11 = /(t)mrFocus/
-    $tmr12 = /(t)mrGrabber/
-    $tmr13 = /(t)mrInaktivitet/
-    $tmr14 = /(t)mrInfoTO/
-    $tmr15 = /(t)mrIntervalUpdate/
-    $tmr16 = /(t)mrLiveLogger/
-    $tmr17 = /(t)mrPersistant/
-    $tmr18 = /(t)mrScreenshot/
-    $tmr19 = /(t)mrSpara/
-    $tmr20 = /(t)mrSprid/
-    $tmr21 = /(t)mrTCP/
-    $tmr22 = /(t)mrUDP/
-    $tmr23 = /(t)mrWebHide/
-
-  condition:
-    10 of ($mod*) or 10 of ($tmr*)
 }
 
 rule BlackShades2: Trojan RAT {
@@ -5266,20 +4832,6 @@ rule xtremrat: rat {
 
   condition:
     2 of them
-}
-
-rule zoxPNG_RAT {
-  meta:
-    Author      = "Novetta Advanced Research Group"
-    Date        = "2014/11/14"
-    Description = "ZoxPNG RAT, url inside"
-    Reference   = "http://www.novetta.com/wp-content/uploads/2014/11/ZoxPNG.pdf"
-
-  strings:
-    $url = "png&w=800&h=600&ei=CnJcUcSBL4rFkQX444HYCw&zoom=1&ved=1t:3588,r:1,s:0,i:92&iact=rc&dur=368&page=1&tbnh=184&tbnw=259&start=0&ndsp=20&tx=114&ty=58"
-
-  condition:
-    $url
 }
 
 rule QuarksPwDump_Gen: Toolkit {
@@ -6805,14 +6357,6 @@ rule SALSA__32_lil_AND_ {
 rule PSX_VAG_CD_ROM_XA_ADPCM_table__32_lil_40_ {
   strings:
     $a0 = { 00 00 00 00 00 00 00 00 3C 00 00 00 00 00 00 00 73 00 00 00 CC FF FF FF 62 00 00 00 C9 FF FF FF 7A 00 00 00 C4 FF FF FF }
-
-  condition:
-    $a0
-}
-
-rule MD5_constants__32_big_AND_ {
-  strings:
-    $a0 = { 67 45 23 01 [0-20] 10 32 54 77 [0-20] 67 45 23 02 [0-20] 10 32 54 76 }
 
   condition:
     $a0
@@ -9971,40 +9515,6 @@ rule zeus_js {
     14 of them
 }
 
-rule zeroaccess_css {
-  meta:
-    author          = "Josh Berry"
-    date            = "2016-06-27"
-    description     = "ZeroAccess Exploit Kit Detection"
-    hash0           = "4944324bad3b020618444ee131dce3d0"
-    sample_filetype = "js-html"
-    yaragenerator   = "https://github.com/Xen0ph0n/YaraGenerator"
-
-  strings:
-    $string0  = "close-mail{right:130px "
-    $string1  = "ccc;box-shadow:0 0 5px 1px "
-    $string2  = "757575;border-bottom:1px solid "
-    $string3  = "777;height:1.8em;line-height:1.9em;display:block;float:left;padding:1px 15px;margin:0;text-shadow:-1"
-    $string4  = "C4C4C4;}"
-    $string5  = "999;-webkit-box-shadow:0 0 3px "
-    $string6  = "header div.service-links ul{display:inline;margin:10px 0 0;}"
-    $string7  = "t div h2.title{padding:0;margin:0;}.box5-condition-news h2.pane-title{display:block;margin:0 0 9px;p"
-    $string8  = "footer div.comp-info p{color:"
-    $string9  = "pcmi-listing-center .full-page-listing{width:490px;}"
-    $string10 = "pcmi-content-top .photo img,"
-    $string11 = "333;}div.tfw-header a var{display:inline-block;margin:0;line-height:20px;height:20px;width:120px;bac"
-    $string12 = "ay:none;text-decoration:none;outline:none;padding:4px;text-align:center;font-size:9px;color:"
-    $string13 = "333;}body.page-videoplayer div"
-    $string14 = "373737;position:relative;}body.node-type-video div"
-    $string15 = "pcmi-content-sidebara,.page-error-page "
-    $string16 = "fff;text-decoration:none;}"
-    $string17 = "qtabs-list li a,"
-    $string18 = "cdn2.dailyrx.com"
-
-  condition:
-    18 of them
-}
-
 rule zeroaccess_css2 {
   meta:
     author          = "Josh Berry"
@@ -10538,21 +10048,6 @@ rule FE_LEGALSTRIKE_RTF {
     $header at 0 and all of them
 }
 
-rule ChinaChopper_one {
-  meta:
-    description = "Chinese Hacktool Set - file one.asp"
-    author      = "Florian Roth"
-    reference   = "http://tools.zjqhr.com/"
-    date        = "2015-06-13"
-    hash        = "6cd28163be831a58223820e7abe43d5eacb14109"
-
-  strings:
-    $s0 = "<%eval request(" fullword ascii
-
-  condition:
-    filesize < 50 and all of them
-}
-
 rule BetterSurfASample {
   meta:
     Description = "Adware.BetterSurf.A.vb"
@@ -10819,22 +10314,6 @@ rule AdwareVitruvianSample {
 
   condition:
     any of them
-}
-
-rule BackdoorGenASample {
-  meta:
-    Description = "Backdoor.Gen.A.vb"
-    ThreatLevel = "5"
-
-  strings:
-    $ = "Form1" ascii wide
-    $ = "Flamand" ascii wide
-    $ = "Afildoe.Belver" ascii wide
-    $ = "FromBase64String" ascii wide
-    $ = "TeAdor.Properties.Resources" ascii wide
-
-  condition:
-    3 of them
 }
 
 rule MirageAPTBackdoorSample {
@@ -13551,20 +13030,6 @@ rule Ratty {
     all of them
 }
 
-rule SAFFRON_ROSE_PDB_PATH {
-  meta:
-    Author      = "@X0RC1SM"
-    Description = "Looking for unique pdb path"
-    Reference   = "https://www.fireeye.com/content/dam/fireeye-www/global/en/current-threats/pdfs/rpt-operation-saffron-rose.pdf"
-
-  strings:
-    $PDB1 = "d:\\svn\\Stealer\\source\\Stealer\\Stealer\\obj\\x86\\Release\\Stealer.pdb"
-    $PDB2 = "f:\\Projects\\C#\\Stealer\\source\\Stealer\\Stealer\\obj\\x86\\Release\\Stealer.pdb"
-
-  condition:
-    any of them
-}
-
 rule TropicTrooper_keyboy_PDB {
   meta:
     author      = "mikesxrs"
@@ -13630,45 +13095,6 @@ rule exploit_Office_Badwinmail {
       )
     ) and
     1 of ($embedded*)
-}
-
-rule exploit_ole_package_manager {
-  meta:
-    author      = "David Cannings"
-    description = "Office Package Manager, may load unsafe content including scripts"
-    ref         = "http://quicksand.io/"
-
-  strings:
-    // Parsers will open files without the full 'rtf'
-    $header_rtf    = "{\\rt" nocase
-    $header_office = { D0 CF 11 E0 }
-    $header_xml    = "<?xml version=" nocase wide ascii
-
-    // Marks of embedded data (reduce FPs)
-    // RTF format
-    $embedded_object   = "\\object" nocase
-    $embedded_objdata  = "\\objdata" nocase
-    $embedded_ocx      = "\\objocx" nocase
-    $embedded_objclass = "\\objclass" nocase
-    $embedded_oleclass = "\\oleclsid" nocase
-
-    // XML Office documents
-    $embedded_axocx     = "<ax:ocx" nocase wide ascii
-    $embedded_axclassid = "ax:classid" nocase wide ascii
-
-    // OLE format
-    $embedded_root_entry = "Root Entry" wide
-    $embedded_comp_obj   = "Comp Obj" wide
-    $embedded_obj_info   = "Obj Info" wide
-    $embedded_ole10      = "Ole10Native" wide
-
-    $data0 = "0003000C-0000-0000-c000-000000000046" nocase wide ascii
-    $data1 = { 0C 00 03 00 00 00 00 00 c0 00 00 00 00 00 00 46 }
-
-  condition:
-    // Mandatory header plus sign of embedding, then any of the others
-    for any of ($header*): (@ == 0) and 1 of ($embedded*)
-    and (1 of ($data*))
 }
 
 rule exploit_ole_package_manager_poss {
@@ -13850,21 +13276,6 @@ rule DeltaCharlie {
     any of them
 }
 
-rule Derusbi_Server {
-  meta:
-    Author    = "Novetta"
-    Reference = "http://www.novetta.com/wp-content/uploads/2014/11/Derusbi.pdf"
-
-  strings:
-    $uuid         = "{93144EB0-8E3E-4591-B307-8EEBFE7DB28F}" wide ascii
-    $infectionID1 = "-%s-%03d"
-    $infectionID2 = "-%03d"
-    $other        = "ZwLoadDriver"
-
-  condition:
-    $uuid or ($infectionID1 and $infectionID2 and $other)
-}
-
 rule wiper_encoded_strings {
   meta:
     copyright = "2015 Novetta Solutions"
@@ -13890,19 +13301,6 @@ rule createP2P {
 
   condition:
     any of them
-}
-
-rule hikit2 {
-  meta:
-    Author    = "Novetta"
-    Reference = "https://www.novetta.com/wp-content/uploads/2014/11/HiKit.pdf"
-
-  strings:
-    $magic1 = { 8C 24 24 43 2B 2B 22 13 13 13 00 }
-    $magic2 = { 8A 25 25 42 28 28 20 1C 1C 1C 15 15 15 0E 0E 0E 05 05 05 00 }
-
-  condition:
-    $magic1 and $magic2
 }
 
 rule IndiaBravo_PapaAlfa {
@@ -14185,14 +13583,6 @@ rule ID2015032010000026 {
 
 }
 
-rule criakl_russian_meta_content {
-  strings:
-    $h1 = "<meta content=\"ru\"" nocase
-
-  condition:
-    all of them
-}
-
 rule docx_macro {
   strings:
     $header     = "PK"
@@ -14463,26 +13853,6 @@ rule Tendrit_2014: OnePHP {
 
 }
 
-rule Trojan_HIKIT {
-  meta:
-    Author    = "HB"
-    Date      = "26 Sep 2013"
-    Project   = "Orion"
-    MD5       = "7D4F241428A2496142DF1C4A376CEC88"
-    MD5       = "A5F07E00D3EEF7A16ECFEC03E94677E3"
-    Reference = "https://blogs.rsa.com/wp-content/uploads/2015/05/RSA-IR-Case-Study.pdf"
-
-  strings:
-    $b1 = { 63 00 6F 00 6E 00 6E 00 65 00 63 00 74 00 20 00 25 00 64 00 2E 00 25 00 64 00 2E 00 25 00 64 00 2E 00 25 00 64 00 20 00 25 00 64 00 00 00 00 00 68 00 69 00 6B 00 69 00 74 00 3E }
-    $b2 = { 68 00 69 00 74 00 78 00 2E 00 73 00 79 00 73 00 00 00 6D 00 61 00 74 00 72 00 69 00 78 00 5F 00 70 00 61 00 73 00 73 00 77 00 6F 00 72 00 }
-    $b3 = { 70 00 72 00 6F 00 78 00 79 00 00 00 63 00 6F 00 6E 00 6E 00 65 00 63 00 74 00 00 00 66 00 69 00 6C 00 65 00 00 00 00 00 73 00 68 00 65 00 6C 00 6C }
-    $a1 = "Open backdoor error" wide
-    $a2 = "data send err..." wide
-
-  condition:
-    any of ($b*) or all of ($a*)
-}
-
 rule Remcos_RAT {
   meta:
     Description = "Deteccion del troyano Remcos"
@@ -14619,52 +13989,6 @@ rule AcridRain {
 
   condition:
     ($mz at 0) and (3 of ($old_*) or 3 of ($new_*)) and (2 of ($zip_*)) and (2 of ($all_*))
-}
-
-rule Cadelle_1 {
-  meta:
-    author    = "Symantec"
-    reference = "http://www.symantec.com/content/en/us/enterprise/media/security_response/docs/CadelSpy-Remexi-IOC.pdf"
-
-  strings:
-    $s1 = { 56 57 8B F8 8B F1 33 C0 3B F0 74 22 39 44 24 0C 74 18 0F B7 0F 66 3B C8 74 10 66 89 0A 42 42 47 47 4E FF 4C 24 0C 3B F0 75 E2 3B F0 75 07 4A 4A B8 7A 00 07 80 33 C9 5F 66 89 0A 5E C2 04 00 }
-    $s2 = "ntsvc32"
-    $s3 = "ntbind32"
-
-  condition:
-    $s1 and ($s2 or $s3)
-}
-
-rule Hacktool {
-  meta:
-    author      = "Symantec Security Response"
-    date        = "2015-07-01"
-    description = "Butterfly hacktool"
-    reference   = "https://www.symantec.com/content/en/us/enterprise/media/security_response/whitepapers/butterfly-corporate-spies-out-for-financial-gain.pdf"
-
-  strings:
-    $str_1 = "\\\\.\\pipe\\winsession" wide
-    $str_2 = "WsiSvc" wide
-    $str_3 = "ConnectNamedPipe"
-    $str_4 = "CreateNamedPipeW"
-    $str_5 = "CreateProcessAsUserW"
-
-  condition:
-    all of them
-}
-
-rule jiripbot_unicode_str_decrypt {
-  meta:
-    author      = "Symantec Security Response"
-    date        = "2015-07-01"
-    description = "Butterfly Jiripbot Unicode hacktool"
-    reference   = "https://www.symantec.com/content/en/us/enterprise/media/security_response/whitepapers/butterfly-corporate-spies-out-for-financial-gain.pdf"
-
-  strings:
-    $decrypt = { 85 ?? 75 03 33 C0 C3 8B ?? 8D 50 02 66 8B 08 83 C0 02 66 85 C9 75 F5 2B C2 D1 F8 57 8B F8 B8 ?? ?? ?? ?? 66 39 44 7E FE 75 43 83 3D ?? ?? ?? ?? 00 53 BB ?? ?? ?? ?? 75 11 53 FF 15 ?? ?? ?? ?? C7 05 ?? ?? ?? ?? 01 00 00 00 53 FF 15 ?? ?? ?? ?? 33 C0 85 FF 74 0E B9 ?? 00 00 00 66 31 0C 46 40 3B C7 72 F2 53 FF 15 ?? ?? ?? ?? 5B 8B C6 5F C3 }
-
-  condition:
-    $decrypt
 }
 
 rule DarkComet_Config_Artifacts_Memory {
@@ -18557,27 +17881,6 @@ rule GoLang: Google {
 }
 
 
-rule apt_GAMAREDON_HTMLSmuggling_Attachment {
-  meta:
-    id             = "a39b6e67-9327-4c5b-902a-b9853cfefc8e"
-    version        = "1.0"
-    intrusion_set  = "Gamaredon"
-    description    = "Detects Gamaredon HTMLSmuggling attachment"
-    source         = "SEKOIA"
-    creation_date  = "2023-01-20"
-    classification = "TLP:WHITE"
-
-  strings:
-    $ = "['at'+'ob'](" ascii
-    $ = "['ev'+'al'](" ascii
-    $ = "document.querySelectorAll('[" ascii
-    $ = "[0].innerHTML.split(' ').join('')))" ascii
-
-  condition:
-    filesize < 1MB and
-    2 of them
-}
-
 rule apt_Gamaredon_LNKs_farl139_hostname {
   meta:
     id             = "f8bb2e6b-e544-46b0-b61b-048fe84e1100"
@@ -19257,28 +18560,6 @@ rule ek_submissions {
     $magic at 0 and $tags
 }
 
-rule TEMP_Periscope_July2018_Spearphish: email {
-  meta:
-    Author      = "Insikt Group, Recorded Future"
-    TLP         = "White"
-    Date        = "2018-09-22"
-    Description = "Rule to identify spearphish sent by Chinese threat actor TEMP.Periscope during July 2018 campaign"
-
-  strings:
-    $eml_1      = "From:"
-    $eml_2      = "To:"
-    $eml_3      = "Subject:"
-    $greeting_1 = "Dear,"
-    $content_1  = "Melissa Coade" nocase
-    $content_2  = "Below is the Report Website and conatc"
-    $content_3  = "Would yo mind giving me"
-    $url_1      = "file://"
-    $url_2      = "https://drive.google.com/open?"
-
-  condition:
-    all of ($eml*) and all of ($greeting*) and 2 of ($content*) and 2 of ($url*)
-}
-
 rule Hangover2_Keylogger {
   strings:
     $a = "iconfall" wide ascii
@@ -19392,31 +18673,6 @@ rule TritonPythonScripts_01 {
 
   condition:
     any of them
-}
-
-rule EmailWithZipAttachment {
-  meta:
-    description  = "Some common email headers together with base64 encoded start of a ZIP file"
-    author       = "@larsborn"
-    date         = "2024-02-06"
-    reference    = "https://en.wikipedia.org/wiki/Base64"
-    example_hash = "941e4a04ea1ffca986f3ae78f7d0a9bc5483464a679e6ea49a5f4ab8e7e92c03"
-    DaysofYARA   = "16/100"
-
-  strings:
-    $email_headers_01      = "Received: "
-    $email_headers_02      = "From: "
-    $email_headers_03      = "Date: "
-    $email_headers_04      = "Subject: "
-    $email_headers_05      = "To: "
-    $attachment_headers_01 = "Content-Type: text/html; "
-    $attachment_headers_02 = "Content-Type: application/octet-stream; name="
-    $attachment_headers_03 = "Content-Disposition: attachment; filename="
-    $attachment_headers_04 = "Content-Transfer-Encoding: base64"
-    $base64_zip_attachment = "\r\n\r\nUEsDB"
-
-  condition:
-    all of them
 }
 
 rule SingleFileInPasswordProtectedZip {
@@ -19966,38 +19222,6 @@ rule PK_PayPal_formsubmit: Paypal {
     uint32(0) == 0x04034b50 and
     $zip_file and
     all of ($spec_file*)
-}
-
-rule PK_SFR_don: SFR {
-  meta:
-    description = "Phishing Kit impersonating SFR Mail"
-    licence     = "GPL-3.0"
-    author      = "Thomas 'tAd' Damonneville"
-    reference   = ""
-    date        = "2020-11-05"
-    comment     = "Phishing Kit - SFR Mail - '-Coded by don-'"
-
-  strings:
-    // the zipfile working on
-    $zip_file   = { 50 4b 03 04 }
-    $spec_dir   = "SFRMailmail_files"
-    // specific file found in PhishingKit
-    $spec_file  = "SFRMailmail.htm"
-    $spec_file2 = "mire-sfr-mail.jpg"
-    $spec_file3 = "HSFR_ec2-1.png"
-    $spec_file4 = "style-responsive.css"
-
-  condition:
-    // look for the ZIP header
-    uint32(0) == 0x04034b50 and
-    // make sure we have a local file header
-    $zip_file and
-    $spec_dir and
-    // check for file
-    $spec_file and
-    $spec_file2 and
-    $spec_file3 and
-    $spec_file4
 }
 
 rule PK_WalletConnect_js: WalletConnect {
@@ -21919,32 +21143,6 @@ rule infected_08_25_18_darkmailer__proba_send {
     ) or (all of them)
 }
 
-rule infected_08_25_18_darkmailer__proba_send2 {
-  meta:
-    description = ".proba - file send2.pl"
-    author      = "Brian Laskowski"
-    reference   = "https://github.com/Hestat/lw-yara/"
-    date        = "2018-08-25"
-    hash1       = "1f03fcef96ec0b0300e4b2adfdcf19bb7767afbb08f0e0d528def7cfa0dec323"
-
-  strings:
-    $s1 = "my $processid = $forkmanager->start() and next;" fullword ascii
-    $s2 = "my $Subject = 'REVENUE Tax refund - 490,99 EUR'; # subject for mails" fullword ascii
-    $s3 = "print \"perl send.pl <email_body_file> <email_list_file> <threads>\\n\";" fullword ascii
-    $s4 = "'content-type' => \"text/html; charset=\\\"iso-8859-1\\\"\"" fullword ascii
-    $s5 = "print \"It works like this:\\n\";" fullword ascii
-    $s6 = "my $From = '--REVENUE--<support@deliveroo.ie>'; # from addr" fullword ascii
-    $s7 = "print \"[+][\".(localtime).\"] Started with $threads threads \\n\\n\";" fullword ascii
-    $s8 = "my $forkmanager = new Parallel::ForkManager($threads);" fullword ascii
-    $s9 = "if  (!$threads){ $threads = \"10\";}" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7375 and
-      filesize < 4KB and
-      (all of them)
-    ) or (all of them)
-}
-
 rule perl_socks_proxy {
   meta:
     author = "Brian Laskowski"
@@ -22140,73 +21338,6 @@ rule ELASTIC_Multi_Attacksimulation_Blindspot_D93F54C5: FILE MEMORY {
     all of them
 }
 
-rule ELASTIC_Multi_Hacktool_Nps_C6Eb4A27: FILE MEMORY {
-  meta:
-    description  = "Detects Multi Hacktool Nps (Multi.Hacktool.Nps)"
-    author       = "Elastic Security"
-    id           = "c6eb4a27-c481-41b4-914d-a27d10672d30"
-    date         = "2024-01-24"
-    modified     = "2024-01-29"
-    reference    = "https://www.elastic.co/security-labs/unmasking-financial-services-intrusion-ref0657"
-    source_url   = "https://github.com/elastic/protections-artifacts//blob/30ed729a461f99a5d0f26622302d68d1416fabc6/yara/rules/Multi_Hacktool_Nps.yar#L1-L25"
-    license_url  = "https://github.com/elastic/protections-artifacts//blob/30ed729a461f99a5d0f26622302d68d1416fabc6/LICENSE.txt"
-    hash         = "4714e8ad9c625070ca0a151ffc98d87d8e5da7c8ef42037ca5f43baede6cfac1"
-    logic_hash   = "53baf04f4ab8967761c6badb24f6632cc1bf4a448abf0049318b96855f30feea"
-    score        = 75
-    quality      = 50
-    tags         = "FILE, MEMORY"
-    fingerprint  = "1386e4cef0f347b38a4614311d585b0b83cb9526b19215392aee893e594950de"
-    severity     = 100
-    arch_context = "x86"
-    scan_context = "file, memory"
-    license      = "Elastic License v2"
-    os           = "multi"
-
-  strings:
-    $str_info0 = "Reconnecting..."
-    $str_info1 = "Loading configuration file %s successfully"
-    $str_info2 = "successful start-up of local socks5 monitoring, port"
-    $str_info3 = "successful start-up of local tcp monitoring, port"
-    $str_info4 = "start local file system, local path %s, strip prefix %s ,remote port %"
-    $str_info5 = "start local file system, local path %s, strip prefix %s ,remote port %s"
-
-  condition:
-    all of them
-}
-
-rule ELASTIC_Multi_Hacktool_Nps_F76F257D: FILE MEMORY {
-  meta:
-    description  = "Detects Multi Hacktool Nps (Multi.Hacktool.Nps)"
-    author       = "Elastic Security"
-    id           = "f76f257d-0286-4b4d-9f73-2add23cfd07e"
-    date         = "2024-01-24"
-    modified     = "2024-01-29"
-    reference    = "https://www.elastic.co/security-labs/unmasking-financial-services-intrusion-ref0657"
-    source_url   = "https://github.com/elastic/protections-artifacts//blob/30ed729a461f99a5d0f26622302d68d1416fabc6/yara/rules/Multi_Hacktool_Nps.yar#L27-L50"
-    license_url  = "https://github.com/elastic/protections-artifacts//blob/30ed729a461f99a5d0f26622302d68d1416fabc6/LICENSE.txt"
-    hash         = "80721b20a8667536a33fca50236f5c8e0c0d07aa7805b980e40818ab92cd9f4a"
-    logic_hash   = "0bbd7f86bfd2967dc390510c2e403d05e1b56551b965ea716b9e5330f75c9bd5"
-    score        = 75
-    quality      = 71
-    tags         = "FILE, MEMORY"
-    fingerprint  = "4aaa270129ce0c8fdd40aae2ebc4f6595aec91cbfea9e0188542e9c3f38eedee"
-    severity     = 100
-    arch_context = "x86"
-    scan_context = "file, memory"
-    license      = "Elastic License v2"
-    os           = "multi"
-
-  strings:
-    $string_decrypt_add = { 0F B6 BC 34 ?? ?? ?? ?? 44 0F B6 84 34 ?? ?? ?? ?? 44 01 C7 40 88 BC 34 ?? ?? ?? ?? 48 FF C6 }
-    $string_decrypt_xor = { 0F B6 54 ?? ?? 0F B6 74 ?? ?? 31 D6 40 88 74 ?? ?? 48 FF C0 }
-    $string_decrypt_sub = { 0F B6 94 04 ?? ?? ?? ?? 0F B6 B4 04 ?? ?? ?? ?? 29 D6 40 88 B4 04 ?? ?? ?? ?? 48 FF C0 }
-    $NewJsonDb_str0     = "clients.json"
-    $NewJsonDb_str1     = "hosts.json"
-
-  condition:
-    all of them
-}
-
 rule ELASTIC_Multi_Trojan_Sliver_42298C4A: FILE MEMORY {
   meta:
     description  = "Detects Multi Trojan Sliver (Multi.Trojan.Sliver)"
@@ -22240,40 +21371,6 @@ rule ELASTIC_Multi_Trojan_Sliver_42298C4A: FILE MEMORY {
 
   condition:
     2 of them
-}
-
-rule ELASTIC_Multi_Trojan_Sliver_3Bde542D: FILE MEMORY {
-  meta:
-    description  = "Detects Multi Trojan Sliver (Multi.Trojan.Sliver)"
-    author       = "Elastic Security"
-    id           = "3bde542d-df52-4f05-84ff-de67e90592a9"
-    date         = "2022-08-31"
-    modified     = "2022-09-29"
-    reference    = "https://github.com/elastic/protections-artifacts/"
-    source_url   = "https://github.com/elastic/protections-artifacts//blob/30ed729a461f99a5d0f26622302d68d1416fabc6/yara/rules/Multi_Trojan_Sliver.yar#L27-L50"
-    license_url  = "https://github.com/elastic/protections-artifacts//blob/30ed729a461f99a5d0f26622302d68d1416fabc6/LICENSE.txt"
-    hash         = "05461e1c2a2e581a7c30e14d04bd3d09670e281f9f7c60f4169e9614d22ce1b3"
-    logic_hash   = "23a0e28c1423f577a147efdf927f2dc71871760e38d4d7494ead2920b90ef05e"
-    score        = 75
-    quality      = 75
-    tags         = "FILE, MEMORY"
-    fingerprint  = "e52e39644274e3077769da4d04488963c85a0b691dc9973ad12d51eb34ba388b"
-    severity     = 100
-    arch_context = "x86"
-    scan_context = "file, memory"
-    license      = "Elastic License v2"
-    os           = "multi"
-
-  strings:
-    $a1 = "B/Z-github.com/bishopfox/sliver/protobuf/sliverpbb" ascii fullword
-    $b1 = "InvokeSpawnDllReq" ascii fullword
-    $b2 = "NetstatReq" ascii fullword
-    $b3 = "HTTPSessionInit" ascii fullword
-    $b4 = "ScreenshotReq" ascii fullword
-    $b5 = "RegistryReadReq" ascii fullword
-
-  condition:
-    1 of ($a*) or all of ($b*)
 }
 
 rule ELASTIC_Multi_Trojan_Sliver_3D6B7Cd3: FILE MEMORY {
@@ -22488,39 +21585,6 @@ rule ELASTIC_Multi_Ransomware_Blackcat_E066D802: FILE MEMORY {
     2 of them
 }
 
-rule ELASTIC_Multi_Hacktool_Rakshasa_D5D3Ef21: FILE MEMORY {
-  meta:
-    description  = "Detects Multi Hacktool Rakshasa (Multi.Hacktool.Rakshasa)"
-    author       = "Elastic Security"
-    id           = "d5d3ef21-e004-4cb4-8f9f-541e831c8e08"
-    date         = "2024-01-24"
-    modified     = "2024-01-29"
-    reference    = "https://www.elastic.co/security-labs/unmasking-financial-services-intrusion-ref0657"
-    source_url   = "https://github.com/elastic/protections-artifacts//blob/30ed729a461f99a5d0f26622302d68d1416fabc6/yara/rules/Multi_Hacktool_Rakshasa.yar#L1-L24"
-    license_url  = "https://github.com/elastic/protections-artifacts//blob/30ed729a461f99a5d0f26622302d68d1416fabc6/LICENSE.txt"
-    hash         = "ccfa30a40445d5237aaee1e015ecfcd9bdbe7665a6dc2736b28e5ebf07ec4597"
-    logic_hash   = "123cbea0ce02012a9b22a4a241d11aa9acbb58b50a1bd9228da7cadbf0fa1b4e"
-    score        = 75
-    quality      = 75
-    tags         = "FILE, MEMORY"
-    fingerprint  = "bd25f85a419679d2278e2e3951531950296785ac888bc69b513bab0a9936eacf"
-    severity     = 100
-    arch_context = "x86"
-    scan_context = "file, memory"
-    license      = "Elastic License v2"
-    os           = "multi"
-
-  strings:
-    $a1 = { 35 B8 00 00 00 48 89 74 24 38 48 89 5C 24 40 48 89 4C 24 48 48 89 54 }
-    $a2 = "rakshasa/server.init.4.func2" ascii fullword
-    $a3 = "type..eq.rakshasa/server.Conn" ascii fullword
-    $a4 = "rakshasa_lite/aes.Str2bytes" ascii fullword
-    $a5 = "rakshasa_lite/server.doShellcode" ascii fullword
-
-  condition:
-    2 of them
-}
-
 rule ELASTIC_Multi_Trojan_Coreimpact_37703Dc3: FILE MEMORY {
   meta:
     description  = "Detects Multi Trojan Coreimpact (Multi.Trojan.Coreimpact)"
@@ -22653,32 +21717,6 @@ rule R3C0NST_UNC2891_Winghook: FILE {
 
   condition:
     uint32(0) == 0x464c457f and filesize < 100KB and 1 of ($code*) and all of ($str*)
-}
-
-rule BINARYALERT_Malware_Multi_Vesche_Basicrat {
-  meta:
-    description = "cross-platform Python 2.x Remote Access Trojan (RAT)"
-    author      = "@mimeframe"
-    id          = "e07a684c-3a3d-5dd3-a540-2cc9a5a170dd"
-    date        = "2017-09-12"
-    modified    = "2017-09-12"
-    reference   = "https://github.com/vesche/basicRAT"
-    source_url  = "https://github.com/airbnb/binaryalert//blob/a9c0f06affc35e1f8e45bb77f835b92350c68a0b/rules/public/malware/multi/malware_multi_vesche_basicrat.yara#L1-L15"
-    license_url = "https://github.com/airbnb/binaryalert//blob/a9c0f06affc35e1f8e45bb77f835b92350c68a0b/LICENSE"
-    logic_hash  = "1503ce9de4e721903058c77b305ba057052d654ff1875ea880f4319c3e525a29"
-    score       = 75
-    quality     = 80
-    tags        = ""
-
-  strings:
-    $a1 = "HKCU Run registry key applied" wide ascii
-    $a2 = "HKCU Run registry key failed" wide ascii
-    $a3 = "Error, platform unsupported." wide ascii
-    $a4 = "Persistence successful," wide ascii
-    $a5 = "Persistence unsuccessful," wide ascii
-
-  condition:
-    all of ($a*)
 }
 
 rule BINARYALERT_Hacktool_Multi_Ncc_ABPTTS {
@@ -23384,63 +22422,6 @@ rule ESET_Sparklinggoblin_Mutex {
 
   condition:
     any of them
-}
-
-rule FIREEYE_RT_Dropper_HTA_Wildchild_1: FILE {
-  meta:
-    description = "This rule looks for strings present in unobfuscated HTAs generated by the WildChild builder."
-    author      = "FireEye"
-    id          = "f570baa5-7d58-5a0a-b713-769e62076f76"
-    date        = "2020-12-09"
-    modified    = "2020-12-09"
-    reference   = "https://github.com/mandiant/red_team_tool_countermeasures/"
-    source_url  = "https://github.com/mandiant/red_team_tool_countermeasures//blob/3561b71724dbfa3e2bb78106aaa2d7f8b892c43b/rules/WILDCHILD/production/yara/Dropper_HTA_WildChild_1.yar#L4-L24"
-    license_url = "https://github.com/mandiant/red_team_tool_countermeasures//blob/3561b71724dbfa3e2bb78106aaa2d7f8b892c43b/LICENSE.txt"
-    hash        = "3e61ca5057633459e96897f79970a46d"
-    logic_hash  = "60c1d53b8a43b9b7518f3260a4d61c6806641ee894a2a331a3a0a2ea0aff9d99"
-    score       = 75
-    quality     = 75
-    tags        = "FILE"
-    rev         = 5
-
-  strings:
-    $s1            = "processpath" ascii wide
-    $s2            = "v4.0.30319" ascii wide
-    $s3            = "v2.0.50727" ascii wide
-    $s4            = "COMPLUS_Version" ascii wide
-    $s5            = "FromBase64Transform" ascii wide
-    $s6            = "MemoryStream" ascii wide
-    $s7            = "entry_class" ascii wide
-    $s8            = "DynamicInvoke" ascii wide
-    $s9            = "Sendoff" ascii wide
-    $script_header = "<script language=" ascii wide
-
-  condition:
-    $script_header at 0 and all of ($s*)
-}
-
-rule FIREEYE_RT_Hunting_B64Engine_Dotnettojscript_Dos {
-  meta:
-    description = "This file may enclude a Base64 encoded .NET executable. This technique is used by the project DotNetToJScript which is used by many malware families including GadgetToJScript."
-    author      = "FireEye"
-    id          = "24c9c259-9bb9-5f46-9278-4fa20eb3c8c4"
-    date        = "2020-12-09"
-    modified    = "2020-12-09"
-    reference   = "https://github.com/mandiant/red_team_tool_countermeasures/"
-    source_url  = "https://github.com/mandiant/red_team_tool_countermeasures//blob/3561b71724dbfa3e2bb78106aaa2d7f8b892c43b/rules/G2JS/production/yara/Hunting_B64Engine_DotNetToJScript_Dos.yar#L4-L15"
-    license_url = "https://github.com/mandiant/red_team_tool_countermeasures//blob/3561b71724dbfa3e2bb78106aaa2d7f8b892c43b/LICENSE.txt"
-    hash        = "7af24305a409a2b8f83ece27bb0f7900"
-    logic_hash  = "e2afb43af469f8ae02f6fd21db6dbd45c997fb003e3aeeaa0d4ff3e85c64159a"
-    score       = 50
-    quality     = 75
-    tags        = ""
-    rev         = 1
-
-  strings:
-    $b64_mz = "AAC4AAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAOH7oOALQJzSG4AUzNIVRoaXMgcHJvZ3JhbSBjYW5ub3QgYmUgcnVuIGluIERPUyBtb2RlLg0NCiQAAAAAAAAAUEU"
-
-  condition:
-    $b64_mz
 }
 
 rule FIREEYE_RT_Hunting_Gadgettojscript_1 {
@@ -24674,37 +23655,6 @@ rule VOLEXITY_Hacktool_Py_Pysoxy: FILE MEMORY {
     all of them
 }
 
-rule VOLEXITY_Apt_Malware_Ps1_Powerstar_Generic: CHARMINGCYPRESS FILE MEMORY {
-  meta:
-    description  = "Detects POWERSTAR modules based on common HTTP functions used across modules."
-    author       = "threatintel@volexity.com"
-    id           = "71a3e99d-e1c8-5ac1-abbc-2ba5cba80799"
-    date         = "2023-06-02"
-    modified     = "2023-06-28"
-    reference    = "https://github.com/volexity/threat-intel"
-    source_url   = "https://github.com/volexity/threat-intel/blob/62e031ea574efde68dac7d38dc23438466a5302b/2024/2024-02-13 CharmingCypress/rules.yar#L311-L335"
-    license_url  = "https://github.com/volexity/threat-intel/blob/62e031ea574efde68dac7d38dc23438466a5302b/LICENSE.txt"
-    logic_hash   = "4da02190ffd16304eccbc0d12dfcc5637a6b785af0e3dc3dfcafcfe114597eb2"
-    score        = 75
-    quality      = 80
-    tags         = "CHARMINGCYPRESS, FILE, MEMORY"
-    scan_context = "file,memory"
-    license      = "See license at https://github.com/volexity/threat-intel/blob/main/LICENSE.txt"
-    rule_id      = 9356
-    version      = 2
-
-  strings:
-    $http1 = "Send_Upload" ascii wide
-    $http2 = "Send_Post_Data" ascii wide
-    $json1 = "{\"OS\":\"" ascii wide
-    $json2 = "{\"ComputerName\":\"' + $env:COMPUTERNAME + '\"}" ascii wide
-    $json3 = "{\"Token\"" ascii wide
-    $json4 = "{\"num\":\"" ascii wide
-
-  condition:
-    all of ($http*) or all of ($json*)
-}
-
 rule VOLEXITY_Hacktool_Golang_Reversessh_Fahrj: FILE MEMORY {
   meta:
     description  = "Detects a reverse SSH utility available on GitHub. Attackers may use this tool or similar tools in post-exploitation activity."
@@ -24795,51 +23745,6 @@ rule VOLEXITY_General_Jsp_Possible_Tiny_Fileuploader: GENERAL WEBSHELLS FILE {
 
   condition:
     (filesize < 4KB and all of ($required*) and any of ($encoding*)) or (filesize < 600 and all of ($required*))
-}
-
-rule VOLEXITY_Apt_Js_Sharpext: SHARPTONGUE {
-  meta:
-    description     = "A malicious Chrome browser extention used by the SharpTongue threat actor to steal mail data from a victim."
-    author          = "threatintel@volexity.com"
-    id              = "61b5176a-ff73-5fce-bc70-c9e09bb5afed"
-    date            = "2021-09-14"
-    modified        = "2022-07-28"
-    reference       = "https://github.com/volexity/threat-intel"
-    source_url      = "https://github.com/volexity/threat-intel/blob/62e031ea574efde68dac7d38dc23438466a5302b/2022/2022-07-28 SharpTongue SharpTongue Deploys Clever Mail-Stealing Browser Extension SHARPEXT/yara.yar#L1-L47"
-    license_url     = "https://github.com/volexity/threat-intel/blob/62e031ea574efde68dac7d38dc23438466a5302b/LICENSE.txt"
-    logic_hash      = "0ed58c8646582ee36aeac650fac02d1e4962d45c0f6a24783c021d9267bed192"
-    score           = 75
-    quality         = 80
-    tags            = "SHARPTONGUE"
-    hash1           = "1c9664513fe226beb53268b58b11dacc35b80a12c50c22b76382304badf4eb00"
-    hash2           = "6025c66c2eaae30c0349731beb8a95f8a5ba1180c5481e9a49d474f4e1bb76a4"
-    hash3           = "6594b75939bcdab4253172f0fa9066c8aee2fa4911bd5a03421aeb7edcd9c90c"
-    memory_suitable = 1
-    license         = "See license at https://github.com/volexity/threat-intel/blob/main/LICENSE.txt"
-
-  strings:
-    $s1        = "\"mode=attach&name=\"" ascii
-    $s2        = "\"mode=new&mid=\"" ascii
-    $s3        = "\"mode=attlist\"" ascii
-    $s4        = "\"mode=list\"" ascii
-    $s5        = "\"mode=domain\"" ascii
-    $s6        = "\"mode=black\"" ascii
-    $s7        = "\"mode=newD&d=\"" ascii
-    $mark1     = "chrome.runtime.onMessage.addListener" ascii
-    $mark2     = "chrome.webNavigation.onCompleted.addListener" ascii
-    $enc1      = "function BSue(string){" ascii
-    $enc2      = "function BSE(input){" ascii
-    $enc3      = "function bin2hex(byteArray)" ascii
-    $xhr1      = ".send(\"mode=cd1" ascii
-    $xhr2      = ".send(\"mode=black" ascii
-    $xhr3      = ".send(\"mode=domain" ascii
-    $xhr4      = ".send(\"mode=list" ascii
-    $manifest1 = "\"description\":\"advanced font\"," ascii
-    $manifest2 = "\"scripts\":[\"bg.js\"]" ascii
-    $manifest3 = "\"devtools_page\":\"dev.html\"" ascii
-
-  condition:
-    (5 of ($s*) and all of ($mark*)) or all of ($enc*) or 3 of ($xhr*) or 2 of ($manifest*)
 }
 
 rule VOLEXITY_Webshell_Jsp_Godzilla: WEBSHELLS COMMODITY {
@@ -25249,31 +24154,6 @@ rule JPCERTCC_Formbook_1 {
     $sqlite3step = { 68 34 1c 7b e1 }
     $sqlite3text = { 68 38 2a 90 c5 }
     $sqlite3blob = { 68 53 d8 7f 8c }
-
-  condition:
-    all of them
-}
-
-rule JPCERTCC_Noderat {
-  meta:
-    description = "detect Noderat in memory"
-    author      = "JPCERT/CC Incident Response Group"
-    id          = "9c2c4b0f-0f45-54f6-a98c-b592af882eef"
-    date        = "2021-08-16"
-    modified    = "2021-08-16"
-    reference   = "https://blogs.jpcert.or.jp/ja/2019/02/tick-activity.html"
-    source_url  = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/yara/rule.yara#L429-L442"
-    license_url = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/LICENSE.txt"
-    logic_hash  = "e1254b6cf28161943db202ea0a6ff2d86aa7975d4a3ecc0f26eed58101e54960"
-    score       = 75
-    quality     = 80
-    tags        = ""
-    rule_usage  = "memory scan"
-
-  strings:
-    $config  = "/config/app.json"
-    $key     = "/config/.regeditKey.rc"
-    $message = "uninstall error when readFileSync: "
 
   condition:
     all of them
@@ -28126,80 +27006,6 @@ rule SIGNATURE_BASE_APT_Webshell_Tiny_1: FILE {
     (uint16(0) == 0x3f3c or uint16(0) == 0x253c) and filesize < 40 and $x1
 }
 
-rule SIGNATURE_BASE_APT_Webshell_AUS_Tiny_2: FILE {
-  meta:
-    description = "Detetcs a tiny webshell involved in the Australian Parliament House network compromise"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "4746d4ce-628a-59b0-9032-7e0759d96ad3"
-    date        = "2019-02-18"
-    modified    = "2023-12-05"
-    reference   = "https://twitter.com/cyb3rops/status/1097423665472376832"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_aus_parl_compromise.yar#L25-L38"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "e26c265d2b1606257d8c843921601f14cae2beaf246f8e37daeeb6c5ff12f289"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "0d6209d86f77a0a69451b0f27b476580c14e0cda15fa6a5003aab57a93e7e5a5"
-
-  strings:
-    $x1 = "Request.Item[System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(\"[password]\"))];" ascii
-    $x2 = "eval(arguments,System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(\"" ascii
-
-  condition:
-    (uint16(0) == 0x3f3c or uint16(0) == 0x253c) and filesize < 1KB and 1 of them
-}
-
-rule SIGNATURE_BASE_APT_Webshell_AUS_Jscript_3: FILE {
-  meta:
-    description = "Detetcs a webshell involved in the Australian Parliament House network compromise"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "ff7e780b-ccf9-53b6-b741-f04a8cbaf580"
-    date        = "2019-02-18"
-    modified    = "2023-12-05"
-    reference   = "https://twitter.com/cyb3rops/status/1097423665472376832"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_aus_parl_compromise.yar#L40-L53"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "e144e555dd80e15ac9072a645e629a86ca1a6b52949d236ec3daedbf06bd6718"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "7ac6f973f7fccf8c3d58d766dec4ab7eb6867a487aa71bc11d5f05da9322582d"
-
-  strings:
-    $s1 = "<%@ Page Language=\"Jscript\" validateRequest=\"false\"%><%try{eval(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String" ascii
-    $s2 = ".Item[\"[password]\"])),\"unsafe\");}" ascii
-
-  condition:
-    uint16(0) == 0x6568 and filesize < 1KB and all of them
-}
-
-rule SIGNATURE_BASE_APT_Webshell_AUS_4: FILE {
-  meta:
-    description = "Detetcs a webshell involved in the Australian Parliament House network compromise"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "bb5b10d1-3528-5361-92fc-8440c65dcda4"
-    date        = "2019-02-18"
-    modified    = "2023-12-05"
-    reference   = "https://twitter.com/cyb3rops/status/1097423665472376832"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_aus_parl_compromise.yar#L56-L71"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "4a4f26b50631021979e4a8246a1e1c10150f4fb03eb7d77a1042e41ef57b3961"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "83321c02339bb51735fbcd9a80c056bd3b89655f3dc41e5fef07ca46af09bb71"
-
-  strings:
-    $s1 = "wProxy.Credentials = new System.Net.NetworkCredential(pusr, ppwd);" fullword ascii
-    $s2 = "{return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(" ascii
-    $s3 = ".Equals('User-Agent', StringComparison.OrdinalIgnoreCase))" ascii
-    $s4 = "gen.Emit(System.Reflection.Emit.OpCodes.Ret);" fullword ascii
-
-  condition:
-    uint16(0) == 0x7566 and filesize < 10KB and 3 of them
-}
-
 rule SIGNATURE_BASE_HKTL_Powerkatz_Feb19_1 {
   meta:
     description = "Detetcs a tool used in the Australian Parliament House network compromise"
@@ -28296,30 +27102,6 @@ rule SIGNATURE_BASE_VUL_Tomcat_Catalina_CVE_2020_1938: FILE {
 
   condition:
     $h1 at 0 and filesize <= 300KB and $a1 and $v1 and not 1 of ($fp*)
-}
-
-rule SIGNATURE_BASE_Base64_PS1_Shellcode {
-  meta:
-    description = "Detects Base64 encoded PS1 Shellcode"
-    author      = "Nick Carr, David Ledbetter"
-    id          = "7c3cec3b-a192-5bfd-b4f1-22b1afeb717e"
-    date        = "2018-11-14"
-    modified    = "2023-12-05"
-    reference   = "https://twitter.com/ItsReallyNick/status/1062601684566843392"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_ps1_shellcode.yar#L1-L15"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "fac6f41965eb2209f1552763800d6a2b172f28cd29bb7586d180654aab1e6d56"
-    score       = 65
-    quality     = 85
-    tags        = ""
-
-  strings:
-    $substring = "AAAAYInlM"
-    $pattern1  = "/OiCAAAAYInlM"
-    $pattern2  = "/OiJAAAAYInlM"
-
-  condition:
-    $substring and 1 of ($p*)
 }
 
 rule SIGNATURE_BASE_HKTL_Natbypass_Dec22_1: T1090 FILE {
@@ -28714,51 +27496,6 @@ rule SIGNATURE_BASE_EXPL_Exchange_Proxyshell_Successful_Aug21_1: SCRIPT {
     1 of them
 }
 
-rule SIGNATURE_BASE_WEBSHELL_ASPX_Proxyshell_Aug21_3: FILE {
-  meta:
-    description = "Detects webshells dropped by ProxyShell exploitation based on their file header (must be DER), size and content"
-    author      = "Max Altgelt"
-    id          = "a7bca62b-c8f1-5a38-81df-f3d4582a590b"
-    date        = "2021-08-23"
-    modified    = "2023-12-05"
-    reference   = "https://twitter.com/gossithedog/status/1429175908905127938?s=12"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/expl_proxyshell.yar#L51-L65"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "f071aaa8918b359f786f2ac7447eeaedb5a6fca9e0a0c0e8820e011244424503"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-
-  strings:
-    $s1 = "Page Language=" ascii nocase
-
-  condition:
-    uint16(0) == 0x8230 and filesize < 10KB and $s1
-}
-
-rule SIGNATURE_BASE_WEBSHELL_ASPX_Proxyshell_Sep21_1: FILE {
-  meta:
-    description = "Detects webshells dropped by ProxyShell exploitation based on their file header (must be PST) and base64 decoded request"
-    author      = "Tobias Michalski"
-    id          = "d0d23e17-6b6a-51d1-afd9-59cc2404bcd8"
-    date        = "2021-09-17"
-    modified    = "2023-12-05"
-    reference   = "Internal Research"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/expl_proxyshell.yar#L67-L81"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "219468c10d2b9d61a8ae70dc8b6d2824ca8fbe4e53bbd925eeca270fef0fd640"
-    logic_hash  = "233ec15dff8da5f2beaa931eb06849aa37e548947c1068d688a1695d977605d8"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-
-  strings:
-    $s = ".FromBase64String(Request["
-
-  condition:
-    uint32(0) == 0x4e444221 and any of them
-}
-
 rule SIGNATURE_BASE_WEBSHELL_ASPX_Proxyshell_Aug15: FILE {
   meta:
     description = "Webshells iisstart.aspx and Logout.aspx"
@@ -29044,33 +27781,6 @@ rule SIGNATURE_BASE_Gsecdump_Password_Dump_File: FILE {
 
   condition:
     uint32be(0) == 0x41646d69 and filesize < 3000 and $x1 at 0
-}
-
-rule SIGNATURE_BASE_CN_Tools_Temp: FILE {
-  meta:
-    description = "Chinese Hacktool Set - file Temp.war"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "4fbaabd0-fbf2-56a0-94af-9deba1e7cc81"
-    date        = "2015-06-13"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_hacktool_scripts.yar#L26-L42"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "c3327ef63b0ed64c4906e9940ef877c76ebaff58"
-    logic_hash  = "05fd1cb3f7c8b96ccf824013c130a0b21f43724463f8658e23239d009be7f4fe"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s0 = "META-INF/context.xml<?xml version=\"1.0\" encoding=\"UTF-8\"?>" fullword ascii
-    $s1 = "browser.jsp" fullword ascii
-    $s3 = "cmd.jsp" fullword ascii
-    $s4 = "index.jsp" fullword ascii
-
-  condition:
-    uint16(0) == 0x4b50 and filesize < 203KB and all of them
 }
 
 rule SIGNATURE_BASE_P0Wnedpowercat: FILE {
@@ -29473,33 +28183,6 @@ rule SIGNATURE_BASE_Groups_Cpassword: FILE {
     uint32be(0) == 0x3C3F786D and filesize < 1000KB and all of ($s*)
 }
 
-rule SIGNATURE_BASE_Tophat_BAT: FILE {
-  meta:
-    description = "Auto-generated rule - file cgen.bat"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "81e84f1b-0ee7-530d-91ea-645c0994e68f"
-    date        = "2018-01-29"
-    modified    = "2023-12-05"
-    reference   = "https://researchcenter.paloaltonetworks.com/2018/01/unit42-the-tophat-campaign-attacks-within-the-middle-east-region-using-popular-third-party-services/#appendix"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_tophat.yar#L62-L78"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "5dc58fa39d8b2aed95b39da575191fe5d10d5dd95b57c320cde8983505e7184f"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "f998271c4140caad13f0674a192093092e2a9f7794a7fbbdaa73ae8f2496c387"
-    hash2       = "0fbc6fd653b971c8677aa17ecd2749200a4a563f9dd5409cfb26d320618db3e2"
-
-  strings:
-    $s1 = "= New-Object IO.MemoryStream(,[Convert]::FromBase64String(\"" ascii
-    $s2 = "goto Start" fullword ascii
-    $s3 = ":Start" fullword ascii
-
-  condition:
-    filesize < 5KB and all of them
-}
-
 rule SIGNATURE_BASE_MAL_Emotet_JS_Dropper_Oct19_1: FILE {
   meta:
     description = "Detects Emotet JS dropper"
@@ -29762,34 +28445,6 @@ rule SIGNATURE_BASE_APT_Sandworm_Cyclopsblink_Config_Identifiers: FILE {
     (uint32(0) == 0x464c457f) and (all of them)
 }
 
-rule SIGNATURE_BASE_APT_Sandworm_Cyclopsblink_Handle_Mod_0Xf_Command: FILE {
-  meta:
-    description = "Detects the code bytes used to check module ID 0xf control flags and a format string used for file content upload"
-    author      = "NCSC"
-    id          = "36646b7a-389d-5fd9-88a1-e43e7224763a"
-    date        = "2022-02-23"
-    modified    = "2023-12-05"
-    reference   = "https://www.ncsc.gov.uk/news/joint-advisory-shows-new-sandworm-malware-cyclops-blink-replaces-vpnfilter"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_sandworm_cyclops_blink.yar#L128-L150"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "6e3eebe404c8cd24e1e16eb3c881b1eda78ba6b365bf89c2557329e6f89396ac"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "3adf9a59743bc5d8399f67cab5eb2daf28b9b863"
-    hash2       = "c59bc17659daca1b1ce65b6af077f86a648ad8a8"
-
-  strings:
-    $ = { 54 00 06 3E 54 00 07 FE 54 00 06 3E 2F 80 00 00 }
-    $ = { 54 00 06 3E 54 00 07 BC 2F 80 00 00 }
-    $ = { 54 00 06 3E 54 00 07 7A 2F 80 00 00 }
-    $ = { 54 00 06 3E 54 00 06 F6 2F 80 00 00 }
-    $ = "file:%s\n" fullword
-
-  condition:
-    (uint32(0) == 0x464c457f) and (all of them)
-}
-
 rule SIGNATURE_BASE_APT_Sandworm_Cyclopsblink_Handle_Mod_0X51_Command: FILE {
   meta:
     description = "Detects the code bytes used to check commands sent to module ID 0x51 and notable strings relating to the Cyclops Blink update process"
@@ -30032,319 +28687,6 @@ rule SIGNATURE_BASE_APT_MAL_CN_Wocao_Webshell_Ver_Jsp {
 
   condition:
     1 of them
-}
-
-rule SIGNATURE_BASE_APT_MAL_CN_Wocao_Webshell_Webinfo {
-  meta:
-    description = "Generic strings from webinfo.war webshells"
-    author      = "Fox-IT SRT"
-    id          = "b8477f62-f3f6-5526-b0e3-9b794fefaa1f"
-    date        = "2023-12-05"
-    modified    = "2023-12-05"
-    reference   = "https://www.fox-it.com/en/news/whitepapers/operation-wocao-shining-a-light-on-one-of-chinas-hidden-hacking-groups/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_op_wocao.yar#L374-L394"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "711737a56067f24f422cc7d5aeba4389741fe18a0e66f2715fce626c3b6aef19"
-    score       = 75
-    quality     = 85
-    tags        = ""
-
-  strings:
-    $var1 = "String strLogo = request.getParameter"
-    $var2 = "String content = request.getParameter(\"content\");"
-    $var3 = "String basePath=request.getScheme()"
-    $var4 = "!strLogo.equals("
-    $var5 = "if(path!=null && !path.equals(\"\") && content!=null"
-    $var6 = "File newfile=new File(path);"
-    $str1 = "Save Success!"
-    $str2 = "Save Failed!"
-
-  condition:
-    2 of ($var*) or (all of ($str*) and 1 of ($var*))
-}
-
-rule SIGNATURE_BASE_Injectionparameters: FILE {
-  meta:
-    description = "Chinese Hacktool Set - file InjectionParameters.vb"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "a77bd0c6-8857-577f-831a-0fcf2537667e"
-    date        = "2015-06-13"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L53-L67"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "4f11aa5b3660c45e527606ee33de001f4994e1ea"
-    logic_hash  = "6bb786256f7154013408323eeb597f91c609a2a26f5ae9e6d61e16bd9c16a577"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s0 = "Public Shared ReadOnly Empty As New InjectionParameters(-1, \"\")" fullword ascii
-    $s1 = "Public Class InjectionParameters" fullword ascii
-
-  condition:
-    filesize < 13KB and all of them
-}
-
-rule SIGNATURE_BASE_Reduhservers_Reduh: FILE {
-  meta:
-    description = "Chinese Hacktool Set - file reDuh.jsp"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "c87d971a-a16f-5593-88fb-6bcd207e0841"
-    date        = "2015-06-13"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L140-L155"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "377886490a86290de53d696864e41d6a547223b0"
-    logic_hash  = "dcb1515da696566d01ec64029a34438a56d2df480b9cd2ea586f71ffe3324c1a"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s1  = "out.println(\"[Error]Unable to connect to reDuh.jsp main process on port \" +ser" ascii
-    $s4  = "System.out.println(\"IPC service failed to bind to \" + servicePort);" fullword ascii
-    $s17 = "System.out.println(\"Bound on \" + servicePort);" fullword ascii
-    $s5  = "outputFromSockets.add(\"[data]\"+target+\":\"+port+\":\"+sockNum+\":\"+new Strin" ascii
-
-  condition:
-    filesize < 116KB and all of them
-}
-
-rule SIGNATURE_BASE_Customize_2: FILE {
-  meta:
-    description = "Chinese Hacktool Set - file Customize.jsp"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "1f7e9063-33d8-5df4-89d5-7d8fc1be61f0"
-    date        = "2015-06-13"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L208-L222"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "37cd17543e14109d3785093e150652032a85d734"
-    logic_hash  = "aa0940a21eea6ba50a93dd36a8f914f636fdba0685048fc67e16dd68c1c2794e"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s1 = "while((l=br.readLine())!=null){sb.append(l+\"\\r\\n\");}}" fullword ascii
-    $s2 = "String Z=EC(request.getParameter(Pwd)+\"\",cs);String z1=EC(request.getParameter" ascii
-
-  condition:
-    filesize < 30KB and all of them
-}
-
-rule SIGNATURE_BASE_Chinachopper_One: FILE {
-  meta:
-    description = "Chinese Hacktool Set - file one.asp"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "854fb5c9-38c7-5fd2-a473-66ae297070f5"
-    date        = "2015-06-13"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L224-L237"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "6cd28163be831a58223820e7abe43d5eacb14109"
-    logic_hash  = "f9a6e4b8556eb3f1e1cbe0bc4eb225b9564ac59aae4a97f184806c6bec95578d"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s0 = "<%eval request(" ascii
-
-  condition:
-    filesize < 50 and all of them
-}
-
-rule SIGNATURE_BASE_Tools_2015: FILE {
-  meta:
-    description = "Chinese Hacktool Set - file 2015.jsp"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "eb2826ab-ef8d-5a93-9ede-f5bbd7ab4ff4"
-    date        = "2015-06-13"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L327-L344"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "8fc67359567b78cadf5d5c91a623de1c1d2ab689"
-    logic_hash  = "2b93ef42c277fd8415cf89bf1bef3e841c56a2b4aa1507d99b84cd8adc9a0644"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s0  = "Configbis = new BufferedInputStream(httpUrl.getInputStream());" fullword ascii
-    $s4  = "System.out.println(Oute.toString());" fullword ascii
-    $s5  = "String ConfigFile = Outpath + \"/\" + request.getParameter(\"ConFile\");" fullword ascii
-    $s8  = "HttpURLConnection httpUrl = null;" fullword ascii
-    $s19 = "Configbos = new BufferedOutputStream(new FileOutputStream(Outf));;" fullword ascii
-
-  condition:
-    filesize < 7KB and all of them
-}
-
-rule SIGNATURE_BASE_Reduhservers_Reduh_3: FILE {
-  meta:
-    description = "Chinese Hacktool Set - file reDuh.aspx"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "69f5fd6b-a9b3-500b-8723-d1c82494903d"
-    date        = "2015-06-13"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L376-L392"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "0744f64c24bf4c0bef54651f7c88a63e452b3b2d"
-    logic_hash  = "5a3bc023e0e8a5ccc8ee8e1b5e7ee0fca64e3f92b72d0aad15b25c82a23da487"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s1 = "Response.Write(\"[Error]Unable to connect to reDuh.jsp main process on port \" +" ascii
-    $s2 = "host = System.Net.Dns.Resolve(\"127.0.0.1\");" fullword ascii
-    $s3 = "rw.WriteLine(\"[newData]\" + targetHost + \":\" + targetPort + \":\" + socketNum" ascii
-    $s4 = "Response.Write(\"Error: Bad port or host or socketnumber for creating new socket" ascii
-
-  condition:
-    filesize < 40KB and all of them
-}
-
-rule SIGNATURE_BASE_Chinachopper_Temp_3: FILE {
-  meta:
-    description = "Chinese Hacktool Set - file temp.aspx"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "573e7da6-f58f-5814-b3e8-a0db3ecfe558"
-    date        = "2015-06-13"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L394-L408"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "c5ecb8bc1d7f0e716b06107b5bd275008acaf7b7"
-    logic_hash  = "6a0d7817607362f325957e30cace24d32635b7e0411e161588ee573118f91b6a"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s0 = "<%@ Page Language=\"Jscript\"%><%eval(Request.Item[\"" ascii
-    $s1 = "\"],\"unsafe\");%>" ascii
-
-  condition:
-    uint16(0) == 0x253c and filesize < 150 and all of them
-}
-
-rule SIGNATURE_BASE_Shell_Asp: FILE {
-  meta:
-    description = "Chinese Hacktool Set Webshells - file Asp.html"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "52089205-8f36-5a0b-a1ae-67c91a253ad2"
-    date        = "2015-06-14"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L410-L425"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "5e0bc914ac287aa1418f6554ddbe0ce25f2b5f20"
-    logic_hash  = "47c5c242713446471d5da4d9245b99561c26ad7fa016059076a6f0acab542c3c"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s1 = "Session.Contents.Remove(m & \"userPassword\")" fullword ascii
-    $s2 = "passWord = Encode(GetPost(\"password\"))" fullword ascii
-    $s3 = "function Command(cmd, str){" fullword ascii
-
-  condition:
-    filesize < 100KB and all of them
-}
-
-rule SIGNATURE_BASE_Txt_Aspx1: FILE {
-  meta:
-    description = "Chinese Hacktool Set - Webshells - file aspx1.txt"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "e01a7235-5c69-5676-ac5d-c4e4632f31b2"
-    date        = "2015-06-14"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L463-L477"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "c5ecb8bc1d7f0e716b06107b5bd275008acaf7b7"
-    logic_hash  = "20bdadd6c8b61ab14f6280f55a90f541bf65c33675f979ebe489cc3967438e15"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s0 = "<%@ Page Language=\"Jscript\"%><%eval(Request.Item["
-    $s1 = "],\"unsafe\");%>" fullword ascii
-
-  condition:
-    filesize < 150 and all of them
-}
-
-rule SIGNATURE_BASE_Txt_Jspcmd: FILE {
-  meta:
-    description = "Chinese Hacktool Set - Webshells - file jspcmd.txt"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "53eb6caf-3578-5df7-a1d8-9e4038b6f57e"
-    date        = "2015-06-14"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L594-L608"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "1d4e789031b15adde89a4628afc759859e53e353"
-    logic_hash  = "d2cbf753fbd9e261234e6beb6f79aecb407a368704ae09d907d128d04c242053"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s0 = "if(\"1752393\".equals(request.getParameter(\"Confpwd\"))){" fullword ascii
-    $s4 = "out.print(\"Hi,Man 2015\");" fullword ascii
-
-  condition:
-    filesize < 1KB and 1 of them
-}
-
-rule SIGNATURE_BASE_Txt_Aspxlcx: FILE {
-  meta:
-    description = "Chinese Hacktool Set - Webshells - file aspxlcx.txt"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "e01a7235-5c69-5676-ac5d-c4e4632f31b2"
-    date        = "2015-06-14"
-    modified    = "2023-12-05"
-    reference   = "http://tools.zjqhr.com/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_cn_webshells.yar#L628-L644"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "453dd3160db17d0d762e032818a5a10baf234e03"
-    logic_hash  = "a6e41e6882e74b0dd55ec4afbf6f8708e28267657e304c97d1304266fe1fbc93"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s1 = "public string remoteip = " ascii
-    $s2 = "=Dns.Resolve(host);" ascii
-    $s3 = "public string remoteport = " ascii
-    $s4 = "public class PortForward" ascii
-
-  condition:
-    uint16(0) == 0x253c and filesize < 18KB and all of them
 }
 
 rule SIGNATURE_BASE_VULN_PHP_Hack_Backdoored_Phpass_May21: FILE {
@@ -30675,30 +29017,6 @@ rule SIGNATURE_BASE_Fscan_Portscanner: FILE {
     filesize < 20KB and 3 of them
 }
 
-rule SIGNATURE_BASE_Lazagne_PW_Dumper {
-  meta:
-    description = "Detects Lazagne PW Dumper"
-    author      = "Markus Neis / Florian Roth"
-    id          = "1904029e-9336-5278-ae2e-4bc853316600"
-    date        = "2018-03-22"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/AlessandroZ/LaZagne/releases/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-hacktools.yar#L4221-L4235"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "2eac81d5cecdaca7eeaa83be70a688a595f8bbf54679ee565ba325b9e384552b"
-    score       = 70
-    quality     = 85
-    tags        = ""
-
-  strings:
-    $s1 = "Crypto.Hash" fullword ascii
-    $s2 = "laZagne" fullword ascii
-    $s3 = "impacket.winregistry" fullword ascii
-
-  condition:
-    3 of them
-}
-
 rule SIGNATURE_BASE_HKTL_Shellpop_Perl: FILE {
   meta:
     description = "Detects Shellpop Perl script"
@@ -30721,31 +29039,6 @@ rule SIGNATURE_BASE_HKTL_Shellpop_Perl: FILE {
 
   condition:
     filesize < 2KB and 1 of them
-}
-
-rule SIGNATURE_BASE_HKTL_Embeddedpdf: FILE {
-  meta:
-    description = "Detects Embedded PDFs which can start malicious content"
-    author      = "Tobias Michalski"
-    id          = "d4e2d878-fb75-54c5-9879-fe94102911d1"
-    date        = "2018-07-25"
-    modified    = "2023-12-05"
-    reference   = "https://twitter.com/infosecn1nja/status/1021399595899731968?s=12"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-hacktools.yar#L4465-L4482"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "041580406e2a7c644d713d8fbf7fccb81664ff536e62df26b3c0f331409fb993"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-
-  strings:
-    $x1 = "/Type /Action\n /S /JavaScript\n /JS (this.exportDataObject({" fullword ascii
-    $s1 = "(This PDF document embeds file" fullword ascii
-    $s2 = "/Names << /EmbeddedFiles << /Names" fullword ascii
-    $s3 = "/Type /EmbeddedFile" fullword ascii
-
-  condition:
-    uint16(0) == 0x5025 and 2 of ($s*) and $x1
 }
 
 rule SIGNATURE_BASE_HKTL_Sqlmap: FILE {
@@ -31053,340 +29346,6 @@ rule SIGNATURE_BASE_Hvs_APT27_Hyperbro_Decrypted_Stage2: FILE {
 
   condition:
     filesize < 200KB and ($lznt1_compressed_pe_header_small at 0x9ce) or (all of ($lznt1_compressed_pe_header_large_*))
-}
-
-rule SIGNATURE_BASE_Empire_Exploit_Jenkins: FILE {
-  meta:
-    description = "Detects Empire component - file Exploit-Jenkins.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "f2162783-34cd-5db4-bd1c-6c58feb92e77"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L26-L41"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "caf65814a1aeb0e14ec6430f7d5692b9c090bdc0d453566f0b0abd703f74bac7"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "a5182cccd82bb9984b804b365e07baba78344108f225b94bd12a59081f680729"
-
-  strings:
-    $s1 = "$postdata=\"script=println+new+ProcessBuilder%28%27\"+$($Cmd)+\"" ascii
-    $s2 = "$url = \"http://\"+$($Rhost)+\":\"+$($Port)+\"/script\"" fullword ascii
-    $s3 = "$Cmd = [System.Web.HttpUtility]::UrlEncode($Cmd)" fullword ascii
-
-  condition:
-    (uint16(0) == 0x6620 and filesize < 7KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Get_Securitypackages: FILE {
-  meta:
-    description = "Detects Empire component - file Get-SecurityPackages.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "a109eda1-a26d-5cf6-b6b5-1a1a1e770a0a"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L43-L57"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "2d63fdcc6713d2f7645b16cf3e79a6e951c7751a10bfa0e2853def47ea9547d2"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "5d06e99121cff9b0fce74b71a137501452eebbcd1e901b26bde858313ee5a9c1"
-
-  strings:
-    $s1 = "$null = $EnumBuilder.DefineLiteral('LOGON', 0x2000)" fullword ascii
-    $s2 = "$EnumBuilder = $ModuleBuilder.DefineEnum('SSPI.SECPKG_FLAG', 'Public', [Int32])" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7566 and filesize < 20KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Invoke_Powerdump: FILE {
-  meta:
-    description = "Detects Empire component - file Invoke-PowerDump.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "d1082a4e-d458-57fb-b332-7c775c8ef2dd"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L59-L74"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "e460d015be54a88d0eb5741a9c32cf6d7a410e0beb5356402af0dd19d1b4c6f2"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "095c5cf5c0c8a9f9b1083302e2ba1d4e112a410e186670f9b089081113f5e0e1"
-
-  strings:
-    $x16 = "$enc = Get-PostHashdumpScript" fullword ascii
-    $x19 = "$lmhash = DecryptSingleHash $rid $hbootkey $enc_lm_hash $almpassword;" fullword ascii
-    $x20 = "$rc4_key = $md5.ComputeHash($hbootkey[0..0x0f] + [BitConverter]::GetBytes($rid) + $lmntstr);" fullword ascii
-
-  condition:
-    (uint16(0) == 0x2023 and filesize < 60KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Invoke_Shellcodemsil: FILE {
-  meta:
-    description = "Detects Empire component - file Invoke-ShellcodeMSIL.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "06011b51-bad7-5656-ac37-e49f9b6d0498"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L91-L107"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "eb556fb8b558145e7e981ab3c3ccfb2656512498b917c705e53bc5b9f3650155"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "9a9c6c9eb67bde4a8ce2c0858e353e19627b17ee2a7215fa04a19010d3ef153f"
-
-  strings:
-    $s1 = "$FinalShellcode.Length" fullword ascii
-    $s2 = "@(0x60,0xE8,0x04,0,0,0,0x61,0x31,0xC0,0xC3)" fullword ascii
-    $s3 = "@(0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57," fullword ascii
-    $s4 = "$TargetMethod.Invoke($null, @(0x11112222)) | Out-Null" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7566 and filesize < 30KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Get_Gpppassword: FILE {
-  meta:
-    description = "Detects Empire component - file Get-GPPPassword.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "7791b009-19d3-5d08-8ef7-4723d28830ed"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L140-L155"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "3c879e50805e8b89fc8f3a7c7da2c8e906c89f210ab74194daca6b0ba2d312ba"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "55a4519c4f243148a971e4860225532a7ce730b3045bde3928303983ebcc38b0"
-
-  strings:
-    $s1 = "$Base64Decoded = [Convert]::FromBase64String($Cpassword)" fullword ascii
-    $s2 = "$XMlFiles += Get-ChildItem -Path \"\\\\$DomainController\\SYSVOL\" -Recurse" ascii
-    $s3 = "function Get-DecryptedCpassword {" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7566 and filesize < 30KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Invoke_Smbscanner: FILE {
-  meta:
-    description = "Detects Empire component - file Invoke-SmbScanner.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "63cd048b-04fd-5b4f-9d4d-3a001c31b4df"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L157-L171"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "5feb32dd0fc5271256dc4a088b9b02b591dbe584759db7ee4f5a6c99f42c3c0c"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "9a705f30766279d1e91273cfb1ce7156699177a109908e9a986cc2d38a7ab1dd"
-
-  strings:
-    $s1 = "$up = Test-Connection -count 1 -Quiet -ComputerName $Computer " fullword ascii
-    $s2 = "$out | add-member Noteproperty 'Password' $Password" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7566 and filesize < 10KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Invoke_Postexfil: FILE {
-  meta:
-    description = "Detects Empire component - file Invoke-PostExfil.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "58d9e057-efde-56ab-9b7e-982342a910e2"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L275-L289"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "74602d1c4986e6392df8845e0ed713499aa3b93c64e9d68e95f9dbaf60fe4299"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "00c0479f83c3dbbeff42f4ab9b71ca5fe8cd5061cb37b7b6861c73c54fd96d3e"
-
-  strings:
-    $s1 = "# upload to a specified exfil URI" fullword ascii
-    $s2 = "Server path to exfil to." fullword ascii
-
-  condition:
-    (uint16(0) == 0x490a and filesize < 2KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Invoke_Smbautobrute: FILE {
-  meta:
-    description = "Detects Empire component - file Invoke-SMBAutoBrute.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "a6b402ac-0925-5bc6-9d6a-b2b811496f9e"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L291-L305"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "dd87a5d3a710017953c8c19862e4daee25de0e57175cab8246eea6d067fcb4d1"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "7950f8abdd8ee09ed168137ef5380047d9d767a7172316070acc33b662f812b2"
-
-  strings:
-    $s1 = "[*] PDC: LAB-2008-DC1.lab.com" fullword ascii
-    $s2 = "$attempts = Get-UserBadPwdCount $userid $dcs" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7566 and filesize < 30KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Keepassconfig: FILE {
-  meta:
-    description = "Detects Empire component - file KeePassConfig.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "814a6ff9-a6ac-55e7-bb3f-597351ce421d"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L337-L350"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "044c8a326ee6cc74a918e6c28100032bfd2fb396ddab8683ab11e00f9370ab2a"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "5a76e642357792bb4270114d7cd76ce45ba24b0d741f5c6b916aeebd45cff2b3"
-
-  strings:
-    $s1 = "$UserMasterKeyFiles = @(, $(Get-ChildItem -Path $UserMasterKeyFolder -Force | Select-Object -ExpandProperty FullName) )" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7223 and filesize < 80KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Agent_Gen: FILE {
-  meta:
-    description = "Detects Empire component - from files agent.ps1, agent.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "0fac915c-2502-50da-93d1-f81e9282aa9a"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L430-L447"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "ed8aee7ac6c1d93b21cc1aa5c3c18df1566692c63a010715a3aae65e18fffa60"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash1       = "380fd09bfbe47d5c8c870c1c97ff6f44982b699b55b61e7c803d3423eb4768db"
-    hash2       = "380fd09bfbe47d5c8c870c1c97ff6f44982b699b55b61e7c803d3423eb4768db"
-
-  strings:
-    $s1 = "$wc.Headers.Add(\"User-Agent\",$script:UserAgent)" fullword ascii
-    $s2 = "$min = [int]((1-$script:AgentJitter)*$script:AgentDelay)" fullword ascii
-    $s3 = "if ($script:AgentDelay -ne 0){" fullword ascii
-
-  condition:
-    (uint16(0) == 0x660a and filesize < 100KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Invoke_Inveighrelay_Gen: FILE {
-  meta:
-    description = "Detects Empire component - from files Invoke-InveighRelay.ps1, Invoke-InveighRelay.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "0adebf6f-99e1-5461-8efc-e4660faf6d5d"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L469-L484"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "183a0afa9233e380471ddfa8f85e6c6555d69c785c9a4e8791e19432b6849558"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash2       = "21b90762150f804485219ad36fa509aeda210d46453307a9761c816040312f41"
-
-  strings:
-    $s1 = "$inveigh.SMBRelay_failed_list.Add(\"$HTTP_NTLM_domain_string\\$HTTP_NTLM_user_string $SMBRelayTarget\")" fullword ascii
-    $s2 = "$NTLM_challenge_base64 = [System.Convert]::ToBase64String($HTTP_NTLM_bytes)" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7566 and filesize < 200KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Keepassconfig_Gen: FILE {
-  meta:
-    description = "Detects Empire component - from files KeePassConfig.ps1, KeePassConfig.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "e2bc88c5-50f8-5ddc-a449-41929b1d0528"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L486-L500"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "986f299d2b6e2ec47acae09d8a25b6c45caf83c964208c594433308cd11ad264"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash2       = "5a76e642357792bb4270114d7cd76ce45ba24b0d741f5c6b916aeebd45cff2b3"
-
-  strings:
-    $s1 = "$KeePassXML = [xml](Get-Content -Path $KeePassXMLPath)" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7223 and filesize < 80KB and 1 of them) or all of them
-}
-
-rule SIGNATURE_BASE_Empire_Invoke_Portscan_Gen: FILE {
-  meta:
-    description = "Detects Empire component - from files Invoke-Portscan.ps1, Invoke-Portscan.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "c2e01780-02d2-57d1-b38e-5c345ebccad6"
-    date        = "2016-11-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/adaptivethreat/Empire"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_empire.yar#L502-L517"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "05e786dc42ee5ec56197803577d104595ad6554e028b7633b2f7fdf55a63e27c"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash2       = "cf7030be01fab47e79e4afc9e0d4857479b06a5f68654717f3bc1bc67a0f38d3"
-
-  strings:
-    $s1 = "Test-Port -h $h -p $Port -timeout $Timeout" fullword ascii
-    $s2 = "1 {$nHosts=10;  $Threads = 32;   $Timeout = 5000 }" fullword ascii
-
-  condition:
-    (uint16(0) == 0x7566 and filesize < 100KB and 1 of them) or all of them
 }
 
 rule SIGNATURE_BASE_Docm_In_PDF: FILE {
@@ -32376,33 +30335,6 @@ rule SIGNATURE_BASE_CN_Honker_Webshell_Webshell: FILE {
     filesize < 30KB and 2 of them
 }
 
-rule SIGNATURE_BASE_Getuserspns_PS1 {
-  meta:
-    description = "Auto-generated rule - file GetUserSPNs.ps1"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "a2fba75c-264f-5e89-afaf-9d19a4a90784"
-    date        = "2016-05-21"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/skelsec/PyKerberoast"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_kerberoast.yar#L25-L41"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "204b009677a02bf8725f928c2bfff321b4543a883760e312a0c92f187684c8e9"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    hash1       = "1b69206b8d93ac86fe364178011723f4b1544fff7eb1ea544ab8912c436ddc04"
-
-  strings:
-    $s1 = "$ForestInfo = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()" fullword ascii
-    $s2 = "@{Name=\"PasswordLastSet\";      Expression={[datetime]::fromFileTime($result.Properties[\"pwdlastset\"][0])} } #, `" fullword ascii
-    $s3 = "Write-Host \"No Global Catalogs Found!\"" fullword ascii
-    $s4 = "$searcher.PropertiesToLoad.Add(\"pwdlastset\") | Out-Null" fullword ascii
-
-  condition:
-    2 of them
-}
-
 rule SIGNATURE_BASE_Kerberoast_PY {
   meta:
     description = "Auto-generated rule - file kerberoast.py"
@@ -32979,30 +30911,6 @@ rule SIGNATURE_BASE_Webshell_Server_Variables {
   strings:
     $s7 = "<% For Each Vars In Request.ServerVariables %>" fullword
     $s9 = "Variable Name</B></font></p>" fullword
-
-  condition:
-    all of them
-}
-
-rule SIGNATURE_BASE_Webshell_Jsp_Guige {
-  meta:
-    description = "Web Shell - file guige.jsp"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "393e738a-b4c2-5630-a55f-c3caee4ff75e"
-    date        = "2014-01-28"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/Neo23x0/signature-base"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-webshells.yar#L477-L490"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "2c9f2dafa06332957127e2c713aacdd2"
-    logic_hash  = "9d71095b5c709dfdd8b5fcebcaa4493d9c93e841e85cda2e2255e0c15ea83659"
-    score       = 70
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s0 = "if(damapath!=null &&!damapath.equals(\"\")&&content!=null"
 
   condition:
     all of them
@@ -34640,39 +32548,6 @@ rule SIGNATURE_BASE_Webshell_NIX_REMOTE_WEB_SHELL_NIX_REMOTE_WEB_Xxx1 {
     2 of them
 }
 
-rule SIGNATURE_BASE_Webshell_2008_2009Mssql_Phpspy_2005_Full_Phpspy_2006_Arabicspy_Hkrkoz {
-  meta:
-    description = "Web Shell"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "41a0560a-b22e-5028-8ad1-710c5758cb1d"
-    date        = "2014-01-28"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/Neo23x0/signature-base"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-webshells.yar#L2837-L2859"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "2d78db4d45a35d6a78d4288e00a382a0937e3806f0570bd353b88955664a47f6"
-    score       = 70
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash0       = "3e4ba470d4c38765e4b16ed930facf2c"
-    hash1       = "aa17b71bb93c6789911bd1c9df834ff9"
-    hash2       = "b68bfafc6059fd26732fa07fb6f7f640"
-    hash3       = "40a1f840111996ff7200d18968e42cfe"
-    hash4       = "e0202adff532b28ef1ba206cf95962f2"
-    hash5       = "802f5cae46d394b297482fd0c27cb2fc"
-
-  strings:
-    $s0 = "$this -> addFile($content, $filename);" fullword
-    $s3 = "function addFile($data, $name, $time = 0) {" fullword
-    $s8 = "function unix2DosTime($unixtime = 0) {" fullword
-    $s9 = "foreach($filelist as $filename){" fullword
-
-  condition:
-    all of them
-}
-
 rule SIGNATURE_BASE_Webshell_000_403_C5_Config_Myxx_Querydong_Spyjsp2010_Zend {
   meta:
     description = "Web Shell - from files 000.jsp, 403.jsp, c5.jsp, config.jsp, myxx.jsp, queryDong.jsp, spyjsp2010.jsp, zend.jsp"
@@ -34796,37 +32671,6 @@ rule SIGNATURE_BASE_Webshell_000_403_807_A_C5_Config_Css_Dm_He1P_Xxx {
 
   condition:
     4 of them
-}
-
-rule SIGNATURE_BASE_Webshell_2_520_Icesword_Job_Ma1 {
-  meta:
-    description = "Web Shell - from files 2.jsp, 520.jsp, icesword.jsp, job.jsp, ma1.jsp"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "393e738a-b4c2-5630-a55f-c3caee4ff75e"
-    date        = "2014-01-28"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/Neo23x0/signature-base"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/thor-webshells.yar#L3043-L3063"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "795eb586310d87a3c6b53117bf2c8cbcfadcb177f5a5129c17fd21f0b64c385c"
-    score       = 70
-    quality     = 85
-    tags        = ""
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-    super_rule  = 1
-    hash0       = "64a3bf9142b045b9062b204db39d4d57"
-    hash1       = "9abd397c6498c41967b4dd327cf8b55a"
-    hash2       = "077f4b1b6d705d223b6d644a4f3eebae"
-    hash3       = "56c005690da2558690c4aa305a31ad37"
-    hash4       = "532b93e02cddfbb548ce5938fe2f5559"
-
-  strings:
-    $s1 = "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=gb2312\"></head>" fullword
-    $s3 = "<input type=\"hidden\" name=\"_EVENTTARGET\" value=\"\" />" fullword
-    $s8 = "<input type=\"hidden\" name=\"_EVENTARGUMENT\" value=\"\" />" fullword
-
-  condition:
-    2 of them
 }
 
 rule SIGNATURE_BASE_Webshell_404_Data_In_Jfolder_Jfolder01_Jsp_Suiyue_Warn {
@@ -37765,51 +35609,6 @@ rule SIGNATURE_BASE_WEBSHELL_ASP_Embedded_Mar21_1: FILE {
     filesize < 100KB and all of them
 }
 
-rule SIGNATURE_BASE_WEBSHELL_ASPX_Fileexplorer_Mar21_1: FILE {
-  meta:
-    description = "Detects Chopper like ASPX Webshells"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "edcaa2a8-6fea-584e-90c2-307a2dfc9f7f"
-    date        = "2021-03-31"
-    modified    = "2023-12-05"
-    reference   = "Internal Research"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_hafnium.yar#L363-L397"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "7b4ffd222b38e76455fff2650b72bdcaff281323103f342b427013cd3fffdc21"
-    score       = 80
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "a8c63c418609c1c291b3e731ca85ded4b3e0fba83f3489c21a3199173b176a75"
-
-  strings:
-    $x1  = "<span style=\"background-color: #778899; color: #fff; padding: 5px; cursor: pointer\" onclick=" ascii
-    $xc1 = {
-      3C 61 73 70 3A 48 69 64 64 65 6E 46 69 65 6C 64
-      20 72 75 6E 61 74 3D 22 73 65 72 76 65 72 22 20
-      49 44 3D 22 ?? ?? ?? ?? ?? 22 20 2F 3E 3C 62 72
-      20 2F 3E 3C 62 72 20 2F 3E 20 50 72 6F 63 65 73
-      73 20 4E 61 6D 65 3A 3C 61 73 70 3A 54 65 78 74
-      42 6F 78 20 49 44 3D
-    }
-    $xc2 = {
-      22 3E 43 6F 6D 6D 61 6E 64 3C 2F 6C 61 62 65 6C
-      3E 3C 69 6E 70 75 74 20 69 64 3D 22 ?? ?? ?? ??
-      ?? 22 20 74 79 70 65 3D 22 72 61 64 69 6F 22 20
-      6E 61 6D 65 3D 22 74 61 62 73 22 3E 3C 6C 61 62
-      65 6C 20 66 6F 72 3D 22 ?? ?? ?? ?? ?? 22 3E 46
-      69 6C 65 20 45 78 70 6C 6F 72 65 72 3C 2F 6C 61
-      62 65 6C 3E 3C 25 2D 2D
-    }
-    $r1  = "(Request.Form[" ascii
-    $s1  = ".Text + \" Created!\";" ascii
-    $s2  = "DriveInfo.GetDrives()" ascii
-    $s3  = "Encoding.UTF8.GetString(FromBase64String(str.Replace(" ascii
-    $s4  = "encodeURIComponent(btoa(String.fromCharCode.apply(null, new Uint8Array(bytes))));;"
-
-  condition:
-    uint16(0) == 0x253c and filesize < 100KB and (1 of ($x*) or 2 of them) or 4 of them
-}
-
 rule SIGNATURE_BASE_WEBSHELL_ASPX_Chopper_Like_Mar21_1: FILE {
   meta:
     description = "Detects Chopper like ASPX Webshells"
@@ -38371,91 +36170,6 @@ rule SIGNATURE_BASE_APT_Project_Sauron_Dext_Module {
     2 of them
 }
 
-rule SIGNATURE_BASE_EXT_NK_GOLDBACKDOOR_Inital_Shellcode {
-  meta:
-    description = "Detection for initial shellcode loader used to deploy GOLDBACDOOR"
-    author      = "Silas Cutler (silas@Stairwell.com)"
-    id          = "daab8e54-11b3-51cc-8bee-55b078f3e791"
-    date        = "2022-04-21"
-    modified    = "2023-12-05"
-    reference   = "https://stairwell.com/wp-content/uploads/2022/04/Stairwell-threat-report-The-ink-stained-trail-of-GOLDBACKDOOR.pdf"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_nk_goldbackdoor.yar#L2-L20"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "4df97181037a580098dbe34d3b6ceab5c7b83932f1831c36ee99876a8f1524f9"
-    score       = 80
-    quality     = 85
-    tags        = ""
-    version     = "0.1"
-
-  strings:
-    $ = {
-      C7 45 C4 25 6C 6F 63 50 8D 45 C4 C7 45 C8 61 6C 61 70 8B F9 C7 45
-      CC 70 64 61 74 50 B9 BD 88 17 75 C7 45 D0 61 25 5C 6C 8B DA C7 45 D4 6F
-      67 5F 67 C7 45 D8 6F 6C 64 2E C7 45 DC 74 78 74 00
-    }
-    $ = { 51 50 57 56 B9 E6 8E 85 35 E8 ?? ?? ?? ?? FF D0 }
-    $ = { 6A 40 68 00 10 00 00 52 6A 00 FF 75 E0 B9 E3 18 90 72 E8 ?? ?? ?? ?? FF D0 }
-
-  condition:
-    all of them
-}
-
-rule SIGNATURE_BASE_EXT_NK_GOLDBACKDOOR_Injected_Shellcode {
-  meta:
-    description = "Detection for injected shellcode that decodes GOLDBACKDOOR"
-    author      = "Silas Cutler (silas@Stairwell.com)"
-    id          = "aa921f01-98cc-51ab-877a-e7beede77e36"
-    date        = "2022-04-21"
-    modified    = "2023-12-05"
-    reference   = "https://stairwell.com/wp-content/uploads/2022/04/Stairwell-threat-report-The-ink-stained-trail-of-GOLDBACKDOOR.pdf"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_nk_goldbackdoor.yar#L22-L42"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "b45f408c0f342591e66ef0dfcfc1c09f8558c5e8f4bd7f824b30f00d531c7511"
-    score       = 80
-    quality     = 85
-    tags        = ""
-    version     = "0.1"
-
-  strings:
-    $dec_routine        = { 8A 19 57 8B FA 8B 51 01 83 C1 05 85 D2 74 0E 56 8B C1 8B F2 30 18 40 83 EE 01 75 F8 5E 57 }
-    $rtlfillmemory_load = { B9 4B 17 CD 5B 55 56 33 ED 55 6A 10 50 E8 86 00 00 00 FF D0 }
-    $                   = "StartModule"
-    $log_file_name      = {
-      C7 44 24 3C 25 6C 6F 63 50 8D 44 24 40 C7 44 24 44 61 6C
-      61 70 50 B9 BD 88 17 75 C7 44 24 4C 70 64 61 74 C7 44 24
-      50 61 25 5C 6C C7 44 24 54 6F 67 5F 67 C7 44 24 58 6F 6C
-      64 32 C7 44 24 5C 2E 74 78 74
-    }
-    $                   = { B9 8E 8A DD 8D 8B F0 E8 E9 FB FF FF FF D0 }
-
-  condition:
-    3 of them
-}
-
-rule SIGNATURE_BASE_EXT_NK_GOLDBACKDOOR_Generic_Shellcode {
-  meta:
-    description = "Generic detection for shellcode used to drop GOLDBACKDOOR"
-    author      = "Silas Cutler (silas@Stairwell.com)"
-    id          = "70081d63-0b26-5358-8444-5adc3a44aaa0"
-    date        = "2022-04-21"
-    modified    = "2023-12-05"
-    reference   = "https://stairwell.com/wp-content/uploads/2022/04/Stairwell-threat-report-The-ink-stained-trail-of-GOLDBACKDOOR.pdf"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_nk_goldbackdoor.yar#L44-L58"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "e046a70b1dee020ba73d960a9d91daaccd0b5c262965c8647f608c5c83a28257"
-    score       = 75
-    quality     = 85
-    tags        = ""
-    version     = "0.1"
-
-  strings:
-    $ = { B9 8E 8A DD 8D 8B F0 E8 ?? ?? ?? ?? FF D0 }
-    $ = { B9 8E AB 6F 40 [1-10] 50 [1-10] E8 ?? ?? ?? ?? FF D0 }
-
-  condition:
-    all of them
-}
-
 rule SIGNATURE_BASE_Lazarus_Dec_17_1: FILE {
   meta:
     description = "Detects Lazarus malware from incident in Dec 2017"
@@ -38723,29 +36437,6 @@ rule SIGNATURE_BASE_TA18_074A_Scripts: FILE {
 
   condition:
     filesize < 600KB and 1 of them
-}
-
-rule SIGNATURE_BASE_CVE_2017_8759_SOAP_Excel: CVE_2017_8759 FILE {
-  meta:
-    description = "Detects malicious files related to CVE-2017-8759"
-    author      = "Florian Roth (Nextron Systems)"
-    id          = "940ec910-49a4-5271-97e4-8536db271b80"
-    date        = "2017-09-15"
-    modified    = "2023-12-05"
-    reference   = "https://twitter.com/buffaloverflow/status/908455053345869825"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/exploit_cve_2017_8759.yar#L63-L76"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "adea595b251796e93cdc54cc59198d88a68e28d42899c90721f63f6813df24fe"
-    score       = 60
-    quality     = 83
-    tags        = "CVE-2017-8759, FILE"
-    license     = "Detection Rule License 1.1 https://github.com/Neo23x0/signature-base/blob/master/LICENSE"
-
-  strings:
-    $s1 = "|'soap:wsdl=" ascii wide nocase
-
-  condition:
-    (filesize < 300KB and 1 of them)
 }
 
 rule SIGNATURE_BASE_TA459_Malware_May17_1: FILE {
@@ -40775,33 +38466,6 @@ rule SIGNATURE_BASE_EQGRP_RC5_RC6_Opcode {
     1 of them
 }
 
-rule SIGNATURE_BASE_WEBSHELL_ASPX_Xsltransform_Aug21: FILE {
-  meta:
-    description = "Detects an ASPX webshell utilizing XSL Transformations"
-    author      = "Max Altgelt"
-    id          = "44254084-a717-59e6-a3ac-eca3c1c864a8"
-    date        = "2020-02-23"
-    modified    = "2023-12-05"
-    reference   = "https://gist.github.com/JohnHammond/cdae03ca5bc2a14a735ad0334dcb93d6"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/webshell_xsl_transform.yar#L1-L19"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "3ac0b50adc4c56769d0248e213e9426a22e0f5086bf081da57f835ff1c77b716"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-
-  strings:
-    $csharpshell = "Language=\"C#\"" nocase
-    $x1          = "<root>1</root>"
-    $x2          = ".LoadXml(System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String("
-    $s1          = "XsltSettings.TrustedXslt"
-    $s2          = "Xml.XmlUrlResolver"
-    $s3          = "FromBase64String(Request[\""
-
-  condition:
-    filesize < 500KB and $csharpshell and (1 of ($x*) or all of ($s*))
-}
-
 rule SIGNATURE_BASE_KINS_DLL_Zeus {
   meta:
     description = "Match default bot in KINS leaked dropper, Zeus"
@@ -41013,22 +38677,6 @@ rule IPStorm {
 
   condition:
     4 of ($package*) and $lib2b
-}
-
-rule RedDelta_loader {
-  meta:
-    copyright = "Intezer Labs"
-    author    = "Intezer Labs"
-    reference = "https://www.intezer.com"
-
-  strings:
-    $str1 = "DotNetLoader"
-    $str2 = "clipboardinject"
-    $str3 = "InjectShellCode"
-    $str4 = "WMIBackdoor"
-
-  condition:
-    3 of them
 }
 
 rule RedDelta_vaccine {
@@ -45506,25 +43154,6 @@ rule apt_cloudatlas_powershower_clean {
     uint8(0) == 0x24 and filesize < 4000 and 4 of them
 }
 
-rule apt_cloudatlas_powershower_obfuscated {
-  meta:
-    id             = "f76ab9d8-7753-4a17-aedd-fc9c3b8cd322"
-    version        = "1.0"
-    description    = "Detects obfuscated version of PowerShower"
-    author         = "Sekoia.io"
-    creation_date  = "2022-11-29"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "{0}{1}{2}{3}{4}{5}{6}{7}{8}" ascii wide
-    $s2 = "{000}{001}{002}{003}{004}{005}{006}{007}{008}" ascii wide
-    $s3 = "::Unicode.GetString([System.Convert]::FromBase64String(" ascii wide
-
-  condition:
-    ($s1 in (0..100) or $s2 in (0..100))
-    and $s3 in (filesize - 200..filesize)
-}
-
 rule apt_cloudatlas_powershower_variant {
   meta:
     id             = "416d0cb0-bc59-47ae-8a98-d7b39f8108ab"
@@ -46048,25 +43677,6 @@ rule apt_kimsuky_sharpext_compromised_securepreferences {
     all of them
 }
 
-rule apt_kimsuky_sharpext_devps1_strings {
-  meta:
-    id             = "f2ad32a4-bfca-40b2-964e-b8562538a6f2"
-    version        = "1.0"
-    description    = "Detects strings of Dev.ps1"
-    author         = "Sekoia.io"
-    creation_date  = "2022-07-29"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "keybd_Event(" ascii fullword
-    $s2 = "Sleep" ascii fullword
-    $s3 = "CreateDev" ascii fullword
-
-  condition:
-    filesize < 10KB and
-    #s1 == 6 and #s2 == 6 and $s3
-}
-
 rule apt_kimsuky_sharpext_devtoolmodule_strings {
   meta:
     id             = "6f589a9c-344a-4ddc-929e-f123a2c3c187"
@@ -46369,26 +43979,6 @@ rule apt_muddywater_muddyc2go_dll_launcher_strings {
     uint16be(0) == 0x4d5a and
     filesize < 50KB and
     all of them
-}
-
-rule apt_muddywater_powgoop_decode_loop {
-  meta:
-    id             = "644ed1c4-e0e1-496e-9efc-7d9e15565f7b"
-    version        = "1.0"
-    description    = "Detects the loop used in PowGoop and its loader"
-    author         = "Sekoia.io"
-    creation_date  = "2022-01-13"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "System.Collections.Generic.List[System.Object]" ascii wide
-    $s2 = "$d.Add($in[$i]);" ascii wide
-    $s3 = "[System.Convert]::FromBase64String(" ascii wide
-
-  condition:
-    filesize < 1MB and
-    $s2 in (@s1..@s1 + 400) and
-    $s3 in (@s1..@s1 + 400)
 }
 
 rule apt_muddywater_powgoop_loader {
@@ -47019,48 +44609,6 @@ rule apt_unc3524_quietexit_strings {
     uint32be(0) == 0x7f454c46 and
     filesize > 1MB and
     5 of them
-}
-
-rule apt_unc4990_explorer_ps1_reverse_b64 {
-  meta:
-    id             = "35c3ffb2-2ced-426c-ac3f-a8cd0c357672"
-    version        = "1.0"
-    description    = "Detects reverse base64 files (explorer.ps1)"
-    author         = "Sekoia.io"
-    creation_date  = "2024-02-01"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s0 = "Invoke-Expression ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\""
-    $s1 = "Wa1VHJ\"[-1..-"
-    $s2 = "-join '')))"
-
-  condition:
-    all of them and $s0 at 0 and @s2 - @s2 < 20
-}
-
-rule apt_unknown_sessionmanageriis_strings {
-  meta:
-    id             = "7d55dd82-509f-444d-a1ba-6417b51f392f"
-    version        = "1.0"
-    description    = "Detects the IIS SessionManager backdoor"
-    author         = "Sekoia.io"
-    creation_date  = "2022-07-04"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "Wokring OK"
-    $ = "Delete File Success :"
-    $ = "Delete File Error :"
-    $ = "SM_SESSION="
-    $ = "SM_SESSIONID"
-    $ = "attachment; filename ="
-    $ = "CHttpModule::"
-
-  condition:
-    uint16be(0) == 0x4d5a and
-    filesize > 100KB and filesize < 400KB and
-    4 of them
 }
 
 rule apt_unk_dex_china_freedom_trap_spyware {
@@ -49401,25 +46949,6 @@ rule unk_quad7_netd_strings {
     4 of them
 }
 
-rule water_sigbin_group {
-  meta:
-    id             = "c49728e8-db7e-4d83-97d2-7d56b51f8a52"
-    version        = "1.0"
-    description    = "Detects IOCs related to the 8220 Mining group."
-    author         = "Sekoia.io"
-    creation_date  = "2024-06-11"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "Z12A3" ascii fullword
-    $s2 = "FromBase64String" ascii fullword
-    $s3 = "Start-Process" ascii fullword
-    $s4 = "WriteAllBytes" ascii fullword
-
-  condition:
-    all of them
-}
-
 rule webshell_icesword_strings {
   meta:
     id             = "2c6b3cec-4200-4386-8cd5-4004c9b5b96a"
@@ -49534,57 +47063,6 @@ rule Maldoc_CVE_2017_11882: Exploit {
     $s0 and ($h0 or $s1)
 }
 
-rule JBIG2_wrong_version: PDF raw {
-  meta:
-    author      = "Glenn Edwards (@hiddenillusion)"
-    description = "JBIG2 was introduced in v1.4"
-    ref         = "http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/pdf/pdfs/pdf_reference_1-7.pdf"
-    version     = "0.1"
-    weight      = 1
-
-  strings:
-    $magic = "%PDF"
-    $js    = /\/JBIG2Decode/
-    $ver   = /%PDF-1\.[4-9]/
-
-  condition:
-    $magic in (0..1024) and $js and not $ver
-}
-
-rule FlateDecode_wrong_version: PDF raw {
-  meta:
-    author      = "Glenn Edwards (@hiddenillusion)"
-    description = "Flate was introduced in v1.2"
-    ref         = "http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/pdf/pdfs/pdf_reference_1-7.pdf"
-    version     = "0.1"
-    weight      = 1
-
-  strings:
-    $magic = "%PDF"
-    $js    = /\/FlateDecode/
-    $ver   = /%PDF-1\.[2-9]/
-
-  condition:
-    $magic in (0..1024) and $js and not $ver
-}
-
-rule embed_wrong_version: PDF raw {
-  meta:
-    author      = "Glenn Edwards (@hiddenillusion)"
-    description = "EmbeddedFiles were introduced in v1.3"
-    ref         = "http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/pdf/pdfs/pdf_reference_1-7.pdf"
-    version     = "0.1"
-    weight      = 1
-
-  strings:
-    $magic = "%PDF"
-    $embed = /\/EmbeddedFiles/
-    $ver   = /%PDF-1\.[3-9]/
-
-  condition:
-    $magic in (0..1024) and $embed and not $ver
-}
-
 rule invalid_xref_numbers: PDF raw {
   meta:
     author      = "Glenn Edwards (@hiddenillusion)"
@@ -49619,36 +47097,6 @@ rule js_splitting: PDF raw {
 
   condition:
     $magic in (0..1024) and $js and 1 of ($s*)
-}
-
-rule header_evasion: PDF raw {
-  meta:
-    author      = "Glenn Edwards (@hiddenillusion)"
-    description = "3.4.1, 'File Header' of Appendix H states that ' Acrobat viewers require only that the header appear somewhere within the first 1024 bytes of the file.'  Therefore, if you see this trigger then any other rule looking to match the magic at 0 won't be applicable"
-    ref         = "http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/pdf/pdfs/pdf_reference_1-7.pdf"
-    version     = "0.1"
-    weight      = 3
-
-  strings:
-    $magic = "%PDF"
-
-  condition:
-    $magic in (5..1024) and #magic == 1
-}
-
-rule BlackHole_v2: PDF raw {
-  meta:
-    author  = "Glenn Edwards (@hiddenillusion)"
-    version = "0.1"
-    ref     = "http://fortknoxnetworks.blogspot.no/2012/10/blackhhole-exploit-kit-v-20-url-pattern.html"
-    weight  = 3
-
-  strings:
-    $magic   = "%PDF"
-    $content = "Index[5 1 7 1 9 4 23 4 50"
-
-  condition:
-    $magic in (0..1024) and $content
 }
 
 rule Contains_VBA_macro_code {
@@ -49822,152 +47270,6 @@ rule free_pascal {
 
   condition:
     any of them
-}
-
-rule without_urls: mail {
-  meta:
-    author      = "Antonio Sanchez <asanchez@hispasec.com>"
-    reference   = "http://laboratorio.blogs.hispasec.com/"
-    description = "Rule to detect the no presence of any url"
-
-  strings:
-    $eml_01 = "From:"
-    $eml_02 = "To:"
-    $eml_03 = "Subject:"
-
-    $url_regex = /https?:\/\/([\w\.-]+)([\/\w \.-]*)/
-
-  condition:
-    all of ($eml_*) and
-    not $url_regex
-}
-
-private rule ssh_client: sshdoor {
-  meta:
-    description = "Signature to match the clean (or not) OpenSSH client (ssh)"
-    author      = "Marc-Etienne M.Leveille"
-    email       = "leveille@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $usage       = "usage: ssh ["
-    $old_version = "-L listen-port:host:port"
-
-  condition:
-    $usage or $old_version
-}
-
-private rule ssh_daemon: sshdoor {
-  meta:
-    description = "Signature to match the clean (or not) OpenSSH daemon (sshd)"
-    author      = "Marc-Etienne M.Leveille"
-    email       = "leveille@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $usage       = "usage: sshd ["
-    $old_version = "Listen on the specified port (default: 22)"
-
-  condition:
-    $usage or $old_version
-}
-
-private rule ssh_add: sshdoor {
-  meta:
-    description = "Signature to match the clean (or not) OpenSSH add (ssh-add)"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $usage = "usage: %s [options] [file ...]\n"
-    $log   = "Could not open a connection to your authentication agent.\n"
-
-  condition:
-    $usage and $log
-}
-
-private rule ssh_askpass: sshdoor {
-  meta:
-    description = "Signature to match the clean (or not) OpenSSH daemon (sshd)"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $pass = "Enter your OpenSSH passphrase:"
-    $log  = "Could not grab %s. A malicious client may be eavesdropping on you"
-
-  condition:
-    $pass and $log
-}
-
-private rule ssh_keygen: sshdoor {
-  meta:
-    description = "Signature to match the clean (or not) OpenSSH keygen (ssh-keygen)"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $pass = "Enter new passphrase (empty for no passphrase):"
-    $log  = "revoking certificates by key ID requires specification of a CA key"
-
-  condition:
-    $pass and $log
-}
-
-private rule ssh_keyscan: sshdoor {
-  meta:
-    description = "Signature to match the clean (or not) OpenSSH keyscan (ssh-keyscan)"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $usage = "usage: %s [-46Hv] [-f file] [-p port] [-T timeout] [-t type]"
-
-  condition:
-    $usage
-}
-
-private rule ssh_binary: sshdoor {
-  meta:
-    description = "Signature to match any clean (or not) SSH binary"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-
-  condition:
-    ssh_client or ssh_daemon or ssh_add or ssh_askpass or ssh_keygen or ssh_keyscan
-}
-
-rule endor {
-  meta:
-    description = "Rule to detect Endor family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $u = "user: %s"
-    $p = "password: %s"
-
-  condition:
-    ssh_binary and $u and $p in (@u..@u + 20)
 }
 
 rule EXT_HKTL_MAL_TinyShell_Backdoor_SPARC {
@@ -50294,35 +47596,6 @@ rule LNKR_JS_a {
 
   condition:
     5 of them
-}
-
-rule OfflRouter {
-  meta:
-    id             = "2I5ccrcSBA9kdy7i0OPcb7"
-    fingerprint    = "6b633ac8b42943fd5868a2632518c3c30104010478c0fc42ee3613e3581b876e"
-    version        = "1.0"
-    creation_date  = "2022-01-01"
-    first_imported = "2022-01-24"
-    last_modified  = "2022-01-24"
-    status         = "RELEASED"
-    sharing        = "TLP:WHITE"
-    source         = "BARTBLAZE"
-    author         = "@bartblaze"
-    description    = "Identifies OfflRouter, malware which spreads to Office documents and removable drives."
-    category       = "MALWARE"
-    reference      = "https://www.csirt.gov.sk/wp-content/uploads/2021/08/analysis_offlrouter.pdf"
-
-  strings:
-    /*
-    Dim num As Long = 0L
-    Dim num2 As Long = CLng((Bytes.Length - 1))
-    For num3 As Long = num To num2
-    Bytes(CInt(num3)) = (Bytes(CInt(num3)) Xor CByte(((num3 + CLng(Bytes.Length) + 1L) Mod &H100L)))
-    */
-    $ = { 16 6A 02 50 8E B7 17 59 6A 0B 0A 2B 22 02 50 06 69 02 50 06 69 91 06 02 50 8E B7 6A 58 17 6A 58 20 00 01 00 00 6A 5D D2 61 9C 06 17 6A 58 0A 06 07 }
-
-  condition:
-    all of them
 }
 
 rule PurpleFox_a {
@@ -51190,30 +48463,6 @@ rule MALWARE_APT29_SVG_Delivery_Jul23 {
     and not $atom_mime
     and filesize > 500KB
     and 4 of ($js_*)
-}
-
-rule Matanbuchus_MSI_2: matanbuchus msitwo {
-  meta:
-    author                    = "Andre Gironda"
-    date                      = "2022-06-16"
-    description               = "Matanbuchus MSI contains CAB with DLL via Zip via HTML Smuggling via Zip as malspam attachment / TA570 who normally delivers Qakbot"
-    hash                      = "5dcbffef867b44bbb828cfb4a21c9fb1fa3404b4d8b6f4e8118c62addbf859da"
-    hash2                     = "4d5da2273e2d7cce6ac37027afd286af"
-    tlp                       = "TLP:WHITE"
-    version                   = "v1.0"
-    yarahub_author_twitter    = "@AndreGironda"
-    yarahub_license           = "CC0 1.0"
-    yarahub_reference_md5     = "4d5da2273e2d7cce6ac37027afd286af"
-    yarahub_rule_matching_tlp = "TLP:WHITE"
-    yarahub_rule_sharing_tlp  = "TLP:WHITE"
-    yarahub_uuid              = "f29897f3-a6f1-43d7-b1cf-553671dc3c75"
-
-  strings:
-    $hex_36855 = "Private Organization1"
-    $hex_368bd = "Westeast Tech Consulting, Corp.1"
-
-  condition:
-    all of them
 }
 
 rule PassProtected_ZIP_ISO_file {
@@ -52226,85 +49475,6 @@ rule warning_mime_mso_embedded_flash {
     1 of them
 }
 
-rule warning_ole2link_embedded {
-  meta:
-    is_exploit = true
-    is_warning = false
-    is_feature = false
-    rank       = 1
-    revision   = "3"
-    date       = "September 12 2017"
-    author     = "David Cannings"
-    copyright  = "source https://github.com/nccgroup/Cyber-Defence/blob/master/Technical%20Notes/Office%20zero-day%20(April%202017)/2017-04%20Office%20OLE2Link%20zero-day%20v0.4.md"
-    tlp        = "white"
-    sigtype    = "cryptam_warning"
-    desc       = "Office OLE2Link unsafe content such as remote risky content"
-
-  strings:
-    // Parsers will open files without the full 'rtf'
-    $header_rtf    = "{\\rt" nocase
-    $header_office = { D0 CF 11 E0 }
-    $header_xml    = "<?xml version=" nocase wide ascii
-
-    // Marks of embedded data (reduce FPs)
-    // RTF format
-    $embedded_object   = "\\object" nocase
-    $embedded_objdata  = "\\objdata" nocase
-    $embedded_ocx      = "\\objocx" nocase
-    $embedded_objclass = "\\objclass" nocase
-    $embedded_oleclass = "\\oleclsid" nocase
-
-    // XML Office documents
-    $embedded_axocx     = "<ax:ocx" nocase wide ascii
-    $embedded_axclassid = "ax:classid" nocase wide ascii
-
-    // OLE format
-    $embedded_root_entry = "Root Entry" wide
-    $embedded_comp_obj   = "Comp Obj" wide
-    $embedded_obj_info   = "Obj Info" wide
-    $embedded_ole10      = "Ole10Native" wide
-
-    $data0 = "00000300-0000-0000-C000-000000000046" nocase wide ascii
-    $data1 = { 00 03 00 00 00 00 00 00 C0 00 00 00 00 00 00 46 }
-    $data2 = "OLE2Link" nocase wide ascii
-    $data3 = "4f4c45324c696e6b" nocase wide ascii
-    $data4 = "StdOleLink" nocase wide ascii
-    $data5 = "5374644f6c654c696e6b" nocase wide ascii
-
-  condition:
-    // Mandatory header plus sign of embedding, then any of the others
-    1 of ($header*) and 1 of ($embedded*)
-    and (1 of ($data*))
-}
-
-rule exploit_cve_2017_8759 {
-  meta:
-    is_exploit = true
-    is_warning = false
-    is_feature = false
-    rank       = 10
-    revision   = "1"
-    date       = "September 12 2017"
-    author     = "@tylabs"
-    release    = "lite"
-    copyright  = "QuickSand.io (c) Copyright 2017. All rights reserved."
-    tlp        = "green"
-    sigtype    = "cryptam_exploit"
-    desc       = "OLE WSDL Parser Code Injection in PrintClientProxy CVE-2017-8759"
-
-  strings:
-    $c5 = "wsdl=" ascii wide nocase
-    $c7 = "wsdl=http" ascii wide nocase
-    $c1 = "ECABB0C7-7F19-11D2-978E-0000F8757E2A"
-    $c2 = "SoapMoniker"
-    $c3 = "c7b0abec-197f-d211-978e-0000f8757e2a"
-    $c4 = "c7b0abec197fd211978e0000f8757e2a"
-    $c6 = { c7 b0 ab ec 19 7f d2 11 97 8e 00 00 f8 75 7e 2a }
-
-  condition:
-    warning_ole2link_embedded and 1 of ($c*)
-}
-
 rule warning_js_inzip {
   meta:
     is_exploit = false
@@ -52327,29 +49497,6 @@ rule warning_js_inzip {
 
   condition:
     $h1 at 0 and all of ($s*)
-}
-
-rule warning_rtf_objupdate {
-  meta:
-    is_exploit = false
-    is_warning = true
-    is_feature = true
-    rank       = 2
-    revision   = "1"
-    date       = "Nov 20 2017"
-    author     = "@tylabs"
-    release    = "lite"
-    copyright  = "QuickSand.io (c) Copyright 2017. All rights reserved."
-    tlp        = "white"
-    sigtype    = "cryptam_exploit"
-    desc       = "update RTF object may load malicious content"
-
-  strings:
-    $header_xml = "{\\rt" nocase
-    $upd        = "\\objupdate" nocase
-
-  condition:
-    all of them
 }
 
 rule doc_exploit_ms12_060_toolbar {
@@ -52747,54 +49894,6 @@ rule Ganelp {
     3 of them
 }
 
-rule GootLoader_Dotnet {
-  meta:
-    id             = "3b73JCHd13eRtWf0DUe0ko"
-    fingerprint    = "2cba1239f67959e2601296cfcdcb8afa29db2c36f4c449424aa17f882f5e949a"
-    version        = "1.0"
-    creation_date  = "2022-07-20"
-    first_imported = "2022-07-20"
-    last_modified  = "2022-07-20"
-    status         = "RELEASED"
-    sharing        = "TLP:WHITE"
-    source         = "BARTBLAZE"
-    author         = "@bartblaze"
-    description    = "Identifies GootLoader, Dotnet variant."
-    category       = "MALWARE"
-    malware        = "GOOTLOADER"
-    reference      = "https://blog.nviso.eu/2022/07/20/analysis-of-a-trojanized-jquery-script-gootloader-unleashed/"
-
-  strings:
-    $ = {
-      15 00 00 0a 6f 16 00 00 0a 0d ?? ?? ?? ?? 00 00 de 00 00 09 6f 09 00 00 0a 16 fe 01 16 fe 01 13 09 11 09 2d 03 00 2b
-      1d 00 07 09 28 12 00 00 0a 0b 00 00 08 17 58 0c 08 20 9f 86 01 00 fe 04 13 09 11 09 2d ?? ?? ?? ?? 00 00 0a 00 07 72 ?? 00 00 70 ?? 3b 00 00 70 6f
-    }
-
-    $ = {
-      73 1D 00 00 06 0A 06 02 7D 6A 00 00 04 00 16 06 7B 6A 00 00 04 6F 09 00 00 0A 28 0A 00 00 0A 7E 01 00 00 04 2D
-      13 14 FE 06 03 00 00 06 73 0B 00 00 0A 80 01 00 00 04 2B 00 7E 01 00 00 04 28 01 00 00 2B 06 FE 06 1E 00 00 06 73 0D
-      00 00 0A 28 02 00 00 2B 28 03 00 00 2B 0B 2B 00 07 2A
-    }
-
-  condition:
-    any of them
-}
-
-rule HeavensGate {
-  meta:
-    author      = "kevoreilly"
-    description = "Heaven's Gate: Switch from 32-bit to 64-mode"
-    cape_type   = "Heaven's Gate"
-
-  strings:
-    $gate_v1 = { 6A 33 E8 00 00 00 00 83 04 24 05 CB }
-    $gate_v2 = { 9A 00 00 00 00 33 00 89 EC 5D C3 48 83 EC 20 E8 00 00 00 00 48 83 C4 20 CB }
-    $gate_v3 = { 5A 66 BB 33 00 66 53 50 89 E0 83 C4 06 FF 28 }
-
-  condition:
-    ($gate_v1 or $gate_v2 or $gate_v3)
-}
-
 rule invalid_trailer_structure_ren: PDF {
   meta:
     author  = "Glenn Edwards (@hiddenillusion)"
@@ -52825,57 +49924,6 @@ rule multiple_versions_ren: PDF {
 
   condition:
     $magic at 0 and #s0 > 1 and #s1 > 1
-}
-
-rule JBIG2_wrong_version_ren: PDF {
-  meta:
-    author      = "Glenn Edwards (@hiddenillusion)"
-    description = "JBIG2 was introduced in v1.4"
-    ref         = "http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/pdf/pdfs/pdf_reference_1-7.pdf"
-    version     = "0.1"
-    weight      = 1
-
-  strings:
-    $magic = "%PDF"
-    $js    = /\/JBIG2Decode/
-    $ver   = /%PDF-1\.[4-9]/
-
-  condition:
-    $magic at 0 and $js and not $ver
-}
-
-rule FlateDecode_wrong_version_ren: PDF {
-  meta:
-    author      = "Glenn Edwards (@hiddenillusion)"
-    description = "Flate was introduced in v1.2"
-    ref         = "http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/pdf/pdfs/pdf_reference_1-7.pdf"
-    version     = "0.1"
-    weight      = 1
-
-  strings:
-    $magic = "%PDF"
-    $js    = /\/FlateDecode/
-    $ver   = /%PDF-1\.[2-9]/
-
-  condition:
-    $magic at 0 and $js and not $ver
-}
-
-rule embed_wrong_version_ren: PDF {
-  meta:
-    author      = "Glenn Edwards (@hiddenillusion)"
-    description = "EmbeddedFiles were introduced in v1.3"
-    ref         = "http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/pdf/pdfs/pdf_reference_1-7.pdf"
-    version     = "0.1"
-    weight      = 1
-
-  strings:
-    $magic = "%PDF"
-    $embed = /\/EmbeddedFiles/
-    $ver   = /%PDF-1\.[3-9]/
-
-  condition:
-    $magic at 0 and $embed and not $ver
 }
 
 rule invalid_xref_numbers_ren: PDF {
@@ -52912,21 +49960,6 @@ rule js_splitting_ren: PDF {
 
   condition:
     $magic at 0 and $js and 1 of ($s*)
-}
-
-rule BlackHole_v2_ren: PDF {
-  meta:
-    author  = "Glenn Edwards (@hiddenillusion)"
-    version = "0.1"
-    ref     = "http://fortknoxnetworks.blogspot.no/2012/10/blackhhole-exploit-kit-v-20-url-pattern.html"
-    weight  = 3
-
-  strings:
-    $magic   = "%PDF"
-    $content = "Index[5 1 7 1 9 4 23 4 50"
-
-  condition:
-    $magic at 0 and $content
 }
 
 rule Maze {
@@ -53038,362 +50071,6 @@ rule Oyster {
 
   condition:
     4 of them
-}
-
-rule abafar {
-  meta:
-    description = "Rule to detect Abafar family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $log_c = "%s:%s@%s"
-    $log_d = "%s:%s from %s"
-
-  condition:
-    ssh_binary and any of them
-}
-
-rule akiva {
-  meta:
-    description = "Rule to detect Akiva family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $log = /(To|From):\s(%s\s\-\s)?%s:%s\n/
-
-  condition:
-    ssh_binary and $log
-}
-
-rule alderaan {
-  meta:
-    description = "Rule to detect Alderaan family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $log = /login\s(in|at):\s(%s\s)?%s:%s\n/
-
-  condition:
-    ssh_binary and $log
-}
-
-rule anoat {
-  meta:
-    description = "Rule to detect Anoat family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $log = "%s at: %s | user: %s, pass: %s\n"
-
-  condition:
-    ssh_binary and $log
-}
-
-rule batuu {
-  meta:
-    description = "Rule to detect Batuu family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $args = "ssh: ~(av[%d]: %s\n)"
-    $log  = "readpass: %s\n"
-
-  condition:
-    ssh_binary and any of them
-}
-
-rule bespin {
-  meta:
-    description = "Rule to detect Bespin family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $log1 = "%Y-%m-%d %H:%M:%S"
-    $log2 = "%s %s%s"
-    $log3 = "[%s]"
-
-  condition:
-    ssh_binary and all of them
-}
-
-rule bonadan {
-  meta:
-    description = "Rule to detect Bonadan family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $s1 = "g_server"
-    $s2 = "mine.sock"
-    $s3 = "tspeed"
-    $e1 = "6106#x=%d#%s#%s#speed=%s"
-    $e2 = "usmars.mynetgear.com"
-    $e3 = "user=%s#os=%s#eip=%s#cpu=%s#mem=%s"
-
-  condition:
-    ssh_binary and any of them
-}
-
-rule borleias {
-  meta:
-    description = "Rule to detect Borleias family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $log = "%Y-%m-%d %H:%M:%S [%s]"
-
-  condition:
-    ssh_binary and all of them
-}
-
-rule chandrila {
-  meta:
-    description = "Rule to detect Chandrila family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $log   = "S%s %s:%s"
-    $magic = { 05 71 92 7D }
-
-  condition:
-    ssh_binary and all of them
-}
-
-rule coruscant {
-  meta:
-    description = "Rule to detect Coruscant family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $s1 = "%s:%s@%s\n"
-    $s2 = "POST"
-    $s3 = "HTTP/1.1"
-
-  condition:
-    ssh_binary and all of them
-}
-
-rule crait {
-  meta:
-    description = "Signature to detect Crait family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $i1 = "flock"
-    $i2 = "fchmod"
-    $i3 = "sendto"
-
-  condition:
-    ssh_binary and 2 of them
-}
-
-rule jakuu {
-  meta:
-    description = "Rule to detect Jakuu family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    notes       = "Strings can be encrypted"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $dec  = /GET\s\/\?(s|c)id=/
-    $enc1 = "getifaddrs"
-    $enc2 = "usleep"
-    $ns   = "gethostbyname"
-    $log  = "%s:%s"
-    $rc4  = { A1 71 31 17 11 1A 22 27 55 00 66 A3 10 FE C2 10 22 32 6E 95 90 84 F9 11 73 62 95 5F 4D 3B DB DC }
-
-  condition:
-    ssh_binary and $log and $ns and ($dec or all of ($enc*) or $rc4)
-}
-
-rule kamino {
-  meta:
-    description = "Rule to detect Kamino family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $s1 = "/var/log/wtmp"
-    $s2 = "/var/log/secure"
-    $s3 = "/var/log/auth.log"
-    $s4 = "/var/log/messages"
-    $s5 = "/var/log/audit/audit.log"
-    $s6 = "/var/log/httpd-access.log"
-    $s7 = "/var/log/httpd-error.log"
-    $s8 = "/var/log/xferlog"
-    $i1 = "BIO_f_base64"
-    $i2 = "PEM_read_bio_RSA_PUBKEY"
-    $i3 = "srand"
-    $i4 = "gethostbyname"
-
-  condition:
-    ssh_binary and 5 of ($s*) and 3 of ($i*)
-}
-
-rule kessel {
-  meta:
-    description = "Rule to detect Kessel family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $rc4 = "Xee5chu1Ohshasheed1u"
-    $s1  = "ssh:%s:%s:%s:%s"
-    $s2  = "sshkey:%s:%s:%s:%s:%s"
-    $s3  = "sshd:%s:%s"
-    $i1  = "spy_report"
-    $i2  = "protoShellCMD"
-    $i3  = "protoUploadFile"
-    $i4  = "protoSendReport"
-    $i5  = "tunRecvDNS"
-    $i6  = "tunPackMSG"
-
-  condition:
-    ssh_binary and (2 of ($s*) or 2 of ($i*) or $rc4)
-}
-
-rule mimban {
-  meta:
-    description = "Rule to detect Mimban family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $s1 = "<|||%s|||%s|||%d|||>"
-    $s2 = />\|\|\|%s\|\|\|%s\|\|\|\d\|\|\|%s\|\|\|%s\|\|\|%s\|\|\|%s\|\|\|</
-    $s3 = "-----BEGIN PUBLIC KEY-----"
-    $i1 = "BIO_f_base64"
-    $i2 = "PEM_read_bio_RSA_PUBKEY"
-    $i3 = "gethostbyname"
-
-  condition:
-    ssh_binary and 2 of ($s*) and 2 of ($i*)
-}
-
-rule ondaron {
-  meta:
-    description = "Rule to detect Ondaron family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $daemon = "user:password --> %s:%s\n"
-    $client = /user(,|:)(a,)?password@host \-\-> %s(,|:)(b,)?%s@%s\n/
-
-  condition:
-    ssh_binary and ($daemon or $client)
-}
-
-rule polis_massa {
-  meta:
-    description = "Rule to detect Polis Massa family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $log = /\b\w+(:|\s-+>)\s%s(:%d)?\s\t(\w+)?:\s%s\s\t(\w+)?:\s%s/
-
-  condition:
-    ssh_binary and $log
-}
-
-rule quarren {
-  meta:
-    description = "Rule to detect Quarren family"
-    author      = "Hugo Porcher"
-    email       = "hugo.porcher@eset.com"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/12/ESET-The_Dark_Side_of_the_ForSSHe.pdf"
-    date        = "2018-12-05"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $log = "h: %s, u: %s, p: %s\n"
-
-  condition:
-    ssh_binary and $log
-}
-
-rule turla_outlook_pdf {
-  meta:
-    author      = "ESET Research"
-    date        = "22-08-2018"
-    description = "Detect PDF documents generated by Turla Outlook malware"
-    reference   = "https://www.welivesecurity.com/wp-content/uploads/2018/08/Eset-Turla-Outlook-Backdoor.pdf"
-    source      = "https://github.com/eset/malware-ioc/"
-    contact     = "github@eset.com"
-    license     = "BSD 2-Clause"
-
-  strings:
-    $s1 = "Adobe PDF Library 9.0" ascii wide nocase
-    $s2 = "Acrobat PDFMaker 9.0" ascii wide nocase
-    $s3 = { FF D8 FF E0 00 10 4A 46 49 46 }
-    $s4 = { 00 3F 00 FD FC A2 8A 28 03 FF D9 }
-    $s5 = "W5M0MpCehiHzreSzNTczkc9d" ascii wide nocase
-    $s6 = "PDF-1.4" ascii wide nocase
-
-  condition:
-    5 of them
 }
 
 rule XiaoBa {
@@ -54492,78 +51169,6 @@ rule webshell_jsp_godzilla: Webshells Commodity {
     any of ($magic*)
 }
 
-rule with_attachment: mail {
-  meta:
-    author      = "Antonio Sanchez <asanchez@hispasec.com>"
-    reference   = "http://laboratorio.blogs.hispasec.com/"
-    description = "Rule to detect the presence of an or several attachments"
-
-  strings:
-    $attachment_id = "X-Attachment-Id"
-
-  condition:
-    $attachment_id
-}
-
-rule davivienda: mail {
-  strings:
-    $nombre = "davivienda" nocase
-
-  condition:
-    all of them
-}
-
-rule CryptoWall_Resume_phish_ren: mail {
-  meta:
-    Author    = "http://phishme.com/"
-    reference = "https://github.com/phishme/malware_analysis/blob/master/yara_rules/cryptowall.yar"
-
-  strings:
-    $hello2 = "my name is " nocase
-    $file1  = "resume attached" nocase
-    $file2  = "my resume is pdf file" nocase
-    $file3  = "attached is my resume" nocase
-    $sal1   = "I would appreciate your " nocase
-    $sal2   = "I am looking forward to hearing from you" nocase
-    $sal3   = "I look forward to your reply" nocase
-    $sal4   = "Please message me back" nocase
-    $sal5   = "our early reply will be appreciated" nocase
-    $file4  = "attach is my resume" nocase
-    $file5  = "PDF file is my resume" nocase
-    $sal6   = "Looking forward to see your response" nocase
-
-  condition:
-    1 of ($hello*) and 1 of ($file*) and 1 of ($sal*)
-}
-
-
-
-rule Email_quota_limit_warning: mail {
-  meta:
-    Author      = "Tyler Linne <@InfoSecTyler>"
-    Description = "Rule to prevent against known email quota limit phishing campaign"
-
-  strings:
-    $eml_01   = "From:"  //Added eml context
-    $eml_02   = "To:"
-    $eml_03   = "Subject:"
-    $subject1 = { 44 65 61 72 20 [0-11] 20 41 63 63 6f 75 6e 74 20 55 73 65 72 73 }  // Range allows for different company names to be accepted
-    $hello1   = { 44 65 61 72 20 [0-11] 20 41 63 63 6f 75 6e 74 20 55 73 65 72 73 }
-    $body1    = "You have exceded" nocase
-    $body2    = "e-mail account limit quota of"  //Range allows for different quota "upgrade" sizes
-    $body3    = "requested to expand it within 24 hours" nocase
-    $body4    = "e-mail account will be disable from our database" nocase
-    $body5    = "simply click with the complete information" nocase
-    $body6    = "requested to expand your account quota" nocase
-    $body7    = { 54 68 61 6e 6b 20 79 6f 75 20 66 6f 72 20 75 73 69 6e 67 20 [0-11] 20 57 65 62 6d 61 69 6c }  // Range allows for different company names to be accepted
-
-  condition:
-    all of ($eml_*) and
-    1 of ($subject*) and
-    1 of ($hello*) and
-    4 of ($body*)
-}
-
 rule FUDCrypter {
   meta:
     description   = "Detects unmodified FUDCrypt samples"
@@ -54606,34 +51211,6 @@ rule MacGyverCap: MacGyver {
     $string5 = "src/MacGyver/javacard/ConstantPool.cap" ascii wide
     $string6 = "src/MacGyver/javacard/Class.cap" ascii wide
     $string7 = "src/MacGyver/javacard/Method.cap" ascii wide
-
-  condition:
-    all of them
-}
-
-rule MacGyverCapInstaller: MacGyvercap Installer {
-  meta:
-    description = "Generic rule for Hacktool:Win32/EMVSoft who install MacGyver.cap"
-    author      = "xylitol@temari.fr"
-    date        = "2021-05-11"
-    reference   = "https://github.com/fboldewin/MacGyver-s-return---An-EMV-Chip-cloning-case/blob/master/MacGyver's%20return%20-%20An%20EMV%20Chip%20cloning%20case.pdf"
-    // May only the challenge guide you
-    hash1       = "bb828eb0bbebabbcb51f490f4a0c08dd798b1f350dddddb6c00abcb6f750069f"
-    hash2       = "04f0c9904675c7cf80ff1962bec5ef465ccf8c29e668f3158ec262414a6cc6eb"
-    hash3       = "7335cd56a9ac08c200cca7e25b939e9c4ffa4d508207e68bee01904bf20a6528"
-    hash4       = "af542ccb415647dbd80df902858a3d150a85f37992a35f29999eed76ac01a12b"
-    hash5       = "247484124f4879bfacaae73ea32267e2c1e89773986df70a5f3456b1fb944c58"
-    hash6       = "1cc8a2f3ce12f4b8356bda8b4aaf61d510d1078112af1c14cf4583090e062fbe"
-    hash7       = "c23411deeec790e2dba37f4c49c7ecac3c867b7012431c9281ed748519eda65c"
-    hash8       = "c0d11ed2eed0fef8d2f53920a1e12f667e03eafdb2d2941473d120e9e6f0e657"
-    hash9       = "1ecfd3755eba578108363c0705c6ec205972080739ed0fbd17439f8139ba7e08"
-    hash10      = "87678c6dcf0065ffc487a284b9f79bd8c0815c5c621fc92f83df24393bfcc660"
-
-  strings:
-    $string1 = "delete -AID 315041592e5359532e4444463031" ascii wide
-    $string2 = "install -file MacGyver.cap -nvDataLimit 1000 -instParam 00 -priv 4" ascii wide
-    $string3 = "-mac_key 404142434445464748494a4b4c4d4e4f" ascii wide
-    $string4 = "-enc_key 404142434445464748494a4b4c4d4e4f" ascii wide
 
   condition:
     all of them
@@ -54696,38 +51273,6 @@ rule MALW_PurpleWave_v1 {
     )
 
     and filesize < 700KB  // Standard size when not packed should be arround ~598/600kb
-}
-
-rule content: mail {
-  meta:
-    author      = "A.Sanchez <asanchez@koodous.com>"
-    description = "Detects scam emails with phishing attachment."
-    test1       = "email/eml/transferencia1.eml"
-    test2       = "email/eml/transferencia2.eml"
-
-  strings:
-    $subject = "Asunto: Justificante de transferencia" nocase
-    $body    = "Adjunto justificante de transferencia"
-
-  condition:
-    all of them
-}
-
-rule attachment: mail {
-  meta:
-    author      = "A.Sanchez <asanchez@koodous.com>"
-    description = "Detects scam emails with phishing attachment."
-    test1       = "email/eml/transferencia1.eml"
-    test2       = "email/eml/transferencia2.eml"
-
-  strings:
-    $filename    = "filename=\"scan001.pdf.html\""
-    $pleaseEnter = "NTAlNkMlNjUlNjElNzMlNjUlMjAlNjUlNkUlNzQlNjUlNzIlMjAlN"  // Please enter 
-    $emailReq    = "NkQlNjUlNkUlNzQlMkUlNjklNkUlNjQlNjUlNzglMzIlMkUlNDUlNkQlNjElNjklNkMlM0I"  // ment.index2.Email;
-    $pAssign     = "NzAlMjAlM0QlMjAlNjQlNkYlNjMlNzUlNkQlNjUlNkUlNzQlMkUlNjklNkUlNjQlNjUl"  // p = document.inde
-
-  condition:
-    all of them
 }
 
 rule Parallels_Detection: AntiVM {
@@ -55143,50 +51688,6 @@ rule nspps_RC4_Key {
     all of them
 }
 
-rule inRegPowerSniff: PowerSniff {
-  meta:
-    copyright = "root9b, LLC"
-
-    authors = "Matt Weeks, Dax Morrow"
-
-    description = "ShellTea + PoSlurp PoS Malware in Registry PowerSniff"
-
-    reference = "https://www.root9b.com/newsroom/shelltea-poslurp-malware"
-
-    version = "1.0"
-
-    last_modified = "2017-06-27"
-
-  strings:
-    $hex1 = { 41 2B CF 81 38 BE BA AD AB 48 8B D0 75 09 81 78 04 0D F0 AD 8B }  //shellcode blob in registry
-
-  condition:
-    $hex1
-
-}
-
-rule inRegShellTea: ShellTea {
-  meta:
-    copyright = "root9b, LLC"
-
-    authors = "Matt Weeks, Dax Morrow"
-
-    description = "ShellTea + PoSlurp PoS Malware in Registry ShellTea"
-
-    reference = "https://www.root9b.com/newsroom/shelltea-poslurp-malware"
-
-    version = "1.0"
-
-    last_modified = "2017-06-27"
-
-  strings:
-    $hex1 = { 48 83 EC 28 E8 F7 03 00 00 [1015] 48 89 5C 24 18 48 89 4C 24 08 55 56 57 41 54 41 }  // Binary registry value with variable content for ShellTea config
-
-  condition:
-    $hex1
-
-}
-
 rule inMemShellTea: ShellTea {
   meta:
     copyright = "root9b, LLC"
@@ -55531,24 +52032,6 @@ rule PoS_Malware_MalumPOS_Config {
   condition:
     /* all of ($s*) and filename == "log.ini" and filesize < 20KB*/
     all of ($s*) and filesize < 20KB
-}
-
-rule HackTool_Producers {
-  meta:
-    description  = "Hacktool Producers String"
-    threat_level = 5
-    score        = 50
-
-  strings:
-    $a1        = "www.oxid.it"
-    $a2        = "www.analogx.com"
-    $a3        = "ntsecurity.nu"
-    $a4        = "gentilkiwi.com"
-    $a6        = "Marcus Murray"
-    $extension = /extension: \.(ini|xml)\n/
-
-  condition:
-    1 of ($a*) and not $extension
 }
 
 private rule file_wasm {
@@ -57267,14 +53750,6 @@ rule LOKI97_values__32_big_AND_ {
 rule LD_CELP_G_728_cb_gain_sq__flt32___32_lil_32_ {
   strings:
     $a0 = { 00 20 88 3e 00 71 50 3f 84 96 1f 40 7a 5e f4 40 00 20 88 3e 00 71 50 3f 84 96 1f 40 7a 5e f4 40 }
-
-  condition:
-    $a0
-}
-
-rule MD5_constants__32_lil_AND_ {
-  strings:
-    $a0 = { 01 23 45 67 [0-20] 77 54 32 10 [0-20] 02 23 45 67 [0-20] 76 54 32 10 }
 
   condition:
     $a0
