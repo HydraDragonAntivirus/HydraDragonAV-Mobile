@@ -29,13 +29,9 @@ import java.util.concurrent.Executors;
 public class ScanEngine {
     private static final String TAG = "HydraDragon-ScanEngine";
 
-    private static final Set<String> DANGEROUS_PERMISSIONS = new HashSet<>(Arrays.asList(
-        "android.permission.READ_SMS", "android.permission.SEND_SMS",
-        "android.permission.READ_CONTACTS", "android.permission.RECORD_AUDIO",
-        "android.permission.CAMERA", "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.READ_CALL_LOG", "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.MANAGE_EXTERNAL_STORAGE"
-    ));
+    // Dangerous-permission detection moved to the native (Rust) engine — it counts
+    // them from the manifest bytes (covers in-memory/inner APKs). Java only applies
+    // the 5/6 decision on the count the native scan returns.
 
     private static final List<String> TRUSTED_COMPANIES = Arrays.asList(
         "google", "meta", "facebook", "whatsapp", "microsoft",
@@ -149,11 +145,16 @@ public class ScanEngine {
 
             try {
                 if (isFullScan) {
-                    scanDirectoryForApks(android.os.Environment.getExternalStorageDirectory(), pm, threats);
+                    // Full scan: EVERY file under external storage. APKs get the
+                    // full app analysis (permissions + code + native); every other
+                    // file type is routed through the native engine, which unpacks
+                    // archives via hydradragonextractor and runs clamav/YARA + ML.
+                    scanDirectoryForApks(android.os.Environment.getExternalStorageDirectory(), pm, threats, true);
                 } else {
+                    // Quick scan: only APKs in Downloads.
                     scanDirectoryForApks(
                         android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
-                        pm, threats);
+                        pm, threats, false);
                 }
             } catch (Exception e) { }
 
@@ -162,13 +163,14 @@ public class ScanEngine {
         });
     }
 
-    private void scanDirectoryForApks(java.io.File dir, PackageManager pm, List<ThreatResult> threats) {
+    private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
+                                      List<ThreatResult> threats, boolean fullScan) {
         if (dir == null || !dir.exists() || !dir.isDirectory()) return;
         java.io.File[] files = dir.listFiles();
         if (files == null) return;
         for (java.io.File file : files) {
             if (file.isDirectory()) {
-                scanDirectoryForApks(file, pm, threats);
+                scanDirectoryForApks(file, pm, threats, fullScan);
             } else if (file.getName().toLowerCase().endsWith(".apk")) {
                 try {
                     PackageInfo pkgInfo = pm.getPackageArchiveInfo(file.getAbsolutePath(),
@@ -183,8 +185,76 @@ public class ScanEngine {
                         }
                     }
                 } catch (Exception e) { }
+            } else if (fullScan) {
+                // Non-APK file in a full scan: route through the native engine
+                // (hydradragonextractor unpacking + clamav/YARA + ML). Permission
+                // analysis doesn't apply — it isn't an installable app.
+                scanGenericFile(file, threats);
             }
         }
+    }
+
+    /**
+     * Scan an arbitrary (non-APK) file with the native engine during a full
+     * scan. The native side unpacks archives (zip/gz/tar/xz/lzma/7z/rar — so a
+     * nested APK is reached too) and runs clamav signatures, YARA and the ML
+     * model on every extracted buffer.
+     */
+    private void scanGenericFile(java.io.File file, List<ThreatResult> threats) {
+        try {
+            if (!NativeScanner.isReady()) return;
+            String path = file.getAbsolutePath();
+            NativeScanner.Verdict v = NativeScanner.scan(path);
+            // Act on a signature/ML hit OR a dangerous-permission count (an inner
+            // APK extracted from this file, detected from the manifest bytes).
+            if (v == null || (!v.malicious && v.permissions < 5)) return;
+
+            ThreatResult.Builder b = new ThreatResult.Builder(path);
+            List<String> reasons = new java.util.ArrayList<>();
+            int riskScore = 0;
+            boolean hasRealThreat = v.mlMalicious;
+            for (String m : v.matches) {
+                boolean isPua = isPuaName(m);
+                if (!isPua) hasRealThreat = true;
+                reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + m);
+            }
+            if (v.malicious) {
+                if (hasRealThreat) {
+                    riskScore = 100;
+                    b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                } else {
+                    riskScore = 50;
+                    b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
+                }
+            }
+            // Two-tier dangerous permissions (same as installed-app analysis):
+            // 6+ => certain malware, exactly 5 => suspicious.
+            if (v.permissions >= 6) {
+                riskScore = 100;
+                b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/9)");
+            } else if (v.permissions == 5) {
+                riskScore = Math.max(riskScore, 30);
+                if (!hasRealThreat) {
+                    b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
+                }
+                reasons.add("🔐 Suspicious permissions (5/9)");
+            }
+            if (v.mlMalicious) {
+                String near = v.nearest != null ? "  ~" + v.nearest : "";
+                reasons.add(String.format(java.util.Locale.US,
+                    "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
+            }
+            b.setRiskScore(riskScore);
+            b.setReasons(reasons);
+            b.setAppName(file.getName() + " (FILE)");
+            b.setApkPath(path);
+            ThreatResult r = b.build();
+            if (r.isThreat()) {
+                threats.add(r);
+                if (callback != null) callback.onThreatFound(r);
+            }
+        } catch (Throwable t) { /* degrade gracefully */ }
     }
 
     public ThreatResult analyzeSingleApp(ApplicationInfo app, PackageManager pm, boolean isApkFile) {
@@ -284,25 +354,10 @@ public class ScanEngine {
                 reasons.add("CRITICAL: Digital signature not found!");
             }
 
-            if (!isWhitelisted && pkgInfo != null && pkgInfo.requestedPermissions != null) {
-                int dc = 0; List<String> dp = new ArrayList<>();
-                for (String p : pkgInfo.requestedPermissions)
-                    if (DANGEROUS_PERMISSIONS.contains(p)) { dc++; dp.add(p.replace("android.permission.","")); }
-                // Two-tier on the 9 most-dangerous permissions (SMS, call log,
-                // contacts, mic, camera, location, overlay, all-files): 6+ = almost
-                // certainly malware; exactly 5 = suspicious. Legit apps routinely
-                // request 3-4, so the old >=3 rule caused heavy false positives.
-                if (dc >= 6) {
-                    riskScore += 50;
-                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                    reasons.add("Excessive dangerous permissions (" + dc + "/9)");
-                } else if (dc == 5) {
-                    riskScore = Math.max(riskScore, 30);
-                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
-                    reasons.add("Suspicious permissions (5/9)");
-                }
-                builder.setDangerousPermissions(dp);
-            }
+            // Dangerous-permission DETECTION lives in the native (Rust) engine —
+            // it counts them from the manifest bytes (works for in-memory/inner
+            // APKs too). The 5/6 DECISION is applied below in Java where `v` is in
+            // scope, so Java still owns the verdict + whitelist.
         } catch (Exception e) { }
 
         if (!isWhitelisted) {
@@ -345,6 +400,21 @@ public class ScanEngine {
                         }
                     } else if (v.isError()) {
                         Log.w(TAG, "native scan error: " + v.error);
+                    }
+
+                    // Two-tier dangerous-permission decision on the native count
+                    // (9 most-dangerous: SMS, call log, contacts, mic, camera,
+                    // location, overlay, all-files). 6+ = almost certainly malware;
+                    // exactly 5 = suspicious. Legit apps routinely request 3-4.
+                    if (v.permissions >= 6) {
+                        riskScore = 100;
+                        builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                        reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/9)");
+                    } else if (v.permissions == 5) {
+                        riskScore = Math.max(riskScore, 30);
+                        if (riskScore < 50) builder.setThreatType(
+                            com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
+                        reasons.add("🔐 Suspicious permissions (5/9)");
                     }
                 }
 

@@ -1172,6 +1172,7 @@ name = "hydradragonandroid"
 version = "0.1.0"
 dependencies = [
  "hydradragonclamav",
+ "hydradragonextractor",
  "hydradragonml",
  "jni",
 ]
@@ -1181,7 +1182,6 @@ name = "hydradragonclamav"
 version = "0.1.0"
 dependencies = [
  "daachorse",
- "hydradragonextractor",
  "image",
  "memchr",
  "regex",

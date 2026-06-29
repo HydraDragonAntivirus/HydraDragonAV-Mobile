@@ -132,6 +132,8 @@ public final class NativeScanner {
         public double anomaly;
         /** Closest known-malware sample (nullable). */
         public String nearest;
+        /** Distinct dangerous permissions found in the (in-memory) manifest bytes. */
+        public int permissions;
         /** Non-null ClamAV target number if the file type was skipped (PE/OLE2/…). */
         public Integer skippedTarget;
         /** Non-null if the native scan errored. */
@@ -162,6 +164,7 @@ public final class NativeScanner {
                 return v;
             }
             v.malicious = o.optBoolean("malicious", false);
+            v.permissions = o.optInt("permissions", 0);
             if (o.has("skipped") && !o.isNull("skipped")) {
                 v.skippedTarget = o.optInt("skipped");
             }

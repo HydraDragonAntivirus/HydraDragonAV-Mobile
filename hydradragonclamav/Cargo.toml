@@ -7,9 +7,6 @@ license = "GPL-2.0-or-later"
 
 [dependencies]
 
-# Archive unpacker for embedded-object extraction — zip, tar, gzip, xz, lzma, 7z
-hydradragonextractor = { path = "../hydradragonextractor" }
-
 # YARA-x engine for Android-focused YARA rule scanning
 yara-x = "1.19"
 

@@ -191,14 +191,24 @@ fn scan_apk(env: &mut JNIEnv, path: JString) -> String {
 }
 
 fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
-    // Scan fully through the clamav engine: it detects the file type, applies
-    // clamav's supported-type gate (PE/OLE2/mail/Mach-O/Flash/Java-class are
-    // skipped), then runs clamav signatures AND all loaded .yrc YARA rulesets,
-    // extracting archives along the way. strict_targets enables the type gate.
+    // Extract ONCE here in the bridge: `buffers` holds the top-level file plus
+    // every buffer reachable by recursively unpacking archives (APK = zip, plus
+    // gz/tar/xz/lzma/7z/rar). BOTH engines then scan every buffer, so a malicious
+    // classes*.dex, native lib, or an APK nested inside a zip is seen DECOMPRESSED
+    // — the compressed container bytes never match clamav signatures or YARA on
+    // their own (which is why a raw scan previously only lit up the
+    // compression-agnostic ML model). Extraction lives only here, not inside the
+    // clamav engine, so the file is unpacked a single time for both signals.
+    //
     // Each engine is isolated: a panic in clamav doesn't lose the ML result (and
     // vice-versa), and `err` names WHICH engine + the panic location so the root
     // cause is pinpointed, not just swallowed.
     let mut err: Option<String> = None;
+    let buffers = collect_buffers(bytes);
+    // Dangerous-permission count from the (in-memory) manifest bytes, so an APK
+    // reached only by extraction still gets permission-based detection. Java
+    // applies the suspicious(5)/malware(6) threshold.
+    let perm_count = max_dangerous_perms(&buffers);
 
     let yara_hits: Vec<String> = match &engine.clamav {
         Some(clamav) => {
@@ -208,11 +218,21 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
                 ..ScanOptions::default()
             };
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                clamav
-                    .scan_bytes_named(bytes, path, opts)
-                    .into_iter()
-                    .map(|m| m.name)
-                    .collect::<Vec<_>>()
+                let mut hits: Vec<String> = Vec::new();
+                for (i, buf) in buffers.iter().enumerate() {
+                    let name = if i == 0 {
+                        path.to_string()
+                    } else {
+                        format!("{path}#extract[{i}]")
+                    };
+                    for m in clamav.scan_bytes_named(buf, &name, opts) {
+                        hits.push(m.name);
+                        if hits.len() >= opts.max_matches {
+                            return hits;
+                        }
+                    }
+                }
+                hits
             })) {
                 Ok(v) => v,
                 Err(_) => {
@@ -224,12 +244,33 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
         None => Vec::new(),
     };
 
-    // one-class ML model (independent of clamav's type gate).
+    // one-class ML model (independent of clamav's type gate), over the SAME
+    // buffers — so an APK nested inside a zip (or any other extracted member)
+    // also gets an ML verdict. The strongest signal across all buffers wins.
     let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest) = match &engine.model {
         Some(model) => {
-            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| model.scan(bytes))) {
-                Ok(Some(r)) => (r.malicious, r.best_jaccard, r.anomaly_score, r.nearest),
-                Ok(None) => (false, 0.0, 0.0, None),
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let mut malicious = false;
+                let mut best_jaccard = 0.0_f32;
+                let mut worst_anomaly = 0.0_f64;
+                let mut nearest: Option<String> = None;
+                for buf in &buffers {
+                    if let Some(r) = model.scan(buf) {
+                        if r.malicious {
+                            malicious = true;
+                        }
+                        if r.best_jaccard > best_jaccard {
+                            best_jaccard = r.best_jaccard;
+                            nearest = r.nearest.clone();
+                        }
+                        if r.anomaly_score > worst_anomaly {
+                            worst_anomaly = r.anomaly_score;
+                        }
+                    }
+                }
+                (malicious, best_jaccard, worst_anomaly, nearest)
+            })) {
+                Ok(t) => t,
                 Err(_) => {
                     if err.is_none() {
                         err = Some(format!("ml: {}", last_panic()));
@@ -259,9 +300,100 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
     };
 
     format!(
-        r#"{{"malicious":{},"matches":[{}],"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}{}}}"#,
-        malicious, hits_json, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, err_json
+        r#"{{"malicious":{},"matches":[{}],"permissions":{},"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}{}}}"#,
+        malicious, hits_json, perm_count, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, err_json
     )
+}
+
+/// The most dangerous Android permissions (mirrors the Java `DANGEROUS_PERMISSIONS`
+/// list). Used to give APKs reached only in-memory — e.g. an APK extracted from a
+/// zip and never written to disk, so `PackageManager` can't read it — the same
+/// permission-based detection, straight from the bytes (no temp file).
+const DANGEROUS_PERMS: &[&str] = &[
+    "android.permission.READ_SMS",
+    "android.permission.SEND_SMS",
+    "android.permission.READ_CONTACTS",
+    "android.permission.RECORD_AUDIO",
+    "android.permission.CAMERA",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.READ_CALL_LOG",
+    "android.permission.SYSTEM_ALERT_WINDOW",
+    "android.permission.MANAGE_EXTERNAL_STORAGE",
+];
+
+fn to_utf16le(s: &str) -> Vec<u8> {
+    let mut v = Vec::with_capacity(s.len() * 2);
+    for u in s.encode_utf16() {
+        v.extend_from_slice(&u.to_le_bytes());
+    }
+    v
+}
+
+fn contains_sub(hay: &[u8], needle: &[u8]) -> bool {
+    !needle.is_empty() && hay.len() >= needle.len() && hay.windows(needle.len()).any(|w| w == needle)
+}
+
+/// Count the distinct dangerous permissions present in any single extracted
+/// buffer. An APK's binary `AndroidManifest.xml` keeps permission names in its
+/// string pool as readable UTF-8 OR UTF-16LE, so we look for both encodings.
+/// Returns the max over buffers (not the sum) so unrelated files don't inflate
+/// the count. Large buffers (dex/resources/native libs) are skipped — a manifest
+/// is small — both for speed and to avoid stray matches in code string tables.
+fn max_dangerous_perms(buffers: &[Vec<u8>]) -> usize {
+    const MAX_MANIFEST_SCAN: usize = 4 * 1024 * 1024;
+    let needles: Vec<(Vec<u8>, Vec<u8>)> = DANGEROUS_PERMS
+        .iter()
+        .map(|p| (p.as_bytes().to_vec(), to_utf16le(p)))
+        .collect();
+    let mut max = 0usize;
+    for buf in buffers {
+        if buf.len() > MAX_MANIFEST_SCAN {
+            continue;
+        }
+        let mut count = 0usize;
+        for (u8n, u16n) in &needles {
+            if contains_sub(buf, u8n) || contains_sub(buf, u16n) {
+                count += 1;
+            }
+        }
+        if count > max {
+            max = count;
+        }
+    }
+    max
+}
+
+/// Recursively unpack archives starting from `data`, returning every buffer —
+/// the top-level file included — so both the clamav/YARA engine and the ML model
+/// can scan each one decompressed. An APK is a zip; a zip may itself contain an
+/// APK, a `.so`, a nested archive, etc. Non-archive buffers contribute only
+/// themselves. Bounded so a malicious "zip bomb" can't exhaust memory: capped
+/// buffer count, recursion depth and per-buffer size. `detect_format` gates the
+/// extractor so plain files never fall through to its 7z fallback.
+fn collect_buffers(data: &[u8]) -> Vec<Vec<u8>> {
+    const MAX_BUFFERS: usize = 4096;
+    const MAX_DEPTH: usize = 8;
+    const MAX_SIZE: usize = 128 * 1024 * 1024;
+
+    let mut out: Vec<Vec<u8>> = Vec::new();
+    let mut stack: Vec<(Vec<u8>, usize)> = vec![(data.to_vec(), 0)];
+    while let Some((buf, depth)) = stack.pop() {
+        if out.len() >= MAX_BUFFERS {
+            break;
+        }
+        if buf.len() > MAX_SIZE {
+            continue;
+        }
+        if depth < MAX_DEPTH && hydradragonextractor::detect_format(&buf).is_some() {
+            if let Ok(children) = hydradragonextractor::extract_archive_from_bytes(&buf) {
+                for child in children {
+                    stack.push((child, depth + 1));
+                }
+            }
+        }
+        out.push(buf);
+    }
+    out
 }
 
 /// The last captured panic ("message @ file:line"), for diagnostics.
