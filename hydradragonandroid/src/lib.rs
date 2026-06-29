@@ -99,29 +99,41 @@ fn do_init(dir: &str) -> Engine {
     let mut report = String::new();
     // ClamAV engine from the bundled DB, then add the compiled .yrc rulesets
     // (compiled only — never .yar source on-device).
-    let clamav = match ClamavEngine::from_database_dir(base) {
-        Ok((mut eng, _report)) => {
+    let clamav = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        ClamavEngine::from_database_dir(base)
+    })) {
+        Ok(Ok((mut eng, _report))) => {
             report.push_str("clamav=ok");
             for name in YRC_FILES {
                 match eng.add_compiled_yara_file(base.join(name)) {
                     Some(_) => report.push_str(&format!(" yrc[{}]=ok", name)),
-                    None => report.push_str(&format!(" yrc[{}]=ERR(load/deserialize failed)", name)),
+                    None => report.push_str(&format!(" yrc[{}]=ERR(load/deserialize)", name)),
                 }
             }
             Some(eng)
         }
-        Err(e) => {
+        Ok(Err(e)) => {
             report.push_str(&format!("clamav=ERR({})", e));
             None
         }
+        Err(_) => {
+            report.push_str(&format!("clamav=PANIC({})", last_panic()));
+            None
+        }
     };
-    let model = match Model::load_bin(&base.join(MODEL_BIN)) {
-        Ok(m) => {
+    let model = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        Model::load_bin(&base.join(MODEL_BIN))
+    })) {
+        Ok(Ok(m)) => {
             report.push_str(" model=ok");
             Some(m)
         }
-        Err(e) => {
+        Ok(Err(e)) => {
             report.push_str(&format!(" model=ERR({})", e));
+            None
+        }
+        Err(_) => {
+            report.push_str(&format!(" model=PANIC({})", last_panic()));
             None
         }
     };

@@ -60,6 +60,7 @@ public final class UrlThreatScanner {
     private static volatile UrlThreatScanner instance;
 
     private final Map<String, BloomFilter<CharSequence>> filters = new LinkedHashMap<>();
+    private final java.util.Set<String> publicSuffixes = new java.util.HashSet<>();
 
     private UrlThreatScanner(Context context) {
         for (String[] b : BLOOMS) {
@@ -69,6 +70,34 @@ public final class UrlThreatScanner {
                 Log.i(TAG, "loaded " + b[0] + " (" + b[1] + ")");
             }
         }
+        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
+                context.getAssets().open("public_suffixes.txt"), java.nio.charset.StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                line = line.trim().toLowerCase(Locale.US);
+                if (!line.isEmpty() && !line.startsWith("//")) publicSuffixes.add(line);
+            }
+        } catch (Exception e) { Log.w(TAG, "public_suffixes.txt missing"); }
+    }
+
+    /** Registrable (main) domain via the public suffix list. If a suffix isn't
+     *  found, falls back to the last two labels — a 3-label host whose last two
+     *  labels aren't a listed suffix is NOT treated as a deeper sub-domain.
+     *  mc.yandex.ru -> yandex.ru; google.com.tk (com.tk not a suffix) -> com.tk. */
+    String getMainDomain(String host) {
+        if (host == null || host.isEmpty()) return host == null ? "" : host;
+        String[] p = host.split("\\.");
+        for (int i = 0; i < p.length; i++) {
+            StringBuilder suf = new StringBuilder();
+            for (int j = i; j < p.length; j++) { if (j > i) suf.append('.'); suf.append(p[j]); }
+            if (publicSuffixes.contains(suf.toString())) {
+                if (i == 0) return host;
+                StringBuilder m = new StringBuilder();
+                for (int j = i - 1; j < p.length; j++) { if (j > i - 1) m.append('.'); m.append(p[j]); }
+                return m.toString();
+            }
+        }
+        return p.length >= 2 ? p[p.length - 2] + "." + p[p.length - 1] : host;
     }
 
     public static UrlThreatScanner get(Context context) {
@@ -154,17 +183,17 @@ public final class UrlThreatScanner {
         int colon = host.indexOf(':');
         if (colon >= 0) host = host.substring(0, colon);
 
-        // http + path => URL scan (URL blooms, full URL). https, or http bare
-        // domain (subdomain too) => domain scan (domain blooms, host).
+        // http + path => URL scan (URL blooms, full URL). Else => domain scan:
+        // check the host AND its main domain (sub-domain split via public suffix).
         boolean urlScan = http && hasPath;
-
+        String main = urlScan ? null : getMainDomain(host);
         for (Map.Entry<String, BloomFilter<CharSequence>> e : filters.entrySet()) {
-            boolean urlBloom = e.getKey().endsWith("_URL");   // MALWARE_URL / PHISHING_URL
+            boolean urlBloom = e.getKey().endsWith("_URL");
             BloomFilter<CharSequence> f = e.getValue();
             if (urlScan) {
                 if (urlBloom && f.mightContain(norm)) return e.getKey();
-            } else {
-                if (!urlBloom && f.mightContain(host)) return e.getKey();
+            } else if (!urlBloom) {
+                if (f.mightContain(host) || (!main.equals(host) && f.mightContain(main))) return e.getKey();
             }
         }
         return null;

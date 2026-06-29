@@ -124,6 +124,21 @@ def extract_from_optimized(prefix: str, tag: str) -> set:
     return domains
 
 
+def extract_domains_skip_zero(filepath: str) -> set:
+    """Like extract_domains_from_csv but DROPS referenceless (,0) entries.
+    Only for MalwareDomains/MalwareSubDomains: ,0 (no known reference) are
+    overwhelmingly false positives — a tiny fraction are real."""
+    domains = set()
+    with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+        for row in csv.reader(f):
+            if not row or not row[0].strip() or row[0].startswith("#"):
+                continue
+            if len(row) >= 2 and row[1].strip() == "0":
+                continue
+            domains.add(row[0].strip().lower())
+    return domains
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--bloom", action="store_true", help="Generate .bloom files (requires mmh3)")
@@ -164,15 +179,14 @@ def main():
         print(f"  [URLHS] urlhaus+MaliciousLinks: {len(mal_urls):,} domains")
     categories["malwareurl"] = mal_urls
 
-    categories["malware"] = extract_from_optimized("MalwareSubDomains", "MWDOM")
-    # MalwareDomains.csv is a plain (non-optimized) CSV: header "entry,reference"
-    # with the domain in column 0.
-    malware_csv = BLOOMS_DIR / "MalwareDomains.csv"
-    if malware_csv.exists():
-        mw_domains = extract_domains_from_csv(str(malware_csv))
-        mw_domains.discard("entry")  # drop the CSV header value
-        print(f"  [MWDOM] MalwareDomains.csv: {len(mw_domains):,} domains")
-        categories["malware"] |= mw_domains
+    # MalwareDomains/MalwareSubDomains: drop referenceless (,0) entries — mostly FP.
+    categories["malware"] = set()
+    for prefix in ("MalwareDomains", "MalwareSubDomains"):
+        p = BLOOMS_DIR / f"{prefix}.optimized.csv"
+        if p.exists():
+            d = extract_domains_skip_zero(str(p))
+            print(f"  [MWDOM] {p.name}: {len(d):,} domains (,0 referenceless skipped)")
+            categories["malware"] |= d
     categories["abuse"] = extract_from_optimized("AbuseDomains", "ABUSE") | extract_from_optimized("AbuseSubDomains", "ABUSE")
     categories["mining"] = extract_from_optimized("MiningDomains", "MINE") | extract_from_optimized("MiningSubDomains", "MINE")
     categories["spam"] = extract_from_optimized("SpamDomains", "SPAM") | extract_from_optimized("SpamSubDomains", "SPAM")
