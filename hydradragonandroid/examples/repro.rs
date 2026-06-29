@@ -52,7 +52,7 @@ fn run() {
         }
     }
     eprintln!("STEP: load_model");
-    let model = Model::load_json(&base.join("apk_model.json")).ok();
+    let model = Model::load_bin(&base.join("apk_model.bin")).ok();
     eprintln!("STEP: loaded ok");
     println!("loaded: clamav={} model={}", clamav.is_some(), model.is_some());
 

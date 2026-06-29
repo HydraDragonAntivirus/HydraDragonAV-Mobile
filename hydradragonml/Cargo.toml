@@ -9,7 +9,9 @@ license = "GPL-2.0-or-later"
 # Pure-Rust zip reader to walk APK (zip) entries and pull AndroidManifest / DEX.
 zip = { version = "2", default-features = false, features = ["deflate"] }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# Compact binary model format — loads ~10-50x faster than JSON (126k numbers as
+# raw bytes instead of text), so on-device init is near-instant.
+bincode-next = { version = "3.1.1", features = ["serde"] }
 # Parallel feature extraction over the 1000-sample corpus during training.
 rayon = "1"
 

@@ -27,7 +27,7 @@ const YRC_FILES: &[&str] = &[
     "valhalla-rules_filtered_verified.yrc",
     "AndroidOS_filtered.yrc",
 ];
-const MODEL_FILE: &str = "apk_model.json";
+const MODEL_BIN: &str = "apk_model.bin";
 
 struct Engine {
     /// ClamAV engine: loaded from the bundled signature DB with the compiled
@@ -95,7 +95,7 @@ fn do_init(dir: &str) -> Engine {
         }
         Err(_) => None,
     };
-    let model = Model::load_json(&base.join(MODEL_FILE)).ok();
+    let model = Model::load_bin(&base.join(MODEL_BIN)).ok();
     Engine { clamav, model }
 }
 
@@ -128,7 +128,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         Err(_) => return JNI_FALSE,
     };
     install_panic_hook();
-    let engine = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| do_init(&dir))) {
+    // Init on a big-stack thread: yara_x deserialization of the .yrc recurses
+    // deeply enough to overflow the JNI thread's stack (the on-device crash).
+    let engine = match on_big_stack(move || do_init(&dir)) {
         Ok(e) => e,
         Err(_) => return JNI_FALSE,
     };
@@ -168,12 +170,10 @@ fn scan_apk(env: &mut JNIEnv, path: JString) -> String {
         Err(e) => return format!(r#"{{"error":"{}"}}"#, json_escape(&e.to_string())),
     };
 
-    // Catch any panic from the native scan (yara_x / clamav / ml on a malformed
-    // or adversarial APK) so it returns an error instead of SIGABRT-ing the whole
-    // app process.
-    let scanned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        run_scan(engine, &bytes, &path)
-    }));
+    // Scan on a big-stack thread (deep clamav/yara recursion) which also catches
+    // any panic — so neither a deep stack nor a panic on a malformed/adversarial
+    // APK can SIGABRT the whole app process.
+    let scanned = on_big_stack(move || run_scan(engine, &bytes, &path));
     match scanned {
         Ok(s) => s,
         Err(_) => {

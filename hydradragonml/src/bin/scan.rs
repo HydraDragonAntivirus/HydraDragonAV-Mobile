@@ -15,7 +15,7 @@ fn main() {
     }
     let json_out = args.iter().any(|a| a == "--json");
 
-    let model = Model::load_json(Path::new(&args[1])).expect("failed to load model");
+    let model = Model::load_bin(Path::new(&args[1])).expect("failed to load model");
 
     let target = PathBuf::from(&args[2]);
     let mut apks = Vec::new();
@@ -34,29 +34,19 @@ fn main() {
                 if r.malicious {
                     flagged += 1;
                 }
-                if json_out {
-                    println!(
-                        "{}",
-                        serde_json::to_string(&serde_json::json!({
-                            "file": p.display().to_string(),
-                            "result": r,
-                        }))
-                        .unwrap()
-                    );
-                } else {
-                    println!(
-                        "{:<8} jaccard={:.2} anomaly={:.4} {}{} {}",
-                        if r.malicious { "MALWARE" } else { "clean" },
-                        r.best_jaccard,
-                        r.anomaly_score,
-                        if r.by_minhash { "[minhash]" } else { "" },
-                        if r.by_iforest { "[iforest]" } else { "" },
-                        p.file_name().and_then(|s| s.to_str()).unwrap_or("")
-                    );
-                    if let Some(n) = &r.nearest {
-                        if r.by_minhash {
-                            println!("         nearest: {n}");
-                        }
+                let _ = json_out;
+                println!(
+                    "{:<8} jaccard={:.2} anomaly={:.4} {}{} {}",
+                    if r.malicious { "MALWARE" } else { "clean" },
+                    r.best_jaccard,
+                    r.anomaly_score,
+                    if r.by_minhash { "[minhash]" } else { "" },
+                    if r.by_iforest { "[iforest]" } else { "" },
+                    p.file_name().and_then(|s| s.to_str()).unwrap_or("")
+                );
+                if let Some(n) = &r.nearest {
+                    if r.by_minhash {
+                        println!("         nearest: {n}");
                     }
                 }
             }

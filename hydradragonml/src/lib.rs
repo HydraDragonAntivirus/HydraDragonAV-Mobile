@@ -109,14 +109,18 @@ impl Model {
         }
     }
 
-    pub fn save_json(&self, path: &std::path::Path) -> std::io::Result<()> {
-        let json = serde_json::to_vec(self)?;
-        std::fs::write(path, json)
+    /// Binary (bincode-next) model.
+    pub fn save_bin(&self, path: &std::path::Path) -> std::io::Result<()> {
+        let bytes = bincode_next::serde::encode_to_vec(self, bincode_next::config::standard())
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        std::fs::write(path, bytes)
     }
 
-    pub fn load_json(path: &std::path::Path) -> std::io::Result<Model> {
+    pub fn load_bin(path: &std::path::Path) -> std::io::Result<Model> {
         let bytes = std::fs::read(path)?;
-        let mut model: Model = serde_json::from_slice(&bytes)?;
+        let (mut model, _): (Model, usize) =
+            bincode_next::serde::decode_from_slice(&bytes, bincode_next::config::standard())
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         model.ensure_index();
         Ok(model)
     }

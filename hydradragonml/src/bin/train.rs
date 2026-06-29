@@ -81,7 +81,7 @@ fn main() {
         SEED,
     );
 
-    model.save_json(&out).expect("failed to write model");
+    model.save_bin(&out).expect("failed to write model");
     eprintln!(
         "saved model: {} samples, jaccard>={:.2}, anomaly<={:.4} -> {}",
         model.len(),
