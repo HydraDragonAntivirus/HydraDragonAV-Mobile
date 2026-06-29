@@ -107,8 +107,15 @@ public class NetworkFragment extends Fragment {
             @Override
             public void onStatsUpdate(long bytesIn, long bytesOut, int blocked, int allowed) {
                 if(isAdded() && getActivity() != null) getActivity().runOnUiThread(() -> {
-                    tvBytesIn.setText(formatBytes(bytesIn) + "/s");
-                    tvBytesOut.setText(formatBytes(bytesOut) + "/s");
+                    // Show the cumulative TOTAL (bytesIn/bytesOut here are the
+                    // per-tick rate, used only for the live chart).
+                    long totalIn = 0, totalOut = 0;
+                    if (serviceBound && guardService != null && guardService.getNetworkMonitor() != null) {
+                        totalIn = guardService.getNetworkMonitor().getBytesReceived();
+                        totalOut = guardService.getNetworkMonitor().getBytesSent();
+                    }
+                    tvBytesIn.setText(formatBytes(totalIn));
+                    tvBytesOut.setText(formatBytes(totalOut));
                     tvBlockedCount.setText(String.valueOf(blocked));
                     tvAllowedCount.setText(String.valueOf(allowed));
                     if (liveChart != null) liveChart.addDataPoint(bytesIn + bytesOut);
@@ -146,7 +153,8 @@ public class NetworkFragment extends Fragment {
     private String formatBytes(long bytes) {
         if (bytes < 1024) return bytes + " B";
         if (bytes < 1024 * 1024) return String.format(Locale.getDefault(), "%.1f KB", bytes / 1024.0);
-        return String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024));
+        if (bytes < 1024L * 1024 * 1024) return String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024));
+        return String.format(Locale.getDefault(), "%.2f GB", bytes / (1024.0 * 1024 * 1024));
     }
 
     @Override

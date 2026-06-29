@@ -213,22 +213,63 @@ public class NetworkMonitor {
     /**
      * Gerçek zamanlı trafik istatistikleri güncelle
      */
+    // Previous cumulative sample for computing the per-tick rate. -1 = no sample
+    // yet, so the first tick doesn't emit a huge bogus spike.
+    private long lastRx = -1, lastTx = -1;
+
     private void updateTrafficStats() {
         try {
-            // Android TrafficStats API kullan
-            long rxBytes = android.net.TrafficStats.getTotalRxBytes();
-            long txBytes = android.net.TrafficStats.getTotalTxBytes();
+            long[] tot = deviceBytes();      // cumulative {rx, tx}
+            long rx = tot[0], tx = tot[1];
+            bytesReceived = rx;              // exposed via getBytesReceived() (total)
+            bytesSent = tx;
 
-            long deltaRx = rxBytes - bytesReceived;
-            long deltaTx = txBytes - bytesSent;
-            bytesReceived = rxBytes;
-            bytesSent = txBytes;
+            long deltaRx = 0, deltaTx = 0;
+            if (lastRx >= 0) {
+                deltaRx = Math.max(0, rx - lastRx);   // bytes since last tick (rate)
+                deltaTx = Math.max(0, tx - lastTx);
+            }
+            lastRx = rx;
+            lastTx = tx;
 
             if (networkCallback != null) {
                 networkCallback.onStatsUpdate(deltaRx, deltaTx, blockedConnections, allowedConnections);
             }
         } catch (Exception e) {
             Log.e(TAG, "Traffic statistics error", e);
+        }
+    }
+
+    /**
+     * Cumulative device {rx, tx} in bytes. Prefers {@code TrafficStats}; when the
+     * device reports {@code UNSUPPORTED} (-1, common on Android 12+/some OEMs)
+     * falls back to {@code NetworkStatsManager} (needs Usage Access). Returns the
+     * last-known totals if both fail, so traffic never falsely reads 0.
+     */
+    private long[] deviceBytes() {
+        long rx = android.net.TrafficStats.getTotalRxBytes();
+        long tx = android.net.TrafficStats.getTotalTxBytes();
+        if (rx != android.net.TrafficStats.UNSUPPORTED
+            && tx != android.net.TrafficStats.UNSUPPORTED
+            && rx >= 0 && tx >= 0) {
+            return new long[]{rx, tx};
+        }
+        try {
+            android.app.usage.NetworkStatsManager nsm =
+                (android.app.usage.NetworkStatsManager)
+                    context.getSystemService(Context.NETWORK_STATS_SERVICE);
+            long now = System.currentTimeMillis();
+            long r = 0, t = 0;
+            int[] types = { ConnectivityManager.TYPE_WIFI, ConnectivityManager.TYPE_MOBILE };
+            for (int type : types) {
+                android.app.usage.NetworkStats.Bucket b =
+                    nsm.querySummaryForDevice(type, null, 0, now);
+                if (b != null) { r += b.getRxBytes(); t += b.getTxBytes(); }
+            }
+            return new long[]{r, t};
+        } catch (Throwable ignore) {
+            // Usage Access not granted or query failed — keep last-known totals.
+            return new long[]{ Math.max(0, bytesReceived), Math.max(0, bytesSent) };
         }
     }
 

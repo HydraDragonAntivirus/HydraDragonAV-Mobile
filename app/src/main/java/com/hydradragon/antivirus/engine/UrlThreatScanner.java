@@ -47,6 +47,13 @@ public final class UrlThreatScanner {
     private static final Pattern URL_RE =
             Pattern.compile("https?://[^\\s\"'<>\\\\)\\]}]+", Pattern.CASE_INSENSITIVE);
 
+    /**
+     * steamcommunity.com phishing typosquats — plain https form only. The REAL
+     * steamcommunity.com (and its subdomains) is whitelisted before this runs.
+     */
+    private static final Pattern STEAM_FAKE = Pattern.compile(
+            "^https://s[cftz]y?[ace][aemnu][a-z]{1,4}o[mn][a-z]{4,8}[iy][a-z]?\\.com/$");
+
     /** Per-entry scan cap when reading APK entries (DEX can be large). */
     private static final int MAX_ENTRY_BYTES = 16 * 1024 * 1024;
 
@@ -132,6 +139,11 @@ public final class UrlThreatScanner {
      * @return the matching category (e.g. "PHISHING_URL"), or null if clean.
      */
     public String scanUrl(String url) {
+        // steamcommunity.com typosquat phishing (real one is whitelisted inside).
+        if (isSteamFake(url)) {
+            return "STEAM_PHISHING";
+        }
+
         String norm = normalize(url);
         if (norm == null) return null;
 
@@ -151,6 +163,37 @@ public final class UrlThreatScanner {
             }
         }
         return null;
+    }
+
+    /**
+     * True if {@code url} is a steamcommunity.com phishing typosquat (plain,
+     * base64 or reversed form). The genuine steamcommunity.com and its subdomains
+     * are whitelisted first, so the real site is never flagged.
+     */
+    public static boolean isSteamFake(String url) {
+        if (url == null) return false;
+        String u = url.trim();
+        String host = rawHost(u);
+        if (host != null
+                && (host.equals("steamcommunity.com") || host.endsWith(".steamcommunity.com"))) {
+            return false;   // genuine site — whitelisted
+        }
+        return STEAM_FAKE.matcher(u).find();
+    }
+
+    /** Lowercased host of an http(s):// URL (no scheme/port/path/userinfo), or null. */
+    private static String rawHost(String url) {
+        String u = url.toLowerCase(Locale.US);
+        int i = u.indexOf("://");
+        if (i < 0) return null;
+        String rest = u.substring(i + 3);
+        int slash = rest.indexOf('/');
+        String host = slash >= 0 ? rest.substring(0, slash) : rest;
+        int at = host.indexOf('@');
+        if (at >= 0) host = host.substring(at + 1);
+        int colon = host.indexOf(':');
+        if (colon >= 0) host = host.substring(0, colon);
+        return host.isEmpty() ? null : host;
     }
 
     /**
