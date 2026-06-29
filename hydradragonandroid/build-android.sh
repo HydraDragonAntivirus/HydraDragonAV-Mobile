@@ -47,6 +47,10 @@ if [ -n "${ANDROID_NDK_HOME:-}" ]; then
 fi
 # ----------------------------------------------------------------------------
 
+# 16 KB page-size alignment (Android 15+): align ELF LOAD segments to 16 KB so
+# the .so loads natively on 16 KB-page devices instead of "compat mode".
+export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,common-page-size=16384"
+
 # arm64-v8a, armeabi-v7a, x86_64, x86 — covers phones + emulators.
 # NOTE: cargo-ndk 4.x renamed the API-level flag — it is now `--platform`
 # (the old short `-p` is forwarded to cargo as `--package`, which fails).
@@ -58,6 +62,11 @@ cargo ndk \
   --platform "$API" \
   -o "$JNILIBS" \
   build --release
+
+# Remove the stray sevenz-rust2 cdylib artifacts: the main lib statically links
+# sevenz-rust2 (no DT_NEEDED on it), so these standalone .so are unused dead
+# weight — and they trip the 16 KB-alignment check. Drop them.
+find "$JNILIBS" -name 'libsevenz_rust2-*.so' -delete
 
 echo "Built .so into $JNILIBS:"
 find "$JNILIBS" -name 'libhydradragonandroid.so' -exec ls -lh {} \;

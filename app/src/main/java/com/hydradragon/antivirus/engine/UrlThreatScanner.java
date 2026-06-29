@@ -156,17 +156,28 @@ public final class UrlThreatScanner {
         urlForms.add(norm.endsWith("/") ? norm.substring(0, norm.length() - 1) : norm + "/");
         List<String> hostForms = hostCandidates(norm);
 
+        // Require TWO independent bloom matches before flagging. Each filter has
+        // ~1% false-positive rate, and across 8 filters those independent FPs
+        // STACK to ~10-15% per host — which is why benign sites kept getting
+        // flagged. A real malicious host is typically present in several feeds,
+        // so it still hits 2+ blooms; a random FP almost never hits two (≈1%×1%).
+        // (URL FP recall trade-off accepted to kill the false-positive flood.)
+        String firstCat = null;
+        int matchedBlooms = 0;
         for (Map.Entry<String, BloomFilter<CharSequence>> e : filters.entrySet()) {
             BloomFilter<CharSequence> f = e.getValue();
             boolean urlBloom = e.getKey().endsWith("_URL");   // MALWARE_URL / PHISHING_URL
             List<String> cands = urlBloom ? urlForms : hostForms;
             for (String c : cands) {
                 if (f.mightContain(c)) {
-                    return e.getKey();
+                    matchedBlooms++;
+                    if (firstCat == null) firstCat = e.getKey();
+                    if (matchedBlooms >= 2) return firstCat;   // confirmed
+                    break;   // count each bloom at most once
                 }
             }
         }
-        return null;
+        return null;   // 0 or 1 match -> treat as clean (single hit = likely FP)
     }
 
     /**
@@ -223,12 +234,12 @@ public final class UrlThreatScanner {
         if (colon >= 0) host = host.substring(0, colon);
         if (host.isEmpty()) return out;
 
-        out.add(host);                              // exact host
-        String[] labels = host.split("\\.");
-        if (labels.length > 2) {                    // registrable domain (eTLD+1 approx)
-            String reg = labels[labels.length - 2] + "." + labels[labels.length - 1];
-            if (!reg.equals(host)) out.add(reg);
-        }
+        // EXACT host only. The earlier registrable-domain reduction
+        // (host + base domain) doubled the per-host bloom lookups, and with 8
+        // filters each at ~1% fpp the independent false-positive probabilities
+        // STACK (1 - 0.99^N), pushing the real per-host FP to ~10-15%. Checking
+        // only the exact host roughly halves that.
+        out.add(host);
         return out;
     }
 

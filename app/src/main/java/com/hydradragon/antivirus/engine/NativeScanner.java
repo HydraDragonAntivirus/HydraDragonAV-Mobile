@@ -66,6 +66,15 @@ public final class NativeScanner {
 
     private static native String nativeScanApk(String path);
 
+    /** Diagnostics: what loaded / failed during the last nativeInit. */
+    private static native String nativeStatus();
+
+    /** Public: human-readable native engine load report (clamav / yrc / model). */
+    public static String status() {
+        if (!LIB_LOADED) return "native lib not loaded (.so missing for this ABI)";
+        try { return nativeStatus(); } catch (Throwable t) { return "status error: " + t; }
+    }
+
     /**
      * Copy bundled assets into internal storage (only if missing or stale) and
      * initialise the native engine. Safe to call multiple times.
@@ -101,7 +110,7 @@ public final class NativeScanner {
             return false;
         }
         ready = nativeInit(dir.getAbsolutePath());
-        Log.i(TAG, "native init " + (ready ? "ok" : "FAILED"));
+        Log.i(TAG, "native init " + (ready ? "ok" : "FAILED") + " | " + status());
         return ready;
     }
 

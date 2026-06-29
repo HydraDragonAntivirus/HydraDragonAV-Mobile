@@ -82,20 +82,50 @@ fn json_escape(s: &str) -> String {
     out
 }
 
+/// Human-readable record of what loaded (and what failed) during the last
+/// `do_init`, so the Java side can log/show the ROOT CAUSE when native scanning
+/// silently does nothing (clamav DB unparsable, model format mismatch, .yrc
+/// version mismatch, …) instead of swallowing it.
+static INIT_STATUS: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
+
+fn set_status(s: String) {
+    if let Ok(mut g) = INIT_STATUS.lock() {
+        *g = s;
+    }
+}
+
 fn do_init(dir: &str) -> Engine {
     let base = std::path::Path::new(dir);
+    let mut report = String::new();
     // ClamAV engine from the bundled DB, then add the compiled .yrc rulesets
     // (compiled only — never .yar source on-device).
     let clamav = match ClamavEngine::from_database_dir(base) {
         Ok((mut eng, _report)) => {
+            report.push_str("clamav=ok");
             for name in YRC_FILES {
-                let _ = eng.add_compiled_yara_file(base.join(name));
+                match eng.add_compiled_yara_file(base.join(name)) {
+                    Some(_) => report.push_str(&format!(" yrc[{}]=ok", name)),
+                    None => report.push_str(&format!(" yrc[{}]=ERR(load/deserialize failed)", name)),
+                }
             }
             Some(eng)
         }
-        Err(_) => None,
+        Err(e) => {
+            report.push_str(&format!("clamav=ERR({})", e));
+            None
+        }
     };
-    let model = Model::load_bin(&base.join(MODEL_BIN)).ok();
+    let model = match Model::load_bin(&base.join(MODEL_BIN)) {
+        Ok(m) => {
+            report.push_str(" model=ok");
+            Some(m)
+        }
+        Err(e) => {
+            report.push_str(&format!(" model=ERR({})", e));
+            None
+        }
+    };
+    set_status(report);
     Engine { clamav, model }
 }
 
@@ -140,6 +170,19 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         JNI_TRUE
     } else {
         JNI_FALSE
+    }
+}
+
+/// `String nativeStatus()` — what loaded / failed during init (diagnostics).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeStatus(
+    env: JNIEnv,
+    _class: JClass,
+) -> jstring {
+    let s = INIT_STATUS.lock().map(|g| g.clone()).unwrap_or_default();
+    match env.new_string(&s) {
+        Ok(j) => j.into_raw(),
+        Err(_) => std::ptr::null_mut(),
     }
 }
 

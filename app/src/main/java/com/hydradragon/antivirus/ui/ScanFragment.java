@@ -193,6 +193,12 @@ public class ScanFragment extends Fragment {
         btnScan.setEnabled(false);
         startScannerAnimation();
 
+        // Surface the native (Rust) engine status so a silent init failure
+        // (clamav DB / model / .yrc) is visible without adb.
+        android.widget.Toast.makeText(getContext(),
+            "Engine: " + com.hydradragon.antivirus.engine.NativeScanner.status(),
+            android.widget.Toast.LENGTH_LONG).show();
+
         attachScanCallback();
         guardService.getScanEngine().scanAllApps(isFullScan);
     }
