@@ -70,15 +70,15 @@ public class SettingsFragment extends Fragment {
             if (getActivity() != null) getActivity().recreate();
         });
 
-        addHeader("Protection");
+        addHeader(getString(R.string.protection_header));
         boolean prot = com.hydradragon.antivirus.engine.ProtectionState.isEnabled(requireContext());
-        addToggle("Real-time Protection", prot, (btn, on) -> {
+        addToggle(getString(R.string.realtime_protection), prot, (btn, on) -> {
             com.hydradragon.antivirus.engine.ProtectionState.setEnabled(requireContext(), on);
             Intent svc = new Intent(requireContext(),
                 com.hydradragon.antivirus.service.GuardService.class);
             if (on) {
                 ContextCompat.startForegroundService(requireContext(), svc);
-                Toast.makeText(getContext(), "Protection enabled", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.protection_enabled), Toast.LENGTH_SHORT).show();
             } else {
                 requireContext().stopService(svc);
                 Toast.makeText(getContext(), "Protection paused — no alerts", Toast.LENGTH_SHORT).show();

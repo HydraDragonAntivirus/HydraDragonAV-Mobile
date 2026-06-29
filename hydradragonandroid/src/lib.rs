@@ -105,9 +105,14 @@ fn do_init(dir: &str) -> Engine {
         Ok(Ok((mut eng, _report))) => {
             report.push_str("clamav=ok");
             for name in YRC_FILES {
-                match eng.add_compiled_yara_file(base.join(name)) {
-                    Some(_) => report.push_str(&format!(" yrc[{}]=ok", name)),
-                    None => report.push_str(&format!(" yrc[{}]=ERR(load/deserialize)", name)),
+                let path = base.join(name);
+                let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    eng.add_compiled_yara_file(&path)
+                }));
+                match added {
+                    Ok(Some(_)) => report.push_str(&format!(" yrc[{}]=ok", name)),
+                    Ok(None) => report.push_str(&format!(" yrc[{}]=ERR(load/deserialize)", name)),
+                    Err(_) => report.push_str(&format!(" yrc[{}]=PANIC({})", name, last_panic())),
                 }
             }
             Some(eng)
@@ -319,6 +324,13 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
                 let mut worst_anomaly = 0.0_f64;
                 let mut nearest: Option<String> = None;
                 for buf in &buffers {
+                    // The model is trained on whole APKs (= zip). Running it on
+                    // raw extracted members (classes.dex, resources, .so, images)
+                    // produces false positives, so only score APK/zip buffers
+                    // (the top-level APK and any APK nested inside a zip).
+                    if hydradragonextractor::detect_format(buf) != Some("zip") {
+                        continue;
+                    }
                     if let Some(r) = model.scan(buf) {
                         if r.malicious {
                             malicious = true;

@@ -184,7 +184,10 @@ public final class UrlThreatScanner {
         if (colon >= 0) host = host.substring(0, colon);
 
         // http + path => URL scan (URL blooms, full URL). Else => domain scan:
-        // check the host AND its main domain (sub-domain split via public suffix).
+        // reduce the host to its main (registrable) domain via the public suffix
+        // list and check ONLY that against the domain blooms. One check per bloom
+        // (not host+main) and sub-domains fold to their base (mc.yandex.ru ->
+        // yandex.ru), avoiding the false positives that flooded every domain.
         boolean urlScan = http && hasPath;
         String main = urlScan ? null : getMainDomain(host);
         for (Map.Entry<String, BloomFilter<CharSequence>> e : filters.entrySet()) {
@@ -192,8 +195,8 @@ public final class UrlThreatScanner {
             BloomFilter<CharSequence> f = e.getValue();
             if (urlScan) {
                 if (urlBloom && f.mightContain(norm)) return e.getKey();
-            } else if (!urlBloom) {
-                if (f.mightContain(host) || (!main.equals(host) && f.mightContain(main))) return e.getKey();
+            } else if (!urlBloom && f.mightContain(main)) {
+                return e.getKey();
             }
         }
         return null;

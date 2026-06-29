@@ -1,5 +1,22 @@
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
+    <string name="root_blocked_title">Rooted Device</string>
+    <string name="root_blocked_msg">This app cannot run on rooted devices.</string>
+    <string name="root_blocked_exit">Exit</string>
+    <string name="native_engine_title">Native Engine</string>
+    <string name="protection_header">Protection</string>
+    <string name="realtime_protection">Real-time Protection</string>
+    <string name="protection_enabled">Protection enabled</string>
+    <string name="protection_paused">Protection paused — no alerts</string>
+    <string name="web_shield">Web Shield (DNS VPN)</string>
+    <string name="web_shield_enabled">Web Shield enabled</string>
+    <string name="web_shield_disabled">Web Shield disabled</string>
+    <string name="vpn_unavailable">VPN unavailable on this device</string>
+    <string name="vpn_consent_denied">VPN consent denied</string>
+    <string name="web_shield_vpn_title">Web Shield (VPN)</string>
+    <string name="web_shield_vpn_msg">HydraDragon can run a LOCAL DNS-filtering VPN to block malicious / phishing sites. It does NOT proxy, decrypt or inspect your traffic — only DNS lookups are filtered, on-device. Android shows a key icon while it\'s active.</string>
+    <string name="enable">Enable</string>
+    <string name="skip">Skip</string>
     <string name="nav_dashboard">Dashboard</string>
     <string name="nav_scan">Scan</string>
     <string name="nav_network">Network</string>

@@ -310,6 +310,11 @@ public class ScanEngine {
         for (ApplicationInfo app : apps) {
             try {
                 if (app.sourceDir == null) continue;
+                // Never deep-flag system files.
+                if ((app.flags & ApplicationInfo.FLAG_SYSTEM) != 0
+                        || (app.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+                        || app.sourceDir.startsWith("/system/") || app.sourceDir.startsWith("/vendor/")
+                        || app.sourceDir.startsWith("/product/") || app.sourceDir.startsWith("/apex/")) continue;
                 if (app.packageName != null && (app.packageName.equals(context.getPackageName())
                         || seen.contains(app.packageName))) continue;
                 NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir);
@@ -382,9 +387,10 @@ public class ScanEngine {
     /** 4) Accessible app-data & system directories (best effort; most need root,
      *  unreadable ones are silently skipped). */
     private void scanAccessibleDataDirs(PackageManager pm, List<ThreatResult> threats) {
+        // No system directories (/system, /vendor, /product) — never scan/flag
+        // system files. Only user-accessible app data.
         String[] roots = {
-            "/sdcard/Android/data", "/sdcard/Android/obb", "/data/local/tmp",
-            "/system/app", "/system/priv-app", "/vendor/app", "/product/app"
+            "/sdcard/Android/data", "/sdcard/Android/obb", "/data/local/tmp"
         };
         for (String r : roots) {
             try {

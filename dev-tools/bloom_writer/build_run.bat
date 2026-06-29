@@ -34,7 +34,7 @@ if !ERRORLEVEL! neq 0 (
     exit /b 1
 )
 
-set FPP=0.01
+set FPP=0.0001
 
 :: Generate one .bloom per "<name>_domains.txt" file. This covers every
 :: category written by gen_domain_bloom.py (phishing, malwareurl, malware,

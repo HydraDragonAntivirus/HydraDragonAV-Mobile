@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirüs</string>
+    <string name="root_blocked_title">Rootlu Cihaz</string>
+    <string name="root_blocked_msg">Bu uygulama rootlu cihazlarda çalışamaz.</string>
+    <string name="root_blocked_exit">Çıkış</string>
+    <string name="native_engine_title">Yerel Motor</string>
+    <string name="protection_header">Koruma</string>
+    <string name="realtime_protection">Gerçek Zamanlı Koruma</string>
+    <string name="protection_enabled">Koruma açık</string>
+    <string name="protection_paused">Koruma duraklatıldı — uyarı yok</string>
+    <string name="web_shield">Web Kalkanı (DNS VPN)</string>
+    <string name="web_shield_enabled">Web Kalkanı açık</string>
+    <string name="web_shield_disabled">Web Kalkanı kapalı</string>
+    <string name="vpn_unavailable">Bu cihazda VPN kullanılamıyor</string>
+    <string name="vpn_consent_denied">VPN izni reddedildi</string>
+    <string name="web_shield_vpn_title">Web Kalkanı (VPN)</string>
+    <string name="web_shield_vpn_msg">HydraDragon, zararlı / phishing siteleri engellemek için YEREL bir DNS filtreleme VPN\'i çalıştırabilir. Trafiğini proxy\'lemez, çözmez veya incelemez — sadece DNS sorguları cihazda filtrelenir. Etkinken Android bir anahtar simgesi gösterir.</string>
+    <string name="enable">Etkinleştir</string>
+    <string name="skip">Atla</string>
     <string name="app_title">ANTİVİRÜS v1.0</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="nav_dashboard">Dashboard</string>

@@ -89,30 +89,33 @@ def extract_domains_from_csv(filepath: str, column: int = 0) -> set:
 
 
 def extract_hostnames_from_urls(filepath: str) -> set:
-    domains = set()
+    # Keep the FULL scheme-less URL (host/path), NOT just the host. Malware is
+    # often hosted on legit platforms (github.com, ...); reducing to the host
+    # would flag the whole platform. The full URL goes into the URL bloom.
+    urls = set()
     with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            url = line.split("://", 1)[1] if "://" in line else line
-            host = url.split("/")[0].split(":")[0]
-            if host:
-                domains.add(host.lower())
-    return domains
+            su = line.split("://", 1)[1] if "://" in line else line
+            if su:
+                urls.add(su.lower())
+    return urls
 
 
 def extract_urls_from_urlhaus_csv(filepath: str) -> set:
-    domains = set()
+    # Full scheme-less URL (host/path), not the bare host — see above.
+    urls = set()
     with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
         for row in csv.reader(f):
             if not row or row[0] == "id" or len(row) <= 2:
                 continue
             url = row[2].strip().lower()
-            host = url.split("://", 1)[1].split("/")[0].split(":")[0] if "://" in url else url.split("/")[0].split(":")[0]
-            if host:
-                domains.add(host)
-    return domains
+            su = url.split("://", 1)[1] if "://" in url else url
+            if su:
+                urls.add(su)
+    return urls
 
 
 def extract_from_optimized(prefix: str, tag: str) -> set:
@@ -208,12 +211,11 @@ def main():
             for entry in entries:
                 if isinstance(entry, str):
                     url = entry.strip().lower()
-                    host = url.split("://", 1)[1] if "://" in url else url
-                    host = host.split("/")[0].split(":")[0]
-                    if host:
-                        phish_urls.add(host)
+                    su = url.split("://", 1)[1] if "://" in url else url
+                    if su:
+                        phish_urls.add(su)   # full scheme-less URL, not bare host
             if phish_urls:
-                print(f"  [PHURL] phishing_links.json: {len(phish_urls):,} domains")
+                print(f"  [PHURL] phishing_links.json: {len(phish_urls):,} urls")
         except Exception as e:
             print(f"  [SKIP] phishing_links.json: {e}")
     categories["phishingurl"] = phish_urls

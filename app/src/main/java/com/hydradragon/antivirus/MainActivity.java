@@ -43,6 +43,20 @@ public class MainActivity extends AppCompatActivity {
         AppCompatDelegate.setDefaultNightMode(dark ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
 
         super.onCreate(savedInstanceState);
+
+        // The app refuses to run on rooted devices (and so never scans/false-flags
+        // system files).
+        if (com.hydradragon.antivirus.engine.RootCheck.isRooted()) {
+            new AlertDialog.Builder(this)
+                .setTitle(R.string.root_blocked_title)
+                .setMessage(R.string.root_blocked_msg)
+                .setCancelable(false)
+                .setPositiveButton(R.string.root_blocked_exit, (d, w) -> finish())
+                .setOnDismissListener(d -> finish())
+                .show();
+            return;
+        }
+
         setContentView(R.layout.activity_main);
 
         bottomNav = findViewById(R.id.bottom_navigation);

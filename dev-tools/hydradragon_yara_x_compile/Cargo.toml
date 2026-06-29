@@ -4,4 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-yara-x = "1.19.0"
+# pulley: compile rules to wasmtime's portable interpreter bytecode so the .yrc
+# loads on 16 KB-page Android (no JIT mprotect) and across all ABIs. MUST match
+# the feature used by hydradragonclamav on-device (serialized module is backend-
+# specific).
+yara-x = { version = "1.19.0", features = ["pulley"] }
