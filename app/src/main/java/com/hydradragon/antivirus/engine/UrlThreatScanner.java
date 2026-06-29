@@ -201,32 +201,34 @@ public final class UrlThreatScanner {
     }
 
     /**
-     * Derive plain-text host candidates from a scheme-less {@code host[:port]/path}
-     * string: the full host plus each suffix obtained by stripping leftmost
-     * labels, down to the last two labels (the registrable domain).
+     * Derive the plain-text domain candidates from a scheme-less
+     * {@code host[:port]/path} string for domain-bloom matching:
+     * <ol>
+     *   <li>the exact host (catches sub-domain blacklist entries), and</li>
+     *   <li>its registrable domain — the last two labels (catches the case
+     *       where the URL lives on a sub-domain but the base domain itself is
+     *       blacklisted).</li>
+     * </ol>
+     * No intermediate cascade levels are emitted, so unrelated middle
+     * sub-domains can never spuriously match.
      */
     static List<String> hostCandidates(String schemeless) {
         List<String> out = new ArrayList<>();
-        String rest = schemeless;
-        int slash = rest.indexOf('/');
-        String host = (slash >= 0) ? rest.substring(0, slash) : rest;
+        String host = schemeless;
+        int slash = host.indexOf('/');
+        if (slash >= 0) host = host.substring(0, slash);
         int at = host.indexOf('@');                 // strip userinfo
         if (at >= 0) host = host.substring(at + 1);
         int colon = host.indexOf(':');              // strip port
         if (colon >= 0) host = host.substring(0, colon);
         if (host.isEmpty()) return out;
 
+        out.add(host);                              // exact host
         String[] labels = host.split("\\.");
-        // Full host, then strip one leftmost label at a time down to 2 labels.
-        for (int i = 0; i + 1 < labels.length; i++) {
-            StringBuilder sb = new StringBuilder();
-            for (int j = i; j < labels.length; j++) {
-                if (j > i) sb.append('.');
-                sb.append(labels[j]);
-            }
-            out.add(sb.toString());
+        if (labels.length > 2) {                    // registrable domain (eTLD+1 approx)
+            String reg = labels[labels.length - 2] + "." + labels[labels.length - 1];
+            if (!reg.equals(host)) out.add(reg);
         }
-        if (labels.length == 1) out.add(host);      // single-label host
         return out;
     }
 
