@@ -189,6 +189,11 @@ public class SettingsFragment extends Fragment {
     }
 
     private void disableWebShield() {
+        // Deliver an explicit STOP action so the running service tears the tunnel
+        // down deterministically, then also stopService as a belt-and-braces.
+        Intent svc = new Intent(requireContext(), com.hydradragon.antivirus.service.DnsVpnService.class);
+        svc.setAction(com.hydradragon.antivirus.service.DnsVpnService.ACTION_STOP);
+        try { requireContext().startService(svc); } catch (Throwable ignore) {}
         requireContext().stopService(
             new Intent(requireContext(), com.hydradragon.antivirus.service.DnsVpnService.class));
         Toast.makeText(getContext(), "Web Shield disabled", Toast.LENGTH_SHORT).show();

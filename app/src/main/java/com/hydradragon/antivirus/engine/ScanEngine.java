@@ -69,6 +69,16 @@ public class ScanEngine {
     }
     private ScanCallback callback;
     private BloomFilter<CharSequence> whitelistBloomFilter;
+    /** Set by {@link #cancelScan()} to abort an in-flight scan at the next loop
+     *  boundary. Volatile so the UI thread's request is seen by the scan thread. */
+    private volatile boolean cancelRequested = false;
+
+    /** Request the running scan to stop as soon as possible (checked between
+     *  files/apps, so an already-started native scan of one file still finishes). */
+    public void cancelScan() { cancelRequested = true; }
+
+    /** Whether a stop was requested for the current/last scan. */
+    public boolean isCancelled() { return cancelRequested; }
 
     public interface ScanCallback {
         void onProgress(int current, int total, String packageName);
@@ -125,6 +135,7 @@ public class ScanEngine {
     public void setCallback(ScanCallback callback) { this.callback = callback; }
 
     public void scanAllApps(boolean isFullScan) {
+        cancelRequested = false;
         scanExecutor.execute(() -> {
             PackageManager pm = context.getPackageManager();
             List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
@@ -132,6 +143,7 @@ public class ScanEngine {
             int total = apps.size();
 
             for (int i = 0; i < total; i++) {
+                if (cancelRequested) break;
                 ApplicationInfo app = apps.get(i);
                 try {
                     if (callback != null) callback.onProgress(i + 1, total, app.packageName);
@@ -144,7 +156,7 @@ public class ScanEngine {
             }
 
             try {
-                if (isFullScan) {
+                if (isFullScan && !cancelRequested) {
                     // Full scan = quick scan PLUS four extra passes:
                     //  1) every file under ALL storage volumes (not just /sdcard)
                     //  2) deep native (clamav/YARA/ML) scan of every installed APK
@@ -154,7 +166,7 @@ public class ScanEngine {
                     deepNativeScanInstalledApks(apps, pm, threats);
                     scanRecentProcesses(pm, threats);
                     scanAccessibleDataDirs(pm, threats);
-                } else {
+                } else if (!cancelRequested) {
                     // Quick scan: only APKs in Downloads.
                     scanDirectoryForApks(
                         android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
@@ -173,6 +185,7 @@ public class ScanEngine {
         java.io.File[] files = dir.listFiles();
         if (files == null) return;
         for (java.io.File file : files) {
+            if (cancelRequested) return;
             if (file.isDirectory()) {
                 scanDirectoryForApks(file, pm, threats, fullScan);
             } else if (file.getName().toLowerCase().endsWith(".apk")) {
@@ -294,6 +307,7 @@ public class ScanEngine {
             }
         } catch (Throwable ignore) { }
         for (String r : roots) {
+            if (cancelRequested) return;
             try { scanDirectoryForApks(new java.io.File(r), pm, threats, true); }
             catch (Throwable ignore) { }
         }
@@ -308,6 +322,7 @@ public class ScanEngine {
         java.util.HashSet<String> seen = new java.util.HashSet<>();
         for (ThreatResult t : threats) if (t.getPackageName() != null) seen.add(t.getPackageName());
         for (ApplicationInfo app : apps) {
+            if (cancelRequested) return;
             try {
                 if (app.sourceDir == null) continue;
                 // Never deep-flag system files.
@@ -369,6 +384,7 @@ public class ScanEngine {
             java.util.HashSet<String> seen = new java.util.HashSet<>();
             for (ThreatResult t : threats) if (t.getPackageName() != null) seen.add(t.getPackageName());
             for (android.app.usage.UsageStats s : stats) {
+                if (cancelRequested) return;
                 String pkg = s.getPackageName();
                 if (pkg == null || seen.contains(pkg) || pkg.equals(context.getPackageName())) continue;
                 seen.add(pkg);
@@ -393,6 +409,7 @@ public class ScanEngine {
             "/sdcard/Android/data", "/sdcard/Android/obb", "/data/local/tmp"
         };
         for (String r : roots) {
+            if (cancelRequested) return;
             try {
                 java.io.File f = new java.io.File(r);
                 if (f.isDirectory() && f.canRead()) scanDirectoryForApks(f, pm, threats, true);

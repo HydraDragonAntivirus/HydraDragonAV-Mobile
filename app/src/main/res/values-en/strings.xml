@@ -25,4 +25,7 @@
     <string name="system_safe">SYSTEM SAFE</string>
     <string name="developers">Developers: Musayev Yusif and Emirhan Ucan</string>
     <string name="accessibility_desc">HydraDragon monitors browser URLs to protect you from malicious websites.</string>
+    <string name="scan_stop">⛔ STOP</string>
+    <string name="scan_stopping">Stopping…</string>
+    <string name="scan_stopped">⏹ Scan stopped</string>
 </resources>

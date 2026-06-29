@@ -110,8 +110,8 @@ public class ScanFragment extends Fragment {
         }
 
         if (isScanning) {
-            btnScan.setText(getString(R.string.scanning));
-            btnScan.setEnabled(false);
+            btnScan.setText(getString(R.string.scan_stop));
+            btnScan.setEnabled(true);
             startScannerAnimation();
         }
 
@@ -162,7 +162,10 @@ public class ScanFragment extends Fragment {
                 .show();
         });
 
-        btnScan.setOnClickListener(v -> { if (!isScanning) showScanTypeDialog(); });
+        btnScan.setOnClickListener(v -> {
+            if (!isScanning) showScanTypeDialog();
+            else stopScan();
+        });
     }
 
     private void showScanTypeDialog() {
@@ -189,8 +192,8 @@ public class ScanFragment extends Fragment {
         foundThreats.clear();
         threatAdapter.notifyDataSetChanged();
 
-        btnScan.setText(getString(R.string.scanning));
-        btnScan.setEnabled(false);
+        btnScan.setText(getString(R.string.scan_stop));
+        btnScan.setEnabled(true);
         startScannerAnimation();
 
         // Surface the native (Rust) engine status so a silent init failure
@@ -201,6 +204,16 @@ public class ScanFragment extends Fragment {
 
         attachScanCallback();
         guardService.getScanEngine().scanAllApps(isFullScan);
+    }
+
+    /** Stop button: request the engine to abort. The in-flight scan ends at its
+     *  next file/app boundary and fires onScanComplete with what was found. */
+    private void stopScan() {
+        if (!serviceBound || guardService == null) return;
+        guardService.getScanEngine().cancelScan();
+        btnScan.setText(getString(R.string.scan_stopping));
+        btnScan.setEnabled(false);
+        tvCurrentApp.setText(getString(R.string.scan_stopping));
     }
 
     private void attachScanCallback() {
@@ -237,12 +250,18 @@ public class ScanFragment extends Fragment {
                     isScanning = false;
                     return;
                 }
+                boolean wasCancelled = serviceBound && guardService != null
+                    && guardService.getScanEngine().isCancelled();
                 getActivity().runOnUiThread(() -> {
                     isScanning = false;
                     stopScannerAnimation();
                     btnScan.setText(getString(R.string.rescan));
                     btnScan.setEnabled(true);
-                    if (result.isClean()) {
+                    if (wasCancelled) {
+                        lastScanStatus = getString(R.string.scan_stopped);
+                        tvScanStatus.setText(lastScanStatus);
+                        tvScanStatus.setTextColor(0xFFFFAA00);
+                    } else if (result.isClean()) {
                         lastScanStatus = getString(R.string.scan_clean_system);
                         tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFF00FF88);

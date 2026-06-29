@@ -55,6 +55,9 @@
     <string name="scan_system">SCAN SYSTEM</string>
     <string name="rescan">RESCAN</string>
     <string name="scanning">SCANNING...</string>
+    <string name="scan_stop">⛔ STOP</string>
+    <string name="scan_stopping">Stopping…</string>
+    <string name="scan_stopped">⏹ Scan stopped</string>
     <string name="scanned">SCANNED</string>
     <string name="threat">THREAT</string>
     <string name="found_threats">⚠ MALICIOUS FILES DETECTED</string>

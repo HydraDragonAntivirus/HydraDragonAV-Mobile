@@ -55,6 +55,9 @@
     <string name="scan_system">SİSTEMİ TARA</string>
     <string name="rescan">YENİDEN TARA</string>
     <string name="scanning">TARANIYOR...</string>
+    <string name="scan_stop">⛔ DURDUR</string>
+    <string name="scan_stopping">Durduruluyor…</string>
+    <string name="scan_stopped">⏹ Tarama durduruldu</string>
     <string name="scanned">TARANAN</string>
     <string name="threat">TEHDİT</string>
     <string name="found_threats">⚠ BULUNAN TEHDİTLER</string>

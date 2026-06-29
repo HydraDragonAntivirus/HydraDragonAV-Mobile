@@ -39,6 +39,10 @@ public class DnsVpnService extends VpnService {
 
     private static final String TAG = "DnsVpnService";
     private static final String CH_ID = "hydra_webshield";
+    /** Explicit stop command — delivered via {@code startService(intent)} so the
+     *  running service tears the tunnel down deterministically (more reliable than
+     *  {@code stopService()} alone for a sticky foreground VPN). */
+    public static final String ACTION_STOP = "com.hydradragon.antivirus.STOP_VPN";
 
     private static final String TUN4 = "10.111.222.1";
     private static final String DNS4 = "10.111.222.2";
@@ -54,7 +58,13 @@ public class DnsVpnService extends VpnService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (running) return START_STICKY;
+        // Explicit stop from the Settings toggle: tear down and don't come back.
+        if (intent != null && ACTION_STOP.equals(intent.getAction())) {
+            teardown();
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        if (running) return START_NOT_STICKY;
         startForegroundShield();
         forwarders = Executors.newCachedThreadPool();
         if (establish()) {
@@ -64,7 +74,19 @@ public class DnsVpnService extends VpnService {
         } else {
             stopSelf();
         }
-        return START_STICKY;
+        // NOT sticky: a user-toggled VPN must stay off once stopped; on launch
+        // MainActivity re-arms it from the saved preference if still enabled.
+        return START_NOT_STICKY;
+    }
+
+    /** Stop the tunnel: end the read loop, close the interface, drop foreground. */
+    private void teardown() {
+        running = false;
+        if (worker != null) { worker.interrupt(); worker = null; }
+        if (forwarders != null) { forwarders.shutdownNow(); forwarders = null; }
+        try { if (vpnInterface != null) { vpnInterface.close(); vpnInterface = null; } }
+        catch (Exception ignore) {}
+        try { stopForeground(true); } catch (Exception ignore) {}
     }
 
     private boolean establish() {
@@ -425,10 +447,16 @@ public class DnsVpnService extends VpnService {
 
     @Override
     public void onDestroy() {
-        running = false;
-        if (worker != null) worker.interrupt();
-        if (forwarders != null) forwarders.shutdownNow();
-        try { if (vpnInterface != null) vpnInterface.close(); } catch (Exception ignore) {}
+        teardown();
         super.onDestroy();
+    }
+
+    /** Android calls this when the user revokes VPN permission or another VPN
+     *  starts — mirror it into a clean teardown so the tunnel never lingers. */
+    @Override
+    public void onRevoke() {
+        teardown();
+        stopSelf();
+        super.onRevoke();
     }
 }
