@@ -145,11 +145,15 @@ public class ScanEngine {
 
             try {
                 if (isFullScan) {
-                    // Full scan: EVERY file under external storage. APKs get the
-                    // full app analysis (permissions + code + native); every other
-                    // file type is routed through the native engine, which unpacks
-                    // archives via hydradragonextractor and runs clamav/YARA + ML.
-                    scanDirectoryForApks(android.os.Environment.getExternalStorageDirectory(), pm, threats, true);
+                    // Full scan = quick scan PLUS four extra passes:
+                    //  1) every file under ALL storage volumes (not just /sdcard)
+                    //  2) deep native (clamav/YARA/ML) scan of every installed APK
+                    //  3) running / recently-active processes
+                    //  4) accessible app-data & system directories
+                    scanAllStorageRoots(pm, threats);
+                    deepNativeScanInstalledApks(apps, pm, threats);
+                    scanRecentProcesses(pm, threats);
+                    scanAccessibleDataDirs(pm, threats);
                 } else {
                     // Quick scan: only APKs in Downloads.
                     scanDirectoryForApks(
@@ -270,6 +274,124 @@ public class ScanEngine {
                 if (callback != null) callback.onThreatFound(r);
             }
         } catch (Throwable t) { /* degrade gracefully */ }
+    }
+
+    // ──────────────────────── FULL-SCAN EXTRA PASSES ────────────────────────
+
+    /** 1) Every file under ALL mounted storage volumes, not just primary /sdcard. */
+    private void scanAllStorageRoots(PackageManager pm, List<ThreatResult> threats) {
+        java.util.LinkedHashSet<String> roots = new java.util.LinkedHashSet<>();
+        try {
+            java.io.File primary = android.os.Environment.getExternalStorageDirectory();
+            if (primary != null) roots.add(primary.getAbsolutePath());
+        } catch (Throwable ignore) { }
+        try {
+            java.io.File[] vols = new java.io.File("/storage").listFiles();
+            if (vols != null) for (java.io.File v : vols) {
+                String n = v.getName();
+                if (v.isDirectory() && v.canRead() && !n.equals("self") && !n.equals("emulated"))
+                    roots.add(v.getAbsolutePath());
+            }
+        } catch (Throwable ignore) { }
+        for (String r : roots) {
+            try { scanDirectoryForApks(new java.io.File(r), pm, threats, true); }
+            catch (Throwable ignore) { }
+        }
+    }
+
+    /** 2) Deep native (clamav/YARA/ML) scan of every installed app's APK — runs
+     *  even on name-whitelisted apps, since a signature/hash match is stronger
+     *  than a trusted package name. Hash/package whitelist still suppresses FPs. */
+    private void deepNativeScanInstalledApks(List<ApplicationInfo> apps, PackageManager pm,
+                                             List<ThreatResult> threats) {
+        if (!NativeScanner.isReady()) return;
+        java.util.HashSet<String> seen = new java.util.HashSet<>();
+        for (ThreatResult t : threats) if (t.getPackageName() != null) seen.add(t.getPackageName());
+        for (ApplicationInfo app : apps) {
+            try {
+                if (app.sourceDir == null) continue;
+                if (app.packageName != null && (app.packageName.equals(context.getPackageName())
+                        || seen.contains(app.packageName))) continue;
+                NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir);
+                if (v == null || !v.malicious) continue;
+                boolean wl = false;
+                if (whitelistBloomFilter != null) {
+                    if (app.packageName != null && whitelistBloomFilter.mightContain(app.packageName)) wl = true;
+                    for (String h : v.hashes) if (whitelistBloomFilter.mightContain(h)) { wl = true; break; }
+                }
+                if (wl) continue;
+                ThreatResult.Builder b = new ThreatResult.Builder(
+                    app.packageName != null ? app.packageName : app.sourceDir);
+                List<String> reasons = new java.util.ArrayList<>();
+                boolean real = v.mlMalicious;
+                for (String m : v.matches) {
+                    boolean pua = isPuaName(m);
+                    if (!pua) real = true;
+                    reasons.add((pua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + m);
+                }
+                b.setThreatType(real
+                    ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
+                    : com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
+                b.setRiskScore(real ? 100 : 50);
+                if (v.sha256 != null && !v.sha256.isEmpty())
+                    reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.sha256);
+                b.setReasons(reasons);
+                CharSequence label = pm.getApplicationLabel(app);
+                b.setAppName((label != null ? label.toString() : app.packageName) + " (DEEP)");
+                b.setApkPath(app.sourceDir);
+                ThreatResult r = b.build();
+                if (r.isThreat()) {
+                    threats.add(r);
+                    if (app.packageName != null) seen.add(app.packageName);
+                    if (callback != null) callback.onThreatFound(r);
+                }
+            } catch (Throwable ignore) { }
+        }
+    }
+
+    /** 3) Recently-active processes. Android 8+ restricts getRunningAppProcesses
+     *  to our own process, so we use UsageStats to find recently-run packages and
+     *  make sure they were analyzed. */
+    private void scanRecentProcesses(PackageManager pm, List<ThreatResult> threats) {
+        try {
+            android.app.usage.UsageStatsManager usm = (android.app.usage.UsageStatsManager)
+                context.getSystemService(Context.USAGE_STATS_SERVICE);
+            if (usm == null) return;
+            long now = System.currentTimeMillis();
+            java.util.List<android.app.usage.UsageStats> stats = usm.queryUsageStats(
+                android.app.usage.UsageStatsManager.INTERVAL_DAILY, now - 24L * 3600 * 1000, now);
+            if (stats == null) return;
+            java.util.HashSet<String> seen = new java.util.HashSet<>();
+            for (ThreatResult t : threats) if (t.getPackageName() != null) seen.add(t.getPackageName());
+            for (android.app.usage.UsageStats s : stats) {
+                String pkg = s.getPackageName();
+                if (pkg == null || seen.contains(pkg) || pkg.equals(context.getPackageName())) continue;
+                seen.add(pkg);
+                try {
+                    ApplicationInfo ai = pm.getApplicationInfo(pkg, 0);
+                    ThreatResult r = analyzeApp(ai, pm, false);
+                    if (r != null && r.isThreat()) {
+                        threats.add(r);
+                        if (callback != null) callback.onThreatFound(r);
+                    }
+                } catch (Throwable ignore) { }
+            }
+        } catch (Throwable ignore) { }
+    }
+
+    /** 4) Accessible app-data & system directories (best effort; most need root,
+     *  unreadable ones are silently skipped). */
+    private void scanAccessibleDataDirs(PackageManager pm, List<ThreatResult> threats) {
+        String[] roots = {
+            "/sdcard/Android/data", "/sdcard/Android/obb", "/data/local/tmp",
+            "/system/app", "/system/priv-app", "/vendor/app", "/product/app"
+        };
+        for (String r : roots) {
+            try {
+                java.io.File f = new java.io.File(r);
+                if (f.isDirectory() && f.canRead()) scanDirectoryForApks(f, pm, threats, true);
+            } catch (Throwable ignore) { }
+        }
     }
 
     public ThreatResult analyzeSingleApp(ApplicationInfo app, PackageManager pm, boolean isApkFile) {

@@ -148,7 +148,6 @@ public class DnsVpnService extends VpnService {
 
         String cat = UrlThreatScanner.get(this).scanUrl("http://" + host);
         if (cat != null) {
-            Log.e(TAG, "BLOCKED DNS/udp (" + cat + "): " + host);
             byte[] dns = nxdomain(p, dnsOff, len);
             writeTun(buildUdp(p, ver, ipHdr, srcOff, dstOff, dns, dns.length));
             notifyBlocked(host, cat);
@@ -207,20 +206,18 @@ public class DnsVpnService extends VpnService {
             if (host != null && !host.isEmpty()) {
                 String cat = UrlThreatScanner.get(this).scanUrl("http://" + host);
                 if (cat != null) {
-                    Log.e(TAG, "BLOCKED DNS/tcp (" + cat + "): " + host);
                     byte[] dnsR = nxdomain(p, dnsStart, dnsStart + dnsLen);
                     byte[] framed = frameTcpDns(dnsR);
                     byte[] data = buildTcp(p, ver, ipHdr, srcOff, dstOff, tcp,
-                        ourSeq, clientNext, 0x18 /*PSH,ACK*/, framed, framed.length);
+                        ourSeq, clientNext, 0x18, framed, framed.length);
                     writeTun(data);
                     byte[] f = buildTcp(p, ver, ipHdr, srcOff, dstOff, tcp,
-                        (ourSeq + framed.length) & 0xFFFFFFFFL, clientNext, 0x11 /*FIN,ACK*/, null, 0);
+                        (ourSeq + framed.length) & 0xFFFFFFFFL, clientNext, 0x11, null, 0);
                     writeTun(f);
                     notifyBlocked(host, cat);
                     return;
                 }
             }
-            // Clean: forward to upstream over TCP and relay the reply.
             final byte[] query = slice(p, payloadOff, payloadLen);   // includes 2-byte length
             final int fVer = ver, fIpHdr = ipHdr, fSrc = srcOff, fDst = dstOff, fTcp = tcp;
             final long fClientNext = clientNext, fOurSeq = 1001L;

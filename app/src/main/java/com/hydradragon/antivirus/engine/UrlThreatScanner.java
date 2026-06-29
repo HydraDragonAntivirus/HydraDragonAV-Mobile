@@ -139,45 +139,35 @@ public final class UrlThreatScanner {
      * @return the matching category (e.g. "PHISHING_URL"), or null if clean.
      */
     public String scanUrl(String url) {
-        // steamcommunity.com typosquat phishing (real one is whitelisted inside).
-        if (isSteamFake(url)) {
-            return "STEAM_PHISHING";
-        }
+        if (isSteamFake(url)) return "STEAM_PHISHING";
+        if (url == null) return null;
+        String lower = url.trim().toLowerCase(Locale.US);
+        boolean http = lower.startsWith("http://");
+        boolean https = lower.startsWith("https://");
+        if (!http && !https) return null;
 
-        String norm = normalize(url);
+        String norm = normalize(url);   // scheme-less host[/path]
         if (norm == null) return null;
+        int slash = norm.indexOf('/');
+        boolean hasPath = slash >= 0 && slash < norm.length() - 1;
+        String host = (slash >= 0) ? norm.substring(0, slash) : norm;
+        int colon = host.indexOf(':');
+        if (colon >= 0) host = host.substring(0, colon);
 
-        // Full-URL candidates go ONLY to the URL blooms; host/domain candidates
-        // go ONLY to the domain blooms. Mixing them (checking the bare host
-        // "github.com" against the URL blooms, which hold full URLs like
-        // "github.com/user/malware.exe") caused legit domains to be flagged.
-        List<String> urlForms = new ArrayList<>();
-        urlForms.add(norm);
-        urlForms.add(norm.endsWith("/") ? norm.substring(0, norm.length() - 1) : norm + "/");
-        List<String> hostForms = hostCandidates(norm);
+        // http + path => URL scan (URL blooms, full URL). https, or http bare
+        // domain (subdomain too) => domain scan (domain blooms, host).
+        boolean urlScan = http && hasPath;
 
-        // Require TWO independent bloom matches before flagging. Each filter has
-        // ~1% false-positive rate, and across 8 filters those independent FPs
-        // STACK to ~10-15% per host — which is why benign sites kept getting
-        // flagged. A real malicious host is typically present in several feeds,
-        // so it still hits 2+ blooms; a random FP almost never hits two (≈1%×1%).
-        // (URL FP recall trade-off accepted to kill the false-positive flood.)
-        String firstCat = null;
-        int matchedBlooms = 0;
         for (Map.Entry<String, BloomFilter<CharSequence>> e : filters.entrySet()) {
-            BloomFilter<CharSequence> f = e.getValue();
             boolean urlBloom = e.getKey().endsWith("_URL");   // MALWARE_URL / PHISHING_URL
-            List<String> cands = urlBloom ? urlForms : hostForms;
-            for (String c : cands) {
-                if (f.mightContain(c)) {
-                    matchedBlooms++;
-                    if (firstCat == null) firstCat = e.getKey();
-                    if (matchedBlooms >= 2) return firstCat;   // confirmed
-                    break;   // count each bloom at most once
-                }
+            BloomFilter<CharSequence> f = e.getValue();
+            if (urlScan) {
+                if (urlBloom && f.mightContain(norm)) return e.getKey();
+            } else {
+                if (!urlBloom && f.mightContain(host)) return e.getKey();
             }
         }
-        return null;   // 0 or 1 match -> treat as clean (single hit = likely FP)
+        return null;
     }
 
     /**
