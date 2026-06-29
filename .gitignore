@@ -7,5 +7,5 @@ __pycache__/
 allblooms/MalwareDomains.optimized.csv
 downloads/
 # YARA-X compiled files
-*.yrc
+yara-x/compiled/
 whitelist/

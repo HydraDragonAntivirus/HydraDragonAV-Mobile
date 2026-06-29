@@ -93,12 +93,30 @@ _MZ_MAGIC_RE = re.compile(
     r'uint16\s*\(\s*0\s*\)\s*==\s*0x5a4d|0x5a4d\s*==\s*uint16\s*\(\s*0\s*\)'
 )
 
-# ELF "\x7fELF" magic-header check via uint16(0), e.g. uint16(0) == 0x457f
-# (little-endian read of the first two header bytes 0x7f 0x45). Order-agnostic
-# and whitespace-insensitive. A hit marks the rule as native/Linux-related and
-# therefore "verified" for the Android/Linux target. Matched on lowercased text.
+# ELF "\x7fELF" magic-header detection in every form a YARA rule expresses it.
+# The header bytes are 0x7f 'E' 'L' 'F' == 7f 45 4c 46. A hit marks the rule as
+# native/Linux-related and therefore "verified" for the Android/Linux target.
+# Order-agnostic and whitespace-insensitive (\s* spans newlines); matched on the
+# lowercased block, so 0x464C457F / "ELF" / "\x7FELF" all fold to lower case.
+#
+# Covered forms:
+#   uint16(0)   == 0x457f        first two bytes 7f 45, little-endian
+#   uint32(0)   == 0x464c457f    four bytes 7f 45 4c 46, little-endian
+#   uint32be(0) == 0x7f454c46    big-endian read
+#   hex string  { 7f 45 4c 46 } / contiguous 7f454c46 (any spacing)
+#   text literal "\x7fELF"
+#   bare 32-bit magic literal 0x464c457f / 0x7f454c46 (distinctive enough alone)
 _ELF_MAGIC_RE = re.compile(
-    r'uint16\s*\(\s*0\s*\)\s*==\s*0x457f|0x457f\s*==\s*uint16\s*\(\s*0\s*\)'
+    r'uint16\s*\(\s*0\s*\)\s*==\s*0x457f'
+    r'|0x457f\s*==\s*uint16\s*\(\s*0\s*\)'
+    r'|uint32\s*\(\s*0\s*\)\s*==\s*0x464c457f'
+    r'|0x464c457f\s*==\s*uint32\s*\(\s*0\s*\)'
+    r'|uint32be\s*\(\s*0\s*\)\s*==\s*0x7f454c46'
+    r'|0x7f454c46\s*==\s*uint32be\s*\(\s*0\s*\)'
+    r'|\b7f\s*45\s*4c\s*46\b'
+    r'|\\x7f\s*elf'
+    r'|0x464c457f'
+    r'|0x7f454c46'
 )
 
 
@@ -399,7 +417,8 @@ def is_android_related(block, verify_terms):
     if "0x4b50" in text:
         return True
     # ELF native/Linux signals: elf module usage (elf. namespace or import "elf")
-    # and the ELF uint16 magic header pattern.
+    # and the ELF magic header in any form — uint16/uint32 (LE & BE), hex-string
+    # bytes 7f 45 4c 46, the "\x7fELF" text literal, or the bare 32-bit magic.
     if _ELF_MAGIC_RE.search(text):
         return True
     if uses_non_android_module(block, {"elf"}):

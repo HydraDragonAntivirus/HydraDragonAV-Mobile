@@ -322,28 +322,6 @@ rule generic_poco_openssl {
     all of them
 }
 
-rule RAN_ELF_Hive_March_2021_1: elf hive v5 x64 {
-  meta:
-    description = "Detect ELF version of Hive ransomware (x64 version)"
-    author      = "Arkbird_SOLG"
-    reference   = "Internal Research"
-    date        = "2021-03-26"
-    hash1       = "058aabdef6b04620902c4354ce40c2e2d8ff2c0151649535c66d870f45318516"
-    hash2       = "2e52494e776be6433c89d5853f02b536f7da56e94bbe86ae4cc782f85bed2c4b"
-    tlp         = "white"
-    adversary   = "Hive"
-    level       = "Experimental"
-
-  strings:
-    $s1 = { ff 54 1d 00 84 c0 75 43 48 83 c3 10 49 83 c7 ff 75 c6 48 8b 54 24 40 eb 02 31 d2 48 89 d1 48 c1 e1 04 49 03 0c 24 31 c0 49 3b 54 24 08 48 0f 42 c1 73 1c 48 8b }
-    $s2 = { 48 8d 1d d5 b1 23 00 49 89 de 49 c1 ee 08 48 c1 e3 38 48 83 cb 28 41 b7 04 80 f9 03 75 54 48 8b 6c 24 18 48 8b 7d 00 48 8b 45 08 ff 10 48 8b 45 08 48 83 78 08 00 74 0a 48 8b 7d 00 ff 15 5a c8 23 00 48 8b 7c 24 18 ff 15 4f c8 23 00 eb }
-    $s3 = { 48 8d 05 67 b2 23 00 48 89 44 24 10 48 c7 44 24 18 01 00 00 00 48 c7 44 24 20 00 00 00 00 48 8d 05 49 0b 03 00 48 89 44 24 30 48 c7 44 24 38 00 00 00 00 48 8d 74 24 10 4c 89 ff 41 ff d5 3c 03 0f 85 a1 00 00 00 48 89 d3 eb 76 4c 8d 25 e4 c8 23 00 4c 89 e7 ff 15 43 c7 23 00 88 5c 24 0f 48 8d 44 24 0f 48 89 44 24 40 48 8d 05 1e 0c 00 00 48 89 44 24 48 48 8d 05 4a ab 23 00 48 89 44 24 10 48 c7 44 24 18 01 00 00 00 48 c7 44 24 20 00 00 00 00 4c 89 74 24 30 48 c7 44 24 38 01 00 00 00 48 8d 74 24 10 4c 89 ff 41 ff d5 49 89 c6 48 89 d3 4c 89 e7 ff 15 7b c5 23 00 41 80 fe 03 75 26 48 8b 3b 48 8b 43 08 ff 10 48 8b 43 08 48 83 78 08 00 74 09 48 8b 3b ff 15 58 }
-    $s4 = { 49 8b 1f 49 8b 6f 08 48 89 df ff 55 00 48 83 7d 08 00 74 09 48 89 df ff 15 5e 40 21 00 4c 89 ff ff 15 55 40 21 00 48 8b 44 24 18 f0 48 ff 08 75 0a 48 8d 7c 24 18 e8 cc 00 00 00 49 c1 e6 20 48 8b 44 24 10 f0 48 ff 08 75 0a 48 8d 7c 24 10 e8 b9 f9 ff ff 48 8d 54 24 50 4c 89 32 48 c7 42 08 00 00 00 00 48 8d 3d 3e 89 00 00 48 8d 0d 19 3b 21 00 4c 8d 05 12 3d 21 00 be 2b 00 00 00 eb 31 48 29 e8 48 8d 54 24 50 48 89 02 48 89 6a 08 4c 89 62 10 4c 89 62 18 48 8d 3d 64 88 00 00 48 8d 0d 86 3a 21 00 4c 8d 05 1f 3a 21 00 be 2f 00 00 }
-
-  condition:
-    uint32(0) == 0x464C457F and filesize > 60KB and all of ($s*)
-}
-
 rule panchan {
   meta:
     author    = "Stiv Kupchik"
@@ -519,111 +497,6 @@ rule HelimodSteal {
    ESET_Apachemodule_PRIVATE and any of ($h*) and any of ($s*)
 }
 
-rule M_Sniffer_LOOKOVER_1 {
-  meta:
-    author = "Mandiant"
-
-  strings:
-    $str1 = "TKEY"
-    $str2 = "FILTER"
-    $str3 = "DEVICE"
-    $str4 = "SNFILENAME"
-    $str5 = "/var/lib/libsyslog.so"
-    $code = { 8B 55 F8 48 8B 45 E8 48 01 C2 8B 45 FC 48 8D 0C 85 00 00 00 00 48 8B 45 E0 48 01 C8 8B 00 88 02 8B 45 F8 83 C0 01 89 C2 48 8B 45 E8 48 01 C2 8B 45 FC 48 8D 0C 85 00 00 00 00 48 8B 45 E0 48 01 C8 8B 00 C1 E8 08 88 02 8B 45 F8 83 C0 02 89 C2 48 8B 45 E8 48 01 C2 8B 45 FC 48 8D 0C 85 00 00 00 00 48 8B 45 E0 48 01 C8 8B 00 C1 E8 10 88 02 8B 45 F8 83 C0 03 89 C2 48 8B 45 E8 48 01 C2 8B 45 FC 48 8D 0C 85 00 00 00 00 48 8B 45 E0 48 01 C8 8B 00 C1 E8 18 88 02 83 45 FC 01 83 45 F8 04 }
-
-  condition:
-    uint32(0) == 0x464c457f and filesize < 5MB and all of them
-}
-
-rule M_Utility_GHOSTTOWN_1 {
-  meta:
-    author = "Mandiant"
-
-  strings:
-    $code1    = "/var/log"
-    $code2    = "/var/run"
-    $debug1   = "=== results ===" ascii
-    $debug2   = "=== %s ===" ascii
-    $debug3   = "searching record in file %s" ascii
-    $debug4   = "record not matched, not modifing %s" ascii
-    $debug5   = "delete %d records in %s" ascii
-    $debug6   = "NEVER_LOGIN" ascii
-    $debug7   = "you need to specify a username to clear" ascii
-    $pattern1 = "%-10s%-10s%-10s%-20s%-10s" ascii
-    $pattern2 = "%-15s%-10s%-15s%-10s" ascii
-
-  condition:
-    uint32(0) == 0x464C457F and all of them
-}
-
-rule M_Utility_VIRTUALPEER_1 {
-  meta:
-    author = "Mandiant"
-
-  strings:
-    $vmci_socket_family           = { B? 00 00 00 00 B? 02 00 00 00 B? 28 00 00 00 e8 [4-128] B? 00 00 00 00 48 8d [5] b? 00 00 00 00 e8 [4-64] B? 00 00 00 00 48 8d [5] b? 00 00 00 00 e8 [4-64] B? B8 07 00 00 [0-8] b? 00 00 00 00 e8 }
-    $vmci_socket_marker1          = "/dev/vsock" ascii wide
-    $vmci_socket_marker2          = "/vmfs/devices/char/vsock/vsock" ascii wide
-    $vmci_socket_init_bind_listen = { e8 [4] 89 45 [4-64] 8B 45 ?? b? 00 00 00 00 b? 01 00 00 00 [0-4] e8 [4-128] B? 10 00 00 00 [1-16] e8 [4-128] BE 01 00 00 00 [1-16] e8 [4] 83 F8 FF }
-    $socket_read_write            = { BA 01 00 00 00 48 89 CE 89 C7 E8 [4] 48 85 C0 [1-64] BA 01 00 00 00 48 89 CE 89 C7 E8 [4] 48 85 C0 7e ?? eb }
-    $marker1                      = "nc <port>"
-
-  condition:
-    uint32(0) == 0x464c457f and all of them
-}
-
-rule M_Hunting_VIRTUALPITA_1 {
-  meta:
-    author = "Mandiant"
-
-  strings:
-    $forpid    = { 70 69 64 20 [0-10] 69 6E 20 60 [0-10] 70 73 20 2D [0-10] 63 20 7C 20 [0-10] 67 72 65 70 [0-10] 20 76 6D 73 [0-10] 79 73 6C 6F [0-10] 67 64 20 7C [0-10] 20 61 77 6B [0-10] 20 27 7B 20 [0-10] 70 72 69 6E [0-10] 74 20 24 31 [0-10] 20 7D 27 60 [0-10] 3B 20 64 6F [0-10] 20 6B 69 6C [0-10] 6C 20 2D 39 [0-10] 20 24 70 69 [0-10] 64 3B 20 64 [0-10] 6F 6E 65 00 }
-    $vmsyslogd = { 2F 75 73 72 [0-10] 2F 6C 69 62 [0-10] 2F 76 6D 77 [0-10] 61 72 65 2F [0-10] 76 6D 73 79 [0-10] 73 6C 6F 67 [0-10] 2F 62 69 6E [0-10] 2F 76 6D 73 [0-10] 79 73 6C 6F [0-10] 67 64 00 00 }
-
-  condition:
-    uint32(0) == 0x464c457f and any of them
-}
-
-rule M_APT_Launcher_REPTILE_1 {
-  meta:
-    author = "Mandiant"
-
-  strings:
-    $str1 = { B8 00 00 00 00 E8 A1 FE FF FF 48 8B 85 40 FF FF FF 48 83 C0 08 48 8B 00 BE 00 00 00 00 48 89 C7 B8 00 00 00 00 E8 ?? FD FF FF 89 45 ?8 48 8D 95 50 FF FF FF 8B 45 ?8 48 89 D6 89 C7 E8 ?? 0? 00 00 48 8B 45 80 48 89 45 F0 48 8B 45 F0 48 89 C7 E8 ?? F? FF FF 48 89 45 ?8 48 8B 55 F0 48 8B 4D ?8 8B 45 ?8 48 89 CE 89 C7 E8 ?? FC FF FF 48 8B 55 F0 48 8B 45 ?8 B9 4? 0C 40 00 48 89 C6 BF AF 00 00 00 B8 00 00 00 00 E8 ?? FC FF FF E8 ?? FC FF FF 8B 00 83 F8 25 75 07 C7 45 ?C 00 00 00 00 }
-    $str2 = { 81 7D F? FF 03 00 00 7E E9 BE 02 00 00 00 BF ?? 0C 40 00 B8 00 00 00 00 E8 ?? F? FF FF 89 45 F? 8B 45 F? BE 01 00 00 00 89 C7 E8 ?? FD FF FF 8B 45 F? BE 02 00 00 00 89 C7 E8 ?? F? FF FF C9 C3 }
-
-  condition:
-    uint32(0) == 0x464C457F and all of them
-}
-
-rule M_APT_Backdoor_VIRTUALSHINE_1 {
-  meta:
-    author = "Mandiant"
-
-  strings:
-    $str1 = "/dev/vsock"
-    $str2 = "/vmfs/devices/char/vsock/vsock"
-    $str3 = "nds4961l <cid> <vport>"
-    $str4 = "[!] VMCISock_GetAFValue()."
-    $str5 = "[+] Connected to server.[ %s:%s ]"
-    $str6 = "TERM=xterm"
-    $str7 = "PWD=/tmp/"
-
-  condition:
-    uint32(0) == 0x464C457F and all of them
-}
-
-rule M_APT_BACKDOOR_MOPSLED_1 {
-  meta:
-    author = "Mandiant"
-
-  strings:
-    $x = { e8 ?? ?? ?? ?? 85 c0 0f 85 ?? ?? ?? ?? 4? 8d ?? ?4 ?8 be ?? ?? ?? ?? e8 ?? ?? ?? ?? 84 c0 0f 84 ?? ?? ?? ?? 4? 8b 94 ?? ?? ?? ?? ?? 4? 8b 44 ?? ?? 4? 89 e1 [0-6] be ?? ?? ?? ?? b? ?? ?? ?? ?? 4? 89 10 8b 94 ?? ?? ?? ?? ?? [0-6] 89 50 08 4? 8b 54 ?? ?? c7 42 0c ?? ?? ?? ?? e8 ?? ?? ?? ?? }
-
-  condition:
-    uint32(0) == 0x464c457f and uint8(4) == 2 and filesize < 5MB and $x
-}
-
 rule XMRig {
   meta:
     attack      = "T1496"
@@ -729,46 +602,6 @@ rule M_Hunting_TINYSHELL_5 {
 
   condition:
     all of ($tshd_*) or all of ($tsh_*)
-}
-
-rule detect_Auto_Color {
-  meta:
-    description = "Detects Auto-color malware family "
-    author      = "Mohamed Ezzat (@ZW01f)"
-    hash1       = "815b74947d3a78a1b7d2aece43596ddc0ffc264e26092f1f9b6409c62e1437d6"
-    hash2       = "270fc72074c697ba5921f7b61a6128b968ca6ccbf8906645e796cfc3072d4c43"
-
-  strings:
-    $elf = "\x7fELF"  // ELF header
-    $s1  = "/var/log/cross"
-    $s2  = "/tmp/cross"
-    $s3  = "/door-%d.log"
-    $s4  = "/etc/ld.so.preload.xxx"
-    $s5  = "%s/auto-color" ascii wide
-    $s6  = "%s memory dump %d bytes..." wide ascii
-
-  condition:
-    (filesize < 300KB) and ($elf at 0) and (5 of ($s*))
-}
-
-rule MAL_LNX_PLAGUE_BACKDOOR_Jul25 {
-  meta:
-    description = "Detects Plague backdoor ELF binaries, related to PAM authentication alteration."
-    reference   = "Internal Research"
-    author      = "Pezier Pierre-Henri"
-    date        = "2025-07-25"
-    score       = 80
-    hash        = "14b0c90a2eff6b94b9c5160875fcf29aff15dcfdfd3402d953441d9b0dca8b39"
-    hash        = "7c3ada3f63a32f4727c62067d13e40bcb9aa9cbec8fb7e99a319931fc5a9332e"
-
-  strings:
-    $s1 = "decrypt_phrase"
-    $s2 = "init_phrases"
-
-  condition:
-    uint32be(0) == 0x7f454c46
-    and filesize < 1MB
-    and all of them
 }
 
 rule dev_3CX_Gopuram_AppleJeus_Shellcode_Hunt {
@@ -1513,21 +1346,6 @@ rule derusbi_kernel {
 
   condition:
     $MZ at 0 and $token1 and $token2 and $cfg and $class
-}
-
-rule Backdoored_ssh {
-  meta:
-    author    = "Kaspersky"
-    reference = "https://securelist.com/energetic-bear-crouching-yeti/85345/"
-    actor     = "Energetic Bear/Crouching Yeti"
-
-  strings:
-    $a1 = "OpenSSH"
-    $a2 = "usage: ssh"
-    $a3 = "HISTFILE"
-
-  condition:
-    uint32(0) == 0x464c457f and filesize < 1000000 and all of ($a*)
 }
 
 rule EquationGroup__funnelout_v4_1_0_1 {
@@ -15021,27 +14839,6 @@ rule gen_python_encoded_adware {
     and all of them
 }
 
-rule Methodology_Contains_Shortcut_OtherURIhandlers {
-  meta:
-    author      = "@itsreallynick (Nick Carr)"
-    description = "Noisy rule for .URL shortcuts containing unique URI handlers"
-    description = "Detects possible shortcut usage for .URL persistence"
-    reference   = "https://twitter.com/cglyer/status/1176184798248919044"
-    score       = 35
-    date        = "27.09.2019"
-
-  strings:
-    $file         = "URL="
-    $filenegate   = /[\x0a\x0d](Base|)URL\s*=\s*(https?|file):\/\// nocase
-    $url_clsid    = "[{000214A0-0000-0000-C000-000000000046}]"
-    $url_explicit = "[InternetShortcut]" nocase
-
-  condition:
-    $file and any of ($url*) and not $filenegate
-    and uint16(0) != 0x5A4D and uint32(0) != 0x464c457f and uint32(0) != 0xBEBAFECA and uint32(0) != 0xFEEDFACE and uint32(0) != 0xFEEDFACF and uint32(0) != 0xCEFAEDFE
-    and filesize < 30KB
-}
-
 rule webshell_jsp_writer_nano {
   meta:
     description = "JSP file writer"
@@ -15865,39 +15662,6 @@ rule apt_Gamaredon_LNKs_farl139_hostname {
     and filesize < 10KB
 }
 
-rule unk_apt31_tsh_2021 {
-  meta:
-    description       = "Detect APT31-linked TSH sample. This rule is quite specific with the $s3 string. We would advise removing this string to cover other TSH samples."
-    version           = "1.0"
-    creation_date     = "2021-10-11"
-    modification_date = "2021-10-11"
-    classification    = "TLP:WHITE"
-    hash              = "4640805c362b1e5bee5312514dd0ab2b"
-    source            = "SEKOIA.IO"
-    version           = "1.0"
-
-  strings:
-    $s1 = {
-      C6 00 48 C6 40 05 49 C6
-      40 01 49 C6 40 06 4C C6
-      40 02 53 C6 40 07 45 C6
-      40 03 54 C6 40 08 3D C6
-      40 04 46 C6 40 09 00
-    }
-
-    $s2 = {
-      C6 00 54 C6 40 03 4D C6
-      40 01 45 C6 40 04 3D
-    }
-
-    $s3 = "www.moperfectstore.com"
-
-  condition:
-    int32be(0) == 0x7f454c46 and
-    filesize < 1MB and filesize > 900KB and
-    all of them
-}
-
 rule apt_nobelium_hta_reg_dropper {
   meta:
     id                = "9f6a2154-c33a-4c38-9667-7479bf49c310"
@@ -16046,32 +15810,6 @@ rule PlugX0 {
 
   condition:
     $v1 at 0 or ($v2a and $v2b and $enc1) or ($v2c and $v2b and $enc1) or ($v2d and $v2b and $enc2) or ($v2d and $v2e and $enc2) or ($v2f and $v2g and $enc3 and $enc4) or ($v2h and $v2g and $enc3 and $enc4)
-}
-
-rule Muliaka_ESXi {
-  meta:
-    author      = "rivitna"
-    family      = "ransomware.muliaka.esxi"
-    description = "Muliaka ransomware ESXi"
-    severity    = 10
-    score       = 100
-
-  strings:
-    $s0 = "crypt_file_one" ascii
-    $s1 = "crypt_file_two" ascii
-    $s2 = "visit_dirs_two" ascii
-    $s3 = "valid_file_one" ascii
-    $s4 = "Send an email to " ascii
-    $s5 = {
-      48 B8 24 24 24 24 24 24 24 24 48 89 84 24 ?? 0? 00 00
-      48 89 84 24
-    }
-
-  condition:
-    (uint32(0) == 0x464C457F) and
-    (
-      (4 of ($s*))
-    )
 }
 
 rule evilnum {
@@ -16639,32 +16377,6 @@ rule head_kwaj {
 rule head_szdd {
   condition:
     uint32be(0) == 0x535a4444
-}
-
-rule head_z_none_of_the_above {
-  condition:
-    uint16be(0) == 0x1f8b
-    and uint16be(0) == 0x377a
-    and uint16be(0) != 0x4d5a
-    and uint16be(0) != 0x504b
-    and uint32be(0) != 0x3c68746d
-    and uint32be(0) != 0x47494638
-    and uint32be(0) != 0x4b57414a
-    and uint32be(0) != 0x4d534346
-    and uint32be(0) != 0x52617221
-    and uint32be(0) != 0x535a4444
-    and uint32be(0) != 0x7b5c7274
-    and uint32be(0) != 0x7f454c46
-    and uint32be(0) != 0x89504e47
-    and uint32be(0) != 0xd0cf11e0
-    and uint32be(0) != 0xffd8ffe0
-    and uint32be(0) != 0x6465780a
-    and uint32(0) != 0xfeedface
-    and uint32(0) != 0xcefaedfe
-    and uint32(0) != 0xfeedfacf
-    and uint32(0) != 0xcffaedfe
-    and uint32(0) != 0xcafebabe
-    and uint32(0) != 0xbebafeca
 }
 
 rule ct_size_1gb_plus {
@@ -18158,29 +17870,6 @@ rule MAL_DOCX_CRC32_1 {
     $ufs at @crc[1] + 8 and $ext at @crc[1] + uint16(@crc[1] + 12) + 16 - 4
 }
 
-rule APT_EQGRP_SUCTIONCHAR_BVP47_1 {
-  meta:
-    author      = "@qutluch@infosec.exchange"
-    description = "Code overlap between EQGRP SUCTIONCHAR and BVP47."
-    reference   = "https://github.com/x0rz/EQGRP"
-    reference   = "https://www.virustotal.com/gui/collection/43334ea6fbd9e71384d7c3c299f6a7472b35d6930b95caedd25764f09513ca60"
-    reference   = "https://www.virustotal.com/gui/collection/alienvault_62165a9098875d0f12e0d0a8"
-    DaysofYARA  = "23/100"
-    license     = "BSD-2-Clause"
-    date        = "2024-01-31"
-    version     = "1.0"
-    hash        = "7989032a5a2baece889100c4cfeca81f1da1241ab47365dad89107e417ce7bac"
-    hash        = "81479e151a090288793a4c449f70a94a7a285dfd86178f2d407d1915536c0105"
-    hash        = "df79815b6fa50dfdd626be2d20a9e5d0741e4ceed4fd49da9f62ef4ecbc127a7"
-
-  strings:
-    $ = { 3C 24 89 D1 BA A1 2F B8 44 C1 E9 06 69 C1 E8 03 00 00 03 4D E0 29 C3 69 DB 40 42 0F 00 69 45 E4 E8 03 00 00 01 C3 89 D8 F7 EA 89 D8 C1 F8 1F C1 FA 1C 29 C2 8D 0C 0A 69 D2 00 CA 9A 3B 8D 45 D0 89 4D }
-
-  condition:
-    uint32(0) == 0x464c457f
-    and all of them
-}
-
 private rule IsOLE: OLE {
   meta:
     description   = "Identifier for OLE files"
@@ -19330,83 +19019,6 @@ rule R3C0NST_Shellcode_Apihashing_FIN8 {
 
   condition:
     all of ($APIHashing32bit*) or $APIHashing64bit
-}
-
-rule R3C0NST_UNC2891_Steelcorgi: FILE {
-  meta:
-    description = "Detects UNC2891 Steelcorgi packed ELF binaries"
-    author      = "Frank Boldewin (@r3c0nst)"
-    id          = "94da7da5-5fc3-5221-97d6-1854aa7b1959"
-    date        = "2022-03-30"
-    modified    = "2023-01-05"
-    reference   = "https://github.com/fboldewin/YARA-rules/"
-    source_url  = "https://github.com/fboldewin/YARA-rules//blob/54e9e6899b258b72074b2b4db6909257683240c2/UNC2891_Steelcorgi.yar#L1-L17"
-    license_url = "N/A"
-    logic_hash  = "4f956b9eaec66bc606ffd0afa2fe9303194e9a8c12d4c3de6ab2334c9856dd99"
-    score       = 75
-    quality     = 90
-    tags        = "FILE"
-    hash1       = "0760cd30d18517e87bf9fd8555513423db1cd80730b47f57167219ddbf91f170"
-    hash2       = "3560ed07aac67f73ef910d0b928db3c0bb5f106b5daee054666638b6575a89c5"
-    hash3       = "5b4bb50055b31dbd897172583c7046dd27cd03e1e3d84f7a23837e8df7943547"
-
-  strings:
-    $pattern1 = { 70 61 64 00 6C 63 6B 00 }
-    $pattern2 = { FF 72 FF 6F FF 63 FF 2F FF 73 FF 65 FF 6C FF 66 FF 2F FF 65 FF 78 FF 65 }
-
-  condition:
-    uint32(0) == 0x464c457f and all of them
-}
-
-rule R3C0NST_UNC2891_Caketap {
-  meta:
-    description = "Detects UNC2891 Rootkit Caketap"
-    author      = "Frank Boldewin (@r3c0nst)"
-    id          = "9c2ffe3d-69ca-5f93-bdb1-40e449139dec"
-    date        = "2022-03-30"
-    modified    = "2023-01-05"
-    reference   = "https://github.com/fboldewin/YARA-rules/"
-    source_url  = "https://github.com/fboldewin/YARA-rules//blob/54e9e6899b258b72074b2b4db6909257683240c2/UNC2891_Caketap.yar#L1-L16"
-    license_url = "N/A"
-    logic_hash  = "530a7d062a218217d2c05460428b2576c3fe2a6099c93940aabde73c513a8914"
-    score       = 75
-    quality     = 88
-    tags        = ""
-
-  strings:
-    $str1  = ".caahGss187" ascii fullword
-    $str2  = "ipstat" ascii
-    $code1 = { 41 80 7E 06 4B 75 ?? 41 80 7E 07 57 75 ?? 41 0F B6 46 2B }
-    $code2 = { 41 C6 46 01 3D 41 C6 46 08 32 }
-
-  condition:
-    uint32(0) == 0x464c457f and (all of ($code*) or (all of ($str*) and #str2 == 2))
-}
-
-rule R3C0NST_UNC2891_Winghook: FILE {
-  meta:
-    description = "Detects UNC2891 Winghook Keylogger"
-    author      = "Frank Boldewin (@r3c0nst)"
-    id          = "e5955fa0-8204-58e3-88a6-de4b47756ede"
-    date        = "2022-03-30"
-    modified    = "2023-01-05"
-    reference   = "https://github.com/fboldewin/YARA-rules/"
-    source_url  = "https://github.com/fboldewin/YARA-rules//blob/54e9e6899b258b72074b2b4db6909257683240c2/UNC2891_Winghook.yar#L1-L17"
-    license_url = "N/A"
-    logic_hash  = "b821d0809a91c54d06764f5a04c458ec7190b41823b2fe65d198342715f22050"
-    score       = 75
-    quality     = 90
-    tags        = "FILE"
-    hash1       = "d071ee723982cf53e4bce89f3de5a8ef1853457b21bffdae387c4c2bd160a38e"
-
-  strings:
-    $code1 = { 01 F9 81 E1 FF 00 00 00 41 89 CA [15] 44 01 CF 81 E7 FF 00 00 00 }
-    $code2 = { 83 E2 0F 0F B6 14 1? 32 14 01 88 14 0? 48 83 ?? ?? 48 83 ?? ?? 75 }
-    $str1  = "fgets" ascii
-    $str2  = "read" ascii
-
-  condition:
-    uint32(0) == 0x464c457f and filesize < 100KB and 1 of ($code*) and all of ($str*)
 }
 
 rule BINARYALERT_Hacktool_Multi_Ncc_ABPTTS {
@@ -20784,36 +20396,6 @@ rule ARKBIRD_SOLG_APK_Droidwatcher_Nov_2021_1: FILE {
     uint32be(0) == 0x504B0304 and filesize > 300KB and 4 of them
 }
 
-rule ARKBIRD_SOLG_MAL_ELF_Vermilion_Strike_Sep_2021_1: FILE {
-  meta:
-    description = "Detect the ELF version of Vermilion Strike implant"
-    author      = "Arkbird_SOLG"
-    id          = "bfc498b6-4d3d-5ae9-a360-d31f8cf6c5fc"
-    date        = "2021-09-14"
-    modified    = "2021-09-16"
-    reference   = "https://www.intezer.com/blog/malware-analysis/vermilionstrike-reimplementation-cobaltstrike/"
-    source_url  = "https://github.com/StrangerealIntel/DailyIOC/blob/a873ff1298c43705e9c67286f3014f4300dd04f7/2021-09-15/Vermilion_Strike/MAL_ELF_Vermilion_Strike_Sep_2021_1.yara#L1-L19"
-    license_url = "N/A"
-    logic_hash  = "fe4bb6da7b29f1ae7c25a657d27f5e60ffa0e7d9f1f09a5a2331e4a80eb79481"
-    score       = 50
-    quality     = 75
-    tags        = "FILE"
-    hash1       = "294b8db1f2702b60fb2e42fdc50c2cee6a5046112da9a5703a548a4fa50477bc"
-    level       = "experimental"
-    tlp         = "White"
-    adversary   = "Vermilion Strike"
-
-  strings:
-    $s1 = { be bd f8 40 00 41 55 49 89 fd bf a3 f8 40 00 41 54 55 53 48 81 ec 20 04 00 00 e8 4f cb ff ff 48 85 c0 48 89 c5 0f 84 af 01 00 00 48 8d 5c 24 20 41 bc 0a 00 00 00 41 be b0 32 40 00 66 90 48 89 ea be c8 00 00 00 48 89 df e8 30 cd ff ff 48 85 c0 0f 84 4f 01 00 00 80 7c 24 20 23 74 e0 bf b4 f8 40 00 48 89 de 4c 89 e1 f3 a6 75 d1 be d4 1d 41 }
-    $s2 = { 8b 43 14 8b 73 10 8b 4b 0c 8d 56 01 44 8d 80 6c 07 00 00 be 70 21 41 00 31 c0 e8 ed 34 ff ff 48 85 ed 74 28 8b 4b 04 8b 53 08 48 89 ef 44 8b 03 48 83 c4 08 be 79 21 41 00 5b 5d }
-    $s3 = { 55 53 48 83 ec 70 48 8d 44 24 30 48 89 44 24 10 48 8d 44 24 40 48 89 44 24 08 8b 84 24 90 00 00 00 89 04 24 e8 22 fb ff ff e8 fd 58 ff ff e8 38 5a ff ff e8 f3 59 ff ff 0f 1f 00 e8 5b 5e ff ff 48 89 c7 e8 23 5b ff ff 48 89 c7 48 89 c5 e8 18 5f ff ff 48 8d 4c 24 50 31 d2 be 6e 00 00 00 48 89 c7 48 89 c3 e8 41 59 ff ff 48 8b 7c 24 50 31 c9 ba 04 00 00 00 be 21 00 00 00 e8 1b 60 ff ff 48 8d 54 24 2f 48 8d 7c 24 60 4c 89 e6 e8 d9 5c ff ff 48 8d 7c 24 60 ba 88 f8 40 00 be a7 20 41 00 e8 a5 1f 00 00 48 8b 4c 24 60 31 d2 be 64 00 00 00 48 89 df e8 f1 58 ff ff 31 c9 31 d2 be 65 00 00 00 48 89 df e8 e0 58 ff ff 48 85 c0 7e 73 48 8b 7c 24 50 e8 41 58 ff ff 8b 54 24 30 48 8b 74 24 40 48 89 df e8 50 59 ff ff 48 8b 7c 24 40 e8 66 12 00 00 48 8b 94 24 a0 00 00 00 48 8b b4 24 98 00 00 00 48 89 df e8 0e fd ff ff 48 89 df e8 b6 5f ff ff 48 89 ef e8 ce 58 ff ff b8 01 00 00 00 48 8b 54 24 60 48 8d 7a e8 48 81 ff c0 54 61 00 75 23 48 83 c4 70 5b 5d 41 5c c3 66 0f 1f 44 00 00 48 89 df e8 80 5f ff ff 48 89 ef e8 98 58 ff ff 31 c0 eb cb be b0 32 40 00 48 8d 4f 10 48 85 f6 74 3d 83 ca ff }
-    $s4 = { 8b 15 6e e4 20 00 31 ff be e0 57 61 00 e8 0a b8 ff ff 48 89 c7 31 c0 48 85 ff 74 17 48 89 3d e9 e4 20 00 e8 a4 bf ff ff 89 05 e6 e4 20 00 b8 01 00 }
-    $s5 = { b8 02 00 00 00 48 89 fb 48 83 ec 10 66 89 04 25 00 00 00 00 e8 a6 4e ff ff 83 f8 ff 89 04 24 74 16 89 04 25 04 00 00 00 b8 01 00 00 00 48 83 c4 10 5b c3 0f 1f 40 00 48 89 df e8 f0 4e ff ff 48 89 c1 31 c0 48 85 }
-
-  condition:
-    uint32(0) == 0x464c457f and filesize > 30KB and 4 of them
-}
-
 rule ARKBIRD_SOLG_EXP_CVE_2021_42321_Nov_2021_1: CVE_2021_42321 FILE {
   meta:
     description = "Detect CVE-2021-42321 exploit tool"
@@ -20909,37 +20491,6 @@ rule ARKBIRD_SOLG_APT_Lazarus_HTA_Apr_2021_1: FILE {
     (uint16(0) == 0x4d42 or uint16(0) == 0xd8ff or uint32(0) == 0x474e5089 or uint32(0) == 0x38464947) and filesize > 20KB and 5 of ($s*)
 }
 
-rule ARKBIRD_SOLG_RAN_ELF_Revil_Jun_2021_1: FILE {
-  meta:
-    description = "Detect the ELF version of REvil ransomware"
-    author      = "Arkbird_SOLG"
-    id          = "b4b9d60e-a352-5045-8be3-e9a08d70ef6b"
-    date        = "2021-06-28"
-    modified    = "2021-06-29"
-    reference   = "https://twitter.com/jaimeblascob/status/1409603887871500288"
-    source_url  = "https://github.com/StrangerealIntel/DailyIOC/blob/a873ff1298c43705e9c67286f3014f4300dd04f7/2021-06-28/REvil/RAN_ELF_REvil_Jun_2021_1.yara#L1-L22"
-    license_url = "N/A"
-    logic_hash  = "054bdb8362fdea2dc914b11387f6c67e35932acb73ba2b133ca29f69549914ba"
-    score       = 75
-    quality     = 75
-    tags        = "FILE"
-    hash1       = "3d375d0ead2b63168de86ca2649360d9dcff75b3e0ffa2cf1e50816ec92b3b7d"
-    hash2       = "d6762eff16452434ac1acc127f082906cc1ae5b0ff026d0d4fe725711db47763"
-    hash3       = "796800face046765bd79f267c56a6c93ee2800b76d7f38ad96e5acb92599fcd4"
-    hash4       = "ea1872b2835128e3cb49a0bc27e4727ca33c4e6eba1e80422db19b505f965bc4"
-    tlp         = "White"
-    adversary   = "RAAS"
-
-  strings:
-    $seq1 = { 55 48 89 e5 48 83 c4 80 bf 04 20 00 00 e8 69 d5 ff ff 48 89 45 f8 ?? 8b 05 [2] 31 00 [0-4] 48 8b 3d [2] 31 00 48 8b 35 [2] 31 00 48 8b 0d [2] 31 00 4c 8b 0d [2] 31 00 4c 8b [2] 13 31 00 48 8b 15 ?? 13 31 00 48 8b 45 f8 4c 89 ?? 24 18 48 89 7c 24 10 48 89 74 24 08 48 89 0c 24 ?? 89 }
-    $seq2 = { 48 89 e5 bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff 8b 05 [2] 20 00 89 c6 bf [2] 41 00 b8 00 00 00 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff bf [2] 41 00 e8 [2] ff ff }
-    $seq3 = { 48 83 ec 20 c7 45 fc 00 00 00 00 eb 64 8b 45 fc 48 8b 14 c5 48 92 61 00 48 8b 05 ?? bd 20 00 48 89 c6 bf 40 93 61 00 b8 00 00 00 00 e8 ?? 3f ff ff 8b 45 fc 48 8b 04 c5 48 92 61 00 48 89 c6 bf [2] 41 00 b8 00 00 00 00 e8 ?? 3d ff ff be [2] 41 00 bf 40 93 61 00 e8 ?? 3e ff ff 48 89 45 f0 48 8b 45 f0 48 89 c7 e8 ?? 3d ff ff 83 45 fc 01 83 7d fc 00 74 96 48 8b 05 [2] 20 00 48 89 c7 e8 ?? 3c ff ff 48 8b 05 [2] 20 00 be [2] 41 00 48 89 c7 e8 ?? 3e ff ff 48 89 45 e8 48 8b 45 e8 48 89 c7 e8 ?? 3d ff ff c9 c3 55 48 89 e5 48 83 ec 20 48 89 7d e8 48 8b 45 e8 48 89 c7 e8 ?? 3c ff ff 89 c2 8b 05 ?? d0 30 00 01 d0 83 c0 01 89 c7 e8 ?? 91 ff ff 48 89 45 f8 48 8b 55 e8 48 8b 45 f8 48 89 d6 48 89 c7 e8 ?? 3c ff ff 48 8b 45 f8 48 c7 c1 ff ff ff ff 48 89 c2 b8 00 00 00 00 48 89 d7 f2 ae 48 89 c8 48 f7 d0 48 8d 50 ff 48 8b 45 f8 48 01 d0 66 c7 00 2f 00 48 8b 15 ?? cf 30 00 48 8b 45 f8 48 89 d6 48 89 c7 e8 ?? 3e ff ff 48 8b 45 f8 be [2] 41 00 48 89 c7 e8 ?? 3e ff ff 48 89 45 f0 48 83 7d f0 00 }
-    $seq4 = { 48 89 e5 48 83 ec 10 c7 45 fc 58 00 00 00 8b 45 fc 48 8d 55 f0 48 89 c6 bf 00 a5 71 00 e8 [2] 00 00 48 89 05 ?? 0b 31 00 48 8d 45 f0 48 89 c2 be 20 00 00 00 bf c0 a4 71 00 e8 [2] 00 00 48 89 05 [2] 31 00 b8 00 00 00 00 e8 b7 fd ff ff 48 89 05 [2] 31 00 48 8b 05 [2] 31 00 48 85 c0 74 09 48 8b 05 [2] 31 00 eb 05 b8 [2] 41 00 48 89 05 [2] 31 00 b8 00 00 00 00 e8 80 fe ff ff 48 89 05 [2] 31 00 48 8b 05 [2] 31 00 48 85 c0 74 09 48 8b 05 [2] 31 00 eb 05 b8 [2] 41 00 48 89 05 ?? 0a 31 00 48 c7 05 ?? 0a 31 00 [2] 41 00 e8 ?? f6 ff ff e8 f1 f7 ff ff b8 01 00 00 00 }
-
-  condition:
-    uint32(0) == 0x464c457f and filesize > 50KB and 3 of ($seq*)
-}
-
 rule ARKBIRD_SOLG_Exp_Underminer_Apr_2021_1: FILE {
   meta:
     description = "Detect Underminer exploit kit"
@@ -20968,38 +20519,6 @@ rule ARKBIRD_SOLG_Exp_Underminer_Apr_2021_1: FILE {
 
   condition:
     filesize > 5KB and 6 of ($s*)
-}
-
-rule ARKBIRD_SOLG_RAN_ELF_Qnapcrypt_Aug_2021_2: FILE {
-  meta:
-    description = "Detect QNAPCrypt ransomware (x64 version)"
-    author      = "Arkbird_SOLG"
-    id          = "8cd54646-87da-5261-82f3-68ab96549379"
-    date        = "2021-08-11"
-    modified    = "2021-08-12"
-    reference   = "https://bazaar.abuse.ch/browse/tag/QNAPCrypt/"
-    source_url  = "https://github.com/StrangerealIntel/DailyIOC/blob/a873ff1298c43705e9c67286f3014f4300dd04f7/2021-08-11/QNAPCrypt/RAN_ELF_QNAPCrypt_Aug_2021_2.yara#L1-L22"
-    license_url = "N/A"
-    logic_hash  = "9eb3a499afbaaf2addb8ee12cc2d479ebbacd4d19cc270e995f12e83546008b4"
-    score       = 75
-    quality     = 73
-    tags        = "FILE"
-    hash1       = "4829041c64971a0cb37d55e6ba83a57e01e76b26f3f744814b59bedbb3fefce8"
-    hash2       = "50470f94e7d65b50bf00d7416a9634d9e4141c5109a78f5769e4204906ab5f0b"
-    hash3       = "f9f5265f4c748ce0e2171915fb8edb6d967539ac46d624db8eb2586854dd0d9e"
-    tlp         = "white"
-    adversary   = "-"
-
-  strings:
-    $s1 = "README_FOR_DECRYPT"
-    $s2 = { 64 48 8b 0c 25 f8 ff ff ff 48 8d 44 24 ?? 48 3b 41 10 0f 86 [2] 00 00 48 81 ec ?? 00 00 00 48 89 ac 24 ?? 00 00 00 48 8d ac 24 ?? 00 00 00 48 8b 05 [3] 00 48 83 3d [3] 00 00 0f 86 [2] 00 00 48 8b 48 08 48 8b 00 48 89 04 24 48 89 4c 24 08 e8 [3] ff 48 c7 04 24 20 00 00 00 e8 [2] 00 00 48 c7 04 24 00 00 00 00 e8 [3] ff 48 8b 44 24 20 48 89 44 24 58 48 8b 4c 24 18 48 89 8c 24 88 00 00 00 48 8b 54 24 28 48 89 54 24 60 48 }
-    $s3 = { 48 81 ec ?? 00 00 00 48 89 ac 24 ?? 00 00 00 48 8d ac 24 ?? 00 00 00 }
-    $s4 = { 64 48 8b 0c 25 f8 ff ff ff 48 [0-5] 3b ?? 10 0f 86 [2] 00 00 48 ?? ec }
-    $s5 = { 48 83 ec 78 48 89 6c 24 70 48 8d 6c 24 70 48 8b 05 [3] 00 48 8b 0d [3] 00 48 8b 15 [3] 00 48 89 0c 24 48 89 44 24 08 48 89 54 24 10 e8 [3] ff 48 8b 44 24 18 48 85 c0 0f 84 10 01 00 00 48 8b 48 28 48 8b 50 20 48 8b 40 18 48 89 04 24 48 89 54 24 08 48 89 4c 24 10 e8 [3] ff 48 8b 44 24 18 48 8b 4c 24 20 48 8b 54 24 28 48 8b 5c 24 30 48 85 d2 0f 85 a3 00 00 00 48 8d 15 [2] 03 00 48 39 d0 0f 85 13 01 00 00 48 8b 05 [3] 00 48 8b 15 [3] 00 48 89 04 24 48 89 54 24 08 48 89 4c 24 10 48 8b 84 24 80 00 00 00 48 89 44 24 18 48 8b 84 24 88 00 00 00 48 89 44 24 20 48 8b 84 24 90 00 00 00 48 89 44 24 28 e8 [3] ff 48 8b 44 24 38 48 8b 4c 24 40 48 8b 54 24 48 48 8b 5c 24 50 48 8b 74 24 30 48 89 b4 24 98 00 00 00 48 89 84 24 a0 00 00 00 48 89 8c 24 a8 00 00 00 48 89 94 24 b0 00 00 00 48 89 9c 24 b8 00 00 00 48 8b 6c 24 }
-    $s6 = { 48 81 ec 48 01 00 00 48 89 ac 24 40 01 00 00 48 8d ac 24 40 01 00 00 48 8d 7c 24 38 48 8d 35 [2] 0f 00 48 89 6c 24 f0 48 8d 6c 24 f0 e8 [3] ff 48 8b 6d 00 48 8d 05 [2] 02 00 48 89 04 24 48 8b 84 24 50 01 00 00 48 89 44 24 08 48 89 44 24 10 e8 [3] ff 48 8b 44 24 18 48 89 84 24 38 01 00 00 31 c9 eb 18 8b 54 84 38 48 8b 5c 24 30 48 8b 84 24 38 01 00 00 89 14 98 48 8d 4b 01 48 8b 94 24 50 01 00 00 48 39 d1 7d 2c 48 89 4c 24 30 90 48 8b 05 [3] 00 48 89 04 24 48 c7 44 24 08 40 00 00 00 e8 [3] ff 48 8b 44 24 10 48 83 f8 40 72 b1 eb 46 48 c7 04 24 00 00 00 00 48 89 44 24 08 48 89 54 24 10 48 89 54 24 18 e8 [3] ff 48 8b 44 24 28 48 8b 4c 24 20 48 89 8c 24 58 01 00 00 48 89 84 24 60 01 00 00 48 8b ac 24 40 01 00 }
-
-  condition:
-    uint32(0) == 0x464C457F and filesize > 25KB and all of ($s*)
 }
 
 rule TELEKOM_SECURITY_Crylock_Hta: FILE {
@@ -21818,32 +21337,6 @@ rule JPCERTCC_Elf_Plead {
 
   condition:
     3 of them
-}
-
-rule JPCERTCC_Elf_Wellmess: FILE {
-  meta:
-    description = "ELF_Wellmess"
-    author      = "JPCERT/CC Incident Response Group"
-    id          = "3e6cb461-fc51-5ea6-bd6f-6dab11d5704c"
-    date        = "2021-08-16"
-    modified    = "2021-08-16"
-    reference   = "https://github.com/JPCERTCC/MalConfScan/"
-    source_url  = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/yara/rule.yara#L571-L584"
-    license_url = "https://github.com/JPCERTCC/MalConfScan//blob/19ec0d145535a6a4cfd37c0960114f455a8c343e/LICENSE.txt"
-    hash        = "00654dd07721e7551641f90cba832e98c0acb030e2848e5efc0e1752c067ec07"
-    logic_hash  = "99789bba9c398b7927b3ab42bb4df40e5470e0816cc048dcc7d09c6a78a1a505"
-    score       = 75
-    quality     = 80
-    tags        = "FILE"
-
-  strings:
-    $botlib1 = "botlib.wellMess" ascii
-    $botlib2 = "botlib.Command" ascii
-    $botlib3 = "botlib.Download" ascii
-    $botlib4 = "botlib.AES_Encrypt" ascii
-
-  condition:
-    (uint32(0) == 0x464C457F) and all of ($botlib*)
 }
 
 rule SECUINFRA_OBFUS_VBS_Reverse_Startup: FILE {
@@ -25605,47 +25098,6 @@ rule SIGNATURE_BASE_Fidelis_Advisory_Purchase_Order_Pps {
     all of them
 }
 
-rule SIGNATURE_BASE_Apt_Nix_Elf_Derusbi_Kernelmodule_1: FILE {
-  meta:
-    description = "Detects Derusbi Backdoor ELF Kernel Module"
-    author      = "Fidelis Cybersecurity"
-    id          = "98196ffc-8a6f-5edc-a688-eeb449410b72"
-    date        = "2016-02-29"
-    modified    = "2023-05-04"
-    reference   = "https://github.com/fideliscyber/indicators/tree/master/FTA-1021"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_turbo_campaign.yar#L51-L83"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "fab37e2dbe05c694da6e428aa922747b276c2827cbbd2b6c8002f0cc30c2870c"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-
-  strings:
-    $s1  = "__this_module"
-    $s2  = "init_module"
-    $s3  = "unhide_pid"
-    $s4  = "is_hidden_pid"
-    $s5  = "clear_hidden_pid"
-    $s6  = "hide_pid"
-    $s7  = "license"
-    $s8  = "description"
-    $s9  = "srcversion="
-    $s10 = "depends="
-    $s12 = "vermagic="
-    $s13 = "current_task"
-    $s14 = "sock_release"
-    $s15 = "module_layout"
-    $s16 = "init_uts_ns"
-    $s17 = "init_net"
-    $s18 = "init_task"
-    $s19 = "filp_open"
-    $s20 = "__netlink_kernel_create"
-    $s21 = "kfree_skb"
-
-  condition:
-    uint32(0) == 0x464c457f and all of them
-}
-
 rule SIGNATURE_BASE_EXPL_Exchange_Proxynotshell_Patterns_CVE_2022_41040_Oct22_1: SCRIPT {
   meta:
     description   = "Detects successful ProxyNotShell exploitation attempts in log files (attempt to identify the attack before the official release of detailed information)"
@@ -25704,147 +25156,6 @@ rule SIGNATURE_BASE_STUXSHOP_Oscheck {
 
   condition:
     any of them
-}
-
-rule SIGNATURE_BASE_APT_Sandworm_Cyclopsblink_Module_Initialisation: FILE {
-  meta:
-    description = "Detects the code bytes used to initialise the modules built into Cyclops Blink"
-    author      = "NCSC"
-    id          = "c81b92c4-3f70-5bbd-acfa-ed1e1d33461d"
-    date        = "2022-02-23"
-    modified    = "2023-12-05"
-    reference   = "https://www.ncsc.gov.uk/news/joint-advisory-shows-new-sandworm-malware-cyclops-blink-replaces-vpnfilter"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_sandworm_cyclops_blink.yar#L39-L55"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "8bde37f642cf07e323beabaacd5c62f8422b451777fc1fc4a6bdf474db49de12"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "3adf9a59743bc5d8399f67cab5eb2daf28b9b863"
-    hash2       = "c59bc17659daca1b1ce65b6af077f86a648ad8a8"
-
-  strings:
-    $ = {
-      94 21 FF F0 93 E1 00 08 7C 3F 0B 78 38 00 00 ?? 7C 03
-      03 78 81 61 00 00 8E EB FF F8 7D 61 5B 78 4E 80 00 20
-    }
-
-  condition:
-    (uint32(0) == 0x464c457f) and (any of them)
-}
-
-rule SIGNATURE_BASE_APT_Sandworm_Cyclopsblink_Modified_Install_Upgrade: FILE {
-  meta:
-    description = "Detects notable strings identified within the modified install_upgrade executable, embedded within Cyclops Blink"
-    author      = "NCSC"
-    id          = "4c4f7262-df74-5f6a-afc0-df1fcae4741c"
-    date        = "2022-02-23"
-    modified    = "2023-12-05"
-    reference   = "https://www.ncsc.gov.uk/news/joint-advisory-shows-new-sandworm-malware-cyclops-blink-replaces-vpnfilter"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_sandworm_cyclops_blink.yar#L57-L88"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "69b89dbaf3e2661f376ff1be7c19e96c82bf84fd572fea422c109f8afdd1e5aa"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "3adf9a59743bc5d8399f67cab5eb2daf28b9b863"
-    hash2       = "c59bc17659daca1b1ce65b6af077f86a648ad8a8"
-    hash3       = "7d61c0dd0cd901221a9dff9df09bb90810754f10"
-    hash4       = "438cd40caca70cafe5ca436b36ef7d3a6321e858"
-
-  strings:
-    $ = "/pending/%010lu_%06d_%03d_p1"
-    $ = "/pending/sysa_code_dir/test_%d_%d_%d_%d_%d_%d"
-    $ = "etaonrishdlcupfm"
-    $ = "/pending/WGUpgrade-dl.new"
-    $ = "/pending/bin/install_upgraded"
-    $ = { 38 80 4C 00 }
-    $ = { 38 80 4C 05 }
-    $ = { 38 80 4C 04 }
-    $ = { 3C 00 48 4D 60 00 41 43 90 09 00 00 }
-
-  condition:
-    (uint32(0) == 0x464c457f) and (6 of them)
-}
-
-rule SIGNATURE_BASE_APT_Sandworm_Cyclopsblink_Core_Command_Check: FILE {
-  meta:
-    description = "Detects the code bytes used to test the command ID being sent to the core component of Cyclops Blink"
-    author      = "NCSC"
-    id          = "46066474-7647-52fb-b40d-30ff8e285b6e"
-    date        = "2022-02-23"
-    modified    = "2023-12-05"
-    reference   = "https://www.ncsc.gov.uk/news/joint-advisory-shows-new-sandworm-malware-cyclops-blink-replaces-vpnfilter"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_sandworm_cyclops_blink.yar#L90-L104"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "71c9da1f0e9e64be87293c985f2a4a59a6c87ffd127ce5104ebe95a0ccb316af"
-    score       = 50
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "3adf9a59743bc5d8399f67cab5eb2daf28b9b863"
-    hash2       = "c59bc17659daca1b1ce65b6af077f86a648ad8a8"
-
-  strings:
-    $cmd_check = { 81 3F 00 18 88 09 00 05 54 00 06 3E 2F 80 00 (07 | 0A | 0B | 0C | 0D) }
-
-  condition:
-    (uint32(0) == 0x464c457f) and (#cmd_check == 5)
-}
-
-rule SIGNATURE_BASE_APT_Sandworm_Cyclopsblink_Config_Identifiers: FILE {
-  meta:
-    description = "Detects the initial characters used to identify Cyclops Blink configuration data"
-    author      = "NCSC"
-    id          = "db5b3a4a-82c2-500a-88f6-340b3392eac8"
-    date        = "2022-02-23"
-    modified    = "2023-12-05"
-    reference   = "https://www.ncsc.gov.uk/news/joint-advisory-shows-new-sandworm-malware-cyclops-blink-replaces-vpnfilter"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_sandworm_cyclops_blink.yar#L106-L126"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "6fa39442d717a69dd6f31a4bb2e5865c3f16156ce24a2b419d95ed751bb0d8ee"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "3adf9a59743bc5d8399f67cab5eb2daf28b9b863"
-    hash2       = "c59bc17659daca1b1ce65b6af077f86a648ad8a8"
-
-  strings:
-    $ = { 3C 00 3C 6B 60 00 3A 20 90 09 00 00 }
-    $ = { 3C 00 3C 63 60 00 3A 20 90 09 00 00 }
-    $ = { 3C 00 3C 73 60 00 3A 20 90 09 00 00 }
-
-  condition:
-    (uint32(0) == 0x464c457f) and (all of them)
-}
-
-rule SIGNATURE_BASE_APT_Sandworm_Cyclopsblink_Handle_Mod_0X51_Command: FILE {
-  meta:
-    description = "Detects the code bytes used to check commands sent to module ID 0x51 and notable strings relating to the Cyclops Blink update process"
-    author      = "NCSC"
-    id          = "a6800aed-27dc-5d01-b005-1eb4a62344a3"
-    date        = "2022-02-23"
-    modified    = "2023-12-05"
-    reference   = "https://www.ncsc.gov.uk/news/joint-advisory-shows-new-sandworm-malware-cyclops-blink-replaces-vpnfilter"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_sandworm_cyclops_blink.yar#L176-L200"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "8a68f4a5f5b7a45819e9a198881aa41b75a65181b63788c8b824b339bfd6fc67"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    hash1       = "3adf9a59743bc5d8399f67cab5eb2daf28b9b863"
-    hash2       = "c59bc17659daca1b1ce65b6af077f86a648ad8a8"
-
-  strings:
-    $cmd_check = { 88 1F [2] 54 00 06 3E 2F 80 00 (01 | 02 | 03) }
-    $path1     = "/etc/wg/configd-hash.xml"
-    $path2     = "/etc/wg/config.xml"
-    $mnt_arg1  = "ext2"
-    $mnt_arg2  = "errors=continue"
-    $mnt_arg3  = { 38 C0 0C 20 }
-    $mnt_arg4  = { 38 C0 0C 21 }
-
-  condition:
-    (uint32(0) == 0x464c457f) and (#cmd_check == 3) and ((@cmd_check[3] - @cmd_check[1]) < 0x200) and (all of ($path*)) and (all of ($mnt_arg*))
 }
 
 rule SIGNATURE_BASE_Gen_Exploit_CVE_2017_10271_Weblogic: HIGHVOL CVE_2017_10271 FILE {
@@ -26973,52 +26284,6 @@ rule SIGNATURE_BASE_IMPLANT_5_V4 {
 
   condition:
     all of them
-}
-
-rule SIGNATURE_BASE_M_APT_VIRTUALPITA_2: FILE {
-  meta:
-    description = "Finds opcodes to decode and parse the recieved data in the socket buffer in fe34b7c071d96dac498b72a4a07cb246.  Opcodes from 401a36 to 401adc"
-    author      = "Mandiant"
-    id          = "6a59cc54-e1a0-594f-9efb-af63d5c05259"
-    date        = "2023-12-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/Neo23x0/signature-base"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_unc3886_virtualpita.yar#L17-L28"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "fe34b7c071d96dac498b72a4a07cb246"
-    logic_hash  = "56a3e1b13f0955a780f882e62003f721e409a1fdf61120dd295941605dbf21a4"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-
-  strings:
-    $x = { 85 c0 74 ?? c7 05 ?? ?? ?? ?? fb ff ff ff c7 8? ?? ?? ?? ?? 00 00 00 00 e9 ?? ?? ?? ?? 4? 8b 05 ?? ?? ?? ?? 4? 83 c0 01 4? 89 05 ?? ?? ?? ?? c7 4? ?? 00 00 00 00 e9 ?? ?? ?? ?? 8b 4? ?? 4? 98 4? 8d 9? ?? ?? ?? ?? 4? 8d ?? e0 4? 8b 0? 4? 89 0? 4? 8b 4? ?? 4? 89 4? ?? 8b 4? ?? 4? 98 4? 8d b? ?? ?? ?? ?? b? ?? ?? ?? ?? e8 ?? ?? ?? ?? c7 4? ?? 00 00 00 00 eb ?? 8b 4? ?? 8b 4? ?? 01 c1 8b 4? ?? 03 4? ?? 4? 98 0f b6 9? ?? ?? ?? ?? 8b 4? ?? 4? 98 0f b6 8? ?? ?? ?? ?? 31 c2 4? 63 c1 88 9? ?? ?? ?? ?? 83 4? ?? 01 }
-
-  condition:
-    uint32(0) == 0x464c457f and all of them
-}
-
-rule SIGNATURE_BASE_M_APT_VIRTUALPITA_4: FILE {
-  meta:
-    description = "Finds opcodes from 401f1c to 401f4f in fe34b7c071d96dac498b72a4a07cb246 to decode text with multiple XORs"
-    author      = "Mandiant"
-    id          = "58d4db75-fcd5-50c2-93ba-a8a4718ac0f6"
-    date        = "2023-12-05"
-    modified    = "2023-12-05"
-    reference   = "https://github.com/Neo23x0/signature-base"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/apt_unc3886_virtualpita.yar#L43-L55"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "fe34b7c071d96dac498b72a4a07cb246"
-    logic_hash  = "aaf2ff682c619d2a254fe069d477654a161658db6315239f1b956141b6a72c01"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-
-  strings:
-    $x = { 4? 8b 4? ?? 4? 83 c1 30 4? 8b 4? ?? 4? 8b 10 8b 4? ?? 4? 98 4? 8b 04 ?? ?? ?? ?? ?? 4? 31 c2 4? 8b 4? ?? 4? 83 c0 28 4? 8b 00 4? c1 e8 10 0f b6 c0 4? 98 4? 8b 04 }
-
-  condition:
-    uint32(0) == 0x464c457f and all of them
 }
 
 rule SIGNATURE_BASE_EXPL_POC_Springcore_0Day_Indicators_Mar22_1 {
@@ -33404,38 +32669,6 @@ rule SIGNATURE_BASE_EXPL_CVE_2021_31166_Accept_Encoding_May21_1: CVE_2021_31166 
     1 of them
 }
 
-rule SIGNATURE_BASE_MAL_ELF_Torchtriton: FILE {
-  meta:
-    description = "Detection for backdoor (TorchTriton) distributed with a nightly build of PyTorch"
-    author      = "Silas Cutler"
-    id          = "85e98ee7-30bf-554f-a0ac-9df263e6dfe4"
-    date        = "2023-01-02"
-    modified    = "2023-12-05"
-    reference   = "https://www.bleepingcomputer.com/news/security/pytorch-discloses-malicious-dependency-chain-compromise-over-holidays/"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/gen_100days_of_yara_2023.yar#L88-L117"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    hash        = "2385b29489cd9e35f92c072780f903ae2e517ed422eae67246ae50a5cc738a0e"
-    logic_hash  = "12de3c3785aaf3623097db58abfe8ee2cbd9a0e712bf752165952de9a5fdb07d"
-    score       = 75
-    quality     = 85
-    tags        = "FILE"
-    version     = "1.0"
-    DaysofYARA  = "2/100"
-
-  strings:
-    $error   = "failed to send packet"
-    $aes_key = "gIdk8tzrHLOM)mPY-R)QgG[;yRXYCZFU"
-    $aes_iv  = "?BVsNqL]S.Ni"
-    $func01  = "splitIntoDomains("
-    $func02  = "packageForTransport"
-    $func03  = "gatherFiles"
-    $func04  = "void sendFile("
-    $domain  = "&z-%`-(*"
-
-  condition:
-    uint32(0) == 0x464c457f and ((all of ($aes_*)) or (all of ($func*) and $error) or ($domain and 2 of them))
-}
-
 rule SIGNATURE_BASE_MAL_PY_Dimorf {
   meta:
     description = "Detection for Dimorf ransomeware"
@@ -33508,60 +32741,6 @@ rule SIGNATURE_BASE_EXPL_Manageengine_CVE_2022_47966_Jan23_1 {
 
   condition:
     1 of them
-}
-
-rule SIGNATURE_BASE_MAL_Fortinet_COATHANGER_Beacon: COATHANGER FILE {
-  meta:
-    description = "Detects COATHANGER beaconing code"
-    author      = "NLD MIVD - JSCU"
-    id          = "0c84e6e4-afae-5150-82e2-8de528cd11fc"
-    date        = "2024-02-06"
-    modified    = "2024-04-24"
-    reference   = "https://www.ncsc.nl/documenten/publicaties/2024/februari/6/mivd-aivd-advisory-coathanger-tlp-clear"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/mal_fortinet_coathanger_feb24.yar#L2-L15"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "e44496e62de8c885d5bd941819a97f4c0dd90ce2d0cfe9d042ab9590cc354ddb"
-    score       = 75
-    quality     = 85
-    tags        = "COATHANGER, FILE"
-    malware     = "COATHANGER"
-
-  strings:
-    $chunk_1 = { 48 B8 47 45 54 20 2F 20 48 54 48 89 45 B0 48 B8 54 50 2F 32 0A 48 6F 73 48 89 45 B8 48 B8 74 3A 20 77 77 77 2E 67 48 89 45 C0 48 B8 6F 6F 67 6C 65 2E 63 6F }
-
-  condition:
-    uint32(0) == 0x464c457f and filesize < 5MB and any of them
-}
-
-rule SIGNATURE_BASE_MAL_Fortinet_COATHANGER_Files: COATHANGER FILE {
-  meta:
-    description = "Detects COATHANGER files by used filenames"
-    author      = "NLD MIVD - JSCU"
-    id          = "0aa2f266-247b-5510-9fd9-4c7940fb80e8"
-    date        = "2024-02-06"
-    modified    = "2024-04-24"
-    reference   = "https://www.ncsc.nl/documenten/publicaties/2024/februari/6/mivd-aivd-advisory-coathanger-tlp-clear"
-    source_url  = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/yara/mal_fortinet_coathanger_feb24.yar#L17-L38"
-    license_url = "https://github.com/Neo23x0/signature-base/blob/6b8e2a00e5aafcfcfc767f3f53ae986cf81f968a/LICENSE"
-    logic_hash  = "5406d8a99e16f08f1ffca548ea1dd1e27e7707506e796e0fc263bcdbb681632d"
-    score       = 75
-    quality     = 85
-    tags        = "COATHANGER, FILE"
-    malware     = "COATHANGER"
-
-  strings:
-    $1 = "/data2/"
-    $2 = "/httpsd"
-    $3 = "/preload.so"
-    $4 = "/authd"
-    $5 = "/tmp/packfile"
-    $6 = "/smartctl"
-    $7 = "/etc/ld.so.preload"
-    $8 = "/newcli"
-    $9 = "/bin/busybox"
-
-  condition:
-    (uint32(0) == 0x464c457f or uint32(4) == 0x464c457f) and filesize < 5MB and 4 of them
 }
 
 rule SIGNATURE_BASE_OPCLEAVER_Backdoorlogger {
@@ -39203,108 +38382,6 @@ rule CobaltStrike {
     all of them
 }
 
-rule Babuk_ESXi {
-  meta:
-    author      = "rivitna"
-    family      = "ransomware.babuk.esxi"
-    description = "Babuk ESXi"
-    severity    = 10
-    score       = 100
-
-  strings:
-    $h0 = "/dev/urandom\x00" ascii
-    $h1 = "EiB\x00PiB\x00TiB\x00GiB\x00MiB\x00KiB\x00B\x00" ascii
-    $h2 = "crypting: %s\n\x00" ascii
-
-    $c0 = {
-      67 E6 09 6A [2-8] 85 AE 67 BB [2-8] 72 F3 6E 3C [2-8]
-      3A F5 4F A5 [2-8] 7F 52 0E 51 [2-8] 8C 68 05 9B
-    }
-    $c1 = {
-      98 2F 8A 42 91 44 37 71 CF FB C0 B5 A5 DB B5 E9
-      5B C2 56 39 F1 11 F1 59 A4 82 3F 92 D5 5E 1C AB
-    }
-    $c2 = { 79 37 9E 89 [4-16] C1 C? (15 | 0B) [16-40] 79 37 9E 89 }
-
-  condition:
-    (uint32(0) == 0x464C457F) and (filesize < 120000) and
-    (
-      (all of ($c*)) and (1 of ($h*))
-    )
-}
-
-rule apt_37_chinotto {
-  meta:
-    id             = "eff8fd11-dc7a-4011-b083-181d0cca8790"
-    version        = "1.0"
-    description    = "Detects obfuscation and string of APT37 stealer"
-    author         = "Sekoia.io"
-    creation_date  = "2023-02-27"
-    classification = "TLP:CLEAR"
-    hash1          = "feab7940559392bbf38f29267509340569160e0a3b257fd86e5c65ae087ea014"
-    hash2          = "c9d2c8b6011a53e68e4a6c6e51142cef3348951d0b379e49b1a65a1891538df5"
-    hash3          = "2f5be3773e7e3a2f6806cdef154adfabc454c0e57a49e437c5889ce09b739302"
-    hash4          = "5bf170c95ca0e2079653d694f783b5bcd38f274ea875f67f0b60db4ac552a66c"
-    hash5          = "6fad04c836bc923f12ebaec8d8fb0c7091b044bf6f5c97e36d7bf46b8494f978"
-    hash6          = "64fe964f342acca6d85d247c4f67503e4222a58dfc5c644dedc2006a4b356d39"
-    hash7          = "6e216b265ea391f71f2a609df995f36b9ba8b17c8859f6d8e4ce4a076d351efd"
-    hash8          = "70dcc03cde3dd5c5ec6a6a240190cfb51667aaba9c867e20281e8dfc43afa891"
-    hash9          = "5053390bde150b771f8efe344b692c6c5718ba9203a4b23f5323af1ee9060ff2"
-    hash10         = "089e4dfd8b25afe596eff05baae86156a4e3243c84faa15416cff31a5120e107"
-    hash11         = "37e096338a78cb06d6236cb5a04cf125f191871ded3c9421f08a37890a095eb8"
-    hash12         = "b90a2b0249407b271a5d849fe82cbf4e9a31c2c6259caf515c9be3897e327414"
-    hash13         = "8f4751ed22619b04009c4b85ec45c8140b570835ca4c638c9e6019e7b7eb66c7"
-
-  strings:
-    $chunk_1 = {
-      C7 85 ?? ?? ?? ?? ?? ?? ?? 00
-      C7 85 ?? ?? ?? ?? ?? ?? ?? 00
-      33 C0
-      EB 03
-      8D 49 00
-      8B 8C 85 ?? ?? ?? ??
-      3B 8C 85 ?? ?? ?? ??
-    }
-
-    $chunk_2 = {
-      C7 84 24 ?? ?? ?? ?? ?? ?? 0? 00
-      C7 84 24 ?? ?? ?? ?? ?? ?? 0? 00
-      33 C0
-      EB 0D
-      8D A4 24 00 00 00 00
-      8D 9B 00 00 00 00
-      8B 8C 84 ?? ?? ?? ??
-      3B 8C 84 ?? ?? ?? ??
-    }
-
-    $movs_zip_dir_start = { C7 45 ?? 5A 69 70 20 C7 45 ?? 44 69 72 20 C7 45 ?? 53 74 61 72 C7 45 ?? 74 20 2D 20 }
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 1MB and ($chunk_1 or $chunk_2) and $movs_zip_dir_start
-}
-
-rule apt_3cx_payload_stealer {
-  meta:
-    id             = "1ca0605d-101f-4d1d-a476-9dfd93e74b4c"
-    version        = "1.0"
-    description    = "Detects stealer used in 3CX campaign"
-    author         = "Sekoia.io"
-    creation_date  = "2023-03-31"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "******************************** %s ******************************" wide
-    $s2 = "\\3CXDesktopApp\\config.json" wide
-    $s3 = "{\"HostName\": \"%s\", \"DomainName\": \"%s\", \"OsVersion\":" wide
-    $s4 = "%s.old" wide
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 8MB and
-    all of them
-}
-
 rule apt_andariel_dorarat_strings {
   meta:
     id             = "30388291-a287-489f-a060-c90a16cda217"
@@ -39343,27 +38420,6 @@ rule apt_andariel_keylogger_strings {
     uint16be(0) == 0x4d5a and
     filesize < 300KB and
     2 of them
-}
-
-rule apt_andariel_siennablue {
-  meta:
-    id             = "ab3f8b49-0851-47a8-ac77-98d4e26f448e"
-    version        = "1.0"
-    description    = "Detects SiennaBlue based routine names"
-    author         = "Sekoia.io"
-    creation_date  = "2023-11-16"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "main_cryptAVPass"
-    $ = "main_DecryptString"
-    $ = "main_DisableNetworkDevice"
-    $ = "main_DeleteSchTask"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize > 4MB and filesize < 15MB and
-    all of them
 }
 
 rule apt_apt10_hui_loader {
@@ -39537,32 +38593,6 @@ rule apt_apt29_wineloader_malicious_pdf {
     $s2 in (@s1..@s3) and $s4
 }
 
-rule apt_apt31_pakdoor {
-  meta:
-    id             = "463b8d0d-30f4-45ed-8f19-4b32436fbbf0"
-    description    = "Detects APT31 ORB implant - 2019/2021"
-    version        = "1.0"
-    creation_date  = "2021-10-11"
-    classification = "TLP:CLEAR"
-    author         = "Sekoia.io"
-    version        = "1.0"
-    hash           = "1d60edb577641ce47dc2a8299f8b7f878e37120b192655aaf80d1cde5ee482d2"
-
-  strings:
-    // Common strings between samples
-    $s1 = "mv -f %s %s ;chmod 777 %s"
-    $s2 = "GET /plain HTTP/1.1"
-    $s3 = "exc_cmd time out"
-    $s4 = "exc_cmd pipe err"
-    $s5 = { 2e 2f [1-10] 20 20 64 65 6c }
-
-  condition:
-    int32be(0) == 0x7f454c46 and
-    filesize < 800KB and
-    filesize > 400KB and
-    4 of ($s*)
-}
-
 rule apt_apt35_iisraid_strings {
   meta:
     id             = "ee42f406-0c7e-4385-9098-409611dbe0a5"
@@ -39687,32 +38717,6 @@ rule apt_badmagic_commonmagic_usbstealer {
     all of them
 }
 
-rule apt_cloudatlas_init_module_virtualalloc {
-  meta:
-    id             = "299ed681-9d1f-4b47-8389-ff5a608f49d4"
-    version        = "1.0"
-    description    = "Find init module of CloudAtlas with params passed to VirtualAlloc"
-    author         = "Sekoia.io"
-    creation_date  = "2023-09-19"
-    classification = "TLP:CLEAR"
-    hash1          = "02a1a9582f5ccf421b08c41c35049416b9cdefc9228daf6b38d95e9b0930cc5a"
-    hash2          = "c7f19c7c295c86867ea7fa4597ba0cebe12f751753866e7298fd5d84676facc3"
-
-  strings:
-    $chunk_1 = {
-      6A 40
-      68 00 30 10 00
-      8B 8D ?? ?? ?? ??
-      8B 51 50
-      52
-      6A 00
-      FF 15 ?? ?? ?? ??
-    }
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and $chunk_1 and filesize < 3MB
-}
-
 rule apt_cloudatlas_powershower_clean {
   meta:
     id             = "4a7c37df-3f53-4190-a86f-94bba3df628e"
@@ -39787,74 +38791,6 @@ rule apt_cloudmensis_spyagent_strings {
   condition:
     uint32be(0) == 0xcafebabe and
     filesize < 2MB and
-    all of them
-}
-
-rule apt_coathanger_beacon {
-  meta:
-    id             = "cc201479-016a-46d2-a9e2-41b4914ce618"
-    version        = "1.0"
-    description    = "Detects COATHANGER beacon"
-    author         = "Sekoia.io"
-    creation_date  = "2024-02-07"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = {
-      48 B8 47 45 54 20 2F 20 48 54
-      48 89 45 B0 48 B8 54 50 2F 32 0A 48 6F 73
-      48 89 45 B8 48 B8 74 3A 20 77 77 77 2E 67
-      48 89 45 C0 48 B8 6F 6F 67 6C 65 2E 63 6F
-    }
-
-  condition:
-    uint32(0) == 0x464c457f and filesize < 5MB and
-    any of them
-}
-
-rule apt_coathanger_files {
-  meta:
-    id             = "615f5ac1-14bc-4f5b-a02e-7b13cd179917"
-    version        = "1.0"
-    description    = "Detects COATHANGER files"
-    author         = "Sekoia.io"
-    creation_date  = "2024-02-07"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "/data2/"
-    $ = "/httpsd"
-    $ = "/preload.so"
-    $ = "/authd"
-    $ = "/tmp/packfile"
-    $ = "/smartctl"
-    $ = "/etc/ld.so.preload"
-    $ = "/newcli"
-    $ = "/bin/busybox"
-
-  condition:
-    (uint32(0) == 0x464c457f or uint32(4) == 0x464c457f)
-    and filesize < 5MB and 4 of them
-}
-
-rule apt_emberbear_credpump_strings {
-  meta:
-    id             = "c9898e34-4ab8-49d6-9c8a-3fce592449e2"
-    version        = "1.0"
-    description    = "Detects CredPump backdoor"
-    author         = "Sekoia.io"
-    creation_date  = "2023-02-28"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "User=%s Pass=%s Host=%s"
-    $ = "/etc/rc0.d/.rc0.d"
-    $ = "pam_get_authtok"
-    $ = "Password:"
-
-  condition:
-    uint32be(0) == 0x7f454c46 and
-    filesize < 200KB and
     all of them
 }
 
@@ -40010,56 +38946,6 @@ rule apt_gamaredon_vbs_downloader {
     filesize < 1KB
 }
 
-rule apt_gelsemium_wolfsbane_backdoor {
-  meta:
-    id             = "db2ad5a4-b592-4646-a385-c668bb2ea090"
-    version        = "1.0"
-    description    = "Detects Gelsemium's WolfsBane backdoor"
-    author         = "Sekoia.io"
-    creation_date  = "2024-11-22"
-    classification = "TLP:CLEAR"
-    hash           = "1418fe9a743226b9661a2b6decb19db0"
-
-  strings:
-    $ = "udp_session"
-    $ = "session_interface"
-    $ = "plugin_persist"
-    $ = "Udp.cpp"
-    $ = "ikcp.c"
-    $ = "' %s 2>/dev/null"
-
-  condition:
-    uint32be(0) == 0x7f454c46 and
-    filesize > 3MB and
-    filesize < 4MB and
-    4 of them
-}
-
-rule apt_gelsemium_wolfsbane_rootkit {
-  meta:
-    id             = "e93f4515-62f5-4057-a464-aae11cbe0639"
-    version        = "1.0"
-    description    = "Detects Gelsemium's WolfsBane rootkit"
-    author         = "Sekoia.io"
-    creation_date  = "2024-11-22"
-    classification = "TLP:CLEAR"
-    hash           = "ba08e63ad65a9bdcdb1655f25d32c808"
-
-  strings:
-    $ = "__non_hooked_symbols"
-    $ = "__hidden_literals"
-    $ = "extract_type_2_socket_inode2"
-    $ = "/proc/%s/fd"
-    $ = "pluginkey" wide
-    $ = "mainpath" wide
-    $ = "hiderpath" wide
-
-  condition:
-    uint32be(0) == 0x7f454c46 and
-    filesize < 1MB and
-    all of them
-}
-
 rule apt_globalshadow {
   meta:
     id             = "2fef6192-25a6-4d6a-8e19-53ad51617d90"
@@ -40087,23 +38973,6 @@ rule apt_globalshadow {
     uint16be(0) == 0x4d5a and
     2 of ($command*) and 3 of ($step*) and $delim and
     true
-}
-
-rule apt_gobrat_2 {
-  meta:
-    id             = "6b7e38f5-00bc-49c8-b34d-3e878bf426d8"
-    version        = "1.0"
-    description    = "Detects GobRat related files"
-    author         = "Sekoia.io"
-    creation_date  = "2024-09-10"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "thisisweird" ascii
-    $ = "ZzZzZzZzZzZz"
-
-  condition:
-    all of them and uint32be(0) == 0x7f454c46
 }
 
 rule apt_icepeony_iceevent {
@@ -40587,77 +39456,6 @@ rule apt_mustangpanda_payload {
     filesize < 8MB and all of them
 }
 
-rule apt_mustangpanda_tinynote {
-  meta:
-    id             = "a2b9bea4-a211-456f-8a3f-0f31733e8b29"
-    version        = "1.0"
-    description    = "Detects strings in TinyNote backdoor"
-    author         = "Sekoia.io"
-    creation_date  = "2023-06-07"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "bypassSMADAV" ascii fullword
-    $s2 = "excuteCmdLine" ascii fullword
-    $s3 = "/Create1953125" ascii
-    $s4 = "MINUTEMonday" ascii
-    $s5 = "WndProc" ascii
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 8MB and
-    all of them
-}
-
-rule apt_mustangpanda_zpakage {
-  meta:
-    id             = "a4767d12-5058-4a26-be62-0cec685917bd"
-    version        = "1.0"
-    description    = "Detect obfuscation seen in ZPAKAGE"
-    author         = "Sekoia.io"
-    creation_date  = "2023-03-27"
-    classification = "TLP:CLEAR"
-    hash           = "711c0e83f4e626a7b54e3948b281a71915a056c5341c8f509ecba535bc199bee"
-
-  strings:
-    $chunk_1 = {
-      88 94 1D ?? ?? ?? ??
-      8A 84 1D ?? ?? ?? ??
-      83 ?? ??
-      88 84 1D ?? ?? ?? ??
-      8A 84 1D ?? ?? ?? ??
-      83 ?? ??
-      88 84 1D ?? ?? ?? ??
-      8A 84 1D ?? ?? ?? ??
-      83 ?? ??
-      88 84 1D ?? ?? ?? ??
-      0F BE 8C 1D ?? ?? ?? ??
-      0F BE 84 1D ?? ?? ?? ??
-    }
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 1MB and filesize < 11MB and
-    #chunk_1 > 20
-}
-
-rule apt_mustang_panda_nupakage {
-  meta:
-    id             = "bd62c220-addc-48e9-bd01-2eff687ac3ce"
-    version        = "1.0"
-    description    = "Detects NUPAKAGE malware (only PDB, too much false positives)"
-    author         = "Sekoia.io"
-    creation_date  = "2023-03-24"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "D:\\Project\\NEW_PACKAGE_FILE\\Release\\NEW_PACKAGE_FILE.pdb" ascii wide
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 1MB and all of them
-}
-
 rule apt_nobelium_acrobox_downloader_apr2022 {
   meta:
     id             = "77f7f01d-72a2-4b13-b23f-d938a415dd40"
@@ -40953,25 +39751,6 @@ rule apt_toddycat_tomberbil_strings {
     4 of them
 }
 
-rule apt_toddycat_waexp_strings {
-  meta:
-    id             = "1bbb3e81-14a9-4bda-b647-b6f5255e9a16"
-    version        = "1.0"
-    description    = "Detects WAExp based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2024-04-23"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "[>] Profile:" wide ascii
-    $ = "[+] All Done" wide ascii
-    $ = "[+] Files:" wide ascii
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    all of them and filesize < 1MB
-}
-
 rule apt_toneshell_shellcode {
   meta:
     id             = "5ac8d2e9-dbeb-42f9-8343-1281510d4411"
@@ -41081,30 +39860,6 @@ rule apt_turla_comlook {
     uint16be(0) == 0x4d5a and filesize < 10MB and any of ($ClassName*) and any of ($MethodName*) and any of ($Log*)
 }
 
-rule apt_unc3524_quietexit_strings {
-  meta:
-    id             = "1bfa9baa-40a3-4ad7-83dc-f9340fbed180"
-    version        = "1.0"
-    description    = "Detect the QUIETEXIT malware used by UNC3524"
-    author         = "Sekoia.io"
-    creation_date  = "2022-05-04"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "Child connection from %s:%s" ascii
-    $ = "Failed to run %s" ascii
-    $ = "add %s %s %s" ascii
-    $ = "/usr/bin/xauth -q" ascii
-    $ = "/tmp/dropbear-%" ascii
-    $ = "cron" ascii
-    $ = { DD E5 D5 97 20 53 27 BF F0 A2 BA CD 96 35 9A AD 1C 75 EB 47 }
-
-  condition:
-    uint32be(0) == 0x7f454c46 and
-    filesize > 1MB and
-    5 of them
-}
-
 rule apt_unk_dex_china_freedom_trap_spyware {
   meta:
     id             = "3d66b6b8-8397-441a-a337-4a282df39591"
@@ -41202,72 +39957,6 @@ rule apt_yemen_apk_guardzoo {
     ((any of ($classes_*)) and (3 of ($path_*)))
 }
 
-rule backdoor_lin_bpfdoor {
-  meta:
-    id             = "1776ff6f-6fbb-4a81-bcad-c43b5117c67c"
-    version        = "1.0"
-    description    = "Detect the BPFDoor backdoor used by the Chinese TA Red Menshen"
-    author         = "Sekoia.io"
-    creation_date  = "2022-05-05"
-    classification = "TLP:CLEAR"
-    reference      = "https://github.com/Neo23x0/signature-base/blob/master/yara/mal_lnx_implant_may22.yar"
-
-  strings:
-    $op1 = { e8 ?? ff ff ff 80 45 ee 01 0f b6 45 ee 3b 45 d4 7c 04 c6 45 ee 00 80 45 ff 01 80 7d ff 00 }
-    $op2 = { 55 48 89 e5 48 83 ec 30 89 7d ec 48 89 75 e0 89 55 dc 83 7d dc 00 75 0? }
-    $op3 = { e8 a? fe ff ff 0f b6 45 f6 48 03 45 e8 0f b6 10 0f b6 45 f7 48 03 45 e8 0f b6 00 8d 04 02 }
-    $op4 = { c6 80 01 01 00 00 00 48 8b 45 c8 0f b6 90 01 01 00 00 48 8b 45 c8 88 90 00 01 00 00 c6 45 ef 00 0f b6 45 ef 88 45 ee }
-
-  condition:
-    uint32(0) == 0x464c457f
-    and filesize > 10KB
-    and filesize < 50KB
-    and (all of ($op*))
-}
-
-rule backdoor_lin_sysupdate {
-  meta:
-    id             = "9cb806cf-4ca1-44d8-809a-58cc5f364fb8"
-    version        = "1.0"
-    description    = "Detect the SysUpdate malware"
-    author         = "Sekoia.io"
-    creation_date  = "2023-03-01"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "generate guid path=%s"
-    $ = "3rd/asio/include/asio/detail/posix_event.hpp"
-    $ = "expires_at"
-    $ = "%s -f %s"
-    $ = "expires_after"
-    $ = "-run"
-
-  condition:
-    uint32(0) == 0x464c457f and all of them
-}
-
-rule backdoor_mul_supershell_client {
-  meta:
-    id             = "3498ca9e-a165-4dda-bc15-2e5d6d43d9c1"
-    version        = "1.0"
-    description    = "Detect the Supershell client (unpacked) by looking for github references"
-    author         = "Sekoia.io"
-    creation_date  = "2024-04-25"
-    classification = "TLP:CLEAR"
-    hash1          = "a42906f8b392089fa1fe3ea264f6cb549ce5437b5ea253d9e1b8dd94bf115dad"
-    hash2          = "d97b41e8cd6b63cd55c9a4f99ccadf5a9141088319bc9eb467d96e54080f3c85"
-    hash3          = "2b54d1c064892a22f48b5742ba6da55bf62b73e5b1e0649e8b7880b286498735"
-    hash4          = "0dedab2ef8d44f9beef782a29dd8f628dd0218b90f23f729b315660437019ccd"
-    hash5          = "2484de7944889d784b8229f4fd756d3930e55c91654921019db4437877e30ab7"
-
-  strings:
-    $ = "github.com/NHAS/reverse_ssh/internal/client/"
-    $ = "golang.org"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and all of them
-}
-
 rule backdoor_sandman_strings {
   meta:
     id             = "7bac7a1e-7d4a-4410-9ad4-1c85beb6faaf"
@@ -41319,49 +40008,6 @@ rule backdoor_xploitspy_strings {
     uint32be(0) == 0x6465780A and
     filesize < 1MB and
     10 of them
-}
-
-rule botnet_lin_tsunami {
-  meta:
-    id             = "65d2ff89-064f-489a-a215-33197926a62d"
-    version        = "1.0"
-    description    = "Catch tsunami botnet based on string"
-    author         = "Sekoia.io"
-    creation_date  = "2024-09-24"
-    classification = "TLP:CLEAR"
-    hash           = "536a28db011459d841652e25a852ccf2"
-
-  strings:
-    $n  = "NOTICE %s" ascii
-    $t  = "TSUNAMI" ascii nocase
-    $s1 = "NICK" ascii fullword
-    $s2 = "GETSPOOFS" ascii fullword
-    $s3 = "IRC" ascii fullword
-    $s4 = "PONG" ascii
-
-  condition:
-    uint32(0) == 0x464c457f and #n > 40 and #t > 3 and 3 of ($s*)
-}
-
-rule bot_lin_lucifer_strings {
-  meta:
-    id             = "c341b6d0-bc22-4a85-aebb-ed323487f524"
-    version        = "1.0"
-    description    = "Catch Lucifer DDoS - lin version - malware based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2024-09-24"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "DealwithDDoS" ascii
-    $s2 = "DecryptData" ascii
-    $s3 = "They say I'm rude. I'm not rude at all, but I still want to say, fuck your mother" ascii
-    $s4 = "stratum+tcp://" ascii
-    $s5 = "gethostip" ascii
-    $s6 = "GetmyName" ascii
-
-  condition:
-    uint32(0) == 0x464c457f and all of them
 }
 
 rule bumblebee_loader {
@@ -41557,25 +40203,6 @@ rule exploit_cve20191458_strings {
     uint16be(0) == 0x4d5a and
     filesize < 200KB and
     3 of them
-}
-
-rule exploit_ez_pwnkit_strings {
-  meta:
-    id             = "24301f35-8174-4e0d-b14a-fc7e45a29b26"
-    version        = "1.0"
-    description    = "Detects ez-pwnkit exploit"
-    author         = "Sekoia.io"
-    creation_date  = "2024-01-22"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "go.buildid"
-    $s2 = "github.com/OXDBXKXO/ez-pwnkit"
-
-  condition:
-    uint32be(0) == 0x7f454c46 and
-    filesize < 5MB and
-    $s1 and #s2 > 5
 }
 
 rule generic_php_webshell {
@@ -41787,81 +40414,6 @@ rule hacktool_duplicatedump_strings {
     4 of them
 }
 
-rule hacktool_fscan_strings {
-  meta:
-    id             = "6bef80c3-370c-4168-9d88-3fac88f986b1"
-    version        = "1.0"
-    description    = "Detects fscan based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2023-12-06"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "Plugins.RdpScan.func1"
-    $ = "Plugins.smb1AnonymousConnectIPC.func1"
-    $ = "WebScan/WebScan.go"
-    $ = "Plugins/CVE-2020-0796.go"
-    $ = "Plugins.SshConn.func4"
-    $ = "Plugins.PostgresScan"
-    $ = "Plugins.(*FCGIClient).Request.func1"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 30MB and
-    4 of them
-}
-
-rule hacktool_gtunnel_strings {
-  meta:
-    id             = "f20a4400-8ae6-4954-b643-0a8847f037f0"
-    version        = "1.0"
-    description    = "Detects Go gTunnel based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2023-04-24"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $repo = "github.com/hotnops/gTunnel/" ascii fullword
-    $s1   = "common.(*Tunnel).GetControlStream"
-    $s2   = "common.(*Tunnel).handleIngressCtrlMessages"
-    $s3   = "client..inittask"
-    $s4   = "client.file_client_proto_rawDescGZIP."
-    $s5   = "common.(*SocksServer).Start."
-    $s6   = "client.(*TunnelControlMessage).GetConnectionId"
-    $s7   = "protobuf/reflect/protoreflect.ProtoMessage"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or
-      uint16be(0) == 0x4d5a or
-      uint32be(0) == 0xfeedface or
-      uint32be(0) == 0xfeedfacf or
-      uint32be(0) == 0xcafebabe) and
-    #repo > 200 or 5 of ($s*)
-}
-
-rule hacktool_iox_tunneling {
-  meta:
-    id             = "45b31d67-95e9-405d-88ea-3f2006ef160a"
-    version        = "1.0"
-    description    = "Detects IOX tunneling tool"
-    author         = "Sekoia.io"
-    creation_date  = "2022-10-13"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "iox/operate.Local2Remote"
-    $ = "iox/operate.Local2Local"
-    $ = "iox/operate.Remote2Remote"
-    $ = "iox/operate.ProxyLocal"
-    $ = "iox/operate.ProxyRemote"
-    $ = "iox/operate.ProxyRemoteL2L"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 5MB and
-    all of them
-}
-
 rule hacktool_ipmipwner_strings {
   meta:
     id             = "2ac736b5-33bb-477f-a98c-57cc2744d251"
@@ -41877,68 +40429,6 @@ rule hacktool_ipmipwner_strings {
 
   condition:
     all of them and filesize < 10KB
-}
-
-rule hacktool_ligolo_relay_strings {
-  meta:
-    id             = "1e32f2e5-b66b-4b55-9dd4-1402b2f627ed"
-    version        = "1.0"
-    description    = "Detects Ligolo Relay based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2022-02-08"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "ligolo/cmd/localrelay"
-    $ = "main.LigoloRelay.Start"
-    $ = "main.LigoloRelay.startRelayHandler"
-    $ = "main.LigoloRelay.startLocalHandler"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize > 2MB and filesize < 5MB and
-    3 of them
-}
-
-rule hacktool_ligolo_strings {
-  meta:
-    id             = "5013256b-eda3-417e-ac72-959055b01c7e"
-    version        = "1.0"
-    description    = "Detects ligolo based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2022-02-08"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "Restarting Ligolo..."
-    $ = "Ligolo starts a socks5 proxy server"
-    $ = "main.startSocksProxy"
-    $ = "main.handleRelay"
-    $ = "main.StartLigolo"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize > 2MB and filesize < 5MB and
-    3 of them
-}
-
-rule hacktool_microsocks_strings {
-  meta:
-    id             = "20e82008-249b-47a3-885b-7c4b04b31a57"
-    version        = "1.0"
-    description    = "Detects Microsocks"
-    author         = "Sekoia.io"
-    creation_date  = "2023-12-08"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "microsocks -1 -i listenip -p port -u user -P password"
-    $ = "user/pass, it is added to a whitelist"
-
-  condition:
-    uint32be(0) == 0x7f454c46 and
-    filesize < 1MB and
-    all of them
 }
 
 rule hacktool_mimikat_ssp_strings {
@@ -42061,31 +40551,6 @@ rule hacktool_rubeus_strings {
     uint16be(0) == 0x4d5a and
     filesize < 1MB and
     4 of them
-}
-
-rule hacktool_stowaway_strings {
-  meta:
-    id             = "a952b45a-269b-4075-bf72-16d6d863e97c"
-    version        = "1.0"
-    description    = "Detects Stowaway based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2023-11-15"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "agent.CloseLowConn"
-    $ = "agent.CloseListener"
-    $ = "agent.SimpleNodeInit"
-    $ = "agent.HandleConnToLowerNode"
-    $ = "agent.HandleConnFromLowerNode"
-    $ = "common.NewPassToLowerNodeData"
-    $ = "agent.HandleSimpleNodeConn"
-    $ = "agent.HandleConnToUpperNode"
-    $ = "agent.HandleConnFromUpperNode"
-    $ = "agent.StartSocks"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and all of them
 }
 
 rule hafnium_tarrask_malware {
@@ -42346,142 +40811,6 @@ rule malware_venom_admin_strings {
     filesize < 11MB and 6 of them
 }
 
-rule malware_venom_agent_strings {
-  meta:
-    id             = "87633510-8b39-4eb1-b95b-4ebff21f3bba"
-    version        = "1.0"
-    description    = "Detects Venom agent strings"
-    author         = "Sekoia.io"
-    creation_date  = "2022-08-29"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "dispather.handleDownloadCmd"
-    $ = "dispather.handleUploadCmd"
-    $ = "dispather.handleShellCmd"
-    $ = "dispather.handleSocks5Cmd"
-    $ = "dispather.handleLForwardCmd"
-    $ = "dispather.localLForwardServer"
-    $ = "dispather.handleRForwardCmd"
-    $ = "dispather.AgentHandShake"
-    $ = "dispather.AgentParseTarget"
-    $ = "dispather.PipeWhenClose"
-    $ = "dispather.handleSshConnectCmd"
-    $ = "node.(*NetworkTopology).InitNetworkMap"
-    $ = "node.CopyNet2Node"
-    $ = "node.(*Node).CommandHandler.func1"
-    $ = "node.(*Buffer).WriteLowLevelPacket"
-    $ = "protocol.(*Packet).ResolveDat"
-    $ = "netio.InitTCP.func2"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and filesize < 10MB and 6 of them
-}
-
-rule miner_lin_xmrig_strings {
-  meta:
-    id                = "2f99020b-424c-4433-860c-5e9ab4e1f1de"
-    version           = "1.0"
-    description       = "Detects XMRig ELF"
-    author            = "Sekoia.io"
-    creation_date     = "2022-09-08"
-    modification_date = "2024-01-04"
-    classification    = "TLP:CLEAR"
-
-  strings:
-    $ = "XMRig "
-    $ = "pool_wallet"
-    $ = "IP Address currently banned"
-    $ = "rigid"
-    $ = "diff_current"
-    $ = "shares_good"
-    $ = "shares_total"
-    $ = "avg_time"
-    $ = "avg_time_ms"
-    $ = "hashes_total"
-    $ = "pool address"
-    $ = "ping time"
-    $ = "connection time"
-    $ = "daemon+wss://"
-    $ = "daemon+https://"
-    $ = "daemon+http://"
-    $ = "socks5://"
-    $ = "stratum+ssl://"
-    $ = "stratum+tcp://"
-
-  condition:
-    uint32be(0) == 0x7f454c46 and
-    filesize < 10MB and
-    7 of them
-}
-
-rule observerstealer {
-  meta:
-    id             = "52314870-c100-441d-9ccf-07588325a401"
-    version        = "1.0"
-    description    = "detection based on the strings"
-    author         = "Sekoia.io"
-    creation_date  = "2024-02-01"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "URLOpenBlockingStreamW" ascii
-    $s2 = "processGrabber" wide
-    $s3 = "grabbers" wide
-    $s4 = { 2F 00 73 }
-    $s5 = "UNKNOWN_HWID" ascii
-    $s6 = { 48 00 57 00 49 00 44 }
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 400KB and
-    all of them
-}
-
-rule platypus_winlinmac_strings {
-  meta:
-    id             = "4519448d-b91b-4794-9521-359b8cf4af78"
-    version        = "1.0"
-    description    = "Catch Platypus based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2023-12-07"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $pl1 = "platypus.go" ascii
-    $pl2 = "Platypus/lib/context/server.go" ascii
-    $pl3 = "Platypus/lib/context/context.go" ascii
-    $pl4 = "Platypus/lib/context/client.go" ascii
-    $pl5 = "github.com/WangYihang/" ascii
-    $f1  = "reflection/reflection.go" ascii
-    $f2  = "socksUsernamePassword" ascii
-    $go  = "/golang" ascii
-
-  condition:
-    uint32(0) == 0x464c457f and 4 of ($pl*) and 1 of ($f*) and #go > 30
-}
-
-rule radx_stealer {
-  meta:
-    id             = "bf2aae08-169c-4bc9-a1ac-80f4b79ef6d7"
-    version        = "1.0"
-    description    = "detection of RADX stealer based on function named in the .NET payload"
-    author         = "Sekoia.io"
-    creation_date  = "2023-12-22"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "get_FileName" ascii fullword
-    $s2 = "set_FileName" ascii fullword
-    $f1 = "TripleDESCryptoServiceProvider" ascii fullword
-    $f2 = "SendBase64ToServer" ascii fullword
-    $f3 = "SendCommandOutputToServer" ascii fullword
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize > 500KB and all of them
-}
-
 rule rat_darkvision_string {
   meta:
     id             = "ab698a79-42ee-452a-a3ba-1a9872d5e2bc"
@@ -42509,27 +40838,6 @@ rule rat_darkvision_string {
   condition:
     uint16be(0) == 0x4d5a and
     2 of them
-}
-
-rule rat_lin_gobrat_2023 {
-  meta:
-    id             = "ca36a586-f87f-445f-95dc-52d447c1d2a2"
-    version        = "1.0"
-    description    = "This rule detect samples that are downloaded on the GobRAT C2 URL path /a, /b and /c."
-    author         = "Sekoia.io"
-    creation_date  = "2023-06-09"
-    classification = "TLP:CLEAR"
-    hash1          = "36cb17d9d118bd9692106c8aafab2462aacf1cdad3a6afb0e4f1de898a7db0e1"
-    hash2          = "28a714f7cec4445dbd507b85016c8e96ed5e378bcabe2e422c499975122b3f03"
-    hash3          = "1e80a084ab89da2375bc3cc2f5a37975edff709ef29a3fa2b4df4ccb6d5afe10"
-
-  strings:
-    $s1 = "Z:/Go/awesomeProject3/main.go" wide ascii
-
-  condition:
-    uint32(0) == 0x464c457f
-    and filesize < 4000KB
-    and $s1
 }
 
 rule rule_lazarus_generic_downloader_7c3f94702fa7 {
@@ -42601,25 +40909,6 @@ rule ta410_control_flow_obfuscation {
     uint16be(0) == 0x4d5a and filesize < 10MB and any of them
 }
 
-rule tool_3proxy_strings {
-  meta:
-    id             = "daf6cd97-8033-4bfd-88b5-41c06eb417b0"
-    version        = "1.0"
-    description    = "Detects 3proxy based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2024-03-14"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "of 3proxy-"
-    $ = "-pPORT - service port to accept connections"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 500KB and
-    all of them
-}
-
 rule tool_cheat_engine {
   meta:
     id             = "51d4246c-f7a1-4589-8f97-bd85d1fe4a0e"
@@ -42641,27 +40930,6 @@ rule tool_cheat_engine {
 
   condition:
     uint16be(0) == 0x4d5a and filesize < 200KB and all of them
-}
-
-rule tool_dogtunnel_strings {
-  meta:
-    id             = "00705613-6367-454f-b3f2-1e2b0a52459c"
-    version        = "1.0"
-    description    = "Detects Dog Tunnel based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2024-03-14"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "pipe.(*UDPMakeSession).doAndWait"
-    $ = "ikcp.ikcp_parse_fastack"
-    $ = "pipe.ListenWithSetting"
-    $ = "pipe.DialTimeoutWithSetting"
-    $ = "common.ReadUDP"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a)
-    and all of them and filesize < 10MB
 }
 
 rule tool_edrsandblast_api_strings {
@@ -42736,46 +41004,6 @@ rule tool_edrsandblast_strings {
     3 of them
 }
 
-rule tool_efspotato {
-  meta:
-    id             = "4440ea37-d7d0-4107-867c-576c6e2f4f7e"
-    version        = "1.0"
-    author         = "Sekoia.io"
-    creation_date  = "2023-08-23"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "usage: EfsPotato <cmd> [pipe]" ascii wide
-    $s2 = "Exploit for EfsPotato(MS-EFSR EfsRpcEncryptFileSrv with SeImpersonatePrivilege local privalege escalation vulnerability)." ascii wide
-    $s3 = "Part of GMH's fuck Tools, Code By zcgonvh." ascii wide
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 4MB and all of them
-}
-
-rule tool_ehole {
-  meta:
-    id             = "7d30ffd0-fada-4ef4-98c3-5572a4e1e140"
-    version        = "1.0"
-    author         = "Sekoia.io"
-    creation_date  = "2023-06-23"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "main.http400"
-    $s2 = "main.fofa_c"
-    $s3 = "main.Jsjump"
-    $s4 = "main.StandBase64"
-    $s5 = "main.fofa_http"
-    $s6 = "main.fofa_seach"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 11MB and
-    all of them
-}
-
 rule tool_exploit_badpotato_strings {
   meta:
     id             = "079aabbc-6978-4d71-92d2-d2a7ce1cc915"
@@ -42825,35 +41053,6 @@ rule tool_exploit_rottenpotato_strings {
     uint16be(0) == 0x4d5a and
     filesize < 1MB and
     8 of them
-}
-
-rule tool_gsocket_strings {
-  meta:
-    id             = "55fb2f2b-1074-4b6d-9113-48eaeb0e1e27"
-    version        = "1.0"
-    description    = "Detects Gsocket based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2024-06-10"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "proxy. It allows multiple gs-netcat clients to (securely) relay"
-    $ = "GS-NETCAT(1)            General Commands Manual          GS-NETCAT(1)"
-    $ = "-T      Use TOR. The gs-netcat tool will connect via TOR to the GSRN."
-    $ = "-D      Daemon & Watchdog mode. Start gs-netcat as a background process"
-    $ = "gs-netcat [-rlgvqwCTSDiu] [-s secret] [-k keyfile] [-L logfile] [-d IP]"
-    $ = "The gs-netcat utility is a re-implementation of netcat."
-
-  condition:
-    (
-      uint32be(0) == 0x7f454c46 or
-      uint16be(0) == 0x4d5a or
-      uint32be(0) == 0xfeedface or
-      uint32be(0) == 0xcffaedfe or
-      uint32be(0) == 0xcafebabe
-    ) and
-    filesize > 2MB and filesize < 6MB and
-    2 of them
 }
 
 rule tool_htran_strings {
@@ -42916,26 +41115,6 @@ rule tool_juicypotatong_strings {
     uint16be(0) == 0x4d5a and all of them
 }
 
-rule tool_koblas_server_strings {
-  meta:
-    id             = "ebd891da-69dd-474c-9e08-63d0b4cc654e"
-    version        = "1.0"
-    description    = "Detects Koblas server"
-    author         = "Sekoia.io"
-    creation_date  = "2024-05-23"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "sent {sent} bytes and received {received} bytes" wide ascii
-    $ = "connection denied" ascii
-    $ = "loaded {} users" ascii
-    $ = "listening on {}:{} for incoming connections" ascii
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    3 of them
-}
-
 rule tool_lsass_dump_strings {
   meta:
     id             = "bf024dc6-a1c8-4c3f-9bf8-8d246c129639"
@@ -42954,27 +41133,6 @@ rule tool_lsass_dump_strings {
   condition:
     uint16be(0) == 0x4d5a and
     3 of them
-}
-
-rule tool_nping_strings {
-  meta:
-    id             = "fcfd9539-b224-45b4-9252-0b4d56a40be4"
-    version        = "1.0"
-    description    = "Detects NPing"
-    author         = "Sekoia.io"
-    creation_date  = "2022-08-11"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "http://nmap.org/nping"
-    $ = "nping scanme.nmap.org"
-    $ = "Bogus target structure passed to %s"
-    $ = "Packet too short."
-    $ = "read_arp_reply_pcap"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    3 of them and filesize < 1MB
 }
 
 rule tool_nssm_strings {
@@ -43046,27 +41204,6 @@ rule tool_pivotnacci_webshell {
     3 of them and filesize < 10KB
 }
 
-rule tool_rsockstun_strings {
-  meta:
-    id             = "94d8cb39-3421-441c-8404-62a591b86912"
-    version        = "1.0"
-    description    = "Detects Rsockstun based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2023-12-22"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "main.connectviaproxy"
-    $ = "main.connectForSocks"
-    $ = "main.listenForClients"
-    $ = "main.listenForSocks"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 10MB and
-    all of them
-}
-
 rule tool_rubeus_strings {
   meta:
     id             = "df1860d0-ec34-4c2d-bd83-5f16b26d075c"
@@ -43109,50 +41246,6 @@ rule tool_scanline_strings {
 
   condition:
     uint16be(0) == 0x4d5a and 3 of them
-}
-
-rule tool_sharpsecdump {
-  meta:
-    id             = "359bf48b-81c8-4d12-ac02-777d4865411a"
-    version        = "1.0"
-    author         = "Sekoia.io"
-    creation_date  = "2023-06-23"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $s1 = "SharpSecDump"
-    $s2 = "e2fdd6cc-9886-456c-9021-ee2c47cf67b7"
-    $s3 = "Md4Hash2"
-    $s4 = "RidToKey"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    filesize < 1MB and
-    all of them
-}
-
-rule tool_ssf_strings {
-  meta:
-    id             = "47fc3df8-a153-4045-a5f0-ed30df662984"
-    version        = "1.0"
-    description    = "Detects SSF based on strings"
-    author         = "Sekoia.io"
-    creation_date  = "2024-05-31"
-    classification = "TLP:CLEAR"
-
-  strings:
-    $ = "could NOT read SSF reply"
-    $ = "SSF reply NOT ok {}"
-    $ = "SSF reply OK"
-    $ = "SSF protocol error {}"
-    $ = "SSF reply ok"
-    $ = "SSF version NOT read {}"
-    $ = "SSF version {}"
-    $ = "SSF version NOT supported {}"
-
-  condition:
-    (uint32be(0) == 0x7f454c46 or uint16be(0) == 0x4d5a) and
-    4 of them
 }
 
 rule tool_swor {
@@ -43289,88 +41382,6 @@ rule tool_yasso_strings {
     uint16be(0) == 0x4d5a and
     filesize > 15MB and filesize < 20MB and
     all of them
-}
-
-rule unknown_quad7_wildcard_login {
-  meta:
-    id             = "01510244-0795-4299-aa66-056a2b4682e7"
-    version        = "1.0"
-    description    = "Detects the (x|r|a)login bind shells"
-    author         = "Sekoia.io"
-    creation_date  = "2024-07-18"
-    classification = "TLP:CLEAR"
-    hash           = "4d9067e7cf517158337123a30a9bd0e3"
-    hash           = "43ea387b8294cc4d0baaef6d26ff7c72"
-    hash           = "777d6f907da38365924a0c2a12e973c5"
-    hash           = "8542a3cbe232fe78baa0882736c61926"
-    hash           = "1b08725acc371f6b7d05bb72d0c2d759"
-
-  strings:
-    $string1 = { 2f 62 69 6e 2f 73 68 00 2f 74 6d 70 2f 6c 6f 67 69 6e }
-    $string2 = { 2f 62 69 6e 2f 73 68 00 2d 63 00 65 78 69 74 20 30 }
-
-  condition:
-    uint32be(0) == 0x7f454c46 and
-    filesize < 180KB and
-    @string2 - @string1 < 3400
-}
-
-rule unk_quad7_fsynet_strings {
-  meta:
-    id             = "897b2421-c177-48c0-8f5b-82d8434208cb"
-    version        = "1.0"
-    description    = "Matches node-r-control, asr_node, node-relay"
-    author         = "Sekoia.io"
-    creation_date  = "2024-08-20"
-    classification = "TLP:CLEAR"
-    hash           = "f42849076e24b7827218f7a25bc11ccc"
-    hash           = "b3b09819f820a4ecd31f82f369000af2"
-    hash           = "92093dd7ba6ae8fe34a215c4c4bd1cd4"
-    hash           = "e6f6a6de285d7c2361c32b1f29a6c3f6"
-    hash           = "408152285671bbd0e6e63bd71d6abaaf"
-    hash           = "5efc7d824851be9ec90a97d889a40d23"
-
-  strings:
-    $ = "prev_hop_port"
-    $ = "next_hop_port"
-    $ = "back_hop_port"
-    $ = "next_tsn_port"
-    $ = "prev_hop_ip"
-    $ = "next_hop_ip"
-    $ = "back_hop_ip"
-    $ = "next_tsn_ip"
-    $ = "ikcp_"
-    $ = "/tmp/log_r"
-    $ = "total_hop"
-
-  condition:
-    uint32be(0) == 0x7f454c46
-    and filesize < 5MB
-    and 6 of them
-}
-
-rule unk_quad7_netd_strings {
-  meta:
-    id             = "3f527f0e-c101-4356-9024-fc61aea644d1"
-    version        = "1.0"
-    description    = "Matches netd binary"
-    author         = "Sekoia.io"
-    creation_date  = "2024-08-23"
-    classification = "TLP:CLEAR"
-    hash           = "cdb37db4543dde5ca2bd98a43699828f"
-
-  strings:
-    $ = "./netd.dat"
-    $ = "./sys.dat"
-    $ = "--conf"
-    $ = "--init"
-    $ = "--nobg"
-    $ = "Url is NULL."
-
-  condition:
-    uint32be(0) == 0x7f454c46 and
-    filesize < 1MB and
-    4 of them
 }
 
 rule webshell_icesword_strings {
@@ -43647,23 +41658,6 @@ rule free_pascal {
 
   condition:
     any of them
-}
-
-rule EXT_APT_UNC2891_SLAPSTICK {
-  meta:
-    author      = "Mandiant"
-    description = "Detects SLAPSTICK malware used by UNC2891"
-    date        = "2022-03-17"
-    reference   = "https://www.mandiant.com/resources/blog/unc2891-overview"
-    score       = 80
-
-  strings:
-    $ss1 = { 25 59 20 25 62 20 25 64 20 25 48 3a 25 4d 3a 25 53 20 20 20 20 00 }
-    $ss2 = { 25 2d 32 33 73 20 25 2d 32 33 73 20 25 2d 32 33 73 00 }
-    $ss3 = { 25 2d 32 33 73 20 25 2d 32 33 73 20 25 2d 32 33 73 20 25 2d 32 33 73 20 25 2d 32 33 73 20 25 73 0a 00 }
-
-  condition:
-    (uint32(0) == 0x464c457f) and all of them
 }
 
 rule HKTL_CobaltStrike_CS_Core_Oct23 {
@@ -47605,24 +45599,6 @@ rule FE_APT_Webshell_PL_RAPIDPULSE_1 {
 
   condition:
     (all of ($s*)) and (@r1[1] < @r2[1])
-}
-
-rule UNC3524_sha1 {
-  meta:
-    author = "Mandiant"
-
-    reference = "https://www.mandiant.com/resources/unc3524-eye-spy-email"
-
-    date_created = "2022-01-19"
-
-    date_modified = "2022-01-19"
-
-  strings:
-    $h1 = { DD E5 D5 97 20 53 27 BF F0 A2 BA CD 96 35 9A AD 1C 75 EB 47 }
-
-  condition:
-    uint32be(0) == 0x7F454C46 and filesize < 10MB and all of them
-
 }
 
 rule Exploit {
