@@ -223,7 +223,7 @@ public class ScanEngine {
             }
             // Act on a signature/ML hit OR a dangerous-permission count (an inner
             // APK extracted from this file, detected from the manifest bytes).
-            if (!v.malicious && v.permissions < 5) return;
+            if (!v.malicious && v.permissions < 6) return;
 
             ThreatResult.Builder b = new ThreatResult.Builder(path);
             List<String> reasons = new java.util.ArrayList<>();
@@ -244,17 +244,17 @@ public class ScanEngine {
                 }
             }
             // Two-tier dangerous permissions (same as installed-app analysis):
-            // 6+ => certain malware, exactly 5 => suspicious.
-            if (v.permissions >= 6) {
+            // 7+ => certain malware, exactly 6 => suspicious.
+            if (v.permissions >= 7) {
                 riskScore = 100;
                 b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                 reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/9)");
-            } else if (v.permissions == 5) {
+            } else if (v.permissions == 6) {
                 riskScore = Math.max(riskScore, 30);
                 if (!hasRealThreat) {
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
                 }
-                reasons.add("🔐 Suspicious permissions (5/9)");
+                reasons.add("🔐 Suspicious permissions (6/9)");
             }
             if (v.mlMalicious) {
                 String near = v.nearest != null ? "  ~" + v.nearest : "";
@@ -549,17 +549,17 @@ public class ScanEngine {
 
                     // Two-tier dangerous-permission decision on the native count
                     // (9 most-dangerous: SMS, call log, contacts, mic, camera,
-                    // location, overlay, all-files). 6+ = almost certainly malware;
-                    // exactly 5 = suspicious. Legit apps routinely request 3-4.
-                    if (v.permissions >= 6) {
+                    // location, overlay, all-files). 7+ = almost certainly malware;
+                    // exactly 6 = suspicious. Legit apps routinely request 3-5.
+                    if (v.permissions >= 7) {
                         riskScore = 100;
                         builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                         reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/9)");
-                    } else if (v.permissions == 5) {
+                    } else if (v.permissions == 6) {
                         riskScore = Math.max(riskScore, 30);
                         if (riskScore < 50) builder.setThreatType(
                             com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
-                        reasons.add("🔐 Suspicious permissions (5/9)");
+                        reasons.add("🔐 Suspicious permissions (6/9)");
                     }
                 }
 
