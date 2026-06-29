@@ -47,9 +47,21 @@ if [ -n "${ANDROID_NDK_HOME:-}" ]; then
 fi
 # ----------------------------------------------------------------------------
 
-# 16 KB page-size alignment (Android 15+): align ELF LOAD segments to 16 KB so
-# the .so loads natively on 16 KB-page devices instead of "compat mode".
-export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,-z,common-page-size=16384"
+# Link flags:
+#  * 16 KB page-size alignment (Android 15+): align ELF LOAD segments to 16 KB
+#    so the .so loads natively on 16 KB-page devices instead of "compat mode".
+#  * libc++ (static): hydradragonextractor pulls a C++ dependency (unrar_sys =
+#    UnRAR, C++). cargo-ndk links with the `clang` C driver, which does NOT add
+#    the C++ runtime, leaving C++ symbols (e.g. std::length_error typeinfo)
+#    UNDEFINED — so `dlopen` fails at load time with "cannot locate symbol
+#    _ZTISt12length_error" and the whole engine silently never loads. Statically
+#    linking libc++/libc++abi makes the .so self-contained (no libc++_shared.so
+#    to bundle, no extra unaligned lib).
+export RUSTFLAGS="${RUSTFLAGS:-} \
+  -C link-arg=-Wl,-z,max-page-size=16384 \
+  -C link-arg=-Wl,-z,common-page-size=16384 \
+  -C link-arg=-lc++_static \
+  -C link-arg=-lc++abi"
 
 # arm64-v8a, armeabi-v7a, x86_64, x86 — covers phones + emulators.
 # NOTE: cargo-ndk 4.x renamed the API-level flag — it is now `--platform`

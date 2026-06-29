@@ -63,10 +63,10 @@ dependencies {
     implementation 'androidx.work:work-runtime:2.9.1'
     implementation 'androidx.room:room-runtime:2.6.1'
     annotationProcessor 'androidx.room:room-compiler:2.6.1'
-    implementation 'org.tensorflow:tensorflow-lite:2.14.0'
-    implementation 'org.tensorflow:tensorflow-lite-support:0.4.4'
-    implementation 'org.tensorflow:tensorflow-lite-gpu:2.14.0'
-    implementation 'org.tensorflow:tensorflow-lite-task-vision:0.4.4'
+    // TensorFlow Lite removed: AIEngine is a pure-Java heuristic and the real ML
+    // is the Rust apk_model.bin — nothing referenced org.tensorflow. Dropping it
+    // also removes the unaligned TFLite native libs that tripped the Android 15
+    // 16 KB page-size check, and shrinks the APK.
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
