@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Minimal device-admin policy. We do NOT request lock/wipe/password powers —
+  the only purpose is the standard side effect that an ACTIVE device admin app
+  cannot be uninstalled until the user deactivates the admin first. This is the
+  legitimate, Play-compliant self-protection used by mainstream antivirus apps.
+-->
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <!-- intentionally empty: no intrusive powers requested -->
+    </uses-policies>
+</device-admin>

@@ -40,6 +40,32 @@ struct Engine {
 
 static ENGINE: OnceLock<Engine> = OnceLock::new();
 
+/// Last panic's "message @ file:line", captured by our hook so we can report
+/// WHY a scan panicked (root cause) instead of just swallowing it.
+static LAST_PANIC: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+fn install_panic_hook() {
+    use std::sync::Once;
+    static ONCE: Once = Once::new();
+    ONCE.call_once(|| {
+        std::panic::set_hook(Box::new(|info| {
+            let loc = info
+                .location()
+                .map(|l| format!("{}:{}", l.file(), l.line()))
+                .unwrap_or_default();
+            let msg = info
+                .payload()
+                .downcast_ref::<&str>()
+                .map(|s| s.to_string())
+                .or_else(|| info.payload().downcast_ref::<String>().cloned())
+                .unwrap_or_else(|| "panic".to_string());
+            if let Ok(mut g) = LAST_PANIC.lock() {
+                *g = Some(format!("{} @ {}", msg, loc));
+            }
+        }));
+    });
+}
+
 fn json_escape(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 2);
     for c in s.chars() {
@@ -73,6 +99,23 @@ fn do_init(dir: &str) -> Engine {
     Engine { clamav, model }
 }
 
+/// Run `f` on a thread with a LARGE stack and return its result. yara_x's rule
+/// deserialization (and clamav matching) can recurse deeply — far past the ~1 MB
+/// stack of the JNI/app thread, which causes a stack overflow that aborts the
+/// whole process (not a catchable panic). A roomy stack avoids it. Returns the
+/// thread's join result (Err on a panic inside).
+fn on_big_stack<F, R>(f: F) -> std::thread::Result<R>
+where
+    F: FnOnce() -> R + Send + 'static,
+    R: Send + 'static,
+{
+    std::thread::Builder::new()
+        .stack_size(64 * 1024 * 1024)
+        .spawn(f)
+        .expect("spawn worker thread")
+        .join()
+}
+
 /// `boolean nativeInit(String dir)`
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeInit(
@@ -84,7 +127,11 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         Ok(s) => s.into(),
         Err(_) => return JNI_FALSE,
     };
-    let engine = do_init(&dir);
+    install_panic_hook();
+    let engine = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| do_init(&dir))) {
+        Ok(e) => e,
+        Err(_) => return JNI_FALSE,
+    };
     let ok = engine.clamav.is_some() || engine.model.is_some();
     let _ = ENGINE.set(engine);
     if ok && ENGINE.get().is_some() {
@@ -121,28 +168,76 @@ fn scan_apk(env: &mut JNIEnv, path: JString) -> String {
         Err(e) => return format!(r#"{{"error":"{}"}}"#, json_escape(&e.to_string())),
     };
 
+    // Catch any panic from the native scan (yara_x / clamav / ml on a malformed
+    // or adversarial APK) so it returns an error instead of SIGABRT-ing the whole
+    // app process.
+    let scanned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        run_scan(engine, &bytes, &path)
+    }));
+    match scanned {
+        Ok(s) => s,
+        Err(_) => {
+            let reason = LAST_PANIC
+                .lock()
+                .ok()
+                .and_then(|g| g.clone())
+                .unwrap_or_else(|| "unknown".to_string());
+            format!(
+                r#"{{"error":"scan panicked: {}","malicious":false}}"#,
+                json_escape(&reason)
+            )
+        }
+    }
+}
+
+fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
     // Scan fully through the clamav engine: it detects the file type, applies
     // clamav's supported-type gate (PE/OLE2/mail/Mach-O/Flash/Java-class are
     // skipped), then runs clamav signatures AND all loaded .yrc YARA rulesets,
     // extracting archives along the way. strict_targets enables the type gate.
-    let mut yara_hits: Vec<String> = Vec::new();
-    if let Some(clamav) = &engine.clamav {
-        let opts = ScanOptions {
-            strict_targets: true,
-            max_matches: 64,
-            ..ScanOptions::default()
-        };
-        for m in clamav.scan_bytes_named(&bytes, &path, opts) {
-            yara_hits.push(m.name);
+    // Each engine is isolated: a panic in clamav doesn't lose the ML result (and
+    // vice-versa), and `err` names WHICH engine + the panic location so the root
+    // cause is pinpointed, not just swallowed.
+    let mut err: Option<String> = None;
+
+    let yara_hits: Vec<String> = match &engine.clamav {
+        Some(clamav) => {
+            let opts = ScanOptions {
+                strict_targets: true,
+                max_matches: 64,
+                ..ScanOptions::default()
+            };
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                clamav
+                    .scan_bytes_named(bytes, path, opts)
+                    .into_iter()
+                    .map(|m| m.name)
+                    .collect::<Vec<_>>()
+            })) {
+                Ok(v) => v,
+                Err(_) => {
+                    err = Some(format!("clamav: {}", last_panic()));
+                    Vec::new()
+                }
+            }
         }
-    }
+        None => Vec::new(),
+    };
 
     // one-class ML model (independent of clamav's type gate).
     let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest) = match &engine.model {
-        Some(model) => match model.scan(&bytes) {
-            Some(r) => (r.malicious, r.best_jaccard, r.anomaly_score, r.nearest),
-            None => (false, 0.0, 0.0, None),
-        },
+        Some(model) => {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| model.scan(bytes))) {
+                Ok(Some(r)) => (r.malicious, r.best_jaccard, r.anomaly_score, r.nearest),
+                Ok(None) => (false, 0.0, 0.0, None),
+                Err(_) => {
+                    if err.is_none() {
+                        err = Some(format!("ml: {}", last_panic()));
+                    }
+                    (false, 0.0, 0.0, None)
+                }
+            }
+        }
         None => (false, 0.0, 0.0, None),
     };
 
@@ -158,8 +253,22 @@ fn scan_apk(env: &mut JNIEnv, path: JString) -> String {
         None => "null".to_string(),
     };
 
+    let err_json = match err {
+        Some(e) => format!(",\"error\":\"{}\"", json_escape(&e)),
+        None => String::new(),
+    };
+
     format!(
-        r#"{{"malicious":{},"matches":[{}],"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}}}"#,
-        malicious, hits_json, ml_malicious, ml_jaccard, ml_anomaly, nearest_json
+        r#"{{"malicious":{},"matches":[{}],"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}{}}}"#,
+        malicious, hits_json, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, err_json
     )
+}
+
+/// The last captured panic ("message @ file:line"), for diagnostics.
+fn last_panic() -> String {
+    LAST_PANIC
+        .lock()
+        .ok()
+        .and_then(|g| g.clone())
+        .unwrap_or_else(|| "?".to_string())
 }
