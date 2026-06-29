@@ -72,7 +72,10 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.content_frame).setVisibility(View.GONE);
         bottomNav.setVisibility(View.GONE);
 
-        ContextCompat.startForegroundService(this, new Intent(this, com.hydradragon.antivirus.service.GuardService.class));
+        // Only auto-start the guard if the user hasn't paused protection.
+        if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(this)) {
+            ContextCompat.startForegroundService(this, new Intent(this, com.hydradragon.antivirus.service.GuardService.class));
+        }
 
         // Biyometrik kaldırıldı, direkt izinlere geç
         checkMandatoryPermissions();

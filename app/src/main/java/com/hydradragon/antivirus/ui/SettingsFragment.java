@@ -71,6 +71,20 @@ public class SettingsFragment extends Fragment {
         });
 
         addHeader("Protection");
+        boolean prot = com.hydradragon.antivirus.engine.ProtectionState.isEnabled(requireContext());
+        addToggle("Real-time Protection", prot, (btn, on) -> {
+            com.hydradragon.antivirus.engine.ProtectionState.setEnabled(requireContext(), on);
+            Intent svc = new Intent(requireContext(),
+                com.hydradragon.antivirus.service.GuardService.class);
+            if (on) {
+                ContextCompat.startForegroundService(requireContext(), svc);
+                Toast.makeText(getContext(), "Protection enabled", Toast.LENGTH_SHORT).show();
+            } else {
+                requireContext().stopService(svc);
+                Toast.makeText(getContext(), "Protection paused — no alerts", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         boolean shield = prefs().getBoolean(KEY_SHIELD, false);
         addToggle("Web Shield (DNS VPN)", shield, (btn, on) -> {
             prefs().edit().putBoolean("web_shield_decided", true)

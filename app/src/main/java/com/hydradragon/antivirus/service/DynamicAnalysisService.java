@@ -64,6 +64,9 @@ public class DynamicAnalysisService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null) return;
+        // Protection paused by the user -> the antivirus stays silent: no
+        // behaviour/URL detection, no alerts, no block pages.
+        if (!com.hydradragon.antivirus.engine.ProtectionState.isEnabled(this)) return;
         CharSequence packageName = event.getPackageName();
         if (packageName == null) return;
 
@@ -180,7 +183,7 @@ public class DynamicAnalysisService extends AccessibilityService {
                             lastUrlAlert = url;   // dedup: don't re-alert same URL
                             Log.e(TAG, "MALICIOUS URL (" + cat + "): " + url + " in " + fgPackage);
                             sendAlert("MALICIOUS WEBSITE BLOCKED", cat + ": " + url, url);
-                            redirectIfNotDismissed(url);
+                            showBlockPageIfNotDismissed(url, cat);
                             break;
                         }
                     }
@@ -346,6 +349,29 @@ public class DynamicAnalysisService extends AccessibilityService {
         // in the threat history.
         try {
             ThreatLogger.logThreat(this, threatId != null ? threatId : "-", title, message);
+        } catch (Throwable ignore) {
+        }
+    }
+
+    /**
+     * Show a full-screen HTML "site blocked" warning page INSTEAD of the
+     * malicious site (and instead of kicking the user to the antivirus screen),
+     * unless the user dismissed the block for this URL.
+     */
+    private void showBlockPageIfNotDismissed(String url, String cat) {
+        if (url != null
+                && com.hydradragon.antivirus.engine.UserDecisions.isRedirectDismissed(this, url)) {
+            return;
+        }
+        try {
+            android.content.Intent i = new android.content.Intent(
+                    this, com.hydradragon.antivirus.ui.BlockActivity.class);
+            i.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                    | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            i.putExtra(com.hydradragon.antivirus.ui.BlockActivity.EXTRA_URL, url);
+            i.putExtra(com.hydradragon.antivirus.ui.BlockActivity.EXTRA_CAT, cat);
+            startActivity(i);
         } catch (Throwable ignore) {
         }
     }

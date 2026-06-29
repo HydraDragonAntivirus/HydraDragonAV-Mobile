@@ -59,6 +59,9 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
             reasons.append("► ").append(r).append("\n");
         }
         holder.tvReason.setText(reasons.toString().trim());
+        // Make the VirusTotal (and any other) URL tappable.
+        android.text.util.Linkify.addLinks(holder.tvReason, android.text.util.Linkify.WEB_URLS);
+        holder.tvReason.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
 
         // Renk Kodlaması
         if (threat.getRiskScore() >= 80) {

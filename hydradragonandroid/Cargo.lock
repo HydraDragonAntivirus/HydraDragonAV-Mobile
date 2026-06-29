@@ -1175,6 +1175,7 @@ dependencies = [
  "hydradragonextractor",
  "hydradragonml",
  "jni",
+ "sha2 0.11.0",
 ]
 
 [[package]]

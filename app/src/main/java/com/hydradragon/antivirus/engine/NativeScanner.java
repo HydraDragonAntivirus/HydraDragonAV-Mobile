@@ -134,6 +134,12 @@ public final class NativeScanner {
         public String nearest;
         /** Distinct dangerous permissions found in the (in-memory) manifest bytes. */
         public int permissions;
+        /** Package name(s) of APK(s) reached in-memory (parsed from AndroidManifest.xml). */
+        public final List<String> packages = new ArrayList<>();
+        /** SHA-256 (lowercase hex) of each APK/zip buffer, for hash-keyed whitelist. */
+        public final List<String> hashes = new ArrayList<>();
+        /** SHA-256 (lowercase hex) of the whole scanned file — its "main hash". */
+        public String sha256;
         /** Non-null ClamAV target number if the file type was skipped (PE/OLE2/…). */
         public Integer skippedTarget;
         /** Non-null if the native scan errored. */
@@ -165,6 +171,23 @@ public final class NativeScanner {
             }
             v.malicious = o.optBoolean("malicious", false);
             v.permissions = o.optInt("permissions", 0);
+            JSONArray pkgs = o.optJSONArray("packages");
+            if (pkgs != null) {
+                for (int i = 0; i < pkgs.length(); i++) {
+                    String p = pkgs.optString(i, null);
+                    if (p != null && !p.isEmpty()) v.packages.add(p);
+                }
+            }
+            JSONArray hsh = o.optJSONArray("hashes");
+            if (hsh != null) {
+                for (int i = 0; i < hsh.length(); i++) {
+                    String h = hsh.optString(i, null);
+                    if (h != null && !h.isEmpty()) v.hashes.add(h);
+                }
+            }
+            if (o.has("sha256") && !o.isNull("sha256")) {
+                v.sha256 = o.optString("sha256", null);
+            }
             if (o.has("skipped") && !o.isNull("skipped")) {
                 v.skippedTarget = o.optInt("skipped");
             }

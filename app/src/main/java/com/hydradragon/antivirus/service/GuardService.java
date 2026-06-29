@@ -132,9 +132,12 @@ public class GuardService extends Service {
 
             @Override
             public void onThreatFound(ThreatResult threat) {
+                // Always record to history; stay silent (no notification) while
+                // protection is paused.
                 ThreatLogger.logThreat(GuardService.this, threat.getPackageName(),
                     threat.getAppName(),
                     threat.getThreatType() + " (scan, risk " + threat.getRiskScore() + ")");
+                if (!com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) return;
                 sendThreatNotification(threat);
                 if (callback != null) callback.onThreatDetected(threat);
             }
@@ -158,6 +161,7 @@ public class GuardService extends Service {
             @Override
             public void onSuspiciousActivity(NetworkMonitor.NetworkEvent event) {
                 ThreatLogger.logThreat(GuardService.this, event.destIp, "Network", event.reason);
+                if (!com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) return;
                 sendNetworkAlert(event);
                 if (callback != null) callback.onNetworkAlert(event);
             }

@@ -29,6 +29,13 @@
         android:supportsRtl="true">
 
         <activity
+            android:name=".ui.BlockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=".block"
+            android:theme="@style/Theme.HydraDragon"/>
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:configChanges="uiMode">

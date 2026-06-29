@@ -205,9 +205,21 @@ public class ScanEngine {
             if (!NativeScanner.isReady()) return;
             String path = file.getAbsolutePath();
             NativeScanner.Verdict v = NativeScanner.scan(path);
+            if (v == null) return;
+            // An APK reached inside this archive that is on the whitelist bloom
+            // filter — by package name OR by SHA-256 — is not a false positive;
+            // suppress the whole file.
+            if (whitelistBloomFilter != null) {
+                for (String pkg : v.packages) {
+                    if (whitelistBloomFilter.mightContain(pkg)) return;
+                }
+                for (String hash : v.hashes) {
+                    if (whitelistBloomFilter.mightContain(hash)) return;
+                }
+            }
             // Act on a signature/ML hit OR a dangerous-permission count (an inner
             // APK extracted from this file, detected from the manifest bytes).
-            if (v == null || (!v.malicious && v.permissions < 5)) return;
+            if (!v.malicious && v.permissions < 5) return;
 
             ThreatResult.Builder b = new ThreatResult.Builder(path);
             List<String> reasons = new java.util.ArrayList<>();
@@ -244,6 +256,9 @@ public class ScanEngine {
                 String near = v.nearest != null ? "  ~" + v.nearest : "";
                 reasons.add(String.format(java.util.Locale.US,
                     "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
+            }
+            if (v.sha256 != null && !v.sha256.isEmpty()) {
+                reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.sha256);
             }
             b.setRiskScore(riskScore);
             b.setReasons(reasons);
@@ -320,6 +335,7 @@ public class ScanEngine {
 
         int riskScore = 0;
         List<String> reasons = new ArrayList<>();
+        String fileSha256 = null;   // top-level file hash from the native scan (for the VirusTotal link)
         String companyName = "Unknown Developer";
         String signatureHash = "NONE";
 
@@ -376,6 +392,7 @@ public class ScanEngine {
                 // Native engine: clamav (type-gated YARA + signatures) + ML model.
                 if (apkPath != null && NativeScanner.isReady()) {
                     NativeScanner.Verdict v = NativeScanner.scan(apkPath);
+                    fileSha256 = v.sha256;
                     if (v.malicious) {
                         // Split PUA.* / PUA_* hits (potentially-unwanted) from real
                         // malware. Only-PUA (and no ML flag) => PUA, lower risk.
@@ -438,6 +455,9 @@ public class ScanEngine {
         if (riskScore > 0 && !isWhitelisted) {
             reasons.add("✍️ Signature: " + companyName);
             reasons.add("🔐 SHA-256: " + signatureHash);
+            if (fileSha256 != null && !fileSha256.isEmpty()) {
+                reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileSha256);
+            }
         }
 
         builder.setRiskScore(riskScore);
