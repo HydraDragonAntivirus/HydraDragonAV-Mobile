@@ -3,6 +3,7 @@ package com.hydradragon.antivirus.ui;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.VpnService;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -37,6 +38,8 @@ public class SettingsFragment extends Fragment {
     private final List<CleanupEngine.BloatwareApp> foundBloatware = new ArrayList<>();
     private static final String PREFS = "hydra_prefs";
     private static final String KEY_DARK = "dark_mode";
+    private static final String KEY_SHIELD = "web_shield_enabled";
+    private static final int REQ_VPN = 1201;
 
     @Nullable
     @Override
@@ -65,6 +68,15 @@ public class SettingsFragment extends Fragment {
                 ? AppCompatDelegate.MODE_NIGHT_YES
                 : AppCompatDelegate.MODE_NIGHT_NO);
             if (getActivity() != null) getActivity().recreate();
+        });
+
+        addHeader("Protection");
+        boolean shield = prefs().getBoolean(KEY_SHIELD, false);
+        addToggle("Web Shield (DNS VPN)", shield, (btn, on) -> {
+            prefs().edit().putBoolean("web_shield_decided", true)
+                          .putBoolean(KEY_SHIELD, on).apply();
+            if (on) enableWebShield(btn);
+            else disableWebShield();
         });
 
         addHeader(getString(R.string.system));
@@ -136,6 +148,51 @@ public class SettingsFragment extends Fragment {
             })
             .setNegativeButton(getString(R.string.btn_skip), (d, w) -> { foundBloatware.remove(0); showNext(); })
             .setNeutralButton(getString(R.string.btn_close), null).show();
+    }
+
+    // ─── WEB SHIELD (DNS VPN) ─────────────────────────────────────
+    private void enableWebShield(CompoundButton btn) {
+        Intent prep;
+        try {
+            prep = VpnService.prepare(requireContext());
+        } catch (Throwable t) {
+            Toast.makeText(getContext(), "VPN unavailable on this device", Toast.LENGTH_LONG).show();
+            prefs().edit().putBoolean(KEY_SHIELD, false).apply();
+            if (btn != null) btn.setChecked(false);
+            return;
+        }
+        if (prep != null) {
+            startActivityForResult(prep, REQ_VPN);   // system consent dialog
+        } else {
+            startShieldService();                    // already authorised
+        }
+    }
+
+    private void startShieldService() {
+        ContextCompat.startForegroundService(requireContext(),
+            new Intent(requireContext(), com.hydradragon.antivirus.service.DnsVpnService.class));
+        Toast.makeText(getContext(), "Web Shield enabled", Toast.LENGTH_SHORT).show();
+    }
+
+    private void disableWebShield() {
+        requireContext().stopService(
+            new Intent(requireContext(), com.hydradragon.antivirus.service.DnsVpnService.class));
+        Toast.makeText(getContext(), "Web Shield disabled", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_VPN) {
+            if (resultCode == android.app.Activity.RESULT_OK) {
+                startShieldService();
+            } else {
+                // Consent denied — revert the toggle.
+                prefs().edit().putBoolean(KEY_SHIELD, false).apply();
+                Toast.makeText(getContext(), "VPN consent denied", Toast.LENGTH_LONG).show();
+                buildUI();
+            }
+        }
     }
 
     // ─── UI YARDIMCILARI ──────────────────────────────────────────

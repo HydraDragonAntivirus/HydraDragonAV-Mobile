@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -30,6 +31,8 @@ import com.hydradragon.antivirus.ui.SettingsFragment;
 import com.hydradragon.antivirus.ui.ThreatLogFragment;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int REQ_VPN = 102;
 
     private BottomNavigationView bottomNav;
 
@@ -103,7 +106,89 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // Optional local DNS-filtering VPN (Web Shield). The system VPN/key icon
+        // only appears once VpnService.prepare() consent is granted AND the
+        // service establishes the tunnel — so we must request consent here.
+        SharedPreferences prefs = getSharedPreferences("hydra_prefs", MODE_PRIVATE);
+        if (!prefs.getBoolean("web_shield_decided", false)) {
+            showOptionalWebShieldDialog();
+            return;
+        }
+        if (prefs.getBoolean("web_shield_enabled", false)) {
+            startWebShield();   // re-arms the tunnel; drives startAppUI()
+            return;
+        }
+
         startAppUI();
+    }
+
+    private void showOptionalWebShieldDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("Web Shield (VPN)")
+            .setMessage("HydraDragon can run a LOCAL DNS-filtering VPN to block malicious / phishing sites. "
+                + "It does NOT proxy, decrypt or inspect your traffic — only DNS lookups are filtered, on-device. "
+                + "Android shows a key icon while it's active.")
+            .setCancelable(false)
+            .setPositiveButton("Enable", (dialog, which) -> {
+                getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("web_shield_decided", true)
+                    .putBoolean("web_shield_enabled", true).apply();
+                startWebShield();
+            })
+            .setNegativeButton("Skip", (dialog, which) -> {
+                getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("web_shield_decided", true)
+                    .putBoolean("web_shield_enabled", false).apply();
+                startAppUI();
+            })
+            .show();
+    }
+
+    /** Request VPN consent if needed, then start the service. */
+    private void startWebShield() {
+        Intent prep;
+        try {
+            prep = VpnService.prepare(this);
+        } catch (Throwable t) {
+            // Some devices/another always-on VPN can throw — degrade gracefully.
+            Toast.makeText(this, "VPN unavailable on this device", Toast.LENGTH_LONG).show();
+            getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                .putBoolean("web_shield_enabled", false).apply();
+            startAppUIIfHidden();
+            return;
+        }
+        if (prep != null) {
+            startActivityForResult(prep, REQ_VPN);   // consent dialog -> onActivityResult
+        } else {
+            onVpnReady();                            // already authorised
+        }
+    }
+
+    private void onVpnReady() {
+        ContextCompat.startForegroundService(this,
+            new Intent(this, com.hydradragon.antivirus.service.DnsVpnService.class));
+        startAppUIIfHidden();
+    }
+
+    private void startAppUIIfHidden() {
+        if (findViewById(R.id.content_frame).getVisibility() != View.VISIBLE) {
+            startAppUI();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_VPN) {
+            if (resultCode == RESULT_OK) {
+                onVpnReady();
+            } else {
+                // User declined consent — remember it, don't nag every launch.
+                getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("web_shield_enabled", false).apply();
+                startAppUIIfHidden();
+            }
+        }
     }
 
     private void showMandatoryPermissionDialog(String title, String message, Intent intent) {
