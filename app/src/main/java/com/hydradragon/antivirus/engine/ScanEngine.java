@@ -288,7 +288,19 @@ public class ScanEngine {
                 int dc = 0; List<String> dp = new ArrayList<>();
                 for (String p : pkgInfo.requestedPermissions)
                     if (DANGEROUS_PERMISSIONS.contains(p)) { dc++; dp.add(p.replace("android.permission.","")); }
-                if (dc >= 3) { riskScore += 40; reasons.add(isApkFile ? "Suspicious APK in File System!" : "Risky permissions!"); }
+                // Two-tier on the 9 most-dangerous permissions (SMS, call log,
+                // contacts, mic, camera, location, overlay, all-files): 6+ = almost
+                // certainly malware; exactly 5 = suspicious. Legit apps routinely
+                // request 3-4, so the old >=3 rule caused heavy false positives.
+                if (dc >= 6) {
+                    riskScore += 50;
+                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                    reasons.add("Excessive dangerous permissions (" + dc + "/9)");
+                } else if (dc == 5) {
+                    riskScore = Math.max(riskScore, 30);
+                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
+                    reasons.add("Suspicious permissions (5/9)");
+                }
                 builder.setDangerousPermissions(dp);
             }
         } catch (Exception e) { }

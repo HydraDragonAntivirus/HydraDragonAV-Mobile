@@ -147,16 +147,20 @@ public final class UrlThreatScanner {
         String norm = normalize(url);
         if (norm == null) return null;
 
-        List<String> candidates = new ArrayList<>();
-        // Scheme-less full URL forms (URL blooms: malwareurl/phishingurl).
-        candidates.add(norm);
-        candidates.add(norm.endsWith("/") ? norm.substring(0, norm.length() - 1) : norm + "/");
-        // Plain host -> domain forms (domain blooms).
-        candidates.addAll(hostCandidates(norm));
+        // Full-URL candidates go ONLY to the URL blooms; host/domain candidates
+        // go ONLY to the domain blooms. Mixing them (checking the bare host
+        // "github.com" against the URL blooms, which hold full URLs like
+        // "github.com/user/malware.exe") caused legit domains to be flagged.
+        List<String> urlForms = new ArrayList<>();
+        urlForms.add(norm);
+        urlForms.add(norm.endsWith("/") ? norm.substring(0, norm.length() - 1) : norm + "/");
+        List<String> hostForms = hostCandidates(norm);
 
         for (Map.Entry<String, BloomFilter<CharSequence>> e : filters.entrySet()) {
             BloomFilter<CharSequence> f = e.getValue();
-            for (String c : candidates) {
+            boolean urlBloom = e.getKey().endsWith("_URL");   // MALWARE_URL / PHISHING_URL
+            List<String> cands = urlBloom ? urlForms : hostForms;
+            for (String c : cands) {
                 if (f.mightContain(c)) {
                     return e.getKey();
                 }

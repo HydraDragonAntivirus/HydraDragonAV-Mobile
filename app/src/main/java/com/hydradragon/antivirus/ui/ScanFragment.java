@@ -149,7 +149,16 @@ public class ScanFragment extends Fragment {
                         tvThreats.setText(String.valueOf(foundThreats.size()));
                     }
                 })
-                .setNegativeButton(getString(R.string.btn_ignore), null)
+                .setNegativeButton(getString(R.string.btn_ignore), (dialog, which) -> {
+                    // Whitelist this package/file so it is never flagged again.
+                    String id = (threat.getPackageName() != null && !threat.getPackageName().isEmpty())
+                        ? threat.getPackageName() : threat.getApkPath();
+                    com.hydradragon.antivirus.engine.UserDecisions.allowThreat(getContext(), id);
+                    ThreatLogger.logThreat(getContext(), threat.getPackageName(), threat.getAppName(), "WHITELISTED (ignored)");
+                    foundThreats.remove(threat);
+                    threatAdapter.notifyDataSetChanged();
+                    tvThreats.setText(String.valueOf(foundThreats.size()));
+                })
                 .show();
         });
 

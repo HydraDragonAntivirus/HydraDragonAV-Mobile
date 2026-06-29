@@ -313,8 +313,7 @@ public class DynamicAnalysisService extends AccessibilityService {
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setColor(0xFF0000)
                 .setAutoCancel(true)
-                .setContentIntent(pi)
-                .setFullScreenIntent(pi, true);   // heads-up / full-screen popup
+                .setContentIntent(pi);   // tap to open HydraDragon (no full-screen popup)
 
         if (threatId != null && !threatId.isEmpty()) {
             // "Safe (ignore)" -> allowlist this package/URL, never flag again.
@@ -342,6 +341,13 @@ public class DynamicAnalysisService extends AccessibilityService {
         }
 
         nm.notify(ALERT_NOTIF_ID, builder.build());   // fixed id -> replaces previous
+
+        // Record every live detection (URL / ransomware / spam / clickjacking)
+        // in the threat history.
+        try {
+            ThreatLogger.logThreat(this, threatId != null ? threatId : "-", title, message);
+        } catch (Throwable ignore) {
+        }
     }
 
     /** Redirect to the antivirus screen unless the user dismissed it for this id. */

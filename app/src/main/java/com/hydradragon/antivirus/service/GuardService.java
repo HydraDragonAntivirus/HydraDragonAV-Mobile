@@ -132,6 +132,9 @@ public class GuardService extends Service {
 
             @Override
             public void onThreatFound(ThreatResult threat) {
+                ThreatLogger.logThreat(GuardService.this, threat.getPackageName(),
+                    threat.getAppName(),
+                    threat.getThreatType() + " (scan, risk " + threat.getRiskScore() + ")");
                 sendThreatNotification(threat);
                 if (callback != null) callback.onThreatDetected(threat);
             }
@@ -154,6 +157,7 @@ public class GuardService extends Service {
         networkMonitor.setCallback(new NetworkMonitor.NetworkCallback() {
             @Override
             public void onSuspiciousActivity(NetworkMonitor.NetworkEvent event) {
+                ThreatLogger.logThreat(GuardService.this, event.destIp, "Network", event.reason);
                 sendNetworkAlert(event);
                 if (callback != null) callback.onNetworkAlert(event);
             }
