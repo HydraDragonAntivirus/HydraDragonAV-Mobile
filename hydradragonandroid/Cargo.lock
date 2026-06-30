@@ -1176,6 +1176,7 @@ dependencies = [
  "hydradragonml",
  "jni",
  "sha2 0.11.0",
+ "tlsh-rs",
 ]
 
 [[package]]
@@ -2621,6 +2622,12 @@ name = "tinyzip"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6847a2bf223d67c916a25d5fb8d197fc1c7c3205421e05d50f3373e092034146"
+
+[[package]]
+name = "tlsh-rs"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c8f3c6805ba80052aab9545c3dcba2dc2cd344ea5f07a5a26e8dd972b9637a0"
 
 [[package]]
 name = "transpose"

@@ -28,6 +28,13 @@ const YRC_FILES: &[&str] = &[
     "AndroidOS_filtered.yrc",
 ];
 const MODEL_BIN: &str = "apk_model.bin";
+/// Malware TLSH similarity database (one T1 digest per line), built from the
+/// MalwareBazaar dump filtered to apk/elf/so/dex (`gen_tlsh_db.py`).
+const TLSH_DB: &str = "malware_tlsh.txt";
+/// A scanned buffer whose TLSH distance to a known-malware digest is at or below
+/// this is flagged as similar. Lower = stricter (fewer FP). TLSH distance: 0 =
+/// identical, <30 very close, <70 related (per the TLSH paper).
+const TLSH_THRESHOLD: i32 = 40;
 
 struct Engine {
     /// ClamAV engine: loaded from the bundled signature DB with the compiled
@@ -36,6 +43,8 @@ struct Engine {
     /// all in one pass. `None` if no clamav DB was bundled.
     clamav: Option<ClamavEngine>,
     model: Option<Model>,
+    /// Known-malware TLSH digests (apk/elf/so/dex) for fuzzy-similarity detection.
+    tlsh_db: Vec<tlsh_rs::TlshDigest>,
 }
 
 static ENGINE: OnceLock<Engine> = OnceLock::new();
@@ -142,8 +151,62 @@ fn do_init(dir: &str) -> Engine {
             None
         }
     };
+    let tlsh_db = load_tlsh_db(&base.join(TLSH_DB));
+    report.push_str(&format!(" tlsh={}", tlsh_db.len()));
     set_status(report);
-    Engine { clamav, model }
+    Engine {
+        clamav,
+        model,
+        tlsh_db,
+    }
+}
+
+/// Load the malware TLSH digests (one `T1...` per line) into parsed digests.
+/// Unparsable lines are skipped. Returns empty if the file is absent.
+fn load_tlsh_db(path: &std::path::Path) -> Vec<tlsh_rs::TlshDigest> {
+    let text = match std::fs::read_to_string(path) {
+        Ok(t) => t,
+        Err(_) => return Vec::new(),
+    };
+    let mut out = Vec::new();
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if let Ok(d) = line.parse::<tlsh_rs::TlshDigest>() {
+            out.push(d);
+        }
+    }
+    out
+}
+
+/// Whether `buf` is a file type we have TLSH malware digests for (apk/zip, ELF,
+/// or DEX) — so we only fuzzy-compare relevant buffers, not every PNG/XML.
+fn tlsh_relevant(buf: &[u8]) -> bool {
+    hydradragonextractor::detect_format(buf) == Some("zip")
+        || buf.starts_with(b"\x7fELF")
+        || buf.starts_with(b"dex\n")
+}
+
+/// Smallest TLSH distance from `buf` to any known-malware digest, or None when
+/// `buf` is too small/low-variance to hash or nothing is close enough.
+fn tlsh_nearest(engine: &Engine, buf: &[u8]) -> Option<i32> {
+    if engine.tlsh_db.is_empty() {
+        return None;
+    }
+    let digest = tlsh_rs::hash_bytes(buf).ok()?;
+    let mut best = i32::MAX;
+    for known in &engine.tlsh_db {
+        let d = digest.diff(known);
+        if d < best {
+            best = d;
+            if best == 0 {
+                break;
+            }
+        }
+    }
+    (best <= TLSH_THRESHOLD).then_some(best)
 }
 
 /// Run `f` on a thread with a LARGE stack and return its result. yara_x's rule
@@ -400,6 +463,18 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str, hydradragon: Option<&[u8]
     let mut detections: Vec<(String, Vec<String>)> = yara_dets;
     for lin in ml_lineages {
         detections.push(("ML".to_string(), lin));
+    }
+
+    // TLSH fuzzy-similarity to known malware: compare each apk/elf/dex buffer's
+    // TLSH against the MalwareBazaar database; a small distance => a likely
+    // variant. Tagged with the buffer's APK lineage so a whitelisted APK is
+    // still suppressed.
+    for b in &buffers {
+        if tlsh_relevant(&b.data) {
+            if let Some(dist) = tlsh_nearest(engine, &b.data) {
+                detections.push((format!("TLSH.Malware/dist={}", dist), b.apk_lineage.clone()));
+            }
+        }
     }
 
     let malicious = !detections.is_empty();

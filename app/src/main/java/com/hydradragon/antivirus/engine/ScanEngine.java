@@ -68,11 +68,16 @@ public class ScanEngine {
         photonCache.clear();
     }
     private ScanCallback callback;
-    /** SHA-256 hash whitelists (whitelist.bloom + whitelist2..5.bloom). A native
-     *  (clamav/YARA/ML) detection whose file SHA-256 is in ANY of these is a known
-     *  false positive and suppressed. These blooms are hash-keyed only — they hold
-     *  no package names, so they're queried by hash exclusively. */
-    private final java.util.List<BloomFilter<CharSequence>> whitelistBlooms = new ArrayList<>();
+    /** EXACT whole-APK SHA-256 whitelist (NSRL RDS Android, extension=apk). A
+     *  native (clamav/YARA/ML) detection whose whole-APK SHA-256 is in here is a
+     *  known false positive and suppressed. Exact membership (not a bloom): the
+     *  set is small (~70k) so we get ZERO false positives — i.e. no whitelist
+     *  false negative (a malicious hash can never collide into the whitelist). */
+    private final java.util.HashSet<String> whitelistHashes = new java.util.HashSet<>();
+    /** EXACT known-good package names (NSRL Android, extension=apk). NOT a
+     *  standalone clear — a package name is spoofable, so it only clears an app
+     *  when combined with a trusted-store install (see analyzeApp). */
+    private final java.util.HashSet<String> whitelistPackages = new java.util.HashSet<>();
     /** Set by {@link #cancelScan()} to abort an in-flight scan at the next loop
      *  boundary. Volatile so the UI thread's request is seen by the scan thread. */
     private volatile boolean cancelRequested = false;
@@ -118,23 +123,38 @@ public class ScanEngine {
     }
 
     private void loadBloomFilter() {
-        // All five hash-whitelist shards. Each is an independent Guava bloom; a
-        // hash present in ANY shard is whitelisted.
-        String[] assets = {"whitelist.bloom", "whitelist2.bloom", "whitelist3.bloom",
-                           "whitelist4.bloom", "whitelist5.bloom"};
-        for (String asset : assets) {
-            try (InputStream is = context.getAssets().open(asset)) {
-                whitelistBlooms.add(BloomFilter.readFrom(is, Funnels.stringFunnel(StandardCharsets.UTF_8)));
-            } catch (Exception e) { /* missing/invalid shard — skip */ }
-        }
+        // EXACT whole-APK SHA-256 whitelist (NSRL RDS Android, extension=apk),
+        // one lowercase-hex digest per line. Loaded into a HashSet for O(1) exact
+        // membership — zero false positives (no whitelist-induced false negative).
+        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
+                context.getAssets().open("whitelist_hashes.txt"), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                line = line.trim();
+                if (line.length() == 64) whitelistHashes.add(line);
+            }
+        } catch (Exception e) { /* missing — whitelist disabled */ }
+        // Known-good package names (NSRL). Used only WITH trusted-store origin.
+        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
+                context.getAssets().open("whitelist_packages.txt"), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                line = line.trim();
+                if (!line.isEmpty()) whitelistPackages.add(line);
+            }
+        } catch (Exception e) { /* missing — package whitelist disabled */ }
     }
 
-    /** True if {@code hash} (a file SHA-256) is in any hash-whitelist shard. */
+    /** True if {@code hash} (a whole-APK/file SHA-256) is an exact known-good
+     *  NSRL hash. Exact match — a malicious hash can never falsely land here. */
     private boolean isHashWhitelisted(String hash) {
-        if (hash == null || hash.isEmpty()) return false;
-        for (BloomFilter<CharSequence> f : whitelistBlooms)
-            if (f.mightContain(hash)) return true;
-        return false;
+        return hash != null && whitelistHashes.contains(hash.toLowerCase(java.util.Locale.US));
+    }
+
+    /** True if {@code pkg} is an exact known-good NSRL package name. Spoofable on
+     *  its own, so callers must combine it with a trusted-store install. */
+    private boolean isPackageWhitelisted(String pkg) {
+        return pkg != null && whitelistPackages.contains(pkg);
     }
 
     /** Lowercase-hex SHA-256 of a file's bytes (streamed), or null on error. We
@@ -380,7 +400,8 @@ public class ScanEngine {
                         || app.sourceDir.startsWith("/product/") || app.sourceDir.startsWith("/apex/")) continue;
                 if (app.packageName != null && (app.packageName.equals(context.getPackageName())
                         || seen.contains(app.packageName))) continue;
-                // Hash-first fast path: known-good APK → skip the deep scan.
+                // Hash-first fast path: known-good APK (SHA-256 match) → skip.
+                // (No package-name skip — a package name is spoofable.)
                 if (isFileWhitelisted(app.sourceDir)) continue;
                 NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir, app.packageName);
                 if (v == null) continue;
@@ -512,16 +533,18 @@ public class ScanEngine {
             } catch (Exception e) { }
         }
 
-        // NOTE: the whitelist blooms are hash-keyed (SHA-256), NOT package names,
-        // so there's no by-package bloom check here — only the trusted-vendor
-        // prefix list. Hash-based suppression happens in the native deep scan.
-        boolean isWhitelisted = false;
-        if (app.packageName != null) {
-            for (String prefix : WHITELIST_PREFIXES)
-                if (app.packageName.startsWith(prefix)) { isWhitelisted = true; break; }
+        // Auto-clear requires TWO things together (neither alone is enough):
+        //   1. a trusted-store install (isFromStore) — OS-enforced, hard to spoof, AND
+        //   2. a known-good NSRL package name (isPackageWhitelisted).
+        // A trusted store alone isn't trusted blindly (store malware exists); a
+        // package name alone is spoofable (sideloaded impersonation). Requiring
+        // both — a known app installed through a real store — is safe. System
+        // apps already returned clean above; the `com.google.*` prefix list is
+        // removed entirely. (Exact SHA-256 hash match still clears in the native
+        // deep scan, independently.)
+        if (isFromStore && isPackageWhitelisted(app.packageName)) {
+            builder.setRiskScore(0); return builder.build();
         }
-
-        if (isWhitelisted || isFromStore) { builder.setRiskScore(0); return builder.build(); }
 
         // User previously marked this app safe ("Safe (ignore)") -> never flag.
         if (app.packageName != null && UserDecisions.isThreatAllowed(context, app.packageName)) {

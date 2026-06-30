@@ -11,3 +11,5 @@ yara-x/compiled/
 whitelist/
 # nist.gov RDS sql database
 sql/
+malwarebazaarfull/
+all_sha256.txt
