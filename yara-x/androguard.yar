@@ -1,3 +1,6 @@
+import "androguard"
+import "hydradragon"
+
 /*
     This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
 */
@@ -8,8 +11,6 @@
 	Before repo removed you can get it, along with installation instructions, at https://github.com/Koodous/androguard-yara
 	Now I rewritte Koodous's androguard module in Rust.
 */
-
-import "androguard"
 
 rule adware : ads
 {
@@ -29,12 +30,8 @@ rule adware : ads
 		all of ($string_*)
 		
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) 
-    and open to any user or organization, as long as you use it under this license.
-*/
 
-rule dropperMapin
+rule dropperMapin : android
 {
     meta:
         author = "https://twitter.com/plutec_net"
@@ -53,8 +50,7 @@ rule dropperMapin
         all of them
 }
 
-
-rule Mapin
+rule Mapin : android
 {
     meta:
         author = "https://twitter.com/plutec_net"
@@ -74,12 +70,7 @@ rule Mapin
         
 }
 
-
-
-
-
-
-rule BaDoink : official
+rule BaDoink : official android
 {
 		meta:
 		author = "Fernando Denis https://twitter.com/fdrg21"
@@ -111,12 +102,7 @@ rule BaDoink : official
 		
 }
 
-
-
-
-
-
-rule assd_developer : official
+rule assd_developer : official android
 {
 	meta:
 		author = "Fernando Denis Ramirez https://twitter.com/fdrg21"
@@ -129,12 +115,7 @@ rule assd_developer : official
 		
 }
 
-
-
-
-
-
-rule batterybotpro : ClickFraud AdFraud SMS Downloader_Trojan
+rule batterybotpro : ClickFraud AdFraud SMS Downloader_Trojan android
 {
 	meta:
 		description = "http://research.zscaler.com/2015/07/fake-batterybotpro-clickfraud-adfruad.html"
@@ -149,11 +130,7 @@ rule batterybotpro : ClickFraud AdFraud SMS Downloader_Trojan
 }
 
 
-
-
-
-
-rule sensual_woman: chinese
+rule sensual_woman: chinese android
 {
   meta:
 		author = "https://twitter.com/plutec_net"
@@ -168,7 +145,7 @@ rule sensual_woman: chinese
 		or androguard.package_name(/com.video.uiA/i)
 }
 
-rule chinese2 : sms_sender
+rule chinese2 : sms_sender android
 {
   meta:
 		author = "https://twitter.com/plutec_net"
@@ -182,7 +159,7 @@ rule chinese2 : sms_sender
 		androguard.package_name(/kr.mlffstrvwb.mu/)
 }
 
-rule chinese_porn : SMSSend
+rule chinese_porn : SMSSend android
 {
   meta:
 		author = "https://twitter.com/plutec_net"
@@ -192,7 +169,7 @@ rule chinese_porn : SMSSend
 		androguard.package_name("com.shenqi.video.nfkw.neim")
 }
 
-rule chineseporn4 : SMSSend
+rule chineseporn4 : SMSSend android
 {
   meta:
 		author = "https://twitter.com/plutec_net"
@@ -202,7 +179,7 @@ rule chineseporn4 : SMSSend
 		androguard.package_name("org.mygson.videoa.zw")
 }
 
-rule chineseporn5 : SMSSend
+rule chineseporn5 : SMSSend android
 {
   meta:
 		author = "https://twitter.com/plutec_net"
@@ -217,8 +194,7 @@ rule chineseporn5 : SMSSend
 		
 }
 
-
-rule Dendroid
+rule Dendroid : android
 {
 	meta:
 	author = "https://twitter.com/jsmesa"
@@ -235,7 +211,7 @@ rule Dendroid
 
 }
 
-rule Dendroid_2
+rule Dendroid_2 : android
 {
 	meta:
 	author = "https://twitter.com/jsmesa"
@@ -249,7 +225,7 @@ rule Dendroid_2
 
 }
 
-rule Dendroid_3
+rule Dendroid_3 : android
 {
 	meta:
 	author = "https://twitter.com/jsmesa"
@@ -263,12 +239,7 @@ rule Dendroid_3
 
 }
 
-
-
-
-
-
-rule fake_facebook: fake
+rule fake_facebook: fake android
 {
   meta:
 		  author = "https://twitter.com/Diviei"
@@ -278,8 +249,7 @@ rule fake_facebook: fake
 		and not androguard.certificate.sha1("A0E980408030C669BCEB38FEFEC9527BE6C3DDD0")
 }
 
-
-rule fake_facebook_2 : fake
+rule fake_facebook_2 : fake android
 {
 	meta:
 		author = "https://twitter.com/plutec_net"
@@ -300,7 +270,7 @@ rule fake_facebook_2 : fake
 		not androguard.certificate.issuer(/O=Facebook Mobile/)	
 }
 
-rule fake_instagram: fake
+rule fake_instagram: fake android
 {
   meta:
 		  author = "https://twitter.com/Diviei"
@@ -310,7 +280,7 @@ rule fake_instagram: fake
 		and not androguard.certificate.sha1("76D72C35164513A4A7EBA098ACCB2B22D2229CBE")
 }
 
-rule fake_king_games: fake
+rule fake_king_games: fake android
 {
 	condition:
 		(androguard.app_name("AlphaBetty Saga")
@@ -328,7 +298,7 @@ rule fake_king_games: fake
 		and not androguard.certificate.sha1("9E93B3336C767C3ABA6FCC4DEADA9F179EE4A05B")
 }
 
-rule fake_market: fake
+rule fake_market: fake android
 {
   meta:
 		author = "https://twitter.com/plutec_net"
@@ -338,8 +308,7 @@ rule fake_market: fake
 		androguard.package_name("com.minitorrent.kimill") 
 }
 
-
-rule fake_minecraft: fake
+rule fake_minecraft: fake android
 {
   meta:
 		author = "https://twitter.com/plutec_net"
@@ -364,7 +333,8 @@ rule fake_whatsapp: fake
 //41dce59ace9cce668e893c9d2c35d6859dc1c86d631a0567bfde7d34dd5cae0b
 //61f7909512c5caf6dd125659428cf764631d5a52c59c6b50112af4a02047774c
 //2c89d0d37257c90311436115c1cf06295c39cd0a8c117730e07be029bd8121a0
-rule moscow_fake : banker
+
+rule moscow_fake : banker androoid
 {
 	meta:
 	  author = "Fernando Denis"
@@ -383,7 +353,8 @@ rule moscow_fake : banker
 	condition:
 		all of ($string_*)
 }
-rule dowgin:adware
+
+rule dowgin:adware android
 {
     meta:
         author = "https://twitter.com/plutec_net"
@@ -402,7 +373,9 @@ rule dowgin:adware
     condition:
         all of them
         
-}rule genericSMS : smsFraud
+}
+
+rule genericSMS : smsFraud android
 {
 	meta:
 	    	author = "https://twitter.com/plutec_net"
@@ -421,7 +394,7 @@ rule dowgin:adware
 		
 }
 
-rule genericSMS2 : smsFraud
+rule genericSMS2 : smsFraud android
 {
 	meta:
 		author = "https://twitter.com/plutec_net"
@@ -442,11 +415,7 @@ rule genericSMS2 : smsFraud
 }
 
 
-
-
-
-
-rule hacking_team : stcert
+rule hacking_team : stcert android
 {
 	meta:
 		author = "Fernando Denis https://twitter.com/fdrg21"
@@ -485,29 +454,31 @@ rule hacking_team : stcert
 		//03EA873D5D13707B0C278A0055E452416054E27B this certification could be stolen
 		//B8D5E3F0BCAD2EB03BB34AEE2B3F63FC5162C56B this certification could be stolen
 }
-//Author @jsmesa
 
-import "cuckoo"
 
-rule koler_domains
+rule koler_domains : android
 {
 	meta:
+ 		author = "https://twitter.com/jsmesa"
+		reference = "https://koodous.com/"
 		description = "Old Koler.A domains examples"
 		sample = "2e1ca3a9f46748e0e4aebdea1afe84f1015e3e7ce667a91e4cfabd0db8557cbf"
 
 	condition:
-		cuckoo.network.dns_lookup(/police-scan-mobile.com/) or
-		cuckoo.network.dns_lookup(/police-secure-mobile.com/) or
-		cuckoo.network.dns_lookup(/mobile-policeblock.com/) or
-		cuckoo.network.dns_lookup(/police-strong-mobile.com/) or
-		cuckoo.network.dns_lookup(/video-porno-gratuit.eu/) or
-		cuckoo.network.dns_lookup(/video-sartex.us/) or 
-		cuckoo.network.dns_lookup(/policemobile.biz/)
+		hydradragon.network.dns_lookup(/police-scan-mobile.com/) or
+		hydradragon.network.dns_lookup(/police-secure-mobile.com/) or
+		hydradragon.network.dns_lookup(/mobile-policeblock.com/) or
+		hydradragon.network.dns_lookup(/police-strong-mobile.com/) or
+		hydradragon.network.dns_lookup(/video-porno-gratuit.eu/) or
+		hydradragon.network.dns_lookup(/video-sartex.us/) or 
+		hydradragon.network.dns_lookup(/policemobile.biz/)
 }
 
-rule koler_builds
+rule koler_builds : android
 {
 	meta:
+		author = "https://twitter.com/jsmesa"
+		reference = "https://koodous.com/"
 		description = "Koler.A builds"
 
 	strings:
@@ -520,9 +491,11 @@ rule koler_builds
 		
 }
 
-rule koler_class
+rule koler_class : android
 {
 	meta:
+		author = "https://twitter.com/jsmesa"
+		reference = "https://koodous.com/"
 		description = "Koler.A class"
 
 	strings:
@@ -534,9 +507,11 @@ rule koler_class
 		
 }
 
-rule koler_D
+rule koler_D : android
 {
 	meta:
+		author = "https://twitter.com/jsmesa"
+		reference = "https://koodous.com/"
 		description = "Koler.D class"
 
 	strings:
@@ -547,28 +522,24 @@ rule koler_D
 		($0 and $a)
 		
 }
-//Author @jsmesa
 
-import "cuckoo"
-
-rule dropper:realshell {
-	meta:
-		source = "https://blog.malwarebytes.org/mobile-2/2015/06/complex-method-of-obfuscation-found-in-dropper-realshell/"
-	strings:
-		$a = "hexKey:"
-		$b = "Decrypt.malloc.memset.free.pluginSMS_encrypt.Java_com_skymobi_pay_common_util_LocalDataDecrpty_Encrypt.strcpy"
-	
-	condition:
-		any of them
+rule dropper:realshell android {
+    meta:
+        author = "https://twitter.com/plutec_net"
+        reference = "https://koodous.com/"
+        source = "https://blog.malwarebytes.org/mobile-2/2015/06/complex-method-of-obfuscation-found-in-dropper-realshell/"
+    strings:
+        $b = "Decrypt.malloc.memset.free.pluginSMS_encrypt.Java_com_skymobi_pay_common_util_LocalDataDecrpty_Encrypt.strcpy"
+    
+    condition:
+        $b
 }
 
-/*
-//https://koodous.com/#/apks/c77eed5e646b248079507973b2afcf866234001166f6d280870e624932368529
-//https://koodous.com/#/apks/bdfbf9de49e71331ffdfd04839b2b0810802f8c8bb9be93b5a7e370958762836
-//https://koodous.com/#/apks/fcf88c8268a7ac97bf10c323eb2828e2025feea13cdc6554770e7591cded462d
 
 
-
+//41dce59ace9cce668e893c9d2c35d6859dc1c86d631a0567bfde7d34dd5cae0b
+//61f7909512c5caf6dd125659428cf764631d5a52c59c6b50112af4a02047774c
+//2c89d0d37257c90311436115c1cf06295c39cd0a8c117730e07be029bd8121a0
 
 rule mobidash : advertising
 {
@@ -581,18 +552,10 @@ rule mobidash : advertising
 		$b = "IDATx"
 
 	condition:
-		($a or $b) and androguard.activity(/mobi.dash.*//*)
-
-		
+		($a or $b) and androguard.activity(/mobi.dash.*/)
 }
 
-*/
-
-
-
-
-
-rule fraudulents_2 : certificates
+rule fraudulents_2 : certificates android
 {
 	meta:
 		description = "This rule automatically adds certificates present in malware"
@@ -608,11 +571,6 @@ rule fraudulents_2 : certificates
 		
 }
 
-
-
-
-
-
 rule leadbolt : advertising
 {
 	meta:
@@ -623,12 +581,8 @@ rule leadbolt : advertising
 	condition:
 		androguard.url(/http:\/\/ad.leadbolt.net/)
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as
-    long as you use it under this license.
-*/
 
-rule ransomware : svpeng
+rule ransomware : svpeng android
 {
 	meta:
 		author = "Fernando Denis https://twitter.com/fdrg21"
@@ -644,8 +598,7 @@ rule ransomware : svpeng
 		$a and $b
 }
 
-
-rule Ransomware : banker
+rule Ransomware : banker android
 {
 	meta:
 		author = "Fernando Denis https://twitter.com/fdrg21"
@@ -666,7 +619,7 @@ rule Ransomware : banker
 		any of ($strings_*)
 }
 
-rule smspay_chinnese : hejupay
+rule smspay_chinnese : hejupay android
 {
     meta:
 		author = "Fernando Denis https://twitter.com/fdrg21"
@@ -681,8 +634,7 @@ rule smspay_chinnese : hejupay
 		$a or $b
 }
 
-
-rule smsfraud : ganga
+rule smsfraud : ganga android
 {
 	meta:
 		author = "Fernando Denis https://twitter.com/fdrg21"
@@ -702,8 +654,7 @@ rule smsfraud : ganga
 		
 }
 
-
-rule sms_fraud : MSACM32
+rule sms_fraud : MSACM32 android
 {
 		meta:
 		author = "Fernando Denis https://twitter.com/fdrg21"
@@ -722,7 +673,7 @@ rule sms_fraud : MSACM32
 		
 }
 
-rule sms_fraud_gen : generic
+rule sms_fraud_gen : generic android
 {
 		meta:
 		author = "Fernando Denis https://twitter.com/fdrg21"
@@ -741,7 +692,7 @@ rule sms_fraud_gen : generic
 		androguard.permission(/android.permission.SEND_SMS/)
 }
 
-rule smsfraud_apk
+rule smsfraud_apk : android
 {
 	meta:
 		author = "https://twitter.com/plutec_net"
@@ -753,16 +704,9 @@ rule smsfraud_apk
 		androguard.certificate.sha1("9E1B8719D80656E9EADAAB4251B2CFB4C8188835")
 		
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
 
 
-
-
-
-rule tinhvan
+rule tinhvan : android
 {
 	meta:
 	  author = "https://twitter.com/plutec_net"
@@ -774,9 +718,7 @@ rule tinhvan
 		
 }
 
-
-
-rule xbot007
+rule xbot007 : android
 {
 	meta:
 		reference = "https://github.com/maldroid/maldrolyzer/blob/master/plugins/xbot007.py"
@@ -787,30 +729,6 @@ rule xbot007
 	condition:
 		any of them
 }
-
-rule adware : ads android
-{
-	meta:
-		author = "Fernando Denis Ramirez https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		description = "Adware"
-		sample = "5a331231f997decca388ba2d73b7dec1554e966a0795b0cb8447a336bdafd71b"
-
-	strings:
-		$string_a = "banner_layout"
-		$string_b = "activity_adpath_sms"
-		$string_c = "adpath_title_one"
-		$string_d = "7291-2ec9362bd699d0cd6f53a5ca6cd"
-
-	condition:
-		all of ($string_*)
-		
-}
-
-
-
-
-
 
 rule Android_AliPay_smsStealer : android
 {
@@ -834,15 +752,11 @@ rule Android_AliPay_smsStealer : android
 		androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/) and 		
 		all of ($str_*)
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
 
-*/
 
 
 // More info: http://amtrckr.info/
 // Last update: 2016/05/19 - 10:00:02
-
 
 rule coudw: amtrckr
 {
@@ -1454,25 +1368,6 @@ rule ibanking: amtrckr
 		androguard.url(/emberaer\.com/)
 }
 
-
-
-
-
-
-rule assd_developer : official android
-{
-	meta:
-		author = "Fernando Denis Ramirez https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		description = "This rule detects apks fom ASSD developer"
-		sample = "cb9721c524f155478e9402d213e240b9f99eaba86fcbce0571cd7da4e258a79e"
-
-	condition:
-		androguard.certificate.sha1("ED9A1CE1F18A1097DCCC5C0CB005E3861DA9C34A")
-		
-}
-
-
 rule Android_AVITOMMS_Variant
 {
 	meta:
@@ -1504,15 +1399,7 @@ rule Android_AVITOMMS_Rule2
 		androguard.permission(/android.permission.SEND_SMS/i) and
 		androguard.permission(/android.permission.INTERNET/i)
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and 
-    open to any user or organization, as long as you use it under this license.
-*/
 
-/*
-	Androguard module used in this rule file is under development by people at https://koodous.com/.
-	You can get it, along with installation instructions, at https://github.com/Koodous/androguard-yara
-*/
 
 
 
@@ -1532,10 +1419,6 @@ rule backdoor: dropper
 		or androguard.url("http://sys.aedxdrcb.com")
 }
 
-
-
-
-
 rule koodous : official
 {
 	meta:
@@ -1549,11 +1432,6 @@ rule koodous : official
 		$str_1 and 
 		androguard.receiver(/\.AppBoot$/)		
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
 
 
 rule Android_BadMirror
@@ -1569,10 +1447,6 @@ rule Android_BadMirror
         androguard.permission(/android.permission.READ_PHONE_STATE/i)
 }
 
-
-
-
-
 rule Banker_Acecard
 {
 meta:
@@ -1585,31 +1459,6 @@ $str_2 = "instagram.php"
 condition:
 ((androguard.package_name("starter.fl") and androguard.service("starter.CosmetiqFlServicesCallHeadlessSmsSendService")) or androguard.package_name("cosmetiq.fl") or all of ($str_*)) and androguard.permissions_number > 19
 }
-
-
-
-
-
-
-rule batterybotpro : ClickFraud AdFraud SMS Downloader_Trojan android
-{
-	meta:
-		description = "http://research.zscaler.com/2015/07/fake-batterybotpro-clickfraud-adfruad.html"
-		sample = "cc4e024db858d7fa9b03d7422e760996de6a4674161efbba22d05f8b826e69d5"
-		author = "https://twitter.com/fdrg21"
-
-	condition:
-
-		androguard.activity(/com\.polaris\.BatteryIndicatorPro\.BatteryInfoActivity/i) and
-		androguard.permission(/android\.permission\.SEND_SMS/)
-		
-}
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
-
 
 rule Android_Clicker_G
 {
@@ -1624,7 +1473,6 @@ rule Android_Clicker_G
 		androguard.receiver(/MyBroadCastReceiver/i) and $a
 }
 
-
 rule Android_Copy9
 {
 	meta:
@@ -1638,7 +1486,6 @@ rule Android_Copy9
         androguard.receiver(/com.ispyoo/i)
 }
 
-
 rule Android_DeathRing
 {
 	meta:
@@ -1651,11 +1498,6 @@ rule Android_DeathRing
 		androguard.service(/MainOsService/i) and
         androguard.receiver(/ApkUninstallReceiver/i)
 }
-
-
-
-
-
 
 rule Android_Dogspectus_rswm
 {
@@ -1688,53 +1530,6 @@ rule Android_Dogspectus_rswm
 		
 }
 
-
-rule Dendroid : android
-{
-	meta:
-	author = "https://twitter.com/jsmesa"
-	reference = "https://koodous.com/"
-	description = "Dendroid RAT"
-	strings:
-    	$s1 = "/upload-pictures.php?"
-    	$s2 = "Opened Dialog:"
-    	$s3 = "com/connect/MyService"
-    	$s4 = "android/os/Binder"
-    	$s5 = "android/app/Service"
-   	condition:
-    	all of them
-
-}
-
-rule Dendroid_2 : android
-{
-	meta:
-	author = "https://twitter.com/jsmesa"
-	reference = "https://koodous.com/"
-	description = "Dendroid evidences via Droidian service"
-	strings:
-    	$a = "Droidian"
-    	$b = "DroidianService"
-   	condition:
-    	all of them
-
-}
-
-rule Dendroid_3 : android
-{
-	meta:
-	author = "https://twitter.com/jsmesa"
-	reference = "https://koodous.com/"
-	description = "Dendroid evidences via ServiceReceiver"
-	strings:
-    	$1 = "ServiceReceiver"
-    	$2 = "Dendroid"
-   	condition:
-    	all of them
-
-}
-
-
 rule Android_Dendroid
 {
 	meta:
@@ -1747,11 +1542,6 @@ rule Android_Dendroid
 		androguard.service(/com.connect/i) and
         androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/i)
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
 
 
 rule Android_Dogspectus
@@ -1769,109 +1559,6 @@ rule Android_Dogspectus
 		androguard.permission(/android.permission.WAKE_LOCK/i)
 }
 
-
-
-
-
-
-rule fake_facebook: fake android
-{
-  meta:
-		  author = "https://twitter.com/Diviei"
-		  reference = "https://koodous.com/"
-	condition:
-		androguard.app_name("Facebook")
-		and not androguard.certificate.sha1("A0E980408030C669BCEB38FEFEC9527BE6C3DDD0")
-}
-
-
-rule fake_facebook_2 : fake android
-{
-	meta:
-		author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-		description = "Detects fake facebook applications"
-		hash_0 = "7be33c2d27121968d2f7081ae2b04965238a3c15c7aae62d006f629d64e0b58e"
-		hash_1 = "c1264c689393880361409eb02570fd49bec91c88569d39062e13c0c8ae0e1806"
-		hash_2 = "70d5cc909d5718674474a54b44f83bd194cbdd2d99354d52cd868b334fb5f3de"
-		hash_3 = "38e757abd5e015e3c3690ea0fdc2ff1e04b716651645a8c4ca6a63185856fe29"
-		hash_4 = "ba0b8fe37b4874656ad129dd4d96fdec181e2c3488985309241b0449bb4ab84f"
-		hash_5 = "7be33c2d27121968d2f7081ae2b04965238a3c15c7aae62d006f629d64e0b58e"
-		hash_6 = "c1264c689393880361409eb02570fd49bec91c88569d39062e13c0c8ae0e1806"
-		hash_7 = "7345c3124891b34607a07e93c8ab6dcbbf513e24e936c3710434b085981b815a"
-		
-	condition:
-		androguard.app_name("Facebook") and
-		not androguard.package_name(/com.facebook.katana/) and 
-		not androguard.certificate.issuer(/O=Facebook Mobile/)	
-}
-
-rule fake_instagram: fake android
-{
-  meta:
-		  author = "https://twitter.com/Diviei"
-		  reference = "https://koodous.com/"
-	condition:
-		androguard.app_name("Instagram")
-		and not androguard.certificate.sha1("76D72C35164513A4A7EBA098ACCB2B22D2229CBE")
-}
-
-rule fake_king_games: fake android
-{
-	condition:
-		(androguard.app_name("AlphaBetty Saga")
-		or androguard.app_name("Candy Crush Soda Saga")
-		or androguard.app_name("Candy Crush Saga")
-		or androguard.app_name("Farm Heroes Saga")
-		or androguard.app_name("Pet Rescue Saga")
-		or androguard.app_name("Bubble Witch 2 Saga")
-		or androguard.app_name("Scrubby Dubby Saga")
-		or androguard.app_name("Diamond Digger Saga")
-		or androguard.app_name("Papa Pear Saga")
-		or androguard.app_name("Pyramid Solitaire Saga")
-		or androguard.app_name("Bubble Witch Saga")
-		or androguard.app_name("King Challenge"))
-		and not androguard.certificate.sha1("9E93B3336C767C3ABA6FCC4DEADA9F179EE4A05B")
-}
-
-rule fake_market: fake android
-{
-  meta:
-		author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-
-	condition:
-		androguard.package_name("com.minitorrent.kimill") 
-}
-
-
-rule fake_minecraft: fake android
-{
-  meta:
-		author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-	condition:
-		( androguard.app_name("Minecraft: Pocket Edition") or 
-			androguard.app_name("Minecraft - Pocket Edition") )
-		and not androguard.package_name("com.mojang.minecraftpe")
-}
-
-rule fake_whatsapp: fake android
-{
-  meta:
-		  author = "https://twitter.com/Diviei"
-		  reference = "https://koodous.com/"
-	condition:
-		androguard.app_name("WhatsApp") and
-		not androguard.certificate.sha1("38A0F7D505FE18FEC64FBF343ECAAAF310DBD799")
-}
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
-
-
 rule Android_FakeBank_Fanta
 {
 	meta:
@@ -1887,10 +1574,6 @@ rule Android_FakeBank_Fanta
 		androguard.receiver(/NetworkChangeReceiver/i)
 		
 }
-
-
-
-
 
 rule Andr_fake_mario
 {
@@ -1934,70 +1617,6 @@ rule finspy : cdshide android
 	condition:
 		$re and (#re > 50)
 }
-rule dowgin:adware android
-{
-    meta:
-        author = "https://twitter.com/plutec_net"
-        reference = "https://koodous.com/"
-        sample = "4d7f2d6ff4ed8ced6f8f7f96e9899273cc3090ea108f2cc3b32dd1a06e63cf70"
-        sample2 = "cde8160d09c486bdd6d96b2ed81bd52390d77094d13ff9cfbc6949ed00206a83"
-        sample3 = "d2e81e6db5f4964246d10241588e0e97cde524815c4de7c0ea1c34a48da1bcaf"
-        sample4 = "cc2d0b3d8f00690298b0e5813f6ace8f4d4b04c9704292407c2b83a12c69617b"
-
-    strings:
-        $a = "http://112.74.111.42:8000"
-        $b = "SHA1-Digest: oIx4iYWeTtKib4fBH7hcONeHuaE="
-        $c = "ONLINEGAMEPROCEDURE_WHICH_WAP_ID"
-        $d = "http://da.mmarket.com/mmsdk/mmsdk?func=mmsdk:posteventlog"
-
-    condition:
-        all of them
-        
-}
-rule genericSMS : smsFraud android
-{
-	meta:
-	    	author = "https://twitter.com/plutec_net"
-            	reference = "https://koodous.com/"
-	    	sample = "3fc533d832e22dc3bc161e5190edf242f70fbc4764267ca073de5a8e3ae23272"
-	    	sample2 = "3d85bdd0faea9c985749c614a0676bb05f017f6bde3651f2b819c7ac40a02d5f"
-
-	strings:
-		$a = "SHA1-Digest: +RsrTx5SNjstrnt7pNaeQAzY4kc="
-		$b = "SHA1-Digest: Rt2oRts0wWTjffGlETGfFix1dfE="
-		$c = "http://image.baidu.com/wisebrowse/index?tag1=%E6%98%8E%E6%98%9F&tag2=%E5%A5%B3%E6%98%8E%E6%98%9F&tag3=%E5%85%A8%E9%83%A8&pn=0&rn=10&fmpage=index&pos=magic#/channel"
-		$d = "pitchfork=022D4"
-
-	condition:
-		all of them
-		
-}
-
-rule genericSMS2 : smsFraud android
-{
-	meta:
-		author = "https://twitter.com/plutec_net"
-                reference = "https://koodous.com/"
-		sample = "1f23524e32c12c56be0c9a25c69ab7dc21501169c57f8d6a95c051397263cf9f"
-		sample2 = "2cf073bd8de8aad6cc0d6ad5c98e1ba458bd0910b043a69a25aabdc2728ea2bd"
-		sample3 = "20575a3e5e97bcfbf2c3c1d905d967e91a00d69758eb15588bdafacb4c854cba"
-
-	strings:
-		$a = "NotLeftTriangleEqual=022EC"
-		$b = "SHA1-Digest: X27Zpw9c6eyXvEFuZfCL2LmumtI="
-		$c = "_ZNSt12_Vector_baseISsSaISsEE13_M_deallocateEPSsj"
-		$d = "FBTP2AHR3WKC6LEYON7D5GZXVISMJ4QU"
-
-	condition:
-		all of them
-		
-}
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
-
 
 rule Android_Godlike
 {
@@ -2034,7 +1653,6 @@ rule Android_Godlike_2
 		androguard.service(/DownloadService/i)) and 
 		any of ($a_*)
 }
-
 
 rule HackingTeam_Android : Android Implant
 {
@@ -2085,13 +1703,6 @@ rule HackingTeam_Android : Android Implant
         $decryptor and ($settings and $getSmsInputNumbers)
 }
 
-
-
-
-
-import "cuckoo"
-
-
 rule libyan_scorpions
 {
 	meta:
@@ -2107,58 +1718,16 @@ rule libyan_scorpions
 		$domain_5 = "sara2011.no-ip.biz" ascii wide nocase
 
 	condition:
-		androguard.url(/41\.208\.110\.46/) or cuckoo.network.http_request(/41\.208\.110\.46/) or
-		androguard.url(/winmeif.myq-see.com/i) or cuckoo.network.dns_lookup(/winmeif.myq-see.com/i) or
-		androguard.url(/wininit.myq-see.com/i) or cuckoo.network.dns_lookup(/wininit.myq-see.com/i) or
-		androguard.url(/samsung.ddns.me/i) or cuckoo.network.dns_lookup(/samsung.ddns.me/i) or
-		androguard.url(/collge.myq-see.com/i) or cuckoo.network.dns_lookup(/collge.myq-see.com/i) or
-		androguard.url(/sara2011.no-ip.biz/i) or cuckoo.network.dns_lookup(/sara2011.no-ip.biz/i) or
+		androguard.url(/41\.208\.110\.46/) or hydradragon.network.http_request(/41\.208\.110\.46/) or
+		androguard.url(/winmeif.myq-see.com/i) or hydradragon.network.dns_lookup(/winmeif.myq-see.com/i) or
+		androguard.url(/wininit.myq-see.com/i) or hydradragon.network.dns_lookup(/wininit.myq-see.com/i) or
+		androguard.url(/samsung.ddns.me/i) or hydradragon.network.dns_lookup(/samsung.ddns.me/i) or
+		androguard.url(/collge.myq-see.com/i) or hydradragon.network.dns_lookup(/collge.myq-see.com/i) or
+		androguard.url(/sara2011.no-ip.biz/i) or hydradragon.network.dns_lookup(/sara2011.no-ip.biz/i) or
 		any of ($domain_*) or any of ($ip_*) or
 		androguard.certificate.sha1("DFFDD3C42FA06BCEA9D65B8A2E980851383BD1E3")
 		
 }
-
-
-
-
-
-
-rule fraudulents_2 : certificates android
-{
-	meta:
-		description = "This rule automatically adds certificates present in malware"
-		author = "https://twitter.com/fdrg21"
-
-	condition:
-		androguard.certificate.sha1("A5D9C9A40A3786D631210E8FCB9CF7A1BC5B3062") or
-		androguard.certificate.sha1("B4142B617997345809736842147F97F46059FDE3") or
-		androguard.certificate.sha1("950A545EA156A0E44B3BAB5F432DCD35005A9B70") or
-		androguard.certificate.sha1("DE18FA0C68E6C9E167262F1F4ED984A5F00FD78C") or
-		androguard.certificate.sha1("81E8E202C539F7AEDF6138804BE870338F81B356") or
-		androguard.certificate.sha1("5A051047F2434DDB2CAA65898D9B19ED9665F759")
-		
-}
-
-
-
-
-
-
-rule leadbolt : advertising android
-{
-	meta:
-	  author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-		description = "Leadbolt"
-		
-	condition:
-		androguard.url(/http:\/\/ad.leadbolt.net/)
-}
-
-
-
-
-
 
 rule Android_Malware : iBanking android
 {
@@ -2190,390 +1759,6 @@ rule Installer: banker android
 	condition:
 		androguard.package_name("Jk7H.PwcD")
 }
-
-
-
-
-
-
-rule sensual_woman: chinese android
-{
-  meta:
-		author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-	condition:
-		androguard.package_name(/com.phone.gzlok.live/)
-		or androguard.package_name(/com.yongrun.app.sxmn/)
-		or androguard.package_name(/com.wnm.zycs/)
-		or androguard.package_name(/com.charile.chen/i)
-		or androguard.package_name(/com.sp.meise/i)
-		or androguard.package_name(/com.legame.wfxk.wjyg/)
-		or androguard.package_name(/com.video.uiA/i)
-}
-
-rule chinese2 : sms_sender android
-{
-  meta:
-		author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-	condition:
-		androguard.package_name(/com.adr.yykbplayer/) or 
-		androguard.package_name(/sdej.hpcite.icep/) or
-		androguard.package_name(/p.da.wdh/) or
-		androguard.package_name(/com.shenqi.video.sjyj.gstx/) or
-		androguard.package_name(/cjbbtwkj.xyduzi.fa/) or
-		androguard.package_name(/kr.mlffstrvwb.mu/)
-}
-
-rule chinese_porn : SMSSend android
-{
-  meta:
-		author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-	condition:
-		androguard.package_name("com.tzi.shy") or
-		androguard.package_name("com.shenqi.video.nfkw.neim")
-}
-
-rule chineseporn4 : SMSSend android
-{
-  meta:
-		author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-	condition:
-		androguard.activity(/com\.shenqi\.video\.Welcome/) or
-		androguard.package_name("org.mygson.videoa.zw")
-}
-
-rule chineseporn5 : SMSSend android
-{
-  meta:
-		author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-	condition:
-		androguard.package_name("com.shenqi.video.ycef.svcr") or 
-		androguard.package_name("dxas.ixa.xvcekbxy") or
-		androguard.package_name("com.video.ui") or 
-		androguard.package_name("com.qq.navideo") or
-		androguard.package_name("com.android.sxye.wwwl") or
-		androguard.certificate.issuer(/llfovtfttfldddcffffhhh/)
-		
-}
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as
-    long as you use it under this license.
-*/
-
-rule dropper:realshell android {
-    meta:
-        author = "https://twitter.com/plutec_net"
-        reference = "https://koodous.com/"
-        source = "https://blog.malwarebytes.org/mobile-2/2015/06/complex-method-of-obfuscation-found-in-dropper-realshell/"
-    strings:
-        $b = "Decrypt.malloc.memset.free.pluginSMS_encrypt.Java_com_skymobi_pay_common_util_LocalDataDecrpty_Encrypt.strcpy"
-    
-    condition:
-        $b
-}
-
-
-
-//41dce59ace9cce668e893c9d2c35d6859dc1c86d631a0567bfde7d34dd5cae0b
-//61f7909512c5caf6dd125659428cf764631d5a52c59c6b50112af4a02047774c
-//2c89d0d37257c90311436115c1cf06295c39cd0a8c117730e07be029bd8121a0
-rule moscow_fake : banker androoid
-{
-	meta:
-	  author = "Fernando Denis"
-		reference = "https://koodous.com/ https://twitter.com/fdrg21"
-		description = "Moskow Droid Development"
-		thread_level = 3
-		in_the_wild = true
-
-	strings:
-		$string_a = "%ioperator%"
-		$string_b = "%imodel%"
-		$string_c = "%ideviceid%"
-		$string_d = "%ipackname%"
-		$string_e = "VILLLLLL"
-
-	condition:
-		all of ($string_*)
-}
-
-
-
-
-
-
-rule hacking_team : stcert android
-{
-	meta:
-		author = "Fernando Denis https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		description = "This rule detects the apk related to hackingteam - These certificates are presents in mailboxes od hackingteam"
-		samples = "c605df5dbb9d9fb1d687d59e4d90eba55b3201f8dd4fa51ec80aa3780d6e3e6e"
-
-	strings:
-		$string_a_1 = "280128120000Z0W1"
-		$string_a_2 = "E6FFF4C5062FBDC9"
-		$string_a_3 = "886FEC93A75D2AC1"
-		$string_a_4 = "121120104150Z"
-		
-		$string_b_1 = "&inbox_timestamp > 0 and is_permanent=1"
-		$string_b_2 = "contact_id = ? AND mimetype = ?"
-		
-		$string_c = "863d9effe70187254d3c5e9c76613a99"
-		
-		$string_d = "nv-sa1"
-
-	condition:
-		(any of ($string_a_*) and any of ($string_b_*) and $string_c and $string_d) or
-		androguard.certificate.sha1("B1BC968BD4F49D622AA89A81F2150152A41D829C") or 	  
-		androguard.certificate.sha1("3FEC88BA49773680E2A3040483806F56E6E8502E") or 
-		androguard.certificate.sha1("B0A4A4880FA5345D6B3B00C0C588A39815D3872E") or 
-		androguard.certificate.sha1("EC2184676D4AE153E63987326666BA0C554A4A60") or 
-		androguard.certificate.sha1("A7394CBAB09D35C69DA7FABB1A7870BE987A5F77")	or
-		androguard.certificate.sha1("A1131C7F816D65670567D6C7041F30E380754022") or
-		androguard.certificate.sha1("4E40663CC29C1FE7A436810C79CAB8F52474133B") or
-		androguard.certificate.sha1("159B4F6C03D43F27339E06ABFD2DE8D8D65516BC") or
-		androguard.certificate.sha1("3EEE4E45B174405D64F877EFC7E5905DCCD73816") or
-		androguard.certificate.sha1("9CE815802A672B75C078D920A5D506BBBAC0D5C9") or
-		androguard.certificate.sha1("C4CF31DBEF79393FD2AD617E79C27BFCF19EFBB3") or
-		androguard.certificate.sha1("2125821BC97CF4B7591E5C771C06C9C96D24DF8F")
-		//97257C6D8F6DA60EA27D2388D9AE252657FF3304 this certification could be stolen
-		//03EA873D5D13707B0C278A0055E452416054E27B this certification could be stolen
-		//B8D5E3F0BCAD2EB03BB34AEE2B3F63FC5162C56B this certification could be stolen
-}
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
-import "cuckoo"
-
-rule ransomware : svpeng android
-{
-	meta:
-		author = "Fernando Denis https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		description = "Ransomware"
-		in_the_wild = true
-
-	strings:
-		$a =  {6e 64 20 79 6f 75 72 27 73 20 64 65 76 69 63 65 20 77 69 6c 6c 20 72 65 62 6f 6f 74 20 61 6e 64}
-		$b = "ADD_DEVICE_ADMI"
-
-	condition:
-		$a and $b
-}
-
-
-rule Ransomware : banker android
-{
-	meta:
-		author = "Fernando Denis https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		description = "Ransomware Test 2"
-		thread_level = 3
-		in_the_wild = true
-
-	strings:
-
-		$strings_a = "!2,.B99^GGD&R-"
-		$strings_b = "22922222222222222222Q^SAAWA"
-		$strings_c = "t2222222222229222Q^SAAWA"
-
-	
-
-	condition:
-		any of ($strings_*)
-}
-
-rule koler_domains : android
-{
-	meta:
- 		author = "https://twitter.com/jsmesa"
-		reference = "https://koodous.com/"
-		description = "Old Koler.A domains examples"
-		sample = "2e1ca3a9f46748e0e4aebdea1afe84f1015e3e7ce667a91e4cfabd0db8557cbf"
-
-	condition:
-		cuckoo.network.dns_lookup(/police-scan-mobile.com/) or
-		cuckoo.network.dns_lookup(/police-secure-mobile.com/) or
-		cuckoo.network.dns_lookup(/mobile-policeblock.com/) or
-		cuckoo.network.dns_lookup(/police-strong-mobile.com/) or
-		cuckoo.network.dns_lookup(/video-porno-gratuit.eu/) or
-		cuckoo.network.dns_lookup(/video-sartex.us/) or 
-		cuckoo.network.dns_lookup(/policemobile.biz/)
-}
-
-rule koler_builds : android
-{
-	meta:
-		author = "https://twitter.com/jsmesa"
-		reference = "https://koodous.com/"
-		description = "Koler.A builds"
-
-	strings:
-		$0 = "buildid"
-		$a = "DCEF055EEE3F76CABB27B3BD7233F6E3"
-		$b = "C143D55D996634D1B761709372042474"
-		
-	condition:
-		$0 and ($a or $b)
-		
-}
-
-rule koler_class : android
-{
-	meta:
-		author = "https://twitter.com/jsmesa"
-		reference = "https://koodous.com/"
-		description = "Koler.A class"
-
-	strings:
-		$0 = "FIND_VALID_DOMAIN"
-		$a = "6589y459"
-		
-	condition:
-		$0 and $a
-		
-}
-
-rule koler_D : android
-{
-	meta:
-		author = "https://twitter.com/jsmesa"
-		reference = "https://koodous.com/"
-		description = "Koler.D class"
-
-	strings:
-		$0 = "ZActivity"
-		$a = "Lcom/android/zics/ZRuntimeInterface"
-		
-	condition:
-		($0 and $a)
-		
-}
-
-
-
-
-
-
-rule smspay_chinnese : hejupay android
-{
-    meta:
-		author = "Fernando Denis https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		
-	strings:
-	  $a = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/Jvgb0/jSRWi7i4J9IwO72KZw404kj02A97ExbUefVeE7yyWSTbKw5sYlKXCtaoQwWr19j0Y+xb6+h2BRuNx307BV/QpG6DnPg+Lx8fPPvhbhOudgKb/XuZPaz/GJbTpwzTbBmT+mI1QTRLyAKDxSjGWYvoPFVz82RxcAblV/twIDAQAB"
-
-	  $b = "MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAL8m+BvT+NJFaLuLgn0jA7vYpnDjTiSPTYD3sTFtR59V4TvLJZJNsrDmxiUpcK1qhDBavX2PRj7Fvr6HYFG43HfTsFX9CkboOc+D4vHx88++FuE652Apv9e5k9rP8YltOnDNNsGZP6YjVBNEvIAoPFKMZZi+g8VXPzZHFwBuVX+3AgMBAAECgYBLYR6uOqUApoZqjtVia5BpX0Ijej+ygyBZH1Qs3Z9E4iTz42RpkWJKCHdS6Eia2kpOlznqbbmRv4E8uT3ufCvUFexjR5ClGVKJ+XHXxqS75+KT38wGZZ1bW0pK4sT1/aGLrt5/netwuzMi/YFNfAKRPqvRXuNcxNLhMhs2efLKIQJBAPGea2UXVWd0Ti8ClA8hiWPSNCPtcp41Dh2H0YczrFmO2zafPPJih2GQY5txszwBLbjxFCY8/WhrYAqx0itMrgsCQQDKh5U1NfpRvk0Hu8iBRB/LPyGimz+WM/chFSC65SlS/cml3U7hUOj2lRGPz+bm68624H0KLviqpBJpmayvbbyFAkEA1NNFJ9uAx8rDn1b3EcjpmvqqIMdjwYVcNJjQ7/WNJ6nU3+0toxc0xrSHeIGTbhRfsNrxc6kfUV3bUDBHvwog9wJBAI+fRH1ekOwlAqVIUnDw6YcNdwHEDHysz0TDodlHp112Ieign06DPSGYJsMQURNTB92CJsnw82C3R2Nhmicxr60CQQCN466JF9GJRZipO64OYw/ElMac7vXgTeGMvYZ2/yfX5CRCLua4DygD1Ju0eMXpea9og/EtwCTV0RVpFc9SSN8V"
-
-	condition:
-		$a or $b
-}
-
-
-rule smsfraud : ganga android
-{
-	meta:
-		author = "Fernando Denis https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		description = "smsfraud chinese"
-		sample = "e6ef34577a75fc0dc0a1f473304de1fc3a0d7d330bf58448db5f3108ed92741b"
-
-	strings:
-		$string_a_1 = "HHHEEEEEEBBBBBB??????;;;;;;888888444444000000,,,,,,''''''''''''######OOO###"
-		$string_a_2 = "2e6081a2-a063-45c7-ab90-5db596e42c7c"
-
-	condition:
-		androguard.package_name("com.yr.sx") or
-		all of ($string_a_*) or
-		androguard.activity(/com.snowfish.cn.ganga.offline.helper.SFGameSplashActivity/)
-		
-		
-}
-
-
-rule sms_fraud : MSACM32 android
-{
-		meta:
-		author = "Fernando Denis https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		description = "sms-fraud examples"
-		sample = "8b9cabd2dafbba57bc35a19b83bf6027d778f3b247e27262ced618e031f9ca3d c52112b45164b37feeb81e0b5c4fcbbed3cfce9a2782a2a5001fb37cfb41e993"
-
-	strings:
-		$string_a = "MSACM32.dll"
-		$string_b = "android.provider.Telephony.SMS_RECEIVED"
-		$string_c = "MAIN_TEXT_TAG"
-
-	condition:
-		all of ($string_*) and
-		androguard.permission(/android.permission.SEND_SMS/)
-		
-}
-
-rule sms_fraud_gen : generic android
-{
-		meta:
-		author = "Fernando Denis https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		description = "This is just an example"
-		thread_level = 3
-		in_the_wild = true
-
-	strings:
-		$a = "080229013346Z"
-		$c = "350717013346Z0"
-		$b = "NUMBER_CHAR_EXP_SIGN"
-
-	condition:
-		$a and $b and $c and
-		androguard.permission(/android.permission.SEND_SMS/)
-}
-
-rule smsfraud_apk : android
-{
-	meta:
-		author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-		description = "This rule detects apks related with sms fraud"
-		sample = "79b35a99f16de6912d6193f06361ac8bb75ea3a067f3dbc1df055418824f813c"
-
-	condition:
-		androguard.certificate.sha1("9E1B8719D80656E9EADAAB4251B2CFB4C8188835")
-		
-}
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
-
-
-
-
-rule tinhvan : android
-{
-	meta:
-	  author = "https://twitter.com/plutec_net"
-		reference = "https://koodous.com/"
-		sample = "0f7e995ff7075af2d0f8d60322975d610e888884922a89fda9a61c228374c5c5"
-
-	condition:
-		androguard.certificate.sha1("0DFBBDB7735517748C3DEF3B6DEC2A800182D1D5")
-		
-}
-
-
-
-
-
 
 rule towelhacking_behaviour
 {
@@ -2628,63 +1813,6 @@ rule towelhacking_cromosome
 		
 }
 
-
-
-rule xbot007 : android
-{
-	meta:
-		reference = "https://github.com/maldroid/maldrolyzer/blob/master/plugins/xbot007.py"
-
-	strings:
-		$a = "xbot007"
-
-	condition:
-		any of them
-}
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) 
-    and open to any user or organization, as long as you use it under this license.
-*/
-
-rule dropperMapin : android
-{
-    meta:
-        author = "https://twitter.com/plutec_net"
-        source = "https://koodous.com/"
-        reference = "http://www.welivesecurity.com/2015/09/22/android-trojan-drops-in-despite-googles-bouncer/"
-        description = "This rule detects mapin dropper files"
-        sample = "7e97b234a5f169e41a2d6d35fadc786f26d35d7ca60ab646fff947a294138768"
-        sample2 = "bfd13f624446a2ce8dec9006a16ae2737effbc4e79249fd3d8ea2dc1ec809f1a"
-
-    strings:
-        $a = ":Write APK file (from txt in assets) to SDCard sucessfully!"
-        $b = "4Write APK (from Txt in assets) file to SDCard  Fail!"
-        $c = "device_admin"
-
-    condition:
-        all of them
-}
-
-
-rule Mapin : android
-{
-    meta:
-        author = "https://twitter.com/plutec_net"
-        source = "https://koodous.com/"
-        reference = "http://www.welivesecurity.com/2015/09/22/android-trojan-drops-in-despite-googles-bouncer/"
-        description = "Mapin trojan, not for droppers"
-        sample = "7f208d0acee62712f3fa04b0c2744c671b3a49781959aaf6f72c2c6672d53776"
-
-    strings:
-        $a = "138675150963" //GCM id
-        $b = "res/xml/device_admin.xml"
-        $c = "Device registered: regId ="
-        
-
-    condition:
-        all of them
-        
-}
 rule marcher1
 {
 	meta:
@@ -2747,12 +1875,6 @@ rule marcher_v2
 
 }
 
-
-
-
-
-
-
 rule android_mazarBot_z: android
 {
 	meta:
@@ -2782,8 +1904,6 @@ rule android_mazarBot_z: android
 		androguard.permission(/android.permission.CALL_PHONE/) and
 		all of ($str_*)
 }
-
-
 
 rule android_meterpreter : android
 {
@@ -2821,7 +1941,6 @@ rule android_metasploit : android
 		
 }
 
-
 rule Metasploit_Payload
 {
 meta:
@@ -2838,11 +1957,6 @@ $s7 = "Lcom/metasploit/stage/b;"
 condition:
 androguard.package_name("com.metasploit.stage") or any of them
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
 
 
 rule Android_OmniRat
@@ -2860,11 +1974,6 @@ rule Android_OmniRat
 		 androguard.permission(/android.permission.WRITE_EXTERNAL_STORAGE/i) and 
 		 androguard.package_name(/com.app/i)) and $a
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
 
 
 rule android_overlayer
@@ -2891,10 +2000,6 @@ rule android_overlayer
 		all of ($str_*))
 }
 
-
-
-
-
 rule Android_pinkLocker : android
 {
 	meta:
@@ -2918,7 +2023,6 @@ rule Android_pinkLocker : android
 		all of ($str_*)
 		
 }
-
 
 rule bankbot_polish_banks : banker
 {
@@ -2958,13 +2062,6 @@ rule bankbot_polish_banks : banker
         androguard.permission(/android.permission.READ_SMS/) and
         androguard.permission(/android.permission.RECEIVE_SMS/)
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
-
-
 
 
 rule trojan: pornClicker 
@@ -2984,9 +2081,6 @@ rule trojan: pornClicker
 	condition:
 		($a and $b and $c and $api) or androguard.url(/mayis24\.4tubetv\.xyz/)
 }
-
-
-
 
 rule Android_RuMMS
 {
@@ -3024,8 +2118,6 @@ rule Android_RuMMS_0
 		
 }
 
-
-
 rule SandroRat
 {
 	meta:
@@ -3037,11 +2129,6 @@ rule SandroRat
 	condition:
 		androguard.activity(/net.droidjack.server/i) 
 }
-
-
-
-
-
 
 rule andr_sk_bank
 {
@@ -3067,8 +2154,6 @@ rule andr_sk_bank
 		all of ($str_*))
 }
 
-
-
 rule SlemBunk : android
 {
 	meta:
@@ -3088,7 +2173,6 @@ rule SlemBunk : android
 		all of them
 		
 }
-
 
 rule smsfraud1 : android
 {
@@ -3125,12 +2209,6 @@ rule smsfraud2 : android {
     condition:
         all of them
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
-
-*/
-
-
 
 
 rule spyAgent
@@ -3157,10 +2235,7 @@ rule spyAgent
 		androguard.url(/ksa-sef\.com/) or ($phone and $caption) or ($cc and $cc_alt and $cc_alt2 and $cc_alt3 and $cc_alt4 and $cc_alt5 and $cc_alt6 and $cc_alt7)
 		
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
 
-*/
 
 rule SpyNet : malware
 {
@@ -3181,18 +2256,6 @@ rule SpyNet : malware
 	condition:
 		4 of them 
 }
-/*
-    This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and 
-    open to any user or organization, as long as you use it under this license.
-*/
-
-/*
-    Androguard module used in this rule file is under development by people at https://koodous.com/.
-    You can get it, along with installation instructions, at https://github.com/Koodous/androguard-yara
-*/
-
-
-
 
 rule spynote_variants
 {
@@ -3214,11 +2277,6 @@ rule spynote_variants
         all of ($str_*)
 }
 
-
-
-
-
-
 rule android_spywaller : android
 {
 	meta:
@@ -3238,12 +2296,6 @@ rule android_spywaller : android
 		androguard.permission(/android.permission.READ_PHONE_STATE/) and 
 		all of ($str_*)
 }
-
-
-
-
-
-
 
 rule Android_Switcher
 {
@@ -3270,6 +2322,7 @@ rule Android_Switcher
 		androguard.permission(/android.permission.ACCESS_WIFI_STATE/) and 
 		($dns_2 or $dns_3 or $dns_4) and all of ($str_*))
 }
+
 rule tachi : android
 {
 	meta:
@@ -3301,6 +2354,7 @@ rule tachi : android
 	condition:
 		$a and 4 of ($xml_*)
 }
+
 rule android_tempting_cedar_spyware
 {
 	meta:
@@ -3316,11 +2370,6 @@ rule android_tempting_cedar_spyware
 	condition:
     	$PK_HEADER in (0..4) and $MANIFEST and $DEX_FILE and any of ($string*)
 }
-
-
-
-
-
 
 rule andr_tordow
 {
@@ -3343,11 +2392,6 @@ rule andr_tordow
 		androguard.certificate.sha1("0B7C3BC97B6D7C228F456304F5E1B75797B7265E")
 }
 
-
-
-
-
-
 rule Android_Triada : android
 {
 	meta:
@@ -3366,9 +2410,6 @@ rule Android_Triada : android
 		androguard.permission(/android.permission.GET_TASKS/)
 }
 
-
-
-
 rule Trojan_Dendroid
 {
 meta:
@@ -3384,11 +2425,6 @@ condition:
 3 of them
 }
 
-
-
-
-
-
 rule Trojan_Droidjack
 {
 meta:
@@ -3396,11 +2432,6 @@ author = "https://twitter.com/SadFud75"
 condition:
 androguard.package_name("net.droidjack.server") or androguard.activity(/net.droidjack.server/i)
 }
-
-
-
-import "cuckoo"
-
 
 rule VikingBotnet
 {
@@ -3417,41 +2448,4 @@ rule VikingBotnet
 		
 	condition:
 		($a and $c) or ($b and $d) 
-}
-
-
-
-
-
-
-rule BaDoink : official android
-{
-		meta:
-		author = "Fernando Denis https://twitter.com/fdrg21"
-		reference = "https://koodous.com/"
-		description = "Virus de la Policia - android"
-		sample = "9bc0fb0f05bbf25507104a4eb74e8066b194a8e6a57670957c0ad1af92189921"
-
-	strings:
-		
-		//$url_string_1 = "http://police-mobile-stop.com"
-		//$url_string_2 = "http://mobile-policeblock.com"
-		
-		$type_a_1 ="6589y459gj4058rt"
-	
-		$type_b_1 = "Q,hu4P#hT;U!XO7T,uD"
-		$type_b_2 = "+Gkwg#M!lf>Laq&+J{lg"
-
-//		$type_c_1 = "ANIM_STYLE_CLOSE_ENTER"
-//		$type_c_2 = "TYPE_VIEW_ACCESSIBILITY_FOCUSED"
-//		$type_c_3 = "TYPE_VIEW_TEXT_SELECTION_CHANGED"
-//		$type_c_4 = "FLAG_REQUEST_ENHANCED_WEB_ACCESSIBILITY"
-
-	condition:
-		androguard.app_name("BaDoink") or
-		//all of ($url_string_*) or
-		$type_a_1 or
-		all of ($type_b*) 
-//		all of ($type_c_*)
-		
 }

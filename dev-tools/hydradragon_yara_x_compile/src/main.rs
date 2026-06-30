@@ -43,6 +43,37 @@ fn main() {
     let mut yar_files: Vec<PathBuf> = Vec::new();
     collect_yar_files(src_dir, &mut yar_files);
 
+    // Never compile the *_unverified.yar variants — they contain rules that
+    // weren't verified (and reference undeclared private rules), so they fail to
+    // compile and are never shipped. Only the *_verified / curated sets ship.
+    yar_files.retain(|p| {
+        p.file_name()
+            .and_then(|n| n.to_str())
+            .map(|n| !n.ends_with("_unverified.yar"))
+            .unwrap_or(true)
+    });
+
+    // Skip the raw full ruleset `<base>.yar` when a curated `<base>_filtered*.yar`
+    // exists — those raw files (AndroidOS.yar, clean_rules.yar, valhalla-rules.yar)
+    // produce huge .yrc and are never shipped; only their filtered variants are.
+    // Files with no filtered sibling (machine_learning_apk.yar, androguard.yar)
+    // are still compiled.
+    let filtered_bases: std::collections::HashSet<String> = yar_files
+        .iter()
+        .filter_map(|p| p.file_name().and_then(|n| n.to_str()))
+        .filter_map(|n| {
+            n.strip_suffix(".yar")
+                .and_then(|s| s.split_once("_filtered"))
+                .map(|(base, _)| base.to_string())
+        })
+        .collect();
+    yar_files.retain(|p| {
+        let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        let stem = name.strip_suffix(".yar").unwrap_or(name);
+        // Keep filtered variants, and any raw file that has no filtered sibling.
+        stem.contains("_filtered") || !filtered_bases.contains(stem)
+    });
+
     if filtered_only {
         yar_files.retain(|p| {
             p.file_name()
