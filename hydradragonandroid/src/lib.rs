@@ -278,6 +278,11 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
     // SHA-256 of the whole top-level file (its "main hash") — Java builds a
     // VirusTotal lookup link from this so the user can inspect it themselves.
     let file_sha256 = sha256_hex(bytes);
+    // androguard JSON report (manifest + URL sweep), fed to the YARA-X
+    // `androguard` module so its rules (permission/url/package_name/...) work.
+    // None when no AndroidManifest.xml is reachable (not an APK).
+    let androguard_json = build_androguard_json(&buffers);
+    let androguard_meta: Option<&[u8]> = androguard_json.as_deref().map(str::as_bytes);
 
     // Each detection carries the APK lineage of the buffer it fired on, so Java
     // can suppress it iff one of those ancestor-APK hashes is whitelisted.
@@ -296,7 +301,7 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
                     } else {
                         format!("{path}#extract[{i}]")
                     };
-                    for m in clamav.scan_bytes_named(&b.data, &name, opts) {
+                    for m in clamav.scan_bytes_named(&b.data, &name, opts, androguard_meta) {
                         dets.push((m.name, b.apk_lineage.clone()));
                         if dets.len() >= opts.max_matches {
                             return dets;
@@ -589,6 +594,253 @@ fn axml_package(data: &[u8]) -> Option<String> {
         off = off.checked_add(csize)?;
     }
     None
+}
+
+// ── androguard report producer ──────────────────────────────────────────────
+// Builds the JSON report consumed by the YARA-X `androguard` module
+// (set_module_metadata("androguard", ...)). Mirrors the keys the original
+// Koodous module read: package_name, app_name, activities, services, receivers,
+// permissions, urls, min/max/target_sdk_version, certificate{subjectDN,
+// IssuerDN, sha1}. Parsed straight from the binary AndroidManifest.xml plus a
+// URL sweep of the decompressed buffers — no androguard/Python dependency.
+//
+// NOTE: `certificate.*` requires parsing the PKCS#7 signature block (X.509),
+// which isn't available here yet, so it is emitted empty (rules using
+// certificate.sha1/issuer/subject simply won't match). Everything else
+// (permission, package_name, activity, service, receiver, url,
+// permissions_number, sdk) is populated.
+
+/// Read a string-typed AXML attribute value (raw string-pool ref, or a typed
+/// TYPE_STRING). Returns None for non-string attributes.
+fn axml_attr_string(data: &[u8], strings: &[String], a: usize) -> Option<String> {
+    let raw = rd_u32(data, a + 8)?;
+    if raw != 0xFFFF_FFFF {
+        return strings.get(raw as usize).cloned();
+    }
+    // Typed value: a+12 = size(u16)+res0(u8)+dataType(u8); a+16 = data(u32).
+    let dtype = *data.get(a + 15)?;
+    if dtype == 0x03 {
+        // TYPE_STRING
+        strings.get(rd_u32(data, a + 16)? as usize).cloned()
+    } else {
+        None
+    }
+}
+
+/// Read an int-typed AXML attribute (TYPE_INT_DEC etc.): data u32 at a+16.
+fn axml_attr_int(data: &[u8], a: usize) -> Option<i64> {
+    Some(rd_u32(data, a + 16)? as i64)
+}
+
+/// Find a named attribute (`attr_name`) within a START_ELEMENT at `off`.
+/// Returns the absolute attribute offset, or None.
+fn axml_find_attr(
+    data: &[u8],
+    strings: &[String],
+    off: usize,
+    attr_name: &str,
+) -> Option<usize> {
+    let attr_start = rd_u16(data, off + 24)? as usize;
+    let attr_count = rd_u16(data, off + 28)? as usize;
+    let abase = off + 16 + attr_start;
+    for i in 0..attr_count.min(256) {
+        let a = abase + i * 20;
+        let aname = rd_u32(data, a + 4)? as usize;
+        if strings.get(aname).map(|s| s == attr_name).unwrap_or(false) {
+            return Some(a);
+        }
+    }
+    None
+}
+
+/// Parse a binary AndroidManifest.xml into the fields androguard exposes.
+struct Manifest {
+    package: Option<String>,
+    app_name: Option<String>,
+    permissions: Vec<String>,
+    activities: Vec<String>,
+    services: Vec<String>,
+    receivers: Vec<String>,
+    min_sdk: Option<i64>,
+    max_sdk: Option<i64>,
+    target_sdk: Option<i64>,
+}
+
+fn parse_manifest(data: &[u8]) -> Option<Manifest> {
+    if rd_u16(data, 0)? != 0x0003 {
+        return None; // not RES_XML_TYPE
+    }
+    let strings = axml_strings(data)?;
+    let pool_size = rd_u32(data, 8 + 4)? as usize;
+    let mut off = 8 + pool_size;
+    let mut guard = 0;
+    let mut m = Manifest {
+        package: None,
+        app_name: None,
+        permissions: Vec::new(),
+        activities: Vec::new(),
+        services: Vec::new(),
+        receivers: Vec::new(),
+        min_sdk: None,
+        max_sdk: None,
+        target_sdk: None,
+    };
+    while off + 8 <= data.len() && guard < 200_000 {
+        guard += 1;
+        let ctype = rd_u16(data, off)?;
+        let csize = rd_u32(data, off + 4)? as usize;
+        if csize == 0 {
+            break;
+        }
+        if ctype == 0x0102 {
+            // RES_XML_START_ELEMENT: element name at off+20.
+            let name_idx = rd_u32(data, off + 20)? as usize;
+            let ename = strings.get(name_idx).map(|s| s.as_str()).unwrap_or("");
+            match ename {
+                "manifest" => {
+                    if let Some(a) = axml_find_attr(data, &strings, off, "package") {
+                        m.package = axml_attr_string(data, &strings, a);
+                    }
+                }
+                "uses-sdk" => {
+                    if let Some(a) = axml_find_attr(data, &strings, off, "minSdkVersion") {
+                        m.min_sdk = axml_attr_int(data, a);
+                    }
+                    if let Some(a) = axml_find_attr(data, &strings, off, "maxSdkVersion") {
+                        m.max_sdk = axml_attr_int(data, a);
+                    }
+                    if let Some(a) = axml_find_attr(data, &strings, off, "targetSdkVersion") {
+                        m.target_sdk = axml_attr_int(data, a);
+                    }
+                }
+                "uses-permission" | "permission" => {
+                    if let Some(a) = axml_find_attr(data, &strings, off, "name") {
+                        if let Some(v) = axml_attr_string(data, &strings, a) {
+                            m.permissions.push(v);
+                        }
+                    }
+                }
+                "application" => {
+                    if let Some(a) = axml_find_attr(data, &strings, off, "label") {
+                        // Only a literal label is usable; a @resource ref needs
+                        // resources.arsc resolution (not done here).
+                        m.app_name = axml_attr_string(data, &strings, a);
+                    }
+                }
+                "activity" | "activity-alias" => push_component(data, &strings, off, &mut m.activities),
+                "service" => push_component(data, &strings, off, &mut m.services),
+                "receiver" => push_component(data, &strings, off, &mut m.receivers),
+                _ => {}
+            }
+        }
+        off = off.checked_add(csize)?;
+    }
+    Some(m)
+}
+
+fn push_component(data: &[u8], strings: &[String], off: usize, out: &mut Vec<String>) {
+    if out.len() >= 4096 {
+        return;
+    }
+    if let Some(a) = axml_find_attr(data, strings, off, "name") {
+        if let Some(v) = axml_attr_string(data, strings, a) {
+            out.push(v);
+        }
+    }
+}
+
+/// Sweep decompressed buffers for http(s) URLs (androguard's `urls`). Deduped,
+/// bounded. Scans dex/resources/etc. as raw bytes — URLs are ASCII.
+fn collect_urls(buffers: &[Buf]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    for b in buffers {
+        let data = &b.data;
+        let n = data.len();
+        let mut i = 0;
+        while i + 7 < n {
+            let is_http = &data[i..i + 7] == b"http://";
+            let is_https = i + 8 < n && &data[i..i + 8] == b"https://";
+            if is_http || is_https {
+                let start = i;
+                let mut j = i;
+                // URL chars until whitespace, quote, or control byte.
+                while j < n {
+                    let c = data[j];
+                    if c <= 0x20 || c == b'"' || c == b'\'' || c == b'<' || c == b'>'
+                        || c == b'\\' || c == 0x7f || c >= 0x80
+                    {
+                        break;
+                    }
+                    j += 1;
+                }
+                if j - start >= 10 && j - start <= 2048 {
+                    if let Ok(s) = std::str::from_utf8(&data[start..j]) {
+                        let s = s.to_string();
+                        if seen.insert(s.clone()) {
+                            out.push(s);
+                            if out.len() >= 4096 {
+                                return out;
+                            }
+                        }
+                    }
+                }
+                i = j;
+            } else {
+                i += 1;
+            }
+        }
+    }
+    out
+}
+
+/// Build the androguard JSON report for the scanned APK, or None if no binary
+/// AndroidManifest.xml is reachable in the buffers (not an APK).
+fn build_androguard_json(buffers: &[Buf]) -> Option<String> {
+    let manifest = buffers.iter().find_map(|b| parse_manifest(&b.data))?;
+    let urls = collect_urls(buffers);
+
+    let arr = |items: &[String]| -> String {
+        items
+            .iter()
+            .map(|s| format!("\"{}\"", json_escape(s)))
+            .collect::<Vec<_>>()
+            .join(",")
+    };
+    let opt_str = |o: &Option<String>| -> String {
+        match o {
+            Some(s) => format!("\"{}\"", json_escape(s)),
+            None => "null".to_string(),
+        }
+    };
+    // SDK versions are emitted as strings (the C module ran atoi over strings).
+    let opt_sdk = |o: Option<i64>| -> String {
+        match o {
+            Some(v) => format!("\"{}\"", v),
+            None => "null".to_string(),
+        }
+    };
+
+    Some(format!(
+        concat!(
+            "{{\"package_name\":{},\"app_name\":{},\"main_activity\":null,",
+            "\"activities\":[{}],\"services\":[{}],\"receivers\":[{}],",
+            "\"permissions\":[{}],\"new_permissions\":[{}],\"urls\":[{}],",
+            "\"min_sdk_version\":{},\"max_sdk_version\":{},\"target_sdk_version\":{},",
+            "\"certificate\":{{\"subjectDN\":null,\"IssuerDN\":null,\"sha1\":null}}}}"
+        ),
+        opt_str(&manifest.package),
+        opt_str(&manifest.app_name),
+        arr(&manifest.activities),
+        arr(&manifest.services),
+        arr(&manifest.receivers),
+        arr(&manifest.permissions),
+        arr(&manifest.permissions), // new_permissions mirrors permissions here
+        arr(&urls),
+        opt_sdk(manifest.min_sdk),
+        opt_sdk(manifest.max_sdk),
+        opt_sdk(manifest.target_sdk),
+    ))
 }
 
 /// Lowercase hex SHA-256 of `data`.

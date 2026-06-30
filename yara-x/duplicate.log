@@ -1,0 +1,49 @@
+Started 2026-06-30 15:22:05.105753
+-------------
+Duplicate rule 
+koler_domains in andro/androguard.yar
+koler_domains in andro/androguard.yar
+Removed rule koler_domains from andro/androguard.yar
+Duplicate rule 
+koler_builds in andro/androguard.yar
+koler_builds in andro/androguard.yar
+Removed rule koler_builds from andro/androguard.yar
+Duplicate rule 
+koler_class in andro/androguard.yar
+koler_class in andro/androguard.yar
+Removed rule koler_class from andro/androguard.yar
+Duplicate rule 
+koler_D in andro/androguard.yar
+koler_D in andro/androguard.yar
+Removed rule koler_D from andro/androguard.yar
+Duplicate rule 
+dropper:realshell in andro/androguard.yar
+dropper:realshell in andro/androguard.yar
+Removed rule dropper:realshell from andro/androguard.yar
+Duplicate rule 
+mobidash : advertising in andro/androguard.yar
+mobidash : advertising in andro/androguard.yar
+Removed rule mobidash : advertising from andro/androguard.yar
+Duplicate rule 
+koler_domains in andro/androguard.yar
+koler_domains in andro/androguard.yar
+Removed rule koler_domains from andro/androguard.yar
+Duplicate rule 
+koler_builds in andro/androguard.yar
+koler_builds in andro/androguard.yar
+Removed rule koler_builds from andro/androguard.yar
+Duplicate rule 
+koler_class in andro/androguard.yar
+koler_class in andro/androguard.yar
+Removed rule koler_class from andro/androguard.yar
+Duplicate rule 
+koler_D in andro/androguard.yar
+koler_D in andro/androguard.yar
+Removed rule koler_D from andro/androguard.yar
+Duplicate rule 
+dropper:realshell in andro/androguard.yar
+dropper:realshell in andro/androguard.yar
+Removed rule dropper:realshell from andro/androguard.yar
+Completed 2026-06-30 15:22:05.128040
+Started 2026-06-30 15:22:34.176957
+Completed 2026-06-30 15:22:34.211246

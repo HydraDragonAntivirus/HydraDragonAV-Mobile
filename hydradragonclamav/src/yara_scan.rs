@@ -64,11 +64,27 @@ impl YaraEngine {
     }
 
     /// Scan `data` with the compiled rules and return any matches.
-    pub fn scan(&self, data: &[u8], object_path: &str) -> Vec<ScanMatch> {
+    pub fn scan(
+        &self,
+        data: &[u8],
+        object_path: &str,
+        androguard: Option<&[u8]>,
+    ) -> Vec<ScanMatch> {
         let mut scanner = yara_x::Scanner::new(&self.rules);
-        let results = match scanner.scan(data) {
-            Ok(r) => r,
-            Err(_) => return Vec::new(),
+        // Feed the androguard JSON report (if any) to the `androguard` module so
+        // its functions (permission/url/activity/...) can query it.
+        let results = if let Some(meta) = androguard {
+            let mut opts = yara_x::ScanOptions::new();
+            opts = opts.set_module_metadata("androguard", meta);
+            match scanner.scan_with_options(data, opts) {
+                Ok(r) => r,
+                Err(_) => return Vec::new(),
+            }
+        } else {
+            match scanner.scan(data) {
+                Ok(r) => r,
+                Err(_) => return Vec::new(),
+            }
         };
         let mut matches = Vec::new();
         for rule in results.matching_rules() {

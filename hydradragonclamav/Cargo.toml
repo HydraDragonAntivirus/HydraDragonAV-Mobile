@@ -13,7 +13,7 @@ license = "GPL-2.0-or-later"
 # protections isn't page-aligned" in wasmtime mmap), and Android restricts W^X
 # JIT anyway. Pulley bytecode is also architecture-independent, so one compiled
 # .yrc works across all ABIs.
-yara-x = { version = "1.19", features = ["pulley"] }
+yara-x = { path = "../third_party/yara-x/lib", features = ["pulley"] }
 
 # PCRE subsignatures and .cdb/.ftm regex fields (linear-time, no catastrophic backtracking)
 regex = "1"

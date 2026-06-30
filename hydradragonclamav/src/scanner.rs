@@ -246,11 +246,11 @@ impl Engine {
     ) -> io::Result<Vec<ScanMatch>> {
         let path = path.as_ref();
         let data = fs::read(path)?;
-        Ok(self.scan_bytes_named(&data, &path.display().to_string(), options))
+        Ok(self.scan_bytes_named(&data, &path.display().to_string(), options, None))
     }
 
     pub fn scan_bytes(&self, data: &[u8], options: ScanOptions) -> Vec<ScanMatch> {
-        self.scan_bytes_named(data, "root", options)
+        self.scan_bytes_named(data, "root", options, None)
     }
 
     pub fn scan_bytes_named(
@@ -258,13 +258,14 @@ impl Engine {
         data: &[u8],
         object_path: &str,
         options: ScanOptions,
+        androguard: Option<&[u8]>,
     ) -> Vec<ScanMatch> {
         let mut state = ScanState {
             matches: Vec::new(),
             objects_seen: 0,
         };
         // Top-level object has no parent container.
-        self.scan_object(data, object_path, None, 0, options, &mut state);
+        self.scan_object(data, object_path, None, 0, options, androguard, &mut state);
         state.matches
     }
 
@@ -275,6 +276,7 @@ impl Engine {
         container_type: Option<&'static str>,
         _depth: usize,
         options: ScanOptions,
+        androguard: Option<&[u8]>,
         state: &mut ScanState,
     ) {
         if state.matches.len() >= options.max_matches
@@ -323,7 +325,7 @@ impl Engine {
                 if state.matches.len() >= options.max_matches {
                     break;
                 }
-                for m in yara.scan(data, object_path) {
+                for m in yara.scan(data, object_path, androguard) {
                     if state.matches.len() >= options.max_matches {
                         break 'rulesets;
                     }

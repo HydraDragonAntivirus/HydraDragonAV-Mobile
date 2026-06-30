@@ -8,4 +8,4 @@ edition = "2021"
 # loads on 16 KB-page Android (no JIT mprotect) and across all ABIs. MUST match
 # the feature used by hydradragonclamav on-device (serialized module is backend-
 # specific).
-yara-x = { version = "1.19.0", features = ["pulley"] }
+yara-x = { path = "../../third_party/yara-x/lib", features = ["pulley"] }
