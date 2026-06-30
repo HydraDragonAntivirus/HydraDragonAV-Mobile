@@ -147,6 +147,17 @@ public final class NativeScanner {
         public final List<String> packages = new ArrayList<>();
         /** SHA-256 (lowercase hex) of each APK/zip buffer, for hash-keyed whitelist. */
         public final List<String> hashes = new ArrayList<>();
+        /** One entry per malicious hit, each carrying the SHA-256s of the APK(s) in
+         *  the buffer's extraction lineage. A detection is a false positive (and
+         *  suppressed) iff one of its {@code hashes} is whitelisted — so a hit
+         *  inside a known-good APK is cleared while a sibling non-APK virus is not. */
+        public final List<Detection> detections = new ArrayList<>();
+
+        public static final class Detection {
+            public final String name;
+            public final List<String> hashes;
+            Detection(String name, List<String> hashes) { this.name = name; this.hashes = hashes; }
+        }
         /** SHA-256 (lowercase hex) of the whole scanned file — its "main hash". */
         public String sha256;
         /** Non-null ClamAV target number if the file type was skipped (PE/OLE2/…). */
@@ -205,6 +216,22 @@ public final class NativeScanner {
                 for (int i = 0; i < arr.length(); i++) {
                     String m = arr.optString(i, null);
                     if (m != null && !m.isEmpty()) v.matches.add(m);
+                }
+            }
+            JSONArray dets = o.optJSONArray("detections");
+            if (dets != null) {
+                for (int i = 0; i < dets.length(); i++) {
+                    JSONObject d = dets.optJSONObject(i);
+                    if (d == null) continue;
+                    String name = d.optString("name", "");
+                    List<String> dh = new ArrayList<>();
+                    JSONArray dhArr = d.optJSONArray("hashes");
+                    if (dhArr != null)
+                        for (int j = 0; j < dhArr.length(); j++) {
+                            String h = dhArr.optString(j, null);
+                            if (h != null && !h.isEmpty()) dh.add(h);
+                        }
+                    v.detections.add(new Verdict.Detection(name, dh));
                 }
             }
             JSONObject ml = o.optJSONObject("ml");

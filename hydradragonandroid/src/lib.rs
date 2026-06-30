@@ -279,7 +279,9 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
     // VirusTotal lookup link from this so the user can inspect it themselves.
     let file_sha256 = sha256_hex(bytes);
 
-    let yara_hits: Vec<String> = match &engine.clamav {
+    // Each detection carries the APK lineage of the buffer it fired on, so Java
+    // can suppress it iff one of those ancestor-APK hashes is whitelisted.
+    let yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
         Some(clamav) => {
             let opts = ScanOptions {
                 strict_targets: true,
@@ -287,21 +289,21 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
                 ..ScanOptions::default()
             };
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                let mut hits: Vec<String> = Vec::new();
-                for (i, buf) in buffers.iter().enumerate() {
+                let mut dets: Vec<(String, Vec<String>)> = Vec::new();
+                for (i, b) in buffers.iter().enumerate() {
                     let name = if i == 0 {
                         path.to_string()
                     } else {
                         format!("{path}#extract[{i}]")
                     };
-                    for m in clamav.scan_bytes_named(buf, &name, opts) {
-                        hits.push(m.name);
-                        if hits.len() >= opts.max_matches {
-                            return hits;
+                    for m in clamav.scan_bytes_named(&b.data, &name, opts) {
+                        dets.push((m.name, b.apk_lineage.clone()));
+                        if dets.len() >= opts.max_matches {
+                            return dets;
                         }
                     }
                 }
-                hits
+                dets
             })) {
                 Ok(v) => v,
                 Err(_) => {
@@ -316,24 +318,28 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
     // one-class ML model (independent of clamav's type gate), over the SAME
     // buffers — so an APK nested inside a zip (or any other extracted member)
     // also gets an ML verdict. The strongest signal across all buffers wins.
-    let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest) = match &engine.model {
+    let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest, ml_lineages) = match &engine.model {
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let mut malicious = false;
                 let mut best_jaccard = 0.0_f32;
                 let mut worst_anomaly = 0.0_f64;
                 let mut nearest: Option<String> = None;
-                for buf in &buffers {
+                // Lineage of every APK/zip buffer the model flagged malicious, so
+                // the ML detection is suppressible by a whitelisted ancestor too.
+                let mut lineages: Vec<Vec<String>> = Vec::new();
+                for b in &buffers {
                     // The model is trained on whole APKs (= zip). Running it on
                     // raw extracted members (classes.dex, resources, .so, images)
                     // produces false positives, so only score APK/zip buffers
                     // (the top-level APK and any APK nested inside a zip).
-                    if hydradragonextractor::detect_format(buf) != Some("zip") {
+                    if hydradragonextractor::detect_format(&b.data) != Some("zip") {
                         continue;
                     }
-                    if let Some(r) = model.scan(buf) {
+                    if let Some(r) = model.scan(&b.data) {
                         if r.malicious {
                             malicious = true;
+                            lineages.push(b.apk_lineage.clone());
                         }
                         if r.best_jaccard > best_jaccard {
                             best_jaccard = r.best_jaccard;
@@ -344,25 +350,45 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
                         }
                     }
                 }
-                (malicious, best_jaccard, worst_anomaly, nearest)
+                (malicious, best_jaccard, worst_anomaly, nearest, lineages)
             })) {
                 Ok(t) => t,
                 Err(_) => {
                     if err.is_none() {
                         err = Some(format!("ml: {}", last_panic()));
                     }
-                    (false, 0.0, 0.0, None)
+                    (false, 0.0, 0.0, None, Vec::new())
                 }
             }
         }
-        None => (false, 0.0, 0.0, None),
+        None => (false, 0.0, 0.0, None, Vec::new()),
     };
 
-    let malicious = !yara_hits.is_empty() || ml_malicious;
-
-    let hits_json = yara_hits
+    // `matches` stays the clamav/YARA names only (display + PUA classification).
+    let hits_json = yara_dets
         .iter()
-        .map(|h| format!("\"{}\"", json_escape(h)))
+        .map(|(h, _)| format!("\"{}\"", json_escape(h)))
+        .collect::<Vec<_>>()
+        .join(",");
+
+    // Unified detection list: clamav/YARA hits plus one "ML" detection per
+    // ml-flagged APK buffer, each tagged with its suppressible APK lineage.
+    let mut detections: Vec<(String, Vec<String>)> = yara_dets;
+    for lin in ml_lineages {
+        detections.push(("ML".to_string(), lin));
+    }
+
+    let malicious = !detections.is_empty();
+    let detections_json = detections
+        .iter()
+        .map(|(name, lineage)| {
+            let hs = lineage
+                .iter()
+                .map(|h| format!("\"{}\"", h))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!("{{\"name\":\"{}\",\"hashes\":[{}]}}", json_escape(name), hs)
+        })
         .collect::<Vec<_>>()
         .join(",");
     let nearest_json = match ml_nearest {
@@ -386,8 +412,8 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
     };
 
     format!(
-        r#"{{"malicious":{},"matches":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"sha256":"{}","ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}{}}}"#,
-        malicious, hits_json, perm_count, packages_json, hashes_json, file_sha256, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, err_json
+        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"sha256":"{}","ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}{}}}"#,
+        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_sha256, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, err_json
     )
 }
 
@@ -425,14 +451,15 @@ fn contains_sub(hay: &[u8], needle: &[u8]) -> bool {
 /// Returns the max over buffers (not the sum) so unrelated files don't inflate
 /// the count. Large buffers (dex/resources/native libs) are skipped — a manifest
 /// is small — both for speed and to avoid stray matches in code string tables.
-fn max_dangerous_perms(buffers: &[Vec<u8>]) -> usize {
+fn max_dangerous_perms(buffers: &[Buf]) -> usize {
     const MAX_MANIFEST_SCAN: usize = 4 * 1024 * 1024;
     let needles: Vec<(Vec<u8>, Vec<u8>)> = DANGEROUS_PERMS
         .iter()
         .map(|p| (p.as_bytes().to_vec(), to_utf16le(p)))
         .collect();
     let mut max = 0usize;
-    for buf in buffers {
+    for b in buffers {
+        let buf = &b.data;
         if buf.len() > MAX_MANIFEST_SCAN {
             continue;
         }
@@ -578,13 +605,13 @@ fn sha256_hex(data: &[u8]) -> String {
 /// Lowercase hex SHA-256 of every APK/zip buffer reachable in `buffers`, so Java
 /// can match an in-memory (e.g. zip-nested) APK against a hash-keyed whitelist
 /// bloom filter. Deduped, bounded.
-fn collect_apk_hashes(buffers: &[Vec<u8>]) -> Vec<String> {
+fn collect_apk_hashes(buffers: &[Buf]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
-    for buf in buffers {
-        if hydradragonextractor::detect_format(buf) != Some("zip") {
+    for b in buffers {
+        if hydradragonextractor::detect_format(&b.data) != Some("zip") {
             continue; // only APK/zip containers
         }
-        let s = sha256_hex(buf);
+        let s = sha256_hex(&b.data);
         if !out.contains(&s) {
             out.push(s);
             if out.len() >= 64 {
@@ -597,10 +624,10 @@ fn collect_apk_hashes(buffers: &[Vec<u8>]) -> Vec<String> {
 
 /// Package names of every APK reachable in `buffers` (each APK's extracted
 /// AndroidManifest.xml). Deduped, bounded.
-fn collect_packages(buffers: &[Vec<u8>]) -> Vec<String> {
+fn collect_packages(buffers: &[Buf]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
-    for buf in buffers {
-        if let Some(p) = axml_package(buf) {
+    for b in buffers {
+        if let Some(p) = axml_package(&b.data) {
             if !p.is_empty() && !out.contains(&p) {
                 out.push(p);
                 if out.len() >= 64 {
@@ -619,28 +646,47 @@ fn collect_packages(buffers: &[Vec<u8>]) -> Vec<String> {
 /// themselves. Bounded so a malicious "zip bomb" can't exhaust memory: capped
 /// buffer count, recursion depth and per-buffer size. `detect_format` gates the
 /// extractor so plain files never fall through to its 7z fallback.
-fn collect_buffers(data: &[u8]) -> Vec<Vec<u8>> {
+/// A decompressed buffer plus the SHA-256s of every ancestor APK/zip in its
+/// extraction lineage (including its OWN hash when it is itself a zip/APK). A
+/// malicious hit on this buffer can be suppressed only if one of these lineage
+/// hashes is whitelisted — so a known-good APK clears every component extracted
+/// from it, while a non-APK file sitting alongside a whitelisted APK (empty or
+/// non-whitelisted lineage) is still flagged.
+struct Buf {
+    data: Vec<u8>,
+    apk_lineage: Vec<String>,
+}
+
+fn collect_buffers(data: &[u8]) -> Vec<Buf> {
     const MAX_BUFFERS: usize = 4096;
     const MAX_DEPTH: usize = 8;
     const MAX_SIZE: usize = 128 * 1024 * 1024;
 
-    let mut out: Vec<Vec<u8>> = Vec::new();
-    let mut stack: Vec<(Vec<u8>, usize)> = vec![(data.to_vec(), 0)];
-    while let Some((buf, depth)) = stack.pop() {
+    let mut out: Vec<Buf> = Vec::new();
+    let mut stack: Vec<(Vec<u8>, usize, Vec<String>)> = vec![(data.to_vec(), 0, Vec::new())];
+    while let Some((buf, depth, parent_lineage)) = stack.pop() {
         if out.len() >= MAX_BUFFERS {
             break;
         }
         if buf.len() > MAX_SIZE {
             continue;
         }
+        let mut lineage = parent_lineage;
+        // A zip/APK contributes its own hash to its (and its children's) lineage.
+        if hydradragonextractor::detect_format(&buf) == Some("zip") {
+            lineage.push(sha256_hex(&buf));
+        }
         if depth < MAX_DEPTH && hydradragonextractor::detect_format(&buf).is_some() {
             if let Ok(children) = hydradragonextractor::extract_archive_from_bytes(&buf) {
                 for child in children {
-                    stack.push((child, depth + 1));
+                    stack.push((child, depth + 1, lineage.clone()));
                 }
             }
         }
-        out.push(buf);
+        out.push(Buf {
+            data: buf,
+            apk_lineage: lineage,
+        });
     }
     out
 }

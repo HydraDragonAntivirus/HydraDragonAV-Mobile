@@ -68,7 +68,11 @@ public class ScanEngine {
         photonCache.clear();
     }
     private ScanCallback callback;
-    private BloomFilter<CharSequence> whitelistBloomFilter;
+    /** SHA-256 hash whitelists (whitelist.bloom + whitelist2..5.bloom). A native
+     *  (clamav/YARA/ML) detection whose file SHA-256 is in ANY of these is a known
+     *  false positive and suppressed. These blooms are hash-keyed only — they hold
+     *  no package names, so they're queried by hash exclusively. */
+    private final java.util.List<BloomFilter<CharSequence>> whitelistBlooms = new ArrayList<>();
     /** Set by {@link #cancelScan()} to abort an in-flight scan at the next loop
      *  boundary. Volatile so the UI thread's request is seen by the scan thread. */
     private volatile boolean cancelRequested = false;
@@ -114,22 +118,64 @@ public class ScanEngine {
     }
 
     private void loadBloomFilter() {
-        try {
-            InputStream is = context.getAssets().open("whitelist.bloom");
-            try {
-                whitelistBloomFilter = BloomFilter.readFrom(is, Funnels.stringFunnel(StandardCharsets.UTF_8));
-            } catch (Exception e) {
-                is.close();
-                is = context.getAssets().open("whitelist.bloom");
-                whitelistBloomFilter = BloomFilter.create(Funnels.stringFunnel(StandardCharsets.UTF_8), 100000, 0.01);
-                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is));
-                String line;
-                while ((line = reader.readLine()) != null)
-                    if (!line.trim().isEmpty()) whitelistBloomFilter.put(line.trim());
-                reader.close();
-            }
-            is.close();
-        } catch (Exception e) { }
+        // All five hash-whitelist shards. Each is an independent Guava bloom; a
+        // hash present in ANY shard is whitelisted.
+        String[] assets = {"whitelist.bloom", "whitelist2.bloom", "whitelist3.bloom",
+                           "whitelist4.bloom", "whitelist5.bloom"};
+        for (String asset : assets) {
+            try (InputStream is = context.getAssets().open(asset)) {
+                whitelistBlooms.add(BloomFilter.readFrom(is, Funnels.stringFunnel(StandardCharsets.UTF_8)));
+            } catch (Exception e) { /* missing/invalid shard — skip */ }
+        }
+    }
+
+    /** True if {@code hash} (a file SHA-256) is in any hash-whitelist shard. */
+    private boolean isHashWhitelisted(String hash) {
+        if (hash == null || hash.isEmpty()) return false;
+        for (BloomFilter<CharSequence> f : whitelistBlooms)
+            if (f.mightContain(hash)) return true;
+        return false;
+    }
+
+    /** Lowercase-hex SHA-256 of a file's bytes (streamed), or null on error. We
+     *  compute it in Java — the native side never sends raw bytes back, only the
+     *  hash — so a known-good whole file can be cleared BEFORE the expensive
+     *  yara/clamav/ML scan even runs (the "hash first" fast path). */
+    private static String fileSha256(java.io.File file) {
+        try (java.io.InputStream in = new java.io.FileInputStream(file)) {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] buf = new byte[64 * 1024];
+            int n;
+            while ((n = in.read(buf)) != -1) md.update(buf, 0, n);
+            StringBuilder sb = new StringBuilder(64);
+            for (byte b : md.digest()) sb.append(Character.forDigit((b >> 4) & 0xF, 16))
+                                         .append(Character.forDigit(b & 0xF, 16));
+            return sb.toString();
+        } catch (Exception e) { return null; }
+    }
+
+    /** Hash-first fast path: if the whole file's SHA-256 is whitelisted it's a
+     *  known-good file — skip scanning entirely. Valid for a pure APK (its file
+     *  bytes == the APK/zip buffer the whitelist was keyed on). */
+    private boolean isFileWhitelisted(String path) {
+        return isHashWhitelisted(fileSha256(new java.io.File(path)));
+    }
+
+    /** A native detection is a false positive iff one of the APKs in its
+     *  extraction lineage is whitelisted (the hit lives inside a known-good APK). */
+    private boolean isDetectionWhitelisted(NativeScanner.Verdict.Detection d) {
+        for (String h : d.hashes) if (isHashWhitelisted(h)) return true;
+        return false;
+    }
+
+    /** Detections that survive per-lineage whitelist suppression. A sibling
+     *  non-APK virus (empty/non-whitelisted lineage) survives even when a
+     *  whitelisted APK sits alongside it in the same archive. */
+    private List<NativeScanner.Verdict.Detection> survivingDetections(NativeScanner.Verdict v) {
+        List<NativeScanner.Verdict.Detection> out = new ArrayList<>();
+        for (NativeScanner.Verdict.Detection d : v.detections)
+            if (!isDetectionWhitelisted(d)) out.add(d);
+        return out;
     }
 
     public void setCallback(ScanCallback callback) { this.callback = callback; }
@@ -221,33 +267,35 @@ public class ScanEngine {
         try {
             if (!NativeScanner.isReady()) return;
             String path = file.getAbsolutePath();
+            // Hash-first fast path: known-good whole file → skip the scan entirely.
+            if (isFileWhitelisted(path)) return;
             NativeScanner.Verdict v = NativeScanner.scan(path);
             if (v == null) return;
-            // An APK reached inside this archive that is on the whitelist bloom
-            // filter — by package name OR by SHA-256 — is not a false positive;
-            // suppress the whole file.
-            if (whitelistBloomFilter != null) {
-                for (String pkg : v.packages) {
-                    if (whitelistBloomFilter.mightContain(pkg)) return;
-                }
-                for (String hash : v.hashes) {
-                    if (whitelistBloomFilter.mightContain(hash)) return;
-                }
-            }
-            // Act on a signature/ML hit OR a dangerous-permission count (an inner
-            // APK extracted from this file, detected from the manifest bytes).
-            if (!v.malicious && v.permissions < 6) return;
+            // Per-detection whitelist suppression: a hit INSIDE a known-good
+            // (whitelisted) APK is a false positive, but a non-APK virus sitting
+            // alongside that APK in the same archive is NOT suppressed by the APK's
+            // hash. Keep only the detections that survive.
+            List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
+            boolean malicious = !live.isEmpty();
+            // Act on a surviving hit OR a dangerous-permission count.
+            if (!malicious && v.permissions < 6) return;
 
             ThreatResult.Builder b = new ThreatResult.Builder(path);
             List<String> reasons = new java.util.ArrayList<>();
             int riskScore = 0;
-            boolean hasRealThreat = v.mlMalicious;
-            for (String m : v.matches) {
-                boolean isPua = isPuaName(m);
-                if (!isPua) hasRealThreat = true;
-                reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + m);
+            boolean mlMalicious = false;
+            boolean hasRealThreat = false;
+            for (NativeScanner.Verdict.Detection d : live) {
+                if ("ML".equals(d.name)) {
+                    mlMalicious = true;
+                    hasRealThreat = true;
+                } else {
+                    boolean isPua = isPuaName(d.name);
+                    if (!isPua) hasRealThreat = true;
+                    reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + d.name);
+                }
             }
-            if (v.malicious) {
+            if (malicious) {
                 if (hasRealThreat) {
                     riskScore = 100;
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
@@ -269,7 +317,7 @@ public class ScanEngine {
                 }
                 reasons.add("🔐 Suspicious permissions (6/9)");
             }
-            if (v.mlMalicious) {
+            if (mlMalicious) {
                 String near = v.nearest != null ? "  ~" + v.nearest : "";
                 reasons.add(String.format(java.util.Locale.US,
                     "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
@@ -332,22 +380,23 @@ public class ScanEngine {
                         || app.sourceDir.startsWith("/product/") || app.sourceDir.startsWith("/apex/")) continue;
                 if (app.packageName != null && (app.packageName.equals(context.getPackageName())
                         || seen.contains(app.packageName))) continue;
+                // Hash-first fast path: known-good APK → skip the deep scan.
+                if (isFileWhitelisted(app.sourceDir)) continue;
                 NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir);
-                if (v == null || !v.malicious) continue;
-                boolean wl = false;
-                if (whitelistBloomFilter != null) {
-                    if (app.packageName != null && whitelistBloomFilter.mightContain(app.packageName)) wl = true;
-                    for (String h : v.hashes) if (whitelistBloomFilter.mightContain(h)) { wl = true; break; }
-                }
-                if (wl) continue;
+                if (v == null) continue;
+                // Per-detection suppression (a hit inside a whitelisted APK is an
+                // FP; a non-APK virus alongside it is not). Nothing survives → skip.
+                List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
+                if (live.isEmpty()) continue;
                 ThreatResult.Builder b = new ThreatResult.Builder(
                     app.packageName != null ? app.packageName : app.sourceDir);
                 List<String> reasons = new java.util.ArrayList<>();
-                boolean real = v.mlMalicious;
-                for (String m : v.matches) {
-                    boolean pua = isPuaName(m);
+                boolean real = false;
+                for (NativeScanner.Verdict.Detection d : live) {
+                    if ("ML".equals(d.name)) { real = true; continue; }
+                    boolean pua = isPuaName(d.name);
                     if (!pua) real = true;
-                    reasons.add((pua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + m);
+                    reasons.add((pua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + d.name);
                 }
                 b.setThreatType(real
                     ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
@@ -463,10 +512,11 @@ public class ScanEngine {
             } catch (Exception e) { }
         }
 
+        // NOTE: the whitelist blooms are hash-keyed (SHA-256), NOT package names,
+        // so there's no by-package bloom check here — only the trusted-vendor
+        // prefix list. Hash-based suppression happens in the native deep scan.
         boolean isWhitelisted = false;
         if (app.packageName != null) {
-            if (whitelistBloomFilter != null && whitelistBloomFilter.mightContain(app.packageName))
-                isWhitelisted = true;
             for (String prefix : WHITELIST_PREFIXES)
                 if (app.packageName.startsWith(prefix)) { isWhitelisted = true; break; }
         }
@@ -535,17 +585,24 @@ public class ScanEngine {
                 }
 
                 // Native engine: clamav (type-gated YARA + signatures) + ML model.
-                if (apkPath != null && NativeScanner.isReady()) {
+                // Hash-first: a known-good (whitelisted) APK skips the whole native
+                // block — no scan, no detections, no permission flag.
+                if (apkPath != null && NativeScanner.isReady() && !isFileWhitelisted(apkPath)) {
                     NativeScanner.Verdict v = NativeScanner.scan(apkPath);
                     fileSha256 = v.sha256;
-                    if (v.malicious) {
+                    // Per-detection whitelist suppression (hit inside a whitelisted
+                    // APK = FP; non-APK virus alongside it survives).
+                    List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
+                    boolean mlMalicious = false;
+                    if (!live.isEmpty()) {
                         // Split PUA.* / PUA_* hits (potentially-unwanted) from real
                         // malware. Only-PUA (and no ML flag) => PUA, lower risk.
-                        boolean hasRealThreat = v.mlMalicious;
-                        for (String m : v.matches) {
-                            boolean isPua = isPuaName(m);
+                        boolean hasRealThreat = false;
+                        for (NativeScanner.Verdict.Detection d : live) {
+                            if ("ML".equals(d.name)) { mlMalicious = true; hasRealThreat = true; continue; }
+                            boolean isPua = isPuaName(d.name);
                             if (!isPua) hasRealThreat = true;
-                            reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + m);
+                            reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + d.name);
                         }
                         if (hasRealThreat) {
                             riskScore = 100;
@@ -555,7 +612,7 @@ public class ScanEngine {
                             riskScore = Math.max(riskScore, 50);
                             builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
                         }
-                        if (v.mlMalicious) {
+                        if (mlMalicious) {
                             String near = v.nearest != null ? "  ~" + v.nearest : "";
                             reasons.add(String.format(java.util.Locale.US,
                                 "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
