@@ -13,5 +13,6 @@ whitelist/
 sql/
 malwarebazaarfull/
 all_sha256.txt
-qf_build/
+xf_build/
 whitelist.xf
+allips/IPv4Malware.optimized.csv

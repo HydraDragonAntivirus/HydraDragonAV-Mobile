@@ -84,6 +84,18 @@ public final class NativeScanner {
         } catch (Throwable t) { return null; }
     }
 
+    private static native String nativeScanIp(String ip);
+
+    /** Malicious category (e.g. "MALWARE_IP") for a resolved IP, or null if clean.
+     *  Exact match against the native per-category xor filters (no CIDR/subnet). */
+    public static String scanIp(String ip) {
+        if (!LIB_LOADED || !ready || ip == null || ip.isEmpty()) return null;
+        try {
+            String c = nativeScanIp(ip);
+            return (c == null || c.isEmpty()) ? null : c;
+        } catch (Throwable t) { return null; }
+    }
+
     /** True if {@code sha256} is in the NSRL whitelist (held in NATIVE memory as a
      *  fastbloom filter — never loaded into the Java heap). False if the native
      *  lib/whitelist isn't available. */

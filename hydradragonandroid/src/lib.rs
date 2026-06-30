@@ -19,6 +19,7 @@ use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 
 mod dex_scan;
+mod ip_scan;
 mod url_scan;
 
 use jni::objects::{JClass, JString};
@@ -39,7 +40,7 @@ const TLSH_DB: &str = "malware_tlsh.txt";
 /// (built offline by `xorfilter_writer`). Decoded once at init into an owned
 /// buffer on the native heap; binary-fuse encodings are far smaller than the
 /// equivalent quotient filter, so the whitelist stays modest in RAM.
-const WHITELIST_QF: &str = "whitelist.xf";
+const WHITELIST_XF: &str = "whitelist.xf";
 
 /// A scanned buffer whose TLSH distance to a known-malware digest is at or below
 /// this is flagged as similar. Lower = stricter (fewer FP). TLSH distance: 0 =
@@ -59,6 +60,8 @@ struct Engine {
     whitelist: Option<XorFilter>,
     /// Malicious domain/URL xor filters + public-suffix list.
     url_scanner: Option<url_scan::UrlScanner>,
+    /// Malicious-IP xor filters (per category).
+    ip_scanner: Option<ip_scan::IpScanner>,
 }
 
 static ENGINE: OnceLock<Engine> = OnceLock::new();
@@ -168,13 +171,18 @@ fn do_init(dir: &str) -> Engine {
     let tlsh_db = load_tlsh_db(&base.join(TLSH_DB));
     report.push_str(&format!(" tlsh={}", tlsh_db.len()));
 
-    let whitelist = load_whitelist(&base.join(WHITELIST_QF));
+    let whitelist = load_whitelist(&base.join(WHITELIST_XF));
     report.push_str(&format!(" whitelist={}", if whitelist.is_some() { "ok" } else { "none" }));
 
     let url_scanner = std::panic::catch_unwind(|| url_scan::UrlScanner::load(base))
         .ok()
         .flatten();
     report.push_str(&format!(" url={}", if url_scanner.is_some() { "ok" } else { "none" }));
+
+    let ip_scanner = std::panic::catch_unwind(|| ip_scan::IpScanner::load(base))
+        .ok()
+        .flatten();
+    report.push_str(&format!(" ip={}", if ip_scanner.is_some() { "ok" } else { "none" }));
 
     set_status(report);
     Engine {
@@ -183,6 +191,7 @@ fn do_init(dir: &str) -> Engine {
         tlsh_db,
         whitelist,
         url_scanner,
+        ip_scanner,
     }
 }
 
@@ -342,6 +351,30 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         .get()
         .and_then(|e| e.url_scanner.as_ref())
         .and_then(|s| s.scan(&u))
+        .unwrap_or("");
+    match env.new_string(cat) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+/// `String nativeScanIp(String ip)` — category (e.g. "MALWARE_IP") for a
+/// blocklisted IP, or "" if clean. Exact match against the per-category xor
+/// filters (allips non-CIDR); no subnet/CIDR matching.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanIp<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ip: JString<'local>,
+) -> jstring {
+    let ip: String = match env.get_string(&ip) {
+        Ok(s) => s.into(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let cat = ENGINE
+        .get()
+        .and_then(|e| e.ip_scanner.as_ref())
+        .and_then(|s| s.scan(&ip))
         .unwrap_or("");
     match env.new_string(cat) {
         Ok(s) => s.into_raw(),

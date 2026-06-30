@@ -2,8 +2,8 @@
 """
 Build the WHITELIST-FILTERED URL lists used by the native xor-filter URL scanner:
 
-  qf_build/malwareurl.txt  <- MaliciousLinks.txt + urlhaus.csv
-  qf_build/phishingurl.txt <- phishing_links.json
+  xf_build/malwareurl.txt  <- MaliciousLinks.txt + urlhaus.csv
+  xf_build/phishingurl.txt <- phishing_links.json
 
 Each entry has ONLY the leading scheme stripped (http:// / https:// removed,
 host[:port]/path kept, lowercased). BOTH lists are then filtered against ALL the
@@ -13,7 +13,7 @@ malwareurl.txt / phishingurl.txt that gen_domain_bloom.py wrote.
 
 Memory-safe: we collect the (small) set of candidate hosts from the URL lists,
 stream the huge whitelist CSVs once to mark which are whitelisted, then drop.
-The .txt files are turned into <stem>.xf by build_qfilters.sh (Rust).
+The .txt files are turned into <stem>.xf by build_xfilters.sh (Rust).
 """
 import csv
 import json
@@ -24,7 +24,7 @@ os.chdir(Path(__file__).parent)
 
 BLOOMS_DIR = Path("allblooms")
 WHITELIST_DIR = Path("whitelist")
-STAGE_DIR = Path("qf_build")
+STAGE_DIR = Path("xf_build")
 WHITELIST_CSVS = [
     "DomainsPopularityWhiteList.optimized.csv",
     "SubDomainsPopularityWhiteList.optimized.csv",

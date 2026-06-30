@@ -1,7 +1,7 @@
-""" Extract per-category domain/URL lists from allblooms/ datasets into qf_build/.
+""" Extract per-category domain/URL lists from allblooms/ datasets into xf_build/.
 
-Each qf_build/<stem>.txt is then turned into assets/scan/<stem>.xf by the Rust
-`xorfilter_writer` (see build_qfilters.sh). No bloom/Guava code here — filter
+Each xf_build/<stem>.txt is then turned into assets/scan/<stem>.xf by the Rust
+`xorfilter_writer` (see build_xfilters.sh). No bloom/Guava code here — filter
 construction lives entirely on the Rust side.
 
 Usage:
@@ -16,10 +16,10 @@ from pathlib import Path
 BLOOMS_DIR = Path("allblooms")
 ASSETS_DIR = Path("app/src/main/assets")
 # Staging dir for the per-category entry lists. These .txt files are the INPUT to
-# `xorfilter_writer` (see build_qfilters.sh), which builds one `<stem>.xf` per file
+# `xorfilter_writer` (see build_xfilters.sh), which builds one `<stem>.xf` per file
 # into assets/scan/. The .txt themselves are NOT shipped. Stems match the Rust
 # `CATS` table in hydradragonandroid/src/url_scan.rs.
-STAGE_DIR = Path("qf_build")
+STAGE_DIR = Path("xf_build")
 
 def extract_domains_from_csv(filepath: str, column: int = 0) -> set:
     domains = set()
@@ -164,7 +164,7 @@ def main():
     COMBINED_ONLY = {"malware"}
 
     # ── Write category text files (staging, stems match the Rust CATS) ──────
-    print("\n=== Writing category text files (qf_build/) ===")
+    print("\n=== Writing category text files (xf_build/) ===")
     for name, domains in sorted(categories.items()):
         if name in COMBINED_ONLY:
             continue
@@ -187,8 +187,8 @@ def main():
           f" {os.path.getsize(str(combined_txt)):,} bytes")
 
     print("\n  Next: build_url_blooms.py (writes whitelist-FILTERED malwareurl.txt /")
-    print("  phishingurl.txt into qf_build/), then ./build_qfilters.sh to turn every")
-    print("  qf_build/<stem>.txt into assets/scan/<stem>.xf via xorfilter_writer (1e-6).")
+    print("  phishingurl.txt into xf_build/), then ./build_xfilters.sh to turn every")
+    print("  xf_build/<stem>.txt into assets/scan/<stem>.xf via xorfilter_writer (1e-6).")
 
 
 if __name__ == "__main__":
