@@ -23,6 +23,11 @@ tlsh-rs = "0.1.0"
 # holds the key derivation + on-disk format so the `.xf` built offline by
 # xorfilter_writer is queryable byte-for-byte on the arm64 device.
 hydradragonxorfilter = { path = "../hydradragonxorfilter" }
+# Zero-copy DEX parser + static analysis: decode each classes*.dex string pool
+# (strings + method/class/field names) to scan it, and surface High/Critical
+# static-analysis findings.
+dex-core = { git = "https://github.com/FossRust/dex-parser-analyzer", branch = "main" }
+dex-analysis = { git = "https://github.com/FossRust/dex-parser-analyzer", branch = "main" }
 
 [profile.release]
 opt-level = "z"

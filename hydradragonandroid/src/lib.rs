@@ -18,6 +18,7 @@ use hydradragonclamav::{Engine as ClamavEngine, ScanOptions};
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 
+mod dex_scan;
 mod url_scan;
 
 use jni::objects::{JClass, JString};
@@ -448,6 +449,19 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str, hydradragon: Option<&[u8]
         }
     }
 
+    // Decode + statically analyse every DEX buffer once (strings + method/class
+    // names), reused below for both the clamav/YARA text pass and findings.
+    let dex_scans: Vec<Option<dex_scan::DexScan>> = buffers
+        .iter()
+        .map(|b| {
+            if b.data.starts_with(b"dex\n") {
+                dex_scan::scan(&b.data)
+            } else {
+                None
+            }
+        })
+        .collect();
+
     // Each detection carries the APK lineage of the buffer it fired on, so Java
     // can suppress it iff one of those ancestor-APK hashes is whitelisted.
     let yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
@@ -469,6 +483,17 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str, hydradragon: Option<&[u8]
                         dets.push((m.name, b.apk_lineage.clone()));
                         if dets.len() >= opts.max_matches {
                             return dets;
+                        }
+                    }
+                    // Also scan the DEX's decoded string pool (method/class names
+                    // contiguous, no MUTF-8/length-prefix noise).
+                    if let Some(ds) = &dex_scans[i] {
+                        let dname = format!("{name}#dex");
+                        for m in clamav.scan_bytes_named(ds.text.as_bytes(), &dname, opts, &module_meta) {
+                            dets.push((m.name, b.apk_lineage.clone()));
+                            if dets.len() >= opts.max_matches {
+                                return dets;
+                            }
                         }
                     }
                 }
@@ -545,6 +570,17 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str, hydradragon: Option<&[u8]
     let mut detections: Vec<(String, Vec<String>)> = yara_dets;
     for lin in ml_lineages {
         detections.push(("ML".to_string(), lin));
+    }
+
+    // DEX static-analysis: only High/Critical findings count as malicious.
+    for (i, b) in buffers.iter().enumerate() {
+        if let Some(ds) = &dex_scans[i] {
+            for (sev, msg) in &ds.findings {
+                if dex_scan::is_severe(*sev) {
+                    detections.push((format!("DEX/{sev:?}: {msg}"), b.apk_lineage.clone()));
+                }
+            }
+        }
     }
 
     // TLSH fuzzy-similarity to known malware: compare each apk/elf/dex buffer's
