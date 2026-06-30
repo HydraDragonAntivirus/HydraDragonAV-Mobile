@@ -14,5 +14,4 @@ sql/
 malwarebazaarfull/
 all_sha256.txt
 qf_build/
-whitelist.qf
-
+whitelist.xf
