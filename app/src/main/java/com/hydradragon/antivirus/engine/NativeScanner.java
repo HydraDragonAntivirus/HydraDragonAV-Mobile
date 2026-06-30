@@ -69,6 +69,29 @@ public final class NativeScanner {
     /** Diagnostics: what loaded / failed during the last nativeInit. */
     private static native String nativeStatus();
 
+    private static native boolean nativeIsHashWhitelisted(String sha256);
+
+    private static native String nativeScanUrl(String url);
+
+    /** Malicious category (e.g. "PHISHING") for an http(s) URL, or null if clean
+     *  / not a URL. Membership is the native fastbloom URL/domain scanner — no
+     *  bloom is held in the Java heap. */
+    public static String scanUrl(String url) {
+        if (!LIB_LOADED || !ready || url == null || url.isEmpty()) return null;
+        try {
+            String c = nativeScanUrl(url);
+            return (c == null || c.isEmpty()) ? null : c;
+        } catch (Throwable t) { return null; }
+    }
+
+    /** True if {@code sha256} is in the NSRL whitelist (held in NATIVE memory as a
+     *  fastbloom filter — never loaded into the Java heap). False if the native
+     *  lib/whitelist isn't available. */
+    public static boolean isHashWhitelisted(String sha256) {
+        if (!LIB_LOADED || !ready || sha256 == null || sha256.isEmpty()) return false;
+        try { return nativeIsHashWhitelisted(sha256); } catch (Throwable t) { return false; }
+    }
+
     /** Public: human-readable native engine load report (clamav / yrc / model). */
     public static String status() {
         if (!LIB_LOADED) return "native lib not loaded (.so missing for this ABI)";

@@ -18,6 +18,18 @@ jni = "0.21"
 # Pure-Rust TLSH fuzzy hashing for malware-similarity detection against the
 # MalwareBazaar (apk/elf/so/dex) TLSH database.
 tlsh-rs = "0.1.0"
+# Rank-Select Quotient Filter (AMQ), serialized to disk and queried ZERO-COPY
+# over an mmap (`FilterRef<'static> = Filter<&'static [u8]>`). The filter bytes
+# stay in the OS page cache (reclaimable, not app dirty RSS), so even a
+# multi-hundred-MB whitelist costs almost no resident RAM and can't trigger the
+# per-app Java heap OOM. Default StableBuildHasher => deterministic across the
+# x86 build host and the arm64 device.
+qfilter = { version = "0.3", features = ["serde"] }
+# mmap the .qf files so the filter buffer is paged in on demand, not read into
+# the heap.
+memmap2 = "0.9"
+# Zero-copy deserialization of the borrowed FilterRef from the mmap'd bytes.
+postcard = { version = "1", features = ["alloc"] }
 
 [profile.release]
 opt-level = "z"

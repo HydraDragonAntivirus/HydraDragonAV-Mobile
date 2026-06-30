@@ -7,8 +7,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.util.Log;
 
-import com.google.common.hash.BloomFilter;
-import com.google.common.hash.Funnels;
 import com.hydradragon.antivirus.model.ThreatResult;
 import com.hydradragon.antivirus.model.ScanResult;
 
@@ -68,12 +66,9 @@ public class ScanEngine {
         photonCache.clear();
     }
     private ScanCallback callback;
-    /** EXACT whole-APK SHA-256 whitelist (NSRL RDS Android, extension=apk). A
-     *  native (clamav/YARA/ML) detection whose whole-APK SHA-256 is in here is a
-     *  known false positive and suppressed. Exact membership (not a bloom): the
-     *  set is small (~70k) so we get ZERO false positives — i.e. no whitelist
-     *  false negative (a malicious hash can never collide into the whitelist). */
-    private final java.util.HashSet<String> whitelistHashes = new java.util.HashSet<>();
+    // SHA-256 hash whitelist now lives in NATIVE memory (fastbloom) — see
+    // NativeScanner.isHashWhitelisted — so the large NSRL set never sits in the
+    // Java heap. isHashWhitelisted() below delegates to it.
     /** EXACT known-good package names (NSRL Android, extension=apk). NOT a
      *  standalone clear — a package name is spoofable, so it only clears an app
      *  when combined with a trusted-store install (see analyzeApp). */
@@ -101,7 +96,7 @@ public class ScanEngine {
         this.aiEngine = aiEngine;
         this.codeAnalyzer = new CodeAnalyzer(context);
         this.scanExecutor = Executors.newFixedThreadPool(4);
-        loadBloomFilter();
+        loadPackageWhitelist();
         // Load YARA rulesets + ML model into the native engine (non-fatal).
         try { NativeScanner.init(context); } catch (Throwable t) { /* degrade gracefully */ }
     }
@@ -122,19 +117,11 @@ public class ScanEngine {
         return u.contains("PUA.") || u.contains("PUA_");
     }
 
-    private void loadBloomFilter() {
-        // EXACT whole-APK SHA-256 whitelist (NSRL RDS Android, extension=apk),
-        // one lowercase-hex digest per line. Loaded into a HashSet for O(1) exact
-        // membership — zero false positives (no whitelist-induced false negative).
-        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
-                context.getAssets().open("whitelist_hashes.txt"), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = r.readLine()) != null) {
-                line = line.trim();
-                if (line.length() == 64) whitelistHashes.add(line);
-            }
-        } catch (Exception e) { /* missing — whitelist disabled */ }
-        // Known-good package names (NSRL). Used only WITH trusted-store origin.
+    private void loadPackageWhitelist() {
+        // Known-good NSRL package names (whitelist_packages.txt) into an exact
+        // HashSet. Only clears an app WITH a trusted-store install (spoofable
+        // alone). The SHA-256 hash whitelist is separate and lives natively
+        // (fastbloom) — see NativeScanner.isHashWhitelisted.
         try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
                 context.getAssets().open("whitelist_packages.txt"), StandardCharsets.UTF_8))) {
             String line;
@@ -145,10 +132,10 @@ public class ScanEngine {
         } catch (Exception e) { /* missing — package whitelist disabled */ }
     }
 
-    /** True if {@code hash} (a whole-APK/file SHA-256) is an exact known-good
-     *  NSRL hash. Exact match — a malicious hash can never falsely land here. */
+    /** True if {@code hash} (a whole-APK/file SHA-256) is a known-good NSRL hash.
+     *  Delegates to the native fastbloom whitelist (native memory). */
     private boolean isHashWhitelisted(String hash) {
-        return hash != null && whitelistHashes.contains(hash.toLowerCase(java.util.Locale.US));
+        return hash != null && NativeScanner.isHashWhitelisted(hash.toLowerCase(java.util.Locale.US));
     }
 
     /** True if {@code pkg} is an exact known-good NSRL package name. Spoofable on

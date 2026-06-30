@@ -8,8 +8,6 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.util.Log;
 
-import com.google.common.hash.BloomFilter;
-import com.google.common.hash.Funnels;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -72,7 +70,6 @@ public class NetworkMonitor {
     );
 
     // Bloom filter asset
-    private static final String MALICIOUS_DOMAIN_BLOOM = "malicious.bloom";
 
     private final Context context;
     private final ConnectivityManager connectivityManager;
@@ -83,7 +80,6 @@ public class NetworkMonitor {
     private boolean isMonitoring = false;
 
     // Domain bloom filter
-    private BloomFilter<CharSequence> maliciousDomainFilter;
 
     private long bytesReceived = 0;
     private long bytesSent = 0;
@@ -128,42 +124,10 @@ public class NetworkMonitor {
         loadDomainFilters();
     }
 
-    /**
-     * Malicious/whitelist domain bloom filter'larını assets'ten yükle.
-     * BloomFilter.readFrom başarısız olursa text dosyadan doldurmayı dene.
-     */
+    /** Domain bloom lookups now run natively (fastbloom) via
+     *  {@link UrlThreatScanner#scanUrl}, so there's nothing to load here. */
     private void loadDomainFilters() {
-        // Malicious domain bloom filter
-        maliciousDomainFilter = loadBloomFromAssets(MALICIOUS_DOMAIN_BLOOM);
-        if (maliciousDomainFilter == null) {
-            Log.w(TAG, "Failed to load " + MALICIOUS_DOMAIN_BLOOM);
-        } else {
-            Log.i(TAG, "Loaded " + MALICIOUS_DOMAIN_BLOOM);
-        }
-    }
-
-    private BloomFilter<CharSequence> loadBloomFromAssets(String assetName) {
-        try {
-            InputStream is = context.getAssets().open(assetName);
-            try {
-                return BloomFilter.readFrom(is, Funnels.stringFunnel(StandardCharsets.UTF_8));
-            } catch (Exception e) {
-                // readFrom failed — try loading from text
-                is.close();
-                is = context.getAssets().open(assetName);
-                BloomFilter<CharSequence> fallback = BloomFilter.create(
-                    Funnels.stringFunnel(StandardCharsets.UTF_8), 5000000, 0.01);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (!line.trim().isEmpty()) fallback.put(line.trim());
-                }
-                reader.close();
-                return fallback;
-            }
-        } catch (Exception e) {
-            return null;
-        }
+        // no-op — domain/URL blooms live on the native side.
     }
 
     public void setCallback(NetworkCallback callback) {
@@ -313,12 +277,7 @@ public class NetworkMonitor {
             if (lower.contains(pattern)) return true;
         }
 
-        // Bloom filter kontrolü (eski tekil filtre)
-        if (maliciousDomainFilter != null && maliciousDomainFilter.mightContain(lower)) {
-            return true;
-        }
-
-        // Tüm bloom'lara karşı kontrol et — domain'i http:// formuna çevirip
+        // Native fastbloom domain/URL kontrolü — domain'i http:// formuna çevirip
         // (URL bloom'ları http:// string'lerinden üretildi) tüm kategorilere bak.
         try {
             if (UrlThreatScanner.get(context).scanUrl("http://" + lower) != null) {

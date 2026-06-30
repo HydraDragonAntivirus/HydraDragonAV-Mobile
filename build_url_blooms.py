@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
-Build the URL blooms (scheme-less, WHITELIST-FILTERED) used by UrlThreatScanner:
+Build the WHITELIST-FILTERED URL lists used by the native qfilter URL scanner:
 
-  malwareurl.bloom  <- MaliciousLinks.txt + urlhaus.csv
-  phishingurl.bloom <- phishing_links.json
+  qf_build/malwareurl.txt  <- MaliciousLinks.txt + urlhaus.csv
+  qf_build/phishingurl.txt <- phishing_links.json
 
 Each entry has ONLY the leading scheme stripped (http:// / https:// removed,
 host[:port]/path kept, lowercased). BOTH lists are then filtered against ALL the
 whitelist/ CSVs: any entry whose host (or a parent domain) is whitelisted is
-dropped, to avoid flagging legit/popular sites.
+dropped, to avoid flagging legit/popular sites. These overwrite the unfiltered
+malwareurl.txt / phishingurl.txt that gen_domain_bloom.py wrote.
 
 Memory-safe: we collect the (small) set of candidate hosts from the URL lists,
 stream the huge whitelist CSVs once to mark which are whitelisted, then drop.
-Reuses the Guava-compatible BloomFilter from gen_domain_bloom.py.
+The .txt files are turned into <stem>.qf by build_qfilters.sh (Rust).
 """
 import csv
 import json
@@ -21,12 +22,9 @@ from pathlib import Path
 
 os.chdir(Path(__file__).parent)
 
-from gen_domain_bloom import BloomFilter, HAVE_MMH3  # noqa: E402
-
 BLOOMS_DIR = Path("allblooms")
 WHITELIST_DIR = Path("whitelist")
-ASSETS_DIR = Path("app/src/main/assets")
-FPP = 0.01
+STAGE_DIR = Path("qf_build")
 WHITELIST_CSVS = [
     "DomainsPopularityWhiteList.optimized.csv",
     "SubDomainsPopularityWhiteList.optimized.csv",
@@ -144,23 +142,19 @@ def whitelist_filter(*entry_sets):
     return results
 
 
-def write_bloom(name: str, entries: set):
+def write_txt(stem: str, entries: set):
     if not entries:
-        print(f"  [SKIP] {name}: no entries")
+        print(f"  [SKIP] {stem}: no entries")
         return
-    bf = BloomFilter(expected_insertions=len(entries), fpp=FPP)
-    for e in entries:
-        bf.put(e)
-    out = ASSETS_DIR / name
-    ASSETS_DIR.mkdir(parents=True, exist_ok=True)
-    bf.write_to(str(out))
-    print(f"  {name}: {len(entries):,} entries -> {os.path.getsize(str(out)):,} bytes")
+    STAGE_DIR.mkdir(parents=True, exist_ok=True)
+    out = STAGE_DIR / f"{stem}.txt"
+    with open(str(out), "w", encoding="utf-8") as f:
+        for e in sorted(entries):
+            f.write(e + "\n")
+    print(f"  {out.name}: {len(entries):,} entries -> {os.path.getsize(str(out)):,} bytes")
 
 
 def main():
-    if not HAVE_MMH3:
-        raise SystemExit("mmh3 required: pip install mmh3")
-
     mal = from_links_txt(BLOOMS_DIR / "MaliciousLinks.txt") | from_urlhaus(BLOOMS_DIR / "urlhaus.csv")
     phish = from_phishing_json(BLOOMS_DIR / "phishing_links.json")
     print(f"raw: malwareurl={len(mal):,}, phishingurl={len(phish):,}")
@@ -170,8 +164,8 @@ def main():
     print(f"filtered: malwareurl={len(mal_f):,} (-{len(mal) - len(mal_f):,}), "
           f"phishingurl={len(phish_f):,} (-{len(phish) - len(phish_f):,})")
 
-    write_bloom("malwareurl.bloom", mal_f)
-    write_bloom("phishingurl.bloom", phish_f)
+    write_txt("malwareurl", mal_f)
+    write_txt("phishingurl", phish_f)
 
 
 if __name__ == "__main__":

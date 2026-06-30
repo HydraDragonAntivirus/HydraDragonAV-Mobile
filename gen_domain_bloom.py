@@ -1,83 +1,25 @@
-""" Extract domains from allblooms/ datasets and write text files for BloomFilter generation.
+""" Extract per-category domain/URL lists from allblooms/ datasets into qf_build/.
+
+Each qf_build/<stem>.txt is then turned into assets/scan/<stem>.qf by the Rust
+`qfilter_writer` (see build_qfilters.sh). No bloom/Guava code here — filter
+construction lives entirely on the Rust side.
 
 Usage:
-    pip install mmh3        # optional — only if generating .bloom with Python
     python gen_domain_bloom.py
-    python gen_domain_bloom.py --bloom   # also generate .bloom files (requires mmh3)
 """
 
-import argparse
 import csv
 import json
 import os
-import sys
 from pathlib import Path
 
 BLOOMS_DIR = Path("allblooms")
 ASSETS_DIR = Path("app/src/main/assets")
-
-try:
-    import mmh3
-    from math import ceil, log
-
-    HAVE_MMH3 = True
-except ImportError:
-    HAVE_MMH3 = False
-
-
-def optimal_num_bits(n: int, p: float) -> int:
-    if p == 0:
-        p = 1e-300
-    return int(ceil(-n * log(p) / (log(2) ** 2)))
-
-
-def optimal_num_hash_functions(n: int, m: int) -> int:
-    return max(1, round(m / n * log(2)))
-
-
-class BloomFilter:
-    """Guava MURMUR128_MITZ_64 compatible bloom filter."""
-
-    LONG_MASK = 0xFFFFFFFFFFFFFFFF
-    POSITIVE_MASK = 0x7FFFFFFFFFFFFFFF  # Long.MAX_VALUE
-
-    def __init__(self, expected_insertions: int, fpp: float = 0.01):
-        optimal = optimal_num_bits(expected_insertions, fpp)
-        self.num_longs = int(ceil(optimal / 64))
-        # Guava pads to next multiple of 64; bitSize = num_longs * 64
-        self.num_bits = self.num_longs * 64
-        self.num_hash_functions = optimal_num_hash_functions(expected_insertions, optimal)
-        self.bits = [0] * self.num_longs
-
-    def _mask_long(self, val: int) -> int:
-        return val & self.LONG_MASK
-
-    def put(self, key: str) -> bool:
-        raw = mmh3.hash64(key.encode("utf-8"), seed=0)
-        h1, h2 = raw if isinstance(raw, tuple) else (raw[0], raw[1])
-        changed = False
-        combined = self._mask_long(h1)
-        for _ in range(self.num_hash_functions):
-            idx = (combined & self.POSITIVE_MASK) % self.num_bits
-            long_idx = idx // 64
-            bit_idx = idx % 64
-            mask = 1 << bit_idx
-            if not (self.bits[long_idx] & mask):
-                self.bits[long_idx] |= mask
-                changed = True
-            combined = self._mask_long(combined + h2)
-        return changed
-
-    def write_to(self, path: str):
-        """Guava serialization: byte(strategy) + byte(numHash) + int(dataLen) + N*long(data)."""
-        import struct
-        with open(path, "wb") as f:
-            f.write(struct.pack(">b", 1))       # strategy = MURMUR128_MITZ_64 (ordinal 1)
-            f.write(struct.pack(">B", self.num_hash_functions))
-            f.write(struct.pack(">I", self.num_longs))
-            for val in self.bits:
-                f.write(struct.pack(">Q", val))
-
+# Staging dir for the per-category entry lists. These .txt files are the INPUT to
+# `qfilter_writer` (see build_qfilters.sh), which builds one `<stem>.qf` per file
+# into assets/scan/. The .txt themselves are NOT shipped. Stems match the Rust
+# `CATS` table in hydradragonandroid/src/url_scan.rs.
+STAGE_DIR = Path("qf_build")
 
 def extract_domains_from_csv(filepath: str, column: int = 0) -> set:
     domains = set()
@@ -143,12 +85,8 @@ def extract_domains_skip_zero(filepath: str) -> set:
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--bloom", action="store_true", help="Generate .bloom files (requires mmh3)")
-    args = parser.parse_args()
-
     os.chdir(Path(__file__).parent)
-    ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+    STAGE_DIR.mkdir(parents=True, exist_ok=True)
 
     # ── Blacklist ──────────────────────────────────────────────────
     black = set()
@@ -225,12 +163,12 @@ def main():
     # combined malicious.bloom, so we don't ship a separate malware.bloom.
     COMBINED_ONLY = {"malware"}
 
-    # ── Write category text files ───────────────────────────────────
-    print("\n=== Writing category text files ===")
+    # ── Write category text files (staging, stems match the Rust CATS) ──────
+    print("\n=== Writing category text files (qf_build/) ===")
     for name, domains in sorted(categories.items()):
         if name in COMBINED_ONLY:
             continue
-        txt_path = ASSETS_DIR / f"{name}_domains.txt"
+        txt_path = STAGE_DIR / f"{name}.txt"
         with open(str(txt_path), "w", encoding="utf-8") as f:
             for d in sorted(domains):
                 f.write(d + "\n")
@@ -241,16 +179,16 @@ def main():
     combined = set()
     for d in categories.values():
         combined |= d
-    combined_txt = ASSETS_DIR / "malicious_domains.txt"
+    combined_txt = STAGE_DIR / "malicious.txt"
     with open(str(combined_txt), "w", encoding="utf-8") as f:
         for d in sorted(combined):
             f.write(d + "\n")
-    print(f"\n  malicious_domains.txt: {len(combined):,} entries,"
+    print(f"\n  malicious.txt: {len(combined):,} entries,"
           f" {os.path.getsize(str(combined_txt)):,} bytes")
 
-    print("\n  Run dev-tools/bloom_writer/build_run.bat to generate one .bloom per")
-    print("  category text file above (phishing.bloom, malwareurl.bloom, ...) plus")
-    print("  the combined malicious.bloom, using BloomWriter.java (uses real Guava).")
+    print("\n  Next: build_url_blooms.py (writes whitelist-FILTERED malwareurl.txt /")
+    print("  phishingurl.txt into qf_build/), then ./build_qfilters.sh to turn every")
+    print("  qf_build/<stem>.txt into assets/scan/<stem>.qf via qfilter_writer (1e-6).")
 
 
 if __name__ == "__main__":

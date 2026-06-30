@@ -17,6 +17,8 @@ use std::sync::OnceLock;
 use hydradragonclamav::{Engine as ClamavEngine, ScanOptions};
 use hydradragonml::Model;
 
+mod url_scan;
+
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jstring, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
@@ -31,6 +33,17 @@ const MODEL_BIN: &str = "apk_model.bin";
 /// Malware TLSH similarity database (one T1 digest per line), built from the
 /// MalwareBazaar dump filtered to apk/elf/so/dex (`gen_tlsh_db.py`).
 const TLSH_DB: &str = "malware_tlsh.txt";
+/// NSRL known-good SHA-256 whitelist as a serialized `qfilter` (quotient filter),
+/// mmap'd and queried ZERO-COPY (`FilterRef<'static>`). The filter bytes live in
+/// the OS page cache (reclaimable), not the app's dirty heap, so even a
+/// multi-hundred-MB whitelist costs almost no resident RAM and can't trigger the
+/// per-app Java OOM.
+const WHITELIST_QF: &str = "whitelist.qf";
+
+/// A `qfilter` borrowing its buffer from an mmap leaked for the process lifetime
+/// (the whitelist/URL filters load once at init and live until the process dies,
+/// so the leak is intentional — it keeps the mapping alive for the static borrow).
+type QFilter = qfilter::Filter<&'static [u8]>;
 /// A scanned buffer whose TLSH distance to a known-malware digest is at or below
 /// this is flagged as similar. Lower = stricter (fewer FP). TLSH distance: 0 =
 /// identical, <30 very close, <70 related (per the TLSH paper).
@@ -45,6 +58,10 @@ struct Engine {
     model: Option<Model>,
     /// Known-malware TLSH digests (apk/elf/so/dex) for fuzzy-similarity detection.
     tlsh_db: Vec<tlsh_rs::TlshDigest>,
+    /// NSRL known-good SHA-256 whitelist (qfilter, mmap'd zero-copy).
+    whitelist: Option<QFilter>,
+    /// Malicious domain/URL qfilters + public-suffix list (mmap'd zero-copy).
+    url_scanner: Option<url_scan::UrlScanner>,
 }
 
 static ENGINE: OnceLock<Engine> = OnceLock::new();
@@ -153,12 +170,47 @@ fn do_init(dir: &str) -> Engine {
     };
     let tlsh_db = load_tlsh_db(&base.join(TLSH_DB));
     report.push_str(&format!(" tlsh={}", tlsh_db.len()));
+
+    let whitelist = load_whitelist(&base.join(WHITELIST_QF));
+    report.push_str(&format!(" whitelist={}", if whitelist.is_some() { "ok" } else { "none" }));
+
+    let url_scanner = std::panic::catch_unwind(|| url_scan::UrlScanner::load(base))
+        .ok()
+        .flatten();
+    report.push_str(&format!(" url={}", if url_scanner.is_some() { "ok" } else { "none" }));
+
     set_status(report);
     Engine {
         clamav,
         model,
         tlsh_db,
+        whitelist,
+        url_scanner,
     }
+}
+
+/// mmap a serialized `qfilter` file and return a ZERO-COPY `FilterRef` borrowing
+/// the mapped bytes. The mmap is leaked (Box::leak) so the borrow is `'static`:
+/// these filters load once at init and live for the whole process, and the leak
+/// keeps the mapping alive without a self-referential struct. The filter bytes
+/// stay in the OS page cache (paged in on demand, reclaimable under pressure) —
+/// almost no resident heap RAM regardless of file size. Returns None if the file
+/// is absent or not a valid qfilter.
+pub(crate) fn load_qfilter(path: &std::path::Path) -> Option<QFilter> {
+    let file = std::fs::File::open(path).ok()?;
+    // SAFETY: the file is a read-only asset we ship; we never mutate it while
+    // mapped. The mapping is leaked, so it outlives every borrow.
+    let mmap = unsafe { memmap2::Mmap::map(&file).ok()? };
+    let leaked: &'static memmap2::Mmap = Box::leak(Box::new(mmap));
+    let slice: &'static [u8] = &leaked[..];
+    std::panic::catch_unwind(|| postcard::from_bytes::<QFilter>(slice).ok())
+        .ok()
+        .flatten()
+}
+
+/// Load the NSRL whitelist quotient filter (mmap, zero-copy). None if absent.
+fn load_whitelist(path: &std::path::Path) -> Option<QFilter> {
+    load_qfilter(path)
 }
 
 /// Load the malware TLSH digests (one `T1...` per line) into parsed digests.
@@ -262,6 +314,51 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     let s = INIT_STATUS.lock().map(|g| g.clone()).unwrap_or_default();
     match env.new_string(&s) {
         Ok(j) => j.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+/// `boolean nativeIsHashWhitelisted(String sha256)` — true if the lowercase-hex
+/// SHA-256 is in the NSRL whitelist (mmap'd qfilter). Lets Java suppress false
+/// positives by hash without holding the (large) filter in the Java heap.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeIsHashWhitelisted<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    hash: JString<'local>,
+) -> jboolean {
+    let h: String = match env.get_string(&hash) {
+        Ok(s) => s.into(),
+        Err(_) => return JNI_FALSE,
+    };
+    let hit = ENGINE
+        .get()
+        .and_then(|e| e.whitelist.as_ref())
+        .map(|wl| wl.contains(h.to_lowercase().as_str()))
+        .unwrap_or(false);
+    if hit { JNI_TRUE } else { JNI_FALSE }
+}
+
+/// `String nativeScanUrl(String url)` — malicious category (e.g. "PHISHING")
+/// for an http(s) URL, or "" if clean / not a URL. All membership is the native
+/// mmap'd qfilter URL/domain scanner, so no filter sits in the Java heap.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanUrl<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    url: JString<'local>,
+) -> jstring {
+    let u: String = match env.get_string(&url) {
+        Ok(s) => s.into(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let cat = ENGINE
+        .get()
+        .and_then(|e| e.url_scanner.as_ref())
+        .and_then(|s| s.scan(&u))
+        .unwrap_or("");
+    match env.new_string(cat) {
+        Ok(s) => s.into_raw(),
         Err(_) => std::ptr::null_mut(),
     }
 }
