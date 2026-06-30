@@ -1,0 +1,269 @@
+name: Release
+permissions:
+  # Allow this action to create releases.
+  contents: write
+on:
+  create:
+    tags:
+    - 'v*'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+jobs:
+  build:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    env:
+      CARGO_TERM_COLOR: always
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+        - linux-arm
+        - linux-intel
+        - macos-arm
+        - macos-intel
+        - windows
+        include:
+        - build: linux-intel
+          os: ubuntu-latest
+          target: x86_64-unknown-linux-gnu
+
+        - build: linux-arm
+          os: ubuntu-24.04-arm
+          target: aarch64-unknown-linux-gnu
+
+        - build: macos-intel
+          os: macos-latest
+          target: x86_64-apple-darwin
+
+        - build: macos-arm
+          os: macos-latest
+          target: aarch64-apple-darwin
+
+        - build: windows
+          os: windows-latest
+          target: x86_64-pc-windows-msvc
+
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+
+    - name: Check version number
+      shell: bash
+      run: |
+        set -ex
+        version=`cargo pkgid --manifest-path lib/Cargo.toml | cut -d "@" -f2`
+        if [ "${{ github.ref_name }}" != "v$version" ]; then
+          exit 1
+        fi
+
+    - run: rustup target add ${{ matrix.target }}
+
+    - name: Build
+      run: cargo build --bin yr --profile release-lto --target ${{ matrix.target }}
+      env:
+        RUSTFLAGS: "-C target-feature=+crt-static"
+
+    - name: Build C library
+      if: contains(matrix.build, 'windows')
+      run: |
+        cargo install cargo-c
+        cargo cbuild --profile release-lto --target ${{ matrix.target }}
+      env:
+        RUSTFLAGS: "-C target-feature=+crt-static"
+
+    - name: Build archive
+      shell: bash
+      run: |
+        set -ex
+        pkgname=yara-x-${{ github.ref_name }}-${{ matrix.target }}
+        if [ "${{ matrix.build }}" = "windows" ]; then
+            7z a $pkgname.zip ./target/${{ matrix.target }}/release-lto/yr.exe
+            7z a yara-x-capi-${{ github.ref_name }}-${{ matrix.target }}.zip \
+               ./target/${{ matrix.target }}/release-lto/yara_x.h \
+               ./target/${{ matrix.target }}/release-lto/yara_x_capi.def \
+               ./target/${{ matrix.target }}/release-lto/yara_x_capi.lib \
+               ./target/${{ matrix.target }}/release-lto/yara_x_capi.dll.lib \
+               ./target/${{ matrix.target }}/release-lto/yara_x_capi.dll
+        else
+            tar czf $pkgname.tar.gz -C target/${{ matrix.target }}/release-lto yr
+        fi
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: yr-${{ matrix.target }}
+        path: yara-x-*
+
+  build-py:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+        - cp39
+        - pp311
+        build:
+        - linux-intel
+        - linux-arm
+        - macos
+        - windows
+        include:
+        - build: linux-intel
+          os: ubuntu-latest
+          arch: 'x86_64'
+
+        - build: linux-arm
+          os: ubuntu-24.04-arm
+          arch: 'aarch64'
+
+        - build: macos
+          os: macos-latest
+          arch: 'arm64 x86_64'
+
+        - build: windows
+          os: windows-latest
+          arch: 'x86 AMD64'
+
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+
+    - name: Check version number
+      shell: bash
+      run: |
+        set -ex
+        version=`cargo pkgid --manifest-path lib/Cargo.toml | cut -d "@" -f2`
+        if [ "${{ github.ref_name }}" != "v$version" ]; then
+          exit 1
+        fi
+
+    - name: Install Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3.12'
+
+    - run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      if: matrix.build == 'macos'
+
+    - name: Install Python dependencies
+      run: pip install -U setuptools wheel twine cibuildwheel platformdirs
+
+    - name: Build sdist
+      if: matrix.build == 'linux' && matrix.python-version == 'cp39'
+      run: |
+        pip install maturin==1.7.4
+        maturin sdist --manifest-path py/Cargo.toml -o wheelhouse
+
+    - name: Build ${{ matrix.platform || matrix.os }} binaries
+      run: cibuildwheel --output-dir wheelhouse py
+      env:
+        CIBW_ENABLE: 'pypy'
+        CIBW_BUILD: '${{ matrix.python-version }}-*'
+        # wasmtime doesn't support i686
+        CIBW_SKIP: '*_i686 *-musllinux*  *-win32'
+        # we build for "arch" if it exists, else 'auto'
+        CIBW_ARCHS: ${{ matrix.arch || 'auto' }}
+
+        CIBW_BEFORE_BUILD_LINUX: >
+          curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=stable --profile=minimal -y &&
+          rustup show
+
+        CIBW_ENVIRONMENT_LINUX: 'PATH="$HOME/.cargo/bin:$PATH" '
+        CIBW_ENVIRONMENT_WINDOWS: 'PATH="$UserProfile\.cargo\bin;$PATH"'
+
+        CIBW_TEST_REQUIRES: pytest
+        CIBW_TEST_COMMAND: 'pytest {project}/py'
+        CIBW_TEST_SKIP: '*-macosx_arm64 *-macosx_universal2:arm64'
+        CIBW_BUILD_VERBOSITY: 1
+
+        MACOSX_DEPLOYMENT_TARGET: '14.0'
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: pypi-${{ matrix.build }}-${{ matrix.python-version }}
+        path: ./wheelhouse/*.whl
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: pypi-source-${{ strategy.job-index }}
+        path: ./wheelhouse/*.tar.gz
+
+  publish:
+    needs: [ build ]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        pattern: yr-*
+
+    - name: ls
+      shell: bash
+      run: ls
+
+    - name: Release
+      uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+      with:
+        draft: true
+        files: yr-*/yara-x-*
+
+  publish-crate:
+    needs: [ publish ]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Publish crate
+      env:
+        # Don't re-generate `modules.rs`, `add_modules.rs` and the files in
+        # `protos/generated`. Use the ones in the repository. These files can't
+        # be regenerated because `cargo publish` checks that the repository
+        # doesn't change during the build.
+        # See: https://github.com/rust-lang/cargo/pull/5584
+        YRX_REGENERATE_MODULES_RS: "no"
+      run: |
+        cargo login ${{ secrets.CRATES_IO_API_TOKEN }}
+        cargo publish -p yara-x-macros
+        cargo publish -p yara-x-proto
+        cargo publish -p yara-x-parser
+        cargo publish -p yara-x-fmt
+        cargo publish -p yara-x
+        cargo publish -p yara-x-capi
+        cargo publish -p yara-x-cli
+
+  publish-py:
+    needs: [ build-py ]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/yara-x
+    permissions:
+      id-token: write
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        pattern: pypi-*
+        merge-multiple: true
+        path: dist
+
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
+      with:
+        #repository-url: https://test.pypi.org/legacy/
+        skip-existing: true

@@ -1,0 +1,109 @@
+use nom::error::ErrorKind;
+use nom::number::complete::u8;
+use nom::{Err, IResult};
+
+/// Parser that reads [ULEB128][1].
+///
+/// Notice however that this function returns a `u64`, so it's able to parse
+/// numbers up to 2^64-1. When parsing larger numbers it fails, even if they
+/// are valid ULEB128.
+///
+/// [1]: https://en.wikipedia.org/wiki/LEB128
+pub fn uleb128(input: &[u8]) -> IResult<&[u8], u64> {
+    let mut val: u64 = 0;
+    let mut shift: u32 = 0;
+
+    let mut data = input;
+    let mut byte: u8;
+
+    loop {
+        // Read one byte of data.
+        (data, byte) = u8(data)?;
+
+        // Use all the bits, except the most significant one.
+        let b = (byte & 0x7f) as u64;
+
+        val |= b.checked_shl(shift).ok_or(Err::Error(
+            nom::error::Error::new(input, ErrorKind::TooLarge),
+        ))?;
+
+        // Break if the most significant bit is zero.
+        if byte & 0x80 == 0 {
+            break;
+        }
+
+        shift += 7;
+    }
+
+    Ok((data, val))
+}
+
+/// Parser that reads [SLEB128][1].
+///
+/// Notice however that this function returns an `i64`, so it's able to parse
+/// numbers from -2^63 to 2^63-1. When parsing numbers out of that range it
+/// fails, even if they are valid ULEB128.
+///
+/// [1]: https://en.wikipedia.org/wiki/LEB128
+pub fn sleb128(input: &[u8]) -> IResult<&[u8], i64> {
+    let mut val: i64 = 0;
+    let mut shift: u32 = 0;
+
+    let mut data = input;
+    let mut byte: u8;
+
+    loop {
+        (data, byte) = u8(data)?;
+
+        // Use all the bits, except the most significant one.
+        let b = (byte & 0x7f) as i64;
+
+        val |= b.checked_shl(shift).ok_or(Err::Error(
+            nom::error::Error::new(input, ErrorKind::TooLarge),
+        ))?;
+
+        shift += 7;
+
+        // Break if the most significant bit is zero.
+        if byte & 0x80 == 0 {
+            break;
+        }
+    }
+
+    if shift < i64::BITS && (byte & 0x40) != 0 {
+        val |= !0 << shift;
+    }
+
+    Ok((data, val))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nom::error::ErrorKind;
+
+    #[test]
+    fn test_uleb128() {
+        assert_eq!(uleb128(&[0x00]), Ok((&[][..], 0)));
+        assert_eq!(uleb128(&[0x01]), Ok((&[][..], 1)));
+        assert_eq!(uleb128(&[0xe5, 0x8e, 0x26]), Ok((&[][..], 624485)));
+        assert_eq!(uleb128(&[0x80, 0x01, 0xff]), Ok((&[0xff][..], 128)));
+        let overflow = [0x80; 11];
+        assert!(
+            matches!(uleb128(&overflow), Err(nom::Err::Error(e)) if e.code == ErrorKind::TooLarge)
+        );
+    }
+
+    #[test]
+    fn test_sleb128() {
+        assert_eq!(sleb128(&[0x00]), Ok((&[][..], 0)));
+        assert_eq!(sleb128(&[0x01]), Ok((&[][..], 1)));
+        assert_eq!(sleb128(&[0x7f]), Ok((&[][..], -1)));
+        assert_eq!(sleb128(&[0x80, 0x7f]), Ok((&[][..], -128)));
+        assert_eq!(sleb128(&[0x9b, 0xf1, 0x59]), Ok((&[][..], -624485)));
+        let overflow = [0x80; 11];
+        assert!(
+            matches!(sleb128(&overflow), Err(nom::Err::Error(e)) if e.code == ErrorKind::TooLarge)
+        );
+    }
+}
