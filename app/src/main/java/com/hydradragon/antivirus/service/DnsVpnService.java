@@ -55,6 +55,8 @@ public class DnsVpnService extends VpnService {
     private volatile boolean running;
     private ExecutorService forwarders;
     private FileOutputStream tunOut;
+    /** CIDR blacklist for resolved-IP sinkholing (loaded once). */
+    private com.hydradragon.antivirus.engine.CidrBlacklist cidr;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -66,6 +68,7 @@ public class DnsVpnService extends VpnService {
         }
         if (running) return START_NOT_STICKY;
         startForegroundShield();
+        cidr = com.hydradragon.antivirus.engine.CidrBlacklist.get(this);
         forwarders = Executors.newCachedThreadPool();
         if (establish()) {
             running = true;
@@ -168,6 +171,12 @@ public class DnsVpnService extends VpnService {
         String host = parseQName(p, dnsOff, len);
         if (host == null || host.isEmpty()) return;
 
+        // Attribute the query to the app that made it, for the hydradragon
+        // dynamic-analysis module (which app contacted which domain).
+        String pkg = ownerPackage(android.system.OsConstants.IPPROTO_UDP, p, ver,
+            srcOff, dstOff, u16(p, ipHdr), u16(p, ipHdr + 2));
+        com.hydradragon.antivirus.engine.NetworkObservations.addDomain(pkg, host);
+
         String cat = UrlThreatScanner.get(this).scanUrl("http://" + host);
         if (cat != null) {
             byte[] dns = nxdomain(p, dnsOff, len);
@@ -176,6 +185,9 @@ public class DnsVpnService extends VpnService {
             return;
         }
         final byte[] q = slice(p, dnsOff, len - dnsOff);
+        final String fpkg = pkg;
+        final String fhost = host;
+        final int fDnsOff = dnsOff, fLen = len;
         forwarders.execute(() -> {
             try (DatagramSocket s = new DatagramSocket()) {
                 protect(s);
@@ -186,11 +198,73 @@ public class DnsVpnService extends VpnService {
                 DatagramPacket rp = new DatagramPacket(ans, ans.length);
                 s.receive(rp);
                 byte[] dns = slice(ans, 0, rp.getLength());
-                writeTun(buildUdp(p, ver, ipHdr, srcOff, dstOff, dns, dns.length));
+
+                // IP extraction: record each resolved IP for the app (hydradragon
+                // `network.host`) and sinkhole the answer if any resolved IP is in
+                // the CIDR blacklist.
+                boolean ipBlocked = false;
+                for (InetAddress ip : extractDnsIps(dns, dns.length)) {
+                    com.hydradragon.antivirus.engine.NetworkObservations
+                        .addHost(fpkg, ip.getHostAddress());
+                    if (cidr != null && cidr.contains(ip)) ipBlocked = true;
+                }
+                if (ipBlocked) {
+                    byte[] nx = nxdomain(p, fDnsOff, fLen);
+                    writeTun(buildUdp(p, ver, ipHdr, srcOff, dstOff, nx, nx.length));
+                    notifyBlocked(fhost, "MALICIOUS_IP");
+                } else {
+                    writeTun(buildUdp(p, ver, ipHdr, srcOff, dstOff, dns, dns.length));
+                }
             } catch (Exception e) {
                 Log.w(TAG, "udp forward: " + e.getMessage());
             }
         });
+    }
+
+    /** Extract A (IPv4) and AAAA (IPv6) record addresses from a DNS answer. */
+    private static java.util.List<InetAddress> extractDnsIps(byte[] dns, int len) {
+        java.util.List<InetAddress> out = new java.util.ArrayList<>();
+        if (len < 12) return out;
+        int qd = u16(dns, 4);
+        int an = u16(dns, 6);
+        int off = 12;
+        for (int i = 0; i < qd; i++) {
+            off = skipDnsName(dns, off, len);
+            if (off < 0 || off + 4 > len) return out;
+            off += 4; // qtype + qclass
+        }
+        for (int i = 0; i < an && i < 256; i++) {
+            off = skipDnsName(dns, off, len);
+            if (off < 0 || off + 10 > len) return out;
+            int type = u16(dns, off);
+            int rdlen = u16(dns, off + 8);
+            off += 10;
+            if (off + rdlen > len) return out;
+            try {
+                if (type == 1 && rdlen == 4) {
+                    byte[] a = new byte[4];
+                    System.arraycopy(dns, off, a, 0, 4);
+                    out.add(InetAddress.getByAddress(a));
+                } else if (type == 28 && rdlen == 16) {
+                    byte[] a = new byte[16];
+                    System.arraycopy(dns, off, a, 0, 16);
+                    out.add(InetAddress.getByAddress(a));
+                }
+            } catch (Exception ignore) { }
+            off += rdlen;
+        }
+        return out;
+    }
+
+    /** Advance past a DNS name (label sequence or compression pointer). */
+    private static int skipDnsName(byte[] d, int off, int len) {
+        while (off < len) {
+            int l = d[off] & 0xFF;
+            if (l == 0) return off + 1;
+            if ((l & 0xC0) == 0xC0) return off + 2; // compression pointer
+            off += 1 + l;
+        }
+        return -1;
     }
 
     // ── TCP DNS (best-effort minimal state machine) ─────────────────────────
@@ -222,6 +296,14 @@ public class DnsVpnService extends VpnService {
             int dnsStart = payloadOff + 2;
             if (dnsStart + dnsLen > len) dnsLen = len - dnsStart;
             String host = parseQName(p, dnsStart, dnsStart + dnsLen);
+            final String fhost = host;
+            final String fpkg = (host != null && !host.isEmpty())
+                ? ownerPackage(android.system.OsConstants.IPPROTO_TCP, p, ver,
+                    srcOff, dstOff, u16(p, tcp), u16(p, tcp + 2))
+                : null;
+            if (host != null && !host.isEmpty()) {
+                com.hydradragon.antivirus.engine.NetworkObservations.addDomain(fpkg, host);
+            }
             long clientNext = (seq + payloadLen) & 0xFFFFFFFFL;   // ack their data
             long ourSeq = 1001L;                                  // after our SYN
 
@@ -254,6 +336,27 @@ public class DnsVpnService extends VpnService {
                     int n = sk.getInputStream().read(buf);
                     if (n <= 0) return;
                     byte[] reply = slice(buf, 0, n);                 // already length-prefixed
+
+                    // IP extraction (TCP): feed resolved IPs to hydradragon and
+                    // sinkhole if any is in the CIDR blacklist.
+                    boolean ipBlocked = false;
+                    if (reply.length > 2) {
+                        byte[] msg = slice(reply, 2, reply.length - 2);
+                        for (InetAddress ip : extractDnsIps(msg, msg.length)) {
+                            com.hydradragon.antivirus.engine.NetworkObservations
+                                .addHost(fpkg, ip.getHostAddress());
+                            if (cidr != null && cidr.contains(ip)) ipBlocked = true;
+                        }
+                    }
+                    if (ipBlocked) {
+                        byte[] nx = frameTcpDns(nxdomain(query, 2, query.length));
+                        writeTun(buildTcp(fp, fVer, fIpHdr, fSrc, fDst, fTcp,
+                            fOurSeq, fClientNext, 0x18, nx, nx.length));
+                        writeTun(buildTcp(fp, fVer, fIpHdr, fSrc, fDst, fTcp,
+                            (fOurSeq + nx.length) & 0xFFFFFFFFL, fClientNext, 0x11, null, 0));
+                        notifyBlocked(fhost, "MALICIOUS_IP");
+                        return;
+                    }
                     byte[] data = buildTcp(fp, fVer, fIpHdr, fSrc, fDst, fTcp,
                         fOurSeq, fClientNext, 0x18, reply, reply.length);
                     writeTun(data);
@@ -281,6 +384,37 @@ public class DnsVpnService extends VpnService {
         out[1] = (byte) (dns.length & 0xFF);
         System.arraycopy(dns, 0, out, 2, dns.length);
         return out;
+    }
+
+    /**
+     * Resolve the package name of the app that owns the connection described by
+     * this packet (so a DNS query can be attributed to the app that made it).
+     * Uses {@code ConnectivityManager.getConnectionOwnerUid} (API 29+); returns
+     * null on older devices or when the owner can't be determined.
+     */
+    private String ownerPackage(int ipProto, byte[] p, int ver, int srcOff, int dstOff,
+                                int srcPort, int dstPort) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) return null;
+        try {
+            int alen = (ver == 4) ? 4 : 16;
+            byte[] sip = new byte[alen];
+            byte[] dip = new byte[alen];
+            System.arraycopy(p, srcOff, sip, 0, alen);
+            System.arraycopy(p, dstOff, dip, 0, alen);
+            java.net.InetSocketAddress local =
+                new java.net.InetSocketAddress(java.net.InetAddress.getByAddress(sip), srcPort);
+            java.net.InetSocketAddress remote =
+                new java.net.InetSocketAddress(java.net.InetAddress.getByAddress(dip), dstPort);
+            android.net.ConnectivityManager cm =
+                (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            if (cm == null) return null;
+            int uid = cm.getConnectionOwnerUid(ipProto, local, remote);
+            if (uid < 0) return null; // INVALID_UID
+            String[] pkgs = getPackageManager().getPackagesForUid(uid);
+            return (pkgs != null && pkgs.length > 0) ? pkgs[0] : null;
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     // ── DNS helpers ─────────────────────────────────────────────────────────
@@ -424,6 +558,7 @@ public class DnsVpnService extends VpnService {
     // ── lifecycle / notifications ───────────────────────────────────────────
 
     private void notifyBlocked(String host, String cat) {
+        if (host == null) return;
         try {
             NotificationManager nm = getSystemService(NotificationManager.class);
             nm.notify(host.hashCode(), new Notification.Builder(this, CH_ID)

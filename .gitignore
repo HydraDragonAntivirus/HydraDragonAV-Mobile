@@ -9,3 +9,5 @@ downloads/
 # YARA-X compiled files
 yara-x/compiled/
 whitelist/
+# nist.gov RDS sql database
+sql/

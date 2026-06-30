@@ -64,7 +64,7 @@ public final class NativeScanner {
 
     private static native boolean nativeInit(String dir);
 
-    private static native String nativeScanApk(String path);
+    private static native String nativeScanApk(String path, String hydradragonJson);
 
     /** Diagnostics: what loaded / failed during the last nativeInit. */
     private static native String nativeStatus();
@@ -123,10 +123,16 @@ public final class NativeScanner {
      *         or {@code {"error":"..."}} on failure.
      */
     public static String scanApk(String apkPath) {
+        return scanApk(apkPath, null);
+    }
+
+    /** Scan an APK, feeding the {@code hydradragon} module the live-network report
+     *  attributed to {@code packageName} (null for an uninstalled APK file). */
+    public static String scanApk(String apkPath, String packageName) {
         if (!ready) {
             return "{\"error\":\"not initialised\"}";
         }
-        return nativeScanApk(apkPath);
+        return nativeScanApk(apkPath, NetworkObservations.buildReportJson(packageName));
     }
 
     /** Parsed scan verdict. */
@@ -169,16 +175,22 @@ public final class NativeScanner {
         public boolean isSkipped() { return skippedTarget != null; }
     }
 
-    /**
-     * Scan an APK and return a fully-parsed {@link Verdict}.
-     */
     public static Verdict scan(String apkPath) {
+        return scan(apkPath, null);
+    }
+
+    /**
+     * Scan an APK and return a fully-parsed {@link Verdict}. {@code packageName}
+     * scopes the live-network ({@code hydradragon}) report to that app; pass null
+     * for an uninstalled APK file (no runtime activity attributed).
+     */
+    public static Verdict scan(String apkPath, String packageName) {
         Verdict v = new Verdict();
         if (!ready) {
             v.error = "not initialised";
             return v;
         }
-        String json = scanApk(apkPath);
+        String json = scanApk(apkPath, packageName);
         if (json == null) {
             v.error = "null native result";
             return v;

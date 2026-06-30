@@ -9,6 +9,13 @@
 
 HydraDragonAV Mobile is a state-of-the-art Android Antivirus and Security suite built to stop the most advanced threats, including Ransomware, Clickjacking, and zero-day spyware. Designed with a **Zero-Trust architecture**, it actively defends Android ecosystems using dynamic behavior analysis and AI-powered static scanning.
 
+> **📋 Requirements: Android 10 (API 29) or newer.** The per-app dynamic network
+> analysis — attributing each DNS/connection to the exact app that made it and
+> feeding it to the YARA-X `hydradragon` module — relies on
+> `ConnectivityManager.getConnectionOwnerUid`, which is only available on
+> Android 10+. On older versions the rest of the suite still runs, but per-app
+> connection attribution is unavailable.
+
 ## 🚀 Key Features
 
 - **⚡ Photon Technology:** Ultra-fast, multi-threaded scanning engine utilizing `ConcurrentHashMap` caching to instantly verify previously scanned safe applications with zero CPU overhead.

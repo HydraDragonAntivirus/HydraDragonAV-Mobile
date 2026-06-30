@@ -68,20 +68,23 @@ impl YaraEngine {
         &self,
         data: &[u8],
         object_path: &str,
-        androguard: Option<&[u8]>,
+        module_meta: &[(&str, &[u8])],
     ) -> Vec<ScanMatch> {
         let mut scanner = yara_x::Scanner::new(&self.rules);
-        // Feed the androguard JSON report (if any) to the `androguard` module so
-        // its functions (permission/url/activity/...) can query it.
-        let results = if let Some(meta) = androguard {
-            let mut opts = yara_x::ScanOptions::new();
-            opts = opts.set_module_metadata("androguard", meta);
-            match scanner.scan_with_options(data, opts) {
+        // Feed any per-module JSON reports (androguard manifest report,
+        // hydradragon live-network report, ...) so those modules' functions can
+        // query them.
+        let results = if module_meta.is_empty() {
+            match scanner.scan(data) {
                 Ok(r) => r,
                 Err(_) => return Vec::new(),
             }
         } else {
-            match scanner.scan(data) {
+            let mut opts = yara_x::ScanOptions::new();
+            for (name, meta) in module_meta {
+                opts = opts.set_module_metadata(name, meta);
+            }
+            match scanner.scan_with_options(data, opts) {
                 Ok(r) => r,
                 Err(_) => return Vec::new(),
             }

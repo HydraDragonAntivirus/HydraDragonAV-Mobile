@@ -382,7 +382,7 @@ public class ScanEngine {
                         || seen.contains(app.packageName))) continue;
                 // Hash-first fast path: known-good APK → skip the deep scan.
                 if (isFileWhitelisted(app.sourceDir)) continue;
-                NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir);
+                NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir, app.packageName);
                 if (v == null) continue;
                 // Per-detection suppression (a hit inside a whitelisted APK is an
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
@@ -588,7 +588,7 @@ public class ScanEngine {
                 // Hash-first: a known-good (whitelisted) APK skips the whole native
                 // block — no scan, no detections, no permission flag.
                 if (apkPath != null && NativeScanner.isReady() && !isFileWhitelisted(apkPath)) {
-                    NativeScanner.Verdict v = NativeScanner.scan(apkPath);
+                    NativeScanner.Verdict v = NativeScanner.scan(apkPath, app.packageName);
                     fileSha256 = v.sha256;
                     // Per-detection whitelist suppression (hit inside a whitelisted
                     // APK = FP; non-APK virus alongside it survives).

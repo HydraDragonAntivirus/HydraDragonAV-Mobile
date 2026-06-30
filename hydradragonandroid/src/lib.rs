@@ -205,23 +205,30 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 
 /// `String nativeScanApk(String path)` — returns a JSON verdict.
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanApk(
-    mut env: JNIEnv,
-    _class: JClass,
-    path: JString,
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanApk<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    path: JString<'local>,
+    hydradragon_json: JString<'local>,
 ) -> jstring {
-    let result = scan_apk(&mut env, path);
+    let result = scan_apk(&mut env, path, hydradragon_json);
     match env.new_string(&result) {
         Ok(s) => s.into_raw(),
         Err(_) => std::ptr::null_mut(),
     }
 }
 
-fn scan_apk(env: &mut JNIEnv, path: JString) -> String {
+fn scan_apk(env: &mut JNIEnv, path: JString, hydradragon_json: JString) -> String {
     let path: String = match env.get_string(&path) {
         Ok(s) => s.into(),
         Err(_) => return r#"{"error":"bad path"}"#.to_string(),
     };
+    // Live-network report from Java (hydradragon module). Empty/absent → None.
+    let hydradragon: Option<Vec<u8>> = env
+        .get_string(&hydradragon_json)
+        .ok()
+        .map(|s| String::from(s).into_bytes())
+        .filter(|b| !b.is_empty());
     let Some(engine) = ENGINE.get() else {
         return r#"{"error":"not initialised"}"#.to_string();
     };
@@ -233,7 +240,9 @@ fn scan_apk(env: &mut JNIEnv, path: JString) -> String {
     // Scan on a big-stack thread (deep clamav/yara recursion) which also catches
     // any panic — so neither a deep stack nor a panic on a malformed/adversarial
     // APK can SIGABRT the whole app process.
-    let scanned = on_big_stack(move || run_scan(engine, &bytes, &path));
+    let scanned = on_big_stack(move || {
+        run_scan(engine, &bytes, &path, hydradragon.as_deref())
+    });
     match scanned {
         Ok(s) => s,
         Err(_) => {
@@ -250,7 +259,7 @@ fn scan_apk(env: &mut JNIEnv, path: JString) -> String {
     }
 }
 
-fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
+fn run_scan(engine: &Engine, bytes: &[u8], path: &str, hydradragon: Option<&[u8]>) -> String {
     // Extract ONCE here in the bridge: `buffers` holds the top-level file plus
     // every buffer reachable by recursively unpacking archives (APK = zip, plus
     // gz/tar/xz/lzma/7z/rar). BOTH engines then scan every buffer, so a malicious
@@ -282,7 +291,17 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
     // `androguard` module so its rules (permission/url/package_name/...) work.
     // None when no AndroidManifest.xml is reachable (not an APK).
     let androguard_json = build_androguard_json(&buffers);
-    let androguard_meta: Option<&[u8]> = androguard_json.as_deref().map(str::as_bytes);
+    // Per-module metadata fed to YARA-X: the `androguard` static report and the
+    // `hydradragon` live-network report (passed in from Java's network monitor).
+    let mut module_meta: Vec<(&str, &[u8])> = Vec::new();
+    if let Some(j) = androguard_json.as_deref() {
+        module_meta.push(("androguard", j.as_bytes()));
+    }
+    if let Some(h) = hydradragon {
+        if !h.is_empty() {
+            module_meta.push(("hydradragon", h));
+        }
+    }
 
     // Each detection carries the APK lineage of the buffer it fired on, so Java
     // can suppress it iff one of those ancestor-APK hashes is whitelisted.
@@ -301,7 +320,7 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str) -> String {
                     } else {
                         format!("{path}#extract[{i}]")
                     };
-                    for m in clamav.scan_bytes_named(&b.data, &name, opts, androguard_meta) {
+                    for m in clamav.scan_bytes_named(&b.data, &name, opts, &module_meta) {
                         dets.push((m.name, b.apk_lineage.clone()));
                         if dets.len() >= opts.max_matches {
                             return dets;
