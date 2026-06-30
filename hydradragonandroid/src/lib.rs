@@ -16,6 +16,7 @@ use std::sync::OnceLock;
 
 use hydradragonclamav::{Engine as ClamavEngine, ScanOptions};
 use hydradragonml::Model;
+use hydradragonxorfilter::XorFilter;
 
 mod url_scan;
 
@@ -33,17 +34,12 @@ const MODEL_BIN: &str = "apk_model.bin";
 /// Malware TLSH similarity database (one T1 digest per line), built from the
 /// MalwareBazaar dump filtered to apk/elf/so/dex (`gen_tlsh_db.py`).
 const TLSH_DB: &str = "malware_tlsh.txt";
-/// NSRL known-good SHA-256 whitelist as a serialized `qfilter` (quotient filter),
-/// mmap'd and queried ZERO-COPY (`FilterRef<'static>`). The filter bytes live in
-/// the OS page cache (reclaimable), not the app's dirty heap, so even a
-/// multi-hundred-MB whitelist costs almost no resident RAM and can't trigger the
-/// per-app Java OOM.
-const WHITELIST_QF: &str = "whitelist.qf";
+/// NSRL known-good SHA-256 whitelist as a serialized Binary-Fuse (xor) filter
+/// (built offline by `xorfilter_writer`). Decoded once at init into an owned
+/// buffer on the native heap; binary-fuse encodings are far smaller than the
+/// equivalent quotient filter, so the whitelist stays modest in RAM.
+const WHITELIST_QF: &str = "whitelist.xf";
 
-/// A `qfilter` borrowing its buffer from an mmap leaked for the process lifetime
-/// (the whitelist/URL filters load once at init and live until the process dies,
-/// so the leak is intentional — it keeps the mapping alive for the static borrow).
-type QFilter = qfilter::Filter<&'static [u8]>;
 /// A scanned buffer whose TLSH distance to a known-malware digest is at or below
 /// this is flagged as similar. Lower = stricter (fewer FP). TLSH distance: 0 =
 /// identical, <30 very close, <70 related (per the TLSH paper).
@@ -58,9 +54,9 @@ struct Engine {
     model: Option<Model>,
     /// Known-malware TLSH digests (apk/elf/so/dex) for fuzzy-similarity detection.
     tlsh_db: Vec<tlsh_rs::TlshDigest>,
-    /// NSRL known-good SHA-256 whitelist (qfilter, mmap'd zero-copy).
-    whitelist: Option<QFilter>,
-    /// Malicious domain/URL qfilters + public-suffix list (mmap'd zero-copy).
+    /// NSRL known-good SHA-256 whitelist (Binary-Fuse xor filter).
+    whitelist: Option<XorFilter>,
+    /// Malicious domain/URL xor filters + public-suffix list.
     url_scanner: Option<url_scan::UrlScanner>,
 }
 
@@ -189,28 +185,16 @@ fn do_init(dir: &str) -> Engine {
     }
 }
 
-/// mmap a serialized `qfilter` file and return a ZERO-COPY `FilterRef` borrowing
-/// the mapped bytes. The mmap is leaked (Box::leak) so the borrow is `'static`:
-/// these filters load once at init and live for the whole process, and the leak
-/// keeps the mapping alive without a self-referential struct. The filter bytes
-/// stay in the OS page cache (paged in on demand, reclaimable under pressure) —
-/// almost no resident heap RAM regardless of file size. Returns None if the file
-/// is absent or not a valid qfilter.
-pub(crate) fn load_qfilter(path: &std::path::Path) -> Option<QFilter> {
-    let file = std::fs::File::open(path).ok()?;
-    // SAFETY: the file is a read-only asset we ship; we never mutate it while
-    // mapped. The mapping is leaked, so it outlives every borrow.
-    let mmap = unsafe { memmap2::Mmap::map(&file).ok()? };
-    let leaked: &'static memmap2::Mmap = Box::leak(Box::new(mmap));
-    let slice: &'static [u8] = &leaked[..];
-    std::panic::catch_unwind(|| postcard::from_bytes::<QFilter>(slice).ok())
-        .ok()
-        .flatten()
+/// Load a serialized Binary-Fuse (xor) filter from a `.xf` asset. The file is
+/// mmap'd to back the decode (pages come from the OS page cache); the returned
+/// filter owns its data. None if the file is absent or not a valid `.xf`.
+pub(crate) fn load_xor_filter(path: &std::path::Path) -> Option<XorFilter> {
+    XorFilter::load(path)
 }
 
-/// Load the NSRL whitelist quotient filter (mmap, zero-copy). None if absent.
-fn load_whitelist(path: &std::path::Path) -> Option<QFilter> {
-    load_qfilter(path)
+/// Load the NSRL whitelist xor filter. None if absent.
+fn load_whitelist(path: &std::path::Path) -> Option<XorFilter> {
+    load_xor_filter(path)
 }
 
 /// Load the malware TLSH digests (one `T1...` per line) into parsed digests.
@@ -318,9 +302,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }
 }
 
-/// `boolean nativeIsHashWhitelisted(String sha256)` — true if the lowercase-hex
-/// SHA-256 is in the NSRL whitelist (mmap'd qfilter). Lets Java suppress false
-/// positives by hash without holding the (large) filter in the Java heap.
+/// `boolean nativeIsHashWhitelisted(String sha256)` — true if the SHA-256 is in
+/// the NSRL whitelist (Binary-Fuse xor filter). Lets Java suppress false
+/// positives by hash without holding the filter in the Java heap.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeIsHashWhitelisted<'local>(
     mut env: JNIEnv<'local>,
@@ -334,14 +318,15 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     let hit = ENGINE
         .get()
         .and_then(|e| e.whitelist.as_ref())
-        .map(|wl| wl.contains(h.to_lowercase().as_str()))
+        // XorFilter::contains lowercases internally, so pass the hash as-is.
+        .map(|wl| wl.contains(&h))
         .unwrap_or(false);
     if hit { JNI_TRUE } else { JNI_FALSE }
 }
 
 /// `String nativeScanUrl(String url)` — malicious category (e.g. "PHISHING")
 /// for an http(s) URL, or "" if clean / not a URL. All membership is the native
-/// mmap'd qfilter URL/domain scanner, so no filter sits in the Java heap.
+/// xor-filter URL/domain scanner, so no filter sits in the Java heap.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanUrl<'local>(
     mut env: JNIEnv<'local>,

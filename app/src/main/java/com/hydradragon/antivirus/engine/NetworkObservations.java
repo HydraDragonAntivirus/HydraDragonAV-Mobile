@@ -19,7 +19,9 @@ import java.util.Map;
  * so the report fed when scanning {@code com.foo} contains only what
  * {@code com.foo} contacted.
  *
- * <p>JSON shape mirrors the cuckoo schema the module was cloned from:
+ * <p>JSON shape = the trimmed Suricata/Snort-style HIPS surface the module
+ * actually supports (DNS names + resolved IPs + URLs; no HTTP/port/behavior,
+ * which a MITM-free DNS shield can't observe):
  * <pre>{@code
  *   {"network":{"domains":[{"domain":"x.com"}],"hosts":["1.2.3.4"]},
  *    "urls":["http://x.com/path"]}

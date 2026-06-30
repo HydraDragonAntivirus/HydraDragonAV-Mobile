@@ -1,0 +1,17 @@
+[package]
+name = "hydradragonxorfilter"
+version = "0.1.0"
+edition = "2024"
+description = "Shared binary-fuse (xor) filter container: built offline by xorfilter_writer, queried on-device by hydradragonandroid. One crate => the bytes are byte-for-byte compatible across build host and arm64 device."
+license = "GPL-2.0-or-later"
+
+[dependencies]
+# Binary Fuse filters (BinaryFuse8/16/32). `serde` lets us (de)serialize the
+# filter with bincode. Default features (binary-fuse, uniform-random) kept.
+xorf = { version = "0.11", features = ["serde"] }
+# Compact, deterministic on-disk encoding of the filter, identical on the x86
+# build host and the arm64 device.
+bincode = { version = "2.0", features = ["serde"] }
+# mmap the filter file on-device so the file bytes are paged in from the OS page
+# cache during decode instead of going through a heap copy of the whole file.
+memmap2 = "0.9"

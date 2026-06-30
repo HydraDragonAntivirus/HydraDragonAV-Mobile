@@ -1,3 +1,20 @@
+//! `hydradragon` — a Suricata/Snort-style network HIPS module.
+//!
+//! Unlike the cuckoo module it was forked from, this is NOT a sandbox-behavior
+//! oracle: the Android Web-Shield is a MITM-free, DNS-only VPN, so the only
+//! signals we can actually observe AND attribute to a specific app are:
+//!
+//!   * the DNS names the app resolves            -> `hydradragon.network.dns_lookup`
+//!   * the destination IPs those names resolve to -> `hydradragon.network.host`
+//!   * full URLs the app contacts (when known)    -> `hydradragon.url`
+//!
+//! Everything cuckoo exposed from a Windows sandbox — HTTP method/URI/User-Agent
+//! (TLS is encrypted, never seen), arbitrary TCP/UDP destination ports (only
+//! port 53 is tunneled), and behavior summaries (mutex/file/registry, no sandbox)
+//! — is UNSUPPORTED on Android and has been removed rather than left as dead
+//! exports that always return 0. Rules therefore match on the same metadata a
+//! DNS-layer HIPS (NextDNS/Pi-hole class) works with: per-app DNS + resolved IP.
+
 use crate::compiler::RegexId;
 use crate::mods::prelude::*;
 use crate::modules::protos::hydradragon::*;
@@ -45,8 +62,8 @@ fn main(
     Ok(Hydradragon::new())
 }
 
-/// Returns true if the HydraDragon report contains a DNS lookup where the domain
-/// matches the given regular expression.
+/// Number of DNS lookups the app made whose resolved domain matches the given
+/// regular expression (0 if none). The core per-app HIPS signal.
 #[module_export(name = "network.dns_lookup")]
 fn network_dns_lookup_r(ctx: &ScanContext, regexp_id: RegexId) -> i64 {
     get_local()
@@ -64,140 +81,9 @@ fn network_dns_lookup_r(ctx: &ScanContext, regexp_id: RegexId) -> i64 {
         .unwrap_or(0)
 }
 
-/// Returns true if the HydraDragon report contains an HTTP request (either, GET,
-/// or any other method) to some URI that matches the given regular expression.
-#[module_export(name = "network.http_request")]
-fn network_http_request_r(ctx: &ScanContext, regexp_id: RegexId) -> i64 {
-    get_local()
-        .as_ref()
-        .and_then(|local| local.network.as_ref())
-        .and_then(|network| network.http.as_ref())
-        .map(|http| {
-            http.iter()
-                .filter(|http| {
-                    http.method.is_some() // ~> is request (is not response)
-                        && matches!(&http.uri, Some(uri) if ctx.regexp_matches(regexp_id, uri.as_bytes()))
-                })
-                .count() as i64
-        })
-        .unwrap_or(0)
-}
-
-/// Returns true if the HydraDragon report contains an HTTP GET request to some URI
-/// that matches the given regular expression.
-#[module_export(name = "network.http_get")]
-fn network_http_get_r(ctx: &ScanContext, regexp_id: RegexId) -> i64 {
-    get_local()
-        .as_ref()
-        .and_then(|local| local.network.as_ref())
-        .and_then(|network| network.http.as_ref())
-        .map(|http| {
-            http.iter()
-                .filter(|http| {
-                    http.method
-                        .as_ref()
-                        .map(|method| method.eq_ignore_ascii_case("get"))
-                        .unwrap_or(false)
-                        && matches!(&http.uri, Some(uri) if ctx.regexp_matches(regexp_id, uri.as_bytes()))
-                })
-                .count() as i64
-        })
-        .unwrap_or(0)
-}
-
-/// Returns true if the HydraDragon report contains an HTTP POST request to some URI
-/// that matches the given regular expression.
-#[module_export(name = "network.http_post")]
-fn network_http_post_r(ctx: &ScanContext, regexp_id: RegexId) -> i64 {
-    get_local()
-        .as_ref()
-        .and_then(|local| local.network.as_ref())
-        .and_then(|network| network.http.as_ref())
-        .map(|http| {
-            http.iter()
-                .filter(|http| {
-                    http.method
-                        .as_ref()
-                        .map(|method| method.eq_ignore_ascii_case("post"))
-                        .unwrap_or(false)
-                        && matches!(&http.uri, Some(uri) if ctx.regexp_matches(regexp_id, uri.as_bytes()))
-                })
-                .count() as i64
-        })
-        .unwrap_or(0)
-}
-
-/// Returns true if the HydraDragon report contains an HTTP where the User-Agent
-/// header matches the given regular expression.
-#[module_export(name = "network.http_user_agent")]
-fn network_http_user_agent_r(ctx: &ScanContext, regexp_id: RegexId) -> i64 {
-    get_local()
-        .as_ref()
-        .and_then(|local| local.network.as_ref())
-        .and_then(|network| network.http.as_ref())
-        .map(|http| {
-            http.iter()
-                .flat_map(|http| http.user_agent.iter())
-                .filter(|user_agent| {
-                    ctx.regexp_matches(regexp_id, user_agent.as_bytes())
-                })
-                .count() as i64
-        })
-        .unwrap_or(0)
-}
-
-/// Returns true if the HydraDragon report contains some TCP connection to the
-/// destination `port` where the destination domain matches the given regular
-/// expression
-#[module_export(name = "network.tcp")]
-fn network_tcp_ri(ctx: &ScanContext, dst_re: RegexId, port: i64) -> i64 {
-    get_local()
-        .as_ref()
-        .and_then(|local| local.network.as_ref())
-        .and_then(|network| network.tcp.as_ref())
-        .map(|tcp| {
-            tcp.iter()
-                .filter(|tcp| {
-                    matches!(tcp.dport, Some(dport) if {
-                        dport == port as u64
-                            && tcp
-                                .dst
-                                .iter()
-                                .chain(tcp.dst_domain.iter())
-                                .any(|dst| ctx.regexp_matches(dst_re, dst.as_bytes()))
-                    })
-                })
-                .count() as i64
-        })
-        .unwrap_or(0)
-}
-
-/// Returns true if the HydraDragon report contains some UDP connection to the
-/// destination `port` where the destination domain matches the given regular
-/// expression
-#[module_export(name = "network.udp")]
-fn network_udp_ri(ctx: &ScanContext, dst_re: RegexId, port: i64) -> i64 {
-    get_local()
-        .as_ref()
-        .and_then(|local| local.network.as_ref())
-        .and_then(|network| network.udp.as_ref())
-        .map(|udp| {
-            udp.iter()
-                .filter(|udp| matches!(udp.dport, Some(dport) if {
-                    dport == port as u64
-                        && udp
-                            .dst
-                            .iter()
-                            .chain(udp.dst_domain.iter())
-                            .any(|dst| ctx.regexp_matches(dst_re, dst.as_bytes()))
-                }))
-                .count() as i64
-        })
-        .unwrap_or(0)
-}
-
-/// Returns true if the HydraDragon report contains an HTTP request where the Host
-/// header matches the given regular expression.
+/// Number of destination IPs the app's DNS resolved to that match the given
+/// regular expression (0 if none). This is the Snort/Suricata "dst host" check —
+/// e.g. `hydradragon.network.host(/^203\.0\.113\./)` for a known-bad /24.
 #[module_export(name = "network.host")]
 fn network_host_r(ctx: &ScanContext, re: RegexId) -> i64 {
     get_local()
@@ -213,66 +99,8 @@ fn network_host_r(ctx: &ScanContext, re: RegexId) -> i64 {
         .unwrap_or(0)
 }
 
-/// Returns true if the HydraDragon report contains some mutex operation where the name
-/// of the mutex matches the given regular expression.
-#[module_export(name = "sync.mutex")]
-fn sync_mutex_r(ctx: &ScanContext, mutex_re: RegexId) -> i64 {
-    get_local()
-        .as_ref()
-        .and_then(|local| local.behavior.as_ref())
-        .and_then(|behavior| behavior.summary.as_ref())
-        .map(|summary| {
-            summary
-                .mutexes
-                .iter()
-                .flatten()
-                .filter(|mutex| ctx.regexp_matches(mutex_re, mutex.as_bytes()))
-                .count() as i64
-        })
-        .unwrap_or(0)
-}
-
-/// Returns true if the HydraDragon report contains some file access operation where the
-/// file path matches the given regular expression.
-#[module_export(name = "filesystem.file_access")]
-fn filesystem_file_access_r(ctx: &ScanContext, regexp_id: RegexId) -> i64 {
-    get_local()
-        .as_ref()
-        .and_then(|local| local.behavior.as_ref())
-        .and_then(|behavior| behavior.summary.as_ref())
-        .map(|summary| {
-            summary
-                .files
-                .iter()
-                .flatten()
-                .filter(|file| ctx.regexp_matches(regexp_id, file.as_bytes()))
-                .count() as i64
-        })
-        .unwrap_or(0)
-}
-
-/// Returns true if the HydraDragon report contains some registry access operation where
-/// the registry key matches the given regular expression.
-#[module_export(name = "registry.key_access")]
-fn registry_key_access_r(ctx: &ScanContext, regexp_id: RegexId) -> i64 {
-    get_local()
-        .as_ref()
-        .and_then(|local| local.behavior.as_ref())
-        .and_then(|behavior| behavior.summary.as_ref())
-        .map(|summary| {
-            summary
-                .keys
-                .iter()
-                .flatten()
-                .filter(|key| ctx.regexp_matches(regexp_id, key.as_bytes()))
-                .count() as i64
-        })
-        .unwrap_or(0)
-}
-
-/// Returns true if the program contacted a URL (host + path) matching the
-/// given regular expression. The Android-native addition over cuckoo's API —
-/// fed live from the DNS / Web-Shield monitor.
+/// Number of full URLs (host + path) the app contacted that match the given
+/// regular expression. Android-native; fed when a full URL is known.
 #[module_export(name = "url")]
 fn url_r(ctx: &ScanContext, re: RegexId) -> i64 {
     get_local()
@@ -285,8 +113,8 @@ fn url_r(ctx: &ScanContext, re: RegexId) -> i64 {
         .unwrap_or(0)
 }
 
-/// Returns true if the program contacted a URL equal (case-insensitive) to the
-/// given string.
+/// Number of full URLs the app contacted equal (case-insensitive) to the given
+/// string.
 #[module_export(name = "url")]
 fn url_s(ctx: &ScanContext, value: RuntimeString) -> i64 {
     let Ok(needle) = value.to_str(ctx) else {

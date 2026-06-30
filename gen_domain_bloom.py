@@ -1,7 +1,7 @@
 """ Extract per-category domain/URL lists from allblooms/ datasets into qf_build/.
 
-Each qf_build/<stem>.txt is then turned into assets/scan/<stem>.qf by the Rust
-`qfilter_writer` (see build_qfilters.sh). No bloom/Guava code here — filter
+Each qf_build/<stem>.txt is then turned into assets/scan/<stem>.xf by the Rust
+`xorfilter_writer` (see build_qfilters.sh). No bloom/Guava code here — filter
 construction lives entirely on the Rust side.
 
 Usage:
@@ -16,7 +16,7 @@ from pathlib import Path
 BLOOMS_DIR = Path("allblooms")
 ASSETS_DIR = Path("app/src/main/assets")
 # Staging dir for the per-category entry lists. These .txt files are the INPUT to
-# `qfilter_writer` (see build_qfilters.sh), which builds one `<stem>.qf` per file
+# `xorfilter_writer` (see build_qfilters.sh), which builds one `<stem>.xf` per file
 # into assets/scan/. The .txt themselves are NOT shipped. Stems match the Rust
 # `CATS` table in hydradragonandroid/src/url_scan.rs.
 STAGE_DIR = Path("qf_build")
@@ -188,7 +188,7 @@ def main():
 
     print("\n  Next: build_url_blooms.py (writes whitelist-FILTERED malwareurl.txt /")
     print("  phishingurl.txt into qf_build/), then ./build_qfilters.sh to turn every")
-    print("  qf_build/<stem>.txt into assets/scan/<stem>.qf via qfilter_writer (1e-6).")
+    print("  qf_build/<stem>.txt into assets/scan/<stem>.xf via xorfilter_writer (1e-6).")
 
 
 if __name__ == "__main__":

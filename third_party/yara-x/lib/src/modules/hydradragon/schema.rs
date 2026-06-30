@@ -8,53 +8,19 @@ pub(super) struct DomainJson {
     pub domain: Option<String>,
 }
 
-#[derive(serde::Deserialize, Debug)]
-pub(super) struct HttpJson {
-    #[serde(rename = "user-agent")]
-    pub user_agent: Option<String>,
-    pub method: Option<String>, // string ftw
-    pub uri: Option<String>,
-}
-
-#[derive(serde::Deserialize, Debug)]
-pub(super) struct TcpJson {
-    pub dst: Option<String>,
-    pub dst_domain: Option<String>,
-    pub dport: Option<u64>,
-}
-
-#[derive(serde::Deserialize, Debug)]
-pub(super) struct UdpJson {
-    pub dst: Option<String>,
-    pub dst_domain: Option<String>,
-    pub dport: Option<u64>,
-}
-
+/// The network metadata a MITM-free, DNS-only Web-Shield can attribute per app:
+/// the domains it resolved and the destination IPs those resolved to. HTTP /
+/// TCP-UDP-port / behavior fields from cuckoo are intentionally absent — they are
+/// not observable on Android (see mod.rs).
 #[derive(/* serde::Deserialize, - custom */ Debug, Default)]
 pub(super) struct NetworkJson {
     pub domains: Option<Vec<DomainJson>>,
-    pub http: Option<Vec<HttpJson>>,
-    pub tcp: Option<Vec<TcpJson>>,
-    pub udp: Option<Vec<UdpJson>>,
     pub hosts: Option<Vec<String>>,
-}
-
-#[derive(serde::Deserialize, Debug, Default)]
-pub(super) struct SummaryJson {
-    pub mutexes: Option<Vec<String>>,
-    pub files: Option<Vec<String>>,
-    pub keys: Option<Vec<String>>,
-}
-
-#[derive(serde::Deserialize, Debug, Default)]
-pub(super) struct BehaviorJson {
-    pub summary: Option<SummaryJson>,
 }
 
 #[derive(serde::Deserialize, Debug, Default)]
 pub(super) struct HydradragonJson {
     pub network: Option<NetworkJson>,
-    pub behavior: Option<BehaviorJson>,
     /// Full URLs observed live (host + path), for `hydradragon.url`.
     pub urls: Option<Vec<String>>,
 }
@@ -77,17 +43,11 @@ impl<'de> Deserialize<'de> for NetworkJson {
             where
                 A: serde::de::MapAccess<'de>,
             {
-                // Must not parse `old_domains` before the whole map is
-                // searched if there is a `domains` field, then the value for
-                // the key `old_domains` should be ignored - specifically, it
-                // is okay if the `old_domains` does not have the expected
-                // structure if `domains` is present.
+                // Accept either `domains` (preferred) or the legacy `dns` key for
+                // the resolved-domain list; ignore everything else (HTTP, tcp/udp,
+                // behavior) since this module no longer exposes it.
                 let mut old_domains = None::<serde_json::Value>;
                 let mut domains = None::<serde_json::Value>;
-
-                let mut http = None::<Vec<HttpJson>>;
-                let mut tcp = None::<Vec<TcpJson>>;
-                let mut udp = None::<Vec<UdpJson>>;
                 let mut hosts = None::<Vec<String>>;
 
                 while let Some((key, val)) =
@@ -102,24 +62,6 @@ impl<'de> Deserialize<'de> for NetworkJson {
                                 continue; // prefer "domains" over "dns"
                             }
                             old_domains = Some(val);
-                        }
-                        "http" if !val.is_null() => {
-                            http = Some(
-                                Deserialize::deserialize(val)
-                                    .map_err(Error::custom)?,
-                            );
-                        }
-                        "tcp" if !val.is_null() => {
-                            tcp = Some(
-                                Deserialize::deserialize(val)
-                                    .map_err(Error::custom)?,
-                            );
-                        }
-                        "udp" if !val.is_null() => {
-                            udp = Some(
-                                Deserialize::deserialize(val)
-                                    .map_err(Error::custom)?,
-                            );
                         }
                         "hosts" if !val.is_null() => {
                             hosts = Some(
@@ -161,7 +103,7 @@ impl<'de> Deserialize<'de> for NetworkJson {
                         _ => None, // domains field is optional or null
                     };
 
-                Ok(NetworkJson { domains, http, tcp, udp, hosts })
+                Ok(NetworkJson { domains, hosts })
             }
         }
 

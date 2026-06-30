@@ -1,7 +1,7 @@
 //! Native URL/domain threat lookup — the Rust port of the Java
-//! `UrlThreatScanner`. All membership is now `qfilter` (quotient filters) mmap'd
-//! and queried ZERO-COPY from the `.qf` assets, by both the live DNS Web-Shield
-//! and the APK URL scan. Mirrors the Java logic exactly:
+//! `UrlThreatScanner`. All membership is now Binary-Fuse (xor) filters loaded
+//! from the `.xf` assets, by both the live DNS Web-Shield and the APK URL scan.
+//! Mirrors the Java logic exactly:
 //!
 //!   * `http://domain` / `https://...`           -> domain scan (registrable
 //!     main domain checked against the domain blooms).
@@ -15,11 +15,11 @@ use std::collections::HashSet;
 use std::path::Path;
 
 /// One category filter: its label, whether it's a URL filter (full URL) vs a
-/// domain filter (registrable domain), and the mmap'd zero-copy quotient filter.
+/// domain filter (registrable domain), and the Binary-Fuse xor filter.
 struct CatFilter {
     category: &'static str,
     is_url: bool,
-    filter: crate::QFilter,
+    filter: hydradragonxorfilter::XorFilter,
 }
 
 pub struct UrlScanner {
@@ -40,13 +40,13 @@ const CATS: &[(&str, &str, bool)] = &[
 ];
 
 impl UrlScanner {
-    /// mmap every category `.qf` plus load `public_suffixes.txt` from `dir`.
+    /// Load every category `.xf` plus `public_suffixes.txt` from `dir`.
     /// Returns None if no filter loaded (URL scanning then disabled).
     pub fn load(dir: &Path) -> Option<UrlScanner> {
         let mut filters = Vec::new();
         for &(stem, category, is_url) in CATS {
-            let path = dir.join(format!("{stem}.qf"));
-            if let Some(filter) = crate::load_qfilter(&path) {
+            let path = dir.join(format!("{stem}.xf"));
+            if let Some(filter) = crate::load_xor_filter(&path) {
                 filters.push(CatFilter { category, is_url, filter });
             }
         }

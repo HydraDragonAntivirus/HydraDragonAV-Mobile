@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build the WHITELIST-FILTERED URL lists used by the native qfilter URL scanner:
+Build the WHITELIST-FILTERED URL lists used by the native xor-filter URL scanner:
 
   qf_build/malwareurl.txt  <- MaliciousLinks.txt + urlhaus.csv
   qf_build/phishingurl.txt <- phishing_links.json
@@ -13,7 +13,7 @@ malwareurl.txt / phishingurl.txt that gen_domain_bloom.py wrote.
 
 Memory-safe: we collect the (small) set of candidate hosts from the URL lists,
 stream the huge whitelist CSVs once to mark which are whitelisted, then drop.
-The .txt files are turned into <stem>.qf by build_qfilters.sh (Rust).
+The .txt files are turned into <stem>.xf by build_qfilters.sh (Rust).
 """
 import csv
 import json

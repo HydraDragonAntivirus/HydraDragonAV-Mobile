@@ -1718,7 +1718,7 @@ rule libyan_scorpions
 		$domain_5 = "sara2011.no-ip.biz" ascii wide nocase
 
 	condition:
-		androguard.url(/41\.208\.110\.46/) or hydradragon.network.http_request(/41\.208\.110\.46/) or
+		androguard.url(/41\.208\.110\.46/) or hydradragon.network.host(/41\.208\.110\.46/) or
 		androguard.url(/winmeif.myq-see.com/i) or hydradragon.network.dns_lookup(/winmeif.myq-see.com/i) or
 		androguard.url(/wininit.myq-see.com/i) or hydradragon.network.dns_lookup(/wininit.myq-see.com/i) or
 		androguard.url(/samsung.ddns.me/i) or hydradragon.network.dns_lookup(/samsung.ddns.me/i) or
