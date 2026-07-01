@@ -92,6 +92,10 @@ public class GuardService extends Service {
     private ProcessDetector processDetector;
     private ScheduledExecutorService scheduler;
     private int alertNotificationId = ALERT_NOTIFICATION_BASE;
+    /** Root state as of the LAST check — starts false since MainActivity already
+     *  refuses to launch on an already-rooted device (see RootCheck), so any
+     *  transition to true observed here happened WHILE this app was running. */
+    private volatile boolean wasRooted = false;
 
     private final IBinder binder = new GuardBinder();
     private GuardCallback callback;
@@ -202,6 +206,57 @@ public class GuardService extends Service {
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();
         }, 10, 60, TimeUnit.SECONDS);
+
+        // Dynamic root-exploit detection: a device that WASN'T rooted when this
+        // app started (MainActivity already blocks launch on an already-rooted
+        // device) suddenly becoming rooted mid-session is unambiguous proof some
+        // running app just used a root exploit — far stronger signal than static
+        // "su"/"magisk" string matching, and catches exploits that never touch a
+        // named su binary at all. Whichever app was in the foreground at the
+        // moment of the transition is the prime suspect.
+        scheduler.scheduleAtFixedRate(this::checkRootTransition, 15, 20, TimeUnit.SECONDS);
+    }
+
+    private void checkRootTransition() {
+        try {
+            boolean rooted = com.hydradragon.antivirus.engine.RootCheck.isRooted();
+            if (rooted && !wasRooted) {
+                wasRooted = true;
+                String suspect = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+                Log.e(TAG, "ROOT EXPLOIT: device became rooted mid-session (foreground=" + suspect + ")");
+                sendRootExploitAlert(suspect);
+                ThreatLogger.logThreat(this,
+                    (suspect != null && !suspect.isEmpty()) ? suspect : "unknown",
+                    "Root Exploit",
+                    "Device became rooted while running — foreground app: "
+                        + (suspect != null && !suspect.isEmpty() ? suspect : "unknown"));
+                if (suspect != null && !suspect.isEmpty()
+                        && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, suspect)) {
+                    com.hydradragon.antivirus.engine.BehaviorFlags.flag(this, suspect,
+                        "🔓 Root exploit: device rooted while this app was in the foreground");
+                }
+            } else if (!rooted) {
+                // Recheck each tick — a root manager app can be uninstalled/su
+                // revoked, and we want the NEXT genuine transition to fire again.
+                wasRooted = false;
+            }
+        } catch (Throwable ignore) { }
+    }
+
+    private void sendRootExploitAlert(String suspectPackage) {
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm == null) return;
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_process_alert)
+            .setContentTitle("🔓 Root Exploit Detected")
+            .setContentText("Device became rooted while running"
+                + (suspectPackage != null && !suspectPackage.isEmpty() ? " — " + suspectPackage : ""))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .setColor(0xFF0040)
+            .build();
+        nm.notify(alertNotificationId++, notification);
     }
 
     private void sendThreatNotification(ThreatResult threat) {
