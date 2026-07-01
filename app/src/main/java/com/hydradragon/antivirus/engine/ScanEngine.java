@@ -364,17 +364,21 @@ public class ScanEngine {
                 }
             }
             // Two-tier dangerous permissions (same as installed-app analysis):
-            // 7+ => certain malware, exactly 6 => suspicious.
-            if (v.permissions >= 7) {
+            // 10+ => certain malware, exactly 9 => suspicious. Calibrated against
+            // Malwarebytes' own permission footprint (contacts, SMS/MMS read+receive,
+            // storage, draw-over-other-apps = 8/36 on this list) — the threshold
+            // sits one above that so a legitimate heavy-permission security app
+            // isn't itself flagged as malware.
+            if (v.permissions >= 10) {
                 riskScore = 100;
                 b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/9)");
-            } else if (v.permissions == 6) {
+                reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/36)");
+            } else if (v.permissions == 9) {
                 riskScore = Math.max(riskScore, 30);
                 if (!hasRealThreat) {
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
                 }
-                reasons.add("🔐 Suspicious permissions (6/9)");
+                reasons.add("🔐 Suspicious permissions (9/36)");
             }
             if (mlMalicious) {
                 String near = v.nearest != null ? "  ~" + v.nearest : "";
@@ -715,19 +719,21 @@ public class ScanEngine {
                     }
 
                     // Two-tier dangerous-permission decision on the native count
-                    // (9 most-dangerous: SMS, call log, contacts, mic, camera,
-                    // location, overlay, all-files). 7+ = almost certainly malware;
-                    // exactly 6 = suspicious. Legit apps routinely request 3-5.
-                    if (v.permissions >= 7) {
+                    // (the full 36-permission "dangerous" set — see lib.rs
+                    // DANGEROUS_PERMS: SMS, call/phone, contacts, location, mic,
+                    // camera, calendar, sensors, nearby devices, storage, overlay).
+                    // 10+ = almost certainly malware; exactly 9 = suspicious —
+                    // calibrated one above Malwarebytes' own footprint (8/36).
+                    if (v.permissions >= 10) {
                         riskScore = 100;
                         builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                        reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/9)");
+                        reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/36)");
                         nativeCorroborated = true;
-                    } else if (v.permissions == 6) {
+                    } else if (v.permissions == 9) {
                         riskScore = Math.max(riskScore, 30);
                         if (riskScore < 50) builder.setThreatType(
                             com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
-                        reasons.add("🔐 Suspicious permissions (6/9)");
+                        reasons.add("🔐 Suspicious permissions (9/36)");
                         nativeCorroborated = true;
                     }
                 }
@@ -793,7 +799,7 @@ public class ScanEngine {
             reasons.add("✍️ Signature: " + companyName);
             reasons.add("🔐 SHA-256: " + signatureHash);
             reasons.add("🔐 Dangerous permissions matched: "
-                + (dangerousPermCount >= 0 ? dangerousPermCount + "/9" : "not scanned"));
+                + (dangerousPermCount >= 0 ? dangerousPermCount + "/36" : "not scanned"));
             if (!requestedPermissions.isEmpty()) {
                 reasons.add("📋 All requested permissions (" + requestedPermissions.size() + "): "
                     + String.join(", ", requestedPermissions));

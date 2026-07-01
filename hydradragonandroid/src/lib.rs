@@ -987,16 +987,63 @@ fn generate_yara_rule(
 /// list). Used to give APKs reached only in-memory — e.g. an APK extracted from a
 /// zip and never written to disk, so `PackageManager` can't read it — the same
 /// permission-based detection, straight from the bytes (no temp file).
+/// The full Android "dangerous" protection-level permission set (all runtime-
+/// prompted groups: SMS, call log/phone, contacts, location, microphone,
+/// camera, calendar, sensors/activity recognition, nearby devices, storage),
+/// plus SYSTEM_ALERT_WINDOW/MANAGE_EXTERNAL_STORAGE which aren't technically
+/// "dangerous" protection level but are heavily malware-abused (overlay
+/// attacks, ransomware file access) so they're included too. Previously this
+/// list only had 9 entries hand-picked around SMS/overlay malware — a sample
+/// requesting a different mix of 6-7 dangerous permissions (e.g. phone state +
+/// call + contacts + accounts + coarse location + bluetooth) matched NONE of
+/// them and was never flagged, even though it was clearly over-permissioned.
 const DANGEROUS_PERMS: &[&str] = &[
+    // SMS / MMS
     "android.permission.READ_SMS",
     "android.permission.SEND_SMS",
+    "android.permission.RECEIVE_SMS",
+    "android.permission.RECEIVE_MMS",
+    "android.permission.RECEIVE_WAP_PUSH",
+    // Call log / phone
+    "android.permission.READ_CALL_LOG",
+    "android.permission.WRITE_CALL_LOG",
+    "android.permission.PROCESS_OUTGOING_CALLS",
+    "android.permission.READ_PHONE_STATE",
+    "android.permission.READ_PHONE_NUMBERS",
+    "android.permission.CALL_PHONE",
+    "android.permission.ANSWER_PHONE_CALLS",
+    "android.permission.ADD_VOICEMAIL",
+    "android.permission.USE_SIP",
+    // Contacts / accounts
     "android.permission.READ_CONTACTS",
+    "android.permission.WRITE_CONTACTS",
+    "android.permission.GET_ACCOUNTS",
+    // Location
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.ACCESS_BACKGROUND_LOCATION",
+    // Microphone / camera
     "android.permission.RECORD_AUDIO",
     "android.permission.CAMERA",
-    "android.permission.ACCESS_FINE_LOCATION",
-    "android.permission.READ_CALL_LOG",
-    "android.permission.SYSTEM_ALERT_WINDOW",
+    // Calendar
+    "android.permission.READ_CALENDAR",
+    "android.permission.WRITE_CALENDAR",
+    // Sensors / activity
+    "android.permission.BODY_SENSORS",
+    "android.permission.BODY_SENSORS_BACKGROUND",
+    "android.permission.ACTIVITY_RECOGNITION",
+    // Nearby devices
+    "android.permission.BLUETOOTH_CONNECT",
+    "android.permission.BLUETOOTH_SCAN",
+    "android.permission.BLUETOOTH_ADVERTISE",
+    "android.permission.NEARBY_WIFI_DEVICES",
+    "android.permission.UWB_RANGING",
+    // Storage (legacy + scoped bypass)
+    "android.permission.READ_EXTERNAL_STORAGE",
+    "android.permission.WRITE_EXTERNAL_STORAGE",
     "android.permission.MANAGE_EXTERNAL_STORAGE",
+    // Not "dangerous" protection level, but classic malware tools:
+    "android.permission.SYSTEM_ALERT_WINDOW",
 ];
 
 fn to_utf16le(s: &str) -> Vec<u8> {
