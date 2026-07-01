@@ -325,7 +325,7 @@ public class SettingsFragment extends Fragment {
         v.setText("HydraDragon Antivirus v1.0\n━━━━━━━━━━━━━━━━━━━━━━\n\n" +
             "[ GELİŞTİRİCİLER ]\n\n  ◈  Musayev Yusif\n  ◈  Emirhan Uçan\n\n" +
             "━━━━━━━━━━━━━━━━━━━━━━\n" +
-            "Engine : Bloom Filter + X.509\nAI : TensorFlow Lite 2.14");
+            "Engine : XOR Filter (Binary-Fuse) + X.509\nAI : Native Rust (MinHash/LSH + Isolation Forest)");
         v.setTextColor(color(R.color.text_secondary));
         v.setTypeface(Typeface.MONOSPACE); v.setLineSpacing(6,1); v.setPadding(16,24,16,0);
         container.addView(v);
