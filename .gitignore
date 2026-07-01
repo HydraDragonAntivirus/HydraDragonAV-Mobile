@@ -12,7 +12,7 @@ whitelist/
 # nist.gov RDS sql database
 sql/
 malwarebazaarfull/
-all_sha256.txt
+all_md5.txt
 xf_build/
 whitelist.xf
 allips/IPv4Malware.optimized.csv

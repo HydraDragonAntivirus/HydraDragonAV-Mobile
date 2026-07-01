@@ -1,7 +1,7 @@
-"""Build the EXACT whole-APK SHA-256 whitelist from the NSRL RDS Android SQLite
+"""Build the EXACT whole-APK MD5 whitelist from the NSRL RDS Android SQLite
 database (sql/RDS_*_android.db).
 
-Only `extension='apk'` rows are taken — these are whole APKs, whose SHA-256
+Only `extension='apk'` rows are taken — these are whole APKs, whose MD5
 matches what the on-device scanner computes for a whole APK/zip buffer. The full
 per-file set (~105M hashes) is intentionally NOT used: it is ~3.4 GB exact /
 ~380 MB as a bloom (too big for a phone, and a bloom FP would be a whitelist
@@ -12,7 +12,7 @@ The result is matched EXACTLY (HashSet, no bloom) on-device: the set is small
 (~70k) so there are zero false positives — a malicious hash can never collide
 into the whitelist.
 
-Output: app/src/main/assets/whitelist_hashes.txt  (one lowercase sha256/line)
+Output: app/src/main/assets/whitelist_hashes.txt  (one lowercase md5/line)
 
 Usage:
     python gen_whitelist_apk.py [path/to/RDS.db]
@@ -32,8 +32,8 @@ def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(DB)
     rows = con.execute(
-        "SELECT DISTINCT lower(sha256) FROM METADATA "
-        "WHERE lower(extension)='apk' AND sha256 IS NOT NULL AND length(sha256)=64"
+        "SELECT DISTINCT lower(md5) FROM METADATA "
+        "WHERE lower(extension)='apk' AND md5 IS NOT NULL AND length(md5)=32"
     )
     n = 0
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
@@ -41,7 +41,7 @@ def main():
             f.write(h + "\n")
             n += 1
     con.close()
-    print(f"{OUT}: {n:,} distinct whole-APK SHA-256, {os.path.getsize(OUT):,} bytes")
+    print(f"{OUT}: {n:,} distinct whole-APK MD5, {os.path.getsize(OUT):,} bytes")
 
 
 if __name__ == "__main__":

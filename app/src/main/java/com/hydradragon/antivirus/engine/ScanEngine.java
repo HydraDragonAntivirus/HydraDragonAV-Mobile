@@ -118,16 +118,25 @@ public class ScanEngine {
     }
 
     private void loadPackageWhitelist() {
-        // Known-good NSRL package names (whitelist_packages.txt) into an exact
+        // Known-good NSRL package keys (whitelist_packages.db, table
+        // whitelist_package, column "key" = package_id^^file_name) into an exact
         // HashSet. Only clears an app WITH a trusted-store install (spoofable
         // alone). The SHA-256 hash whitelist is separate and lives natively
         // (fastbloom) — see NativeScanner.isHashWhitelisted.
-        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
-                context.getAssets().open("whitelist_packages.txt"), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = r.readLine()) != null) {
-                line = line.trim();
-                if (!line.isEmpty()) whitelistPackages.add(line);
+        java.io.File dbFile = new java.io.File(context.getNoBackupFilesDir(), "whitelist_packages.db");
+        try {
+            if (!dbFile.exists()) {
+                try (InputStream in = context.getAssets().open("whitelist_packages.db");
+                     java.io.OutputStream out = new java.io.FileOutputStream(dbFile)) {
+                    byte[] buf = new byte[64 * 1024];
+                    int n;
+                    while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+                }
+            }
+            try (android.database.sqlite.SQLiteDatabase db = android.database.sqlite.SQLiteDatabase.openDatabase(
+                    dbFile.getAbsolutePath(), null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY);
+                 android.database.Cursor c = db.rawQuery("SELECT key FROM whitelist_package", null)) {
+                while (c.moveToNext()) whitelistPackages.add(c.getString(0));
             }
         } catch (Exception e) { /* missing — package whitelist disabled */ }
     }
@@ -144,28 +153,22 @@ public class ScanEngine {
         return pkg != null && whitelistPackages.contains(pkg);
     }
 
-    /** Lowercase-hex SHA-256 of a file's bytes (streamed), or null on error. We
+    /** Lowercase-hex MD5 of a file's bytes (streamed), or null on error. We
      *  compute it in Java — the native side never sends raw bytes back, only the
      *  hash — so a known-good whole file can be cleared BEFORE the expensive
-     *  yara/clamav/ML scan even runs (the "hash first" fast path). */
-    private static String fileSha256(java.io.File file) {
+     *  yara/clamav/ML scan even runs (the "hash first" fast path). Reused natively
+     *  (passed to scan) so the file isn't hashed a second time. */
+    static String fileMd5(java.io.File file) {
         try (java.io.InputStream in = new java.io.FileInputStream(file)) {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
             byte[] buf = new byte[64 * 1024];
             int n;
             while ((n = in.read(buf)) != -1) md.update(buf, 0, n);
-            StringBuilder sb = new StringBuilder(64);
+            StringBuilder sb = new StringBuilder(32);
             for (byte b : md.digest()) sb.append(Character.forDigit((b >> 4) & 0xF, 16))
                                          .append(Character.forDigit(b & 0xF, 16));
             return sb.toString();
         } catch (Exception e) { return null; }
-    }
-
-    /** Hash-first fast path: if the whole file's SHA-256 is whitelisted it's a
-     *  known-good file — skip scanning entirely. Valid for a pure APK (its file
-     *  bytes == the APK/zip buffer the whitelist was keyed on). */
-    private boolean isFileWhitelisted(String path) {
-        return isHashWhitelisted(fileSha256(new java.io.File(path)));
     }
 
     /** A native detection is a false positive iff one of the APKs in its
@@ -275,8 +278,10 @@ public class ScanEngine {
             if (!NativeScanner.isReady()) return;
             String path = file.getAbsolutePath();
             // Hash-first fast path: known-good whole file → skip the scan entirely.
-            if (isFileWhitelisted(path)) return;
-            NativeScanner.Verdict v = NativeScanner.scan(path);
+            // MD5 computed once here and reused natively.
+            String md5 = fileMd5(new java.io.File(path));
+            if (isHashWhitelisted(md5)) return;
+            NativeScanner.Verdict v = NativeScanner.scan(path, null, md5);
             if (v == null) return;
             // Per-detection whitelist suppression: a hit INSIDE a known-good
             // (whitelisted) APK is a false positive, but a non-APK virus sitting
@@ -329,8 +334,8 @@ public class ScanEngine {
                 reasons.add(String.format(java.util.Locale.US,
                     "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
             }
-            if (v.sha256 != null && !v.sha256.isEmpty()) {
-                reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.sha256);
+            if (v.md5 != null && !v.md5.isEmpty()) {
+                reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
             }
             b.setRiskScore(riskScore);
             b.setReasons(reasons);
@@ -387,10 +392,12 @@ public class ScanEngine {
                         || app.sourceDir.startsWith("/product/") || app.sourceDir.startsWith("/apex/")) continue;
                 if (app.packageName != null && (app.packageName.equals(context.getPackageName())
                         || seen.contains(app.packageName))) continue;
-                // Hash-first fast path: known-good APK (SHA-256 match) → skip.
+                // Hash-first fast path: known-good APK (MD5 match) → skip.
                 // (No package-name skip — a package name is spoofable.)
-                if (isFileWhitelisted(app.sourceDir)) continue;
-                NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir, app.packageName);
+                // MD5 computed once here and reused natively.
+                String appMd5 = fileMd5(new java.io.File(app.sourceDir));
+                if (isHashWhitelisted(appMd5)) continue;
+                NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir, app.packageName, appMd5);
                 if (v == null) continue;
                 // Per-detection suppression (a hit inside a whitelisted APK is an
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
@@ -410,8 +417,8 @@ public class ScanEngine {
                     ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
                     : com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
                 b.setRiskScore(real ? 100 : 50);
-                if (v.sha256 != null && !v.sha256.isEmpty())
-                    reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.sha256);
+                if (v.md5 != null && !v.md5.isEmpty())
+                    reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
                 b.setReasons(reasons);
                 CharSequence label = pm.getApplicationLabel(app);
                 b.setAppName((label != null ? label.toString() : app.packageName) + " (DEEP)");
@@ -540,7 +547,7 @@ public class ScanEngine {
 
         int riskScore = 0;
         List<String> reasons = new ArrayList<>();
-        String fileSha256 = null;   // top-level file hash from the native scan (for the VirusTotal link)
+        String fileMd5Vt = null;   // top-level file MD5 from the native scan (for the VirusTotal link)
         String companyName = "Unknown Developer";
         String signatureHash = "NONE";
 
@@ -596,10 +603,11 @@ public class ScanEngine {
 
                 // Native engine: clamav (type-gated YARA + signatures) + ML model.
                 // Hash-first: a known-good (whitelisted) APK skips the whole native
-                // block — no scan, no detections, no permission flag.
-                if (apkPath != null && NativeScanner.isReady() && !isFileWhitelisted(apkPath)) {
-                    NativeScanner.Verdict v = NativeScanner.scan(apkPath, app.packageName);
-                    fileSha256 = v.sha256;
+                // block. The file MD5 is computed once here and reused natively.
+                String apkMd5 = apkPath != null ? fileMd5(new java.io.File(apkPath)) : null;
+                if (apkPath != null && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
+                    NativeScanner.Verdict v = NativeScanner.scan(apkPath, app.packageName, apkMd5);
+                    fileMd5Vt = v.md5;
                     // Per-detection whitelist suppression (hit inside a whitelisted
                     // APK = FP; non-APK virus alongside it survives).
                     List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
@@ -667,8 +675,8 @@ public class ScanEngine {
         if (riskScore > 0 && !isWhitelisted) {
             reasons.add("✍️ Signature: " + companyName);
             reasons.add("🔐 SHA-256: " + signatureHash);
-            if (fileSha256 != null && !fileSha256.isEmpty()) {
-                reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileSha256);
+            if (fileMd5Vt != null && !fileMd5Vt.isEmpty()) {
+                reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileMd5Vt);
             }
         }
 

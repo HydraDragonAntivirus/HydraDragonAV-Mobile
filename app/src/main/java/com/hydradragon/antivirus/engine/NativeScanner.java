@@ -64,7 +64,7 @@ public final class NativeScanner {
 
     private static native boolean nativeInit(String dir);
 
-    private static native String nativeScanApk(String path, String hydradragonJson);
+    private static native String nativeScanApk(String path, String hydradragonJson, String fileMd5);
 
     /** Diagnostics: what loaded / failed during the last nativeInit. */
     private static native String nativeStatus();
@@ -158,16 +158,20 @@ public final class NativeScanner {
      *         or {@code {"error":"..."}} on failure.
      */
     public static String scanApk(String apkPath) {
-        return scanApk(apkPath, null);
+        return scanApk(apkPath, null, null);
     }
 
     /** Scan an APK, feeding the {@code hydradragon} module the live-network report
-     *  attributed to {@code packageName} (null for an uninstalled APK file). */
-    public static String scanApk(String apkPath, String packageName) {
+     *  attributed to {@code packageName} (null for an uninstalled APK file).
+     *  {@code fileMd5} is the caller's already-computed MD5 of the whole file
+     *  (from the hash-first whitelist check), reused natively so the top-level
+     *  buffer isn't hashed again; null/"" makes native compute it. */
+    public static String scanApk(String apkPath, String packageName, String fileMd5) {
         if (!ready) {
             return "{\"error\":\"not initialised\"}";
         }
-        return nativeScanApk(apkPath, NetworkObservations.buildReportJson(packageName));
+        return nativeScanApk(apkPath, NetworkObservations.buildReportJson(packageName),
+                fileMd5 == null ? "" : fileMd5);
     }
 
     /** Parsed scan verdict. */
@@ -199,8 +203,8 @@ public final class NativeScanner {
             public final List<String> hashes;
             Detection(String name, List<String> hashes) { this.name = name; this.hashes = hashes; }
         }
-        /** SHA-256 (lowercase hex) of the whole scanned file — its "main hash". */
-        public String sha256;
+        /** MD5 (lowercase hex) of the whole scanned file — its "main hash". */
+        public String md5;
         /** Non-null ClamAV target number if the file type was skipped (PE/OLE2/…). */
         public Integer skippedTarget;
         /** Non-null if the native scan errored. */
@@ -211,21 +215,26 @@ public final class NativeScanner {
     }
 
     public static Verdict scan(String apkPath) {
-        return scan(apkPath, null);
+        return scan(apkPath, null, null);
+    }
+
+    public static Verdict scan(String apkPath, String packageName) {
+        return scan(apkPath, packageName, null);
     }
 
     /**
      * Scan an APK and return a fully-parsed {@link Verdict}. {@code packageName}
      * scopes the live-network ({@code hydradragon}) report to that app; pass null
-     * for an uninstalled APK file (no runtime activity attributed).
+     * for an uninstalled APK file (no runtime activity attributed). {@code fileMd5}
+     * is the caller's already-computed MD5 of the file, reused natively.
      */
-    public static Verdict scan(String apkPath, String packageName) {
+    public static Verdict scan(String apkPath, String packageName, String fileMd5) {
         Verdict v = new Verdict();
         if (!ready) {
             v.error = "not initialised";
             return v;
         }
-        String json = scanApk(apkPath, packageName);
+        String json = scanApk(apkPath, packageName, fileMd5);
         if (json == null) {
             v.error = "null native result";
             return v;
@@ -252,8 +261,8 @@ public final class NativeScanner {
                     if (h != null && !h.isEmpty()) v.hashes.add(h);
                 }
             }
-            if (o.has("sha256") && !o.isNull("sha256")) {
-                v.sha256 = o.optString("sha256", null);
+            if (o.has("md5") && !o.isNull("md5")) {
+                v.md5 = o.optString("md5", null);
             }
             if (o.has("skipped") && !o.isNull("skipped")) {
                 v.skippedTarget = o.optInt("skipped");

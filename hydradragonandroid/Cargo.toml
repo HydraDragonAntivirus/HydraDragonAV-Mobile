@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 hydradragonclamav = { path = "../hydradragonclamav" }
 hydradragonml = { path = "../hydradragonml" }
 hydradragonextractor = { path = "../hydradragonextractor" }
-sha2 = "0.11"
+md-5 = "0.11"
 jni = "0.21"
 # Pure-Rust TLSH fuzzy hashing for malware-similarity detection against the
 # MalwareBazaar (apk/elf/so/dex) TLSH database.

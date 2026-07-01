@@ -312,9 +312,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }
 }
 
-/// `boolean nativeIsHashWhitelisted(String sha256)` — true if the SHA-256 is in
-/// the NSRL whitelist (Binary-Fuse xor filter). Lets Java suppress false
-/// positives by hash without holding the filter in the Java heap.
+/// `boolean nativeIsHashWhitelisted(String md5)` — true if the MD5 is in the
+/// NSRL whitelist (Binary-Fuse xor filter). Lets Java suppress false positives
+/// by hash without holding the filter in the Java heap.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeIsHashWhitelisted<'local>(
     mut env: JNIEnv<'local>,
@@ -389,15 +389,21 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass<'local>,
     path: JString<'local>,
     hydradragon_json: JString<'local>,
+    file_md5: JString<'local>,
 ) -> jstring {
-    let result = scan_apk(&mut env, path, hydradragon_json);
+    let result = scan_apk(&mut env, path, hydradragon_json, file_md5);
     match env.new_string(&result) {
         Ok(s) => s.into_raw(),
         Err(_) => std::ptr::null_mut(),
     }
 }
 
-fn scan_apk(env: &mut JNIEnv, path: JString, hydradragon_json: JString) -> String {
+fn scan_apk(
+    env: &mut JNIEnv,
+    path: JString,
+    hydradragon_json: JString,
+    file_md5: JString,
+) -> String {
     let path: String = match env.get_string(&path) {
         Ok(s) => s.into(),
         Err(_) => return r#"{"error":"bad path"}"#.to_string(),
@@ -408,6 +414,13 @@ fn scan_apk(env: &mut JNIEnv, path: JString, hydradragon_json: JString) -> Strin
         .ok()
         .map(|s| String::from(s).into_bytes())
         .filter(|b| !b.is_empty());
+    // MD5 Java already computed for the whole file (hash-first fast path). Reused
+    // for the top-level buffer so it isn't hashed again here. Empty → None.
+    let file_md5: Option<String> = env
+        .get_string(&file_md5)
+        .ok()
+        .map(String::from)
+        .filter(|s| !s.is_empty());
     let Some(engine) = ENGINE.get() else {
         return r#"{"error":"not initialised"}"#.to_string();
     };
@@ -420,7 +433,7 @@ fn scan_apk(env: &mut JNIEnv, path: JString, hydradragon_json: JString) -> Strin
     // any panic — so neither a deep stack nor a panic on a malformed/adversarial
     // APK can SIGABRT the whole app process.
     let scanned = on_big_stack(move || {
-        run_scan(engine, &bytes, &path, hydradragon.as_deref())
+        run_scan(engine, &bytes, &path, hydradragon.as_deref(), file_md5.as_deref())
     });
     match scanned {
         Ok(s) => s,
@@ -438,7 +451,13 @@ fn scan_apk(env: &mut JNIEnv, path: JString, hydradragon_json: JString) -> Strin
     }
 }
 
-fn run_scan(engine: &Engine, bytes: &[u8], path: &str, hydradragon: Option<&[u8]>) -> String {
+fn run_scan(
+    engine: &Engine,
+    bytes: &[u8],
+    path: &str,
+    hydradragon: Option<&[u8]>,
+    file_md5: Option<&str>,
+) -> String {
     // Extract ONCE here in the bridge: `buffers` holds the top-level file plus
     // every buffer reachable by recursively unpacking archives (APK = zip, plus
     // gz/tar/xz/lzma/7z/rar). BOTH engines then scan every buffer, so a malicious
@@ -452,7 +471,7 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str, hydradragon: Option<&[u8]
     // vice-versa), and `err` names WHICH engine + the panic location so the root
     // cause is pinpointed, not just swallowed.
     let mut err: Option<String> = None;
-    let buffers = collect_buffers(bytes);
+    let buffers = collect_buffers(bytes, file_md5);
     // Dangerous-permission count from the (in-memory) manifest bytes, so an APK
     // reached only by extraction still gets permission-based detection. Java
     // applies the suspicious(5)/malware(6) threshold.
@@ -461,11 +480,14 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str, hydradragon: Option<&[u8]
     // in-memory AndroidManifest.xml). Java matches these against its package
     // whitelist so a whitelisted app packed inside a zip is not a false positive.
     let packages = collect_packages(&buffers);
-    // SHA-256 of each APK/zip buffer, for the hash-keyed whitelist bloom filter.
-    let hashes = collect_apk_hashes(&buffers);
-    // SHA-256 of the whole top-level file (its "main hash") — Java builds a
-    // VirusTotal lookup link from this so the user can inspect it themselves.
-    let file_sha256 = sha256_hex(bytes);
+    // MD5 of each APK/zip buffer, for the hash-keyed whitelist.
+    let hashes = collect_apk_hashes(&buffers, file_md5);
+    // MD5 of the whole top-level file (its "main hash") — Java builds a
+    // VirusTotal lookup link from this (VT accepts md5). Reuses Java's md5.
+    let file_hash = match file_md5 {
+        Some(md5) => md5.to_string(),
+        None => md5_hex(bytes),
+    };
     // androguard JSON report (manifest + URL sweep), fed to the YARA-X
     // `androguard` module so its rules (permission/url/package_name/...) work.
     // None when no AndroidManifest.xml is reachable (not an APK).
@@ -662,8 +684,8 @@ fn run_scan(engine: &Engine, bytes: &[u8], path: &str, hydradragon: Option<&[u8]
     };
 
     format!(
-        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"sha256":"{}","ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}{}}}"#,
-        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_sha256, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, err_json
+        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}{}}}"#,
+        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, err_json
     )
 }
 
@@ -1088,27 +1110,31 @@ fn build_androguard_json(buffers: &[Buf]) -> Option<String> {
     ))
 }
 
-/// Lowercase hex SHA-256 of `data`.
-fn sha256_hex(data: &[u8]) -> String {
-    use sha2::{Digest, Sha256};
-    let digest = Sha256::digest(data);
-    let mut s = String::with_capacity(64);
+/// Lowercase hex MD5 of `data` (the whitelist is keyed on MD5).
+fn md5_hex(data: &[u8]) -> String {
+    use md5::{Digest, Md5};
+    let digest = Md5::digest(data);
+    let mut s = String::with_capacity(32);
     for b in digest {
         s.push_str(&format!("{:02x}", b));
     }
     s
 }
 
-/// Lowercase hex SHA-256 of every APK/zip buffer reachable in `buffers`, so Java
-/// can match an in-memory (e.g. zip-nested) APK against a hash-keyed whitelist
-/// bloom filter. Deduped, bounded.
-fn collect_apk_hashes(buffers: &[Buf]) -> Vec<String> {
+/// Lowercase hex MD5 of every APK/zip buffer reachable in `buffers`, so Java can
+/// match an in-memory (e.g. zip-nested) APK against the hash-keyed whitelist.
+/// Deduped, bounded.
+fn collect_apk_hashes(buffers: &[Buf], top_md5: Option<&str>) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
-    for b in buffers {
+    for (i, b) in buffers.iter().enumerate() {
         if hydradragonextractor::detect_format(&b.data) != Some("zip") {
             continue; // only APK/zip containers
         }
-        let s = sha256_hex(&b.data);
+        // buffers[0] is the top-level file — reuse Java's MD5 for it.
+        let s = match top_md5 {
+            Some(md5) if i == 0 => md5.to_string(),
+            _ => md5_hex(&b.data),
+        };
         if !out.contains(&s) {
             out.push(s);
             if out.len() >= 64 {
@@ -1143,7 +1169,7 @@ fn collect_packages(buffers: &[Buf]) -> Vec<String> {
 /// themselves. Bounded so a malicious "zip bomb" can't exhaust memory: capped
 /// buffer count, recursion depth and per-buffer size. `detect_format` gates the
 /// extractor so plain files never fall through to its 7z fallback.
-/// A decompressed buffer plus the SHA-256s of every ancestor APK/zip in its
+/// A decompressed buffer plus the MD5s of every ancestor APK/zip in its
 /// extraction lineage (including its OWN hash when it is itself a zip/APK). A
 /// malicious hit on this buffer can be suppressed only if one of these lineage
 /// hashes is whitelisted — so a known-good APK clears every component extracted
@@ -1154,7 +1180,9 @@ struct Buf {
     apk_lineage: Vec<String>,
 }
 
-fn collect_buffers(data: &[u8]) -> Vec<Buf> {
+/// `top_md5` is Java's already-computed MD5 of the whole scanned file, reused for
+/// the top-level (depth 0) buffer so the largest buffer isn't hashed twice.
+fn collect_buffers(data: &[u8], top_md5: Option<&str>) -> Vec<Buf> {
     const MAX_BUFFERS: usize = 4096;
     const MAX_DEPTH: usize = 8;
     const MAX_SIZE: usize = 128 * 1024 * 1024;
@@ -1171,7 +1199,11 @@ fn collect_buffers(data: &[u8]) -> Vec<Buf> {
         let mut lineage = parent_lineage;
         // A zip/APK contributes its own hash to its (and its children's) lineage.
         if hydradragonextractor::detect_format(&buf) == Some("zip") {
-            lineage.push(sha256_hex(&buf));
+            let h = match top_md5 {
+                Some(md5) if depth == 0 => md5.to_string(),
+                _ => md5_hex(&buf),
+            };
+            lineage.push(h);
         }
         if depth < MAX_DEPTH && hydradragonextractor::detect_format(&buf).is_some() {
             if let Ok(children) = hydradragonextractor::extract_archive_from_bytes(&buf) {
