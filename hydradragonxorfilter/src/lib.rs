@@ -4,18 +4,16 @@
 //! and the on-disk format in ONE crate guarantees a filter written on the x86
 //! build host is queryable byte-for-byte on the arm64 device.
 //!
-//! This replaces the previous `qfilter` (Rank-Select Quotient Filter) approach.
 //! Binary Fuse filters are smaller (~1.08 B/key for BF8, ~2.16 for BF16, ~4.3
 //! for BF32) and faster to query than quotient or Bloom/Cuckoo filters; the
 //! trade-off is that construction needs every key in memory at once (done once,
 //! offline) and the filter keys on `u64`, so textual items are folded to a
 //! `u64` with [`key`].
 //!
-//! NOTE on memory: unlike the old mmap'd zero-copy `qfilter`, the binary-fuse
-//! filter is decoded into an owned buffer at load time (its fingerprint array
-//! lives on the native heap). Binary-fuse encodings are far smaller than the
-//! equivalent quotient filter, so resident RAM is typically LOWER overall, but
-//! it is now dirty RSS rather than reclaimable page cache.
+//! NOTE on memory: the filter is decoded into an owned buffer at load time (its
+//! fingerprint array lives on the native heap) rather than mmap'd zero-copy.
+//! Binary-fuse encodings are small enough that resident RAM is typically low
+//! overall even so, but it is dirty RSS rather than reclaimable page cache.
 
 use std::fs::File;
 use std::path::Path;
