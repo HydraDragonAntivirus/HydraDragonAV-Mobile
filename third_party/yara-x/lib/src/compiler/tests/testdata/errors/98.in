@@ -1,6 +1,0 @@
-rule test {
-   strings:
-     $ = "foo"
-   condition:
-     $
-}

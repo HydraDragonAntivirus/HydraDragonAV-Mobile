@@ -1,5 +1,0 @@
-rule test {
-	condition:
-	   with foo = "foo" : ( foo == "foo" )
-       and foo == "foo"
-}

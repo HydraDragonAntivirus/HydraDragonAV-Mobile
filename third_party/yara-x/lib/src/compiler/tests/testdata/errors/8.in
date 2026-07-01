@@ -1,3 +1,0 @@
-rule test {
-  condition: "111" contains 1
-}

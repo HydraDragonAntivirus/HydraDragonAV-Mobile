@@ -1,7 +1,0 @@
-// constant-folding required
-rule test {
-  strings:
-    $a = "foo"
-  condition:
-    !a[-1]
-}

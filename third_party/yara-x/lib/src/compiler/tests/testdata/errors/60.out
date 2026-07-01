@@ -1,7 +1,0 @@
-error[E014]: invalid regular expression
- --> line:5:15
-  |
-5 |     $b = /abc{}/
-  |               ^ repetition quantifier expects a valid decimal
-  |
-  = note: did you mean `\{` instead of `{`?
