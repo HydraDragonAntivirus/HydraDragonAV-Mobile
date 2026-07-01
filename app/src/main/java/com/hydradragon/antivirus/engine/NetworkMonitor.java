@@ -170,8 +170,18 @@ public class NetworkMonitor {
         eventLog.add(0, event);
         while (eventLog.size() > 1000) eventLog.remove(eventLog.size() - 1);
         if (blocked) recordBlocked(); else recordAllowed();
-        NetworkCallback cb = staticCallback;
-        if (cb != null) cb.onSuspiciousActivity(event);
+        // onSuspiciousActivity is BLOCKED-only by contract (GuardService turns it
+        // straight into a "🛡 ... Engellendi" push notification + threat-log entry
+        // + Dashboard feed line, unconditionally). Firing it for an ALLOWED query
+        // too — e.g. gstatic.com, completely normal Google-CDN traffic — showed
+        // it in the live feed labelled "Engellendi" even though nothing was
+        // blocked. Allowed events still land in getEventLog() for the Network
+        // screen's full list (allowed rows render green there), just not as a
+        // "suspicious" push alert.
+        if (blocked) {
+            NetworkCallback cb = staticCallback;
+            if (cb != null) cb.onSuspiciousActivity(event);
+        }
     }
 
     /**

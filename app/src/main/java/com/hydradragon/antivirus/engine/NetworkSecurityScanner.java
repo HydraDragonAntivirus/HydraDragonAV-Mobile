@@ -59,13 +59,17 @@ public class NetworkSecurityScanner {
         if (wifiManager != null) {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             if (wifiInfo != null) {
-                String ssid = wifiInfo.getSSID();
+                // Not requesting ACCESS_FINE_LOCATION just to read the SSID (see
+                // the "no SSID display" decision) means WifiInfo.getSSID() always
+                // returns the literal placeholder "<unknown ssid>" here — so it's
+                // never actually usable for a "Free"/"Public" name check either.
+                // Drop the SSID from the message entirely instead of showing that
+                // placeholder to the user.
                 boolean isArpSpoofed = checkArpSpoofing();
-                
+
                 if (isArpSpoofed) return new SecurityReport(false, "CRITICAL: ARP Spoofing (Man-in-the-Middle) Detected!", true);
-                else if (ssid.contains("Free") || ssid.contains("Public")) return new SecurityReport(false, "WARNING: Public network. Traffic may be intercepted.", false);
-                
-                return new SecurityReport(true, "Wi-Fi Network (" + ssid + ") Secure.", false);
+
+                return new SecurityReport(true, "Wi-Fi Network Secure.", false);
             }
         }
         return new SecurityReport(true, "Network Status Unknown", false);

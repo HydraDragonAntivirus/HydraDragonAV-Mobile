@@ -1,0 +1,1 @@
+This is just a normal harmless text file for a negative control test.
