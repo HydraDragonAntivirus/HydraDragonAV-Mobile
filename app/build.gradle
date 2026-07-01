@@ -71,6 +71,11 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
     implementation 'androidx.core:core-splashscreen:1.0.1'
+    // On-device OCR for Zero Trust screen-capture scanning (ScreenCaptureService):
+    // recognizes text from periodic MediaProjection frames, fed to the native
+    // hydradragon.screen_text YARA-X module. Latin-script model only (no
+    // dependency on Google Play Services beyond the base ML Kit runtime).
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'

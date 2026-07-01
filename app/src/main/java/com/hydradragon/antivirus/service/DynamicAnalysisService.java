@@ -37,6 +37,13 @@ public class DynamicAnalysisService extends AccessibilityService {
 
     /** Foreground package of the event currently being processed. */
     private volatile String fgPackage = "";
+    /** Same value, static so ScreenCaptureService (a separate service, not this
+     *  Accessibility instance) can attribute an OCR'd screen frame to the app
+     *  that was actually on screen when it was captured. */
+    private static volatile String sForegroundPackage = "";
+
+    /** Best-known foreground package name, or "" if none observed yet. */
+    public static String getForegroundPackage() { return sForegroundPackage; }
 
     // Single, self-replacing alert notification (no spam).
     private static final int ALERT_NOTIF_ID = 0xA1E7;
@@ -123,6 +130,7 @@ public class DynamicAnalysisService extends AccessibilityService {
             eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
 
             fgPackage = pkg;   // remember which app's content we're scanning
+            sForegroundPackage = pkg;
             AccessibilityNodeInfo rootNode = getRootInActiveWindow();
             if (rootNode != null) {
                 checkNodesForSuspiciousKeywords(rootNode);

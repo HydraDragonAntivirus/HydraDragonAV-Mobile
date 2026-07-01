@@ -39,7 +39,9 @@ public class SettingsFragment extends Fragment {
     private static final String PREFS = "hydra_prefs";
     private static final String KEY_DARK = "dark_mode";
     private static final String KEY_SHIELD = "web_shield_enabled";
+    private static final String KEY_SCREEN_OCR = "screen_ocr_enabled";
     private static final int REQ_VPN = 1201;
+    private static final int REQ_SCREEN_CAPTURE = 1202;
 
     @Nullable
     @Override
@@ -91,6 +93,21 @@ public class SettingsFragment extends Fragment {
                           .putBoolean(KEY_SHIELD, on).apply();
             if (on) enableWebShield(btn);
             else disableWebShield();
+        });
+
+        addHeader("Zero Trust (experimental)");
+        boolean zeroTrust = com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext());
+        addToggle("Zero Trust Mode — NOT RECOMMENDED", zeroTrust, (btn, on) -> {
+            com.hydradragon.antivirus.engine.ZeroTrustMode.setEnabled(requireContext(), on);
+            Toast.makeText(getContext(), on
+                ? "Zero Trust ON: unmatched apps now show as unverified, not clean — expect false positives"
+                : "Zero Trust OFF", Toast.LENGTH_LONG).show();
+        });
+
+        boolean screenOcr = prefs().getBoolean(KEY_SCREEN_OCR, false);
+        addToggle("Screen OCR scanning — NOT RECOMMENDED (battery)", screenOcr, (btn, on) -> {
+            if (on) requestScreenCapture(btn);
+            else stopScreenCapture();
         });
 
         addHeader(getString(R.string.system));

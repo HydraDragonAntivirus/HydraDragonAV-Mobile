@@ -126,4 +126,18 @@ fn url_s(ctx: &ScanContext, value: RuntimeString) -> i64 {
         .unwrap_or(0)
 }
 
+/// 1 if the on-screen text captured by the OCR screen-capture pipeline (see
+/// ScreenCaptureService) matches the given regular expression, 0 otherwise
+/// (including when no screen text was captured for this scan). Lets a rule
+/// match scam/ransomware/phishing wording actually rendered on screen, not
+/// just strings baked into the APK.
+#[module_export(name = "screen_text")]
+fn screen_text_r(ctx: &ScanContext, re: RegexId) -> i64 {
+    get_local()
+        .as_ref()
+        .and_then(|local| local.screen_text.as_ref())
+        .map(|text| i64::from(ctx.regexp_matches(re, text.as_bytes())))
+        .unwrap_or(0)
+}
+
 register_module!("hydradragon", Hydradragon, main);

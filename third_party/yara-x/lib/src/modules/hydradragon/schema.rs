@@ -23,6 +23,9 @@ pub(super) struct HydradragonJson {
     pub network: Option<NetworkJson>,
     /// Full URLs observed live (host + path), for `hydradragon.url`.
     pub urls: Option<Vec<String>>,
+    /// On-screen text recognized by the OCR screen-capture pipeline (recent
+    /// text for the scanned app, concatenated), for `hydradragon.screen_text`.
+    pub screen_text: Option<String>,
 }
 
 impl<'de> Deserialize<'de> for NetworkJson {

@@ -86,6 +86,10 @@ public final class NativeScanner {
 
     private static native String nativeScanIp(String ip);
 
+    /** Comma-joined matched rule/signature names for OCR'd on-screen text
+     *  ("" if clean or engine not ready). Backs {@link #scanText}. */
+    private static native String nativeScanText(String text);
+
     /** Malicious category (e.g. "MALWARE_IP") for a resolved IP, or null if clean.
      *  Exact match against the native per-category xor filters (no CIDR/subnet). */
     public static String scanIp(String ip) {
@@ -102,6 +106,23 @@ public final class NativeScanner {
     public static boolean isHashWhitelisted(String sha256) {
         if (!LIB_LOADED || !ready || sha256 == null || sha256.isEmpty()) return false;
         try { return nativeIsHashWhitelisted(sha256); } catch (Throwable t) { return false; }
+    }
+
+    /** Scan OCR'd on-screen text (from ScreenCaptureService) against the
+     *  ClamAV/YARA engine — including {@code hydradragon.screen_text(regexp)}
+     *  rules — so wording actually rendered on screen (scam/ransomware/
+     *  phishing) is caught even if it never touches the foreground app's own
+     *  APK bytes. Returns matched rule/signature names, empty if clean/unready. */
+    public static List<String> scanText(String text) {
+        List<String> out = new ArrayList<>();
+        if (!ready || text == null || text.isEmpty()) return out;
+        try {
+            String joined = nativeScanText(text);
+            if (joined != null && !joined.isEmpty()) {
+                for (String s : joined.split(",")) if (!s.isEmpty()) out.add(s);
+            }
+        } catch (Throwable t) { /* degrade gracefully */ }
+        return out;
     }
 
     /** Public: human-readable native engine load report (clamav / yrc / model). */
@@ -209,6 +230,10 @@ public final class NativeScanner {
         public Integer skippedTarget;
         /** Non-null if the native scan errored. */
         public String error;
+        /** yarGen-style auto-generated YARA rule text for THIS malicious sample
+         *  (androguard/hydradragon-aware condition, no whitelist-DB string
+         *  filtering), or null for a clean scan / when nothing was extractable. */
+        public String generatedRule;
 
         public boolean isError() { return error != null; }
         public boolean isSkipped() { return skippedTarget != null; }
@@ -289,6 +314,9 @@ public final class NativeScanner {
                         }
                     v.detections.add(new Verdict.Detection(name, dh));
                 }
+            }
+            if (o.has("generated_rule") && !o.isNull("generated_rule")) {
+                v.generatedRule = o.optString("generated_rule", null);
             }
             JSONObject ml = o.optJSONObject("ml");
             if (ml != null) {

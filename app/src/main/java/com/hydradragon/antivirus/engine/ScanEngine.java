@@ -182,6 +182,23 @@ public class ScanEngine {
         return false;
     }
 
+    /** Write a yarGen-style auto-generated rule (see NativeScanner.Verdict#generatedRule)
+     *  next to the app's other on-device rulesets so it can be inspected/exported. One
+     *  file per sample hash — re-scanning the same malicious sample overwrites, not
+     *  duplicates. No-op when the native side didn't produce one (clean scan). */
+    private void saveGeneratedRule(NativeScanner.Verdict v) {
+        if (v == null || v.generatedRule == null || v.generatedRule.isEmpty()) return;
+        try {
+            java.io.File dir = new java.io.File(context.getFilesDir(), "generated_rules");
+            if (!dir.exists() && !dir.mkdirs()) return;
+            String name = (v.md5 != null && !v.md5.isEmpty()) ? v.md5 : String.valueOf(System.nanoTime());
+            java.io.File out = new java.io.File(dir, "auto_" + name + ".yar");
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
+                fos.write(v.generatedRule.getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception e) { /* best effort — never block the scan on this */ }
+    }
+
     /** Detections that survive per-lineage whitelist suppression. A sibling
      *  non-APK virus (empty/non-whitelisted lineage) survives even when a
      *  whitelisted APK sits alongside it in the same archive. */
@@ -287,6 +304,7 @@ public class ScanEngine {
             if (isHashWhitelisted(md5)) return;
             NativeScanner.Verdict v = NativeScanner.scan(path, null, md5);
             if (v == null) return;
+            saveGeneratedRule(v);
             // Per-detection whitelist suppression: a hit INSIDE a known-good
             // (whitelisted) APK is a false positive, but a non-APK virus sitting
             // alongside that APK in the same archive is NOT suppressed by the APK's
@@ -403,6 +421,7 @@ public class ScanEngine {
                 if (isHashWhitelisted(appMd5)) continue;
                 NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir, app.packageName, appMd5);
                 if (v == null) continue;
+                saveGeneratedRule(v);
                 // Per-detection suppression (a hit inside a whitelisted APK is an
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
                 List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
@@ -554,12 +573,22 @@ public class ScanEngine {
         String fileMd5Vt = null;   // top-level file MD5 from the native scan (for the VirusTotal link)
         String companyName = "Unknown Developer";
         String signatureHash = "NONE";
+        // Captured for the Zero Trust "full known details" dump below — only
+        // used when NOTHING else flagged this app (riskScore stays 0).
+        List<String> requestedPermissions = new ArrayList<>();
+        List<String> nativePackages = new ArrayList<>();
+        List<String> nativeHashes = new ArrayList<>();
+        int dangerousPermCount = -1;
+        String mlSummary = null;
 
         try {
             PackageInfo pkgInfo = isApkFile
                 ? pm.getPackageArchiveInfo(app.sourceDir, PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES)
                 : pm.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
 
+            if (pkgInfo != null && pkgInfo.requestedPermissions != null) {
+                requestedPermissions.addAll(Arrays.asList(pkgInfo.requestedPermissions));
+            }
             if (pkgInfo != null && pkgInfo.signatures != null && pkgInfo.signatures.length > 0) {
                 Signature sig = pkgInfo.signatures[0];
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -611,7 +640,14 @@ public class ScanEngine {
                 String apkMd5 = apkPath != null ? fileMd5(new java.io.File(apkPath)) : null;
                 if (apkPath != null && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
                     NativeScanner.Verdict v = NativeScanner.scan(apkPath, app.packageName, apkMd5);
+                    saveGeneratedRule(v);
                     fileMd5Vt = v.md5;
+                    nativePackages.addAll(v.packages);
+                    nativeHashes.addAll(v.hashes);
+                    dangerousPermCount = v.permissions;
+                    mlSummary = String.format(java.util.Locale.US,
+                        "jaccard=%.2f anomaly=%.4f nearest=%s", v.jaccard, v.anomaly,
+                        v.nearest != null ? v.nearest : "none");
                     // Per-detection whitelist suppression (hit inside a whitelisted
                     // APK = FP; non-APK virus alongside it survives).
                     List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
@@ -681,6 +717,42 @@ public class ScanEngine {
             reasons.add("🔐 SHA-256: " + signatureHash);
             if (fileMd5Vt != null && !fileMd5Vt.isEmpty()) {
                 reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileMd5Vt);
+            }
+        }
+
+        // Zero Trust Mode: NONE of clamav/YARA, the ML model, DEX static
+        // analysis, permissions, code analysis or behaviour flagged anything
+        // (riskScore still 0) — normally that means "clean". With Zero Trust
+        // on, refuse to call it clean: report SUSPICIOUS instead and attach
+        // every known detail so the user decides, not the (absent) verdict.
+        if (riskScore == 0 && !isWhitelisted && ZeroTrustMode.isEnabled(context)) {
+            riskScore = 30; // matches ThreatResult.isThreat()'s SUSPICIOUS threshold
+            builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
+            reasons.add("⚠️ ZERO TRUST: no detector matched this app — verdict is UNVERIFIED, "
+                + "not confirmed clean (not recommended: expect false positives on ordinary apps)");
+            reasons.add("✍️ Signature: " + companyName);
+            reasons.add("🔐 SHA-256: " + signatureHash);
+            reasons.add("🔐 Dangerous permissions matched: "
+                + (dangerousPermCount >= 0 ? dangerousPermCount + "/9" : "not scanned"));
+            if (!requestedPermissions.isEmpty()) {
+                reasons.add("📋 All requested permissions (" + requestedPermissions.size() + "): "
+                    + String.join(", ", requestedPermissions));
+            }
+            if (!nativePackages.isEmpty()) {
+                reasons.add("📦 Package(s) reached in-memory: " + String.join(", ", nativePackages));
+            }
+            if (!nativeHashes.isEmpty()) {
+                reasons.add("🔍 APK/zip buffer hash(es): " + String.join(", ", nativeHashes));
+            }
+            if (mlSummary != null) {
+                reasons.add("🤖 [ML] " + mlSummary);
+            }
+            if (fileMd5Vt != null && !fileMd5Vt.isEmpty()) {
+                reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileMd5Vt);
+            }
+            String netJson = NetworkObservations.buildReportJson(app.packageName);
+            if (!netJson.isEmpty()) {
+                reasons.add("🌐 Observed network/screen activity: " + netJson);
             }
         }
 

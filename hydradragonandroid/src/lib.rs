@@ -424,6 +424,59 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }
 }
 
+/// `String nativeScanText(String text, String packageName)` — runs the
+/// clamav/YARA engine (hydradragon.screen_text + plain-string rules) against
+/// OCR'd on-screen text and returns a comma-joined list of matched rule/sig
+/// names ("" if clean or the engine isn't ready). Used by ScreenCaptureService
+/// so a scam/ransomware message actually rendered on screen can be caught even
+/// when it never touches the APK's own bytes.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanText<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    text: JString<'local>,
+) -> jstring {
+    let t: String = match env.get_string(&text) {
+        Ok(s) => s.into(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let result = scan_text(&t);
+    match env.new_string(&result) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+fn scan_text(text: &str) -> String {
+    if text.is_empty() {
+        return String::new();
+    }
+    let Some(engine) = ENGINE.get() else {
+        return String::new();
+    };
+    let Some(clamav) = &engine.clamav else {
+        return String::new();
+    };
+    // Cap: OCR text is display-sized, never worth scanning megabytes of it.
+    let bytes = if text.len() > 8192 { &text.as_bytes()[..8192] } else { text.as_bytes() };
+    let meta_json = format!(r#"{{"screen_text":"{}"}}"#, json_escape(text));
+    let module_meta: Vec<(&str, &[u8])> = vec![("hydradragon", meta_json.as_bytes())];
+    let opts = ScanOptions {
+        strict_targets: false,
+        max_matches: 16,
+        ..ScanOptions::default()
+    };
+    let names = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        clamav
+            .scan_bytes_named(bytes, "screen_text", opts, &module_meta)
+            .into_iter()
+            .map(|m| m.name)
+            .collect::<Vec<_>>()
+    }))
+    .unwrap_or_default();
+    names.join(",")
+}
+
 /// `String nativeScanApk(String path)` — returns a JSON verdict.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanApk<'local>(
@@ -727,6 +780,21 @@ fn run_scan(
     }
 
     let malicious = !detections.is_empty();
+    // yarGen-style auto-generated rule for THIS malicious sample only — every
+    // string comes straight from this sample's own DEX string pool, no
+    // goodware/whitelist DB filtering (unlike real yarGen). References the
+    // androguard and hydradragon modules in its condition, not just literal
+    // strings, so it also fires on package-name/network reruns of the same
+    // family. None for a clean scan.
+    let generated_rule = if malicious {
+        generate_yara_rule(&file_hash, &packages, &detections, &dex_scans)
+    } else {
+        None
+    };
+    let generated_rule_json = match &generated_rule {
+        Some(r) => format!("\"{}\"", json_escape(r)),
+        None => "null".to_string(),
+    };
     let detections_json = detections
         .iter()
         .map(|(name, lineage)| {
@@ -760,9 +828,87 @@ fn run_scan(
     };
 
     format!(
-        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}}{}}}"#,
-        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, err_json
+        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}},"generated_rule":{}{}}}"#,
+        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, generated_rule_json, err_json
     )
+}
+
+/// Build a yarGen-style YARA rule from THIS scan's own results (no
+/// goodware/whitelist-DB string filtering — every string here comes straight
+/// from the sample itself). Only called when the scan is malicious, so a
+/// clean app never gets an ad-hoc rule generated for it. `import`s the
+/// androguard and hydradragon modules and references them in the condition
+/// (package name / network) rather than relying on literal strings alone.
+fn generate_yara_rule(
+    file_hash: &str,
+    packages: &[String],
+    detections: &[(String, Vec<String>)],
+    dex_scans: &[Option<dex_scan::DexScan>],
+) -> Option<String> {
+    if detections.is_empty() {
+        return None;
+    }
+    let mut strings: Vec<String> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    'outer: for ds in dex_scans.iter().flatten() {
+        for line in ds.text.lines() {
+            let l = line.trim();
+            if l.len() < 8 || l.len() > 128 || l.chars().any(|c| c.is_control()) {
+                continue;
+            }
+            if !seen.insert(l.to_string()) {
+                continue;
+            }
+            strings.push(l.to_string());
+            if strings.len() >= 40 {
+                break 'outer;
+            }
+        }
+    }
+    if strings.is_empty() && packages.is_empty() {
+        return None;
+    }
+
+    let rule_name = format!("auto_{}", file_hash);
+    let mut out = String::new();
+    out.push_str("import \"androguard\"\nimport \"hydradragon\"\n\n");
+    out.push_str(&format!("rule {} {{\n", rule_name));
+    out.push_str("  meta:\n");
+    out.push_str("    generator = \"hydradragon-autogen (yarGen-style, no whitelist filtering)\"\n");
+    out.push_str(&format!("    sample_md5 = \"{}\"\n", file_hash));
+    let det_names: Vec<String> = detections.iter().map(|(n, _)| n.replace('"', "'")).collect();
+    out.push_str(&format!(
+        "    based_on_detections = \"{}\"\n",
+        det_names.join(", ")
+    ));
+    if !strings.is_empty() {
+        out.push_str("  strings:\n");
+        for (i, s) in strings.iter().enumerate() {
+            out.push_str(&format!(
+                "    $s{} = \"{}\" ascii wide\n",
+                i,
+                s.replace('\\', "\\\\").replace('"', "\\\"")
+            ));
+        }
+    }
+    out.push_str("  condition:\n");
+    let mut clauses: Vec<String> = Vec::new();
+    for pkg in packages {
+        clauses.push(format!(
+            "androguard.package_name(\"{}\")",
+            pkg.replace('"', "'")
+        ));
+    }
+    if !strings.is_empty() {
+        let threshold = strings.len().min(6).max(1);
+        clauses.push(format!("{} of them", threshold));
+    }
+    if clauses.is_empty() {
+        clauses.push("false".to_string());
+    }
+    out.push_str(&format!("    {}\n", clauses.join(" or\n    ")));
+    out.push_str("}\n");
+    Some(out)
 }
 
 /// The most dangerous Android permissions (mirrors the Java `DANGEROUS_PERMISSIONS`

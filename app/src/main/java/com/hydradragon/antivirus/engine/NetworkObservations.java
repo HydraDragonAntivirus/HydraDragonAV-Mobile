@@ -24,8 +24,16 @@ import java.util.Map;
  * which a MITM-free DNS shield can't observe):
  * <pre>{@code
  *   {"network":{"domains":[{"domain":"x.com"}],"hosts":["1.2.3.4"]},
- *    "urls":["http://x.com/path"]}
+ *    "urls":["http://x.com/path"],
+ *    "screen_text":"recent OCR'd on-screen text for this app"}
  * }</pre>
+ *
+ * {@code screen_text} comes from ScreenCaptureService (OCR over periodic
+ * MediaProjection frames, attributed via DynamicAnalysisService's tracked
+ * foreground package) rather than the network VPN — same report, different
+ * source — so {@code hydradragon.screen_text(regexp)} rules can match wording
+ * actually rendered on screen (scam/ransomware/phishing text) at the next scan
+ * of that app.
  *
  * Bounded per app (oldest evicted) so long uptime can't grow it unbounded.
  */
@@ -33,13 +41,17 @@ public final class NetworkObservations {
 
     private static final int MAX_PER_APP = 2048;
     private static final int MAX_APPS = 1024;
+    /** Cap on how much recent screen text one app's report carries (bytes, not
+     *  frames) — OCR text is small per frame but frames arrive continuously. */
+    private static final int MAX_SCREEN_TEXT_CHARS = 8192;
 
     private static final class Buckets {
         final LinkedHashSet<String> domains = new LinkedHashSet<>();
         final LinkedHashSet<String> hosts = new LinkedHashSet<>();
         final LinkedHashSet<String> urls = new LinkedHashSet<>();
+        final StringBuilder screenText = new StringBuilder();
 
-        boolean isEmpty() { return domains.isEmpty() && hosts.isEmpty() && urls.isEmpty(); }
+        boolean isEmpty() { return domains.isEmpty() && hosts.isEmpty() && urls.isEmpty() && screenText.length() == 0; }
     }
 
     /** package name → observations. */
@@ -50,6 +62,25 @@ public final class NetworkObservations {
     public static synchronized void addDomain(String pkg, String domain) { add(pkg, 0, domain); }
     public static synchronized void addHost(String pkg, String host)     { add(pkg, 1, host); }
     public static synchronized void addUrl(String pkg, String url)       { add(pkg, 2, url); }
+
+    /** Append OCR'd on-screen text captured while {@code pkg} was foreground.
+     *  Oldest text is dropped (not the newest) once the per-app cap is hit, so
+     *  the report always reflects the most recent screen content. */
+    public static synchronized void addScreenText(String pkg, String text) {
+        if (pkg == null || pkg.isEmpty() || text == null) return;
+        text = text.trim();
+        if (text.isEmpty()) return;
+        Buckets b = byPkg.get(pkg);
+        if (b == null) {
+            if (byPkg.size() >= MAX_APPS) return;
+            b = new Buckets();
+            byPkg.put(pkg, b);
+        }
+        if (b.screenText.length() > 0) b.screenText.append('\n');
+        b.screenText.append(text);
+        int over = b.screenText.length() - MAX_SCREEN_TEXT_CHARS;
+        if (over > 0) b.screenText.delete(0, over);
+    }
 
     private static void add(String pkg, int kind, String v) {
         if (pkg == null || pkg.isEmpty() || v == null) return;
@@ -87,7 +118,7 @@ public final class NetworkObservations {
         appendArray(sb, b.hosts);
         sb.append("]},\"urls\":[");
         appendArray(sb, b.urls);
-        sb.append("]}");
+        sb.append("],\"screen_text\":\"").append(esc(b.screenText.toString())).append("\"}");
         return sb.toString();
     }
 
