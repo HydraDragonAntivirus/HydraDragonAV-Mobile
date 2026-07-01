@@ -569,6 +569,7 @@ public class ScanEngine {
         }
 
         int riskScore = 0;
+        boolean isWhitelisted = false;
         List<String> reasons = new ArrayList<>();
         String fileMd5Vt = null;   // top-level file MD5 from the native scan (for the VirusTotal link)
         String companyName = "Unknown Developer";
