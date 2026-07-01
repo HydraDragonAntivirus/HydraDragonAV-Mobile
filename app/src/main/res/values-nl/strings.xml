@@ -165,4 +165,10 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="scam_page_msg">Losgeld-/scamtekst op een webpagina.</string>
     <string name="sms_phishing_title">Mogelijke sms-scam / phishing</string>
     <string name="sms_phishing_msg">Scam- of phishingtekst gedetecteerd op scherm in %1$s</string>
+    <string name="fake_virus_warning_title">Nepwaarschuwing voor virus gedetecteerd</string>
+    <string name="fake_virus_warning_msg">Nepantivirus-/technischeondersteuningsscamtekst gedetecteerd op scherm in %1$s — dit is een scampagina, geen echt scanresultaat.</string>
+    <string name="play_protect_off_title">Google Play Protect staat uit</string>
+    <string name="play_protect_off_msg">Play Protect scant apps bij installatie met behulp van Googles server-side dreigingsdatabase — het werkt naast HydraDragon, niet in plaats daarvan. We raden aan het weer in te schakelen.</string>
+    <string name="sms_virus_title">Schadelijke sms geblokkeerd</string>
+    <string name="sms_virus_msg">Een sms-bericht van %1$s bevatte een schadelijke link of scamtekst en is gemarkeerd.</string>
 </resources>

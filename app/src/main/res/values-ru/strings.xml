@@ -165,4 +165,10 @@
     <string name="scam_page_msg">Текст вымогательства/мошенничества на веб-странице.</string>
     <string name="sms_phishing_title">Возможное SMS-мошенничество / фишинг</string>
     <string name="sms_phishing_msg">На экране в %1$s обнаружен текст мошенничества или фишинга</string>
+    <string name="fake_virus_warning_title">Обнаружено поддельное предупреждение о вирусе</string>
+    <string name="fake_virus_warning_msg">На экране в %1$s обнаружен текст поддельного антивируса / мошенничества с технической поддержкой — это мошенническая веб-страница, а не реальный результат сканирования.</string>
+    <string name="play_protect_off_title">Google Play Защита отключена</string>
+    <string name="play_protect_off_msg">Play Защита сканирует приложения при установке, используя серверную базу угроз Google — она работает вместе с HydraDragon, а не вместо него. Рекомендуем снова включить её.</string>
+    <string name="sms_virus_title">Вредоносное SMS заблокировано</string>
+    <string name="sms_virus_msg">Текстовое сообщение от %1$s содержало вредоносную ссылку или текст мошенничества и было помечено.</string>
 </resources>

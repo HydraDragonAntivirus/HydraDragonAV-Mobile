@@ -165,4 +165,10 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scam_page_msg">Teks tebusan/penipuan di halaman web.</string>
     <string name="sms_phishing_title">Kemungkinan penipuan SMS / phishing</string>
     <string name="sms_phishing_msg">Teks penipuan atau phishing terdeteksi di layar di %1$s</string>
+    <string name="fake_virus_warning_title">Peringatan virus palsu terdeteksi</string>
+    <string name="fake_virus_warning_msg">Teks antivirus palsu / penipuan dukungan teknis terdeteksi di layar di %1$s — ini adalah halaman web penipuan, bukan hasil pemindaian sebenarnya.</string>
+    <string name="play_protect_off_title">Google Play Protect nonaktif</string>
+    <string name="play_protect_off_msg">Play Protect memindai aplikasi saat instalasi menggunakan basis data ancaman sisi server Google — ia bekerja bersama HydraDragon, bukan sebagai penggantinya. Kami menyarankan untuk mengaktifkannya kembali.</string>
+    <string name="sms_virus_title">SMS berbahaya diblokir</string>
+    <string name="sms_virus_msg">Pesan teks dari %1$s berisi tautan berbahaya atau teks penipuan dan telah ditandai.</string>
 </resources>

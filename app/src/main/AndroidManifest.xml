@@ -20,6 +20,13 @@
 <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- SMS virus/scam detection: incoming texts are checked for malicious
+         links and scam/phishing wording (SmsReceiver), never blocked or
+         modified. NOTE: RECEIVE_SMS is a Play Console "Restricted Permission"
+         — a non-default SMS-handler app declaring it will be rejected unless
+         it qualifies for an approved use case (Play Console > App content >
+         Permissions declaration form must be filed before publishing). -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <!-- Screen OCR scanning (Zero Trust screen-text detection): system consent
          dialog is requested per-session via MediaProjectionManager; this
          permission only lets the resulting foreground service run. -->
@@ -132,7 +139,14 @@
             </intent-filter>
         </receiver>
 
-        
-        
+        <receiver
+            android:name=".service.SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED"/>
+            </intent-filter>
+        </receiver>
+
     </application>
 </manifest>

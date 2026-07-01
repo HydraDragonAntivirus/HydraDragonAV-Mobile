@@ -165,4 +165,10 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="scam_page_msg">Texte de rançon/arnaque sur une page web.</string>
     <string name="sms_phishing_title">Possible arnaque SMS / phishing</string>
     <string name="sms_phishing_msg">Texte d\'arnaque ou de phishing détecté à l\'écran dans %1$s</string>
+    <string name="fake_virus_warning_title">Fausse alerte virus détectée</string>
+    <string name="fake_virus_warning_msg">Texte de faux antivirus / arnaque au support technique détecté à l\'écran dans %1$s — il s\'agit d\'une page web frauduleuse, pas d\'un vrai résultat d\'analyse.</string>
+    <string name="play_protect_off_title">Google Play Protect est désactivé</string>
+    <string name="play_protect_off_msg">Play Protect analyse les applications lors de l\'installation à l\'aide de la base de données de menaces côté serveur de Google — il fonctionne en complément de HydraDragon, pas à sa place. Nous recommandons de le réactiver.</string>
+    <string name="sms_virus_title">SMS malveillant bloqué</string>
+    <string name="sms_virus_msg">Un SMS provenant de %1$s contenait un lien malveillant ou un texte d\'arnaque et a été signalé.</string>
 </resources>

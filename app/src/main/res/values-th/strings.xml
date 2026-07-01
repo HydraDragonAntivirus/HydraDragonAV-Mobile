@@ -165,4 +165,10 @@
     <string name="scam_page_msg">พบข้อความเรียกค่าไถ่/หลอกลวงบนหน้าเว็บ</string>
     <string name="sms_phishing_title">อาจเป็นการหลอกลวงทาง SMS / ฟิชชิง</string>
     <string name="sms_phishing_msg">ตรวจพบข้อความหลอกลวงหรือฟิชชิงบนหน้าจอใน %1$s</string>
+    <string name="fake_virus_warning_title">ตรวจพบคำเตือนไวรัสปลอม</string>
+    <string name="fake_virus_warning_msg">ตรวจพบข้อความโปรแกรมป้องกันไวรัสปลอม / การหลอกลวงฝ่ายสนับสนุนทางเทคนิคบนหน้าจอใน %1$s — นี่คือเว็บเพจหลอกลวง ไม่ใช่ผลการสแกนจริง</string>
+    <string name="play_protect_off_title">Google Play Protect ปิดอยู่</string>
+    <string name="play_protect_off_msg">Play Protect สแกนแอปขณะติดตั้งโดยใช้ฐานข้อมูลภัยคุกคามฝั่งเซิร์ฟเวอร์ของ Google — ทำงานร่วมกับ HydraDragon ไม่ใช่แทนที่ เราขอแนะนำให้เปิดใช้งานอีกครั้ง</string>
+    <string name="sms_virus_title">บล็อก SMS ที่เป็นอันตรายแล้ว</string>
+    <string name="sms_virus_msg">ข้อความจาก %1$s มีลิงก์อันตรายหรือข้อความหลอกลวง และถูกตั้งค่าสถานะ</string>
 </resources>

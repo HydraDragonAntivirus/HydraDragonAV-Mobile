@@ -165,4 +165,10 @@
     <string name="scam_page_msg">웹 페이지에서 몸값/사기 텍스트가 발견되었습니다.</string>
     <string name="sms_phishing_title">SMS 사기 / 피싱 가능성</string>
     <string name="sms_phishing_msg">%1$s의 화면에서 사기 또는 피싱 문구가 감지되었습니다</string>
+    <string name="fake_virus_warning_title">가짜 바이러스 경고 감지됨</string>
+    <string name="fake_virus_warning_msg">%1$s의 화면에서 가짜 백신 / 기술 지원 사기 문구가 감지되었습니다 — 이는 실제 검사 결과가 아니라 사기성 웹페이지입니다.</string>
+    <string name="play_protect_off_title">Google Play 프로텍트가 꺼져 있습니다</string>
+    <string name="play_protect_off_msg">Play 프로텍트는 Google의 서버 측 위협 데이터베이스를 사용하여 설치 시 앱을 검사합니다 — HydraDragon 대신이 아니라 함께 작동합니다. 다시 켜는 것을 권장합니다.</string>
+    <string name="sms_virus_title">악성 SMS 차단됨</string>
+    <string name="sms_virus_msg">%1$s에서 온 문자 메시지에 악성 링크 또는 사기 문구가 포함되어 있어 표시되었습니다.</string>
 </resources>

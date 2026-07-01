@@ -165,4 +165,10 @@
     <string name="scam_page_msg">متن باج‌گیری/کلاهبرداری در یک صفحه وب.</string>
     <string name="sms_phishing_title">احتمال کلاهبرداری پیامکی / فیشینگ</string>
     <string name="sms_phishing_msg">متن کلاهبرداری یا فیشینگ روی صفحه در %1$s شناسایی شد</string>
+    <string name="fake_virus_warning_title">هشدار ویروس جعلی شناسایی شد</string>
+    <string name="fake_virus_warning_msg">متن آنتی‌ویروس جعلی / کلاهبرداری پشتیبانی فنی روی صفحه در %1$s شناسایی شد — این یک صفحه وب کلاهبرداری است، نه یک نتیجه اسکن واقعی.</string>
+    <string name="play_protect_off_title">Google Play Protect خاموش است</string>
+    <string name="play_protect_off_msg">Play Protect برنامه‌ها را هنگام نصب با استفاده از پایگاه داده تهدیدات سمت سرور گوگل اسکن می‌کند — این همراه با HydraDragon کار می‌کند، نه به جای آن. توصیه می‌کنیم دوباره آن را روشن کنید.</string>
+    <string name="sms_virus_title">پیامک مخرب مسدود شد</string>
+    <string name="sms_virus_msg">یک پیام متنی از %1$s حاوی پیوند مخرب یا متن کلاهبرداری بود و علامت‌گذاری شد.</string>
 </resources>

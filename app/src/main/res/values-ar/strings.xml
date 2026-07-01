@@ -165,4 +165,10 @@
     <string name="scam_page_msg">نص فدية/احتيال على صفحة ويب.</string>
     <string name="sms_phishing_title">رسالة SMS احتيالية / تصيّد محتملة</string>
     <string name="sms_phishing_msg">تم اكتشاف نص احتيالي أو تصيّدي على الشاشة في %1$s</string>
+    <string name="fake_virus_warning_title">تم اكتشاف تحذير فيروس مزيف</string>
+    <string name="fake_virus_warning_msg">تم اكتشاف نص مضاد فيروسات مزيف / احتيال دعم فني على الشاشة في %1$s — هذه صفحة ويب احتيالية وليست نتيجة فحص حقيقية.</string>
+    <string name="play_protect_off_title">حماية Google Play معطلة</string>
+    <string name="play_protect_off_msg">تفحص حماية Play التطبيقات عند التثبيت باستخدام قاعدة بيانات التهديدات على خادم Google — وهي تعمل جنبًا إلى جنب مع HydraDragon، وليس بدلاً منه. نوصي بإعادة تفعيلها.</string>
+    <string name="sms_virus_title">تم حظر رسالة SMS ضارة</string>
+    <string name="sms_virus_msg">احتوت رسالة نصية من %1$s على رابط ضار أو نص احتيالي وتم وضع علامة عليها.</string>
 </resources>

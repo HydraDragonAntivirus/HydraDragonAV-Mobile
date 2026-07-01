@@ -185,6 +185,21 @@ public class DynamicAnalysisService extends AccessibilityService {
                 }
             }
 
+            // FAKE VIRUS WARNING / TECH-SUPPORT SCAM MITIGATION (multi-language).
+            // Screen-text based — a full-screen "N viruses found, call this number"
+            // popup is virtually always a browser/WebView scam page, never a real
+            // scan result (this app's own scan UI is excluded above). Warn only —
+            // it's a web page, not malware to remove.
+            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAny(
+                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.FAKE_VIRUS_WARNING)) {
+                String id = "fakevirus:" + fgPackage;
+                if (!com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, id)) {
+                    Log.w(TAG, "FAKE VIRUS WARNING TEXT DETECTED in " + fgPackage);
+                    sendAlert(getString(R.string.fake_virus_warning_title),
+                        getString(R.string.fake_virus_warning_msg, fgPackage), id);
+                }
+            }
+
             // Website scan: ONLY in a real browser (or an already-flagged malware
             // app), where the URL is actually being VISITED. We don't scan URLs
             // that merely appear as text elsewhere (a scan result showing a URL

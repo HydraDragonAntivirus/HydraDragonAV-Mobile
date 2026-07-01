@@ -34,6 +34,11 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_VPN = 102;
 
+    // Guards the RECEIVE_SMS prompt to once per process — declining it must not
+    // re-prompt on every checkMandatoryPermissions() pass (unlike the mandatory
+    // checks above it, which re-run until satisfied).
+    private boolean smsPermissionAsked = false;
+
     private BottomNavigationView bottomNav;
 
     @Override
@@ -118,8 +123,26 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // SMS virus/scam detection (SmsReceiver): optional — some devices/ROMs
+        // restrict RECEIVE_SMS, and a user may simply decline it. Unlike
+        // POST_NOTIFICATIONS above, declining does NOT close the app; the rest
+        // of the suite runs fine without SMS scanning.
+        if (!smsPermissionAsked && ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
+            smsPermissionAsked = true;
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.RECEIVE_SMS}, 103);
+            return;
+        }
+
         if (!isAccessibilityServiceEnabled()) {
             showOptionalAccessibilityDialog();
+            return;
+        }
+
+        // Google Play Protect works alongside (not instead of) HydraDragon — it
+        // vets apps at install time via Google's server-side scan. If the user
+        // turned it off we recommend re-enabling it, but never block on it.
+        if (!isPlayProtectEnabled()) {
+            showOptionalPlayProtectDialog();
             return;
         }
 
@@ -243,6 +266,47 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Notification permission is required!", Toast.LENGTH_LONG).show();
                 finish();
+            }
+        } else if (requestCode == 103) {
+            // Optional — proceed either way, SMS scanning simply stays off if denied.
+            checkMandatoryPermissions();
+        }
+    }
+
+    /**
+     * Google Play Protect's on/off state isn't exposed by any public API — this
+     * reads the same {@code package_verifier_user_consent} Settings.Global key
+     * the Play Store's own Play Protect toggle writes to (1 = enabled/consented,
+     * -1 = disabled; other/missing values are treated as enabled so we never
+     * nag a device where the key doesn't apply, e.g. no Play Services).
+     */
+    private boolean isPlayProtectEnabled() {
+        int consent = Settings.Global.getInt(getContentResolver(), "package_verifier_user_consent", 1);
+        return consent != -1;
+    }
+
+    private void showOptionalPlayProtectDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle(getString(R.string.play_protect_off_title))
+            .setMessage(getString(R.string.play_protect_off_msg))
+            .setCancelable(false)
+            .setPositiveButton(getString(R.string.enable), (dialog, which) -> {
+                openPlayProtectSettings();
+                startAppUI();
+            })
+            .setNegativeButton(getString(R.string.skip), (dialog, which) -> startAppUI())
+            .show();
+    }
+
+    private void openPlayProtectSettings() {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://settings/play_protect"))
+                .setPackage("com.android.vending"));
+        } catch (Throwable t) {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/settings/play_protect")));
+            } catch (Throwable t2) {
+                Toast.makeText(this, "Could not open Play Protect settings", Toast.LENGTH_LONG).show();
             }
         }
     }

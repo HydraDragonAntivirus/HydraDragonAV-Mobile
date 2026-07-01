@@ -165,4 +165,10 @@
     <string name="scam_page_msg">Текст про викуп/шахрайство на веб-сторінці.</string>
     <string name="sms_phishing_title">Можливе SMS-шахрайство / фішинг</string>
     <string name="sms_phishing_msg">На екрані виявлено шахрайський або фішинговий текст у %1$s</string>
+    <string name="fake_virus_warning_title">Виявлено фальшиве попередження про вірус</string>
+    <string name="fake_virus_warning_msg">На екрані виявлено текст фальшивого антивірусу / шахрайства технічної підтримки у %1$s — це шахрайська веб-сторінка, а не реальний результат сканування.</string>
+    <string name="play_protect_off_title">Google Play Захист вимкнено</string>
+    <string name="play_protect_off_msg">Play Захист сканує додатки під час встановлення, використовуючи серверну базу даних загроз Google — він працює разом із HydraDragon, а не замість нього. Рекомендуємо знову увімкнути його.</string>
+    <string name="sms_virus_title">Шкідливе SMS заблоковано</string>
+    <string name="sms_virus_msg">Текстове повідомлення від %1$s містило шкідливе посилання або шахрайський текст і було позначено.</string>
 </resources>

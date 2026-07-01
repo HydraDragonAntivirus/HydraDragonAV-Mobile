@@ -165,4 +165,10 @@
     <string name="scam_page_msg">ウェブページ上に身代金/詐欺のテキストがあります。</string>
     <string name="sms_phishing_title">SMS詐欺 / フィッシングの可能性</string>
     <string name="sms_phishing_msg">%1$sの画面上で詐欺またはフィッシングの文言を検出しました</string>
+    <string name="fake_virus_warning_title">偽のウイルス警告を検出しました</string>
+    <string name="fake_virus_warning_msg">%1$sの画面上で偽のウイルス対策/テクニカルサポート詐欺の文言を検出しました — これは詐欺のウェブページであり、実際のスキャン結果ではありません。</string>
+    <string name="play_protect_off_title">Google Play プロテクトがオフです</string>
+    <string name="play_protect_off_msg">Play プロテクトはGoogleのサーバー側の脅威データベースを使用してインストール時にアプリをスキャンします — HydraDragonの代わりではなく、併用して機能します。再度有効にすることをお勧めします。</string>
+    <string name="sms_virus_title">悪意のあるSMSをブロックしました</string>
+    <string name="sms_virus_msg">%1$sからのテキストメッセージに悪意のあるリンクまたは詐欺の文言が含まれていたため、フラグが立てられました。</string>
 </resources>

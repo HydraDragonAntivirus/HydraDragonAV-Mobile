@@ -165,4 +165,10 @@ Puntuación de riesgo: %2$d/100
     <string name="scam_page_msg">Texto de rescate/estafa en una página web.</string>
     <string name="sms_phishing_title">Posible estafa por SMS / phishing</string>
     <string name="sms_phishing_msg">Se detectó texto de estafa o phishing en pantalla en %1$s</string>
+    <string name="fake_virus_warning_title">Alerta de virus falsa detectada</string>
+    <string name="fake_virus_warning_msg">Se detectó texto de antivirus falso / soporte técnico fraudulento en pantalla en %1$s: es una página web fraudulenta, no un resultado de análisis real.</string>
+    <string name="play_protect_off_title">Google Play Protect está desactivado</string>
+    <string name="play_protect_off_msg">Play Protect escanea las apps al instalarlas usando la base de datos de amenazas de Google en el servidor — funciona junto a HydraDragon, no en su lugar. Recomendamos volver a activarlo.</string>
+    <string name="sms_virus_title">SMS malicioso bloqueado</string>
+    <string name="sms_virus_msg">Un mensaje de texto de %1$s contenía un enlace malicioso o texto de estafa y fue marcado.</string>
 </resources>

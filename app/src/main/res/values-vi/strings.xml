@@ -165,4 +165,10 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scam_page_msg">Văn bản đòi tiền chuộc/lừa đảo trên một trang web.</string>
     <string name="sms_phishing_title">Có thể là lừa đảo SMS / phishing</string>
     <string name="sms_phishing_msg">Đã phát hiện văn bản lừa đảo hoặc phishing trên màn hình trong %1$s</string>
+    <string name="fake_virus_warning_title">Đã phát hiện cảnh báo virus giả</string>
+    <string name="fake_virus_warning_msg">Đã phát hiện văn bản phần mềm diệt virus giả / lừa đảo hỗ trợ kỹ thuật trên màn hình trong %1$s — đây là trang web lừa đảo, không phải kết quả quét thực sự.</string>
+    <string name="play_protect_off_title">Google Play Protect đang tắt</string>
+    <string name="play_protect_off_msg">Play Protect quét ứng dụng khi cài đặt bằng cơ sở dữ liệu mối đe dọa phía máy chủ của Google — nó hoạt động cùng với HydraDragon, không thay thế. Chúng tôi khuyên bạn nên bật lại.</string>
+    <string name="sms_virus_title">Đã chặn SMS độc hại</string>
+    <string name="sms_virus_msg">Một tin nhắn văn bản từ %1$s chứa liên kết độc hại hoặc văn bản lừa đảo và đã bị gắn cờ.</string>
 </resources>

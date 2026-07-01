@@ -166,4 +166,10 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="scam_page_msg">Web sayfasında fidye/dolandırıcılık metni.</string>
     <string name="sms_phishing_title">Olası SMS dolandırıcılığı / kimlik avı</string>
     <string name="sms_phishing_msg">%1$s içinde ekranda dolandırıcılık veya kimlik avı ifadesi tespit edildi</string>
+    <string name="fake_virus_warning_title">Sahte virüs uyarısı tespit edildi</string>
+    <string name="fake_virus_warning_msg">%1$s içinde ekranda sahte antivirüs / teknik destek dolandırıcılığı ifadesi tespit edildi — bu gerçek bir tarama sonucu değil, dolandırıcılık web sayfasıdır.</string>
+    <string name="play_protect_off_title">Google Play Protect Kapalı</string>
+    <string name="play_protect_off_msg">Play Protect, Google\'ın sunucu taraflı tehdit veritabanını kullanarak uygulamaları yükleme anında tarar — HydraDragon\'un yerine değil, onunla birlikte çalışır. Tekrar açmanızı öneririz.</string>
+    <string name="sms_virus_title">Zararlı SMS engellendi</string>
+    <string name="sms_virus_msg">%1$s numarasından gelen bir mesaj zararlı bağlantı veya dolandırıcılık ifadesi içeriyordu ve işaretlendi.</string>
 </resources>

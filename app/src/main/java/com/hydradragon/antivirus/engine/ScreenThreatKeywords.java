@@ -191,6 +191,113 @@ public final class ScreenThreatKeywords {
         "คลิกลิงก์ด้านล่าง", "รหัสผ่านแบบใช้ครั้งเดียว", "บัญชีธนาคารของคุณ",
     };
 
+    /** Fake antivirus warning / tech-support scam lures — bogus "N viruses found"
+     *  full-screen popups pushing a call to a "support" number or a fake cleaner
+     *  app install, shown in a browser/WebView (never a real scan result). */
+    public static final String[] FAKE_VIRUS_WARNING = {
+        // English
+        "your device is infected", "virus detected", "system is infected",
+        "call this number immediately", "call microsoft support", "call apple support",
+        "your phone has been infected", "critical alert", "device infected with",
+        "your device is at risk", "malware detected on your device", "system32 has been damaged",
+        "do not turn off your phone", "technical support", "your data is at risk",
+        // Turkish
+        "cihazınız virüs bulaştı", "virüs tespit edildi", "sistem virüs bulaştı",
+        "hemen bu numarayı arayın", "microsoft destek hattını arayın", "apple destek hattını arayın",
+        "telefonunuza virüs bulaştı", "kritik uyarı", "cihazınız risk altında",
+        "cihazınızda kötü amaçlı yazılım tespit edildi", "telefonunuzu kapatmayın", "teknik destek",
+        // Spanish
+        "su dispositivo está infectado", "virus detectado", "el sistema está infectado",
+        "llame a este número inmediatamente", "llame al soporte de microsoft", "llame al soporte de apple",
+        "su teléfono ha sido infectado", "alerta crítica", "su dispositivo está en riesgo",
+        "malware detectado en su dispositivo", "no apague su teléfono", "soporte técnico",
+        // German
+        "ihr gerät ist infiziert", "virus erkannt", "das system ist infiziert",
+        "rufen sie sofort diese nummer an", "rufen sie den microsoft-support an", "rufen sie den apple-support an",
+        "ihr telefon wurde infiziert", "kritischer alarm", "ihr gerät ist gefährdet",
+        "malware auf ihrem gerät erkannt", "schalten sie ihr telefon nicht aus", "technischer support",
+        // French
+        "votre appareil est infecté", "virus détecté", "le système est infecté",
+        "appelez ce numéro immédiatement", "appelez le support microsoft", "appelez le support apple",
+        "votre téléphone a été infecté", "alerte critique", "votre appareil est en danger",
+        "logiciel malveillant détecté sur votre appareil", "n'éteignez pas votre téléphone", "support technique",
+        // Russian
+        "ваше устройство заражено", "обнаружен вирус", "система заражена",
+        "немедленно позвоните по этому номеру", "позвоните в поддержку microsoft", "позвоните в поддержку apple",
+        "ваш телефон заражен", "критическое предупреждение", "ваше устройство в опасности",
+        "на вашем устройстве обнаружено вредоносное по", "не выключайте телефон", "техническая поддержка",
+        // Portuguese
+        "seu dispositivo está infectado", "vírus detectado", "o sistema está infectado",
+        "ligue para este número imediatamente", "ligue para o suporte da microsoft", "ligue para o suporte da apple",
+        "seu telefone foi infectado", "alerta crítico", "seu dispositivo está em risco",
+        "malware detectado em seu dispositivo", "não desligue seu telefone", "suporte técnico",
+        // Arabic
+        "جهازك مصاب", "تم اكتشاف فيروس", "النظام مصاب",
+        "اتصل بهذا الرقم فورا", "اتصل بدعم مايكروسوفت", "اتصل بدعم آبل",
+        "تم إصابة هاتفك", "تنبيه حرج", "جهازك معرض للخطر",
+        "تم اكتشاف برامج ضارة على جهازك", "لا تقم بإيقاف تشغيل هاتفك", "الدعم الفني",
+        // Italian
+        "il tuo dispositivo è infetto", "virus rilevato", "il sistema è infetto",
+        "chiama subito questo numero", "chiama il supporto microsoft", "chiama il supporto apple",
+        "il tuo telefono è stato infettato", "avviso critico", "il tuo dispositivo è a rischio",
+        "malware rilevato sul tuo dispositivo", "non spegnere il telefono", "supporto tecnico",
+        // Dutch
+        "uw apparaat is geïnfecteerd", "virus gedetecteerd", "systeem is geïnfecteerd",
+        "bel dit nummer onmiddellijk", "bel microsoft-ondersteuning", "bel apple-ondersteuning",
+        "uw telefoon is geïnfecteerd", "kritieke waarschuwing", "uw apparaat loopt risico",
+        "malware gedetecteerd op uw apparaat", "schakel uw telefoon niet uit", "technische ondersteuning",
+        // Polish
+        "twoje urządzenie jest zainfekowane", "wykryto wirusa", "system jest zainfekowany",
+        "zadzwoń pod ten numer natychmiast", "zadzwoń do pomocy technicznej microsoft", "zadzwoń do pomocy technicznej apple",
+        "twój telefon został zainfekowany", "krytyczny alert", "twoje urządzenie jest zagrożone",
+        "wykryto złośliwe oprogramowanie na twoim urządzeniu", "nie wyłączaj telefonu", "pomoc techniczna",
+        // Ukrainian
+        "ваш пристрій заражено", "виявлено вірус", "система заражена",
+        "негайно зателефонуйте за цим номером", "зателефонуйте до служби підтримки microsoft", "зателефонуйте до служби підтримки apple",
+        "ваш телефон заражено", "критичне попередження", "ваш пристрій під загрозою",
+        "на вашому пристрої виявлено шкідливе по", "не вимикайте телефон", "технічна підтримка",
+        // Chinese (Simplified)
+        "您的设备已感染", "检测到病毒", "系统已感染",
+        "请立即拨打此号码", "请致电微软支持", "请致电苹果支持",
+        "您的手机已感染", "严重警报", "您的设备处于危险中",
+        "在您的设备上检测到恶意软件", "请勿关闭手机", "技术支持",
+        // Japanese
+        "デバイスが感染しています", "ウイルスが検出されました", "システムが感染しています",
+        "今すぐこの番号に電話してください", "マイクロソフトサポートに電話してください", "アップルサポートに電話してください",
+        "あなたの携帯電話が感染しました", "緊急警告", "デバイスが危険にさらされています",
+        "デバイスでマルウェアが検出されました", "電話の電源を切らないでください", "テクニカルサポート",
+        // Korean
+        "기기가 감염되었습니다", "바이러스가 감지되었습니다", "시스템이 감염되었습니다",
+        "즉시 이 번호로 전화하세요", "마이크로소프트 지원팀에 전화하세요", "애플 지원팀에 전화하세요",
+        "휴대폰이 감염되었습니다", "긴급 경고", "기기가 위험에 처해 있습니다",
+        "기기에서 악성코드가 감지되었습니다", "휴대폰을 끄지 마세요", "기술 지원",
+        // Hindi
+        "आपका डिवाइस संक्रमित है", "वायरस का पता चला", "सिस्टम संक्रमित है",
+        "तुरंत इस नंबर पर कॉल करें", "माइक्रोसॉफ्ट सपोर्ट को कॉल करें", "एप्पल सपोर्ट को कॉल करें",
+        "आपका फोन संक्रमित हो गया है", "गंभीर चेतावनी", "आपका डिवाइस खतरे में है",
+        "आपके डिवाइस पर मैलवेयर का पता चला", "अपना फोन बंद न करें", "तकनीकी सहायता",
+        // Indonesian
+        "perangkat anda terinfeksi", "virus terdeteksi", "sistem terinfeksi",
+        "segera hubungi nomor ini", "hubungi dukungan microsoft", "hubungi dukungan apple",
+        "ponsel anda telah terinfeksi", "peringatan kritis", "perangkat anda berisiko",
+        "malware terdeteksi di perangkat anda", "jangan matikan ponsel anda", "dukungan teknis",
+        // Vietnamese
+        "thiết bị của bạn bị nhiễm", "phát hiện vi-rút", "hệ thống bị nhiễm",
+        "hãy gọi ngay số này", "gọi hỗ trợ microsoft", "gọi hỗ trợ apple",
+        "điện thoại của bạn đã bị nhiễm", "cảnh báo nghiêm trọng", "thiết bị của bạn đang gặp rủi ro",
+        "phát hiện phần mềm độc hại trên thiết bị của bạn", "không tắt điện thoại", "hỗ trợ kỹ thuật",
+        // Persian
+        "دستگاه شما آلوده است", "ویروس شناسایی شد", "سیستم آلوده است",
+        "فورا با این شماره تماس بگیرید", "با پشتیبانی مایکروسافت تماس بگیرید", "با پشتیبانی اپل تماس بگیرید",
+        "تلفن شما آلوده شده است", "هشدار حیاتی", "دستگاه شما در معرض خطر است",
+        "بدافزار روی دستگاه شما شناسایی شد", "تلفن خود را خاموش نکنید", "پشتیبانی فنی",
+        // Thai
+        "อุปกรณ์ของคุณติดไวรัส", "ตรวจพบไวรัส", "ระบบติดไวรัส",
+        "โทรหมายเลขนี้ทันที", "โทรหาฝ่ายสนับสนุนไมโครซอฟท์", "โทรหาฝ่ายสนับสนุนแอปเปิล",
+        "โทรศัพท์ของคุณติดไวรัสแล้ว", "การแจ้งเตือนที่สำคัญ", "อุปกรณ์ของคุณมีความเสี่ยง",
+        "ตรวจพบมัลแวร์บนอุปกรณ์ของคุณ", "อย่าปิดโทรศัพท์ของคุณ", "ฝ่ายสนับสนุนทางเทคนิค",
+    };
+
     public static boolean containsAny(String lowerText, String[] phrases) {
         for (String p : phrases) {
             if (lowerText.contains(p)) return true;

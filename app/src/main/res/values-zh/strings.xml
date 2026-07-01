@@ -165,4 +165,10 @@
     <string name="scam_page_msg">网页上出现勒索/诈骗文本。</string>
     <string name="sms_phishing_title">可能的短信诈骗 / 钓鱼</string>
     <string name="sms_phishing_msg">在%1$s的屏幕上检测到诈骗或钓鱼字样</string>
+    <string name="fake_virus_warning_title">检测到虚假病毒警告</string>
+    <string name="fake_virus_warning_msg">在%1$s的屏幕上检测到虚假杀毒软件/技术支持诈骗文字 — 这是一个诈骗网页，不是真实的扫描结果。</string>
+    <string name="play_protect_off_title">Google Play Protect 已关闭</string>
+    <string name="play_protect_off_msg">Play Protect 会在安装时使用 Google 的服务器端威胁数据库扫描应用 — 它与 HydraDragon 协同工作，而非取代它。我们建议重新开启它。</string>
+    <string name="sms_virus_title">已拦截恶意短信</string>
+    <string name="sms_virus_msg">来自%1$s的短信包含恶意链接或诈骗字样，已被标记。</string>
 </resources>

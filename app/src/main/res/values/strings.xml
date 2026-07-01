@@ -169,4 +169,10 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="scam_page_msg">Ransom/scam text on a web page.</string>
     <string name="sms_phishing_title">Possible SMS scam / phishing</string>
     <string name="sms_phishing_msg">Scam or phishing wording detected on screen in %1$s</string>
+    <string name="fake_virus_warning_title">Fake virus warning detected</string>
+    <string name="fake_virus_warning_msg">Fake antivirus / tech-support scam wording detected on screen in %1$s — this is a scam web page, not a real scan result.</string>
+    <string name="play_protect_off_title">Google Play Protect is Off</string>
+    <string name="play_protect_off_msg">Play Protect scans apps at install time using Google\'s server-side threat database — it works alongside HydraDragon, not instead of it. We recommend turning it back on.</string>
+    <string name="sms_virus_title">Malicious SMS blocked</string>
+    <string name="sms_virus_msg">A text message from %1$s contained a malicious link or scam wording and was flagged.</string>
 </resources>
