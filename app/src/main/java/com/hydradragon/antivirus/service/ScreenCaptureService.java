@@ -81,11 +81,18 @@ public class ScreenCaptureService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        createNotificationChannel();
-        startForeground(NOTIF_ID, buildNotification());
-
+        // Android 14+ (targetSdk 35) requires a mediaProjection-type foreground
+        // service to have valid, JUST-GRANTED consent extras at the moment
+        // startForeground() is called, or the OS kills the process with a
+        // SecurityException before this method even returns. That happens on
+        // every redelivery: START_STICKY makes the system relaunch this service
+        // with intent=null after ANY process death (including a normal user
+        // "swipe away recents"), and the one-time MediaProjection token from the
+        // original consent can never be reconstructed from a null Intent. So we
+        // must validate BEFORE claiming foreground status, and never ask for a
+        // sticky restart in the first place.
         if (intent == null || !intent.hasExtra(EXTRA_RESULT_CODE)) {
-            Log.e(TAG, "missing MediaProjection consent result — stopping");
+            Log.w(TAG, "missing MediaProjection consent result — not starting foreground");
             stopSelf();
             return START_NOT_STICKY;
         }
@@ -102,13 +109,20 @@ public class ScreenCaptureService extends Service {
         projection = mgr.getMediaProjection(resultCode, resultData);
         if (projection == null) { stopSelf(); return START_NOT_STICKY; }
 
+        createNotificationChannel();
+        startForeground(NOTIF_ID, buildNotification());
+
         recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
         bgThread = new HandlerThread("ScreenOCR");
         bgThread.start();
         bgHandler = new Handler(bgThread.getLooper());
 
         startCapture();
-        return START_STICKY;
+        // Never sticky: a killed process invalidates the MediaProjection token,
+        // so an OS-initiated restart could only crash again (no consent data to
+        // redeliver). The user re-enabling Zero Trust screen scanning is what
+        // starts this service again, with a fresh consent grant.
+        return START_NOT_STICKY;
     }
 
     private void startCapture() {
