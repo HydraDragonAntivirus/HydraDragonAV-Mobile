@@ -128,7 +128,31 @@ public class ScreenCaptureService extends Service {
         bgThread.start();
         bgHandler = new Handler(bgThread.getLooper());
 
-        startCapture();
+        // Android 14+ (targetSdk 35) THROWS IllegalStateException from
+        // createVirtualDisplay() below unless a Callback is registered on the
+        // projection first — even an empty one satisfies the requirement. Also
+        // handles the projection being revoked externally (user taps "Stop
+        // sharing" in the system status bar) so we tear ourselves down instead
+        // of the next captureLoop tick hitting a dead projection.
+        projection.registerCallback(new MediaProjection.Callback() {
+            @Override
+            public void onStop() {
+                running = false;
+                stopSelf();
+            }
+        }, bgHandler);
+
+        try {
+            startCapture();
+        } catch (Throwable t) {
+            // createVirtualDisplay/ImageReader.newInstance can throw on edge-case
+            // display states (e.g. mid-rotation, 0-sized window during multi-window
+            // transition) — this runs on the main thread inside onStartCommand, so
+            // an uncaught exception here crashes the whole app process.
+            Log.e(TAG, "startCapture failed — stopping", t);
+            stopSelf();
+            return START_NOT_STICKY;
+        }
         // Never sticky: a killed process invalidates the MediaProjection token,
         // so an OS-initiated restart could only crash again (no consent data to
         // redeliver). The user re-enabling Zero Trust screen scanning is what
