@@ -47,6 +47,8 @@ A local **DnsVpnService** additionally filters DNS lookups against known-malicio
 
 *Designed with 💻 by @elnureisayeva1-cloud (creator) & @Siradankullanici (backend development)*
 
+About original HydraDragonAntivirus: This only detects Android viruses and minimalist version of original HydraDragonAntivirus.
+
 **Note: Max file size is 650MB for this antivirus**
 
 ## ⚙️ How to Build & Install
