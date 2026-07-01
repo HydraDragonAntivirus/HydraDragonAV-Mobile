@@ -106,11 +106,22 @@ public class ScreenCaptureService extends Service {
         MediaProjectionManager mgr =
             (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         if (mgr == null) { stopSelf(); return START_NOT_STICKY; }
-        projection = mgr.getMediaProjection(resultCode, resultData);
-        if (projection == null) { stopSelf(); return START_NOT_STICKY; }
 
+        // Android requires startForeground() with the mediaProjection service
+        // type to happen BEFORE getMediaProjection() is called — calling it the
+        // other way around throws "Media projections require a foreground
+        // service of type FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION" even though
+        // the manifest declares that type, because the OS checks the service's
+        // ACTUAL running foreground state at the moment of the call, not just
+        // its manifest declaration. We only reach this point once real, fresh
+        // consent extras were already validated above, so it's safe to claim
+        // foreground status here (unlike the original bug: claiming it
+        // unconditionally at the top of onStartCommand for every redelivery).
         createNotificationChannel();
         startForeground(NOTIF_ID, buildNotification());
+
+        projection = mgr.getMediaProjection(resultCode, resultData);
+        if (projection == null) { stopSelf(); return START_NOT_STICKY; }
 
         recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
         bgThread = new HandlerThread("ScreenOCR");
