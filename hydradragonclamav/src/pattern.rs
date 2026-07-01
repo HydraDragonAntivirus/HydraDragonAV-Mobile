@@ -42,6 +42,18 @@ fn match_byte(inst: u16, byte: u8) -> bool {
     }
 }
 
+/// Value of a single ASCII hex-digit byte, or `Err` for anything else
+/// (including non-ASCII bytes, which are never valid standalone UTF-8 and
+/// used to panic here via `str::from_utf8(..).unwrap()` on malformed input).
+fn hex_nibble(b: u8) -> Result<u8, String> {
+    match b {
+        b'0'..=b'9' => Ok(b - b'0'),
+        b'a'..=b'f' => Ok(b - b'a' + 10),
+        b'A'..=b'F' => Ok(b - b'A' + 10),
+        _ => Err(format!("bad hex digit '{:?}'", b as char)),
+    }
+}
+
 /// Parse a hex string (with `??` wildcards and nibble masks) into u16 instructions.
 fn hex_to_u16(hex: &str) -> Result<Vec<u16>, String> {
     let h = hex.as_bytes();
@@ -58,19 +70,13 @@ fn hex_to_u16(hex: &str) -> Result<Vec<u16>, String> {
         } else if hi == b'?' && lo == b'?' {
             CLI_MATCH_IGNORE
         } else if hi == b'?' {
-            let lo_v = u8::from_str_radix(std::str::from_utf8(&[lo]).unwrap(), 16)
-                .map_err(|_| format!("bad nibble '{:?}'", lo))?;
+            let lo_v = hex_nibble(lo)?;
             CLI_MATCH_NIBBLE_LOW | lo_v as u16
         } else if lo == b'?' {
-            let hi_v = u8::from_str_radix(std::str::from_utf8(&[hi]).unwrap(), 16)
-                .map_err(|_| format!("bad nibble '{:?}'", hi))? << 4;
+            let hi_v = hex_nibble(hi)? << 4;
             CLI_MATCH_NIBBLE_HIGH | hi_v as u16
         } else {
-            let byte = u8::from_str_radix(
-                std::str::from_utf8(&[hi, lo]).unwrap(),
-                16,
-            )
-            .map_err(|_| format!("bad hex byte '{:?}{:?}'", hi as char, lo as char))?;
+            let byte = (hex_nibble(hi)? << 4) | hex_nibble(lo)?;
             CLI_MATCH_CHAR | byte as u16
         };
         out.push(inst);

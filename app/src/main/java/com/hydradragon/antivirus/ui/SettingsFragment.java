@@ -331,18 +331,34 @@ public class SettingsFragment extends Fragment {
         container.addView(v);
     }
 
+    // Display name (native script) <-> BCP-47 tag, in the same order/set as the
+    // 20 localized app/src/main/res/values-XX resource folders.
+    private static final String[] LANGUAGE_NAMES = {
+        "English", "Türkçe", "Español", "Deutsch", "Français", "Русский",
+        "Português", "العربية", "Italiano", "Nederlands", "Polski", "Українська",
+        "中文", "日本語", "한국어", "हिन्दी", "Bahasa Indonesia", "Tiếng Việt",
+        "فارسی", "ไทย",
+    };
+    private static final String[] LANGUAGE_CODES = {
+        "en", "tr", "es", "de", "fr", "ru",
+        "pt", "ar", "it", "nl", "pl", "uk",
+        "zh", "ja", "ko", "hi", "in", "vi",
+        "fa", "th",
+    };
+
     private void selectLanguage() {
-        String[] langs = {"English", "Türkçe"};
         new android.app.AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(getString(R.string.language_settings))
-            .setItems(langs, (dialog, which) -> {
-                String code = (which == 0) ? "en" : "tr";
+            .setItems(LANGUAGE_NAMES, (dialog, which) -> {
+                String code = LANGUAGE_CODES[which];
                 prefs().edit().putString("language", code).apply();
-                if (getActivity() != null) {
-                    android.content.Intent intent = getActivity().getIntent();
-                    getActivity().finish();
-                    startActivity(intent);
-                }
+                // Per-app language override (AndroidX AppCompat) — this is what
+                // actually switches the UI's resource-qualifier locale; the
+                // previous version only saved the preference and restarted the
+                // activity, which did nothing because no locale was ever applied.
+                // AppCompat persists this across process restarts on its own.
+                AppCompatDelegate.setApplicationLocales(
+                    androidx.core.os.LocaleListCompat.forLanguageTags(code));
             }).show();
     }
 
