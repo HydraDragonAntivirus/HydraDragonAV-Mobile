@@ -66,8 +66,11 @@ public class SmsReceiver extends BroadcastReceiver {
             // ransom notes sent/linked via SMS).
             if (!malicious) {
                 String lower = text.toLowerCase(Locale.ROOT);
-                malicious = ScreenThreatKeywords.containsAny(lower, ScreenThreatKeywords.SMS_PHISHING)
-                    || ScreenThreatKeywords.containsAny(lower, ScreenThreatKeywords.FAKE_VIRUS_WARNING)
+                // SMS_PHISHING/FAKE_VIRUS_WARNING require 2+ distinct lures (most
+                // individual phrases also appear in genuine texts); RANSOMWARE
+                // phrases are unambiguous enough on their own for a single hit.
+                malicious = ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.SMS_PHISHING, 2)
+                    || ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.FAKE_VIRUS_WARNING, 2)
                     || ScreenThreatKeywords.containsAny(lower, ScreenThreatKeywords.RANSOMWARE);
             }
 

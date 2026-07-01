@@ -175,8 +175,11 @@ public class DynamicAnalysisService extends AccessibilityService {
             // not just in a real browser. Never blocks the app (it's usually the
             // legitimate Messages/notification UI showing someone else's scam
             // text) — just warns so the user doesn't tap the link or reply.
-            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAny(
-                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.SMS_PHISHING)) {
+            // Threshold match (2+ distinct lures) — most individual phrases also
+            // show up in genuine account/shipping texts, so a single hit alone
+            // isn't strong enough evidence.
+            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAtLeast(
+                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.SMS_PHISHING, 2)) {
                 String id = "smsphish:" + fgPackage;
                 if (!com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, id)) {
                     Log.w(TAG, "SMS SCAM/PHISHING TEXT DETECTED in " + fgPackage);
@@ -190,8 +193,8 @@ public class DynamicAnalysisService extends AccessibilityService {
             // popup is virtually always a browser/WebView scam page, never a real
             // scan result (this app's own scan UI is excluded above). Warn only —
             // it's a web page, not malware to remove.
-            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAny(
-                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.FAKE_VIRUS_WARNING)) {
+            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAtLeast(
+                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.FAKE_VIRUS_WARNING, 2)) {
                 String id = "fakevirus:" + fgPackage;
                 if (!com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, id)) {
                     Log.w(TAG, "FAKE VIRUS WARNING TEXT DETECTED in " + fgPackage);

@@ -86,109 +86,112 @@ public final class ScreenThreatKeywords {
         "เปิดใช้งานผู้ดูแลอุปกรณ์",
     };
 
-    /** SMS/smishing + generic phishing lures shown as on-screen text (SMS app, browser, WebView popups). */
+    /** SMS/smishing + generic phishing lures shown as on-screen text (SMS app, browser, WebView popups).
+     *  Deliberately excludes plain OTP/one-time-password wording ("your OTP is...") — that's the
+     *  exact wording of a LEGITIMATE 2FA text, not a scam indicator, and would have false-positived
+     *  on every real bank/service code sent to the user. Matching is threshold-based (see
+     *  {@link #containsAtLeast}), not single-phrase — most of these phrases (e.g. "confirm your
+     *  identity", "your account has been suspended") also show up individually in genuine account
+     *  emails/texts, so one hit alone isn't treated as a verdict. */
     public static final String[] SMS_PHISHING = {
         // English
         "verify your account", "your account has been suspended", "confirm your identity",
         "you have won", "claim your prize", "your package is on hold", "update your payment details",
         "unusual activity detected on your account", "your parcel could not be delivered",
-        "click the link below to", "enter your otp", "one time password", "your bank account",
-        "suspended due to suspicious activity", "act now to avoid", "final notice",
+        "click the link below to", "suspended due to suspicious activity", "act now to avoid", "final notice",
         // Turkish
         "hesabınızı doğrulayın", "hesabınız askıya alındı", "kimliğinizi doğrulayın",
         "ödül kazandınız", "ödülünüzü talep edin", "kargonuz teslim edilemedi",
         "ödeme bilgilerinizi güncelleyin", "hesabınızda şüpheli işlem tespit edildi",
-        "aşağıdaki bağlantıya tıklayın", "tek kullanımlık şifre", "banka hesabınız",
-        "son uyarı",
+        "aşağıdaki bağlantıya tıklayın", "son uyarı",
         // Spanish
         "verifique su cuenta", "su cuenta ha sido suspendida", "confirme su identidad",
         "ha ganado un premio", "reclame su premio", "su paquete no pudo ser entregado",
         "actualice sus datos de pago", "actividad inusual detectada en su cuenta",
-        "haga clic en el siguiente enlace", "código de un solo uso", "su cuenta bancaria",
+        "haga clic en el siguiente enlace",
         // German
         "bestätigen sie ihr konto", "ihr konto wurde gesperrt", "bestätigen sie ihre identität",
         "sie haben gewonnen", "fordern sie ihren gewinn an", "ihr paket konnte nicht zugestellt werden",
         "aktualisieren sie ihre zahlungsdaten", "verdächtige aktivität auf ihrem konto festgestellt",
-        "klicken sie auf den folgenden link", "einmaliges passwort", "ihr bankkonto",
+        "klicken sie auf den folgenden link",
         // French
         "vérifiez votre compte", "votre compte a été suspendu", "confirmez votre identité",
         "vous avez gagné", "réclamez votre prix", "votre colis n'a pas pu être livré",
         "mettez à jour vos informations de paiement", "activité inhabituelle détectée sur votre compte",
-        "cliquez sur le lien ci-dessous", "mot de passe à usage unique", "votre compte bancaire",
+        "cliquez sur le lien ci-dessous",
         // Russian
         "подтвердите свою учетную запись", "ваша учетная запись заблокирована",
         "подтвердите свою личность", "вы выиграли", "получите свой приз",
         "ваша посылка не может быть доставлена", "обновите платежные данные",
         "обнаружена подозрительная активность", "перейдите по ссылке ниже",
-        "одноразовый пароль", "ваш банковский счет",
         // Portuguese
         "verifique sua conta", "sua conta foi suspensa", "confirme sua identidade",
         "você ganhou um prêmio", "resgate seu prêmio", "sua encomenda não pôde ser entregue",
         "atualize seus dados de pagamento", "atividade suspeita detectada em sua conta",
-        "clique no link abaixo", "senha de uso único", "sua conta bancária",
+        "clique no link abaixo",
         // Arabic
         "تحقق من حسابك", "تم تعليق حسابك", "أكد هويتك", "لقد ربحت جائزة", "استلم جائزتك",
         "لم يتم تسليم طردك", "قم بتحديث بيانات الدفع", "تم رصد نشاط غير عادي في حسابك",
-        "انقر على الرابط أدناه", "رمز مرور لمرة واحدة", "حسابك المصرفي",
+        "انقر على الرابط أدناه",
         // Italian
         "verifica il tuo account", "il tuo account è stato sospeso", "confermi la tua identità",
         "hai vinto", "riscatta il tuo premio", "il tuo pacco è in attesa",
         "aggiorna i tuoi dati di pagamento", "attività inusuale rilevata sul tuo account",
-        "clicca sul link sottostante", "password usa e getta", "il tuo conto bancario",
+        "clicca sul link sottostante",
         // Dutch
         "verifieer uw account", "uw account is opgeschort", "bevestig uw identiteit",
         "u heeft gewonnen", "claim uw prijs", "uw pakket kon niet worden afgeleverd",
         "update uw betalingsgegevens", "ongewone activiteit gedetecteerd op uw account",
-        "klik op de link hieronder", "eenmalig wachtwoord", "uw bankrekening",
+        "klik op de link hieronder",
         // Polish
         "zweryfikuj swoje konto", "twoje konto zostało zablokowane", "potwierdź swoją tożsamość",
         "wygrałeś nagrodę", "odbierz swoją nagrodę", "twoja przesyłka nie mogła zostać dostarczona",
         "zaktualizuj dane płatności", "wykryto nietypową aktywność na twoim koncie",
-        "kliknij poniższy link", "jednorazowe hasło", "twoje konto bankowe",
+        "kliknij poniższy link",
         // Ukrainian
         "підтвердьте свій рахунок", "ваш рахунок заблоковано", "підтвердьте свою особу",
         "ви виграли", "отримайте свій приз", "вашу посилку не вдалося доставити",
         "оновіть платіжні дані", "виявлено підозрілу активність на вашому рахунку",
-        "перейдіть за посиланням нижче", "одноразовий пароль", "ваш банківський рахунок",
+        "перейдіть за посиланням нижче",
         // Chinese (Simplified)
         "请验证您的账户", "您的账户已被暂停", "确认您的身份", "您中奖了", "领取您的奖品",
         "您的包裹无法送达", "请更新您的付款信息", "检测到您账户有异常活动",
-        "点击下方链接", "一次性验证码", "您的银行账户",
+        "点击下方链接",
         // Japanese
         "アカウントを確認してください", "あなたのアカウントは停止されました", "本人確認をしてください",
         "当選しました", "賞品を受け取る", "荷物をお届けできませんでした",
         "支払い情報を更新してください", "アカウントで異常な操作が検出されました",
-        "下記のリンクをクリック", "ワンタイムパスワード", "あなたの銀行口座",
+        "下記のリンクをクリック",
         // Korean
         "계정을 인증하세요", "계정이 정지되었습니다", "신원을 확인하세요",
         "당첨되었습니다", "상품을 받으세요", "택배가 배송되지 않았습니다",
         "결제 정보를 업데이트하세요", "계정에서 비정상적인 활동이 감지되었습니다",
-        "아래 링크를 클릭하세요", "일회용 비밀번호", "귀하의 은행 계좌",
+        "아래 링크를 클릭하세요",
         // Hindi
         "अपने खाते को सत्यापित करें", "आपका खाता निलंबित कर दिया गया है", "अपनी पहचान की पुष्टि करें",
         "आप जीत गए हैं", "अपना पुरस्कार प्राप्त करें", "आपका पैकेज वितरित नहीं किया जा सका",
         "अपनी भुगतान जानकारी अपडेट करें", "आपके खाते में असामान्य गतिविधि पाई गई",
-        "नीचे दिए गए लिंक पर क्लिक करें", "एक बार का पासवर्ड", "आपका बैंक खाता",
+        "नीचे दिए गए लिंक पर क्लिक करें",
         // Indonesian
         "verifikasi akun anda", "akun anda telah ditangguhkan", "konfirmasi identitas anda",
         "anda telah menang", "klaim hadiah anda", "paket anda tidak dapat dikirim",
         "perbarui detail pembayaran anda", "aktivitas tidak biasa terdeteksi pada akun anda",
-        "klik tautan di bawah ini", "kata sandi sekali pakai", "rekening bank anda",
+        "klik tautan di bawah ini",
         // Vietnamese
         "xác minh tài khoản của bạn", "tài khoản của bạn đã bị tạm ngưng", "xác nhận danh tính của bạn",
         "bạn đã trúng thưởng", "nhận giải thưởng của bạn", "không thể giao gói hàng của bạn",
         "cập nhật thông tin thanh toán của bạn", "phát hiện hoạt động bất thường trên tài khoản của bạn",
-        "nhấp vào liên kết dưới đây", "mật khẩu dùng một lần", "tài khoản ngân hàng của bạn",
+        "nhấp vào liên kết dưới đây",
         // Persian
         "حساب خود را تأیید کنید", "حساب شما مسدود شده است", "هویت خود را تأیید کنید",
         "شما برنده شده‌اید", "جایزه خود را دریافت کنید", "بسته شما تحویل داده نشد",
         "اطلاعات پرداخت خود را به‌روزرسانی کنید", "فعالیت غیرعادی در حساب شما شناسایی شد",
-        "روی پیوند زیر کلیک کنید", "رمز یک‌بار مصرف", "حساب بانکی شما",
+        "روی پیوند زیر کلیک کنید",
         // Thai
         "ยืนยันบัญชีของคุณ", "บัญชีของคุณถูกระงับ", "ยืนยันตัวตนของคุณ",
         "คุณได้รับรางวัล", "รับรางวัลของคุณ", "ไม่สามารถจัดส่งพัสดุของคุณได้",
         "อัปเดตข้อมูลการชำระเงินของคุณ", "ตรวจพบกิจกรรมที่ไม่ปกติในบัญชีของคุณ",
-        "คลิกลิงก์ด้านล่าง", "รหัสผ่านแบบใช้ครั้งเดียว", "บัญชีธนาคารของคุณ",
+        "คลิกลิงก์ด้านล่าง",
     };
 
     /** Fake antivirus warning / tech-support scam lures — bogus "N viruses found"
@@ -301,6 +304,24 @@ public final class ScreenThreatKeywords {
     public static boolean containsAny(String lowerText, String[] phrases) {
         for (String p : phrases) {
             if (lowerText.contains(p)) return true;
+        }
+        return false;
+    }
+
+    /** True if AT LEAST {@code min} distinct phrases from the list match. Used for
+     *  SMS_PHISHING/FAKE_VIRUS_WARNING: most individual phrases in those lists also
+     *  show up in genuine account/shipping/security messages, so a single hit alone
+     *  is too weak a signal — requiring 2+ distinct lures together is what actually
+     *  distinguishes a scam message from an ordinary one. RANSOMWARE keeps single-hit
+     *  matching (containsAny) since its phrases ("pay bitcoin", "your files are
+     *  encrypted") are unambiguous on their own. */
+    public static boolean containsAtLeast(String lowerText, String[] phrases, int min) {
+        int count = 0;
+        for (String p : phrases) {
+            if (lowerText.contains(p)) {
+                count++;
+                if (count >= min) return true;
+            }
         }
         return false;
     }
