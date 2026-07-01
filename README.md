@@ -45,7 +45,9 @@ HydraDragonAV Mobile operates across four core pillars:
 
 A local **DnsVpnService** additionally filters DNS lookups against known-malicious domains, and a **NetworkSecurityScanner**/**NetworkMonitor** pair watches live connections for MITM interception, ARP spoofing, and malicious IP/C2 traffic.
 
-*Designed with 💻 by @elnureisayeva1-cloud (creator) & @Siradankullanici* (backend development)
+*Designed with 💻 by @elnureisayeva1-cloud (creator) & @Siradankullanici* (backend development)l
+
+**Note: Max file size is 650MB for this antivirus**
 
 ## ⚙️ How to Build & Install
 

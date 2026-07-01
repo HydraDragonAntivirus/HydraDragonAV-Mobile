@@ -42,7 +42,7 @@ impl Default for ScanOptions {
             scan_normalized: true,
             max_recursion: 8,
             max_child_objects: 4096,
-            max_child_size: 128 * 1024 * 1024,
+            max_child_size: 650 * 1024 * 1024,
         }
     }
 }

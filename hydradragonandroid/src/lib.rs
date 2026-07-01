@@ -1417,7 +1417,7 @@ struct Buf {
 fn collect_buffers(data: &[u8], top_md5: Option<&str>) -> Vec<Buf> {
     const MAX_BUFFERS: usize = 4096;
     const MAX_DEPTH: usize = 8;
-    const MAX_SIZE: usize = 128 * 1024 * 1024;
+    const MAX_SIZE: usize = 650 * 1024 * 1024;
 
     let mut out: Vec<Buf> = Vec::new();
     let mut stack: Vec<(Vec<u8>, usize, Vec<String>)> = vec![(data.to_vec(), 0, Vec::new())];
