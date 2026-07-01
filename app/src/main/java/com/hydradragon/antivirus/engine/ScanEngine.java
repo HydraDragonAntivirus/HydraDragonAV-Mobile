@@ -247,7 +247,9 @@ public class ScanEngine {
                     //  2) deep native (clamav/YARA/ML) scan of every installed APK
                     //  3) running / recently-active processes
                     //  4) accessible app-data & system directories
-                    scanAllStorageRoots(pm, threats);
+                    java.util.Set<String> installedPackages = new java.util.HashSet<>();
+                    for (ApplicationInfo a : apps) if (a.packageName != null) installedPackages.add(a.packageName);
+                    scanAllStorageRoots(pm, threats, installedPackages);
                     deepNativeScanInstalledApks(apps, pm, threats);
                     scanRecentProcesses(pm, threats);
                     scanAccessibleDataDirs(pm, threats);
@@ -266,18 +268,33 @@ public class ScanEngine {
 
     private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
                                       List<ThreatResult> threats, boolean fullScan) {
+        scanDirectoryForApks(dir, pm, threats, fullScan, null);
+    }
+
+    /** @param skipPackages installed-package names already analyzed by the main
+     *  full-scan pass (scanAllApps's installed-apps loop) — a standalone APK file
+     *  found on disk (e.g. sitting in Downloads) whose package name is already in
+     *  this set is the SAME app already reported once as an installed app, so it's
+     *  skipped here instead of being reported a second time under its file path. */
+    private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
+                                      List<ThreatResult> threats, boolean fullScan,
+                                      java.util.Set<String> skipPackages) {
         if (dir == null || !dir.exists() || !dir.isDirectory()) return;
         java.io.File[] files = dir.listFiles();
         if (files == null) return;
         for (java.io.File file : files) {
             if (cancelRequested) return;
             if (file.isDirectory()) {
-                scanDirectoryForApks(file, pm, threats, fullScan);
+                scanDirectoryForApks(file, pm, threats, fullScan, skipPackages);
             } else if (file.getName().toLowerCase().endsWith(".apk")) {
                 try {
                     PackageInfo pkgInfo = pm.getPackageArchiveInfo(file.getAbsolutePath(),
                         PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
                     if (pkgInfo != null) {
+                        String pkgName = pkgInfo.applicationInfo.packageName;
+                        if (skipPackages != null && pkgName != null && skipPackages.contains(pkgName)) {
+                            continue;
+                        }
                         pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
                         pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
                         ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
@@ -381,8 +398,13 @@ public class ScanEngine {
 
     // ──────────────────────── FULL-SCAN EXTRA PASSES ────────────────────────
 
-    /** 1) Every file under ALL mounted storage volumes, not just primary /sdcard. */
-    private void scanAllStorageRoots(PackageManager pm, List<ThreatResult> threats) {
+    /** 1) Every file under ALL mounted storage volumes, not just primary /sdcard.
+     *  {@code installedPackages} lets a standalone APK file whose package is
+     *  already installed (and already scanned/reported by the main installed-apps
+     *  pass) be skipped here — otherwise the same app shows up twice in the threat
+     *  list: once as the installed app, once as its leftover installer file. */
+    private void scanAllStorageRoots(PackageManager pm, List<ThreatResult> threats,
+                                      java.util.Set<String> installedPackages) {
         java.util.LinkedHashSet<String> roots = new java.util.LinkedHashSet<>();
         try {
             java.io.File primary = android.os.Environment.getExternalStorageDirectory();
@@ -398,7 +420,7 @@ public class ScanEngine {
         } catch (Throwable ignore) { }
         for (String r : roots) {
             if (cancelRequested) return;
-            try { scanDirectoryForApks(new java.io.File(r), pm, threats, true); }
+            try { scanDirectoryForApks(new java.io.File(r), pm, threats, true, installedPackages); }
             catch (Throwable ignore) { }
         }
     }
@@ -634,19 +656,22 @@ public class ScanEngine {
             try {
                 String apkPath = (isApkFile && app.sourceDir != null) ? app.sourceDir
                     : pm.getPackageInfo(app.packageName, 0).applicationInfo.sourceDir;
+                // CodeAnalyzer is a cheap Java-side heuristic (raw substring search
+                // over DEX bytes — "DexClassLoader", "Runtime.exec", etc). Those
+                // strings show up in plenty of LEGITIMATE apps (plugin loaders,
+                // shell helpers, reflection-based libraries), so on their own they
+                // are NOT proof of malware. Its verdict is applied further down,
+                // ONLY if the real engine (native YARA/ClamAV signatures, the ML
+                // model, or a high dangerous-permission count) corroborates it —
+                // "code smells like malware" plus "the antivirus also found
+                // something" is what actually earns a MALWARE verdict.
                 CodeAnalyzer.AnalysisResult codeResult = codeAnalyzer.analyzeApk(apkPath);
-                if (codeResult.isMalicious) {
-                    riskScore = Math.min(100, riskScore + codeResult.riskScore);
-                    builder.setThreatType(codeResult.threatType);
-                    for (String finding : codeResult.findings) {
-                        if (!finding.startsWith("✅")) reasons.add("💻 [CODE] " + finding);
-                    }
-                }
 
                 // Native engine: clamav (type-gated YARA + signatures) + ML model.
                 // Hash-first: a known-good (whitelisted) APK skips the whole native
                 // block. The file MD5 is computed once here and reused natively.
                 String apkMd5 = apkPath != null ? fileMd5(new java.io.File(apkPath)) : null;
+                boolean nativeCorroborated = false;
                 if (apkPath != null && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
                     NativeScanner.Verdict v = NativeScanner.scan(apkPath, app.packageName, apkMd5, ZeroTrustMode.isEnabled(context));
                     saveGeneratedRule(v);
@@ -674,6 +699,7 @@ public class ScanEngine {
                         if (hasRealThreat) {
                             riskScore = 100;
                             builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                            nativeCorroborated = true;
                         } else {
                             // Only PUA signatures matched.
                             riskScore = Math.max(riskScore, 50);
@@ -696,11 +722,36 @@ public class ScanEngine {
                         riskScore = 100;
                         builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                         reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/9)");
+                        nativeCorroborated = true;
                     } else if (v.permissions == 6) {
                         riskScore = Math.max(riskScore, 30);
                         if (riskScore < 50) builder.setThreatType(
                             com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
                         reasons.add("🔐 Suspicious permissions (6/9)");
+                        nativeCorroborated = true;
+                    }
+                }
+
+                // Apply CodeAnalyzer's heuristic verdict now that the real engine has
+                // had a chance to weigh in. Corroborated (native signature/YARA hit,
+                // ML flag, or 6+ dangerous permissions) => full weight, genuine
+                // finding. NOT corroborated => the code pattern alone isn't treated
+                // as malware (too false-positive prone on its own); still surfaced as
+                // a small, clearly-labelled unverified note so it isn't silently lost.
+                if (codeResult.isMalicious) {
+                    if (nativeCorroborated) {
+                        riskScore = Math.min(100, riskScore + codeResult.riskScore);
+                        if (riskScore >= 60) builder.setThreatType(codeResult.threatType);
+                        for (String finding : codeResult.findings) {
+                            if (!finding.startsWith("✅")) reasons.add("💻 [CODE] " + finding);
+                        }
+                    } else {
+                        riskScore = Math.max(riskScore, 10);
+                        for (String finding : codeResult.findings) {
+                            if (!finding.startsWith("✅")) {
+                                reasons.add("💻 [CODE, unverified by engine] " + finding);
+                            }
+                        }
                     }
                 }
 

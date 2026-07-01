@@ -96,10 +96,15 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
             if (icon != null) {
                 holder.ivAppIcon.setImageDrawable(icon);
             } else {
-                holder.ivAppIcon.setImageResource(R.mipmap.ic_launcher); // Varsayılan Ejderha Logosu
+                // Icon lookup failed (most commonly: the app was already
+                // uninstalled after being flagged, so PackageManager no longer
+                // has it) — show Android's own generic "unknown app" icon, NOT
+                // our dragon logo. Reusing our own branding here read as if the
+                // row itself WAS HydraDragon rather than "this app is gone".
+                holder.ivAppIcon.setImageResource(android.R.mipmap.sym_def_app_icon);
             }
         } catch (Exception e) {
-            holder.ivAppIcon.setImageResource(R.mipmap.ic_launcher); // Hata olursa ejderha logosu koy
+            holder.ivAppIcon.setImageResource(android.R.mipmap.sym_def_app_icon);
         }
 
         // Tıklama olayı
