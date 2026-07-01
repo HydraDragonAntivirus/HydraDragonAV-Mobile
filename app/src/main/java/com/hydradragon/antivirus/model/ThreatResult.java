@@ -11,6 +11,7 @@ public class ThreatResult {
 
     public enum ThreatType {
         CLEAN,          // Temiz
+        UNKNOWN,        // Zero Trust: no detector matched — NOT verified clean
         SUSPICIOUS,     // Şüpheli (düşük risk)
         MALWARE,        // Bilinen malware
         SPYWARE,        // Casus yazılım

@@ -64,7 +64,7 @@ public final class NativeScanner {
 
     private static native boolean nativeInit(String dir);
 
-    private static native String nativeScanApk(String path, String hydradragonJson, String fileMd5);
+    private static native String nativeScanApk(String path, String hydradragonJson, String fileMd5, boolean zeroTrust);
 
     /** Diagnostics: what loaded / failed during the last nativeInit. */
     private static native String nativeStatus();
@@ -179,7 +179,7 @@ public final class NativeScanner {
      *         or {@code {"error":"..."}} on failure.
      */
     public static String scanApk(String apkPath) {
-        return scanApk(apkPath, null, null);
+        return scanApk(apkPath, null, null, false);
     }
 
     /** Scan an APK, feeding the {@code hydradragon} module the live-network report
@@ -188,11 +188,20 @@ public final class NativeScanner {
      *  (from the hash-first whitelist check), reused natively so the top-level
      *  buffer isn't hashed again; null/"" makes native compute it. */
     public static String scanApk(String apkPath, String packageName, String fileMd5) {
+        return scanApk(apkPath, packageName, fileMd5, false);
+    }
+
+    /** Same as {@link #scanApk(String, String, String)}, but when
+     *  {@code zeroTrust} is true the native side builds the yarGen-style
+     *  {@code generated_rule} even for a CLEAN verdict (normally only built
+     *  for a malicious one) — Zero Trust Mode never treats "nothing matched"
+     *  as "nothing to record". */
+    public static String scanApk(String apkPath, String packageName, String fileMd5, boolean zeroTrust) {
         if (!ready) {
             return "{\"error\":\"not initialised\"}";
         }
         return nativeScanApk(apkPath, NetworkObservations.buildReportJson(packageName),
-                fileMd5 == null ? "" : fileMd5);
+                fileMd5 == null ? "" : fileMd5, zeroTrust);
     }
 
     /** Parsed scan verdict. */
@@ -254,12 +263,18 @@ public final class NativeScanner {
      * is the caller's already-computed MD5 of the file, reused natively.
      */
     public static Verdict scan(String apkPath, String packageName, String fileMd5) {
+        return scan(apkPath, packageName, fileMd5, false);
+    }
+
+    /** Same as {@link #scan(String, String, String)} but forwards
+     *  {@code zeroTrust} to {@link #scanApk(String, String, String, boolean)}. */
+    public static Verdict scan(String apkPath, String packageName, String fileMd5, boolean zeroTrust) {
         Verdict v = new Verdict();
         if (!ready) {
             v.error = "not initialised";
             return v;
         }
-        String json = scanApk(apkPath, packageName, fileMd5);
+        String json = scanApk(apkPath, packageName, fileMd5, zeroTrust);
         if (json == null) {
             v.error = "null native result";
             return v;

@@ -477,7 +477,10 @@ fn scan_text(text: &str) -> String {
     names.join(",")
 }
 
-/// `String nativeScanApk(String path)` — returns a JSON verdict.
+/// `String nativeScanApk(String path, String hydradragonJson, String fileMd5,
+/// boolean zeroTrust)` — returns a JSON verdict. `zeroTrust` forces the
+/// yarGen-style `generated_rule` to be built even for a clean verdict (Zero
+/// Trust Mode never treats "nothing matched" as "nothing worth recording").
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanApk<'local>(
     mut env: JNIEnv<'local>,
@@ -485,8 +488,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     path: JString<'local>,
     hydradragon_json: JString<'local>,
     file_md5: JString<'local>,
+    zero_trust: jboolean,
 ) -> jstring {
-    let result = scan_apk(&mut env, path, hydradragon_json, file_md5);
+    let result = scan_apk(&mut env, path, hydradragon_json, file_md5, zero_trust == JNI_TRUE);
     match env.new_string(&result) {
         Ok(s) => s.into_raw(),
         Err(_) => std::ptr::null_mut(),
@@ -498,6 +502,7 @@ fn scan_apk(
     path: JString,
     hydradragon_json: JString,
     file_md5: JString,
+    zero_trust: bool,
 ) -> String {
     let path: String = match env.get_string(&path) {
         Ok(s) => s.into(),
@@ -528,7 +533,7 @@ fn scan_apk(
     // any panic — so neither a deep stack nor a panic on a malformed/adversarial
     // APK can SIGABRT the whole app process.
     let scanned = on_big_stack(move || {
-        run_scan(engine, &bytes, &path, hydradragon.as_deref(), file_md5.as_deref())
+        run_scan(engine, &bytes, &path, hydradragon.as_deref(), file_md5.as_deref(), zero_trust)
     });
     match scanned {
         Ok(s) => s,
@@ -552,6 +557,7 @@ fn run_scan(
     path: &str,
     hydradragon: Option<&[u8]>,
     file_md5: Option<&str>,
+    zero_trust: bool,
 ) -> String {
     // Extract ONCE here in the bridge: `buffers` holds the top-level file plus
     // every buffer reachable by recursively unpacking archives (APK = zip, plus
@@ -780,13 +786,15 @@ fn run_scan(
     }
 
     let malicious = !detections.is_empty();
-    // yarGen-style auto-generated rule for THIS malicious sample only — every
-    // string comes straight from this sample's own DEX string pool, no
-    // goodware/whitelist DB filtering (unlike real yarGen). References the
-    // androguard and hydradragon modules in its condition, not just literal
-    // strings, so it also fires on package-name/network reruns of the same
-    // family. None for a clean scan.
-    let generated_rule = if malicious {
+    // yarGen-style auto-generated rule — every string comes straight from this
+    // sample's own DEX string pool, no goodware/whitelist DB filtering (unlike
+    // real yarGen). References the androguard and hydradragon modules in its
+    // condition, not just literal strings, so it also fires on package-name/
+    // network reruns of the same family. Built for a malicious verdict OR
+    // (Java's) Zero Trust Mode — Zero Trust never treats "nothing matched" as
+    // "nothing worth cataloguing"; the rule is then based on the sample's own
+    // strings/package rather than a named detection.
+    let generated_rule = if malicious || zero_trust {
         generate_yara_rule(&file_hash, &packages, &detections, &dex_scans)
     } else {
         None
@@ -835,19 +843,19 @@ fn run_scan(
 
 /// Build a yarGen-style YARA rule from THIS scan's own results (no
 /// goodware/whitelist-DB string filtering — every string here comes straight
-/// from the sample itself). Only called when the scan is malicious, so a
-/// clean app never gets an ad-hoc rule generated for it. `import`s the
-/// androguard and hydradragon modules and references them in the condition
-/// (package name / network) rather than relying on literal strings alone.
+/// from the sample itself). Called when the scan is malicious OR Zero Trust
+/// Mode is on (so an unmatched/"unknown" sample is catalogued too, not just a
+/// confirmed-bad one) — `detections` may be empty in the Zero Trust case, in
+/// which case the rule is based on the sample's own strings/package instead
+/// of a named detection. `import`s the androguard and hydradragon modules and
+/// references them in the condition (package name / network) rather than
+/// relying on literal strings alone.
 fn generate_yara_rule(
     file_hash: &str,
     packages: &[String],
     detections: &[(String, Vec<String>)],
     dex_scans: &[Option<dex_scan::DexScan>],
 ) -> Option<String> {
-    if detections.is_empty() {
-        return None;
-    }
     let mut strings: Vec<String> = Vec::new();
     let mut seen = std::collections::HashSet::new();
     'outer: for ds in dex_scans.iter().flatten() {
@@ -877,10 +885,12 @@ fn generate_yara_rule(
     out.push_str("    generator = \"hydradragon-autogen (yarGen-style, no whitelist filtering)\"\n");
     out.push_str(&format!("    sample_md5 = \"{}\"\n", file_hash));
     let det_names: Vec<String> = detections.iter().map(|(n, _)| n.replace('"', "'")).collect();
-    out.push_str(&format!(
-        "    based_on_detections = \"{}\"\n",
+    let based_on = if det_names.is_empty() {
+        "none (Zero Trust: unmatched/unknown sample, not a confirmed detection)".to_string()
+    } else {
         det_names.join(", ")
-    ));
+    };
+    out.push_str(&format!("    based_on_detections = \"{}\"\n", based_on));
     if !strings.is_empty() {
         out.push_str("  strings:\n");
         for (i, s) in strings.iter().enumerate() {

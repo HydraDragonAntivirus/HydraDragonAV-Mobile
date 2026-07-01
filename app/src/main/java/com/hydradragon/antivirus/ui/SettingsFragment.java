@@ -1,6 +1,7 @@
 package com.hydradragon.antivirus.ui;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.VpnService;
@@ -228,7 +229,41 @@ public class SettingsFragment extends Fragment {
                 Toast.makeText(getContext(), "VPN consent denied", Toast.LENGTH_LONG).show();
                 buildUI();
             }
+        } else if (requestCode == REQ_SCREEN_CAPTURE) {
+            if (resultCode == android.app.Activity.RESULT_OK && data != null) {
+                prefs().edit().putBoolean(KEY_SCREEN_OCR, true).apply();
+                Intent svc = new Intent(requireContext(),
+                    com.hydradragon.antivirus.service.ScreenCaptureService.class);
+                svc.putExtra(com.hydradragon.antivirus.service.ScreenCaptureService.EXTRA_RESULT_CODE, resultCode);
+                svc.putExtra(com.hydradragon.antivirus.service.ScreenCaptureService.EXTRA_RESULT_DATA, data);
+                ContextCompat.startForegroundService(requireContext(), svc);
+                Toast.makeText(getContext(), "Screen OCR scanning ON", Toast.LENGTH_SHORT).show();
+            } else {
+                prefs().edit().putBoolean(KEY_SCREEN_OCR, false).apply();
+                Toast.makeText(getContext(), "Screen capture consent denied", Toast.LENGTH_LONG).show();
+                buildUI();
+            }
         }
+    }
+
+    // ─── SCREEN OCR (Zero Trust) ───────────────────────────────────
+    private void requestScreenCapture(CompoundButton btn) {
+        android.media.projection.MediaProjectionManager mgr =
+            (android.media.projection.MediaProjectionManager)
+                requireContext().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        if (mgr == null) {
+            Toast.makeText(getContext(), "Screen capture unavailable on this device", Toast.LENGTH_LONG).show();
+            if (btn != null) btn.setChecked(false);
+            return;
+        }
+        startActivityForResult(mgr.createScreenCaptureIntent(), REQ_SCREEN_CAPTURE);
+    }
+
+    private void stopScreenCapture() {
+        prefs().edit().putBoolean(KEY_SCREEN_OCR, false).apply();
+        requireContext().stopService(new Intent(requireContext(),
+            com.hydradragon.antivirus.service.ScreenCaptureService.class));
+        Toast.makeText(getContext(), "Screen OCR scanning OFF", Toast.LENGTH_SHORT).show();
     }
 
     // ─── UI YARDIMCILARI ──────────────────────────────────────────

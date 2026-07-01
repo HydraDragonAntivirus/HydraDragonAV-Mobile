@@ -302,7 +302,7 @@ public class ScanEngine {
             // MD5 computed once here and reused natively.
             String md5 = fileMd5(new java.io.File(path));
             if (isHashWhitelisted(md5)) return;
-            NativeScanner.Verdict v = NativeScanner.scan(path, null, md5);
+            NativeScanner.Verdict v = NativeScanner.scan(path, null, md5, ZeroTrustMode.isEnabled(context));
             if (v == null) return;
             saveGeneratedRule(v);
             // Per-detection whitelist suppression: a hit INSIDE a known-good
@@ -419,7 +419,7 @@ public class ScanEngine {
                 // MD5 computed once here and reused natively.
                 String appMd5 = fileMd5(new java.io.File(app.sourceDir));
                 if (isHashWhitelisted(appMd5)) continue;
-                NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir, app.packageName, appMd5);
+                NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir, app.packageName, appMd5, ZeroTrustMode.isEnabled(context));
                 if (v == null) continue;
                 saveGeneratedRule(v);
                 // Per-detection suppression (a hit inside a whitelisted APK is an
@@ -639,7 +639,7 @@ public class ScanEngine {
                 // block. The file MD5 is computed once here and reused natively.
                 String apkMd5 = apkPath != null ? fileMd5(new java.io.File(apkPath)) : null;
                 if (apkPath != null && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
-                    NativeScanner.Verdict v = NativeScanner.scan(apkPath, app.packageName, apkMd5);
+                    NativeScanner.Verdict v = NativeScanner.scan(apkPath, app.packageName, apkMd5, ZeroTrustMode.isEnabled(context));
                     saveGeneratedRule(v);
                     fileMd5Vt = v.md5;
                     nativePackages.addAll(v.packages);
@@ -726,9 +726,9 @@ public class ScanEngine {
         // on, refuse to call it clean: report SUSPICIOUS instead and attach
         // every known detail so the user decides, not the (absent) verdict.
         if (riskScore == 0 && !isWhitelisted && ZeroTrustMode.isEnabled(context)) {
-            riskScore = 30; // matches ThreatResult.isThreat()'s SUSPICIOUS threshold
-            builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
-            reasons.add("⚠️ ZERO TRUST: no detector matched this app — verdict is UNVERIFIED, "
+            riskScore = 30; // matches ThreatResult.isThreat()'s threshold — surfaces the app in the threat list
+            builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.UNKNOWN);
+            reasons.add("⚠️ ZERO TRUST: no detector matched this app — verdict is UNKNOWN, "
                 + "not confirmed clean (not recommended: expect false positives on ordinary apps)");
             reasons.add("✍️ Signature: " + companyName);
             reasons.add("🔐 SHA-256: " + signatureHash);
