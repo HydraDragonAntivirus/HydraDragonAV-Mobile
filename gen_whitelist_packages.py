@@ -11,19 +11,26 @@ NSRL data itself) — the exact value the old txt whitelist held one per line.
 On-device matching logic is unchanged, only the storage format and available
 detail changed.
 
-Output: app/src/main/assets/whitelist_packages.db
+Output: app/src/main/assets/scan/whitelist_packages.db (under assets/scan/ so
+NativeScanner.init() copies it alongside the .yrc/model files into the same
+on-device directory the Rust engine reads at nativeInit — the same DB is then
+usable from both Java and Rust).
+
+Also applies every sql/RDS_*_android_delta.sql newer than the base DB (not
+just one hardcoded month) so a package only present in a later delta isn't
+dropped.
 
 Usage:
     python gen_whitelist_packages.py [path/to/RDS.db]
 """
 
 import os
-import sqlite3
 import sys
 from pathlib import Path
 
-DB = sys.argv[1] if len(sys.argv) > 1 else "sql/RDS_2026.03.1_android.db"
-OUT = Path("app/src/main/assets/whitelist_packages.db")
+import nsrl_sql
+
+OUT = Path("app/src/main/assets/scan/whitelist_packages.db")
 
 
 def main():
@@ -31,7 +38,8 @@ def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.unlink(missing_ok=True)
 
-    src = sqlite3.connect(DB)
+    DB = sys.argv[1] if len(sys.argv) > 1 else nsrl_sql.find_main_db()
+    src = nsrl_sql.open_with_deltas(DB)
 
     apk_by_object = {}
     for row in src.execute(

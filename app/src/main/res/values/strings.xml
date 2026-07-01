@@ -163,4 +163,10 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="accessibility_service_description">HydraDragon Dynamic Analysis Engine. Monitors real-time UI manipulation and intercepts clickjacking/overlay attacks from malware.</string>
     <string name="system_safe">SYSTEM SAFE</string>
     <string name="accessibility_desc">HydraDragon monitors browser URLs to protect you from malicious websites.</string>
+    <string name="ransomware_blocked_title">RANSOMWARE BLOCKED</string>
+    <string name="ransomware_blocked_msg">Ransomware lock screen detected — opened HydraDragon.</string>
+    <string name="scam_page_title">Possible scam page</string>
+    <string name="scam_page_msg">Ransom/scam text on a web page.</string>
+    <string name="sms_phishing_title">Possible SMS scam / phishing</string>
+    <string name="sms_phishing_msg">Scam or phishing wording detected on screen in %1$s</string>
 </resources>

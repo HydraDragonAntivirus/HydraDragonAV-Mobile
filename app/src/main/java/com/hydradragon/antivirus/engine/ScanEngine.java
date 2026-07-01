@@ -123,10 +123,14 @@ public class ScanEngine {
         // HashSet. Only clears an app WITH a trusted-store install (spoofable
         // alone). The SHA-256 hash whitelist is separate and lives natively
         // (fastbloom) — see NativeScanner.isHashWhitelisted.
+        // Lives under assets/scan/ (not the assets root) so NativeScanner.init()
+        // also copies it into the "hydra-scan" dir the Rust engine reads at
+        // nativeInit — the same DB file backs both the Java package check here
+        // AND the Rust exact-file skip check in NativeScanner_nativeScanApk.
         java.io.File dbFile = new java.io.File(context.getNoBackupFilesDir(), "whitelist_packages.db");
         try {
             if (!dbFile.exists()) {
-                try (InputStream in = context.getAssets().open("whitelist_packages.db");
+                try (InputStream in = context.getAssets().open("scan/whitelist_packages.db");
                      java.io.OutputStream out = new java.io.FileOutputStream(dbFile)) {
                     byte[] buf = new byte[64 * 1024];
                     int n;

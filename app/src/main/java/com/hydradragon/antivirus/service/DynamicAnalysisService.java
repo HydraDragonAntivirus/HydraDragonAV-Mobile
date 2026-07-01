@@ -137,11 +137,9 @@ public class DynamicAnalysisService extends AccessibilityService {
         CharSequence text = node.getText();
         if (text != null) {
             String lowerText = text.toString().toLowerCase();
-            // RANSOMWARE MITIGATION
-            if (lowerText.contains("your files are encrypted") || 
-                lowerText.contains("pay bitcoin") ||
-                lowerText.contains("recover your files") ||
-                lowerText.contains("bitcoin address")) {
+            // RANSOMWARE MITIGATION (multi-language — see ScreenThreatKeywords)
+            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAny(
+                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.RANSOMWARE)) {
                 Log.e(TAG, "RANSOMWARE TEXT DETECTED in " + fgPackage);
                 // Relatedness: a standalone app showing a full-screen "files
                 // encrypted" lock IS ransomware -> nuke. The same text inside a
@@ -149,18 +147,34 @@ public class DynamicAnalysisService extends AccessibilityService {
                 // warn only, don't close the browser.
                 if (!BROWSERS.contains(fgPackage)) {
                     if (!com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, fgPackage)) {
-                        sendAlert("RANSOMWARE BLOCKED", "Ransomware lock screen detected — opened HydraDragon.", fgPackage);
+                        sendAlert(getString(R.string.ransomware_blocked_title),
+                            getString(R.string.ransomware_blocked_msg), fgPackage);
                         redirectIfNotDismissed(fgPackage);
                     }
                 } else {
-                    sendAlert("Possible scam page", "Ransom/scam text on a web page.");
+                    sendAlert(getString(R.string.scam_page_title), getString(R.string.scam_page_msg));
                 }
             }
 
-            if (lowerText.contains("activate device admin") ||
-                lowerText.contains("cihaz yöneticisini etkinleştir") ||
-                lowerText.contains("cihaz yöneticisi")) {
+            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAny(
+                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.DEVICE_ADMIN)) {
                 Log.d(TAG, "Device Admin activation screen visible.");
+            }
+
+            // SMS SCAM / PHISHING MITIGATION (multi-language). Screen-text based —
+            // catches smishing lures wherever they're displayed (Messages app,
+            // notification preview, a WebView popup impersonating a bank/carrier),
+            // not just in a real browser. Never blocks the app (it's usually the
+            // legitimate Messages/notification UI showing someone else's scam
+            // text) — just warns so the user doesn't tap the link or reply.
+            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAny(
+                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.SMS_PHISHING)) {
+                String id = "smsphish:" + fgPackage;
+                if (!com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, id)) {
+                    Log.w(TAG, "SMS SCAM/PHISHING TEXT DETECTED in " + fgPackage);
+                    sendAlert(getString(R.string.sms_phishing_title),
+                        getString(R.string.sms_phishing_msg, fgPackage), id);
+                }
             }
 
             // Website scan: ONLY in a real browser (or an already-flagged malware

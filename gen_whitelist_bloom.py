@@ -19,8 +19,10 @@ import subprocess
 import sqlite3
 from pathlib import Path
 
-DB = "sql/RDS_2026.03.1_android.db"
-DELTA = "sql/RDS_2026.06.1_android_delta.sql"
+import nsrl_sql
+
+DB = nsrl_sql.find_main_db()
+DELTAS = nsrl_sql.find_delta_sqls()  # every RDS_*_android_delta.sql newer than DB
 TXT = "whitelist_md5.txt"               # working file (large; removed at end)
 OUT = "app/src/main/assets/whitelist.bloom"
 FPP = "0.000001"                        # same as the domain/malicious blooms
@@ -47,15 +49,17 @@ def extract():
             if n % 20_000_000 == 0:
                 print(f"  db {n:,}...", flush=True)
         con.close()
-        # 2) delta .sql — pull md5 (3rd-from-last quoted value) per METADATA
-        #    insert line with a regex (case-insensitive hex).
-        with open(DELTA, "rb") as f:
-            for line in f:
-                m = MD5RE.search(line.lower())
-                if m:
-                    out.write(m.group(1).decode())
-                    out.write("\n")
-                    n += 1
+        # 2) delta .sql (every month newer than DB, not just one hardcoded
+        #    file) — pull md5 (3rd-from-last quoted value) per METADATA insert
+        #    line with a regex (case-insensitive hex).
+        for delta in DELTAS:
+            with open(delta, "rb") as f:
+                for line in f:
+                    m = MD5RE.search(line.lower())
+                    if m:
+                        out.write(m.group(1).decode())
+                        out.write("\n")
+                        n += 1
     print(f"total md5 rows written: {n:,}", flush=True)
     return n
 

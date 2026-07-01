@@ -14,23 +14,28 @@ into the whitelist.
 
 Output: app/src/main/assets/whitelist_hashes.txt  (one lowercase md5/line)
 
+Also applies every sql/RDS_*_android_delta.sql newer than the base DB (not
+just one hardcoded month) so a whole-APK hash only present in a later delta
+isn't dropped.
+
 Usage:
     python gen_whitelist_apk.py [path/to/RDS.db]
 """
 
 import os
-import sqlite3
 import sys
 from pathlib import Path
 
-DB = sys.argv[1] if len(sys.argv) > 1 else "sql/RDS_2026.03.1_android.db"
+import nsrl_sql
+
 OUT = Path("app/src/main/assets/whitelist_hashes.txt")
 
 
 def main():
     os.chdir(Path(__file__).parent)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB)
+    DB = sys.argv[1] if len(sys.argv) > 1 else nsrl_sql.find_main_db()
+    con = nsrl_sql.open_with_deltas(DB)
     rows = con.execute(
         "SELECT DISTINCT lower(md5) FROM METADATA "
         "WHERE lower(extension)='apk' AND md5 IS NOT NULL AND length(md5)=32"

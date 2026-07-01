@@ -28,6 +28,12 @@ hydradragonxorfilter = { path = "../hydradragonxorfilter" }
 # static-analysis findings.
 dex-core = { git = "https://github.com/FossRust/dex-parser-analyzer", branch = "main" }
 dex-analysis = { git = "https://github.com/FossRust/dex-parser-analyzer", branch = "main" }
+# Reads whitelist_packages.db (same file Java's ScanEngine.loadPackageWhitelist
+# loads) so a nested APK buffer whose package+md5 EXACTLY matches an
+# NSRL-known-good row skips the heavy clamav/YARA/ML/TLSH pass instead of
+# rescanning what Java's whitelist already vouches for. "bundled" statically
+# links sqlite3 (no cross-compiled system dependency needed for the .so).
+rusqlite = { version = "0.31", features = ["bundled"] }
 
 [profile.release]
 opt-level = "z"

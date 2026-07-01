@@ -41,6 +41,15 @@ const TLSH_DB: &str = "malware_tlsh.txt";
 /// buffer on the native heap; binary-fuse encodings are far smaller than the
 /// equivalent quotient filter, so the whitelist stays modest in RAM.
 const WHITELIST_XF: &str = "whitelist.xf";
+/// Same whitelist_packages.db Java's ScanEngine.loadPackageWhitelist reads
+/// (table whitelist_package: key TEXT, md5 TEXT, ...). Loaded once at init into
+/// an owned key->md5 map so a nested APK buffer whose package name AND md5
+/// exactly match a row can skip the heavy scan below instead of Rust redoing
+/// work Java's whitelist already vouches for. Matching BOTH fields (not just
+/// the package name) keeps this safe against a spoofed package name — only an
+/// exact known-good file is skipped, and only that one buffer: a sibling
+/// non-whitelisted file/APK inside the same archive is scanned normally.
+const WHITELIST_PACKAGES_DB: &str = "whitelist_packages.db";
 
 /// A scanned buffer whose TLSH distance to a known-malware digest is at or below
 /// this is flagged as similar. Lower = stricter (fewer FP). TLSH distance: 0 =
@@ -58,6 +67,9 @@ struct Engine {
     tlsh_db: Vec<tlsh_rs::TlshDigest>,
     /// NSRL known-good SHA-256 whitelist (Binary-Fuse xor filter).
     whitelist: Option<XorFilter>,
+    /// NSRL known-good package -> md5 map, read from whitelist_packages.db.
+    /// See WHITELIST_PACKAGES_DB.
+    package_whitelist: std::collections::HashMap<String, String>,
     /// Malicious domain/URL xor filters + public-suffix list.
     url_scanner: Option<url_scan::UrlScanner>,
     /// Malicious-IP xor filters (per category).
@@ -174,6 +186,9 @@ fn do_init(dir: &str) -> Engine {
     let whitelist = load_whitelist(&base.join(WHITELIST_XF));
     report.push_str(&format!(" whitelist={}", if whitelist.is_some() { "ok" } else { "none" }));
 
+    let package_whitelist = load_package_whitelist(&base.join(WHITELIST_PACKAGES_DB));
+    report.push_str(&format!(" package_whitelist={}", package_whitelist.len()));
+
     let url_scanner = std::panic::catch_unwind(|| url_scan::UrlScanner::load(base))
         .ok()
         .flatten();
@@ -190,9 +205,36 @@ fn do_init(dir: &str) -> Engine {
         model,
         tlsh_db,
         whitelist,
+        package_whitelist,
         url_scanner,
         ip_scanner,
     }
+}
+
+/// Load `key -> md5` from whitelist_packages.db's `whitelist_package` table
+/// (read-only; same file Java reads). Empty map if absent/unreadable — the
+/// heavy scan then just runs on every buffer as before.
+fn load_package_whitelist(path: &std::path::Path) -> std::collections::HashMap<String, String> {
+    let mut out = std::collections::HashMap::new();
+    let Ok(conn) = rusqlite::Connection::open_with_flags(
+        path,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    ) else {
+        return out;
+    };
+    let Ok(mut stmt) = conn.prepare("SELECT key, md5 FROM whitelist_package WHERE md5 IS NOT NULL")
+    else {
+        return out;
+    };
+    let rows = stmt.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    });
+    if let Ok(rows) = rows {
+        for row in rows.flatten() {
+            out.insert(row.0, row.1.to_lowercase());
+        }
+    }
+    out
 }
 
 /// Load a serialized Binary-Fuse (xor) filter from a `.xf` asset. The file is
@@ -504,12 +546,37 @@ fn run_scan(
         }
     }
 
+    // Per-buffer "already vouched for by Java's whitelist_packages.db" flag:
+    // true only when the buffer's OWN package name AND md5 exactly match a row
+    // (see WHITELIST_PACKAGES_DB) — never propagated to children/siblings, so a
+    // non-whitelisted file/APK sitting next to a whitelisted one in the same
+    // archive is still fully scanned below.
+    let skip_heavy: Vec<bool> = buffers
+        .iter()
+        .map(|b| {
+            if engine.package_whitelist.is_empty() {
+                return false;
+            }
+            let Some(pkg) = axml_package(&b.data) else {
+                return false;
+            };
+            if pkg.is_empty() {
+                return false;
+            }
+            match engine.package_whitelist.get(&pkg) {
+                Some(known_md5) => known_md5.eq_ignore_ascii_case(&md5_hex(&b.data)),
+                None => false,
+            }
+        })
+        .collect();
+
     // Decode + statically analyse every DEX buffer once (strings + method/class
     // names), reused below for both the clamav/YARA text pass and findings.
     let dex_scans: Vec<Option<dex_scan::DexScan>> = buffers
         .iter()
-        .map(|b| {
-            if b.data.starts_with(b"dex\n") {
+        .enumerate()
+        .map(|(i, b)| {
+            if !skip_heavy[i] && b.data.starts_with(b"dex\n") {
                 dex_scan::scan(&b.data)
             } else {
                 None
@@ -529,6 +596,9 @@ fn run_scan(
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let mut dets: Vec<(String, Vec<String>)> = Vec::new();
                 for (i, b) in buffers.iter().enumerate() {
+                    if skip_heavy[i] {
+                        continue;
+                    }
                     let name = if i == 0 {
                         path.to_string()
                     } else {
@@ -577,7 +647,10 @@ fn run_scan(
                 // Lineage of every APK/zip buffer the model flagged malicious, so
                 // the ML detection is suppressible by a whitelisted ancestor too.
                 let mut lineages: Vec<Vec<String>> = Vec::new();
-                for b in &buffers {
+                for (i, b) in buffers.iter().enumerate() {
+                    if skip_heavy[i] {
+                        continue;
+                    }
                     // The model is trained on whole APKs (= zip). Running it on
                     // raw extracted members (classes.dex, resources, .so, images)
                     // produces false positives, so only score APK/zip buffers
@@ -642,7 +715,10 @@ fn run_scan(
     // TLSH against the MalwareBazaar database; a small distance => a likely
     // variant. Tagged with the buffer's APK lineage so a whitelisted APK is
     // still suppressed.
-    for b in &buffers {
+    for (i, b) in buffers.iter().enumerate() {
+        if skip_heavy[i] {
+            continue;
+        }
         if tlsh_relevant(&b.data) {
             if let Some(dist) = tlsh_nearest(engine, &b.data) {
                 detections.push((format!("TLSH.Malware/dist={}", dist), b.apk_lineage.clone()));

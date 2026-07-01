@@ -160,4 +160,10 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="cert_untrusted">GÜVENSİZ SERTİFİKA (Test Anahtarı)</string>
     <string name="cert_signature">✍️ İmza: %1$s</string>
     <string name="threat_adware">ADWARE TESPİTİ: Aşırı Reklam İçeriyor!</string>
+    <string name="ransomware_blocked_title">FIDYE YAZILIMI ENGELLENDİ</string>
+    <string name="ransomware_blocked_msg">Fidye yazılımı kilit ekranı tespit edildi — HydraDragon açıldı.</string>
+    <string name="scam_page_title">Olası dolandırıcılık sayfası</string>
+    <string name="scam_page_msg">Web sayfasında fidye/dolandırıcılık metni.</string>
+    <string name="sms_phishing_title">Olası SMS dolandırıcılığı / kimlik avı</string>
+    <string name="sms_phishing_msg">%1$s içinde ekranda dolandırıcılık veya kimlik avı ifadesi tespit edildi</string>
 </resources>
