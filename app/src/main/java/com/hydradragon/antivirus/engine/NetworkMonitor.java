@@ -75,8 +75,17 @@ public class NetworkMonitor {
     private final ConnectivityManager connectivityManager;
     private final ScheduledExecutorService scheduler;
     private final ExecutorService executor;
-    private final CopyOnWriteArrayList<NetworkEvent> eventLog;
+    // Static: the REAL blocking/allowing happens in DnsVpnService (separate
+    // Service instance, same process) — see recordEvent(). A per-instance log
+    // would sit empty forever since DnsVpnService has no reference to whichever
+    // NetworkMonitor instance the UI happens to be bound to.
+    private static final CopyOnWriteArrayList<NetworkEvent> eventLog = new CopyOnWriteArrayList<>();
     private NetworkCallback networkCallback;
+    /** Same instance as {@link #networkCallback} in practice (one NetworkMonitor
+     *  is ever bound to the UI at a time) — kept static too so recordEvent(),
+     *  called from DnsVpnService's own instance, can still push a LIVE update to
+     *  whichever screen is currently listening. */
+    private static volatile NetworkCallback staticCallback;
     private boolean isMonitoring = false;
 
     // Domain bloom filter
@@ -135,7 +144,6 @@ public class NetworkMonitor {
         this.connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         this.scheduler = Executors.newScheduledThreadPool(2);
         this.executor = Executors.newFixedThreadPool(3);
-        this.eventLog = new CopyOnWriteArrayList<>();
         loadDomainFilters();
     }
 
@@ -147,6 +155,23 @@ public class NetworkMonitor {
 
     public void setCallback(NetworkCallback callback) {
         this.networkCallback = callback;
+        staticCallback = callback;
+    }
+
+    /** Called by DnsVpnService for every DNS query it actually blocks or allows
+     *  — the real traffic path, separate from this class's own (dead)
+     *  checkConnection()/logEvent() pair. Feeds both getEventLog() (so the
+     *  Network screen's list isn't empty/stale on next backfill) and the live
+     *  callback (so an already-open Network screen sees it immediately, not just
+     *  after leaving and re-entering the tab). */
+    public static void recordEvent(String destIp, int port, String protocol,
+                                    boolean blocked, String reason) {
+        NetworkEvent event = new NetworkEvent("local", destIp, port, protocol, blocked, reason, 0);
+        eventLog.add(0, event);
+        while (eventLog.size() > 1000) eventLog.remove(eventLog.size() - 1);
+        if (blocked) recordBlocked(); else recordAllowed();
+        NetworkCallback cb = staticCallback;
+        if (cb != null) cb.onSuspiciousActivity(event);
     }
 
     /**

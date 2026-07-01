@@ -1,6 +1,8 @@
 # 🐉 HydraDragonAV Mobile
 **Military-Grade Advanced Android Cybersecurity & Threat Protection**
 
+![HydraDragonAndroid](assets/HydraDragonAndroid.png)
+
 ![Android](https://img.shields.io/badge/Android-10.0%2B-3DDC84?style=for-the-badge&logo=android)
 ![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Native_Engine-DEA584?style=for-the-badge&logo=rust&logoColor=black)

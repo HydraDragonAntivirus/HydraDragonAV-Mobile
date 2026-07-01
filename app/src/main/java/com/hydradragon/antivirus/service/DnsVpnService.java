@@ -214,7 +214,7 @@ public class DnsVpnService extends VpnService {
                     notifyBlocked(fhost, "MALICIOUS_IP");
                 } else {
                     writeTun(buildUdp(p, ver, ipHdr, srcOff, dstOff, dns, dns.length));
-                    com.hydradragon.antivirus.engine.NetworkMonitor.recordAllowed();
+                    com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent(fhost, 53, "DNS", false, "Allowed");
                 }
             } catch (Exception e) {
                 Log.w(TAG, "udp forward: " + e.getMessage());
@@ -364,7 +364,7 @@ public class DnsVpnService extends VpnService {
                     byte[] fin2 = buildTcp(fp, fVer, fIpHdr, fSrc, fDst, fTcp,
                         (fOurSeq + reply.length) & 0xFFFFFFFFL, fClientNext, 0x11, null, 0);
                     writeTun(fin2);
-                    com.hydradragon.antivirus.engine.NetworkMonitor.recordAllowed();
+                    com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent(fhost, 53, "DNS", false, "Allowed");
                 } catch (Exception e) {
                     Log.w(TAG, "tcp forward: " + e.getMessage());
                 }
@@ -561,11 +561,11 @@ public class DnsVpnService extends VpnService {
 
     private void notifyBlocked(String host, String cat) {
         if (host == null) return;
-        // Feeds the Dashboard/Network screens' "BLOCKED" counter — see
-        // NetworkMonitor.recordBlocked(). This is where blocking ACTUALLY
-        // happens (DNS sinkhole); NetworkMonitor.checkConnection() is never
-        // invoked from this real traffic path on its own.
-        com.hydradragon.antivirus.engine.NetworkMonitor.recordBlocked();
+        // Feeds the Dashboard/Network screens' "BLOCKED" counter AND the live
+        // event list — this is where blocking ACTUALLY happens (DNS sinkhole);
+        // NetworkMonitor.checkConnection() is never invoked from this real
+        // traffic path on its own.
+        com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent(host, 53, "DNS", true, cat);
         try {
             NotificationManager nm = getSystemService(NotificationManager.class);
             nm.notify(host.hashCode(), new Notification.Builder(this, CH_ID)
