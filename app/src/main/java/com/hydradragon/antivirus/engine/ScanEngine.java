@@ -32,7 +32,7 @@ public class ScanEngine {
     // the 5/6 decision on the count the native scan returns.
 
     private static final List<String> TRUSTED_COMPANIES = Arrays.asList(
-        "google", "meta", "facebook", "whatsapp", "microsoft",
+        "google", "meta", "facebook", "instagram", "whatsapp", "microsoft",
         "amazon", "spotify", "netflix", "twitter", "x corp",
         "telegram", "roblox", "kaspersky", "xiaomi", "samsung",
         "oppo", "vivo", "motorola", "lenovo", "huawei", "oneplus",
@@ -741,23 +741,15 @@ public class ScanEngine {
                 // Apply CodeAnalyzer's heuristic verdict now that the real engine has
                 // had a chance to weigh in. Corroborated (native signature/YARA hit,
                 // ML flag, or 6+ dangerous permissions) => full weight, genuine
-                // finding. NOT corroborated => the code pattern alone isn't treated
-                // as malware (too false-positive prone on its own); still surfaced as
-                // a small, clearly-labelled unverified note so it isn't silently lost.
-                if (codeResult.isMalicious) {
-                    if (nativeCorroborated) {
-                        riskScore = Math.min(100, riskScore + codeResult.riskScore);
-                        if (riskScore >= 60) builder.setThreatType(codeResult.threatType);
-                        for (String finding : codeResult.findings) {
-                            if (!finding.startsWith("✅")) reasons.add("💻 [CODE] " + finding);
-                        }
-                    } else {
-                        riskScore = Math.max(riskScore, 10);
-                        for (String finding : codeResult.findings) {
-                            if (!finding.startsWith("✅")) {
-                                reasons.add("💻 [CODE, unverified by engine] " + finding);
-                            }
-                        }
+                // finding. NOT corroborated => discarded entirely — a raw DEX
+                // substring hit ("DexClassLoader", "Runtime.exec", etc.) with no
+                // real-engine backing is noise, not evidence, and was showing up as
+                // a "[CODE, unverified by engine]" reason on completely clean apps.
+                if (codeResult.isMalicious && nativeCorroborated) {
+                    riskScore = Math.min(100, riskScore + codeResult.riskScore);
+                    if (riskScore >= 60) builder.setThreatType(codeResult.threatType);
+                    for (String finding : codeResult.findings) {
+                        if (!finding.startsWith("✅")) reasons.add("💻 [CODE] " + finding);
                     }
                 }
 

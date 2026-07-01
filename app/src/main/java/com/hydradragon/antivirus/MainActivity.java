@@ -34,11 +34,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_VPN = 102;
 
-    // Guards the RECEIVE_SMS prompt to once per process — declining it must not
-    // re-prompt on every checkMandatoryPermissions() pass (unlike the mandatory
-    // checks above it, which re-run until satisfied).
-    private boolean smsPermissionAsked = false;
-
     private BottomNavigationView bottomNav;
 
     @Override
@@ -123,15 +118,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // SMS virus/scam detection (SmsReceiver): optional — some devices/ROMs
-        // restrict RECEIVE_SMS, and a user may simply decline it. Unlike
-        // POST_NOTIFICATIONS above, declining does NOT close the app; the rest
-        // of the suite runs fine without SMS scanning.
-        if (!smsPermissionAsked && ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
-            smsPermissionAsked = true;
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.RECEIVE_SMS}, 103);
-            return;
-        }
+        // SMS virus/scam detection (SmsReceiver) is opt-in from Settings, not
+        // asked here at launch — see SettingsFragment's SMS scan toggle.
 
         if (!isAccessibilityServiceEnabled()) {
             showOptionalAccessibilityDialog();
@@ -267,9 +255,6 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Notification permission is required!", Toast.LENGTH_LONG).show();
                 finish();
             }
-        } else if (requestCode == 103) {
-            // Optional — proceed either way, SMS scanning simply stays off if denied.
-            checkMandatoryPermissions();
         }
     }
 

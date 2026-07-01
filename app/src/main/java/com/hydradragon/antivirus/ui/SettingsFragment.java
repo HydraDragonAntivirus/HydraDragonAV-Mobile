@@ -43,6 +43,7 @@ public class SettingsFragment extends Fragment {
     private static final String KEY_SCREEN_OCR = "screen_ocr_enabled";
     private static final int REQ_VPN = 1201;
     private static final int REQ_SCREEN_CAPTURE = 1202;
+    private static final int REQ_SMS = 1203;
 
     @Nullable
     @Override
@@ -109,6 +110,14 @@ public class SettingsFragment extends Fragment {
         addToggle("Screen OCR scanning — NOT RECOMMENDED (battery)", screenOcr, (btn, on) -> {
             if (on) requestScreenCapture(btn);
             else stopScreenCapture();
+        });
+
+        addHeader("SMS Protection");
+        boolean smsGranted = ContextCompat.checkSelfPermission(requireContext(),
+            android.Manifest.permission.RECEIVE_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        addToggle("Scan incoming SMS for scam links / phishing", smsGranted, (btn, on) -> {
+            if (on) requestSmsPermission(btn);
+            else openAppSettingsToRevokeSms();
         });
 
         addHeader(getString(R.string.system));
@@ -264,6 +273,42 @@ public class SettingsFragment extends Fragment {
         requireContext().stopService(new Intent(requireContext(),
             com.hydradragon.antivirus.service.ScreenCaptureService.class));
         Toast.makeText(getContext(), "Screen OCR scanning OFF", Toast.LENGTH_SHORT).show();
+    }
+
+    // ─── SMS PROTECTION ─────────────────────────────────────────────
+    /** RECEIVE_SMS is dangerous + Play Console "Restricted Permission" — it's
+     *  opt-in from Settings, never requested at app launch (see MainActivity),
+     *  so declining or never touching this toggle simply leaves SMS scanning
+     *  off; the rest of the suite is unaffected. */
+    private void requestSmsPermission(CompoundButton btn) {
+        if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECEIVE_SMS)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            return; // already granted (toggle just reflected stale state)
+        }
+        requestPermissions(new String[]{android.Manifest.permission.RECEIVE_SMS}, REQ_SMS);
+    }
+
+    /** Android has no API to revoke a permission from within the app — send the
+     *  user to this app's system App Info > Permissions screen to turn it off. */
+    private void openAppSettingsToRevokeSms() {
+        Toast.makeText(getContext(), "Open Permissions > SMS to turn this off", Toast.LENGTH_LONG).show();
+        try {
+            startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + requireContext().getPackageName())));
+        } catch (Throwable ignore) { }
+        buildUI(); // revert the toggle visually — permission is still granted until the user acts
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_SMS) {
+            boolean granted = grantResults.length > 0
+                && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            Toast.makeText(getContext(), granted ? "SMS scanning enabled" : "SMS permission denied",
+                granted ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
+            buildUI(); // reflect the actual granted state, whichever way it went
+        }
     }
 
     // ─── UI YARDIMCILARI ──────────────────────────────────────────

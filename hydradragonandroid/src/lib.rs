@@ -763,7 +763,16 @@ fn run_scan(
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let mut malicious = false;
                 let mut best_jaccard = 0.0_f32;
-                let mut worst_anomaly = 0.0_f64;
+                // hydradragonml flags a buffer malicious when
+                // `anomaly_score <= anomaly_threshold` (LOWER = more anomalous —
+                // isolation-forest convention). Tracking the MAXIMUM here (as this
+                // used to) meant the one buffer that actually tripped `by_iforest`
+                // — typically a NEGATIVE score — could never overwrite the 0.0
+                // starting value, so the JSON verdict showed "anomaly": 0.0000
+                // even when the ML detection genuinely fired on a real anomaly.
+                // Track the MINIMUM (most anomalous) instead so the displayed
+                // number is always the one that actually caused the flag.
+                let mut worst_anomaly = f64::MAX;
                 let mut nearest: Option<String> = None;
                 // Lineage of every APK/zip buffer the model flagged malicious, so
                 // the ML detection is suppressible by a whitelisted ancestor too.
@@ -788,10 +797,13 @@ fn run_scan(
                             best_jaccard = r.best_jaccard;
                             nearest = r.nearest.clone();
                         }
-                        if r.anomaly_score > worst_anomaly {
+                        if r.anomaly_score < worst_anomaly {
                             worst_anomaly = r.anomaly_score;
                         }
                     }
+                }
+                if worst_anomaly == f64::MAX {
+                    worst_anomaly = 0.0; // no buffer was scored — nothing to report
                 }
                 (malicious, best_jaccard, worst_anomaly, nearest, lineages)
             })) {
