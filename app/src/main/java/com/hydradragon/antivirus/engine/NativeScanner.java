@@ -64,6 +64,20 @@ public final class NativeScanner {
 
     private static native boolean nativeInit(String dir);
 
+    private static native boolean nativeLearnRule(String yarPath);
+
+    /** Hot-load a single freshly auto-generated {@code .yar} rule (already written
+     *  to disk by ScanEngine.saveGeneratedRule) into the LIVE native engine, so a
+     *  family this device just caught is detected by every scan for the rest of
+     *  THIS session too — not only after the next app restart (which already
+     *  reloads every past generated rule from the init directory). Best-effort:
+     *  false just means this session doesn't get the instant benefit; the rule is
+     *  still on disk and will load normally next launch. */
+    public static boolean learnRule(String yarPath) {
+        if (!LIB_LOADED || !ready || yarPath == null || yarPath.isEmpty()) return false;
+        try { return nativeLearnRule(yarPath); } catch (Throwable t) { return false; }
+    }
+
     private static native String nativeScanApk(String path, String hydradragonJson, String fileMd5, boolean zeroTrust);
 
     /** Diagnostics: what loaded / failed during the last nativeInit. */

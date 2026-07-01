@@ -76,7 +76,11 @@ struct Engine {
     ip_scanner: Option<ip_scan::IpScanner>,
 }
 
-static ENGINE: OnceLock<Engine> = OnceLock::new();
+/// `RwLock` (not a bare `Engine`) so a freshly auto-generated rule can be
+/// hot-added to the LIVE engine mid-session (write lock, brief) — see
+/// `nativeLearnRule` — instead of only taking effect after the next process
+/// restart reloads `generated_rules/*.yar` in `do_init`.
+static ENGINE: OnceLock<std::sync::RwLock<Engine>> = OnceLock::new();
 
 /// Last panic's "message @ file:line", captured by our hook so we can report
 /// WHY a scan panicked (root cause) instead of just swallowing it.
@@ -153,6 +157,32 @@ fn do_init(dir: &str) -> Engine {
                     Err(_) => report.push_str(&format!(" yrc[{}]=PANIC({})", name, last_panic())),
                 }
             }
+            // Self-learning: every rule this device has
+            // ever auto-generated from a real detection (see generate_yara_rule /
+            // ScanEngine.saveGeneratedRule, written to <dir>/generated_rules/) is
+            // recompiled and added to the live engine alongside the bundled
+            // rulesets — so a re-run or recompiled variant of a family this
+            // device has ALREADY caught once is detected immediately on future
+            // scans, without waiting for a signature-database update. Persists
+            // across app restarts (loaded fresh every init); a fresh process
+            // within the SAME session doesn't retroactively rescan past files.
+            let learned_dir = base.join("generated_rules");
+            let mut learned = 0usize;
+            if let Ok(entries) = std::fs::read_dir(&learned_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.extension().and_then(|e| e.to_str()) != Some("yar") {
+                        continue;
+                    }
+                    let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        eng.add_yara_source_file(&path)
+                    }));
+                    if matches!(added, Ok(Some(_))) {
+                        learned += 1;
+                    }
+                }
+            }
+            report.push_str(&format!(" learned={}", learned));
             Some(eng)
         }
         Ok(Err(e)) => {
@@ -333,12 +363,37 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         Err(_) => return JNI_FALSE,
     };
     let ok = engine.clamav.is_some() || engine.model.is_some();
-    let _ = ENGINE.set(engine);
+    let _ = ENGINE.set(std::sync::RwLock::new(engine));
     if ok && ENGINE.get().is_some() {
         JNI_TRUE
     } else {
         JNI_FALSE
     }
+}
+
+/// `boolean nativeLearnRule(String yarPath)` — hot-load ONE freshly
+/// auto-generated `.yar` file (already written to disk by
+/// ScanEngine.saveGeneratedRule) into the LIVE engine via a brief write lock,
+/// so a family this device just caught is detected by every scan for the
+/// REST OF THIS SESSION too — not only after the next process restart, which
+/// already reloads every past `generated_rules/*.yar` file from `do_init`.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeLearnRule<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    yar_path: JString<'local>,
+) -> jboolean {
+    let path: String = match env.get_string(&yar_path) {
+        Ok(s) => s.into(),
+        Err(_) => return JNI_FALSE,
+    };
+    let Some(lock) = ENGINE.get() else { return JNI_FALSE };
+    let Ok(mut guard) = lock.write() else { return JNI_FALSE };
+    let Some(clamav) = guard.clamav.as_mut() else { return JNI_FALSE };
+    let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        clamav.add_yara_source_file(&path)
+    }));
+    if matches!(added, Ok(Some(_))) { JNI_TRUE } else { JNI_FALSE }
 }
 
 /// `String nativeStatus()` — what loaded / failed during init (diagnostics).
@@ -369,9 +424,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     };
     let hit = ENGINE
         .get()
-        .and_then(|e| e.whitelist.as_ref())
+        .and_then(|l| l.read().ok())
         // XorFilter::contains lowercases internally, so pass the hash as-is.
-        .map(|wl| wl.contains(&h))
+        .map(|e| e.whitelist.as_ref().map(|wl| wl.contains(&h)).unwrap_or(false))
         .unwrap_or(false);
     if hit { JNI_TRUE } else { JNI_FALSE }
 }
@@ -391,8 +446,8 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     };
     let cat = ENGINE
         .get()
-        .and_then(|e| e.url_scanner.as_ref())
-        .and_then(|s| s.scan(&u))
+        .and_then(|l| l.read().ok())
+        .and_then(|e| e.url_scanner.as_ref().and_then(|s| s.scan(&u)))
         .unwrap_or("");
     match env.new_string(cat) {
         Ok(s) => s.into_raw(),
@@ -415,8 +470,8 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     };
     let cat = ENGINE
         .get()
-        .and_then(|e| e.ip_scanner.as_ref())
-        .and_then(|s| s.scan(&ip))
+        .and_then(|l| l.read().ok())
+        .and_then(|e| e.ip_scanner.as_ref().and_then(|s| s.scan(&ip)))
         .unwrap_or("");
     match env.new_string(cat) {
         Ok(s) => s.into_raw(),
@@ -451,10 +506,10 @@ fn scan_text(text: &str) -> String {
     if text.is_empty() {
         return String::new();
     }
-    let Some(engine) = ENGINE.get() else {
+    let Some(guard) = ENGINE.get().and_then(|l| l.read().ok()) else {
         return String::new();
     };
-    let Some(clamav) = &engine.clamav else {
+    let Some(clamav) = &guard.clamav else {
         return String::new();
     };
     // Cap: OCR text is display-sized, never worth scanning megabytes of it.
@@ -521,7 +576,7 @@ fn scan_apk(
         .ok()
         .map(String::from)
         .filter(|s| !s.is_empty());
-    let Some(engine) = ENGINE.get() else {
+    let Some(engine_lock) = ENGINE.get() else {
         return r#"{"error":"not initialised"}"#.to_string();
     };
     let bytes = match std::fs::read(&path) {
@@ -531,9 +586,16 @@ fn scan_apk(
 
     // Scan on a big-stack thread (deep clamav/yara recursion) which also catches
     // any panic — so neither a deep stack nor a panic on a malformed/adversarial
-    // APK can SIGABRT the whole app process.
+    // APK can SIGABRT the whole app process. The read lock is taken INSIDE the
+    // spawned thread (not held across the spawn boundary) so a concurrent
+    // nativeLearnRule() write lock never blocks scheduling this scan longer
+    // than the lock is actually needed.
     let scanned = on_big_stack(move || {
-        run_scan(engine, &bytes, &path, hydradragon.as_deref(), file_md5.as_deref(), zero_trust)
+        let guard = match engine_lock.read() {
+            Ok(g) => g,
+            Err(_) => return r#"{"error":"engine lock poisoned"}"#.to_string(),
+        };
+        run_scan(&guard, &bytes, &path, hydradragon.as_deref(), file_md5.as_deref(), zero_trust)
     });
     match scanned {
         Ok(s) => s,

@@ -183,19 +183,27 @@ public class ScanEngine {
     }
 
     /** Write a yarGen-style auto-generated rule (see NativeScanner.Verdict#generatedRule)
-     *  next to the app's other on-device rulesets so it can be inspected/exported. One
-     *  file per sample hash — re-scanning the same malicious sample overwrites, not
-     *  duplicates. No-op when the native side didn't produce one (clean scan). */
+     *  into the SAME "hydra-scan" directory NativeScanner.init() points the native
+     *  engine at — under generated_rules/, so the native side re-loads and compiles
+     *  every rule this device has ever generated on the NEXT app start: self-learning,
+     *  a family this device already caught once is detected immediately on future
+     *  scans, even a recompiled/renamed variant matching the same strings/package.
+     *  Also hot-loads the rule into the LIVE engine right away (NativeScanner.learnRule)
+     *  so the SAME session benefits too, not just the next app launch. One file per
+     *  sample hash — re-scanning the same malicious sample overwrites, not duplicates.
+     *  No-op when the native side didn't produce one (clean scan). */
     private void saveGeneratedRule(NativeScanner.Verdict v) {
         if (v == null || v.generatedRule == null || v.generatedRule.isEmpty()) return;
         try {
-            java.io.File dir = new java.io.File(context.getFilesDir(), "generated_rules");
+            java.io.File dir = new java.io.File(
+                new java.io.File(context.getFilesDir(), "hydra-scan"), "generated_rules");
             if (!dir.exists() && !dir.mkdirs()) return;
             String name = (v.md5 != null && !v.md5.isEmpty()) ? v.md5 : String.valueOf(System.nanoTime());
             java.io.File out = new java.io.File(dir, "auto_" + name + ".yar");
             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
                 fos.write(v.generatedRule.getBytes(StandardCharsets.UTF_8));
             }
+            NativeScanner.learnRule(out.getAbsolutePath());
         } catch (Exception e) { /* best effort — never block the scan on this */ }
     }
 
