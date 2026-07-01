@@ -83,8 +83,23 @@ public class NetworkMonitor {
 
     private long bytesReceived = 0;
     private long bytesSent = 0;
-    private int blockedConnections = 0;
-    private int allowedConnections = 0;
+    // Static (process-wide): the ACTUAL blocking/allowing of DNS queries happens
+    // in DnsVpnService — a separate Service instance from whichever NetworkMonitor
+    // the UI is bound to (via GuardService). Both run in the same app process (no
+    // android:process split in the manifest), so a static counter is what lets
+    // DnsVpnService's notifyBlocked()/pass-through calls actually reach the
+    // Dashboard/Network screens instead of updating a NetworkMonitor instance
+    // nothing reads from.
+    private static final java.util.concurrent.atomic.AtomicInteger blockedConnections =
+        new java.util.concurrent.atomic.AtomicInteger(0);
+    private static final java.util.concurrent.atomic.AtomicInteger allowedConnections =
+        new java.util.concurrent.atomic.AtomicInteger(0);
+
+    /** Called by DnsVpnService when it sinkholes a malicious/blacklisted query. */
+    public static void recordBlocked() { blockedConnections.incrementAndGet(); }
+
+    /** Called by DnsVpnService when a DNS query is forwarded through cleanly. */
+    public static void recordAllowed() { allowedConnections.incrementAndGet(); }
 
     public static class NetworkEvent {
         public final long timestamp;
@@ -197,7 +212,7 @@ public class NetworkMonitor {
             lastTx = tx;
 
             if (networkCallback != null) {
-                networkCallback.onStatsUpdate(deltaRx, deltaTx, blockedConnections, allowedConnections);
+                networkCallback.onStatsUpdate(deltaRx, deltaTx, blockedConnections.get(), allowedConnections.get());
             }
         } catch (Exception e) {
             Log.e(TAG, "Traffic statistics error", e);
@@ -246,7 +261,7 @@ public class NetworkMonitor {
         for (String blacklistedPrefix : BLACKLISTED_IPS) {
             if (destIp.startsWith(blacklistedPrefix)) {
                 logEvent(destIp, destPort, "TCP", true, "Blacklisted IP: " + blacklistedPrefix, 0);
-                blockedConnections++;
+                recordBlocked();
                 return false;
             }
         }
@@ -255,11 +270,11 @@ public class NetworkMonitor {
         if (SUSPICIOUS_PORTS.contains(destPort)) {
             logEvent(destIp, destPort, "TCP", true,
                 "Suspicious port: " + destPort + " (" + packageName + ")", 0);
-            blockedConnections++;
+            recordBlocked();
             return false;
         }
 
-        allowedConnections++;
+        recordAllowed();
         logEvent(destIp, destPort, "TCP", false, "Allowed", 0);
         return true;
     }
@@ -339,8 +354,8 @@ public class NetworkMonitor {
     public List<NetworkEvent> getEventLog() { return new ArrayList<>(eventLog); }
     public long getBytesReceived() { return bytesReceived; }
     public long getBytesSent() { return bytesSent; }
-    public int getBlockedCount() { return blockedConnections; }
-    public int getAllowedCount() { return allowedConnections; }
+    public int getBlockedCount() { return blockedConnections.get(); }
+    public int getAllowedCount() { return allowedConnections.get(); }
 
     public void stopMonitoring() {
         isMonitoring = false;
