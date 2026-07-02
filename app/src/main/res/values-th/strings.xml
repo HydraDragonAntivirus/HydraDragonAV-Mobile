@@ -152,6 +152,8 @@
     <string name="lock_saved">บันทึก PIN แล้ว!</string>
     <string name="language_settings">ภาษา</string>
     <string name="scan_custom">📁 สแกนแบบกำหนดเอง</string>
+    <string name="scan_custom_folder">🗂 สแกนแบบกำหนดเอง (โฟลเดอร์)</string>
+    <string name="scan_custom_folder_unsupported">ไม่สามารถแปลงโฟลเดอร์นั้นเป็นเส้นทางจริงได้ (เช่น ผู้ให้บริการคลาวด์) — โปรดเลือกโฟลเดอร์บนที่เก็บข้อมูลภายในเครื่อง/การ์ด SD แทน</string>
     <string name="threat_logs_title">--- บันทึกภัยคุกคาม ---</string>
     <string name="safe_download_title">✅ การดาวน์โหลดปลอดภัย</string>
     <string name="safe_download_desc">สะอาด</string>

@@ -132,6 +132,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="scan_btn">TARA</string>
     <string name="scan_initial_status">Taramayı başlatmak için TARA butonuna basın</string>
     <string name="scan_scanning_btn">TARANIYOR...</string>
+    <string name="background_scan_running">⏳ Arka planda tarama çalışıyor…</string>
     <string name="scan_already_running">Arka planda zaten bir tarama sürüyor — lütfen bitmesini bekleyin</string>
     <string name="scan_rescan_btn">YENİDEN TARA</string>
     <string name="scan_clean_system">✓ Tarama tamamlandı - Sistem temiz!</string>
@@ -156,6 +157,8 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
 
     <string name="language_settings">Dil Seçimi</string>
     <string name="scan_custom">📁 Özel Dosya Taraması</string>
+    <string name="scan_custom_folder">🗂 Özel Klasör Taraması</string>
+    <string name="scan_custom_folder_unsupported">Bu klasör gerçek bir yola çözümlenemedi (ör. bulut sağlayıcı) — bunun yerine yerel depolama/SD kart üzerinde bir klasör seç</string>
     <string name="threat_logs_title">--- TEHDİT GÜNLÜKLERİ ---</string>
     <string name="safe_download_title">✅ Güvenli Dosya</string>
     <string name="safe_download_desc">temizdir.</string>

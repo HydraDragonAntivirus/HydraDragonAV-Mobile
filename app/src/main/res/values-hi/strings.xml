@@ -152,6 +152,8 @@
     <string name="lock_saved">पिन सेव हो गया!</string>
     <string name="language_settings">भाषा</string>
     <string name="scan_custom">📁 कस्टम स्कैन</string>
+    <string name="scan_custom_folder">🗂 कस्टम स्कैन (फ़ोल्डर)</string>
+    <string name="scan_custom_folder_unsupported">इस फ़ोल्डर को वास्तविक पथ में हल नहीं किया जा सका (जैसे क्लाउड प्रदाता) — इसके बजाय लोकल/SD स्टोरेज पर कोई फ़ोल्डर चुनें</string>
     <string name="threat_logs_title">--- खतरा लॉग ---</string>
     <string name="safe_download_title">✅ सुरक्षित डाउनलोड</string>
     <string name="safe_download_desc">स्वच्छ है।</string>

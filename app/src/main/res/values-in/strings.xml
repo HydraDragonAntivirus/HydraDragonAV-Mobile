@@ -152,6 +152,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="lock_saved">PIN Disimpan!</string>
     <string name="language_settings">Bahasa</string>
     <string name="scan_custom">📁 Pemindaian Khusus</string>
+    <string name="scan_custom_folder">🗂 Pemindaian Khusus (folder)</string>
+    <string name="scan_custom_folder_unsupported">Tidak dapat menerjemahkan folder itu ke jalur nyata (mis. penyedia cloud) — pilih folder di penyimpanan lokal/kartu SD</string>
     <string name="threat_logs_title">--- LOG ANCAMAN ---</string>
     <string name="safe_download_title">✅ Unduhan Aman</string>
     <string name="safe_download_desc">bersih.</string>

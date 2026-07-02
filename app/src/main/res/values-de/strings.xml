@@ -152,6 +152,8 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="lock_saved">PIN gespeichert!</string>
     <string name="language_settings">Sprache</string>
     <string name="scan_custom">📁 Benutzerdefinierter Scan</string>
+    <string name="scan_custom_folder">🗂 Benutzerdefinierter Scan (Ordner)</string>
+    <string name="scan_custom_folder_unsupported">Dieser Ordner lässt sich keinem echten Pfad zuordnen (z. B. Cloud-Anbieter) — wähle stattdessen einen Ordner auf lokalem Speicher/der SD-Karte</string>
     <string name="threat_logs_title">--- BEDROHUNGSPROTOKOLLE ---</string>
     <string name="safe_download_title">✅ Sicherer Download</string>
     <string name="safe_download_desc">ist sauber.</string>

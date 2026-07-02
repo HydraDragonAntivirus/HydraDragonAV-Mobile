@@ -152,6 +152,8 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="lock_saved">PIN salvato!</string>
     <string name="language_settings">Lingua</string>
     <string name="scan_custom">📁 Scansione personalizzata</string>
+    <string name="scan_custom_folder">🗂 Scansione personalizzata (cartella)</string>
+    <string name="scan_custom_folder_unsupported">Impossibile risolvere quella cartella in un percorso reale (es. provider cloud) — scegli invece una cartella su archiviazione locale/SD</string>
     <string name="threat_logs_title">--- REGISTRO MINACCE ---</string>
     <string name="safe_download_title">✅ Download sicuro</string>
     <string name="safe_download_desc">è pulito.</string>

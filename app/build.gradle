@@ -88,6 +88,14 @@ android {
 android.applicationVariants.all { variant ->
     def hash = signingCertSha256(variant.signingConfig)
     variant.buildConfigField 'String', 'EXPECTED_SIGNATURE_SHA256', "\"${hash}\""
+
+    // Default output APK filename: HydraDragonAV.apk (release) /
+    // HydraDragonAV-debug.apk (debug), instead of Gradle's default
+    // "app-release.apk" / "app-debug.apk".
+    variant.outputs.all { output ->
+        def suffix = variant.buildType.name == "release" ? "" : "-${variant.buildType.name}"
+        output.outputFileName = "HydraDragonAV${suffix}.apk"
+    }
 }
 
 dependencies {

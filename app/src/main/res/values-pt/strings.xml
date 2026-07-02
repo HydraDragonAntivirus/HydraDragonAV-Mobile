@@ -152,6 +152,8 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="lock_saved">PIN Salvo!</string>
     <string name="language_settings">Idioma</string>
     <string name="scan_custom">📁 Verificação Personalizada</string>
+    <string name="scan_custom_folder">🗂 Verificação Personalizada (pasta)</string>
+    <string name="scan_custom_folder_unsupported">Não foi possível resolver essa pasta para um caminho real (ex.: provedor em nuvem) — escolha uma pasta no armazenamento local/cartão SD</string>
     <string name="threat_logs_title">--- REGISTROS DE AMEAÇAS ---</string>
     <string name="safe_download_title">✅ Download Seguro</string>
     <string name="safe_download_desc">está limpo.</string>

@@ -48,8 +48,9 @@ public class ScanFragment extends Fragment {
     private GuardService guardService;
     private boolean serviceBound = false;
     private android.net.Uri pendingCustomScanUri = null;
+    private File pendingCustomScanDir = null;
     
-    // STATİK HAFIZA: Sen sekmeler arası gezsen bile bu veriler silinmez, orada kalır!
+    // STATIC MEMORY: survives switching between tabs — this data stays put.
     private static boolean isScanning = false;
     private static boolean hasScanned = false;
     private static String lastScanStatus = null;
@@ -70,12 +71,17 @@ public class ScanFragment extends Fragment {
         public void onServiceConnected(android.content.ComponentName name, android.os.IBinder service) {
             guardService = ((com.hydradragon.antivirus.service.GuardService.GuardBinder) service).getService();
             serviceBound = true;
-            if (isScanning && pendingCustomScanUri == null) attachScanCallback();
-            
-            // Eğer uykuya dalarken seçilmiş bir dosya varsa, uyanır uyanmaz tara!
+            if (isScanning && pendingCustomScanUri == null && pendingCustomScanDir == null) attachScanCallback();
+
+            // A file or folder was picked while the engine was still asleep —
+            // scan it now that the service is awake.
             if (pendingCustomScanUri != null) {
                 scanCustomFile(pendingCustomScanUri);
                 pendingCustomScanUri = null;
+            }
+            if (pendingCustomScanDir != null) {
+                startCustomFolderScan(pendingCustomScanDir);
+                pendingCustomScanDir = null;
             }
         }
         @Override
@@ -107,7 +113,7 @@ public class ScanFragment extends Fragment {
         rvThreats.setLayoutManager(new LinearLayoutManager(getContext()));
         rvThreats.setAdapter(threatAdapter);
 
-        // Sekme değiştirip geri geldiysen, son durumu ekrana yükle
+        // Switched tabs and came back — restore the last known state on screen
         if (hasScanned) {
             tvScanned.setText(String.valueOf(lastScannedCount));
             tvThreats.setText(String.valueOf(foundThreats.size()));
@@ -131,7 +137,7 @@ public class ScanFragment extends Fragment {
             }
         }
 
-        // AKILLI SİLME İŞLEMİ (APK Dosyası vs Kurulu Uygulama Ayırımı)
+        // SMART REMOVAL (distinguishes a standalone APK file from an installed app)
         threatAdapter.setOnThreatClickListener(threat -> {
             new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle(getString(R.string.threat_found_dialog_title))
@@ -139,14 +145,14 @@ public class ScanFragment extends Fragment {
                 .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> {
                     String path = threat.getApkPath();
                     
-                    // DURUM 1: Eğer bu SD Karttaki gizli bir .apk dosyasıysa
+                    // CASE 1: a standalone .apk file sitting on SD/storage
                     if (path != null && path.contains("/storage/")) {
                         File file = new File(path);
                         if (file.exists() && file.delete()) {
                             Toast.makeText(getContext(), getString(R.string.threat_destroyed), Toast.LENGTH_LONG).show();
-                            // Günlüklere yaz
+                            // Write to the history log
                             ThreatLogger.logThreat(getContext(), threat.getPackageName(), threat.getAppName(), getString(R.string.file_deleted_safe));
-                            // Ekranda listeden anında kaldır!
+                            // Remove it from the on-screen list immediately
                             foundThreats.remove(threat);
                             threatAdapter.notifyDataSetChanged();
                             tvThreats.setText(String.valueOf(foundThreats.size()));
@@ -154,7 +160,7 @@ public class ScanFragment extends Fragment {
                             Toast.makeText(getContext(), getString(R.string.file_delete_failed), Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        // DURUM 2: Eğer bu telefona hali hazırda KURULMUŞ bir uygulamaysa
+                        // CASE 2: an app already INSTALLED on this phone
                         boolean isZeroTrustUnknown = threat.getThreatType() == ThreatResult.ThreatType.UNKNOWN
                             && com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext())
                             && com.hydradragon.antivirus.engine.AskSignatureOnRemove.isEnabled(requireContext());
@@ -243,7 +249,7 @@ public class ScanFragment extends Fragment {
         intent.setData(Uri.parse("package:" + threat.getPackageName()));
         startActivity(intent);
 
-        // Ekrandan direkt gizleyelim ki silinmiş hissiyatı versin
+        // Hide it from the screen right away so it feels instantly removed
         foundThreats.remove(threat);
         threatAdapter.notifyDataSetChanged();
         tvThreats.setText(String.valueOf(foundThreats.size()));
@@ -253,7 +259,8 @@ public class ScanFragment extends Fragment {
         String[] options = {
             getString(R.string.btn_quick_scan),
             getString(R.string.btn_full_scan),
-            getString(R.string.scan_custom)
+            getString(R.string.scan_custom),
+            getString(R.string.scan_custom_folder)
         };
         new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(getString(R.string.scan_type_title))
@@ -261,6 +268,7 @@ public class ScanFragment extends Fragment {
                 if (which == 0) startScan(false);
                 else if (which == 1) startScan(true);
                 else if (which == 2) pickFileLauncher.launch("*/*");
+                else if (which == 3) pickFolderLauncher.launch(null);
             })
             .show();
     }
@@ -269,16 +277,11 @@ public class ScanFragment extends Fragment {
     private void startScan(boolean isFullScan) {
         if (!serviceBound || guardService == null) return;
         // GuardService's own periodic background scan (see startPeriodicScans)
-        // shares this same ScanEngine — if it's mid-run, scanAllApps() below
-        // would silently no-op (see ScanEngine.scanAllApps's overlap guard),
-        // leaving this screen stuck on "SCANNING..." forever with nothing to
-        // complete it. Tell the user instead of starting an animation that
-        // will never finish.
-        if (guardService.getScanEngine().isScanRunning()) {
-            android.widget.Toast.makeText(getContext(),
-                getString(R.string.scan_already_running), android.widget.Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // shares this same ScanEngine. A pre-check here alone isn't race-free
+        // — a background scan can start in the gap between it and the actual
+        // scanAllApps() call below — so set up the UI optimistically, THEN
+        // check scanAllApps()'s own return value (the real, atomic answer)
+        // and roll the UI back if it turns out a scan was already running.
         isScanning = true;
         hasScanned = true;
         foundThreats.clear();
@@ -299,14 +302,23 @@ public class ScanFragment extends Fragment {
         tvScanStatus.setTextColor(0xFF00D9FF);
         tvThreats.setText("0");
 
+        attachScanCallback();
+        if (!guardService.getScanEngine().scanAllApps(isFullScan)) {
+            // Lost the race to a background scan — undo the optimistic UI
+            // state instead of leaving this screen stuck on "SCANNING..."
+            // forever with nothing to ever complete it.
+            isScanning = false;
+            stopScannerAnimation();
+            btnScan.setText(getString(R.string.rescan));
+            Toast.makeText(getContext(), getString(R.string.scan_already_running), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Surface the native (Rust) engine status so a silent init failure
         // (clamav DB / model / .yrc) is visible without adb.
         android.widget.Toast.makeText(getContext(),
             getString(R.string.engine_status_format, com.hydradragon.antivirus.engine.NativeScanner.status()),
             android.widget.Toast.LENGTH_LONG).show();
-
-        attachScanCallback();
-        guardService.getScanEngine().scanAllApps(isFullScan);
     }
 
     /** Stop button: request the engine to abort. The in-flight scan ends at its
@@ -411,15 +423,35 @@ public class ScanFragment extends Fragment {
 
     private void stopScannerAnimation() { ivScannerIcon.clearAnimation(); }
 
+    // Surfaces GuardService's own periodic BACKGROUND scan (see
+    // GuardService#startPeriodicScans) on this screen even when the user
+    // never tapped the Scan button themselves — previously it ran completely
+    // invisibly, so a user looking at this screen while it happened had no
+    // way to tell a scan was in progress at all.
+    private final android.os.Handler backgroundScanPoller = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable backgroundScanCheck = new Runnable() {
+        @Override
+        public void run() {
+            if (serviceBound && guardService != null && !isScanning
+                    && guardService.getScanEngine().isScanRunning()) {
+                tvScanStatus.setText(getString(R.string.background_scan_running));
+                tvScanStatus.setTextColor(0xFF00D9FF);
+            }
+            backgroundScanPoller.postDelayed(this, 3000);
+        }
+    };
+
     @Override
     public void onStart() {
         super.onStart();
         requireContext().bindService(new Intent(getContext(), GuardService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+        backgroundScanPoller.post(backgroundScanCheck);
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        backgroundScanPoller.removeCallbacks(backgroundScanCheck);
         if (serviceBound) {
             // GuardService keeps scanning/notifying/logging on its own even
             // with no UI attached — just drop this screen's reference so it's
@@ -431,16 +463,104 @@ public class ScanFragment extends Fragment {
     }
 
     
-    private final androidx.activity.result.ActivityResultLauncher<String> pickFileLauncher = 
+    private final androidx.activity.result.ActivityResultLauncher<String> pickFileLauncher =
         registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.GetContent(), uri -> {
             if (uri != null) {
                 if (serviceBound && guardService != null) {
-                    scanCustomFile(uri); // Motor uyanıksa direkt tara
+                    scanCustomFile(uri); // Scan immediately if the engine is already awake
                 } else {
-                    pendingCustomScanUri = uri; // Motor uykudaysa hafızaya al, onStart'ta taranacak
+                    pendingCustomScanUri = uri; // Engine asleep — remember it, scan in onStart
                 }
             }
         });
+
+    /** Folder picker for Custom Scan's "pick a folder" option. Returns a SAF
+     *  tree Uri, not a filesystem path — converted best-effort via
+     *  uriTreeToFile() (works for local device storage, the common case;
+     *  falls back to a toast if the volume can't be resolved to a real path,
+     *  e.g. a cloud-backed document provider). */
+    private final androidx.activity.result.ActivityResultLauncher<Uri> pickFolderLauncher =
+        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree(), treeUri -> {
+            if (treeUri == null) return;
+            File dir = uriTreeToFile(treeUri);
+            if (dir == null || !dir.isDirectory()) {
+                Toast.makeText(getContext(), getString(R.string.scan_custom_folder_unsupported), Toast.LENGTH_LONG).show();
+                return;
+            }
+            if (serviceBound && guardService != null) {
+                startCustomFolderScan(dir);
+            } else {
+                pendingCustomScanDir = dir;
+            }
+        });
+
+    /** Resolves a SAF tree Uri to a real filesystem File, for the common case
+     *  of a LOCAL storage volume (primary or an SD card) — the document ID for
+     *  those is "<volume>:<relative/path>" (e.g. "primary:Download"), which
+     *  maps directly onto Environment's storage roots. Returns null for
+     *  anything that isn't a local storage document tree (e.g. a cloud
+     *  provider), since there's no real filesystem path to scan there. */
+    private File uriTreeToFile(Uri treeUri) {
+        try {
+            String docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
+            String[] split = docId.split(":", 2);
+            String volume = split[0];
+            String relative = split.length > 1 ? split[1] : "";
+            File root;
+            if ("primary".equalsIgnoreCase(volume)) {
+                root = android.os.Environment.getExternalStorageDirectory();
+            } else {
+                // Non-primary volume (SD card) — look it up among the
+                // app-scoped external file dirs' volume roots.
+                root = null;
+                for (File f : requireContext().getExternalFilesDirs(null)) {
+                    if (f == null) continue;
+                    String path = f.getAbsolutePath();
+                    int idx = path.indexOf("/Android/");
+                    if (idx > 0 && path.contains(volume)) {
+                        root = new File(path.substring(0, idx));
+                        break;
+                    }
+                }
+                if (root == null) return null;
+            }
+            return relative.isEmpty() ? root : new File(root, relative);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Custom Scan's folder option — reuses the exact same UI plumbing as a
+     *  normal quick/full scan (attachScanCallback + the ScanCallback contract)
+     *  since ScanEngine.scanCustomFolder() reports through it identically. */
+    private void startCustomFolderScan(File dir) {
+        if (!serviceBound || guardService == null) return;
+        isScanning = true;
+        hasScanned = true;
+        foundThreats.clear();
+        threatAdapter.notifyDataSetChanged();
+        lastProgressCurrent = 0;
+        lastProgressTotal = 0;
+        lastProgressName = "";
+
+        btnScan.setText(getString(R.string.scan_stop));
+        btnScan.setEnabled(true);
+        startScannerAnimation();
+
+        lastScanStatus = getString(R.string.scan_scanning_btn);
+        tvScanStatus.setText(lastScanStatus);
+        tvScanStatus.setTextColor(0xFF00D9FF);
+        tvThreats.setText("0");
+
+        attachScanCallback();
+        if (!guardService.getScanEngine().scanCustomFolder(dir)) {
+            // Same race-free check as startScan() — see its comment.
+            isScanning = false;
+            stopScannerAnimation();
+            btnScan.setText(getString(R.string.rescan));
+            Toast.makeText(getContext(), getString(R.string.scan_already_running), Toast.LENGTH_SHORT).show();
+        }
+    }
 
 private void scanCustomFile(android.net.Uri uri) {
         if (!serviceBound || guardService == null) return;
@@ -459,7 +579,7 @@ private void scanCustomFile(android.net.Uri uri) {
 
         new Thread(() -> {
             try {
-                // Seçilen dosyayı geçici belleğe al ve ScanEngine'e sok
+                // Copy the picked file into a temp cache file and feed it to ScanEngine
                 java.io.File tempFile = new java.io.File(getContext().getCacheDir(), "custom_scan.apk");
                 java.io.InputStream is = getContext().getContentResolver().openInputStream(uri);
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
@@ -477,7 +597,7 @@ private void scanCustomFile(android.net.Uri uri) {
                     pkgInfo.applicationInfo.publicSourceDir = tempFile.getAbsolutePath();
                     result = guardService.getScanEngine().analyzeSingleApp(pkgInfo.applicationInfo, pm, true);
                 } else {
-                    // APK olmayan tehlikeli uzantılar (.exe, .sh) için manuel risk kontrolü
+                    // Manual risk check for dangerous non-APK extensions (.exe, .sh)
                     com.hydradragon.antivirus.model.ThreatResult.Builder tb = new com.hydradragon.antivirus.model.ThreatResult.Builder(uri.getLastPathSegment());
                     tb.setAppName(uri.getLastPathSegment() + " (Custom File)");
                     tb.setApkPath(tempFile.getAbsolutePath());

@@ -67,11 +67,16 @@ public class SettingsFragment extends Fragment {
         boolean dark = prefs().getBoolean(KEY_DARK, true);
         addToggle(getString(R.string.dark_light_mode), dark, (btn, on) -> {
             prefs().edit().putBoolean(KEY_DARK, on).apply();
-            // Tüm uygulamaya temayı anında uygula ve yeniden çiz
+            // AppCompatDelegate.setDefaultNightMode() already triggers its OWN
+            // Activity.recreate() when the mode actually changes. Also calling
+            // recreate() manually right after used to race it — the manual
+            // recreate could fire before the night-mode config change had
+            // fully applied, so the UI looked "half themed" until the user
+            // navigated to another screen (which recreated views fresh with
+            // the now-settled config). Let AppCompat handle it alone.
             AppCompatDelegate.setDefaultNightMode(on
                 ? AppCompatDelegate.MODE_NIGHT_YES
                 : AppCompatDelegate.MODE_NIGHT_NO);
-            if (getActivity() != null) getActivity().recreate();
         });
 
         addHeader(getString(R.string.protection_header));
@@ -421,7 +426,11 @@ public class SettingsFragment extends Fragment {
     }
     private void addBtn(String label, int bgColor, View.OnClickListener cl) {
         TextView b = new TextView(getContext()); b.setText(label);
-        b.setTextColor(0xFF000000); b.setBackgroundColor(bgColor);
+        // Was hardcoded pure black regardless of theme — invisible on a dark
+        // mode button whose background is bg_secondary (dark navy in night
+        // mode). text_primary tracks day/night correctly (dark text on the
+        // light backgrounds, light text on the dark ones).
+        b.setTextColor(color(R.color.text_primary)); b.setBackgroundColor(bgColor);
         b.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         b.setPadding(32,28,32,28); b.setTextSize(14); b.setGravity(Gravity.CENTER);
         b.setOnClickListener(cl);

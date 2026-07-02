@@ -152,6 +152,8 @@
     <string name="lock_saved">PINを保存しました！</string>
     <string name="language_settings">言語</string>
     <string name="scan_custom">📁 カスタムスキャン</string>
+    <string name="scan_custom_folder">🗂 カスタムスキャン（フォルダ）</string>
+    <string name="scan_custom_folder_unsupported">そのフォルダを実際のパスに解決できません（例: クラウドプロバイダー）— 代わりにローカル/SDストレージのフォルダを選択してください</string>
     <string name="threat_logs_title">--- 脅威ログ ---</string>
     <string name="safe_download_title">✅ 安全なダウンロード</string>
     <string name="safe_download_desc">は安全です。</string>

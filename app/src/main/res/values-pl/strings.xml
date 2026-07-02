@@ -152,6 +152,8 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="lock_saved">PIN zapisany!</string>
     <string name="language_settings">Język</string>
     <string name="scan_custom">📁 Skanowanie niestandardowe</string>
+    <string name="scan_custom_folder">🗂 Skanowanie niestandardowe (folder)</string>
+    <string name="scan_custom_folder_unsupported">Nie można przypisać tego folderu do rzeczywistej ścieżki (np. dostawca chmury) — wybierz zamiast tego folder na pamięci lokalnej/karcie SD</string>
     <string name="threat_logs_title">--- DZIENNIK ZAGROŻEŃ ---</string>
     <string name="safe_download_title">✅ Bezpieczne pobieranie</string>
     <string name="safe_download_desc">jest czysty.</string>

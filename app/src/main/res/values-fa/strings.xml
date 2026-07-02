@@ -152,6 +152,8 @@
     <string name="lock_saved">پین ذخیره شد!</string>
     <string name="language_settings">زبان</string>
     <string name="scan_custom">📁 اسکن سفارشی</string>
+    <string name="scan_custom_folder">🗂 اسکن سفارشی (پوشه)</string>
+    <string name="scan_custom_folder_unsupported">این پوشه به یک مسیر واقعی قابل تبدیل نیست (مثلاً ارائه‌دهنده ابری) — به‌جای آن پوشه‌ای در حافظه محلی/کارت SD انتخاب کنید</string>
     <string name="threat_logs_title">--- گزارش تهدیدها ---</string>
     <string name="safe_download_title">✅ دانلود ایمن</string>
     <string name="safe_download_desc">پاک است.</string>

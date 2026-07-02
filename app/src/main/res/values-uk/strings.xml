@@ -152,6 +152,8 @@
     <string name="lock_saved">PIN-код збережено!</string>
     <string name="language_settings">Мова</string>
     <string name="scan_custom">📁 Власне сканування</string>
+    <string name="scan_custom_folder">🗂 Власне сканування (папка)</string>
+    <string name="scan_custom_folder_unsupported">Не вдалося визначити реальний шлях для цієї папки (напр. хмарний провайдер) — виберіть натомість папку на локальному сховищі/SD-карті</string>
     <string name="threat_logs_title">--- ЖУРНАЛ ЗАГРОЗ ---</string>
     <string name="safe_download_title">✅ Безпечне завантаження</string>
     <string name="safe_download_desc">чисте.</string>

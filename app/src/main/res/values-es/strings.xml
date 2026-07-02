@@ -152,6 +152,8 @@ Puntuación de riesgo: %2$d/100
     <string name="lock_saved">¡PIN guardado!</string>
     <string name="language_settings">Idioma</string>
     <string name="scan_custom">📁 Escaneo Personalizado</string>
+    <string name="scan_custom_folder">🗂 Escaneo Personalizado (carpeta)</string>
+    <string name="scan_custom_folder_unsupported">No se puede resolver esa carpeta a una ruta real (p. ej. un proveedor en la nube) — elige una carpeta en almacenamiento local/SD</string>
     <string name="threat_logs_title">--- REGISTROS DE AMENAZAS ---</string>
     <string name="safe_download_title">✅ Descarga Segura</string>
     <string name="safe_download_desc">está limpio.</string>

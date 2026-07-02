@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
             ContextCompat.startForegroundService(this, new Intent(this, com.hydradragon.antivirus.service.GuardService.class));
         }
 
-        // Biyometrik kaldırıldı, direkt izinlere geç
+        // Biometric prompt removed — go straight to permission checks
         checkMandatoryPermissions();
     }
 

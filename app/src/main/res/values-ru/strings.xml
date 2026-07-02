@@ -152,6 +152,8 @@
     <string name="lock_saved">PIN-код сохранён!</string>
     <string name="language_settings">Язык</string>
     <string name="scan_custom">📁 Выборочное сканирование</string>
+    <string name="scan_custom_folder">🗂 Выборочное сканирование (папка)</string>
+    <string name="scan_custom_folder_unsupported">Не удалось определить реальный путь для этой папки (напр. облачный провайдер) — выберите папку на локальном хранилище/SD-карте</string>
     <string name="threat_logs_title">--- ЖУРНАЛ УГРОЗ ---</string>
     <string name="safe_download_title">✅ Безопасная загрузка</string>
     <string name="safe_download_desc">чист.</string>

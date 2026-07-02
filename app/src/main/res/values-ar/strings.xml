@@ -152,6 +152,8 @@
     <string name="lock_saved">تم حفظ رمز PIN!</string>
     <string name="language_settings">اللغة</string>
     <string name="scan_custom">📁 فحص مخصص</string>
+    <string name="scan_custom_folder">🗂 فحص مخصص (مجلد)</string>
+    <string name="scan_custom_folder_unsupported">تعذّر تحويل هذا المجلد إلى مسار حقيقي (مثل مزود سحابي) — اختر مجلداً على التخزين المحلي/بطاقة SD بدلاً من ذلك</string>
     <string name="threat_logs_title">--- سجلات التهديدات ---</string>
     <string name="safe_download_title">✅ تنزيل آمن</string>
     <string name="safe_download_desc">نظيف.</string>

@@ -152,6 +152,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="lock_saved">Đã Lưu PIN!</string>
     <string name="language_settings">Ngôn ngữ</string>
     <string name="scan_custom">📁 Quét Tùy chỉnh</string>
+    <string name="scan_custom_folder">🗂 Quét Tùy chỉnh (thư mục)</string>
+    <string name="scan_custom_folder_unsupported">Không thể phân giải thư mục đó thành đường dẫn thực (vd: nhà cung cấp đám mây) — hãy chọn thư mục trên bộ nhớ cục bộ/thẻ SD thay thế</string>
     <string name="threat_logs_title">--- NHẬT KÝ MỐI ĐE DỌA ---</string>
     <string name="safe_download_title">✅ Tải xuống An toàn</string>
     <string name="safe_download_desc">sạch.</string>

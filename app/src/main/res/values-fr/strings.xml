@@ -152,6 +152,8 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="lock_saved">PIN enregistré !</string>
     <string name="language_settings">Langue</string>
     <string name="scan_custom">📁 Analyse Personnalisée</string>
+    <string name="scan_custom_folder">🗂 Analyse Personnalisée (dossier)</string>
+    <string name="scan_custom_folder_unsupported">Impossible de résoudre ce dossier vers un chemin réel (ex. fournisseur cloud) — choisissez plutôt un dossier sur le stockage local/carte SD</string>
     <string name="threat_logs_title">--- JOURNAUX DE MENACES ---</string>
     <string name="safe_download_title">✅ Téléchargement Sécurisé</string>
     <string name="safe_download_desc">est propre.</string>

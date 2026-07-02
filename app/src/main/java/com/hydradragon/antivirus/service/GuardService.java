@@ -330,7 +330,7 @@ public class GuardService extends Service {
 
         scheduler.scheduleAtFixedRate(() -> {
             Log.d(TAG, "Periyodik tarama başladı");
-            scanEngine.scanAllApps(false); // QUICK SCAN varsayılan
+            scanEngine.scanAllApps(false); // default: QUICK SCAN
         }, quickDelay, quickMin, TimeUnit.MINUTES);
 
         // A file copied straight onto external/SD storage from a computer (USB/
@@ -505,7 +505,7 @@ public class GuardService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY; // Öldürülürse otomatik yeniden başlat
+        return START_STICKY; // auto-restart if the system kills this service
     }
 
     @Override

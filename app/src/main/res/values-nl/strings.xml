@@ -152,6 +152,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="lock_saved">Pincode opgeslagen!</string>
     <string name="language_settings">Taal</string>
     <string name="scan_custom">📁 Aangepaste scan</string>
+    <string name="scan_custom_folder">🗂 Aangepaste scan (map)</string>
+    <string name="scan_custom_folder_unsupported">Die map kan niet naar een echt pad worden herleid (bijv. een cloudprovider) — kies in plaats daarvan een map op lokale opslag/SD-kaart</string>
     <string name="threat_logs_title">--- DREIGINGSLOGBOEK ---</string>
     <string name="safe_download_title">✅ Veilige download</string>
     <string name="safe_download_desc">is schoon.</string>

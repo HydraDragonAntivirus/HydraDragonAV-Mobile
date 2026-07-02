@@ -142,6 +142,12 @@ public class ScanEngine {
             } catch (java.util.concurrent.TimeoutException te) {
                 // keep polling
             } catch (Exception e) {
+                // Distinct from a cancellation: the native call itself failed
+                // (or this thread was interrupted). Both end up returning null
+                // (same "no verdict" handling every call site already has),
+                // but silently — logging it means a genuine native-side
+                // failure is never mistaken for "nothing found" without a trace.
+                Log.e(TAG, "runNativeInterruptible: native call failed", e);
                 return null;
             }
         }
@@ -339,10 +345,16 @@ public class ScanEngine {
 
     public boolean isScanRunning() { return scanRunning.get(); }
 
-    public void scanAllApps(boolean isFullScan) {
+    /** @return true if this call actually started a scan, false if one was
+     *  already running (see scanRunning) and this request was skipped. The
+     *  caller (e.g. ScanFragment) MUST check this — an isScanRunning() check
+     *  done beforehand is not enough, since a background scan can start in
+     *  the gap between that check and this call. Checking THIS return value
+     *  instead closes that race. */
+    public boolean scanAllApps(boolean isFullScan) {
         if (!scanRunning.compareAndSet(false, true)) {
             Log.w(TAG, "scanAllApps: a scan is already running, skipping this request");
-            return;
+            return false;
         }
         cancelRequested = false;
         engineTimingMs.clear();
@@ -408,6 +420,39 @@ public class ScanEngine {
               scanRunning.set(false);
           }
         });
+        return true;
+    }
+
+    /** User-picked custom folder scan (see ScanFragment's folder-picker option
+     *  in the Custom Scan dialog). Walks every file under {@code dir} — APKs
+     *  through the full analyzeApp pipeline, everything else through the
+     *  native engine — and reports through the SAME ScanCallback contract as
+     *  scanAllApps(), so the existing progress/threat-found/complete UI wiring
+     *  just works. Subject to the same one-scan-at-a-time guard.
+     *  @return true if this call actually started the scan (see scanAllApps's
+     *  javadoc — same race-free contract). */
+    public boolean scanCustomFolder(java.io.File dir) {
+        if (!scanRunning.compareAndSet(false, true)) {
+            Log.w(TAG, "scanCustomFolder: a scan is already running, skipping this request");
+            return false;
+        }
+        cancelRequested = false;
+        engineTimingMs.clear();
+        filesScannedCount.set(0);
+        appsScannedBase = 0;
+        scanExecutor.execute(() -> {
+          try {
+            PackageManager pm = context.getPackageManager();
+            List<ThreatResult> threats = new ArrayList<>();
+            scanDirectoryForApks(dir, pm, threats, true);
+            int scannedTotal = filesScannedCount.get() + threats.size();
+            if (callback != null)
+                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats));
+          } finally {
+              scanRunning.set(false);
+          }
+        });
+        return true;
     }
 
     private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
