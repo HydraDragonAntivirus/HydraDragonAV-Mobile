@@ -53,6 +53,11 @@ public class ScanEngine {
     private final AIEngine aiEngine;
     private final CodeAnalyzer codeAnalyzer;
     private final ExecutorService scanExecutor;
+    // Dedicated pool for wrapping blocking native (JNI/Rust) calls so cancelScan()
+    // can take effect almost immediately instead of Stop waiting out however
+    // long the CURRENT file's native scan takes (large files can take seconds;
+    // the native side has no interruption point). See runNativeInterruptible.
+    private final ExecutorService nativeCallExecutor = Executors.newCachedThreadPool();
     // Static so invalidation from receivers reaches the live GuardService cache.
     private static final java.util.concurrent.ConcurrentHashMap<String, ThreatResult> photonCache = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -107,12 +112,40 @@ public class ScanEngine {
      *  boundary. Volatile so the UI thread's request is seen by the scan thread. */
     private volatile boolean cancelRequested = false;
 
-    /** Request the running scan to stop as soon as possible (checked between
-     *  files/apps, so an already-started native scan of one file still finishes). */
+    /** Request the running scan to stop as soon as possible. Native calls
+     *  in flight are ABANDONED (see runNativeInterruptible), not killed —
+     *  they keep running to completion on their own thread, but the scan loop
+     *  stops waiting for them almost immediately instead of blocking until
+     *  they return. */
     public void cancelScan() { cancelRequested = true; }
 
     /** Whether a stop was requested for the current/last scan. */
     public boolean isCancelled() { return cancelRequested; }
+
+    /** Runs a blocking native (JNI/Rust) call on a background thread and polls
+     *  for {@link #cancelRequested} every 150ms instead of blocking until it
+     *  returns. The native side (clamav/YARA/ML over a whole file) has no
+     *  interruption point of its own, and killing a thread mid-JNI-call is
+     *  unsafe (can corrupt native state / crash the process) — so a cancelled
+     *  call is simply ABANDONED: this method returns {@code null} right away,
+     *  the caller treats that exactly like "no verdict" (every call site
+     *  already has that null-handling), and the abandoned call quietly
+     *  finishes on its own thread in the background with its result discarded.
+     *  This is what lets Stop take effect in ~150ms instead of however long
+     *  the file being scanned right now takes. */
+    private NativeScanner.Verdict runNativeInterruptible(java.util.concurrent.Callable<NativeScanner.Verdict> call) {
+        java.util.concurrent.Future<NativeScanner.Verdict> future = nativeCallExecutor.submit(call);
+        while (true) {
+            if (cancelRequested) return null;
+            try {
+                return future.get(150, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (java.util.concurrent.TimeoutException te) {
+                // keep polling
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
 
     /** Manual, user-requested signature generation for a specific APK — used by
      *  the "ask to generate a signature before removing this Zero-Trust UNKNOWN
@@ -480,7 +513,8 @@ public class ScanEngine {
             // MD5 computed once here and reused natively.
             String md5 = fileMd5(new java.io.File(path));
             if (isHashWhitelisted(md5)) return;
-            NativeScanner.Verdict v = NativeScanner.scan(path, null, md5, ZeroTrustMode.isEnabled(context));
+            NativeScanner.Verdict v = runNativeInterruptible(() ->
+                NativeScanner.scan(path, null, md5, ZeroTrustMode.isEnabled(context)));
             if (v == null) return;
             saveGeneratedRule(v);
             // Per-detection whitelist suppression: a hit INSIDE a known-good
@@ -613,7 +647,8 @@ public class ScanEngine {
                 // MD5 computed once here and reused natively.
                 String appMd5 = fileMd5(new java.io.File(app.sourceDir));
                 if (isHashWhitelisted(appMd5)) continue;
-                NativeScanner.Verdict v = NativeScanner.scan(app.sourceDir, app.packageName, appMd5, ZeroTrustMode.isEnabled(context));
+                NativeScanner.Verdict v = runNativeInterruptible(() ->
+                    NativeScanner.scan(app.sourceDir, app.packageName, appMd5, ZeroTrustMode.isEnabled(context)));
                 if (v == null) continue;
                 // Per-detection suppression (a hit inside a whitelisted APK is an
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
@@ -856,8 +891,14 @@ public class ScanEngine {
                 boolean nativeCorroborated = false;
                 if (apkPath != null && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
                     long nativeT0 = android.os.SystemClock.elapsedRealtime();
-                    NativeScanner.Verdict v = NativeScanner.scan(apkPath, app.packageName, apkMd5, ZeroTrustMode.isEnabled(context));
+                    NativeScanner.Verdict v = runNativeInterruptible(() ->
+                        NativeScanner.scan(apkPath, app.packageName, apkMd5, ZeroTrustMode.isEnabled(context)));
                     addTiming("NativeScanner", android.os.SystemClock.elapsedRealtime() - nativeT0);
+                    // null = the scan was cancelled mid-file (see
+                    // runNativeInterruptible) — NativeScanner.scan() itself
+                    // never returns null. Skip the native-verdict processing
+                    // below entirely rather than NPE on it.
+                    if (v != null) {
                     fileMd5Vt = v.md5;
                     nativePackages.addAll(v.packages);
                     nativeHashes.addAll(v.hashes);
@@ -936,6 +977,7 @@ public class ScanEngine {
                         reasons.add("🔐 Suspicious permissions (9/36)");
                         nativeCorroborated = true;
                     }
+                    } // end if (v != null)
                 }
 
                 // Apply CodeAnalyzer's heuristic verdict now that the real engine has

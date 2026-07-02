@@ -160,8 +160,13 @@ public class GuardService extends Service {
 
 
     private static final String TAG = "HydraDragon-Guard";
-    private static final String CHANNEL_ID = "hydradragon_guard";
-    private static final int NOTIFICATION_ID = 1001;
+    // Package-visible (not private): DnsVpnService reuses this SAME channel +
+    // notification ID for its own foreground requirement (Android mandates
+    // every foreground Service posts one) so Web Shield never shows as a
+    // SECOND separate "HydraDragon Antivirus / System protected" notification
+    // — see DnsVpnService#startForegroundShield / #teardown.
+    static final String CHANNEL_ID = "hydradragon_guard";
+    static final int NOTIFICATION_ID = 1001;
     private static final int ALERT_NOTIFICATION_BASE = 2000;
 
     private AIEngine aiEngine;
@@ -177,6 +182,20 @@ public class GuardService extends Service {
 
     private final IBinder binder = new GuardBinder();
     private GuardCallback callback;
+    /** ScanFragment's live UI callback — set/cleared via setUiScanCallback().
+     *  NEVER replaces scanEngine's actual callback (see initializeEngines):
+     *  that one is set ONCE, permanently, so notifications/ThreatLogger
+     *  entries keep firing for a periodic BACKGROUND scan even while no UI is
+     *  attached (or after the Scan tab has been closed) — it used to be that
+     *  ScanFragment called scanEngine.setCallback(...) directly, silently
+     *  replacing this permanent callback and killing all future
+     *  notifications/logging the moment the user ever opened the Scan tab. */
+    private volatile ScanEngine.ScanCallback uiScanCallback;
+
+    /** Called by ScanFragment instead of touching ScanEngine's callback
+     *  directly. Pass {@code null} when the fragment goes away (onStop) so a
+     *  stale reference isn't held past the fragment's lifecycle. */
+    public void setUiScanCallback(ScanEngine.ScanCallback cb) { this.uiScanCallback = cb; }
 
     public interface GuardCallback {
         void onThreatDetected(ThreatResult threat);
@@ -209,9 +228,14 @@ public class GuardService extends Service {
         networkMonitor = new NetworkMonitor(this);
         processDetector = new ProcessDetector(this);
 
+        // Set ONCE — see uiScanCallback's javadoc for why ScanFragment must
+        // never call scanEngine.setCallback() itself.
         scanEngine.setCallback(new ScanEngine.ScanCallback() {
             @Override
-            public void onProgress(int current, int total, String packageName) {}
+            public void onProgress(int current, int total, String packageName) {
+                ScanEngine.ScanCallback ui = uiScanCallback;
+                if (ui != null) ui.onProgress(current, total, packageName);
+            }
 
             @Override
             public void onThreatFound(ThreatResult threat) {
@@ -220,9 +244,23 @@ public class GuardService extends Service {
                 ThreatLogger.logThreat(GuardService.this, threat.getPackageName(),
                     threat.getAppName(),
                     threat.getThreatType() + " (scan, risk " + threat.getRiskScore() + ")");
-                if (!com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) return;
-                sendThreatNotification(threat);
-                if (callback != null) callback.onThreatDetected(threat);
+                // Isolated in its own try/catch: this whole onThreatFound() call
+                // runs INSIDE ScanEngine's per-app loop, itself wrapped in a
+                // silent catch(Exception) — any exception thrown here (bad
+                // PendingIntent, null NotificationManager, etc.) used to abort
+                // the rest of this method too, which meant the UI forwarding
+                // below NEVER ran either: the scan looked like it found nothing,
+                // both in the system tray AND in the app's own threat list.
+                if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {
+                    try {
+                        sendThreatNotification(threat);
+                    } catch (Throwable t) {
+                        Log.e(TAG, "sendThreatNotification failed", t);
+                    }
+                    if (callback != null) callback.onThreatDetected(threat);
+                }
+                ScanEngine.ScanCallback ui = uiScanCallback;
+                if (ui != null) ui.onThreatFound(threat);
             }
 
             @Override
@@ -232,11 +270,15 @@ public class GuardService extends Service {
                     : "⚠ " + result.getThreatsFound() + " " + getString(R.string.threat);
                 updateNotification(status, result.isClean());
                 if (callback != null) callback.onStatusUpdate(status);
+                ScanEngine.ScanCallback ui = uiScanCallback;
+                if (ui != null) ui.onScanComplete(result);
             }
 
             @Override
             public void onError(String error) {
                 Log.e(TAG, "Tarama hatası: " + error);
+                ScanEngine.ScanCallback ui = uiScanCallback;
+                if (ui != null) ui.onError(error);
             }
         });
 
@@ -360,6 +402,7 @@ public class GuardService extends Service {
 
     private void sendThreatNotification(ThreatResult threat) {
         NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm == null) return;
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_threat)
             .setContentTitle(getString(R.string.threat_detected))

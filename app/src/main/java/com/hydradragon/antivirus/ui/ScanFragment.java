@@ -55,6 +55,13 @@ public class ScanFragment extends Fragment {
     private static String lastScanStatus = null;
     private static int lastScannedCount = 0;
     private static List<ThreatResult> foundThreats = new ArrayList<>();
+    // Latest onProgress() values — restored in onViewCreated so switching away
+    // from this tab mid-scan and back doesn't show a stale/blank progress bar
+    // until the NEXT progress tick happens to arrive (could be a noticeable
+    // delay, looked like the scan was "broken" until it moved to another file).
+    private static int lastProgressCurrent = 0;
+    private static int lastProgressTotal = 0;
+    private static String lastProgressName = "";
 
     private ThreatAdapter threatAdapter;
 
@@ -113,6 +120,15 @@ public class ScanFragment extends Fragment {
             btnScan.setText(getString(R.string.scan_stop));
             btnScan.setEnabled(true);
             startScannerAnimation();
+            // Restore the last known progress immediately instead of leaving
+            // the bar/labels at their fresh-inflated (0/blank) state until the
+            // engine's next onProgress() call happens to arrive.
+            if (lastProgressTotal > 0) {
+                progressBar.setMax(lastProgressTotal);
+                progressBar.setProgress(lastProgressCurrent);
+                tvProgress.setText(lastProgressCurrent + "/" + lastProgressTotal);
+                tvCurrentApp.setText("► " + lastProgressName);
+            }
         }
 
         // AKILLI SİLME İŞLEMİ (APK Dosyası vs Kurulu Uygulama Ayırımı)
@@ -267,6 +283,9 @@ public class ScanFragment extends Fragment {
         hasScanned = true;
         foundThreats.clear();
         threatAdapter.notifyDataSetChanged();
+        lastProgressCurrent = 0;
+        lastProgressTotal = 0;
+        lastProgressName = "";
 
         btnScan.setText(getString(R.string.scan_stop));
         btnScan.setEnabled(true);
@@ -300,17 +319,27 @@ public class ScanFragment extends Fragment {
         tvCurrentApp.setText(getString(R.string.scan_stopping));
     }
 
+    /** Registers this screen's UI updates as GuardService's "UI" callback —
+     *  NOT scanEngine.setCallback() directly. GuardService keeps permanent
+     *  ownership of the engine's actual callback (notifications + history
+     *  logging) and forwards every event here too; calling
+     *  scanEngine.setCallback() from here would silently replace that
+     *  permanent callback and kill all future threat notifications/logging,
+     *  including for this very scan. */
     private void attachScanCallback() {
-        guardService.getScanEngine().setCallback(new com.hydradragon.antivirus.engine.ScanEngine.ScanCallback() {
+        guardService.setUiScanCallback(new com.hydradragon.antivirus.engine.ScanEngine.ScanCallback() {
             @Override
             public void onProgress(int current, int total, String packageName) {
+                lastProgressCurrent = current;
+                lastProgressTotal = total;
+                lastProgressName = packageName != null ? packageName : "";
+                lastScannedCount = current;
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() -> {
                     progressBar.setMax(total);
                     progressBar.setProgress(current);
                     tvProgress.setText(current + "/" + total);
                     tvCurrentApp.setText("► " + packageName);
-                    lastScannedCount = current;
                     tvScanned.setText(String.valueOf(current));
                 });
             }
@@ -392,6 +421,10 @@ public class ScanFragment extends Fragment {
     public void onStop() {
         super.onStop();
         if (serviceBound) {
+            // GuardService keeps scanning/notifying/logging on its own even
+            // with no UI attached — just drop this screen's reference so it's
+            // not held past the fragment's lifecycle (see setUiScanCallback).
+            if (guardService != null) guardService.setUiScanCallback(null);
             requireContext().unbindService(serviceConnection);
             serviceBound = false;
         }

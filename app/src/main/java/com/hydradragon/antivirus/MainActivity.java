@@ -36,6 +36,15 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQ_VPN = 102;
 
     private BottomNavigationView bottomNav;
+    // checkMandatoryPermissions() can be re-entered from more than one
+    // lifecycle path in quick succession — onResume() (fired whenever a
+    // system permission/settings screen closes and this Activity resumes)
+    // AND onRequestPermissionsResult()/onActivityResult() (fired for the same
+    // event) both call it. Without this guard, each re-entry created a BRAND
+    // NEW AlertDialog for the same still-pending permission, stacking
+    // duplicates — the user saw the same permission asked several times in a
+    // row even though they'd already answered it once.
+    private boolean permissionDialogShowing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,6 +153,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkMandatoryPermissions() {
+        // Already have a dialog up from a previous (overlapping) call — don't
+        // stack a duplicate on top of it. It clears itself (see
+        // showMandatoryPermissionDialog / showOptionalAccessibilityDialog /
+        // showOptionalPlayProtectDialog / showOptionalWebShieldDialog) once
+        // the user answers, and the SAME re-entrant call that would have
+        // fired again gets a fresh chance next lifecycle event anyway.
+        if (permissionDialogShowing) return;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
             showMandatoryPermissionDialog(
                 getString(R.string.all_files_access_title),
@@ -154,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            permissionDialogShowing = true;
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
             return;
         }
@@ -191,17 +209,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showOptionalWebShieldDialog() {
+        permissionDialogShowing = true;
         new AlertDialog.Builder(this)
             .setTitle(getString(R.string.web_shield_vpn_title))
             .setMessage(getString(R.string.web_shield_vpn_msg))
             .setCancelable(false)
             .setPositiveButton(getString(R.string.enable), (dialog, which) -> {
+                permissionDialogShowing = false;
                 getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
                     .putBoolean("web_shield_decided", true)
                     .putBoolean("web_shield_enabled", true).apply();
                 startWebShield();
             })
             .setNegativeButton(getString(R.string.skip), (dialog, which) -> {
+                permissionDialogShowing = false;
                 getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
                     .putBoolean("web_shield_decided", true)
                     .putBoolean("web_shield_enabled", false).apply();
@@ -258,22 +279,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showMandatoryPermissionDialog(String title, String message, Intent intent) {
+        permissionDialogShowing = true;
         new AlertDialog.Builder(this)
             .setTitle(title)
             .setMessage(message + getString(R.string.mandatory_permission_suffix))
             .setCancelable(false)
-            .setPositiveButton(getString(R.string.btn_grant_now), (dialog, which) -> startActivity(intent))
+            .setPositiveButton(getString(R.string.btn_grant_now), (dialog, which) -> {
+                permissionDialogShowing = false;
+                startActivity(intent);
+            })
             .setNegativeButton(getString(R.string.btn_exit_app), (dialog, which) -> finish())
             .show();
     }
 
     private void showOptionalAccessibilityDialog() {
+        permissionDialogShowing = true;
         new AlertDialog.Builder(this)
             .setTitle(getString(R.string.accessibility_optional_title))
             .setMessage(getString(R.string.accessibility_optional_msg))
             .setCancelable(false)
-            .setPositiveButton(getString(R.string.btn_grant_now), (dialog, which) -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
-            .setNegativeButton(getString(R.string.skip), (dialog, which) -> startAppUI())
+            .setPositiveButton(getString(R.string.btn_grant_now), (dialog, which) -> {
+                permissionDialogShowing = false;
+                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            })
+            .setNegativeButton(getString(R.string.skip), (dialog, which) -> {
+                permissionDialogShowing = false;
+                startAppUI();
+            })
             .show();
     }
 
@@ -287,6 +319,7 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 101) {
+            permissionDialogShowing = false;
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 checkMandatoryPermissions(); 
             } else {
@@ -309,15 +342,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showOptionalPlayProtectDialog() {
+        permissionDialogShowing = true;
         new AlertDialog.Builder(this)
             .setTitle(getString(R.string.play_protect_off_title))
             .setMessage(getString(R.string.play_protect_off_msg))
             .setCancelable(false)
             .setPositiveButton(getString(R.string.enable), (dialog, which) -> {
+                permissionDialogShowing = false;
                 openPlayProtectSettings();
                 startAppUI();
             })
-            .setNegativeButton(getString(R.string.skip), (dialog, which) -> startAppUI())
+            .setNegativeButton(getString(R.string.skip), (dialog, which) -> {
+                permissionDialogShowing = false;
+                startAppUI();
+            })
             .show();
     }
 

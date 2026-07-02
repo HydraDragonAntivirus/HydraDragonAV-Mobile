@@ -90,7 +90,14 @@ public class DnsVpnService extends VpnService {
         if (forwarders != null) { forwarders.shutdownNow(); forwarders = null; }
         try { if (vpnInterface != null) { vpnInterface.close(); vpnInterface = null; } }
         catch (Exception ignore) {}
-        try { stopForeground(true); } catch (Exception ignore) {}
+        // DETACH, not remove: notification GuardService.NOTIFICATION_ID is
+        // SHARED with GuardService's own persistent notification (see
+        // startForegroundShield) — cancelling it here would also blow away
+        // GuardService's "System protected" notification even though
+        // GuardService is still running. DETACH just stops THIS service from
+        // being foreground; the notification itself stays posted/managed by
+        // GuardService.
+        try { stopForeground(STOP_FOREGROUND_DETACH); } catch (Exception ignore) {}
     }
 
     private boolean establish() {
@@ -583,14 +590,21 @@ public class DnsVpnService extends VpnService {
         } catch (Exception ignore) {}
     }
 
+    /** Reuses GuardService's own channel + notification ID instead of posting
+     *  a second, separate "HydraDragon Antivirus / System protected"
+     *  notification — Android requires EVERY foreground Service (this one
+     *  included, since it's a VpnService) to call startForeground() with
+     *  something, but there's no reason for Web Shield to show as its own
+     *  duplicate entry when GuardService's is already visible. */
     private void startForegroundShield() {
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel(
-            CH_ID, getString(R.string.dnsvpn_channel_name), NotificationManager.IMPORTANCE_LOW));
-        startForeground(0xD0A, new Notification.Builder(this, CH_ID)
-            .setContentTitle(getString(R.string.dnsvpn_notif_title))
+            GuardService.CHANNEL_ID, getString(R.string.guard_channel_name), NotificationManager.IMPORTANCE_LOW));
+        startForeground(GuardService.NOTIFICATION_ID, new Notification.Builder(this, GuardService.CHANNEL_ID)
+            .setContentTitle(getString(R.string.app_name))
             .setContentText(getString(R.string.dnsvpn_notif_text))
             .setSmallIcon(android.R.drawable.stat_sys_warning)
+            .setOngoing(true)
             .build());
     }
 
