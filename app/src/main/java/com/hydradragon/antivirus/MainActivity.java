@@ -12,6 +12,7 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -72,6 +73,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_main);
+
+        // Version shown in the header always tracks BuildConfig (build.gradle
+        // versionName) — never hardcode it in strings.xml again, it silently
+        // goes stale every release (was stuck at "v1.0.3" for several bumps).
+        TextView tvAppTitle = findViewById(R.id.tv_app_title);
+        if (tvAppTitle != null) {
+            tvAppTitle.setText(getString(R.string.app_title, BuildConfig.VERSION_NAME));
+        }
 
         // USB/wireless debugging is a real attack surface (another device can
         // push input, pull app data, sideload) but common for developers, so
