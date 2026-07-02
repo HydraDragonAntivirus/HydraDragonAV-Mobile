@@ -19,7 +19,10 @@ public class ThreatResult {
         ADWARE,         // Reklam yazılımı
         TROJAN,         // Truva atı
         BACKDOOR,       // Arka kapı
-        PUA             // Potansiyel istenmeyen uygulama (PUA.* / PUA_*)
+        PUA,            // Potansiyel istenmeyen uygulama (PUA.* / PUA_*)
+        TEST_MALWARE    // EICAR standard AV test signature — a deliberate test
+                         // file, not a real threat; kept distinct so the UI can
+                         // label it clearly instead of alarming the user.
     }
 
     private final String packageName;

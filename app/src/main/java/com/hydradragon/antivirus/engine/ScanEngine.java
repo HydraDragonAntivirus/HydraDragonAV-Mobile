@@ -117,6 +117,14 @@ public class ScanEngine {
         return u.contains("PUA.") || u.contains("PUA_");
     }
 
+    /** True for the EICAR standard AV test signature (e.g. "test.test.eicar",
+     *  "test.test.eicar.1040") — a deliberate test string every real antivirus
+     *  recognizes, not actual malware. Matched anywhere in the name is enough:
+     *  no legitimate detection name ever contains "eicar". */
+    private static boolean isEicarName(String name) {
+        return name != null && name.toLowerCase(java.util.Locale.US).contains("eicar");
+    }
+
     private void loadPackageWhitelist() {
         // Known-good NSRL package keys (whitelist_packages.db, table
         // whitelist_package, column "key" = package_id^^file_name) into an exact
@@ -372,10 +380,14 @@ public class ScanEngine {
             int riskScore = 0;
             boolean mlMalicious = false;
             boolean hasRealThreat = false;
+            boolean hasEicar = false;
             for (NativeScanner.Verdict.Detection d : live) {
                 if ("ML".equals(d.name)) {
                     mlMalicious = true;
                     hasRealThreat = true;
+                } else if (isEicarName(d.name)) {
+                    hasEicar = true;
+                    reasons.add("🧪 [TEST] " + d.name);
                 } else {
                     boolean isPua = isPuaName(d.name);
                     if (!isPua) hasRealThreat = true;
@@ -386,6 +398,9 @@ public class ScanEngine {
                 if (hasRealThreat) {
                     riskScore = 100;
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                } else if (hasEicar) {
+                    riskScore = 50;
+                    b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.TEST_MALWARE);
                 } else {
                     riskScore = 50;
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
@@ -492,15 +507,19 @@ public class ScanEngine {
                     app.packageName != null ? app.packageName : app.sourceDir);
                 List<String> reasons = new java.util.ArrayList<>();
                 boolean real = false;
+                boolean eicar = false;
                 for (NativeScanner.Verdict.Detection d : live) {
                     if ("ML".equals(d.name)) { real = true; continue; }
+                    if (isEicarName(d.name)) { eicar = true; reasons.add("🧪 [TEST] " + d.name); continue; }
                     boolean pua = isPuaName(d.name);
                     if (!pua) real = true;
                     reasons.add((pua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + d.name);
                 }
                 b.setThreatType(real
                     ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
-                    : com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
+                    : eicar
+                        ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.TEST_MALWARE
+                        : com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
                 b.setRiskScore(real ? 100 : 50);
                 if (v.md5 != null && !v.md5.isEmpty())
                     reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
@@ -719,11 +738,15 @@ public class ScanEngine {
                     List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
                     boolean mlMalicious = false;
                     if (!live.isEmpty()) {
-                        // Split PUA.* / PUA_* hits (potentially-unwanted) from real
-                        // malware. Only-PUA (and no ML flag) => PUA, lower risk.
+                        // Split PUA.* / PUA_* hits (potentially-unwanted) and the
+                        // EICAR test signature from real malware. Only-PUA (and no
+                        // ML flag) => PUA, lower risk; EICAR-only => TEST_MALWARE,
+                        // clearly labelled as a deliberate test, not a real threat.
                         boolean hasRealThreat = false;
+                        boolean hasEicar = false;
                         for (NativeScanner.Verdict.Detection d : live) {
                             if ("ML".equals(d.name)) { mlMalicious = true; hasRealThreat = true; continue; }
+                            if (isEicarName(d.name)) { hasEicar = true; reasons.add("🧪 [TEST] " + d.name); continue; }
                             boolean isPua = isPuaName(d.name);
                             if (!isPua) hasRealThreat = true;
                             reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + d.name);
@@ -732,6 +755,9 @@ public class ScanEngine {
                             riskScore = 100;
                             builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                             nativeCorroborated = true;
+                        } else if (hasEicar) {
+                            riskScore = Math.max(riskScore, 50);
+                            builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.TEST_MALWARE);
                         } else {
                             // Only PUA signatures matched.
                             riskScore = Math.max(riskScore, 50);
