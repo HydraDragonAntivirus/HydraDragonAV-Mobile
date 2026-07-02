@@ -171,4 +171,5 @@
     <string name="play_protect_off_msg">Play Protect برنامه‌ها را هنگام نصب با استفاده از پایگاه داده تهدیدات سمت سرور گوگل اسکن می‌کند — این همراه با HydraDragon کار می‌کند، نه به جای آن. توصیه می‌کنیم دوباره آن را روشن کنید.</string>
     <string name="sms_virus_title">پیامک مخرب مسدود شد</string>
     <string name="sms_virus_msg">یک پیام متنی از %1$s حاوی پیوند مخرب یا متن کلاهبرداری بود و علامت‌گذاری شد.</string>
+    <string name="storage_watch_toggle">نظارت بی‌درنگ بر کل حافظه (مصرف باتری بیشتر)</string>
 </resources>

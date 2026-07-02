@@ -171,4 +171,5 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="play_protect_off_msg">Play Protect quét ứng dụng khi cài đặt bằng cơ sở dữ liệu mối đe dọa phía máy chủ của Google — nó hoạt động cùng với HydraDragon, không thay thế. Chúng tôi khuyên bạn nên bật lại.</string>
     <string name="sms_virus_title">Đã chặn SMS độc hại</string>
     <string name="sms_virus_msg">Một tin nhắn văn bản từ %1$s chứa liên kết độc hại hoặc văn bản lừa đảo và đã bị gắn cờ.</string>
+    <string name="storage_watch_toggle">Giám sát toàn bộ bộ nhớ theo thời gian thực (tốn thêm pin)</string>
 </resources>

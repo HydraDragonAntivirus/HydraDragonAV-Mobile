@@ -29,7 +29,13 @@ import java.util.concurrent.TimeUnit;
 
 public class GuardService extends Service {
 
+    /** Opt-in (Settings > "Real-time full storage monitoring", off by default —
+     *  see startFullStorageMonitor). Downloads is always watched regardless. */
+    public static final String KEY_REALTIME_STORAGE_WATCH = "realtime_storage_watch";
+
     private android.os.FileObserver downloadObserver;
+    private final java.util.List<android.os.FileObserver> extraStorageObservers = new java.util.ArrayList<>();
+
     private void startDownloadMonitor() {
         java.io.File downloadDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
         if (downloadDir.exists()) {
@@ -46,32 +52,86 @@ public class GuardService extends Service {
         }
     }
 
-    private void scanDownloadedFile(java.io.File file) {
-        // Yapay Zeka Risk Simülasyonu
-        boolean isSafe = true;
-        String name = file.getName().toLowerCase();
-        if (name.endsWith(".apk") || name.endsWith(".exe") || name.endsWith(".sh")) {
-            isSafe = Math.random() > 0.4; // %40 Virüs şüphesi tetiklenir (Demo amaçlı)
+    /** Optional (Settings toggle, default OFF — battery/CPU cost of one watcher
+     *  thread per storage root): real-time detection for files dropped straight
+     *  onto external/SD storage from a computer (USB/MTP), OUTSIDE Downloads —
+     *  the periodic Full Scan above still catches those, just not instantly.
+     *  Each observer only watches its root's immediate children (Android's
+     *  FileObserver isn't recursive) — a file copied into a SUBFOLDER of a
+     *  storage root still waits for the periodic Full Scan, same trade-off the
+     *  user was told about when enabling this. */
+    private void startFullStorageMonitor() {
+        if (!getSharedPreferences("hydra_prefs", MODE_PRIVATE)
+                .getBoolean(KEY_REALTIME_STORAGE_WATCH, false)) {
+            return;
         }
-        
-        android.app.NotificationManager nm = getSystemService(android.app.NotificationManager.class);
-        androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(this, "hydradragon_guard")
-                .setAutoCancel(true)
-                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MAX)
-                .setDefaults(android.app.Notification.DEFAULT_ALL);
+        java.util.LinkedHashSet<String> roots = new java.util.LinkedHashSet<>();
+        try {
+            java.io.File primary = android.os.Environment.getExternalStorageDirectory();
+            if (primary != null) roots.add(primary.getAbsolutePath());
+        } catch (Throwable ignore) { }
+        try {
+            java.io.File[] vols = new java.io.File("/storage").listFiles();
+            if (vols != null) for (java.io.File v : vols) {
+                String n = v.getName();
+                if (v.isDirectory() && v.canRead() && !n.equals("self") && !n.equals("emulated"))
+                    roots.add(v.getAbsolutePath());
+            }
+        } catch (Throwable ignore) { }
 
-        if (isSafe) {
-            builder.setSmallIcon(R.drawable.ic_shield_secure)
-                   .setContentTitle(getString(R.string.safe_download_title))
-                   .setContentText(file.getName() + " " + getString(R.string.safe_download_desc))
-                   .setColor(0x00FF88);
-        } else {
-            builder.setSmallIcon(R.drawable.ic_shield_alert)
-                   .setContentTitle(getString(R.string.danger_download_title))
-                   .setContentText(getString(R.string.danger_download_desc))
-                   .setColor(0xFF0040);
+        for (String rootPath : roots) {
+            java.io.File root = new java.io.File(rootPath);
+            android.os.FileObserver obs = new android.os.FileObserver(rootPath, android.os.FileObserver.CLOSE_WRITE) {
+                @Override
+                public void onEvent(int event, String path) {
+                    if (path != null) scanDownloadedFile(new java.io.File(root, path));
+                }
+            };
+            obs.startWatching();
+            extraStorageObservers.add(obs);
         }
-        nm.notify((int) System.currentTimeMillis(), builder.build());
+        Log.i(TAG, "Real-time full storage monitoring: watching " + roots.size() + " root(s)");
+    }
+
+    /** Fired by the Downloads-folder FileObserver on CLOSE_WRITE — a file just
+     *  finished being written (download complete, or moved/copied in). Runs a
+     *  REAL scan (native YARA/ClamAV/ML for any file type, the full analyzeApp
+     *  pipeline for an APK) off the observer thread; used to just flip a coin
+     *  ({@code Math.random() > 0.4}) and show a notification regardless of the
+     *  file's actual contents. */
+    private void scanDownloadedFile(java.io.File file) {
+        new Thread(() -> {
+            ThreatResult threat = null;
+            try {
+                threat = scanEngine.scanSingleFile(file);
+            } catch (Throwable t) {
+                Log.e(TAG, "download scan failed: " + file, t);
+            }
+
+            android.app.NotificationManager nm = getSystemService(android.app.NotificationManager.class);
+            if (nm == null) return;
+            androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(this, "hydradragon_guard")
+                    .setAutoCancel(true)
+                    .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MAX)
+                    .setDefaults(android.app.Notification.DEFAULT_ALL);
+
+            if (threat == null) {
+                builder.setSmallIcon(R.drawable.ic_shield_secure)
+                       .setContentTitle(getString(R.string.safe_download_title))
+                       .setContentText(file.getName() + " " + getString(R.string.safe_download_desc))
+                       .setColor(0x00FF88);
+            } else {
+                Log.e(TAG, "MALICIOUS DOWNLOAD: " + file.getAbsolutePath());
+                ThreatLogger.logThreat(this, file.getAbsolutePath(), file.getName(),
+                    getString(R.string.danger_download_desc));
+                if (callback != null) callback.onThreatDetected(threat);
+                builder.setSmallIcon(R.drawable.ic_shield_alert)
+                       .setContentTitle(getString(R.string.danger_download_title))
+                       .setContentText(getString(R.string.danger_download_desc))
+                       .setColor(0xFF0040);
+            }
+            nm.notify((int) System.currentTimeMillis(), builder.build());
+        }).start();
     }
 
 
@@ -121,6 +181,7 @@ public class GuardService extends Service {
         startForeground(NOTIFICATION_ID, buildNotification("Sistem korunuyor", true));
         startPeriodicScans();
         startDownloadMonitor();
+        startFullStorageMonitor();
         Log.i(TAG, "✓ Guard Service aktif");
     }
 
@@ -202,6 +263,17 @@ public class GuardService extends Service {
             Log.d(TAG, "Periyodik tarama başladı");
             scanEngine.scanAllApps(false); // QUICK SCAN varsayılan
         }, 5, 30, TimeUnit.MINUTES);
+
+        // A file copied straight onto external/SD storage from a computer (USB/
+        // MTP) outside the Downloads folder is invisible to the Downloads
+        // FileObserver AND to the frequent Quick Scan above (Downloads + installed
+        // apps only) — it would otherwise sit undetected until the user manually
+        // taps Full Scan. Periodic Full Scan (all storage roots + SD card) closes
+        // that gap without needing always-on real-time watchers on every folder.
+        scheduler.scheduleAtFixedRate(() -> {
+            Log.d(TAG, "Periyodik FULL tarama başladı (harici depolama kapsaması)");
+            scanEngine.scanAllApps(true);
+        }, 45, 180, TimeUnit.MINUTES);
 
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();
@@ -372,6 +444,9 @@ public class GuardService extends Service {
         if (scheduler != null) scheduler.shutdown();
         if (networkMonitor != null) networkMonitor.stopMonitoring();
         if (aiEngine != null) aiEngine.close();
+        if (downloadObserver != null) downloadObserver.stopWatching();
+        for (android.os.FileObserver obs : extraStorageObservers) obs.stopWatching();
+        extraStorageObservers.clear();
         Log.i(TAG, "Guard Service durduruldu");
     }
 }

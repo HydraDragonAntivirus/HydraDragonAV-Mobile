@@ -171,4 +171,5 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="play_protect_off_msg">Play Protect memindai aplikasi saat instalasi menggunakan basis data ancaman sisi server Google — ia bekerja bersama HydraDragon, bukan sebagai penggantinya. Kami menyarankan untuk mengaktifkannya kembali.</string>
     <string name="sms_virus_title">SMS berbahaya diblokir</string>
     <string name="sms_virus_msg">Pesan teks dari %1$s berisi tautan berbahaya atau teks penipuan dan telah ditandai.</string>
+    <string name="storage_watch_toggle">Pemantauan penyimpanan penuh secara real-time (konsumsi baterai tambahan)</string>
 </resources>

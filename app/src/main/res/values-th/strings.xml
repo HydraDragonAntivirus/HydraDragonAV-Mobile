@@ -171,4 +171,5 @@
     <string name="play_protect_off_msg">Play Protect สแกนแอปขณะติดตั้งโดยใช้ฐานข้อมูลภัยคุกคามฝั่งเซิร์ฟเวอร์ของ Google — ทำงานร่วมกับ HydraDragon ไม่ใช่แทนที่ เราขอแนะนำให้เปิดใช้งานอีกครั้ง</string>
     <string name="sms_virus_title">บล็อก SMS ที่เป็นอันตรายแล้ว</string>
     <string name="sms_virus_msg">ข้อความจาก %1$s มีลิงก์อันตรายหรือข้อความหลอกลวง และถูกตั้งค่าสถานะ</string>
+    <string name="storage_watch_toggle">การตรวจสอบพื้นที่จัดเก็บทั้งหมดแบบเรียลไทม์ (ใช้แบตเตอรี่เพิ่มขึ้น)</string>
 </resources>

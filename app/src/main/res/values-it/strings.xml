@@ -171,4 +171,5 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="play_protect_off_msg">Play Protect analizza le app al momento dell\'installazione utilizzando il database delle minacce lato server di Google — funziona insieme a HydraDragon, non al suo posto. Ti consigliamo di riattivarlo.</string>
     <string name="sms_virus_title">SMS dannoso bloccato</string>
     <string name="sms_virus_msg">Un messaggio di testo da %1$s conteneva un link dannoso o testo di truffa ed è stato segnalato.</string>
+    <string name="storage_watch_toggle">Monitoraggio completo dell\'archiviazione in tempo reale (maggior consumo di batteria)</string>
 </resources>

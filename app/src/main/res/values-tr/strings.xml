@@ -172,4 +172,5 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="play_protect_off_msg">Play Protect, Google\'ın sunucu taraflı tehdit veritabanını kullanarak uygulamaları yükleme anında tarar — HydraDragon\'un yerine değil, onunla birlikte çalışır. Tekrar açmanızı öneririz.</string>
     <string name="sms_virus_title">Zararlı SMS engellendi</string>
     <string name="sms_virus_msg">%1$s numarasından gelen bir mesaj zararlı bağlantı veya dolandırıcılık ifadesi içeriyordu ve işaretlendi.</string>
+    <string name="storage_watch_toggle">Gerçek zamanlı tüm depolama izleme (ekstra pil kullanımı)</string>
 </resources>

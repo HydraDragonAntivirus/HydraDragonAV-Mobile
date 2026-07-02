@@ -171,4 +171,5 @@
     <string name="play_protect_off_msg">Play Protect 会在安装时使用 Google 的服务器端威胁数据库扫描应用 — 它与 HydraDragon 协同工作，而非取代它。我们建议重新开启它。</string>
     <string name="sms_virus_title">已拦截恶意短信</string>
     <string name="sms_virus_msg">来自%1$s的短信包含恶意链接或诈骗字样，已被标记。</string>
+    <string name="storage_watch_toggle">实时全存储监控（额外耗电）</string>
 </resources>

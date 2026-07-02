@@ -171,4 +171,5 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="play_protect_off_msg">Play Protect analyse les applications lors de l\'installation à l\'aide de la base de données de menaces côté serveur de Google — il fonctionne en complément de HydraDragon, pas à sa place. Nous recommandons de le réactiver.</string>
     <string name="sms_virus_title">SMS malveillant bloqué</string>
     <string name="sms_virus_msg">Un SMS provenant de %1$s contenait un lien malveillant ou un texte d\'arnaque et a été signalé.</string>
+    <string name="storage_watch_toggle">Surveillance complète du stockage en temps réel (consommation de batterie accrue)</string>
 </resources>

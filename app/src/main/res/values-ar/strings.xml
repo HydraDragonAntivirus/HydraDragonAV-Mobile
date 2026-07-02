@@ -171,4 +171,5 @@
     <string name="play_protect_off_msg">تفحص حماية Play التطبيقات عند التثبيت باستخدام قاعدة بيانات التهديدات على خادم Google — وهي تعمل جنبًا إلى جنب مع HydraDragon، وليس بدلاً منه. نوصي بإعادة تفعيلها.</string>
     <string name="sms_virus_title">تم حظر رسالة SMS ضارة</string>
     <string name="sms_virus_msg">احتوت رسالة نصية من %1$s على رابط ضار أو نص احتيالي وتم وضع علامة عليها.</string>
+    <string name="storage_watch_toggle">مراقبة كامل التخزين في الوقت الفعلي (استهلاك بطارية إضافي)</string>
 </resources>

@@ -171,4 +171,5 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="play_protect_off_msg">Play Protect scant apps bij installatie met behulp van Googles server-side dreigingsdatabase — het werkt naast HydraDragon, niet in plaats daarvan. We raden aan het weer in te schakelen.</string>
     <string name="sms_virus_title">Schadelijke sms geblokkeerd</string>
     <string name="sms_virus_msg">Een sms-bericht van %1$s bevatte een schadelijke link of scamtekst en is gemarkeerd.</string>
+    <string name="storage_watch_toggle">Realtime volledige opslagbewaking (extra batterijverbruik)</string>
 </resources>

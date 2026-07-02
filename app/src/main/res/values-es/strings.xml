@@ -171,4 +171,5 @@ Puntuación de riesgo: %2$d/100
     <string name="play_protect_off_msg">Play Protect escanea las apps al instalarlas usando la base de datos de amenazas de Google en el servidor — funciona junto a HydraDragon, no en su lugar. Recomendamos volver a activarlo.</string>
     <string name="sms_virus_title">SMS malicioso bloqueado</string>
     <string name="sms_virus_msg">Un mensaje de texto de %1$s contenía un enlace malicioso o texto de estafa y fue marcado.</string>
+    <string name="storage_watch_toggle">Monitoreo de almacenamiento completo en tiempo real (mayor consumo de batería)</string>
 </resources>

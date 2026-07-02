@@ -171,4 +171,5 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="play_protect_off_msg">Play Protect skanuje aplikacje podczas instalacji, korzystając z bazy zagrożeń Google po stronie serwera — działa razem z HydraDragon, a nie zamiast niego. Zalecamy ponowne włączenie.</string>
     <string name="sms_virus_title">Zablokowano złośliwy SMS</string>
     <string name="sms_virus_msg">Wiadomość tekstowa od %1$s zawierała złośliwy link lub tekst oszustwa i została oznaczona.</string>
+    <string name="storage_watch_toggle">Monitorowanie całej pamięci w czasie rzeczywistym (większe zużycie baterii)</string>
 </resources>

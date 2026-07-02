@@ -314,6 +314,34 @@ public class ScanEngine {
     }
 
     /**
+     * Scan ONE file that just appeared on disk (e.g. GuardService's Downloads
+     * folder FileObserver, fired on CLOSE_WRITE) — APK or any other type — and
+     * return the real verdict (native YARA/ClamAV/ML for generic files, the full
+     * analyzeApp pipeline for an APK), or {@code null} if clean/unreadable.
+     * Synchronous — call it off the caller's main/observer thread.
+     */
+    public ThreatResult scanSingleFile(java.io.File file) {
+        if (file == null || !file.exists()) return null;
+        PackageManager pm = context.getPackageManager();
+        if (file.getName().toLowerCase(java.util.Locale.US).endsWith(".apk")) {
+            try {
+                PackageInfo pkgInfo = pm.getPackageArchiveInfo(file.getAbsolutePath(),
+                    PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
+                if (pkgInfo != null) {
+                    pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
+                    pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
+                    ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
+                    if (result != null && result.isThreat()) return result;
+                }
+            } catch (Exception e) { /* unreadable/corrupt APK — treat as no verdict */ }
+            return null;
+        }
+        List<ThreatResult> out = new ArrayList<>();
+        scanGenericFile(file, out);
+        return out.isEmpty() ? null : out.get(0);
+    }
+
+    /**
      * Scan an arbitrary (non-APK) file with the native engine during a full
      * scan. The native side unpacks archives (zip/gz/tar/xz/lzma/7z/rar — so a
      * nested APK is reached too) and runs clamav signatures, YARA and the ML

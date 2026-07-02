@@ -171,4 +171,5 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="play_protect_off_msg">O Play Protect verifica apps na instalação usando o banco de dados de ameaças do lado do servidor do Google — ele funciona junto com o HydraDragon, não no lugar dele. Recomendamos ativá-lo novamente.</string>
     <string name="sms_virus_title">SMS malicioso bloqueado</string>
     <string name="sms_virus_msg">Uma mensagem de texto de %1$s continha um link malicioso ou texto de fraude e foi sinalizada.</string>
+    <string name="storage_watch_toggle">Monitoramento completo de armazenamento em tempo real (maior consumo de bateria)</string>
 </resources>

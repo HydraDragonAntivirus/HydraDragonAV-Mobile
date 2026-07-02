@@ -171,4 +171,5 @@
     <string name="play_protect_off_msg">Play Protect इंस्टॉल के समय Google के सर्वर-साइड खतरा डेटाबेस का उपयोग करके ऐप्स को स्कैन करता है — यह HydraDragon के साथ मिलकर काम करता है, उसकी जगह नहीं। हम इसे फिर से चालू करने की सलाह देते हैं।</string>
     <string name="sms_virus_title">दुर्भावनापूर्ण SMS ब्लॉक किया गया</string>
     <string name="sms_virus_msg">%1$s से आए एक टेक्स्ट संदेश में दुर्भावनापूर्ण लिंक या धोखाधड़ी वाला टेक्स्ट था और इसे चिह्नित किया गया।</string>
+    <string name="storage_watch_toggle">रीयल-टाइम पूर्ण संग्रहण निगरानी (अतिरिक्त बैटरी खपत)</string>
 </resources>

@@ -171,4 +171,5 @@
     <string name="play_protect_off_msg">Play プロテクトはGoogleのサーバー側の脅威データベースを使用してインストール時にアプリをスキャンします — HydraDragonの代わりではなく、併用して機能します。再度有効にすることをお勧めします。</string>
     <string name="sms_virus_title">悪意のあるSMSをブロックしました</string>
     <string name="sms_virus_msg">%1$sからのテキストメッセージに悪意のあるリンクまたは詐欺の文言が含まれていたため、フラグが立てられました。</string>
+    <string name="storage_watch_toggle">リアルタイム全ストレージ監視（バッテリー消費増加）</string>
 </resources>

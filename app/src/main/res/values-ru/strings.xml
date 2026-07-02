@@ -171,4 +171,5 @@
     <string name="play_protect_off_msg">Play Защита сканирует приложения при установке, используя серверную базу угроз Google — она работает вместе с HydraDragon, а не вместо него. Рекомендуем снова включить её.</string>
     <string name="sms_virus_title">Вредоносное SMS заблокировано</string>
     <string name="sms_virus_msg">Текстовое сообщение от %1$s содержало вредоносную ссылку или текст мошенничества и было помечено.</string>
+    <string name="storage_watch_toggle">Мониторинг всего хранилища в реальном времени (повышенный расход батареи)</string>
 </resources>
