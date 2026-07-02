@@ -291,8 +291,16 @@ public class ScanEngine {
      *  engine-wide (every app/file), unlike UserDecisions.allowThreat which
      *  only clears one specific app/file. */
     private boolean isDetectionWhitelisted(NativeScanner.Verdict.Detection d) {
-        if (IgnoredSignatures.isIgnored(context, d.name)) return true;
-        for (String h : d.hashes) if (isHashWhitelisted(h)) return true;
+        if (IgnoredSignatures.isIgnored(context, d.name)) {
+            Log.d(TAG, "DETECTION-SUPPRESSED[ignored signature] " + d.name);
+            return true;
+        }
+        for (String h : d.hashes) {
+            if (isHashWhitelisted(h)) {
+                Log.d(TAG, "DETECTION-SUPPRESSED[lineage hash whitelisted] " + d.name + " hash=" + h);
+                return true;
+            }
+        }
         return false;
     }
 
@@ -852,7 +860,10 @@ public class ScanEngine {
             || app.sourceDir.startsWith("/vendor/") || app.sourceDir.startsWith("/product/")
             || app.sourceDir.startsWith("/oem/") || app.sourceDir.startsWith("/odm/")
             || app.sourceDir.startsWith("/apex/"))) isSystem = true;
-        if (isSystem) { builder.setRiskScore(0); return builder.build(); }
+        if (isSystem) {
+            Log.d(TAG, "CLEAR-EXIT[isSystem] " + app.packageName + " sourceDir=" + app.sourceDir);
+            builder.setRiskScore(0); return builder.build();
+        }
 
         boolean isFromStore = false;
         if (!isApkFile) {
@@ -879,11 +890,13 @@ public class ScanEngine {
         // removed entirely. (Exact SHA-256 hash match still clears in the native
         // deep scan, independently.)
         if (isFromStore && isPackageWhitelisted(app.packageName)) {
+            Log.d(TAG, "CLEAR-EXIT[store+NSRL-whitelisted] " + app.packageName);
             builder.setRiskScore(0); return builder.build();
         }
 
         // User previously marked this app safe ("Safe (ignore)") -> never flag.
         if (app.packageName != null && UserDecisions.isThreatAllowed(context, app.packageName)) {
+            Log.d(TAG, "CLEAR-EXIT[user-allowed] " + app.packageName);
             builder.setRiskScore(0); return builder.build();
         }
 
@@ -924,7 +937,12 @@ public class ScanEngine {
                 signatureHash = sb.toString().toUpperCase().substring(0, 16) + "...";
 
                 for (String trusted : TRUSTED_COMPANIES)
-                    if (companyName.toLowerCase().contains(trusted)) { isWhitelisted = true; break; }
+                    if (companyName.toLowerCase().contains(trusted)) {
+                        isWhitelisted = true;
+                        Log.d(TAG, "TRUSTED_COMPANIES match: " + app.packageName
+                            + " companyName=\"" + companyName + "\" matched=\"" + trusted + "\" — signature checks skipped");
+                        break;
+                    }
 
                 if (!isWhitelisted && (subject.contains("Android Debug") || subject.contains("test-keys"))) {
                     riskScore += 60;
@@ -963,11 +981,22 @@ public class ScanEngine {
                 // block. The file MD5 is computed once here and reused natively.
                 String apkMd5 = apkPath != null ? fileMd5(new java.io.File(apkPath)) : null;
                 boolean nativeCorroborated = false;
+                if (apkPath == null) {
+                    Log.d(TAG, "NATIVE-SKIP[apkPath null] " + app.packageName);
+                } else if (!NativeScanner.isReady()) {
+                    Log.d(TAG, "NATIVE-SKIP[engine not ready] " + app.packageName);
+                } else if (isHashWhitelisted(apkMd5)) {
+                    Log.d(TAG, "NATIVE-SKIP[hash-whitelisted] " + app.packageName + " md5=" + apkMd5);
+                }
                 if (apkPath != null && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
                     long nativeT0 = android.os.SystemClock.elapsedRealtime();
                     NativeScanner.Verdict v = runNativeInterruptible(() ->
                         NativeScanner.scan(apkPath, app.packageName, apkMd5, ZeroTrustMode.isEnabled(context)));
                     addTiming("NativeScanner", android.os.SystemClock.elapsedRealtime() - nativeT0);
+                    Log.d(TAG, "NATIVE-RESULT " + app.packageName + " verdict="
+                        + (v == null ? "NULL(cancelled/error)" : ("detections=" + v.detections.size()
+                            + " permissions=" + v.permissions + " jaccard=" + v.jaccard + " anomaly=" + v.anomaly
+                            + " error=" + v.error)));
                     // null = the scan was cancelled mid-file (see
                     // runNativeInterruptible) — NativeScanner.scan() itself
                     // never returns null. Skip the native-verdict processing
