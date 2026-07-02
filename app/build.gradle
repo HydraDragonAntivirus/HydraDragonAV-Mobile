@@ -10,10 +10,17 @@ android {
         applicationId "com.hydradragon.antivirus"
         minSdk 26
         targetSdk 35
-        versionCode 4
-        versionName "1.0.3"
+        versionCode 5
+        versionName "1.0.4"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        debug {
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
     }
 
     buildTypes {
