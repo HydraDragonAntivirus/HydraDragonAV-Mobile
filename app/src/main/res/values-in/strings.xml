@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">Pemindaian lengkap setiap (menit):</string>
     <string name="scan_interval_hint">Minimal %1$d menit — interval yang lebih pendek tidak diizinkan (dampak baterai/CPU)</string>
     <string name="scan_interval_saved">Interval pemindaian disimpan</string>
+    <string name="whitelists_header">Daftar Putih</string>
+    <string name="ignored_signatures_btn">Tanda Tangan yang Diabaikan</string>
+    <string name="ignored_signatures_hint">Ketik nama tanda tangan/deteksi yang tepat (mis. PUA.SomeAdware, YARA.auto_...) untuk mengabaikannya di semua aplikasi/file, bukan hanya satu</string>
+    <string name="website_whitelist_btn">Daftar Putih Situs Web</string>
+    <string name="website_whitelist_hint">Tambahkan domain (example.com), IP polos, atau rentang CIDR (mis. 10.0.0.0/24) agar tidak pernah diblokir di Web Shield</string>
+    <string name="btn_ignore_signature">ABAIKAN TANDA TANGAN</string>
+    <string name="no_signature_to_ignore">Tidak ada tanda tangan spesifik untuk diabaikan pada ancaman ini</string>
+    <string name="signature_ignored_toast">%1$d tanda tangan akan diabaikan sekarang di setiap aplikasi/file</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield diaktifkan</string>
     <string name="web_shield_disabled">Web Shield dinonaktifkan</string>

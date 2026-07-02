@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">Quét đầy đủ mỗi (phút):</string>
     <string name="scan_interval_hint">Tối thiểu %1$d phút — không cho phép chu kỳ ngắn hơn (ảnh hưởng pin/CPU)</string>
     <string name="scan_interval_saved">Đã lưu chu kỳ quét</string>
+    <string name="whitelists_header">Danh sách trắng</string>
+    <string name="ignored_signatures_btn">Chữ ký bị bỏ qua</string>
+    <string name="ignored_signatures_hint">Nhập tên chữ ký/phát hiện chính xác (vd: PUA.SomeAdware, YARA.auto_...) để bỏ qua nó cho mọi ứng dụng/tệp, không chỉ một</string>
+    <string name="website_whitelist_btn">Danh sách trắng website</string>
+    <string name="website_whitelist_hint">Thêm một tên miền (example.com), một IP đơn hoặc dải CIDR (vd: 10.0.0.0/24) để không bao giờ chặn nó trong Web Shield</string>
+    <string name="btn_ignore_signature">BỎ QUA CHỮ KÝ</string>
+    <string name="no_signature_to_ignore">Không có chữ ký cụ thể nào để bỏ qua cho mối đe dọa này</string>
+    <string name="signature_ignored_toast">%1$d chữ ký giờ đây sẽ bị bỏ qua trên mọi ứng dụng/tệp</string>
     <string name="web_shield">Lá chắn Web (DNS VPN)</string>
     <string name="web_shield_enabled">Đã bật Lá chắn Web</string>
     <string name="web_shield_disabled">Đã tắt Lá chắn Web</string>

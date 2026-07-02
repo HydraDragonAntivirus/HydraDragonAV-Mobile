@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">Volledige scan elke (minuten):</string>
     <string name="scan_interval_hint">Minimaal %1$d minuten — een korter interval is niet toegestaan (batterij-/CPU-impact)</string>
     <string name="scan_interval_saved">Scaninterval opgeslagen</string>
+    <string name="whitelists_header">Whitelists</string>
+    <string name="ignored_signatures_btn">Genegeerde signaturen</string>
+    <string name="ignored_signatures_hint">Typ een exacte signatuur-/detectienaam (bijv. PUA.SomeAdware, YARA.auto_...) om deze voor elke app/bestand te onderdrukken, niet slechts één</string>
+    <string name="website_whitelist_btn">Website-whitelist</string>
+    <string name="website_whitelist_hint">Voeg een domein (example.com), een kaal IP-adres of een CIDR-bereik (bijv. 10.0.0.0/24) toe om het nooit te blokkeren in Web Shield</string>
+    <string name="btn_ignore_signature">SIGNATUUR NEGEREN</string>
+    <string name="no_signature_to_ignore">Geen specifieke signatuur om te negeren voor deze bedreiging</string>
+    <string name="signature_ignored_toast">%1$d signatu(u)r(en) worden nu genegeerd bij elke app/bestand</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield ingeschakeld</string>
     <string name="web_shield_disabled">Web Shield uitgeschakeld</string>

@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">Pełne skanowanie co (minuty):</string>
     <string name="scan_interval_hint">Minimum %1$d minut — krótszy interwał jest niedozwolony (wpływ na baterię/CPU)</string>
     <string name="scan_interval_saved">Zapisano interwał skanowania</string>
+    <string name="whitelists_header">Białe listy</string>
+    <string name="ignored_signatures_btn">Ignorowane sygnatury</string>
+    <string name="ignored_signatures_hint">Wpisz dokładną nazwę sygnatury/wykrycia (np. PUA.SomeAdware, YARA.auto_...), aby ją pomijać dla każdej aplikacji/pliku, nie tylko jednego</string>
+    <string name="website_whitelist_btn">Biała lista stron internetowych</string>
+    <string name="website_whitelist_hint">Dodaj domenę (example.com), samo IP lub zakres CIDR (np. 10.0.0.0/24), aby nigdy nie był blokowany w Web Shield</string>
+    <string name="btn_ignore_signature">IGNORUJ SYGNATURĘ</string>
+    <string name="no_signature_to_ignore">Brak konkretnej sygnatury do zignorowania dla tego zagrożenia</string>
+    <string name="signature_ignored_toast">%1$d sygnatur(a/y) będzie teraz ignorowana dla każdej aplikacji/pliku</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield włączony</string>
     <string name="web_shield_disabled">Web Shield wyłączony</string>

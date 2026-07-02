@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">Tam tarama her (dakika):</string>
     <string name="scan_interval_hint">Minimum %1$d dakika — daha kısa bir aralığa izin verilmez (pil/CPU etkisi)</string>
     <string name="scan_interval_saved">Tarama aralığı kaydedildi</string>
+    <string name="whitelists_header">Beyaz Listeler</string>
+    <string name="ignored_signatures_btn">Yoksayılan İmzalar</string>
+    <string name="ignored_signatures_hint">Tam bir imza/tespit adı yazın (ör. PUA.SomeAdware, YARA.auto_...), böylece sadece bir uygulama değil, tüm uygulamalar/dosyalar için bastırılsın</string>
+    <string name="website_whitelist_btn">Web Sitesi Beyaz Listesi</string>
+    <string name="website_whitelist_hint">Web Shield\'de asla engellenmemesi için bir alan adı (example.com), tek başına bir IP veya bir CIDR aralığı (ör. 10.0.0.0/24) ekleyin</string>
+    <string name="btn_ignore_signature">İMZAYI YOKSAY</string>
+    <string name="no_signature_to_ignore">Bu tehdit için yoksayılacak belirli bir imza yok</string>
+    <string name="signature_ignored_toast">Artık %1$d imza her uygulamada/dosyada yoksayılacak</string>
     <string name="web_shield">Web Kalkanı (DNS VPN)</string>
     <string name="web_shield_enabled">Web Kalkanı açık</string>
     <string name="web_shield_disabled">Web Kalkanı kapalı</string>

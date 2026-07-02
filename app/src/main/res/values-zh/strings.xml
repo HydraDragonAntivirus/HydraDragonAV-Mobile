@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">完整扫描间隔（分钟）：</string>
     <string name="scan_interval_hint">最短 %1$d 分钟 — 不允许更短的间隔（会影响电池/CPU）</string>
     <string name="scan_interval_saved">扫描间隔已保存</string>
+    <string name="whitelists_header">白名单</string>
+    <string name="ignored_signatures_btn">已忽略的签名</string>
+    <string name="ignored_signatures_hint">输入确切的签名/检测名称（例如 PUA.SomeAdware、YARA.auto_...），以便在所有应用/文件中忽略它，而不仅仅是一个</string>
+    <string name="website_whitelist_btn">网站白名单</string>
+    <string name="website_whitelist_hint">添加域名（example.com）、纯 IP 或 CIDR 范围（例如 10.0.0.0/24），使其在 Web Shield 中永远不被阻止</string>
+    <string name="btn_ignore_signature">忽略签名</string>
+    <string name="no_signature_to_ignore">此威胁没有可忽略的特定签名</string>
+    <string name="signature_ignored_toast">现在将在所有应用/文件中忽略 %1$d 个签名</string>
     <string name="web_shield">网络防护（DNS VPN）</string>
     <string name="web_shield_enabled">网络防护已启用</string>
     <string name="web_shield_disabled">网络防护已禁用</string>

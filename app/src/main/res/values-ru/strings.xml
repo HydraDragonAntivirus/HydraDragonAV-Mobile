@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">Полное сканирование каждые (минут):</string>
     <string name="scan_interval_hint">Минимум %1$d минут — более короткий интервал не допускается (влияние на батарею/ЦП)</string>
     <string name="scan_interval_saved">Интервал сканирования сохранён</string>
+    <string name="whitelists_header">Белые списки</string>
+    <string name="ignored_signatures_btn">Игнорируемые сигнатуры</string>
+    <string name="ignored_signatures_hint">Введите точное имя сигнатуры/обнаружения (напр. PUA.SomeAdware, YARA.auto_...), чтобы подавлять его для всех приложений/файлов, а не только одного</string>
+    <string name="website_whitelist_btn">Белый список сайтов</string>
+    <string name="website_whitelist_hint">Добавьте домен (example.com), обычный IP или диапазон CIDR (напр. 10.0.0.0/24), чтобы никогда не блокировать его в Web Shield</string>
+    <string name="btn_ignore_signature">ИГНОРИРОВАТЬ СИГНАТУРУ</string>
+    <string name="no_signature_to_ignore">Нет конкретной сигнатуры, которую можно игнорировать для этой угрозы</string>
+    <string name="signature_ignored_toast">Теперь %1$d сигнатур(а/ы) будут игнорироваться для всех приложений/файлов</string>
     <string name="web_shield">Веб-щит (DNS VPN)</string>
     <string name="web_shield_enabled">Веб-щит включён</string>
     <string name="web_shield_disabled">Веб-щит выключен</string>

@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">전체 검사 주기(분):</string>
     <string name="scan_interval_hint">최소 %1$d분 — 이보다 짧은 주기는 허용되지 않습니다(배터리/CPU 영향)</string>
     <string name="scan_interval_saved">스캔 주기가 저장되었습니다</string>
+    <string name="whitelists_header">화이트리스트</string>
+    <string name="ignored_signatures_btn">무시된 시그니처</string>
+    <string name="ignored_signatures_hint">정확한 시그니처/탐지 이름(예: PUA.SomeAdware, YARA.auto_...)을 입력하면 하나의 앱뿐만 아니라 모든 앱/파일에서 억제됩니다</string>
+    <string name="website_whitelist_btn">웹사이트 화이트리스트</string>
+    <string name="website_whitelist_hint">도메인(example.com), 단순 IP 또는 CIDR 범위(예: 10.0.0.0/24)를 추가하면 Web Shield에서 절대 차단되지 않습니다</string>
+    <string name="btn_ignore_signature">시그니처 무시</string>
+    <string name="no_signature_to_ignore">이 위협에 대해 무시할 특정 시그니처가 없습니다</string>
+    <string name="signature_ignored_toast">이제 %1$d개의 시그니처가 모든 앱/파일에서 무시됩니다</string>
     <string name="web_shield">웹 실드 (DNS VPN)</string>
     <string name="web_shield_enabled">웹 실드 활성화됨</string>
     <string name="web_shield_disabled">웹 실드 비활성화됨</string>

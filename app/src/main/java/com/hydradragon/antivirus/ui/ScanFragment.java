@@ -172,6 +172,8 @@ public class ScanFragment extends Fragment {
                     threatAdapter.notifyDataSetChanged();
                     tvThreats.setText(String.valueOf(foundThreats.size()));
                 })
+                .setNeutralButton(getString(R.string.btn_ignore_signature), (dialog, which) ->
+                    showIgnoreSignatureDialog(threat))
                 .show();
         });
 
@@ -179,6 +181,42 @@ public class ScanFragment extends Fragment {
             if (!isScanning) showScanTypeDialog();
             else stopScan();
         });
+    }
+
+    /** Lets the user pick which of THIS threat's specific detection/signature
+     *  names (parsed from its reasons — "EMOJI [TAG] name") to suppress
+     *  engine-wide from now on (see IgnoredSignatures), instead of only
+     *  whitelisting this one app/file (that's the "IGNORE" button above). */
+    private void showIgnoreSignatureDialog(ThreatResult threat) {
+        java.util.List<String> names = new java.util.ArrayList<>();
+        for (String reason : threat.getReasons()) {
+            int close = reason.indexOf("] ");
+            if (close >= 0 && close + 2 < reason.length()) {
+                names.add(reason.substring(close + 2));
+            }
+        }
+        if (names.isEmpty()) {
+            Toast.makeText(getContext(), getString(R.string.no_signature_to_ignore), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        boolean[] checked = new boolean[names.size()];
+        new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.btn_ignore_signature))
+            .setMultiChoiceItems(names.toArray(new String[0]), checked, (d, which, isChecked) -> checked[which] = isChecked)
+            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
+                int count = 0;
+                for (int i = 0; i < names.size(); i++) {
+                    if (checked[i]) {
+                        com.hydradragon.antivirus.engine.IgnoredSignatures.add(requireContext(), names.get(i));
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    Toast.makeText(getContext(), getString(R.string.signature_ignored_toast, count), Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
     }
 
     /** Fires the system uninstall UI for an installed-app threat, then hides it

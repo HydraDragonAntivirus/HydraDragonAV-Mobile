@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">Full scan every (minutes):</string>
     <string name="scan_interval_hint">Minimum %1$d minutes — a shorter interval isn\'t allowed (battery/CPU impact)</string>
     <string name="scan_interval_saved">Scan interval saved</string>
+    <string name="whitelists_header">Whitelists</string>
+    <string name="ignored_signatures_btn">Ignored Signatures</string>
+    <string name="ignored_signatures_hint">Type an exact signature/detection name (e.g. PUA.SomeAdware, YARA.auto_...) to suppress it for every app/file, not just one</string>
+    <string name="website_whitelist_btn">Website Whitelist</string>
+    <string name="website_whitelist_hint">Add a domain (example.com), a bare IP, or a CIDR range (e.g. 10.0.0.0/24) to never block it in Web Shield</string>
+    <string name="btn_ignore_signature">IGNORE SIGNATURE</string>
+    <string name="no_signature_to_ignore">No specific signature to ignore for this threat</string>
+    <string name="signature_ignored_toast">%1$d signature(s) will now be ignored on every app/file</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield enabled</string>
     <string name="web_shield_disabled">Web Shield disabled</string>

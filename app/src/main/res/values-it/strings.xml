@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">Scansione completa ogni (minuti):</string>
     <string name="scan_interval_hint">Minimo %1$d minuti — un intervallo più breve non è consentito (impatto su batteria/CPU)</string>
     <string name="scan_interval_saved">Intervallo di scansione salvato</string>
+    <string name="whitelists_header">Liste bianche</string>
+    <string name="ignored_signatures_btn">Firme ignorate</string>
+    <string name="ignored_signatures_hint">Digita un nome esatto di firma/rilevamento (es. PUA.SomeAdware, YARA.auto_...) per sopprimerla per ogni app/file, non solo uno</string>
+    <string name="website_whitelist_btn">Lista bianca dei siti web</string>
+    <string name="website_whitelist_hint">Aggiungi un dominio (example.com), un IP semplice o un intervallo CIDR (es. 10.0.0.0/24) per non bloccarlo mai in Web Shield</string>
+    <string name="btn_ignore_signature">IGNORA FIRMA</string>
+    <string name="no_signature_to_ignore">Nessuna firma specifica da ignorare per questa minaccia</string>
+    <string name="signature_ignored_toast">%1$d firma/e verranno ora ignorate per ogni app/file</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield attivato</string>
     <string name="web_shield_disabled">Web Shield disattivato</string>

@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">Analyse complète toutes les (minutes) :</string>
     <string name="scan_interval_hint">Minimum %1$d minutes — un intervalle plus court n\'est pas autorisé (impact batterie/CPU)</string>
     <string name="scan_interval_saved">Intervalle d\'analyse enregistré</string>
+    <string name="whitelists_header">Listes blanches</string>
+    <string name="ignored_signatures_btn">Signatures ignorées</string>
+    <string name="ignored_signatures_hint">Tapez un nom exact de signature/détection (ex. PUA.SomeAdware, YARA.auto_...) pour la supprimer pour toute app/fichier, pas seulement un</string>
+    <string name="website_whitelist_btn">Liste blanche de sites web</string>
+    <string name="website_whitelist_hint">Ajoutez un domaine (example.com), une IP simple ou une plage CIDR (ex. 10.0.0.0/24) pour ne jamais la bloquer dans Web Shield</string>
+    <string name="btn_ignore_signature">IGNORER LA SIGNATURE</string>
+    <string name="no_signature_to_ignore">Aucune signature spécifique à ignorer pour cette menace</string>
+    <string name="signature_ignored_toast">%1$d signature(s) seront désormais ignorées pour toute app/fichier</string>
     <string name="web_shield">Bouclier Web (VPN DNS)</string>
     <string name="web_shield_enabled">Bouclier Web activé</string>
     <string name="web_shield_disabled">Bouclier Web désactivé</string>

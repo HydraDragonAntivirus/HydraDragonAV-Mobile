@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">الفحص الكامل كل (بالدقائق):</string>
     <string name="scan_interval_hint">الحد الأدنى %1$d دقيقة — لا يُسمح بفترة أقصر (تأثير على البطارية/المعالج)</string>
     <string name="scan_interval_saved">تم حفظ فترة الفحص</string>
+    <string name="whitelists_header">القوائم البيضاء</string>
+    <string name="ignored_signatures_btn">التوقيعات المتجاهلة</string>
+    <string name="ignored_signatures_hint">اكتب اسم توقيع/اكتشاف دقيق (مثل PUA.SomeAdware أو YARA.auto_...) لتجاهله في كل تطبيق/ملف، وليس واحداً فقط</string>
+    <string name="website_whitelist_btn">قائمة المواقع البيضاء</string>
+    <string name="website_whitelist_hint">أضف نطاقاً (example.com) أو عنوان IP مجرداً أو نطاق CIDR (مثل 10.0.0.0/24) لعدم حظره أبداً في Web Shield</string>
+    <string name="btn_ignore_signature">تجاهل التوقيع</string>
+    <string name="no_signature_to_ignore">لا يوجد توقيع محدد لتجاهله لهذا التهديد</string>
+    <string name="signature_ignored_toast">سيتم الآن تجاهل %1$d من التوقيعات في كل تطبيق/ملف</string>
     <string name="web_shield">درع الويب (VPN لـ DNS)</string>
     <string name="web_shield_enabled">درع الويب مفعّل</string>
     <string name="web_shield_disabled">درع الويب معطّل</string>

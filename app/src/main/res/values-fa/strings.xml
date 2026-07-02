@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">اسکن کامل هر (دقیقه):</string>
     <string name="scan_interval_hint">حداقل %1$d دقیقه — بازه کوتاه‌تر مجاز نیست (تأثیر بر باتری/پردازنده)</string>
     <string name="scan_interval_saved">بازه اسکن ذخیره شد</string>
+    <string name="whitelists_header">لیست‌های سفید</string>
+    <string name="ignored_signatures_btn">امضاهای نادیده‌گرفته‌شده</string>
+    <string name="ignored_signatures_hint">یک نام دقیق امضا/تشخیص (مانند PUA.SomeAdware یا YARA.auto_...) تایپ کنید تا برای همه برنامه‌ها/فایل‌ها نادیده گرفته شود، نه فقط یکی</string>
+    <string name="website_whitelist_btn">لیست سفید وب‌سایت</string>
+    <string name="website_whitelist_hint">یک دامنه (example.com)، یک IP ساده یا محدوده CIDR (مانند 10.0.0.0/24) اضافه کنید تا هرگز در Web Shield مسدود نشود</string>
+    <string name="btn_ignore_signature">نادیده گرفتن امضا</string>
+    <string name="no_signature_to_ignore">امضای خاصی برای نادیده گرفتن این تهدید وجود ندارد</string>
+    <string name="signature_ignored_toast">اکنون %1$d امضا در همه برنامه‌ها/فایل‌ها نادیده گرفته می‌شود</string>
     <string name="web_shield">سپر وب (DNS VPN)</string>
     <string name="web_shield_enabled">سپر وب فعال است</string>
     <string name="web_shield_disabled">سپر وب غیرفعال است</string>

@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">สแกนแบบเต็มทุก (นาที):</string>
     <string name="scan_interval_hint">ขั้นต่ำ %1$d นาที — ไม่อนุญาตให้ตั้งช่วงเวลาสั้นกว่านี้ (ผลกระทบต่อแบตเตอรี่/CPU)</string>
     <string name="scan_interval_saved">บันทึกช่วงเวลาสแกนแล้ว</string>
+    <string name="whitelists_header">รายการที่อนุญาต</string>
+    <string name="ignored_signatures_btn">ลายเซ็นที่ถูกละเว้น</string>
+    <string name="ignored_signatures_hint">พิมพ์ชื่อลายเซ็น/การตรวจจับที่แน่นอน (เช่น PUA.SomeAdware, YARA.auto_...) เพื่อระงับสำหรับทุกแอป/ไฟล์ ไม่ใช่แค่รายการเดียว</string>
+    <string name="website_whitelist_btn">รายการเว็บไซต์ที่อนุญาต</string>
+    <string name="website_whitelist_hint">เพิ่มโดเมน (example.com) IP เปล่า หรือช่วง CIDR (เช่น 10.0.0.0/24) เพื่อไม่ให้ถูกบล็อกใน Web Shield อีกต่อไป</string>
+    <string name="btn_ignore_signature">ละเว้นลายเซ็น</string>
+    <string name="no_signature_to_ignore">ไม่มีลายเซ็นเฉพาะที่จะละเว้นสำหรับภัยคุกคามนี้</string>
+    <string name="signature_ignored_toast">ตอนนี้จะละเว้นลายเซ็น %1$d รายการในทุกแอป/ไฟล์</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">เปิดใช้งาน Web Shield แล้ว</string>
     <string name="web_shield_disabled">ปิดใช้งาน Web Shield แล้ว</string>

@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">フルスキャンの間隔（分）：</string>
     <string name="scan_interval_hint">最小 %1$d 分 — これより短い間隔は許可されません（バッテリー/CPUへの影響）</string>
     <string name="scan_interval_saved">スキャン間隔を保存しました</string>
+    <string name="whitelists_header">ホワイトリスト</string>
+    <string name="ignored_signatures_btn">無視するシグネチャ</string>
+    <string name="ignored_signatures_hint">正確なシグネチャ/検出名（例: PUA.SomeAdware、YARA.auto_...）を入力すると、1つのアプリだけでなくすべてのアプリ/ファイルで抑制されます</string>
+    <string name="website_whitelist_btn">ウェブサイトのホワイトリスト</string>
+    <string name="website_whitelist_hint">ドメイン（example.com）、単純なIP、またはCIDR範囲（例: 10.0.0.0/24）を追加すると、Web Shieldで二度とブロックされません</string>
+    <string name="btn_ignore_signature">シグネチャを無視</string>
+    <string name="no_signature_to_ignore">この脅威に無視できる特定のシグネチャはありません</string>
+    <string name="signature_ignored_toast">%1$d 件のシグネチャが今後すべてのアプリ/ファイルで無視されます</string>
     <string name="web_shield">ウェブシールド（DNS VPN）</string>
     <string name="web_shield_enabled">ウェブシールドが有効です</string>
     <string name="web_shield_disabled">ウェブシールドが無効です</string>

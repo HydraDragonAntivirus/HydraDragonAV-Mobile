@@ -164,6 +164,22 @@ public class SettingsFragment extends Fragment {
             ContextCompat.startForegroundService(requireContext(), svc);
         });
 
+        addHeader(getString(R.string.whitelists_header));
+        addBtn("🚫 " + getString(R.string.ignored_signatures_btn), color(R.color.bg_secondary),
+            v -> showManagedListDialog(
+                getString(R.string.ignored_signatures_btn),
+                getString(R.string.ignored_signatures_hint),
+                com.hydradragon.antivirus.engine.IgnoredSignatures.getAll(requireContext()),
+                com.hydradragon.antivirus.engine.IgnoredSignatures::add,
+                com.hydradragon.antivirus.engine.IgnoredSignatures::remove));
+        addBtn("🌐 " + getString(R.string.website_whitelist_btn), color(R.color.bg_secondary),
+            v -> showManagedListDialog(
+                getString(R.string.website_whitelist_btn),
+                getString(R.string.website_whitelist_hint),
+                com.hydradragon.antivirus.engine.WebsiteWhitelist.getAll(requireContext()),
+                com.hydradragon.antivirus.engine.WebsiteWhitelist::add,
+                com.hydradragon.antivirus.engine.WebsiteWhitelist::remove));
+
         addHeader(getString(R.string.system));
         // app lock removed });
         addBtn(getString(R.string.bloatware_cleaner), color(R.color.neon_cyan), v -> runCleanup());
@@ -510,6 +526,83 @@ public class SettingsFragment extends Fragment {
         } catch (Exception e) {
             return def;
         }
+    }
+
+    /** Generic "type to add / tap to remove" manager, shared by Ignored
+     *  Signatures and Website Whitelist — both are just a small user-edited
+     *  string set with an add(Context,String) + remove(Context,String) API. */
+    private void showManagedListDialog(String title, String hint, java.util.List<String> current,
+                                        java.util.function.BiConsumer<Context, String> adder,
+                                        java.util.function.BiConsumer<Context, String> remover) {
+        LinearLayout box = new LinearLayout(requireContext());
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(48, 8, 48, 0);
+
+        TextView hintView = new TextView(requireContext());
+        hintView.setText(hint);
+        hintView.setTextColor(color(R.color.text_secondary));
+        hintView.setTextSize(12);
+        hintView.setPadding(0, 0, 0, 16);
+        box.addView(hintView);
+
+        LinearLayout listBox = new LinearLayout(requireContext());
+        listBox.setOrientation(LinearLayout.VERTICAL);
+        box.addView(listBox);
+
+        android.widget.EditText input = new android.widget.EditText(requireContext());
+        input.setHint(title);
+        box.addView(input);
+
+        AlertDialog dlg = new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(title)
+            .setView(box)
+            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
+                String v = input.getText().toString().trim();
+                if (!v.isEmpty()) adder.accept(requireContext(), v);
+            })
+            .setNegativeButton(getString(R.string.btn_close), null)
+            .create();
+
+        Runnable[] refresh = new Runnable[1];
+        refresh[0] = () -> {
+            listBox.removeAllViews();
+            java.util.List<String> items = current;
+            for (String item : items) {
+                LinearLayout r = new LinearLayout(requireContext());
+                r.setOrientation(LinearLayout.HORIZONTAL);
+                r.setGravity(Gravity.CENTER_VERTICAL);
+                TextView t = new TextView(requireContext());
+                t.setText(item);
+                t.setTextColor(color(R.color.text_primary));
+                t.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                r.addView(t);
+                TextView removeBtn = new TextView(requireContext());
+                removeBtn.setText("✕");
+                removeBtn.setTextColor(0xFFFF0040);
+                removeBtn.setPadding(24, 0, 8, 0);
+                removeBtn.setOnClickListener(rv -> {
+                    remover.accept(requireContext(), item);
+                    items.remove(item);
+                    refresh[0].run();
+                });
+                r.addView(removeBtn);
+                listBox.addView(r);
+            }
+        };
+        refresh[0].run();
+        dlg.show();
+
+        // Re-add immediately re-renders the list without closing the dialog —
+        // override the positive button's default (dismissing) click after show().
+        dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String val = input.getText().toString().trim();
+            if (!val.isEmpty()) {
+                adder.accept(requireContext(), val);
+                current.add(val);
+                input.setText("");
+                refresh[0].run();
+            }
+        });
     }
 
 }

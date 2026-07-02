@@ -20,6 +20,14 @@
     <string name="scan_interval_full_label">फुल स्कैन हर (मिनट):</string>
     <string name="scan_interval_hint">न्यूनतम %1$d मिनट — इससे छोटा अंतराल अनुमत नहीं है (बैटरी/CPU प्रभाव)</string>
     <string name="scan_interval_saved">स्कैन अंतराल सहेजा गया</string>
+    <string name="whitelists_header">व्हाइटलिस्ट</string>
+    <string name="ignored_signatures_btn">अनदेखे किए गए सिग्नेचर</string>
+    <string name="ignored_signatures_hint">एक सटीक सिग्नेचर/डिटेक्शन नाम टाइप करें (जैसे PUA.SomeAdware, YARA.auto_...) ताकि इसे सिर्फ एक नहीं, हर ऐप/फ़ाइल के लिए अनदेखा किया जाए</string>
+    <string name="website_whitelist_btn">वेबसाइट व्हाइटलिस्ट</string>
+    <string name="website_whitelist_hint">एक डोमेन (example.com), एक सादा IP, या एक CIDR रेंज (जैसे 10.0.0.0/24) जोड़ें ताकि इसे Web Shield में कभी ब्लॉक न किया जाए</string>
+    <string name="btn_ignore_signature">सिग्नेचर अनदेखा करें</string>
+    <string name="no_signature_to_ignore">इस खतरे के लिए अनदेखा करने हेतु कोई विशिष्ट सिग्नेचर नहीं है</string>
+    <string name="signature_ignored_toast">अब %1$d सिग्नेचर हर ऐप/फ़ाइल पर अनदेखा किया जाएगा</string>
     <string name="web_shield">वेब शील्ड (DNS VPN)</string>
     <string name="web_shield_enabled">वेब शील्ड सक्षम है</string>
     <string name="web_shield_disabled">वेब शील्ड अक्षम है</string>

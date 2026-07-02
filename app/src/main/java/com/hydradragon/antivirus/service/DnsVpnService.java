@@ -350,7 +350,10 @@ public class DnsVpnService extends VpnService {
                         for (InetAddress ip : extractDnsIps(msg, msg.length)) {
                             com.hydradragon.antivirus.engine.NetworkObservations
                                 .addHost(fpkg, ip.getHostAddress());
-                            if (cidr != null && cidr.contains(ip)) ipBlocked = true;
+                            if (cidr != null && cidr.contains(ip)
+                                    && !com.hydradragon.antivirus.engine.WebsiteWhitelist.isIpWhitelisted(this, ip)) {
+                                ipBlocked = true;
+                            }
                         }
                     }
                     if (ipBlocked) {
