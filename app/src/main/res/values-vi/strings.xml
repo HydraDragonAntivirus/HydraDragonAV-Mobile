@@ -226,7 +226,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="dnsvpn_channel_name">Lá chắn Web</string>
     <string name="dnsvpn_session_name">HydraDragon Lá chắn Web</string>
     <string name="dnsvpn_notif_title">HydraDragon Lá chắn Web</string>
-    <string name="dnsvpn_notif_text">Đang lọc DNS cho các trang web độc hại</string>
+    <string name="dnsvpn_notif_text">Hệ thống được bảo vệ</string>
     <string name="screencapture_malicious_text_title">Đã phát hiện văn bản độc hại trên màn hình</string>
     <string name="screencapture_active_title">Quét màn hình Zero Trust đang hoạt động</string>
     <string name="screencapture_active_text">Đang quét văn bản trên màn hình để tìm mối đe dọa (OCR)</string>

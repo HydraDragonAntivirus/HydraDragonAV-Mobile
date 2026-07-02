@@ -226,7 +226,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="dnsvpn_channel_name">Web Shield</string>
     <string name="dnsvpn_session_name">HydraDragon Web Shield</string>
     <string name="dnsvpn_notif_title">HydraDragon Web Shield</string>
-    <string name="dnsvpn_notif_text">DNS filteren op schadelijke sites</string>
+    <string name="dnsvpn_notif_text">Systeem beveiligd</string>
     <string name="screencapture_malicious_text_title">Schadelijke tekst op scherm gedetecteerd</string>
     <string name="screencapture_active_title">Zero Trust-schermscannen actief</string>
     <string name="screencapture_active_text">Tekst op scherm scannen op bedreigingen (OCR)</string>

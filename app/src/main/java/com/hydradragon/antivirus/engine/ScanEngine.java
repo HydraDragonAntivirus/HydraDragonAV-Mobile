@@ -75,6 +75,11 @@ public class ScanEngine {
     // installed-APPS total, so a full scan's progress/"scanned" count reflects
     // the file-level work too, not just the up-front installed-apps loop.
     private final java.util.concurrent.atomic.AtomicInteger filesScannedCount = new java.util.concurrent.atomic.AtomicInteger();
+    // Installed-apps total from the CURRENT scanAllApps() run's up-front loop —
+    // added on top of filesScannedCount so the UI's "scanned" counter keeps
+    // climbing through the storage-file phase instead of resetting back down
+    // to 1, 2, 3... once the app loop hands off to file scanning.
+    private volatile int appsScannedBase;
 
     private void addTiming(String engine, long ms) {
         engineTimingMs.computeIfAbsent(engine, k -> new java.util.concurrent.atomic.AtomicLong()).addAndGet(ms);
@@ -291,6 +296,7 @@ public class ScanEngine {
             List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
             List<ThreatResult> threats = new ArrayList<>();
             int total = apps.size();
+            appsScannedBase = total;
 
             for (int i = 0; i < total; i++) {
                 if (cancelRequested) break;
@@ -351,11 +357,13 @@ public class ScanEngine {
 
     /** Bump the storage-file counter and push a live progress update so a full
      *  scan's UI reflects the (potentially huge) storage-root file walk, not
-     *  just the up-front installed-apps loop. current==total on purpose: the
-     *  eventual file count isn't known ahead of time, so this reports "how
-     *  many files scanned so far" rather than a completion percentage. */
+     *  just the up-front installed-apps loop. Adds appsScannedBase so the
+     *  displayed count keeps climbing from where the installed-apps loop left
+     *  off, instead of resetting back down to 1, 2, 3... current==total on
+     *  purpose: the eventual file count isn't known ahead of time, so this
+     *  reports "how many scanned so far" rather than a completion percentage. */
     private void reportFileScanned(java.io.File file) {
-        int n = filesScannedCount.incrementAndGet();
+        int n = appsScannedBase + filesScannedCount.incrementAndGet();
         if (callback != null) callback.onProgress(n, n, file.getName());
     }
 
@@ -655,7 +663,7 @@ public class ScanEngine {
                         threats.add(r);
                         if (callback != null) callback.onThreatFound(r);
                     }
-                    int n = filesScannedCount.incrementAndGet();
+                    int n = appsScannedBase + filesScannedCount.incrementAndGet();
                     if (callback != null) callback.onProgress(n, n, pkg);
                 } catch (Throwable ignore) { }
             }

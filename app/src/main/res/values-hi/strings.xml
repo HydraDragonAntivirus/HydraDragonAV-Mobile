@@ -226,7 +226,7 @@
     <string name="dnsvpn_channel_name">वेब शील्ड</string>
     <string name="dnsvpn_session_name">HydraDragon वेब शील्ड</string>
     <string name="dnsvpn_notif_title">HydraDragon वेब शील्ड</string>
-    <string name="dnsvpn_notif_text">दुर्भावनापूर्ण साइटों के लिए DNS फ़िल्टर किया जा रहा है</string>
+    <string name="dnsvpn_notif_text">सिस्टम सुरक्षित है</string>
     <string name="screencapture_malicious_text_title">स्क्रीन पर दुर्भावनापूर्ण टेक्स्ट का पता चला</string>
     <string name="screencapture_active_title">ज़ीरो ट्रस्ट स्क्रीन स्कैनिंग सक्रिय है</string>
     <string name="screencapture_active_text">खतरों के लिए स्क्रीन पर मौजूद टेक्स्ट स्कैन किया जा रहा है (OCR)</string>

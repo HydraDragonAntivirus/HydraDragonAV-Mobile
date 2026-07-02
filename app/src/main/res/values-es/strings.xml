@@ -226,7 +226,7 @@ Puntuación de riesgo: %2$d/100
     <string name="dnsvpn_channel_name">Escudo Web</string>
     <string name="dnsvpn_session_name">Escudo Web HydraDragon</string>
     <string name="dnsvpn_notif_title">Escudo Web HydraDragon</string>
-    <string name="dnsvpn_notif_text">Filtrando DNS de sitios maliciosos</string>
+    <string name="dnsvpn_notif_text">Sistema protegido</string>
     <string name="screencapture_malicious_text_title">Texto malicioso en pantalla detectado</string>
     <string name="screencapture_active_title">Escaneo de pantalla de Confianza Cero activo</string>
     <string name="screencapture_active_text">Escaneando texto en pantalla en busca de amenazas (OCR)</string>

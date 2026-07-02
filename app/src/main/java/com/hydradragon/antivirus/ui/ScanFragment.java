@@ -223,6 +223,14 @@ public class ScanFragment extends Fragment {
         btnScan.setEnabled(true);
         startScannerAnimation();
 
+        // Clear the PREVIOUS scan's final status ("System clean" / "N threats
+        // found") right away — otherwise it stays on screen, looking like a
+        // stale/wrong result, for this whole new scan until it finishes.
+        lastScanStatus = getString(R.string.scan_scanning_btn);
+        tvScanStatus.setText(lastScanStatus);
+        tvScanStatus.setTextColor(0xFF00D9FF);
+        tvThreats.setText("0");
+
         // Surface the native (Rust) engine status so a silent init failure
         // (clamav DB / model / .yrc) is visible without adb.
         android.widget.Toast.makeText(getContext(),
@@ -362,6 +370,10 @@ private void scanCustomFile(android.net.Uri uri) {
         btnScan.setText(getString(R.string.scanning));
         btnScan.setEnabled(false);
         startScannerAnimation();
+
+        lastScanStatus = getString(R.string.scan_scanning_btn);
+        tvScanStatus.setText(lastScanStatus);
+        tvScanStatus.setTextColor(0xFF00D9FF);
 
         new Thread(() -> {
             try {

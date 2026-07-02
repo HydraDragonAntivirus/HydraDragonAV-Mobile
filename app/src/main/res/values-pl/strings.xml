@@ -226,7 +226,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="dnsvpn_channel_name">Web Shield</string>
     <string name="dnsvpn_session_name">HydraDragon Web Shield</string>
     <string name="dnsvpn_notif_title">HydraDragon Web Shield</string>
-    <string name="dnsvpn_notif_text">Filtrowanie DNS w poszukiwaniu złośliwych witryn</string>
+    <string name="dnsvpn_notif_text">System chroniony</string>
     <string name="screencapture_malicious_text_title">Wykryto złośliwy tekst na ekranie</string>
     <string name="screencapture_active_title">Skanowanie ekranu Zero Trust aktywne</string>
     <string name="screencapture_active_text">Skanowanie tekstu na ekranie w poszukiwaniu zagrożeń (OCR)</string>

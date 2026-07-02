@@ -226,7 +226,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="dnsvpn_channel_name">Web Shield</string>
     <string name="dnsvpn_session_name">HydraDragon Web Shield</string>
     <string name="dnsvpn_notif_title">HydraDragon Web Shield</string>
-    <string name="dnsvpn_notif_text">Filtraggio DNS per siti dannosi</string>
+    <string name="dnsvpn_notif_text">Sistema protetto</string>
     <string name="screencapture_malicious_text_title">Testo dannoso sullo schermo rilevato</string>
     <string name="screencapture_active_title">Scansione dello schermo Zero Trust attiva</string>
     <string name="screencapture_active_text">Scansione del testo sullo schermo alla ricerca di minacce (OCR)</string>

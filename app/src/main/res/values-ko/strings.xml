@@ -226,7 +226,7 @@
     <string name="dnsvpn_channel_name">웹 실드</string>
     <string name="dnsvpn_session_name">HydraDragon 웹 실드</string>
     <string name="dnsvpn_notif_title">HydraDragon 웹 실드</string>
-    <string name="dnsvpn_notif_text">악성 사이트에 대한 DNS 필터링 중</string>
+    <string name="dnsvpn_notif_text">시스템 보호 중</string>
     <string name="screencapture_malicious_text_title">악성 화면 텍스트 감지됨</string>
     <string name="screencapture_active_title">제로 트러스트 화면 스캔 활성</string>
     <string name="screencapture_active_text">화면 텍스트에서 위협 검사 중 (OCR)</string>

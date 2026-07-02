@@ -235,7 +235,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="dnsvpn_channel_name">Web Shield</string>
     <string name="dnsvpn_session_name">HydraDragon Web Shield</string>
     <string name="dnsvpn_notif_title">HydraDragon Web Shield</string>
-    <string name="dnsvpn_notif_text">Filtering DNS for malicious sites</string>
+    <string name="dnsvpn_notif_text">System protected</string>
 
     <string name="screencapture_malicious_text_title">Malicious on-screen text detected</string>
     <string name="screencapture_active_title">Zero Trust screen scanning active</string>

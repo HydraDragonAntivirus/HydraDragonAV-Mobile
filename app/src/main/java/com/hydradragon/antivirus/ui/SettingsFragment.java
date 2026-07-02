@@ -89,7 +89,8 @@ public class SettingsFragment extends Fragment {
             }
         });
 
-        addHeader(getString(R.string.premium_features_header));
+        // Web Shield is core protection (malicious-domain/IP DNS filtering),
+        // not an extra — it lives in Protection, not Premium Features.
         boolean shield = prefs().getBoolean(KEY_SHIELD, false);
         addToggle(getString(R.string.web_shield), shield, (btn, on) -> {
             prefs().edit().putBoolean("web_shield_decided", true)
@@ -98,6 +99,7 @@ public class SettingsFragment extends Fragment {
             else disableWebShield();
         });
 
+        addHeader(getString(R.string.premium_features_header));
         boolean zeroTrust = com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext());
         addToggle(getString(R.string.zero_trust_toggle), zeroTrust, (btn, on) -> {
             com.hydradragon.antivirus.engine.ZeroTrustMode.setEnabled(requireContext(), on);

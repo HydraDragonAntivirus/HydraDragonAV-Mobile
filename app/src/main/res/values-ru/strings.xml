@@ -226,7 +226,7 @@
     <string name="dnsvpn_channel_name">Веб-щит</string>
     <string name="dnsvpn_session_name">HydraDragon Веб-щит</string>
     <string name="dnsvpn_notif_title">HydraDragon Веб-щит</string>
-    <string name="dnsvpn_notif_text">Фильтрация DNS от вредоносных сайтов</string>
+    <string name="dnsvpn_notif_text">Система защищена</string>
     <string name="screencapture_malicious_text_title">Обнаружен вредоносный текст на экране</string>
     <string name="screencapture_active_title">Сканирование экрана Нулевого доверия активно</string>
     <string name="screencapture_active_text">Сканирование текста на экране на предмет угроз (OCR)</string>

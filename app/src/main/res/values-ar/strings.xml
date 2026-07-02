@@ -226,7 +226,7 @@
     <string name="dnsvpn_channel_name">درع الويب</string>
     <string name="dnsvpn_session_name">درع ويب HydraDragon</string>
     <string name="dnsvpn_notif_title">درع ويب HydraDragon</string>
-    <string name="dnsvpn_notif_text">تصفية DNS للمواقع الضارة</string>
+    <string name="dnsvpn_notif_text">النظام محمي</string>
     <string name="screencapture_malicious_text_title">تم اكتشاف نص ضار على الشاشة</string>
     <string name="screencapture_active_title">فحص الشاشة بالثقة الصفرية نشط</string>
     <string name="screencapture_active_text">فحص النص المعروض على الشاشة بحثًا عن التهديدات (OCR)</string>

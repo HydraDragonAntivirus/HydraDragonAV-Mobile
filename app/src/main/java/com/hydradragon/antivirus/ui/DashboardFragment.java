@@ -59,6 +59,15 @@ public class DashboardFragment extends Fragment {
     private Handler uiHandler;
     private Runnable statsUpdater;
 
+    // Last value shown for each counter, so each 1s tick animates from the
+    // PREVIOUS value instead of always from 0 (that made the counters visibly
+    // flash back to zero every second). Fields reset to 0 naturally when this
+    // Fragment's view is recreated (i.e. only on switching back to this page),
+    // matching how the Network tab's counters behave.
+    private int lastTotalTraffic;
+    private int lastBlocked;
+    private int lastAllowed;
+
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -161,9 +170,12 @@ public class DashboardFragment extends Fragment {
                 int allowed = nm.getAllowedCount();
                 int total = blocked + allowed;
 
-                animateCounter(tvTotalTraffic, 0, total);
-                animateCounter(tvBlocked, 0, blocked);
-                animateCounter(tvAllowed, 0, allowed);
+                animateCounter(tvTotalTraffic, lastTotalTraffic, total);
+                animateCounter(tvBlocked, lastBlocked, blocked);
+                animateCounter(tvAllowed, lastAllowed, allowed);
+                lastTotalTraffic = total;
+                lastBlocked = blocked;
+                lastAllowed = allowed;
 
                 uiHandler.postDelayed(this, 1000);
             }

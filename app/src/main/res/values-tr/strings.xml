@@ -227,7 +227,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="dnsvpn_channel_name">Web Kalkanı</string>
     <string name="dnsvpn_session_name">HydraDragon Web Kalkanı</string>
     <string name="dnsvpn_notif_title">HydraDragon Web Kalkanı</string>
-    <string name="dnsvpn_notif_text">Zararlı siteler için DNS filtreleniyor</string>
+    <string name="dnsvpn_notif_text">Sistem korunuyor</string>
     <string name="screencapture_malicious_text_title">Ekranda zararlı metin tespit edildi</string>
     <string name="screencapture_active_title">Sıfır Güven ekran taraması aktif</string>
     <string name="screencapture_active_text">Tehditler için ekrandaki metin taranıyor (OCR)</string>

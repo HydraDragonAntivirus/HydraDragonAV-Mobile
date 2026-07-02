@@ -226,7 +226,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="dnsvpn_channel_name">Escudo Web</string>
     <string name="dnsvpn_session_name">Escudo Web HydraDragon</string>
     <string name="dnsvpn_notif_title">Escudo Web HydraDragon</string>
-    <string name="dnsvpn_notif_text">Filtrando DNS em busca de sites maliciosos</string>
+    <string name="dnsvpn_notif_text">Sistema protegido</string>
     <string name="screencapture_malicious_text_title">Texto malicioso na tela detectado</string>
     <string name="screencapture_active_title">Verificação de tela Confiança Zero ativa</string>
     <string name="screencapture_active_text">Verificando texto na tela em busca de ameaças (OCR)</string>

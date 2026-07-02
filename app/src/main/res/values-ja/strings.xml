@@ -226,7 +226,7 @@
     <string name="dnsvpn_channel_name">Webシールド</string>
     <string name="dnsvpn_session_name">HydraDragon Webシールド</string>
     <string name="dnsvpn_notif_title">HydraDragon Webシールド</string>
-    <string name="dnsvpn_notif_text">悪意のあるサイトのDNSをフィルタリング中</string>
+    <string name="dnsvpn_notif_text">システムは保護されています</string>
     <string name="screencapture_malicious_text_title">画面上に悪意のあるテキストを検出</string>
     <string name="screencapture_active_title">ゼロトラスト画面スキャンが有効です</string>
     <string name="screencapture_active_text">画面上のテキストの脅威をスキャン中（OCR）</string>

@@ -226,7 +226,7 @@
     <string name="dnsvpn_channel_name">سپر وب</string>
     <string name="dnsvpn_session_name">سپر وب HydraDragon</string>
     <string name="dnsvpn_notif_title">سپر وب HydraDragon</string>
-    <string name="dnsvpn_notif_text">در حال فیلتر DNS برای سایت‌های مخرب</string>
+    <string name="dnsvpn_notif_text">سیستم محافظت می‌شود</string>
     <string name="screencapture_malicious_text_title">متن مخرب روی صفحه شناسایی شد</string>
     <string name="screencapture_active_title">اسکن صفحه Zero Trust فعال است</string>
     <string name="screencapture_active_text">در حال اسکن متن روی صفحه برای تهدیدها (OCR)</string>

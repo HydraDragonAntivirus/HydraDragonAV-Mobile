@@ -226,7 +226,7 @@
     <string name="dnsvpn_channel_name">网络防护</string>
     <string name="dnsvpn_session_name">HydraDragon网络防护</string>
     <string name="dnsvpn_notif_title">HydraDragon网络防护</string>
-    <string name="dnsvpn_notif_text">正在为恶意网站过滤DNS</string>
+    <string name="dnsvpn_notif_text">系统已受保护</string>
     <string name="screencapture_malicious_text_title">检测到屏幕上的恶意文本</string>
     <string name="screencapture_active_title">零信任屏幕扫描运行中</string>
     <string name="screencapture_active_text">正在扫描屏幕文本以查找威胁（OCR）</string>
