@@ -79,7 +79,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="btn_full_scan">🔍 SCANSIONE COMPLETA</string>
     <string name="btn_quick_scan">🚀 SCANSIONE RAPIDA</string>
     <string name="btn_cancel">Annulla</string>
-    <string name="system_clean">Sistema pulito secondo l'ultima scansione</string>
+    <string name="system_clean">Sistema pulito secondo l\'ultima scansione</string>
     <string name="risk_critical">CRITICO</string>
     <string name="risk_high">RISCHIO ALTO (%1$d)</string>
     <string name="risk_medium">RISCHIO MEDIO (%1$d)</string>
