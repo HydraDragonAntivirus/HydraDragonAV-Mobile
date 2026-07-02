@@ -101,7 +101,16 @@ public class DynamicAnalysisService extends AccessibilityService {
 
         // Behavioural detection: an app that repeats the SAME event/content far
         // too often (overlay/dialog/toast/click spam) is acting maliciously.
-        if (!trusted) checkSpamBehavior(event, pkg);
+        // Restricted to click/window events — TYPE_VIEW_SCROLLED,
+        // TYPE_VIEW_TEXT_CHANGED, TYPE_WINDOW_CONTENT_CHANGED etc. fire
+        // constantly during completely normal use (scrolling a list, a video
+        // player's progress ticking, a chat/game UI updating) and were
+        // tripping this at 30 identical events / 8s — a false positive, not a
+        // sign of adware/clicker/ransomware behaviour.
+        if (!trusted && (eventType == AccessibilityEvent.TYPE_VIEW_CLICKED
+                || eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)) {
+            checkSpamBehavior(event, pkg);
+        }
 
         boolean isInstaller = packageName.toString().contains("packageinstaller") ||
                               packageName.toString().contains("permissioncontroller");
