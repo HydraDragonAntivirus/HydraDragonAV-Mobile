@@ -132,6 +132,14 @@ Puntuación de riesgo: %2$d/100
     <string name="scan_initial_status">Presiona ESCANEAR para comenzar</string>
     <string name="scan_scanning_btn">ESCANEANDO...</string>
     <string name="scan_already_running">Ya hay un análisis en segundo plano en curso — espera a que termine</string>
+    <string name="background_scan_running">⏳ Análisis en segundo plano en curso…</string>
+    <string name="detection_categories_header">Categorías de Detección</string>
+    <string name="detect_cat_signatures">Basado en firmas (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">Detección de anomalías por ML</string>
+    <string name="detect_cat_pua">Apps Potencialmente No Deseadas (PUA)</string>
+    <string name="detect_cat_auto_rules">Reglas auto-aprendidas</string>
+    <string name="detect_cat_permissions">Permisos peligrosos</string>
+    <string name="detect_cat_eicar">Archivos de prueba EICAR</string>
     <string name="scan_rescan_btn">REESCANEAR</string>
     <string name="scan_clean_system">✓ Escaneo completo - ¡El sistema está limpio!</string>
     <string name="scan_threat_found">⚠ ¡Se encontraron %1$s amenazas!</string>

@@ -132,6 +132,14 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="scan_initial_status">Premi SCAN per iniziare</string>
     <string name="scan_scanning_btn">SCANSIONE IN CORSO...</string>
     <string name="scan_already_running">Una scansione in background è già in corso — attendi che finisca</string>
+    <string name="background_scan_running">⏳ Scansione in background in corso…</string>
+    <string name="detection_categories_header">Categorie di Rilevamento</string>
+    <string name="detect_cat_signatures">Basato su firme (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">Rilevamento anomalie ML</string>
+    <string name="detect_cat_pua">App Potenzialmente Indesiderate (PUA)</string>
+    <string name="detect_cat_auto_rules">Regole auto-apprese</string>
+    <string name="detect_cat_permissions">Permessi pericolosi</string>
+    <string name="detect_cat_eicar">File di test EICAR</string>
     <string name="scan_rescan_btn">RISCANSIONA</string>
     <string name="scan_clean_system">✓ Scansione completata - Il sistema è pulito!</string>
     <string name="scan_threat_found">⚠ %1$s minacce trovate!</string>

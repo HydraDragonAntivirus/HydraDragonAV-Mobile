@@ -132,6 +132,14 @@
     <string name="scan_initial_status">برای شروع دکمه اسکن را فشار دهید</string>
     <string name="scan_scanning_btn">در حال اسکن...</string>
     <string name="scan_already_running">یک اسکن در پس‌زمینه در حال اجراست — لطفاً منتظر پایان آن بمانید</string>
+    <string name="background_scan_running">⏳ اسکن پس‌زمینه در حال اجراست…</string>
+    <string name="detection_categories_header">دسته‌های تشخیص</string>
+    <string name="detect_cat_signatures">مبتنی بر امضا (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">تشخیص ناهنجاری با یادگیری ماشین</string>
+    <string name="detect_cat_pua">برنامه‌های بالقوه ناخواسته (PUA)</string>
+    <string name="detect_cat_auto_rules">قوانین خودآموز</string>
+    <string name="detect_cat_permissions">مجوزهای خطرناک</string>
+    <string name="detect_cat_eicar">فایل‌های آزمایشی EICAR</string>
     <string name="scan_rescan_btn">اسکن مجدد</string>
     <string name="scan_clean_system">✓ اسکن کامل شد - سیستم پاک است!</string>
     <string name="scan_threat_found">⚠ %1$s تهدید یافت شد!</string>

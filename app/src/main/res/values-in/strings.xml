@@ -132,6 +132,14 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scan_initial_status">Tekan PINDAI untuk mulai</string>
     <string name="scan_scanning_btn">MEMINDAI...</string>
     <string name="scan_already_running">Pemindaian latar belakang sudah berjalan — harap tunggu hingga selesai</string>
+    <string name="background_scan_running">⏳ Pemindaian latar belakang sedang berjalan…</string>
+    <string name="detection_categories_header">Kategori Deteksi</string>
+    <string name="detect_cat_signatures">Berbasis tanda tangan (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">Deteksi anomali ML</string>
+    <string name="detect_cat_pua">Aplikasi Berpotensi Tidak Diinginkan (PUA)</string>
+    <string name="detect_cat_auto_rules">Aturan otomatis yang dipelajari sendiri</string>
+    <string name="detect_cat_permissions">Izin berbahaya</string>
+    <string name="detect_cat_eicar">File uji EICAR</string>
     <string name="scan_rescan_btn">PINDAI ULANG</string>
     <string name="scan_clean_system">✓ Pemindaian selesai - Sistem bersih!</string>
     <string name="scan_threat_found">⚠ %1$s ancaman ditemukan!</string>

@@ -134,6 +134,13 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="scan_scanning_btn">TARANIYOR...</string>
     <string name="background_scan_running">⏳ Arka planda tarama çalışıyor…</string>
     <string name="scan_already_running">Arka planda zaten bir tarama sürüyor — lütfen bitmesini bekleyin</string>
+    <string name="detection_categories_header">Tespit Kategorileri</string>
+    <string name="detect_cat_signatures">İmza tabanlı (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">ML anomali tespiti</string>
+    <string name="detect_cat_pua">Potansiyel İstenmeyen Uygulamalar (PUA)</string>
+    <string name="detect_cat_auto_rules">Kendi kendine öğrenen oto kurallar</string>
+    <string name="detect_cat_permissions">Tehlikeli izinler</string>
+    <string name="detect_cat_eicar">EICAR test dosyaları</string>
     <string name="scan_rescan_btn">YENİDEN TARA</string>
     <string name="scan_clean_system">✓ Tarama tamamlandı - Sistem temiz!</string>
     <string name="scan_threat_found">⚠ %1$s tehdit bulundu!</string>

@@ -132,6 +132,14 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="scan_initial_status">Pressione VERIFICAR para iniciar</string>
     <string name="scan_scanning_btn">VERIFICANDO...</string>
     <string name="scan_already_running">Já há uma verificação em segundo plano em andamento — aguarde até terminar</string>
+    <string name="background_scan_running">⏳ Verificação em segundo plano em andamento…</string>
+    <string name="detection_categories_header">Categorias de Detecção</string>
+    <string name="detect_cat_signatures">Baseado em assinaturas (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">Detecção de anomalias por ML</string>
+    <string name="detect_cat_pua">Apps Potencialmente Indesejados (PUA)</string>
+    <string name="detect_cat_auto_rules">Regras autoaprendidas</string>
+    <string name="detect_cat_permissions">Permissões perigosas</string>
+    <string name="detect_cat_eicar">Arquivos de teste EICAR</string>
     <string name="scan_rescan_btn">VERIFICAR NOVAMENTE</string>
     <string name="scan_clean_system">✓ Verificação concluída - O sistema está limpo!</string>
     <string name="scan_threat_found">⚠ %1$s ameaças encontradas!</string>

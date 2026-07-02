@@ -132,6 +132,14 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scan_initial_status">Nhấn QUÉT để bắt đầu</string>
     <string name="scan_scanning_btn">ĐANG QUÉT...</string>
     <string name="scan_already_running">Đã có một lượt quét nền đang chạy — vui lòng đợi cho đến khi hoàn tất</string>
+    <string name="background_scan_running">⏳ Đang quét nền…</string>
+    <string name="detection_categories_header">Danh mục Phát hiện</string>
+    <string name="detect_cat_signatures">Dựa trên chữ ký (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">Phát hiện bất thường bằng ML</string>
+    <string name="detect_cat_pua">Ứng dụng có khả năng không mong muốn (PUA)</string>
+    <string name="detect_cat_auto_rules">Quy tắc tự động tự học</string>
+    <string name="detect_cat_permissions">Quyền nguy hiểm</string>
+    <string name="detect_cat_eicar">Tệp kiểm tra EICAR</string>
     <string name="scan_rescan_btn">QUÉT LẠI</string>
     <string name="scan_clean_system">✓ Quét hoàn tất - Hệ thống sạch!</string>
     <string name="scan_threat_found">⚠ Tìm thấy %1$s mối đe dọa!</string>

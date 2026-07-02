@@ -132,6 +132,14 @@
     <string name="scan_initial_status">शुरू करने के लिए स्कैन दबाएँ</string>
     <string name="scan_scanning_btn">स्कैन हो रहा है...</string>
     <string name="scan_already_running">पृष्ठभूमि में पहले से एक स्कैन चल रहा है — कृपया इसके समाप्त होने की प्रतीक्षा करें</string>
+    <string name="background_scan_running">⏳ बैकग्राउंड स्कैन चल रहा है…</string>
+    <string name="detection_categories_header">डिटेक्शन श्रेणियाँ</string>
+    <string name="detect_cat_signatures">सिग्नेचर-आधारित (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">ML असामान्यता पहचान</string>
+    <string name="detect_cat_pua">संभावित अवांछित ऐप्स (PUA)</string>
+    <string name="detect_cat_auto_rules">स्व-सीखे नियम</string>
+    <string name="detect_cat_permissions">खतरनाक अनुमतियाँ</string>
+    <string name="detect_cat_eicar">EICAR परीक्षण फ़ाइलें</string>
     <string name="scan_rescan_btn">पुनः स्कैन करें</string>
     <string name="scan_clean_system">✓ स्कैन पूरा हुआ - सिस्टम स्वच्छ है!</string>
     <string name="scan_threat_found">⚠ %1$s खतरे मिले!</string>

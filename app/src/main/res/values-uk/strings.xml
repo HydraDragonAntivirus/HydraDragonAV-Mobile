@@ -132,6 +132,14 @@
     <string name="scan_initial_status">Натисніть СКАНУВАТИ для початку</string>
     <string name="scan_scanning_btn">СКАНУВАННЯ...</string>
     <string name="scan_already_running">Фонове сканування вже виконується — зачекайте на його завершення</string>
+    <string name="background_scan_running">⏳ Виконується фонове сканування…</string>
+    <string name="detection_categories_header">Категорії виявлення</string>
+    <string name="detect_cat_signatures">На основі сигнатур (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">Виявлення аномалій ML</string>
+    <string name="detect_cat_pua">Потенційно небажані додатки (PUA)</string>
+    <string name="detect_cat_auto_rules">Автоматичні самонавчальні правила</string>
+    <string name="detect_cat_permissions">Небезпечні дозволи</string>
+    <string name="detect_cat_eicar">Тестові файли EICAR</string>
     <string name="scan_rescan_btn">ПОВТОРНЕ СКАНУВАННЯ</string>
     <string name="scan_clean_system">✓ Сканування завершено - Система чиста!</string>
     <string name="scan_threat_found">⚠ Знайдено загроз: %1$s!</string>

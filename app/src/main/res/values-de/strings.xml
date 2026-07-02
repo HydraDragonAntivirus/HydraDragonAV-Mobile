@@ -132,6 +132,14 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="scan_initial_status">SCAN drücken, um zu starten</string>
     <string name="scan_scanning_btn">SCANNEN...</string>
     <string name="scan_already_running">Im Hintergrund läuft bereits ein Scan — bitte warten, bis er abgeschlossen ist</string>
+    <string name="background_scan_running">⏳ Hintergrundscan läuft…</string>
+    <string name="detection_categories_header">Erkennungskategorien</string>
+    <string name="detect_cat_signatures">Signaturbasiert (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">ML-Anomalieerkennung</string>
+    <string name="detect_cat_pua">Potenziell unerwünschte Apps (PUA)</string>
+    <string name="detect_cat_auto_rules">Selbst erlernte Auto-Regeln</string>
+    <string name="detect_cat_permissions">Gefährliche Berechtigungen</string>
+    <string name="detect_cat_eicar">EICAR-Testdateien</string>
     <string name="scan_rescan_btn">ERNEUT SCANNEN</string>
     <string name="scan_clean_system">✓ Scan abgeschlossen - System ist sauber!</string>
     <string name="scan_threat_found">⚠ %1$s Bedrohungen gefunden!</string>

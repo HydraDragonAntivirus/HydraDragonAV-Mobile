@@ -132,6 +132,14 @@
     <string name="scan_initial_status">스캔을 눌러 시작하세요</string>
     <string name="scan_scanning_btn">스캔 중...</string>
     <string name="scan_already_running">백그라운드 스캔이 이미 실행 중입니다 — 완료될 때까지 기다려 주세요</string>
+    <string name="background_scan_running">⏳ 백그라운드 스캔 실행 중…</string>
+    <string name="detection_categories_header">탐지 카테고리</string>
+    <string name="detect_cat_signatures">시그니처 기반 (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">ML 이상 탐지</string>
+    <string name="detect_cat_pua">잠재적 유해 가능 앱 (PUA)</string>
+    <string name="detect_cat_auto_rules">자가 학습 자동 규칙</string>
+    <string name="detect_cat_permissions">위험한 권한</string>
+    <string name="detect_cat_eicar">EICAR 테스트 파일</string>
     <string name="scan_rescan_btn">다시 스캔</string>
     <string name="scan_clean_system">✓ 스캔 완료 - 시스템이 깨끗합니다!</string>
     <string name="scan_threat_found">⚠ %1$s개의 위협이 발견되었습니다!</string>

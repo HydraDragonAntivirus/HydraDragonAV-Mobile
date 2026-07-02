@@ -132,6 +132,14 @@
     <string name="scan_initial_status">按下扫描开始</string>
     <string name="scan_scanning_btn">扫描中...</string>
     <string name="scan_already_running">后台已经在进行扫描 — 请等待其完成</string>
+    <string name="background_scan_running">⏳ 后台扫描运行中…</string>
+    <string name="detection_categories_header">检测类别</string>
+    <string name="detect_cat_signatures">基于签名（YARA/ClamAV）</string>
+    <string name="detect_cat_ml">机器学习异常检测</string>
+    <string name="detect_cat_pua">潜在有害应用（PUA）</string>
+    <string name="detect_cat_auto_rules">自学习自动规则</string>
+    <string name="detect_cat_permissions">危险权限</string>
+    <string name="detect_cat_eicar">EICAR 测试文件</string>
     <string name="scan_rescan_btn">重新扫描</string>
     <string name="scan_clean_system">✓ 扫描完成 - 系统清洁！</string>
     <string name="scan_threat_found">⚠ 发现%1$s个威胁！</string>

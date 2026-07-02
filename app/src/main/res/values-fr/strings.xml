@@ -132,6 +132,14 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="scan_initial_status">Appuyez sur ANALYSER pour commencer</string>
     <string name="scan_scanning_btn">ANALYSE EN COURS...</string>
     <string name="scan_already_running">Une analyse en arrière-plan est déjà en cours — veuillez attendre qu\'elle se termine</string>
+    <string name="background_scan_running">⏳ Analyse en arrière-plan en cours…</string>
+    <string name="detection_categories_header">Catégories de Détection</string>
+    <string name="detect_cat_signatures">Basé sur des signatures (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">Détection d\'anomalies par ML</string>
+    <string name="detect_cat_pua">Applications potentiellement indésirables (PUA)</string>
+    <string name="detect_cat_auto_rules">Règles auto-apprises</string>
+    <string name="detect_cat_permissions">Autorisations dangereuses</string>
+    <string name="detect_cat_eicar">Fichiers de test EICAR</string>
     <string name="scan_rescan_btn">RÉANALYSER</string>
     <string name="scan_clean_system">✓ Analyse terminée - Le système est propre !</string>
     <string name="scan_threat_found">⚠ %1$s menaces trouvées !</string>

@@ -109,6 +109,14 @@ public class SettingsFragment extends Fragment {
         addBtn("⏱ " + getString(R.string.scan_interval_btn), color(R.color.bg_secondary),
             v -> showScanIntervalDialog());
 
+        addHeader(getString(R.string.detection_categories_header));
+        addCategoryToggle(R.string.detect_cat_signatures, com.hydradragon.antivirus.engine.DetectionCategories.SIGNATURES);
+        addCategoryToggle(R.string.detect_cat_ml, com.hydradragon.antivirus.engine.DetectionCategories.ML);
+        addCategoryToggle(R.string.detect_cat_pua, com.hydradragon.antivirus.engine.DetectionCategories.PUA);
+        addCategoryToggle(R.string.detect_cat_auto_rules, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
+        addCategoryToggle(R.string.detect_cat_permissions, com.hydradragon.antivirus.engine.DetectionCategories.PERMISSIONS);
+        addCategoryToggle(R.string.detect_cat_eicar, com.hydradragon.antivirus.engine.DetectionCategories.EICAR);
+
         // Web Shield is core protection (malicious-domain/IP DNS filtering),
         // not an extra — it lives in Protection, not Premium Features.
         boolean shield = prefs().getBoolean(KEY_SHIELD, false);
@@ -531,6 +539,14 @@ public class SettingsFragment extends Fragment {
             })
             .setNegativeButton(getString(R.string.btn_cancel), null)
             .show();
+    }
+
+    /** One row for a single DetectionCategories toggle — same on/off contract
+     *  as every other category, just parameterized by string res + pref key. */
+    private void addCategoryToggle(int labelRes, String category) {
+        boolean on = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(requireContext(), category);
+        addToggle(getString(labelRes), on, (btn, checked) ->
+            com.hydradragon.antivirus.engine.DetectionCategories.setEnabled(requireContext(), category, checked));
     }
 
     private int parseMinutesOrDefault(String text, int def) {

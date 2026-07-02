@@ -132,6 +132,14 @@
     <string name="scan_initial_status">กดสแกนเพื่อเริ่มต้น</string>
     <string name="scan_scanning_btn">กำลังสแกน...</string>
     <string name="scan_already_running">มีการสแกนเบื้องหลังทำงานอยู่แล้ว — โปรดรอจนกว่าจะเสร็จสิ้น</string>
+    <string name="background_scan_running">⏳ กำลังสแกนพื้นหลัง…</string>
+    <string name="detection_categories_header">หมวดหมู่การตรวจจับ</string>
+    <string name="detect_cat_signatures">ใช้ลายเซ็น (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">การตรวจจับความผิดปกติด้วย ML</string>
+    <string name="detect_cat_pua">แอปที่อาจไม่พึงประสงค์ (PUA)</string>
+    <string name="detect_cat_auto_rules">กฎอัตโนมัติที่เรียนรู้ด้วยตนเอง</string>
+    <string name="detect_cat_permissions">สิทธิ์ที่เป็นอันตราย</string>
+    <string name="detect_cat_eicar">ไฟล์ทดสอบ EICAR</string>
     <string name="scan_rescan_btn">สแกนอีกครั้ง</string>
     <string name="scan_clean_system">✓ การสแกนเสร็จสมบูรณ์ - ระบบสะอาด!</string>
     <string name="scan_threat_found">⚠ พบภัยคุกคาม %1$s รายการ!</string>

@@ -132,6 +132,14 @@
     <string name="scan_initial_status">Нажмите СКАНИРОВАТЬ, чтобы начать</string>
     <string name="scan_scanning_btn">СКАНИРОВАНИЕ...</string>
     <string name="scan_already_running">Фоновое сканирование уже выполняется — дождитесь его завершения</string>
+    <string name="background_scan_running">⏳ Выполняется фоновое сканирование…</string>
+    <string name="detection_categories_header">Категории обнаружения</string>
+    <string name="detect_cat_signatures">На основе сигнатур (YARA/ClamAV)</string>
+    <string name="detect_cat_ml">Обнаружение аномалий ML</string>
+    <string name="detect_cat_pua">Потенциально нежелательные приложения (PUA)</string>
+    <string name="detect_cat_auto_rules">Самообучающиеся автоправила</string>
+    <string name="detect_cat_permissions">Опасные разрешения</string>
+    <string name="detect_cat_eicar">Тестовые файлы EICAR</string>
     <string name="scan_rescan_btn">ПЕРЕСКАНИРОВАТЬ</string>
     <string name="scan_clean_system">✓ Сканирование завершено - система чиста!</string>
     <string name="scan_threat_found">⚠ Найдено угроз: %1$s!</string>
