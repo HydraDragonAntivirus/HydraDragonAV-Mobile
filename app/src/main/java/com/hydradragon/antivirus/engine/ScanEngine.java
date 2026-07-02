@@ -244,8 +244,14 @@ public class ScanEngine {
     }
 
     /** A native detection is a false positive iff one of the APKs in its
-     *  extraction lineage is whitelisted (the hit lives inside a known-good APK). */
+     *  extraction lineage is whitelisted (the hit lives inside a known-good APK),
+     *  OR the user has explicitly told the engine to ignore this exact
+     *  signature name (see IgnoredSignatures — Settings, or the "ignore this
+     *  signature" action on a completed scan's threat dialog). The latter is
+     *  engine-wide (every app/file), unlike UserDecisions.allowThreat which
+     *  only clears one specific app/file. */
     private boolean isDetectionWhitelisted(NativeScanner.Verdict.Detection d) {
+        if (IgnoredSignatures.isIgnored(context, d.name)) return true;
         for (String h : d.hashes) if (isHashWhitelisted(h)) return true;
         return false;
     }
@@ -287,11 +293,29 @@ public class ScanEngine {
 
     public void setCallback(ScanCallback callback) { this.callback = callback; }
 
+    // Guards against two scanAllApps() runs overlapping — e.g. GuardService's
+    // periodic background scan firing while a user-initiated scan (from
+    // ScanFragment) is still in progress. Both would otherwise share this
+    // engine's single `callback` + progress counters (filesScannedCount,
+    // appsScannedBase, engineTimingMs), so whichever run finished FIRST would
+    // fire onScanComplete on the UI's callback and show "scan complete/system
+    // clean" while the user's own scan was still actively running, and each
+    // run's counter resets would corrupt the other's in-flight numbers.
+    private final java.util.concurrent.atomic.AtomicBoolean scanRunning =
+        new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    public boolean isScanRunning() { return scanRunning.get(); }
+
     public void scanAllApps(boolean isFullScan) {
+        if (!scanRunning.compareAndSet(false, true)) {
+            Log.w(TAG, "scanAllApps: a scan is already running, skipping this request");
+            return;
+        }
         cancelRequested = false;
         engineTimingMs.clear();
         filesScannedCount.set(0);
         scanExecutor.execute(() -> {
+          try {
             PackageManager pm = context.getPackageManager();
             List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
             List<ThreatResult> threats = new ArrayList<>();
@@ -347,6 +371,9 @@ public class ScanEngine {
             int scannedTotal = total + filesScannedCount.get() + threats.size();
             if (callback != null)
                 callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats));
+          } finally {
+              scanRunning.set(false);
+          }
         });
     }
 

@@ -12,6 +12,14 @@
     <string name="realtime_protection">Защита в реальном времени</string>
     <string name="protection_enabled">Защита включена</string>
     <string name="protection_paused">Защита приостановлена — без уведомлений</string>
+    <string name="boot_auto_start_toggle">Автоматически запускать защиту при загрузке</string>
+    <string name="boot_auto_start_on_toast">Защита будет запускаться автоматически при следующей загрузке устройства</string>
+    <string name="boot_auto_start_off_toast">Автозапуск при загрузке ВЫКЛЮЧЕН — для запуска защиты нужно открыть приложение</string>
+    <string name="scan_interval_btn">Настроить интервал сканирования</string>
+    <string name="scan_interval_quick_label">Быстрое сканирование каждые (минут):</string>
+    <string name="scan_interval_full_label">Полное сканирование каждые (минут):</string>
+    <string name="scan_interval_hint">Минимум %1$d минут — более короткий интервал не допускается (влияние на батарею/ЦП)</string>
+    <string name="scan_interval_saved">Интервал сканирования сохранён</string>
     <string name="web_shield">Веб-щит (DNS VPN)</string>
     <string name="web_shield_enabled">Веб-щит включён</string>
     <string name="web_shield_disabled">Веб-щит выключен</string>
@@ -110,6 +118,7 @@
     <string name="scan_btn">СКАНИРОВАТЬ</string>
     <string name="scan_initial_status">Нажмите СКАНИРОВАТЬ, чтобы начать</string>
     <string name="scan_scanning_btn">СКАНИРОВАНИЕ...</string>
+    <string name="scan_already_running">Фоновое сканирование уже выполняется — дождитесь его завершения</string>
     <string name="scan_rescan_btn">ПЕРЕСКАНИРОВАТЬ</string>
     <string name="scan_clean_system">✓ Сканирование завершено - система чиста!</string>
     <string name="scan_threat_found">⚠ Найдено угроз: %1$s!</string>
@@ -223,9 +232,9 @@
     <string name="guard_channel_desc">Уведомления о защите в реальном времени</string>
     <string name="guard_protecting_status">Система защищена</string>
     <string name="dnsvpn_malicious_blocked_title">Вредоносный сайт заблокирован</string>
-    <string name="dnsvpn_channel_name">Веб-щит</string>
+    <string name="dnsvpn_channel_name">Защита в реальном времени</string>
     <string name="dnsvpn_session_name">HydraDragon Веб-щит</string>
-    <string name="dnsvpn_notif_title">HydraDragon Веб-щит</string>
+    <string name="dnsvpn_notif_title">HydraDragon Защита в реальном времени</string>
     <string name="dnsvpn_notif_text">Система защищена</string>
     <string name="screencapture_malicious_text_title">Обнаружен вредоносный текст на экране</string>
     <string name="screencapture_active_title">Сканирование экрана Нулевого доверия активно</string>

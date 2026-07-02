@@ -12,6 +12,14 @@
     <string name="realtime_protection">リアルタイム保護</string>
     <string name="protection_enabled">保護が有効です</string>
     <string name="protection_paused">保護を一時停止中 — 通知なし</string>
+    <string name="boot_auto_start_toggle">起動時に保護を自動的に開始する</string>
+    <string name="boot_auto_start_on_toast">次回デバイスが起動したとき、保護が自動的に開始されます</string>
+    <string name="boot_auto_start_off_toast">起動時の自動開始OFF — 保護を開始するにはアプリを開く必要があります</string>
+    <string name="scan_interval_btn">スキャン間隔の設定</string>
+    <string name="scan_interval_quick_label">クイックスキャンの間隔（分）：</string>
+    <string name="scan_interval_full_label">フルスキャンの間隔（分）：</string>
+    <string name="scan_interval_hint">最小 %1$d 分 — これより短い間隔は許可されません（バッテリー/CPUへの影響）</string>
+    <string name="scan_interval_saved">スキャン間隔を保存しました</string>
     <string name="web_shield">ウェブシールド（DNS VPN）</string>
     <string name="web_shield_enabled">ウェブシールドが有効です</string>
     <string name="web_shield_disabled">ウェブシールドが無効です</string>
@@ -110,6 +118,7 @@
     <string name="scan_btn">スキャン</string>
     <string name="scan_initial_status">スキャンを押して開始</string>
     <string name="scan_scanning_btn">スキャン中...</string>
+    <string name="scan_already_running">バックグラウンドスキャンが既に実行中です — 終了までお待ちください</string>
     <string name="scan_rescan_btn">再スキャン</string>
     <string name="scan_clean_system">✓ スキャン完了 - システムはクリーンです！</string>
     <string name="scan_threat_found">⚠ %1$s件の脅威が見つかりました！</string>
@@ -223,9 +232,9 @@
     <string name="guard_channel_desc">リアルタイム保護通知</string>
     <string name="guard_protecting_status">システムは保護されています</string>
     <string name="dnsvpn_malicious_blocked_title">悪意のあるサイトをブロックしました</string>
-    <string name="dnsvpn_channel_name">Webシールド</string>
+    <string name="dnsvpn_channel_name">リアルタイム保護</string>
     <string name="dnsvpn_session_name">HydraDragon Webシールド</string>
-    <string name="dnsvpn_notif_title">HydraDragon Webシールド</string>
+    <string name="dnsvpn_notif_title">HydraDragon リアルタイム保護</string>
     <string name="dnsvpn_notif_text">システムは保護されています</string>
     <string name="screencapture_malicious_text_title">画面上に悪意のあるテキストを検出</string>
     <string name="screencapture_active_title">ゼロトラスト画面スキャンが有効です</string>

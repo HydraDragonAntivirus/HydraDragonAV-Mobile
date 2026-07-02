@@ -12,6 +12,14 @@
     <string name="realtime_protection">Protección en Tiempo Real</string>
     <string name="protection_enabled">Protección activada</string>
     <string name="protection_paused">Protección pausada — sin alertas</string>
+    <string name="boot_auto_start_toggle">Iniciar la protección automáticamente al arrancar</string>
+    <string name="boot_auto_start_on_toast">La protección se iniciará automáticamente la próxima vez que arranque tu dispositivo</string>
+    <string name="boot_auto_start_off_toast">Inicio automático al arrancar DESACTIVADO — deberás abrir la app para iniciar la protección</string>
+    <string name="scan_interval_btn">Configurar intervalo de análisis</string>
+    <string name="scan_interval_quick_label">Análisis rápido cada (minutos):</string>
+    <string name="scan_interval_full_label">Análisis completo cada (minutos):</string>
+    <string name="scan_interval_hint">Mínimo %1$d minutos — no se permite un intervalo más corto (impacto en batería/CPU)</string>
+    <string name="scan_interval_saved">Intervalo de análisis guardado</string>
     <string name="web_shield">Escudo Web (DNS VPN)</string>
     <string name="web_shield_enabled">Escudo Web activado</string>
     <string name="web_shield_disabled">Escudo Web desactivado</string>
@@ -110,6 +118,7 @@ Puntuación de riesgo: %2$d/100
     <string name="scan_btn">ESCANEAR</string>
     <string name="scan_initial_status">Presiona ESCANEAR para comenzar</string>
     <string name="scan_scanning_btn">ESCANEANDO...</string>
+    <string name="scan_already_running">Ya hay un análisis en segundo plano en curso — espera a que termine</string>
     <string name="scan_rescan_btn">REESCANEAR</string>
     <string name="scan_clean_system">✓ Escaneo completo - ¡El sistema está limpio!</string>
     <string name="scan_threat_found">⚠ ¡Se encontraron %1$s amenazas!</string>
@@ -223,9 +232,9 @@ Puntuación de riesgo: %2$d/100
     <string name="guard_channel_desc">Notificaciones de protección en tiempo real</string>
     <string name="guard_protecting_status">Sistema protegido</string>
     <string name="dnsvpn_malicious_blocked_title">Sitio malicioso bloqueado</string>
-    <string name="dnsvpn_channel_name">Escudo Web</string>
+    <string name="dnsvpn_channel_name">Protección en Tiempo Real</string>
     <string name="dnsvpn_session_name">Escudo Web HydraDragon</string>
-    <string name="dnsvpn_notif_title">Escudo Web HydraDragon</string>
+    <string name="dnsvpn_notif_title">HydraDragon Protección en Tiempo Real</string>
     <string name="dnsvpn_notif_text">Sistema protegido</string>
     <string name="screencapture_malicious_text_title">Texto malicioso en pantalla detectado</string>
     <string name="screencapture_active_title">Escaneo de pantalla de Confianza Cero activo</string>

@@ -12,6 +12,14 @@
     <string name="realtime_protection">实时防护</string>
     <string name="protection_enabled">防护已启用</string>
     <string name="protection_paused">防护已暂停 — 无提醒</string>
+    <string name="boot_auto_start_toggle">开机时自动启动保护</string>
+    <string name="boot_auto_start_on_toast">下次设备启动时将自动启动保护</string>
+    <string name="boot_auto_start_off_toast">开机自动启动已关闭 — 您需要打开应用才能启动保护</string>
+    <string name="scan_interval_btn">配置扫描间隔</string>
+    <string name="scan_interval_quick_label">快速扫描间隔（分钟）：</string>
+    <string name="scan_interval_full_label">完整扫描间隔（分钟）：</string>
+    <string name="scan_interval_hint">最短 %1$d 分钟 — 不允许更短的间隔（会影响电池/CPU）</string>
+    <string name="scan_interval_saved">扫描间隔已保存</string>
     <string name="web_shield">网络防护（DNS VPN）</string>
     <string name="web_shield_enabled">网络防护已启用</string>
     <string name="web_shield_disabled">网络防护已禁用</string>
@@ -110,6 +118,7 @@
     <string name="scan_btn">扫描</string>
     <string name="scan_initial_status">按下扫描开始</string>
     <string name="scan_scanning_btn">扫描中...</string>
+    <string name="scan_already_running">后台已经在进行扫描 — 请等待其完成</string>
     <string name="scan_rescan_btn">重新扫描</string>
     <string name="scan_clean_system">✓ 扫描完成 - 系统清洁！</string>
     <string name="scan_threat_found">⚠ 发现%1$s个威胁！</string>
@@ -223,9 +232,9 @@
     <string name="guard_channel_desc">实时防护通知</string>
     <string name="guard_protecting_status">系统已受保护</string>
     <string name="dnsvpn_malicious_blocked_title">已拦截恶意网站</string>
-    <string name="dnsvpn_channel_name">网络防护</string>
+    <string name="dnsvpn_channel_name">实时防护</string>
     <string name="dnsvpn_session_name">HydraDragon网络防护</string>
-    <string name="dnsvpn_notif_title">HydraDragon网络防护</string>
+    <string name="dnsvpn_notif_title">HydraDragon 实时防护</string>
     <string name="dnsvpn_notif_text">系统已受保护</string>
     <string name="screencapture_malicious_text_title">检测到屏幕上的恶意文本</string>
     <string name="screencapture_active_title">零信任屏幕扫描运行中</string>

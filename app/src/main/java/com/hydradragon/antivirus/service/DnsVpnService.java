@@ -179,7 +179,7 @@ public class DnsVpnService extends VpnService {
         com.hydradragon.antivirus.engine.NetworkObservations.addDomain(pkg, host);
 
         String cat = UrlThreatScanner.get(this).scanUrl("http://" + host);
-        if (cat != null) {
+        if (cat != null && !com.hydradragon.antivirus.engine.WebsiteWhitelist.isDomainWhitelisted(this, host)) {
             byte[] dns = nxdomain(p, dnsOff, len);
             writeTun(buildUdp(p, ver, ipHdr, srcOff, dstOff, dns, dns.length));
             notifyBlocked(host, cat);
@@ -207,7 +207,10 @@ public class DnsVpnService extends VpnService {
                 for (InetAddress ip : extractDnsIps(dns, dns.length)) {
                     com.hydradragon.antivirus.engine.NetworkObservations
                         .addHost(fpkg, ip.getHostAddress());
-                    if (cidr != null && cidr.contains(ip)) ipBlocked = true;
+                    if (cidr != null && cidr.contains(ip)
+                            && !com.hydradragon.antivirus.engine.WebsiteWhitelist.isIpWhitelisted(this, ip)) {
+                        ipBlocked = true;
+                    }
                 }
                 if (ipBlocked) {
                     byte[] nx = nxdomain(p, fDnsOff, fLen);

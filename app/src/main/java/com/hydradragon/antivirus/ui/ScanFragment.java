@@ -214,6 +214,17 @@ public class ScanFragment extends Fragment {
 
     private void startScan(boolean isFullScan) {
         if (!serviceBound || guardService == null) return;
+        // GuardService's own periodic background scan (see startPeriodicScans)
+        // shares this same ScanEngine — if it's mid-run, scanAllApps() below
+        // would silently no-op (see ScanEngine.scanAllApps's overlap guard),
+        // leaving this screen stuck on "SCANNING..." forever with nothing to
+        // complete it. Tell the user instead of starting an animation that
+        // will never finish.
+        if (guardService.getScanEngine().isScanRunning()) {
+            android.widget.Toast.makeText(getContext(),
+                getString(R.string.scan_already_running), android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
         isScanning = true;
         hasScanned = true;
         foundThreats.clear();

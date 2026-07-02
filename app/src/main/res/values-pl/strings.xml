@@ -12,6 +12,14 @@
     <string name="realtime_protection">Ochrona w czasie rzeczywistym</string>
     <string name="protection_enabled">Ochrona włączona</string>
     <string name="protection_paused">Ochrona wstrzymana — brak alertów</string>
+    <string name="boot_auto_start_toggle">Automatycznie uruchamiaj ochronę przy starcie</string>
+    <string name="boot_auto_start_on_toast">Ochrona uruchomi się automatycznie przy następnym uruchomieniu urządzenia</string>
+    <string name="boot_auto_start_off_toast">Automatyczne uruchamianie przy starcie WYŁĄCZONE — musisz otworzyć aplikację, aby uruchomić ochronę</string>
+    <string name="scan_interval_btn">Skonfiguruj interwał skanowania</string>
+    <string name="scan_interval_quick_label">Szybkie skanowanie co (minuty):</string>
+    <string name="scan_interval_full_label">Pełne skanowanie co (minuty):</string>
+    <string name="scan_interval_hint">Minimum %1$d minut — krótszy interwał jest niedozwolony (wpływ na baterię/CPU)</string>
+    <string name="scan_interval_saved">Zapisano interwał skanowania</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield włączony</string>
     <string name="web_shield_disabled">Web Shield wyłączony</string>
@@ -110,6 +118,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="scan_btn">SKANUJ</string>
     <string name="scan_initial_status">Naciśnij SKANUJ, aby rozpocząć</string>
     <string name="scan_scanning_btn">SKANOWANIE...</string>
+    <string name="scan_already_running">Skanowanie w tle jest już w toku — poczekaj, aż się zakończy</string>
     <string name="scan_rescan_btn">SKANUJ PONOWNIE</string>
     <string name="scan_clean_system">✓ Skanowanie zakończone - System jest czysty!</string>
     <string name="scan_threat_found">⚠ Znaleziono %1$s zagrożeń!</string>
@@ -223,9 +232,9 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="guard_channel_desc">Powiadomienia o ochronie w czasie rzeczywistym</string>
     <string name="guard_protecting_status">System chroniony</string>
     <string name="dnsvpn_malicious_blocked_title">Zablokowano złośliwą witrynę</string>
-    <string name="dnsvpn_channel_name">Web Shield</string>
+    <string name="dnsvpn_channel_name">Ochrona w czasie rzeczywistym</string>
     <string name="dnsvpn_session_name">HydraDragon Web Shield</string>
-    <string name="dnsvpn_notif_title">HydraDragon Web Shield</string>
+    <string name="dnsvpn_notif_title">HydraDragon Ochrona w czasie rzeczywistym</string>
     <string name="dnsvpn_notif_text">System chroniony</string>
     <string name="screencapture_malicious_text_title">Wykryto złośliwy tekst na ekranie</string>
     <string name="screencapture_active_title">Skanowanie ekranu Zero Trust aktywne</string>

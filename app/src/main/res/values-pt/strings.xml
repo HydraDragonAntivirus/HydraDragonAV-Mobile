@@ -12,6 +12,14 @@
     <string name="realtime_protection">Proteção em Tempo Real</string>
     <string name="protection_enabled">Proteção ativada</string>
     <string name="protection_paused">Proteção pausada — sem alertas</string>
+    <string name="boot_auto_start_toggle">Iniciar a proteção automaticamente ao ligar</string>
+    <string name="boot_auto_start_on_toast">A proteção será iniciada automaticamente na próxima vez que o dispositivo ligar</string>
+    <string name="boot_auto_start_off_toast">Início automático ao ligar DESATIVADO — você precisará abrir o aplicativo para iniciar a proteção</string>
+    <string name="scan_interval_btn">Configurar intervalo de verificação</string>
+    <string name="scan_interval_quick_label">Verificação rápida a cada (minutos):</string>
+    <string name="scan_interval_full_label">Verificação completa a cada (minutos):</string>
+    <string name="scan_interval_hint">Mínimo de %1$d minutos — um intervalo mais curto não é permitido (impacto na bateria/CPU)</string>
+    <string name="scan_interval_saved">Intervalo de verificação salvo</string>
     <string name="web_shield">Escudo Web (DNS VPN)</string>
     <string name="web_shield_enabled">Escudo Web ativado</string>
     <string name="web_shield_disabled">Escudo Web desativado</string>
@@ -110,6 +118,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="scan_btn">VERIFICAR</string>
     <string name="scan_initial_status">Pressione VERIFICAR para iniciar</string>
     <string name="scan_scanning_btn">VERIFICANDO...</string>
+    <string name="scan_already_running">Já há uma verificação em segundo plano em andamento — aguarde até terminar</string>
     <string name="scan_rescan_btn">VERIFICAR NOVAMENTE</string>
     <string name="scan_clean_system">✓ Verificação concluída - O sistema está limpo!</string>
     <string name="scan_threat_found">⚠ %1$s ameaças encontradas!</string>
@@ -223,9 +232,9 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="guard_channel_desc">Notificações de proteção em tempo real</string>
     <string name="guard_protecting_status">Sistema protegido</string>
     <string name="dnsvpn_malicious_blocked_title">Site malicioso bloqueado</string>
-    <string name="dnsvpn_channel_name">Escudo Web</string>
+    <string name="dnsvpn_channel_name">Proteção em Tempo Real</string>
     <string name="dnsvpn_session_name">Escudo Web HydraDragon</string>
-    <string name="dnsvpn_notif_title">Escudo Web HydraDragon</string>
+    <string name="dnsvpn_notif_title">HydraDragon Proteção em Tempo Real</string>
     <string name="dnsvpn_notif_text">Sistema protegido</string>
     <string name="screencapture_malicious_text_title">Texto malicioso na tela detectado</string>
     <string name="screencapture_active_title">Verificação de tela Confiança Zero ativa</string>

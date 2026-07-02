@@ -12,6 +12,14 @@
     <string name="realtime_protection">Gerçek Zamanlı Koruma</string>
     <string name="protection_enabled">Koruma açık</string>
     <string name="protection_paused">Koruma duraklatıldı — uyarı yok</string>
+    <string name="boot_auto_start_toggle">Cihaz açılışında korumayı otomatik başlat</string>
+    <string name="boot_auto_start_on_toast">Cihazın bir sonraki açılışında koruma otomatik olarak başlayacak</string>
+    <string name="boot_auto_start_off_toast">Açılışta otomatik başlatma KAPALI — korumayı başlatmak için uygulamayı açman gerekecek</string>
+    <string name="scan_interval_btn">Tarama Aralığını Yapılandır</string>
+    <string name="scan_interval_quick_label">Hızlı tarama her (dakika):</string>
+    <string name="scan_interval_full_label">Tam tarama her (dakika):</string>
+    <string name="scan_interval_hint">Minimum %1$d dakika — daha kısa bir aralığa izin verilmez (pil/CPU etkisi)</string>
+    <string name="scan_interval_saved">Tarama aralığı kaydedildi</string>
     <string name="web_shield">Web Kalkanı (DNS VPN)</string>
     <string name="web_shield_enabled">Web Kalkanı açık</string>
     <string name="web_shield_disabled">Web Kalkanı kapalı</string>
@@ -111,6 +119,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="scan_btn">TARA</string>
     <string name="scan_initial_status">Taramayı başlatmak için TARA butonuna basın</string>
     <string name="scan_scanning_btn">TARANIYOR...</string>
+    <string name="scan_already_running">Arka planda zaten bir tarama sürüyor — lütfen bitmesini bekleyin</string>
     <string name="scan_rescan_btn">YENİDEN TARA</string>
     <string name="scan_clean_system">✓ Tarama tamamlandı - Sistem temiz!</string>
     <string name="scan_threat_found">⚠ %1$s tehdit bulundu!</string>
@@ -224,9 +233,9 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="guard_channel_desc">Gerçek zamanlı koruma bildirimleri</string>
     <string name="guard_protecting_status">Sistem korunuyor</string>
     <string name="dnsvpn_malicious_blocked_title">Zararlı site engellendi</string>
-    <string name="dnsvpn_channel_name">Web Kalkanı</string>
+    <string name="dnsvpn_channel_name">Gerçek Zamanlı Koruma</string>
     <string name="dnsvpn_session_name">HydraDragon Web Kalkanı</string>
-    <string name="dnsvpn_notif_title">HydraDragon Web Kalkanı</string>
+    <string name="dnsvpn_notif_title">HydraDragon Gerçek Zamanlı Koruma</string>
     <string name="dnsvpn_notif_text">Sistem korunuyor</string>
     <string name="screencapture_malicious_text_title">Ekranda zararlı metin tespit edildi</string>
     <string name="screencapture_active_title">Sıfır Güven ekran taraması aktif</string>

@@ -12,6 +12,14 @@
     <string name="realtime_protection">Bảo vệ Thời gian Thực</string>
     <string name="protection_enabled">Đã bật bảo vệ</string>
     <string name="protection_paused">Bảo vệ đã tạm dừng — không có cảnh báo</string>
+    <string name="boot_auto_start_toggle">Tự động khởi động bảo vệ khi khởi động máy</string>
+    <string name="boot_auto_start_on_toast">Bảo vệ sẽ tự động khởi động vào lần khởi động thiết bị tiếp theo</string>
+    <string name="boot_auto_start_off_toast">Tự động khởi động khi khởi động máy TẮT — bạn sẽ cần mở ứng dụng để bắt đầu bảo vệ</string>
+    <string name="scan_interval_btn">Cấu hình chu kỳ quét</string>
+    <string name="scan_interval_quick_label">Quét nhanh mỗi (phút):</string>
+    <string name="scan_interval_full_label">Quét đầy đủ mỗi (phút):</string>
+    <string name="scan_interval_hint">Tối thiểu %1$d phút — không cho phép chu kỳ ngắn hơn (ảnh hưởng pin/CPU)</string>
+    <string name="scan_interval_saved">Đã lưu chu kỳ quét</string>
     <string name="web_shield">Lá chắn Web (DNS VPN)</string>
     <string name="web_shield_enabled">Đã bật Lá chắn Web</string>
     <string name="web_shield_disabled">Đã tắt Lá chắn Web</string>
@@ -110,6 +118,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scan_btn">QUÉT</string>
     <string name="scan_initial_status">Nhấn QUÉT để bắt đầu</string>
     <string name="scan_scanning_btn">ĐANG QUÉT...</string>
+    <string name="scan_already_running">Đã có một lượt quét nền đang chạy — vui lòng đợi cho đến khi hoàn tất</string>
     <string name="scan_rescan_btn">QUÉT LẠI</string>
     <string name="scan_clean_system">✓ Quét hoàn tất - Hệ thống sạch!</string>
     <string name="scan_threat_found">⚠ Tìm thấy %1$s mối đe dọa!</string>
@@ -223,9 +232,9 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="guard_channel_desc">Thông báo bảo vệ theo thời gian thực</string>
     <string name="guard_protecting_status">Hệ thống được bảo vệ</string>
     <string name="dnsvpn_malicious_blocked_title">Trang web độc hại đã bị chặn</string>
-    <string name="dnsvpn_channel_name">Lá chắn Web</string>
+    <string name="dnsvpn_channel_name">Bảo vệ Thời gian Thực</string>
     <string name="dnsvpn_session_name">HydraDragon Lá chắn Web</string>
-    <string name="dnsvpn_notif_title">HydraDragon Lá chắn Web</string>
+    <string name="dnsvpn_notif_title">HydraDragon Bảo vệ Thời gian Thực</string>
     <string name="dnsvpn_notif_text">Hệ thống được bảo vệ</string>
     <string name="screencapture_malicious_text_title">Đã phát hiện văn bản độc hại trên màn hình</string>
     <string name="screencapture_active_title">Quét màn hình Zero Trust đang hoạt động</string>

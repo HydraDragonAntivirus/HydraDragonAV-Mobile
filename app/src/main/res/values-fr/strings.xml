@@ -12,6 +12,14 @@
     <string name="realtime_protection">Protection en Temps Réel</string>
     <string name="protection_enabled">Protection activée</string>
     <string name="protection_paused">Protection en pause — aucune alerte</string>
+    <string name="boot_auto_start_toggle">Démarrer automatiquement la protection au démarrage</string>
+    <string name="boot_auto_start_on_toast">La protection démarrera automatiquement au prochain démarrage de votre appareil</string>
+    <string name="boot_auto_start_off_toast">Démarrage automatique DÉSACTIVÉ — vous devrez ouvrir l\'application pour démarrer la protection</string>
+    <string name="scan_interval_btn">Configurer l\'intervalle d\'analyse</string>
+    <string name="scan_interval_quick_label">Analyse rapide toutes les (minutes) :</string>
+    <string name="scan_interval_full_label">Analyse complète toutes les (minutes) :</string>
+    <string name="scan_interval_hint">Minimum %1$d minutes — un intervalle plus court n\'est pas autorisé (impact batterie/CPU)</string>
+    <string name="scan_interval_saved">Intervalle d\'analyse enregistré</string>
     <string name="web_shield">Bouclier Web (VPN DNS)</string>
     <string name="web_shield_enabled">Bouclier Web activé</string>
     <string name="web_shield_disabled">Bouclier Web désactivé</string>
@@ -110,6 +118,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="scan_btn">ANALYSER</string>
     <string name="scan_initial_status">Appuyez sur ANALYSER pour commencer</string>
     <string name="scan_scanning_btn">ANALYSE EN COURS...</string>
+    <string name="scan_already_running">Une analyse en arrière-plan est déjà en cours — veuillez attendre qu\'elle se termine</string>
     <string name="scan_rescan_btn">RÉANALYSER</string>
     <string name="scan_clean_system">✓ Analyse terminée - Le système est propre !</string>
     <string name="scan_threat_found">⚠ %1$s menaces trouvées !</string>
@@ -223,9 +232,9 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="guard_channel_desc">Notifications de protection en temps réel</string>
     <string name="guard_protecting_status">Système protégé</string>
     <string name="dnsvpn_malicious_blocked_title">Site malveillant bloqué</string>
-    <string name="dnsvpn_channel_name">Bouclier Web</string>
+    <string name="dnsvpn_channel_name">Protection en Temps Réel</string>
     <string name="dnsvpn_session_name">Bouclier Web HydraDragon</string>
-    <string name="dnsvpn_notif_title">Bouclier Web HydraDragon</string>
+    <string name="dnsvpn_notif_title">HydraDragon Protection en Temps Réel</string>
     <string name="dnsvpn_notif_text">Système protégé</string>
     <string name="screencapture_malicious_text_title">Texte malveillant à l\'écran détecté</string>
     <string name="screencapture_active_title">Analyse d\'écran Confiance Zéro active</string>

@@ -12,6 +12,14 @@
     <string name="realtime_protection">Real-time Protection</string>
     <string name="protection_enabled">Protection enabled</string>
     <string name="protection_paused">Protection paused — no alerts</string>
+    <string name="boot_auto_start_toggle">Start protection automatically on boot</string>
+    <string name="boot_auto_start_on_toast">Protection will start automatically the next time your device boots</string>
+    <string name="boot_auto_start_off_toast">Auto-start on boot OFF — you\'ll need to open the app to start protection</string>
+    <string name="scan_interval_btn">Configure Scan Interval</string>
+    <string name="scan_interval_quick_label">Quick scan every (minutes):</string>
+    <string name="scan_interval_full_label">Full scan every (minutes):</string>
+    <string name="scan_interval_hint">Minimum %1$d minutes — a shorter interval isn\'t allowed (battery/CPU impact)</string>
+    <string name="scan_interval_saved">Scan interval saved</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield enabled</string>
     <string name="web_shield_disabled">Web Shield disabled</string>
@@ -111,6 +119,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="scan_btn">SCAN</string>
     <string name="scan_initial_status">Press SCAN to start</string>
     <string name="scan_scanning_btn">SCANNING...</string>
+    <string name="scan_already_running">A background scan is already running — please wait for it to finish</string>
     <string name="scan_rescan_btn">RESCAN</string>
     <string name="scan_clean_system">✓ Scan complete - System is clean!</string>
     <string name="scan_threat_found">⚠ %1$s threats found!</string>
@@ -232,9 +241,9 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="guard_protecting_status">System protected</string>
 
     <string name="dnsvpn_malicious_blocked_title">Malicious site blocked</string>
-    <string name="dnsvpn_channel_name">Web Shield</string>
+    <string name="dnsvpn_channel_name">Real-time Protection</string>
     <string name="dnsvpn_session_name">HydraDragon Web Shield</string>
-    <string name="dnsvpn_notif_title">HydraDragon Web Shield</string>
+    <string name="dnsvpn_notif_title">HydraDragon Real-time Protection</string>
     <string name="dnsvpn_notif_text">System protected</string>
 
     <string name="screencapture_malicious_text_title">Malicious on-screen text detected</string>

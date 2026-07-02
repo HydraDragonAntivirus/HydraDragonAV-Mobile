@@ -12,6 +12,14 @@
     <string name="realtime_protection">रीयल-टाइम सुरक्षा</string>
     <string name="protection_enabled">सुरक्षा सक्षम है</string>
     <string name="protection_paused">सुरक्षा रुकी हुई है — कोई अलर्ट नहीं</string>
+    <string name="boot_auto_start_toggle">बूट होने पर सुरक्षा स्वतः शुरू करें</string>
+    <string name="boot_auto_start_on_toast">अगली बार जब आपका डिवाइस बूट होगा तो सुरक्षा स्वतः शुरू हो जाएगी</string>
+    <string name="boot_auto_start_off_toast">बूट पर ऑटो-स्टार्ट बंद — सुरक्षा शुरू करने के लिए आपको ऐप खोलना होगा</string>
+    <string name="scan_interval_btn">स्कैन अंतराल कॉन्फ़िगर करें</string>
+    <string name="scan_interval_quick_label">क्विक स्कैन हर (मिनट):</string>
+    <string name="scan_interval_full_label">फुल स्कैन हर (मिनट):</string>
+    <string name="scan_interval_hint">न्यूनतम %1$d मिनट — इससे छोटा अंतराल अनुमत नहीं है (बैटरी/CPU प्रभाव)</string>
+    <string name="scan_interval_saved">स्कैन अंतराल सहेजा गया</string>
     <string name="web_shield">वेब शील्ड (DNS VPN)</string>
     <string name="web_shield_enabled">वेब शील्ड सक्षम है</string>
     <string name="web_shield_disabled">वेब शील्ड अक्षम है</string>
@@ -110,6 +118,7 @@
     <string name="scan_btn">स्कैन</string>
     <string name="scan_initial_status">शुरू करने के लिए स्कैन दबाएँ</string>
     <string name="scan_scanning_btn">स्कैन हो रहा है...</string>
+    <string name="scan_already_running">पृष्ठभूमि में पहले से एक स्कैन चल रहा है — कृपया इसके समाप्त होने की प्रतीक्षा करें</string>
     <string name="scan_rescan_btn">पुनः स्कैन करें</string>
     <string name="scan_clean_system">✓ स्कैन पूरा हुआ - सिस्टम स्वच्छ है!</string>
     <string name="scan_threat_found">⚠ %1$s खतरे मिले!</string>
@@ -223,9 +232,9 @@
     <string name="guard_channel_desc">रीयल-टाइम सुरक्षा सूचनाएं</string>
     <string name="guard_protecting_status">सिस्टम सुरक्षित है</string>
     <string name="dnsvpn_malicious_blocked_title">दुर्भावनापूर्ण साइट ब्लॉक की गई</string>
-    <string name="dnsvpn_channel_name">वेब शील्ड</string>
+    <string name="dnsvpn_channel_name">रीयल-टाइम सुरक्षा</string>
     <string name="dnsvpn_session_name">HydraDragon वेब शील्ड</string>
-    <string name="dnsvpn_notif_title">HydraDragon वेब शील्ड</string>
+    <string name="dnsvpn_notif_title">HydraDragon रीयल-टाइम सुरक्षा</string>
     <string name="dnsvpn_notif_text">सिस्टम सुरक्षित है</string>
     <string name="screencapture_malicious_text_title">स्क्रीन पर दुर्भावनापूर्ण टेक्स्ट का पता चला</string>
     <string name="screencapture_active_title">ज़ीरो ट्रस्ट स्क्रीन स्कैनिंग सक्रिय है</string>

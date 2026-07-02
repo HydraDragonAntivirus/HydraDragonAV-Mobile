@@ -12,6 +12,14 @@
     <string name="realtime_protection">실시간 보호</string>
     <string name="protection_enabled">보호 활성화됨</string>
     <string name="protection_paused">보호 일시 중지됨 — 알림 없음</string>
+    <string name="boot_auto_start_toggle">부팅 시 보호 자동 시작</string>
+    <string name="boot_auto_start_on_toast">다음 기기 부팅 시 보호가 자동으로 시작됩니다</string>
+    <string name="boot_auto_start_off_toast">부팅 시 자동 시작 꺼짐 — 보호를 시작하려면 앱을 열어야 합니다</string>
+    <string name="scan_interval_btn">스캔 주기 설정</string>
+    <string name="scan_interval_quick_label">빠른 검사 주기(분):</string>
+    <string name="scan_interval_full_label">전체 검사 주기(분):</string>
+    <string name="scan_interval_hint">최소 %1$d분 — 이보다 짧은 주기는 허용되지 않습니다(배터리/CPU 영향)</string>
+    <string name="scan_interval_saved">스캔 주기가 저장되었습니다</string>
     <string name="web_shield">웹 실드 (DNS VPN)</string>
     <string name="web_shield_enabled">웹 실드 활성화됨</string>
     <string name="web_shield_disabled">웹 실드 비활성화됨</string>
@@ -110,6 +118,7 @@
     <string name="scan_btn">스캔</string>
     <string name="scan_initial_status">스캔을 눌러 시작하세요</string>
     <string name="scan_scanning_btn">스캔 중...</string>
+    <string name="scan_already_running">백그라운드 스캔이 이미 실행 중입니다 — 완료될 때까지 기다려 주세요</string>
     <string name="scan_rescan_btn">다시 스캔</string>
     <string name="scan_clean_system">✓ 스캔 완료 - 시스템이 깨끗합니다!</string>
     <string name="scan_threat_found">⚠ %1$s개의 위협이 발견되었습니다!</string>
@@ -223,9 +232,9 @@
     <string name="guard_channel_desc">실시간 보호 알림</string>
     <string name="guard_protecting_status">시스템 보호 중</string>
     <string name="dnsvpn_malicious_blocked_title">악성 사이트 차단됨</string>
-    <string name="dnsvpn_channel_name">웹 실드</string>
+    <string name="dnsvpn_channel_name">실시간 보호</string>
     <string name="dnsvpn_session_name">HydraDragon 웹 실드</string>
-    <string name="dnsvpn_notif_title">HydraDragon 웹 실드</string>
+    <string name="dnsvpn_notif_title">HydraDragon 실시간 보호</string>
     <string name="dnsvpn_notif_text">시스템 보호 중</string>
     <string name="screencapture_malicious_text_title">악성 화면 텍스트 감지됨</string>
     <string name="screencapture_active_title">제로 트러스트 화면 스캔 활성</string>

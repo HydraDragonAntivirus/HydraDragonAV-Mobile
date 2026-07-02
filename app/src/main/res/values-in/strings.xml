@@ -12,6 +12,14 @@
     <string name="realtime_protection">Perlindungan Real-time</string>
     <string name="protection_enabled">Perlindungan diaktifkan</string>
     <string name="protection_paused">Perlindungan dijeda — tanpa peringatan</string>
+    <string name="boot_auto_start_toggle">Mulai perlindungan otomatis saat boot</string>
+    <string name="boot_auto_start_on_toast">Perlindungan akan dimulai secara otomatis saat perangkat Anda berikutnya kali boot</string>
+    <string name="boot_auto_start_off_toast">Mulai otomatis saat boot NONAKTIF — Anda perlu membuka aplikasi untuk memulai perlindungan</string>
+    <string name="scan_interval_btn">Konfigurasi Interval Pemindaian</string>
+    <string name="scan_interval_quick_label">Pemindaian cepat setiap (menit):</string>
+    <string name="scan_interval_full_label">Pemindaian lengkap setiap (menit):</string>
+    <string name="scan_interval_hint">Minimal %1$d menit — interval yang lebih pendek tidak diizinkan (dampak baterai/CPU)</string>
+    <string name="scan_interval_saved">Interval pemindaian disimpan</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield diaktifkan</string>
     <string name="web_shield_disabled">Web Shield dinonaktifkan</string>
@@ -110,6 +118,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scan_btn">PINDAI</string>
     <string name="scan_initial_status">Tekan PINDAI untuk mulai</string>
     <string name="scan_scanning_btn">MEMINDAI...</string>
+    <string name="scan_already_running">Pemindaian latar belakang sudah berjalan — harap tunggu hingga selesai</string>
     <string name="scan_rescan_btn">PINDAI ULANG</string>
     <string name="scan_clean_system">✓ Pemindaian selesai - Sistem bersih!</string>
     <string name="scan_threat_found">⚠ %1$s ancaman ditemukan!</string>
@@ -223,9 +232,9 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="guard_channel_desc">Notifikasi perlindungan real-time</string>
     <string name="guard_protecting_status">Sistem terlindungi</string>
     <string name="dnsvpn_malicious_blocked_title">Situs berbahaya diblokir</string>
-    <string name="dnsvpn_channel_name">Web Shield</string>
+    <string name="dnsvpn_channel_name">Perlindungan Real-time</string>
     <string name="dnsvpn_session_name">HydraDragon Web Shield</string>
-    <string name="dnsvpn_notif_title">HydraDragon Web Shield</string>
+    <string name="dnsvpn_notif_title">HydraDragon Perlindungan Real-time</string>
     <string name="dnsvpn_notif_text">Sistem terlindungi</string>
     <string name="screencapture_malicious_text_title">Teks berbahaya di layar terdeteksi</string>
     <string name="screencapture_active_title">Pemindaian layar Zero Trust aktif</string>

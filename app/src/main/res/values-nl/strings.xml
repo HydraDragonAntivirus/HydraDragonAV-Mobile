@@ -12,6 +12,14 @@
     <string name="realtime_protection">Realtimebescherming</string>
     <string name="protection_enabled">Bescherming ingeschakeld</string>
     <string name="protection_paused">Bescherming gepauzeerd — geen meldingen</string>
+    <string name="boot_auto_start_toggle">Bescherming automatisch starten bij opstarten</string>
+    <string name="boot_auto_start_on_toast">De bescherming start automatisch de volgende keer dat je apparaat opstart</string>
+    <string name="boot_auto_start_off_toast">Automatisch starten bij opstarten UIT — je moet de app openen om de bescherming te starten</string>
+    <string name="scan_interval_btn">Scaninterval configureren</string>
+    <string name="scan_interval_quick_label">Snelle scan elke (minuten):</string>
+    <string name="scan_interval_full_label">Volledige scan elke (minuten):</string>
+    <string name="scan_interval_hint">Minimaal %1$d minuten — een korter interval is niet toegestaan (batterij-/CPU-impact)</string>
+    <string name="scan_interval_saved">Scaninterval opgeslagen</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield ingeschakeld</string>
     <string name="web_shield_disabled">Web Shield uitgeschakeld</string>
@@ -110,6 +118,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="scan_btn">SCANNEN</string>
     <string name="scan_initial_status">Druk op SCAN om te beginnen</string>
     <string name="scan_scanning_btn">BEZIG MET SCANNEN...</string>
+    <string name="scan_already_running">Er wordt al een achtergrondscan uitgevoerd — wacht tot deze is voltooid</string>
     <string name="scan_rescan_btn">OPNIEUW SCANNEN</string>
     <string name="scan_clean_system">✓ Scan voltooid - Systeem is schoon!</string>
     <string name="scan_threat_found">⚠ %1$s dreigingen gevonden!</string>
@@ -223,9 +232,9 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="guard_channel_desc">Realtime beschermingsmeldingen</string>
     <string name="guard_protecting_status">Systeem beveiligd</string>
     <string name="dnsvpn_malicious_blocked_title">Schadelijke site geblokkeerd</string>
-    <string name="dnsvpn_channel_name">Web Shield</string>
+    <string name="dnsvpn_channel_name">Realtimebescherming</string>
     <string name="dnsvpn_session_name">HydraDragon Web Shield</string>
-    <string name="dnsvpn_notif_title">HydraDragon Web Shield</string>
+    <string name="dnsvpn_notif_title">HydraDragon Realtimebescherming</string>
     <string name="dnsvpn_notif_text">Systeem beveiligd</string>
     <string name="screencapture_malicious_text_title">Schadelijke tekst op scherm gedetecteerd</string>
     <string name="screencapture_active_title">Zero Trust-schermscannen actief</string>

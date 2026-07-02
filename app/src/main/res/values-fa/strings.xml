@@ -12,6 +12,14 @@
     <string name="realtime_protection">محافظت بلادرنگ</string>
     <string name="protection_enabled">محافظت فعال است</string>
     <string name="protection_paused">محافظت متوقف شده — بدون هشدار</string>
+    <string name="boot_auto_start_toggle">شروع خودکار محافظت هنگام روشن شدن</string>
+    <string name="boot_auto_start_on_toast">دفعه بعد که دستگاه شما روشن شود، محافظت به‌طور خودکار شروع می‌شود</string>
+    <string name="boot_auto_start_off_toast">شروع خودکار هنگام روشن شدن خاموش شد — برای شروع محافظت باید برنامه را باز کنید</string>
+    <string name="scan_interval_btn">پیکربندی بازه اسکن</string>
+    <string name="scan_interval_quick_label">اسکن سریع هر (دقیقه):</string>
+    <string name="scan_interval_full_label">اسکن کامل هر (دقیقه):</string>
+    <string name="scan_interval_hint">حداقل %1$d دقیقه — بازه کوتاه‌تر مجاز نیست (تأثیر بر باتری/پردازنده)</string>
+    <string name="scan_interval_saved">بازه اسکن ذخیره شد</string>
     <string name="web_shield">سپر وب (DNS VPN)</string>
     <string name="web_shield_enabled">سپر وب فعال است</string>
     <string name="web_shield_disabled">سپر وب غیرفعال است</string>
@@ -110,6 +118,7 @@
     <string name="scan_btn">اسکن</string>
     <string name="scan_initial_status">برای شروع دکمه اسکن را فشار دهید</string>
     <string name="scan_scanning_btn">در حال اسکن...</string>
+    <string name="scan_already_running">یک اسکن در پس‌زمینه در حال اجراست — لطفاً منتظر پایان آن بمانید</string>
     <string name="scan_rescan_btn">اسکن مجدد</string>
     <string name="scan_clean_system">✓ اسکن کامل شد - سیستم پاک است!</string>
     <string name="scan_threat_found">⚠ %1$s تهدید یافت شد!</string>
@@ -223,9 +232,9 @@
     <string name="guard_channel_desc">اعلان‌های محافظت بلادرنگ</string>
     <string name="guard_protecting_status">سیستم محافظت می‌شود</string>
     <string name="dnsvpn_malicious_blocked_title">سایت مخرب مسدود شد</string>
-    <string name="dnsvpn_channel_name">سپر وب</string>
+    <string name="dnsvpn_channel_name">محافظت بلادرنگ</string>
     <string name="dnsvpn_session_name">سپر وب HydraDragon</string>
-    <string name="dnsvpn_notif_title">سپر وب HydraDragon</string>
+    <string name="dnsvpn_notif_title">HydraDragon محافظت بلادرنگ</string>
     <string name="dnsvpn_notif_text">سیستم محافظت می‌شود</string>
     <string name="screencapture_malicious_text_title">متن مخرب روی صفحه شناسایی شد</string>
     <string name="screencapture_active_title">اسکن صفحه Zero Trust فعال است</string>

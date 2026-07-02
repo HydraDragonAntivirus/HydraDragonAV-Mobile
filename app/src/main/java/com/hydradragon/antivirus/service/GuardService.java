@@ -277,10 +277,19 @@ public class GuardService extends Service {
     private void startPeriodicScans() {
         scheduler = Executors.newScheduledThreadPool(2);
 
+        // Intervals are user-configurable from Settings (see ScanSchedule) —
+        // defaults match what used to be hardcoded (30 / 180 min). The initial
+        // delay is capped at the interval itself so a shorter user-set
+        // interval isn't stuck waiting out the old fixed delay first.
+        int quickMin = com.hydradragon.antivirus.engine.ScanSchedule.getQuickScanIntervalMinutes(this);
+        int fullMin = com.hydradragon.antivirus.engine.ScanSchedule.getFullScanIntervalMinutes(this);
+        int quickDelay = Math.min(5, quickMin);
+        int fullDelay = Math.min(45, fullMin);
+
         scheduler.scheduleAtFixedRate(() -> {
             Log.d(TAG, "Periyodik tarama başladı");
             scanEngine.scanAllApps(false); // QUICK SCAN varsayılan
-        }, 5, 30, TimeUnit.MINUTES);
+        }, quickDelay, quickMin, TimeUnit.MINUTES);
 
         // A file copied straight onto external/SD storage from a computer (USB/
         // MTP) outside the Downloads folder is invisible to the Downloads
@@ -291,7 +300,7 @@ public class GuardService extends Service {
         scheduler.scheduleAtFixedRate(() -> {
             Log.d(TAG, "Periyodik FULL tarama başladı (harici depolama kapsaması)");
             scanEngine.scanAllApps(true);
-        }, 45, 180, TimeUnit.MINUTES);
+        }, fullDelay, fullMin, TimeUnit.MINUTES);
 
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();

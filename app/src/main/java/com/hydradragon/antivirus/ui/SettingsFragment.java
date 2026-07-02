@@ -89,6 +89,17 @@ public class SettingsFragment extends Fragment {
             }
         });
 
+        boolean bootAutoStart = com.hydradragon.antivirus.engine.BootAutoStart.isEnabled(requireContext());
+        addToggle(getString(R.string.boot_auto_start_toggle), bootAutoStart, (btn, on) -> {
+            com.hydradragon.antivirus.engine.BootAutoStart.setEnabled(requireContext(), on);
+            Toast.makeText(getContext(), on
+                ? getString(R.string.boot_auto_start_on_toast)
+                : getString(R.string.boot_auto_start_off_toast), Toast.LENGTH_LONG).show();
+        });
+
+        addBtn("⏱ " + getString(R.string.scan_interval_btn), color(R.color.bg_secondary),
+            v -> showScanIntervalDialog());
+
         // Web Shield is core protection (malicious-domain/IP DNS filtering),
         // not an extra — it lives in Protection, not Premium Features.
         boolean shield = prefs().getBoolean(KEY_SHIELD, false);
@@ -438,6 +449,67 @@ public class SettingsFragment extends Fragment {
                 AppCompatDelegate.setApplicationLocales(
                     androidx.core.os.LocaleListCompat.forLanguageTags(code));
             }).show();
+    }
+
+    /** Lets the user configure how often GuardService's periodic background
+     *  scans run (see ScanSchedule / GuardService#startPeriodicScans). Applies
+     *  immediately by restarting GuardService, same as the storage-watch toggle. */
+    private void showScanIntervalDialog() {
+        LinearLayout box = new LinearLayout(requireContext());
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(48, 24, 48, 0);
+
+        TextView quickLabel = new TextView(requireContext());
+        quickLabel.setText(getString(R.string.scan_interval_quick_label));
+        quickLabel.setTextColor(color(R.color.text_primary));
+        box.addView(quickLabel);
+        android.widget.EditText quickInput = new android.widget.EditText(requireContext());
+        quickInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        quickInput.setText(String.valueOf(
+            com.hydradragon.antivirus.engine.ScanSchedule.getQuickScanIntervalMinutes(requireContext())));
+        box.addView(quickInput);
+
+        TextView fullLabel = new TextView(requireContext());
+        fullLabel.setText(getString(R.string.scan_interval_full_label));
+        fullLabel.setTextColor(color(R.color.text_primary));
+        fullLabel.setPadding(0, 32, 0, 0);
+        box.addView(fullLabel);
+        android.widget.EditText fullInput = new android.widget.EditText(requireContext());
+        fullInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        fullInput.setText(String.valueOf(
+            com.hydradragon.antivirus.engine.ScanSchedule.getFullScanIntervalMinutes(requireContext())));
+        box.addView(fullInput);
+
+        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.scan_interval_btn))
+            .setMessage(getString(R.string.scan_interval_hint,
+                com.hydradragon.antivirus.engine.ScanSchedule.MIN_INTERVAL_MIN))
+            .setView(box)
+            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
+                int quick = parseMinutesOrDefault(quickInput.getText().toString(),
+                    com.hydradragon.antivirus.engine.ScanSchedule.DEFAULT_QUICK_MIN);
+                int full = parseMinutesOrDefault(fullInput.getText().toString(),
+                    com.hydradragon.antivirus.engine.ScanSchedule.DEFAULT_FULL_MIN);
+                com.hydradragon.antivirus.engine.ScanSchedule.setQuickScanIntervalMinutes(requireContext(), quick);
+                com.hydradragon.antivirus.engine.ScanSchedule.setFullScanIntervalMinutes(requireContext(), full);
+                // GuardService only reads these at startPeriodicScans() (onCreate)
+                // — restart it so the new interval takes effect right away.
+                Intent svc = new Intent(requireContext(), com.hydradragon.antivirus.service.GuardService.class);
+                requireContext().stopService(svc);
+                ContextCompat.startForegroundService(requireContext(), svc);
+                Toast.makeText(getContext(), getString(R.string.scan_interval_saved), Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
+    }
+
+    private int parseMinutesOrDefault(String text, int def) {
+        try {
+            int v = Integer.parseInt(text.trim());
+            return Math.max(com.hydradragon.antivirus.engine.ScanSchedule.MIN_INTERVAL_MIN, v);
+        } catch (Exception e) {
+            return def;
+        }
     }
 
 }
