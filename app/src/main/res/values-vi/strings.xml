@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">HydraDragon có thể chạy một VPN lọc DNS CỤC BỘ để chặn các trang web độc hại/lừa đảo. Nó KHÔNG proxy, giải mã hoặc kiểm tra lưu lượng của bạn — chỉ các truy vấn DNS được lọc, ngay trên thiết bị. Android hiển thị biểu tượng chìa khóa khi đang hoạt động.</string>
     <string name="enable">Bật</string>
     <string name="skip">Bỏ qua</string>
-    <string name="app_title">ANTIVIRUS v1.0.1</string>
+    <string name="app_title">ANTIVIRUS v1.0.2</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="nav_dashboard">Bảng điều khiển</string>
     <string name="nav_scan">Quét</string>

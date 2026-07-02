@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">HydraDragon สามารถเรียกใช้ VPN กรอง DNS ภายในเครื่องเพื่อบล็อกเว็บไซต์ที่เป็นอันตราย/ฟิชชิง โดยจะไม่ทำการพร็อกซี ถอดรหัส หรือตรวจสอบทราฟฟิกของคุณ — จะกรองเฉพาะการค้นหา DNS บนอุปกรณ์เท่านั้น Android จะแสดงไอคอนกุญแจขณะทำงานอยู่</string>
     <string name="enable">เปิดใช้งาน</string>
     <string name="skip">ข้าม</string>
-    <string name="app_title">ANTIVIRUS v1.0.1</string>
+    <string name="app_title">ANTIVIRUS v1.0.2</string>
     <string name="developers">Musayev Yusif และ Emirhan Uçan</string>
     <string name="nav_dashboard">แดชบอร์ด</string>
     <string name="nav_scan">สแกน</string>

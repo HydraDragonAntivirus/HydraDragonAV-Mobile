@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">HydraDragon可以运行本地DNS过滤VPN，以阻止恶意/钓鱼网站。它不会代理、解密或检查您的流量 — 仅在设备本地过滤DNS查询。VPN激活时Android会显示钥匙图标。</string>
     <string name="enable">启用</string>
     <string name="skip">跳过</string>
-    <string name="app_title">杀毒软件 v1.0.1</string>
+    <string name="app_title">杀毒软件 v1.0.2</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="nav_dashboard">仪表盘</string>
     <string name="nav_scan">扫描</string>

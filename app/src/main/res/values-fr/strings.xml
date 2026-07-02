@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">HydraDragon peut exécuter un VPN de filtrage DNS LOCAL pour bloquer les sites malveillants / de phishing. Il ne fait NI proxy, NI déchiffrement, NI inspection de votre trafic — seules les requêtes DNS sont filtrées, sur l\'appareil. Android affiche une icône de clé pendant qu\'il est actif.</string>
     <string name="enable">Activer</string>
     <string name="skip">Ignorer</string>
-    <string name="app_title">ANTIVIRUS v1.0.1</string>
+    <string name="app_title">ANTIVIRUS v1.0.2</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="nav_dashboard">Tableau de bord</string>
     <string name="nav_scan">Analyse</string>

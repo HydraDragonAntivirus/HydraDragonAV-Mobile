@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">HydraDragon दुर्भावनापूर्ण/फ़िशिंग साइटों को ब्लॉक करने के लिए एक स्थानीय DNS-फ़िल्टरिंग VPN चला सकता है। यह आपके ट्रैफ़िक को प्रॉक्सी, डिक्रिप्ट या निरीक्षण नहीं करता — केवल DNS लुकअप को डिवाइस पर ही फ़िल्टर किया जाता है। सक्रिय होने पर Android एक की (चाबी) आइकन दिखाता है।</string>
     <string name="enable">सक्षम करें</string>
     <string name="skip">छोड़ें</string>
-    <string name="app_title">एंटीवायरस v1.0.1</string>
+    <string name="app_title">एंटीवायरस v1.0.2</string>
     <string name="developers">Musayev Yusif और Emirhan Uçan</string>
     <string name="nav_dashboard">डैशबोर्ड</string>
     <string name="nav_scan">स्कैन</string>
