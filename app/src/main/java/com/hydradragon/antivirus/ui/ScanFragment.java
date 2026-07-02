@@ -139,14 +139,27 @@ public class ScanFragment extends Fragment {
                         }
                     } else {
                         // DURUM 2: Eğer bu telefona hali hazırda KURULMUŞ bir uygulamaysa
-                        Intent intent = new Intent(Intent.ACTION_DELETE);
-                        intent.setData(Uri.parse("package:" + threat.getPackageName()));
-                        startActivity(intent);
-                        
-                        // Ekrandan direkt gizleyelim ki silinmiş hissiyatı versin
-                        foundThreats.remove(threat);
-                        threatAdapter.notifyDataSetChanged();
-                        tvThreats.setText(String.valueOf(foundThreats.size()));
+                        boolean isZeroTrustUnknown = threat.getThreatType() == ThreatResult.ThreatType.UNKNOWN
+                            && com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext())
+                            && com.hydradragon.antivirus.engine.AskSignatureOnRemove.isEnabled(requireContext());
+                        if (isZeroTrustUnknown) {
+                            new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                                .setTitle(getString(R.string.gen_sig_on_remove_title))
+                                .setMessage(getString(R.string.gen_sig_on_remove_msg, threat.getAppName()))
+                                .setPositiveButton(getString(R.string.gen_sig_on_remove_yes), (d2, w2) -> {
+                                    boolean generated = guardService != null
+                                        && guardService.getScanEngine().generateRuleForApp(
+                                            threat.getApkPath(), threat.getPackageName());
+                                    Toast.makeText(getContext(), generated
+                                        ? getString(R.string.gen_sig_on_remove_done)
+                                        : getString(R.string.gen_sig_on_remove_failed), Toast.LENGTH_SHORT).show();
+                                    uninstallInstalledThreat(threat);
+                                })
+                                .setNegativeButton(getString(R.string.gen_sig_on_remove_no), (d2, w2) -> uninstallInstalledThreat(threat))
+                                .show();
+                        } else {
+                            uninstallInstalledThreat(threat);
+                        }
                     }
                 })
                 .setNegativeButton(getString(R.string.btn_ignore), (dialog, which) -> {
@@ -166,6 +179,20 @@ public class ScanFragment extends Fragment {
             if (!isScanning) showScanTypeDialog();
             else stopScan();
         });
+    }
+
+    /** Fires the system uninstall UI for an installed-app threat, then hides it
+     *  from this screen's list (same behavior for both the direct-delete path
+     *  and the "ask to generate a signature first" path above). */
+    private void uninstallInstalledThreat(ThreatResult threat) {
+        Intent intent = new Intent(Intent.ACTION_DELETE);
+        intent.setData(Uri.parse("package:" + threat.getPackageName()));
+        startActivity(intent);
+
+        // Ekrandan direkt gizleyelim ki silinmiş hissiyatı versin
+        foundThreats.remove(threat);
+        threatAdapter.notifyDataSetChanged();
+        tvThreats.setText(String.valueOf(foundThreats.size()));
     }
 
     private void showScanTypeDialog() {

@@ -89,6 +89,7 @@ public class SettingsFragment extends Fragment {
             }
         });
 
+        addHeader(getString(R.string.premium_features_header));
         boolean shield = prefs().getBoolean(KEY_SHIELD, false);
         addToggle(getString(R.string.web_shield), shield, (btn, on) -> {
             prefs().edit().putBoolean("web_shield_decided", true)
@@ -97,7 +98,6 @@ public class SettingsFragment extends Fragment {
             else disableWebShield();
         });
 
-        addHeader(getString(R.string.zero_trust_header));
         boolean zeroTrust = com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext());
         addToggle(getString(R.string.zero_trust_toggle), zeroTrust, (btn, on) -> {
             com.hydradragon.antivirus.engine.ZeroTrustMode.setEnabled(requireContext(), on);
@@ -106,13 +106,28 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.zero_trust_off_toast), Toast.LENGTH_LONG).show();
         });
 
+        boolean autoRuleGen = com.hydradragon.antivirus.engine.AutoRuleGeneration.isEnabled(requireContext());
+        addToggle(getString(R.string.auto_rule_gen_toggle), autoRuleGen, (btn, on) -> {
+            com.hydradragon.antivirus.engine.AutoRuleGeneration.setEnabled(requireContext(), on);
+            Toast.makeText(getContext(), on
+                ? getString(R.string.auto_rule_gen_on_toast)
+                : getString(R.string.auto_rule_gen_off_toast), Toast.LENGTH_LONG).show();
+        });
+
+        boolean askSigOnRemove = com.hydradragon.antivirus.engine.AskSignatureOnRemove.isEnabled(requireContext());
+        addToggle(getString(R.string.ask_sig_on_remove_toggle), askSigOnRemove, (btn, on) -> {
+            com.hydradragon.antivirus.engine.AskSignatureOnRemove.setEnabled(requireContext(), on);
+            Toast.makeText(getContext(), on
+                ? getString(R.string.ask_sig_on_remove_on_toast)
+                : getString(R.string.ask_sig_on_remove_off_toast), Toast.LENGTH_LONG).show();
+        });
+
         boolean screenOcr = prefs().getBoolean(KEY_SCREEN_OCR, false);
         addToggle(getString(R.string.screen_ocr_toggle), screenOcr, (btn, on) -> {
             if (on) requestScreenCapture(btn);
             else stopScreenCapture();
         });
 
-        addHeader(getString(R.string.sms_protection_header));
         boolean smsGranted = ContextCompat.checkSelfPermission(requireContext(),
             android.Manifest.permission.RECEIVE_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED;
         addToggle(getString(R.string.sms_scan_toggle), smsGranted, (btn, on) -> {

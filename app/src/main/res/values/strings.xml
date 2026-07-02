@@ -4,6 +4,9 @@
     <string name="root_blocked_title">Rooted Device</string>
     <string name="root_blocked_msg">This app cannot run on rooted devices.</string>
     <string name="root_blocked_exit">Exit</string>
+    <string name="integrity_blocked_title">Modified APK Detected</string>
+    <string name="integrity_blocked_msg">This copy\'s signature does not match the original release — the code may have been altered and could be malicious. This app will not run.</string>
+    <string name="integrity_blocked_exit">Exit</string>
     <string name="native_engine_title">Native Engine</string>
     <string name="protection_header">Protection</string>
     <string name="realtime_protection">Real-time Protection</string>
@@ -187,10 +190,23 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="notification_permission_required">Notification permission is required!</string>
     <string name="play_protect_open_failed">Could not open Play Protect settings</string>
 
+    <string name="premium_features_header">PREMIUM FEATURES</string>
     <string name="zero_trust_header">Zero Trust (experimental)</string>
     <string name="zero_trust_toggle">Zero Trust Mode — NOT RECOMMENDED</string>
     <string name="zero_trust_on_toast">Zero Trust ON: unmatched apps now show as unverified, not clean — expect false positives</string>
     <string name="zero_trust_off_toast">Zero Trust OFF</string>
+    <string name="auto_rule_gen_toggle">Auto Rule Generator — NOT RECOMMENDED (high FP risk)</string>
+    <string name="auto_rule_gen_on_toast">Auto Rule Generator ON: confirmed-malware hits now self-generate YARA rules — expect false positives</string>
+    <string name="auto_rule_gen_off_toast">Auto Rule Generator OFF</string>
+    <string name="ask_sig_on_remove_toggle">Ask to generate signature on unknown app removal (Zero Trust)</string>
+    <string name="ask_sig_on_remove_on_toast">Removing a Zero Trust UNKNOWN app will now ask to generate a signature first</string>
+    <string name="ask_sig_on_remove_off_toast">Ask-on-remove OFF</string>
+    <string name="gen_sig_on_remove_title">Generate signature before removing?</string>
+    <string name="gen_sig_on_remove_msg">%1$s was never matched by any detector (Zero Trust: unverified, not confirmed clean). Generate a signature from it now, before it\'s removed?</string>
+    <string name="gen_sig_on_remove_yes">YES, GENERATE</string>
+    <string name="gen_sig_on_remove_no">SKIP</string>
+    <string name="gen_sig_on_remove_done">Signature generated</string>
+    <string name="gen_sig_on_remove_failed">Could not generate a signature</string>
     <string name="screen_ocr_toggle">Screen OCR scanning — NOT RECOMMENDED (battery)</string>
     <string name="screen_ocr_on_toast">Screen OCR scanning ON</string>
     <string name="screen_ocr_off_toast">Screen OCR scanning OFF</string>

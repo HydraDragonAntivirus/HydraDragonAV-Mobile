@@ -1,5 +1,36 @@
+import java.security.KeyStore
+import java.security.MessageDigest
+
 plugins {
     id 'com.android.application'
+}
+
+// Code-integrity check: hash the SIGNING CERTIFICATE this variant is about to
+// be signed with (from its own signingConfig's keystore), baked in as
+// BuildConfig.EXPECTED_SIGNATURE_SHA256 via buildConfigField below. At
+// runtime IntegrityCheck compares this constant against the APK's ACTUAL
+// signing cert (read from PackageManager) — see IntegrityCheck.java. Since
+// the constant is computed from the SAME keystore that ends up signing the
+// build, the two always match for an untouched build; they only diverge if
+// someone decompiles/modifies the code and re-signs the APK with a different
+// key (impossible to avoid re-signing — Android requires a valid signature to
+// install at all). "UNAVAILABLE" (keystore unreadable at build time, e.g. no
+// signing configured yet) disables the runtime check rather than blocking a
+// legitimate build.
+def signingCertSha256(config) {
+    if (config == null || config.storeFile == null || !config.storeFile.exists()) return "UNAVAILABLE"
+    for (String type : [config.storeType, "PKCS12", "JKS"]) {
+        if (type == null) continue
+        try {
+            KeyStore ks = KeyStore.getInstance(type)
+            config.storeFile.withInputStream { is -> ks.load(is, config.storePassword?.toCharArray()) }
+            def cert = ks.getCertificate(config.keyAlias)
+            if (cert == null) continue
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded())
+            return digest.collect { String.format('%02x', it) }.join('')
+        } catch (Exception ignored) { /* try next keystore type */ }
+    }
+    return "UNAVAILABLE"
 }
 
 android {
@@ -10,8 +41,8 @@ android {
         applicationId "com.hydradragon.antivirus"
         minSdk 26
         targetSdk 35
-        versionCode 5
-        versionName "1.0.4"
+        versionCode 6
+        versionName "1.0.5"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -52,6 +83,11 @@ android {
             excludes += ['/META-INF/{AL2.0,LGPL2.1}', '*.proto']
         }
     }
+}
+
+android.applicationVariants.all { variant ->
+    def hash = signingCertSha256(variant.signingConfig)
+    variant.buildConfigField 'String', 'EXPECTED_SIGNATURE_SHA256', "\"${hash}\""
 }
 
 dependencies {

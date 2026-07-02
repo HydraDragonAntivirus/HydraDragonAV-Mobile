@@ -44,6 +44,20 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
+        // Refuse to run a repackaged/re-signed copy of this APK (see
+        // IntegrityCheck — signing certificate no longer matches the one this
+        // build was compiled with).
+        if (com.hydradragon.antivirus.engine.IntegrityCheck.isTampered(this)) {
+            new AlertDialog.Builder(this)
+                .setTitle(R.string.integrity_blocked_title)
+                .setMessage(R.string.integrity_blocked_msg)
+                .setCancelable(false)
+                .setPositiveButton(R.string.integrity_blocked_exit, (d, w) -> finish())
+                .setOnDismissListener(d -> finish())
+                .show();
+            return;
+        }
+
         // The app refuses to run on rooted devices (and so never scans/false-flags
         // system files).
         if (com.hydradragon.antivirus.engine.RootCheck.isRooted()) {

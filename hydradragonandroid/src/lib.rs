@@ -74,6 +74,82 @@ struct Engine {
     url_scanner: Option<url_scan::UrlScanner>,
     /// Malicious-IP xor filters (per category).
     ip_scanner: Option<ip_scan::IpScanner>,
+    /// Goodware string DB (yarGen-style): DEX strings this device has seen in
+    /// its own CLEAN scans (no detections), remembered across restarts so
+    /// `generate_yara_rule` can drop them from a future auto-rule instead of
+    /// building on a string that also shows up in legitimate apps. Grows
+    /// on-device only — never bundled/shared. `RwLock` because a clean scan
+    /// writes to it (see `record_clean_strings`) while rule generation reads it.
+    clean_strings: std::sync::RwLock<std::collections::HashSet<String>>,
+    /// Where `clean_strings` is persisted (`<base>/clean_strings.txt`, one
+    /// string per line) — new entries are appended here as they're learned.
+    clean_strings_path: std::path::PathBuf,
+}
+
+/// Cap on how many goodware strings this device remembers — a plain growing
+/// file would otherwise creep unbounded over a device's lifetime of scans.
+const CLEAN_STRINGS_CAP: usize = 50_000;
+const CLEAN_STRINGS_FILE: &str = "clean_strings.txt";
+
+fn load_clean_strings(path: &std::path::Path) -> std::collections::HashSet<String> {
+    match std::fs::read_to_string(path) {
+        Ok(s) => s
+            .lines()
+            .map(|l| l.to_string())
+            .take(CLEAN_STRINGS_CAP)
+            .collect(),
+        Err(_) => std::collections::HashSet::new(),
+    }
+}
+
+/// Extract this sample's candidate rule-strings (same filter as
+/// `generate_yara_rule`'s own extraction) and, if the scan was CLEAN, add any
+/// new ones to the goodware DB — in memory now, appended to disk so future
+/// process restarts remember them too. Never runs on a malicious/flagged
+/// sample: that would poison the goodware DB with the malware's own strings.
+fn record_clean_strings(engine: &Engine, dex_scans: &[Option<dex_scan::DexScan>]) {
+    let mut fresh: Vec<String> = Vec::new();
+    {
+        let Ok(clean) = engine.clean_strings.read() else { return };
+        if clean.len() >= CLEAN_STRINGS_CAP {
+            return;
+        }
+        for ds in dex_scans.iter().flatten() {
+            for line in ds.text.lines() {
+                let l = line.trim();
+                if l.len() < 8 || l.len() > 128 || l.chars().any(|c| c.is_control()) {
+                    continue;
+                }
+                if !clean.contains(l) {
+                    fresh.push(l.to_string());
+                }
+            }
+        }
+    }
+    if fresh.is_empty() {
+        return;
+    }
+    let Ok(mut clean) = engine.clean_strings.write() else { return };
+    let mut appended = String::new();
+    for s in fresh {
+        if clean.len() >= CLEAN_STRINGS_CAP {
+            break;
+        }
+        if clean.insert(s.clone()) {
+            appended.push_str(&s);
+            appended.push('\n');
+        }
+    }
+    if !appended.is_empty() {
+        use std::io::Write;
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&engine.clean_strings_path)
+        {
+            let _ = f.write_all(appended.as_bytes());
+        }
+    }
 }
 
 /// `RwLock` (not a bare `Engine`) so a freshly auto-generated rule can be
@@ -229,6 +305,10 @@ fn do_init(dir: &str) -> Engine {
         .flatten();
     report.push_str(&format!(" ip={}", if ip_scanner.is_some() { "ok" } else { "none" }));
 
+    let clean_strings_path = base.join(CLEAN_STRINGS_FILE);
+    let clean_strings = load_clean_strings(&clean_strings_path);
+    report.push_str(&format!(" clean_strings={}", clean_strings.len()));
+
     set_status(report);
     Engine {
         clamav,
@@ -238,6 +318,8 @@ fn do_init(dir: &str) -> Engine {
         package_whitelist,
         url_scanner,
         ip_scanner,
+        clean_strings: std::sync::RwLock::new(clean_strings),
+        clean_strings_path,
     }
 }
 
@@ -860,16 +942,24 @@ fn run_scan(
     }
 
     let malicious = !detections.is_empty();
-    // yarGen-style auto-generated rule — every string comes straight from this
-    // sample's own DEX string pool, no goodware/whitelist DB filtering (unlike
-    // real yarGen). References the androguard and hydradragon modules in its
+    // Genuinely clean sample: remember its DEX strings as goodware so a LATER
+    // auto-rule (built from some other, actually malicious sample) doesn't key
+    // off a string this device has independently seen in a clean app.
+    if !malicious && !zero_trust {
+        record_clean_strings(engine, &dex_scans);
+    }
+    // yarGen-style auto-generated rule — strings come from this sample's own
+    // DEX string pool, MINUS any string this device has already seen in one
+    // of its own clean scans (see `clean_strings` / `record_clean_strings`) —
+    // a lightweight, on-device approximation of real yarGen's goodware-DB
+    // filtering. References the androguard and hydradragon modules in its
     // condition, not just literal strings, so it also fires on package-name/
     // network reruns of the same family. Built for a malicious verdict OR
     // (Java's) Zero Trust Mode — Zero Trust never treats "nothing matched" as
     // "nothing worth cataloguing"; the rule is then based on the sample's own
     // strings/package rather than a named detection.
     let generated_rule = if malicious || zero_trust {
-        generate_yara_rule(&file_hash, &packages, &detections, &dex_scans)
+        generate_yara_rule(&file_hash, &packages, &detections, &dex_scans, engine)
     } else {
         None
     };
@@ -915,9 +1005,10 @@ fn run_scan(
     )
 }
 
-/// Build a yarGen-style YARA rule from THIS scan's own results (no
-/// goodware/whitelist-DB string filtering — every string here comes straight
-/// from the sample itself). Called when the scan is malicious OR Zero Trust
+/// Build a yarGen-style YARA rule from THIS scan's own results, filtered
+/// against `engine.clean_strings` — the on-device goodware DB built from this
+/// device's own past clean scans (see `record_clean_strings`). Called when
+/// the scan is malicious OR Zero Trust
 /// Mode is on (so an unmatched/"unknown" sample is catalogued too, not just a
 /// confirmed-bad one) — `detections` may be empty in the Zero Trust case, in
 /// which case the rule is based on the sample's own strings/package instead
@@ -929,7 +1020,9 @@ fn generate_yara_rule(
     packages: &[String],
     detections: &[(String, Vec<String>)],
     dex_scans: &[Option<dex_scan::DexScan>],
+    engine: &Engine,
 ) -> Option<String> {
+    let clean = engine.clean_strings.read().ok();
     let mut strings: Vec<String> = Vec::new();
     let mut seen = std::collections::HashSet::new();
     'outer: for ds in dex_scans.iter().flatten() {
@@ -937,6 +1030,14 @@ fn generate_yara_rule(
             let l = line.trim();
             if l.len() < 8 || l.len() > 128 || l.chars().any(|c| c.is_control()) {
                 continue;
+            }
+            // Skip strings this device has independently seen in one of its
+            // own CLEAN scans — a goodware-DB hit means the string isn't
+            // distinctive of THIS malware, it's just common app boilerplate.
+            if let Some(clean) = &clean {
+                if clean.contains(l) {
+                    continue;
+                }
             }
             if !seen.insert(l.to_string()) {
                 continue;
@@ -956,7 +1057,7 @@ fn generate_yara_rule(
     out.push_str("import \"androguard\"\nimport \"hydradragon\"\n\n");
     out.push_str(&format!("rule {} {{\n", rule_name));
     out.push_str("  meta:\n");
-    out.push_str("    generator = \"hydradragon-autogen (yarGen-style, no whitelist filtering)\"\n");
+    out.push_str("    generator = \"hydradragon-autogen (yarGen-style, on-device goodware filtering)\"\n");
     out.push_str(&format!("    sample_md5 = \"{}\"\n", file_hash));
     let det_names: Vec<String> = detections.iter().map(|(n, _)| n.replace('"', "'")).collect();
     let based_on = if det_names.is_empty() {
