@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">Phát hiện APK đã bị sửa đổi</string>
     <string name="integrity_blocked_msg">Chữ ký của bản sao này không khớp với bản phát hành gốc — mã có thể đã bị thay đổi và có thể độc hại. Ứng dụng này sẽ không chạy.</string>
     <string name="integrity_blocked_exit">Thoát</string>
+    <string name="debug_mode_warning_title">Gỡ lỗi USB đang bật</string>
+    <string name="debug_mode_warning_msg">Tính năng gỡ lỗi USB/không dây (ADB) đang bật. Một máy tính được kết nối hoặc thiết bị được ủy quyền khác có thể gửi dữ liệu đầu vào, lấy dữ liệu ứng dụng hoặc cài đặt ứng dụng theo cách này — hãy tắt nếu bạn không cần ngay bây giờ.</string>
+    <string name="debug_mode_warning_open_settings">MỞ CÀI ĐẶT</string>
+    <string name="debug_mode_warning_dont_ask">KHÔNG HỎI LẠI</string>
+    <string name="debug_mode_warning_toggle">Cảnh báo khi gỡ lỗi USB đang bật</string>
     <string name="native_engine_title">Công cụ Native</string>
     <string name="protection_header">Bảo vệ</string>
     <string name="realtime_protection">Bảo vệ Thời gian Thực</string>

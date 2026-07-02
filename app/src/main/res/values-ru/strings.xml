@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">Обнаружен изменённый APK</string>
     <string name="integrity_blocked_msg">Подпись этой копии не совпадает с оригинальным релизом — код мог быть изменён и может быть вредоносным. Это приложение не будет запущено.</string>
     <string name="integrity_blocked_exit">Выход</string>
+    <string name="debug_mode_warning_title">Включена отладка по USB</string>
+    <string name="debug_mode_warning_msg">Включена отладка по USB/Wi-Fi (ADB). Подключённый компьютер или другое авторизованное устройство может отправлять ввод, извлекать данные приложений или устанавливать приложения таким образом — отключите её, если сейчас она не нужна.</string>
+    <string name="debug_mode_warning_open_settings">ОТКРЫТЬ НАСТРОЙКИ</string>
+    <string name="debug_mode_warning_dont_ask">БОЛЬШЕ НЕ СПРАШИВАТЬ</string>
+    <string name="debug_mode_warning_toggle">Предупреждать, когда включена отладка по USB</string>
     <string name="native_engine_title">Нативный движок</string>
     <string name="protection_header">Защита</string>
     <string name="realtime_protection">Защита в реальном времени</string>

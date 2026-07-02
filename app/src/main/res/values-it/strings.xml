@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">Rilevato APK modificato</string>
     <string name="integrity_blocked_msg">La firma di questa copia non corrisponde alla versione originale — il codice potrebbe essere stato alterato ed essere dannoso. Questa app non verrà eseguita.</string>
     <string name="integrity_blocked_exit">Esci</string>
+    <string name="debug_mode_warning_title">Debug USB attivo</string>
+    <string name="debug_mode_warning_msg">Il debug USB/wireless (ADB) è attivo. Un computer connesso o un altro dispositivo autorizzato può inviare input, estrarre dati delle app o installare app in questo modo — disattivalo se non ti serve ora.</string>
+    <string name="debug_mode_warning_open_settings">APRI IMPOSTAZIONI</string>
+    <string name="debug_mode_warning_dont_ask">NON CHIEDERE PIÙ</string>
+    <string name="debug_mode_warning_toggle">Avvisa quando il debug USB è attivo</string>
     <string name="native_engine_title">Motore Nativo</string>
     <string name="protection_header">Protezione</string>
     <string name="realtime_protection">Protezione in tempo reale</string>

@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">تم اكتشاف APK معدَّل</string>
     <string name="integrity_blocked_msg">توقيع هذه النسخة لا يطابق الإصدار الأصلي — قد يكون الكود قد تم تعديله وقد يكون ضارًا. لن يعمل هذا التطبيق.</string>
     <string name="integrity_blocked_exit">خروج</string>
+    <string name="debug_mode_warning_title">تصحيح USB مفعّل</string>
+    <string name="debug_mode_warning_msg">تصحيح USB/اللاسلكي (ADB) مفعّل. يمكن لجهاز كمبيوتر متصل أو جهاز آخر مصرّح له إرسال إدخالات أو سحب بيانات التطبيقات أو تثبيت تطبيقات بهذه الطريقة — أوقفه إذا لم تكن بحاجة إليه الآن.</string>
+    <string name="debug_mode_warning_open_settings">فتح الإعدادات</string>
+    <string name="debug_mode_warning_dont_ask">لا تسأل مجدداً</string>
+    <string name="debug_mode_warning_toggle">تحذير عند تفعيل تصحيح USB</string>
     <string name="native_engine_title">المحرك الأصلي</string>
     <string name="protection_header">الحماية</string>
     <string name="realtime_protection">الحماية في الوقت الفعلي</string>

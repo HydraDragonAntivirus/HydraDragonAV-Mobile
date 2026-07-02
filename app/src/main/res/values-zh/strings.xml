@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">检测到已修改的 APK</string>
     <string name="integrity_blocked_msg">此副本的签名与原始版本不匹配 — 代码可能已被篡改，可能存在恶意。此应用将无法运行。</string>
     <string name="integrity_blocked_exit">退出</string>
+    <string name="debug_mode_warning_title">USB 调试已开启</string>
+    <string name="debug_mode_warning_msg">USB/无线调试（ADB）已启用。已连接的电脑或其他授权设备可以通过此方式发送输入、提取应用数据或安装应用 — 如果现在不需要，请将其关闭。</string>
+    <string name="debug_mode_warning_open_settings">打开设置</string>
+    <string name="debug_mode_warning_dont_ask">不再询问</string>
+    <string name="debug_mode_warning_toggle">USB 调试开启时发出警告</string>
     <string name="native_engine_title">本地引擎</string>
     <string name="protection_header">防护</string>
     <string name="realtime_protection">实时防护</string>

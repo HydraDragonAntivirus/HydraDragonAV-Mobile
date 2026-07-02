@@ -73,6 +73,23 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        // USB/wireless debugging is a real attack surface (another device can
+        // push input, pull app data, sideload) but common for developers, so
+        // this WARNS instead of blocking launch like root/tampering do above.
+        if (com.hydradragon.antivirus.engine.DebugModeWarning.isEnabled(this)
+                && com.hydradragon.antivirus.engine.DebugModeCheck.isEnabled(this)) {
+            new AlertDialog.Builder(this)
+                .setTitle(R.string.debug_mode_warning_title)
+                .setMessage(R.string.debug_mode_warning_msg)
+                .setCancelable(true)
+                .setPositiveButton(R.string.debug_mode_warning_open_settings, (d, w) ->
+                    startActivity(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)))
+                .setNegativeButton(R.string.debug_mode_warning_dont_ask, (d, w) ->
+                    com.hydradragon.antivirus.engine.DebugModeWarning.setEnabled(this, false))
+                .setNeutralButton(R.string.btn_close, null)
+                .show();
+        }
+
         bottomNav = findViewById(R.id.bottom_navigation);
 
         bottomNav.setOnItemSelectedListener(item -> {

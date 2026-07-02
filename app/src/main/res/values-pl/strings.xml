@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">Wykryto zmodyfikowany plik APK</string>
     <string name="integrity_blocked_msg">Podpis tej kopii nie zgadza się z oryginalnym wydaniem — kod mógł zostać zmieniony i może być szkodliwy. Ta aplikacja nie zostanie uruchomiona.</string>
     <string name="integrity_blocked_exit">Zamknij</string>
+    <string name="debug_mode_warning_title">Debugowanie USB jest włączone</string>
+    <string name="debug_mode_warning_msg">Debugowanie USB/bezprzewodowe (ADB) jest włączone. Podłączony komputer lub inne autoryzowane urządzenie może w ten sposób wysyłać dane wejściowe, pobierać dane aplikacji lub instalować aplikacje — wyłącz to, jeśli teraz tego nie potrzebujesz.</string>
+    <string name="debug_mode_warning_open_settings">OTWÓRZ USTAWIENIA</string>
+    <string name="debug_mode_warning_dont_ask">NIE PYTAJ PONOWNIE</string>
+    <string name="debug_mode_warning_toggle">Ostrzegaj, gdy debugowanie USB jest włączone</string>
     <string name="native_engine_title">Silnik natywny</string>
     <string name="protection_header">Ochrona</string>
     <string name="realtime_protection">Ochrona w czasie rzeczywistym</string>

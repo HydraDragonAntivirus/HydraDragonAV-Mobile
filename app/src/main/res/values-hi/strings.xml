@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">संशोधित APK मिला</string>
     <string name="integrity_blocked_msg">इस प्रति का हस्ताक्षर मूल रिलीज़ से मेल नहीं खाता — कोड में बदलाव हो सकता है और यह हानिकारक हो सकता है। यह ऐप नहीं चलेगा।</string>
     <string name="integrity_blocked_exit">बाहर निकलें</string>
+    <string name="debug_mode_warning_title">USB डिबगिंग चालू है</string>
+    <string name="debug_mode_warning_msg">USB/वायरलेस डिबगिंग (ADB) सक्षम है। एक जुड़ा हुआ कंप्यूटर या अन्य अधिकृत डिवाइस इस तरह इनपुट भेज सकता है, ऐप डेटा निकाल सकता है, या ऐप्स इंस्टॉल कर सकता है — यदि अभी इसकी आवश्यकता नहीं है तो इसे बंद कर दें।</string>
+    <string name="debug_mode_warning_open_settings">सेटिंग्स खोलें</string>
+    <string name="debug_mode_warning_dont_ask">फिर मत पूछो</string>
+    <string name="debug_mode_warning_toggle">USB डिबगिंग चालू होने पर चेतावनी दें</string>
     <string name="native_engine_title">नेटिव इंजन</string>
     <string name="protection_header">सुरक्षा</string>
     <string name="realtime_protection">रीयल-टाइम सुरक्षा</string>

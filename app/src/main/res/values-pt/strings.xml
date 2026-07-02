@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">APK modificado detectado</string>
     <string name="integrity_blocked_msg">A assinatura desta cópia não corresponde à versão original — o código pode ter sido alterado e pode ser malicioso. Este aplicativo não será executado.</string>
     <string name="integrity_blocked_exit">Sair</string>
+    <string name="debug_mode_warning_title">Depuração USB está ativada</string>
+    <string name="debug_mode_warning_msg">A depuração USB/sem fio (ADB) está ativada. Um computador conectado ou outro dispositivo autorizado pode enviar entradas, extrair dados de apps ou instalar apps dessa forma — desative se não precisar agora.</string>
+    <string name="debug_mode_warning_open_settings">ABRIR CONFIGURAÇÕES</string>
+    <string name="debug_mode_warning_dont_ask">NÃO PERGUNTAR NOVAMENTE</string>
+    <string name="debug_mode_warning_toggle">Avisar quando a depuração USB estiver ativada</string>
     <string name="native_engine_title">Motor Nativo</string>
     <string name="protection_header">Proteção</string>
     <string name="realtime_protection">Proteção em Tempo Real</string>

@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">Gewijzigde APK gedetecteerd</string>
     <string name="integrity_blocked_msg">De handtekening van deze kopie komt niet overeen met de originele release — de code is mogelijk gewijzigd en kan schadelijk zijn. Deze app wordt niet uitgevoerd.</string>
     <string name="integrity_blocked_exit">Afsluiten</string>
+    <string name="debug_mode_warning_title">USB-foutopsporing staat aan</string>
+    <string name="debug_mode_warning_msg">USB-/draadloze foutopsporing (ADB) is ingeschakeld. Een verbonden computer of ander geautoriseerd apparaat kan hiermee invoer sturen, app-gegevens ophalen of apps installeren — schakel het uit als je het nu niet nodig hebt.</string>
+    <string name="debug_mode_warning_open_settings">INSTELLINGEN OPENEN</string>
+    <string name="debug_mode_warning_dont_ask">NIET MEER VRAGEN</string>
+    <string name="debug_mode_warning_toggle">Waarschuwen als USB-foutopsporing aanstaat</string>
     <string name="native_engine_title">Native Engine</string>
     <string name="protection_header">Bescherming</string>
     <string name="realtime_protection">Realtimebescherming</string>

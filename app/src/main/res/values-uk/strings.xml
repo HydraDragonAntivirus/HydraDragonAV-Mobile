@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">Виявлено змінений APK</string>
     <string name="integrity_blocked_msg">Підпис цієї копії не збігається з оригінальним випуском — код міг бути змінений і може бути шкідливим. Цей додаток не запуститься.</string>
     <string name="integrity_blocked_exit">Вихід</string>
+    <string name="debug_mode_warning_title">Увімкнено налагодження USB</string>
+    <string name="debug_mode_warning_msg">Увімкнено налагодження через USB/бездротову мережу (ADB). Підключений комп\'ютер або інший авторизований пристрій може надсилати введення, отримувати дані додатків або встановлювати додатки таким чином — вимкніть це, якщо зараз воно вам не потрібне.</string>
+    <string name="debug_mode_warning_open_settings">ВІДКРИТИ НАЛАШТУВАННЯ</string>
+    <string name="debug_mode_warning_dont_ask">БІЛЬШЕ НЕ ПИТАТИ</string>
+    <string name="debug_mode_warning_toggle">Попереджати, коли увімкнено налагодження USB</string>
     <string name="native_engine_title">Нативний рушій</string>
     <string name="protection_header">Захист</string>
     <string name="realtime_protection">Захист у реальному часі</string>

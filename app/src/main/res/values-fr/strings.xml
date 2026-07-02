@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">APK modifiée détectée</string>
     <string name="integrity_blocked_msg">La signature de cette copie ne correspond pas à la version originale — le code a peut-être été altéré et pourrait être malveillant. Cette application ne s\'exécutera pas.</string>
     <string name="integrity_blocked_exit">Quitter</string>
+    <string name="debug_mode_warning_title">Le débogage USB est activé</string>
+    <string name="debug_mode_warning_msg">Le débogage USB/sans fil (ADB) est activé. Un ordinateur connecté ou un autre appareil autorisé peut ainsi envoyer des entrées, extraire des données d\'applications ou installer des applications — désactivez-le si vous n\'en avez pas besoin maintenant.</string>
+    <string name="debug_mode_warning_open_settings">OUVRIR LES PARAMÈTRES</string>
+    <string name="debug_mode_warning_dont_ask">NE PLUS DEMANDER</string>
+    <string name="debug_mode_warning_toggle">Avertir quand le débogage USB est activé</string>
     <string name="native_engine_title">Moteur Natif</string>
     <string name="protection_header">Protection</string>
     <string name="realtime_protection">Protection en Temps Réel</string>

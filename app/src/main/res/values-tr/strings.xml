@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">Değiştirilmiş APK Tespit Edildi</string>
     <string name="integrity_blocked_msg">Bu kopyanın imzası orijinal sürümle eşleşmiyor — kod değiştirilmiş olabilir ve zararlı olabilir. Bu uygulama çalışmayacak.</string>
     <string name="integrity_blocked_exit">Çıkış</string>
+    <string name="debug_mode_warning_title">USB Hata Ayıklama Açık</string>
+    <string name="debug_mode_warning_msg">USB/kablosuz hata ayıklama (ADB) etkin. Bağlı bir bilgisayar veya başka yetkili bir cihaz bu yolla girdi gönderebilir, uygulama verilerini çekebilir veya uygulama yükleyebilir — şu an ihtiyacın yoksa kapat.</string>
+    <string name="debug_mode_warning_open_settings">AYARLARI AÇ</string>
+    <string name="debug_mode_warning_dont_ask">BİR DAHA SORMA</string>
+    <string name="debug_mode_warning_toggle">USB hata ayıklama açıkken uyar</string>
     <string name="native_engine_title">Yerel Motor</string>
     <string name="protection_header">Koruma</string>
     <string name="realtime_protection">Gerçek Zamanlı Koruma</string>

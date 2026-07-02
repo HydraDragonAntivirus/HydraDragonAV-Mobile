@@ -97,6 +97,10 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.boot_auto_start_off_toast), Toast.LENGTH_LONG).show();
         });
 
+        boolean debugWarn = com.hydradragon.antivirus.engine.DebugModeWarning.isEnabled(requireContext());
+        addToggle(getString(R.string.debug_mode_warning_toggle), debugWarn, (btn, on) ->
+            com.hydradragon.antivirus.engine.DebugModeWarning.setEnabled(requireContext(), on));
+
         addBtn("⏱ " + getString(R.string.scan_interval_btn), color(R.color.bg_secondary),
             v -> showScanIntervalDialog());
 

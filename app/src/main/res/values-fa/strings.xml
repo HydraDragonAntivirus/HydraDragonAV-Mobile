@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">APK تغییر یافته شناسایی شد</string>
     <string name="integrity_blocked_msg">امضای این نسخه با نسخه اصلی مطابقت ندارد — ممکن است کد تغییر یافته و مخرب باشد. این برنامه اجرا نخواهد شد.</string>
     <string name="integrity_blocked_exit">خروج</string>
+    <string name="debug_mode_warning_title">اشکال‌زدایی USB روشن است</string>
+    <string name="debug_mode_warning_msg">اشکال‌زدایی USB/بی‌سیم (ADB) فعال است. یک رایانه متصل یا دستگاه مجاز دیگر می‌تواند از این طریق ورودی ارسال کند، داده‌های برنامه را بکشد یا برنامه نصب کند — اگر الان به آن نیاز ندارید، خاموشش کنید.</string>
+    <string name="debug_mode_warning_open_settings">باز کردن تنظیمات</string>
+    <string name="debug_mode_warning_dont_ask">دیگر نپرس</string>
+    <string name="debug_mode_warning_toggle">هشدار هنگام روشن بودن اشکال‌زدایی USB</string>
     <string name="native_engine_title">موتور بومی</string>
     <string name="protection_header">محافظت</string>
     <string name="realtime_protection">محافظت بلادرنگ</string>

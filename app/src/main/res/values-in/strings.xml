@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">APK yang Dimodifikasi Terdeteksi</string>
     <string name="integrity_blocked_msg">Tanda tangan salinan ini tidak cocok dengan rilis aslinya — kode mungkin telah diubah dan bisa berbahaya. Aplikasi ini tidak akan berjalan.</string>
     <string name="integrity_blocked_exit">Keluar</string>
+    <string name="debug_mode_warning_title">Debugging USB Aktif</string>
+    <string name="debug_mode_warning_msg">Debugging USB/nirkabel (ADB) diaktifkan. Komputer yang terhubung atau perangkat resmi lain dapat mengirim input, mengambil data aplikasi, atau menginstal aplikasi dengan cara ini — matikan jika Anda tidak membutuhkannya sekarang.</string>
+    <string name="debug_mode_warning_open_settings">BUKA PENGATURAN</string>
+    <string name="debug_mode_warning_dont_ask">JANGAN TANYA LAGI</string>
+    <string name="debug_mode_warning_toggle">Peringatkan saat debugging USB aktif</string>
     <string name="native_engine_title">Mesin Native</string>
     <string name="protection_header">Perlindungan</string>
     <string name="realtime_protection">Perlindungan Real-time</string>

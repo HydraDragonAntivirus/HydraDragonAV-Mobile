@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">Geänderte APK erkannt</string>
     <string name="integrity_blocked_msg">Die Signatur dieser Kopie stimmt nicht mit der Originalversion überein — der Code wurde möglicherweise verändert und könnte schädlich sein. Diese App wird nicht ausgeführt.</string>
     <string name="integrity_blocked_exit">Beenden</string>
+    <string name="debug_mode_warning_title">USB-Debugging ist aktiviert</string>
+    <string name="debug_mode_warning_msg">USB-/WLAN-Debugging (ADB) ist aktiviert. Ein verbundener Computer oder ein anderes autorisiertes Gerät kann so Eingaben senden, App-Daten auslesen oder Apps installieren — schalte es aus, wenn du es gerade nicht brauchst.</string>
+    <string name="debug_mode_warning_open_settings">EINSTELLUNGEN ÖFFNEN</string>
+    <string name="debug_mode_warning_dont_ask">NICHT MEHR FRAGEN</string>
+    <string name="debug_mode_warning_toggle">Warnen, wenn USB-Debugging aktiv ist</string>
     <string name="native_engine_title">Native Engine</string>
     <string name="protection_header">Schutz</string>
     <string name="realtime_protection">Echtzeitschutz</string>

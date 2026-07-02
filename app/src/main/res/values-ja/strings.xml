@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">改ざんされたAPKを検出</string>
     <string name="integrity_blocked_msg">このコピーの署名は元のリリースと一致しません — コードが改変され、悪意のあるものである可能性があります。このアプリは実行されません。</string>
     <string name="integrity_blocked_exit">終了</string>
+    <string name="debug_mode_warning_title">USBデバッグが有効です</string>
+    <string name="debug_mode_warning_msg">USB/ワイヤレスデバッグ（ADB）が有効になっています。接続されたコンピューターや他の許可されたデバイスは、この方法で入力を送信したり、アプリのデータを取得したり、アプリをインストールしたりできます — 今必要でなければオフにしてください。</string>
+    <string name="debug_mode_warning_open_settings">設定を開く</string>
+    <string name="debug_mode_warning_dont_ask">今後表示しない</string>
+    <string name="debug_mode_warning_toggle">USBデバッグが有効なときに警告する</string>
     <string name="native_engine_title">ネイティブエンジン</string>
     <string name="protection_header">保護</string>
     <string name="realtime_protection">リアルタイム保護</string>

@@ -7,6 +7,11 @@
     <string name="integrity_blocked_title">ตรวจพบ APK ที่ถูกดัดแปลง</string>
     <string name="integrity_blocked_msg">ลายเซ็นของสำเนานี้ไม่ตรงกับเวอร์ชันต้นฉบับ — โค้ดอาจถูกเปลี่ยนแปลงและอาจเป็นอันตราย แอปนี้จะไม่ทำงาน</string>
     <string name="integrity_blocked_exit">ออก</string>
+    <string name="debug_mode_warning_title">เปิดใช้งานการดีบัก USB</string>
+    <string name="debug_mode_warning_msg">การดีบัก USB/ไร้สาย (ADB) เปิดใช้งานอยู่ คอมพิวเตอร์ที่เชื่อมต่อหรืออุปกรณ์ที่ได้รับอนุญาตอื่นสามารถส่งข้อมูลนำเข้า ดึงข้อมูลแอป หรือติดตั้งแอปด้วยวิธีนี้ — ปิดหากคุณไม่ต้องการใช้งานตอนนี้</string>
+    <string name="debug_mode_warning_open_settings">เปิดการตั้งค่า</string>
+    <string name="debug_mode_warning_dont_ask">ไม่ต้องถามอีก</string>
+    <string name="debug_mode_warning_toggle">แจ้งเตือนเมื่อเปิดใช้งานการดีบัก USB</string>
     <string name="native_engine_title">เอนจิ้นเนทีฟ</string>
     <string name="protection_header">การป้องกัน</string>
     <string name="realtime_protection">การป้องกันแบบเรียลไทม์</string>
