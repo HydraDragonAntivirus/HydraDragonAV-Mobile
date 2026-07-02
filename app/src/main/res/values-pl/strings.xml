@@ -140,6 +140,8 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="detect_cat_auto_rules">Samouczące się reguły automatyczne</string>
     <string name="detect_cat_permissions">Niebezpieczne uprawnienia</string>
     <string name="detect_cat_eicar">Pliki testowe EICAR</string>
+    <string name="self_protection_toggle">Samoobrona (Administrator urządzenia) — zapobiega odinstalowaniu</string>
+    <string name="self_protection_off_toast">Samoobrona WYŁĄCZONA — aplikację można teraz normalnie odinstalować</string>
     <string name="scan_rescan_btn">SKANUJ PONOWNIE</string>
     <string name="scan_clean_system">✓ Skanowanie zakończone - System jest czysty!</string>
     <string name="scan_threat_found">⚠ Znaleziono %1$s zagrożeń!</string>

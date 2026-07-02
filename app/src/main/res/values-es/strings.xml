@@ -140,6 +140,8 @@ Puntuación de riesgo: %2$d/100
     <string name="detect_cat_auto_rules">Reglas auto-aprendidas</string>
     <string name="detect_cat_permissions">Permisos peligrosos</string>
     <string name="detect_cat_eicar">Archivos de prueba EICAR</string>
+    <string name="self_protection_toggle">Autoprotección (Administrador del dispositivo) — evitar desinstalación</string>
+    <string name="self_protection_off_toast">Autoprotección DESACTIVADA — la app ya puede desinstalarse normalmente</string>
     <string name="scan_rescan_btn">REESCANEAR</string>
     <string name="scan_clean_system">✓ Escaneo completo - ¡El sistema está limpio!</string>
     <string name="scan_threat_found">⚠ ¡Se encontraron %1$s amenazas!</string>

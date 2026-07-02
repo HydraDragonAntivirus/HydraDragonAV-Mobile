@@ -140,6 +140,8 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="detect_cat_auto_rules">Règles auto-apprises</string>
     <string name="detect_cat_permissions">Autorisations dangereuses</string>
     <string name="detect_cat_eicar">Fichiers de test EICAR</string>
+    <string name="self_protection_toggle">Auto-protection (Administrateur de l\'appareil) — empêcher la désinstallation</string>
+    <string name="self_protection_off_toast">Auto-protection DÉSACTIVÉE — l\'application peut de nouveau être désinstallée normalement</string>
     <string name="scan_rescan_btn">RÉANALYSER</string>
     <string name="scan_clean_system">✓ Analyse terminée - Le système est propre !</string>
     <string name="scan_threat_found">⚠ %1$s menaces trouvées !</string>

@@ -140,6 +140,8 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="detect_cat_auto_rules">Regole auto-apprese</string>
     <string name="detect_cat_permissions">Permessi pericolosi</string>
     <string name="detect_cat_eicar">File di test EICAR</string>
+    <string name="self_protection_toggle">Autoprotezione (Amministratore dispositivo) — impedisci la disinstallazione</string>
+    <string name="self_protection_off_toast">Autoprotezione DISATTIVATA — l\'app può ora essere disinstallata normalmente</string>
     <string name="scan_rescan_btn">RISCANSIONA</string>
     <string name="scan_clean_system">✓ Scansione completata - Il sistema è pulito!</string>
     <string name="scan_threat_found">⚠ %1$s minacce trovate!</string>

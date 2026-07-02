@@ -58,6 +58,16 @@ public class SettingsFragment extends Fragment {
         return scroll;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Rebuild so toggles reflect state changed by a system screen this
+        // fragment doesn't get a direct callback for (Accessibility settings,
+        // Device Admin consent) — the fragment itself isn't recreated when
+        // the user comes back from those, only the Activity resumes.
+        if (container != null) buildUI();
+    }
+
     private void buildUI() {
         container.removeAllViews();
         addTitle(getString(R.string.settings_title));
@@ -105,6 +115,22 @@ public class SettingsFragment extends Fragment {
         boolean debugWarn = com.hydradragon.antivirus.engine.DebugModeWarning.isEnabled(requireContext());
         addToggle(getString(R.string.debug_mode_warning_toggle), debugWarn, (btn, on) ->
             com.hydradragon.antivirus.engine.DebugModeWarning.setEnabled(requireContext(), on));
+
+        // Device Admin self-protection (SelfProtection/AdminReceiver) existed
+        // in the codebase but was never actually wired up anywhere — this is
+        // the first place the user can turn it on/off. Turning ON opens the
+        // system consent screen (async — the switch's true state is re-read
+        // next time this screen builds, same as the Accessibility toggle).
+        // Turning OFF is synchronous (removeActiveAdmin).
+        boolean selfProtectionActive = com.hydradragon.antivirus.engine.SelfProtection.isActive(requireContext());
+        addToggle(getString(R.string.self_protection_toggle), selfProtectionActive, (btn, on) -> {
+            if (on) {
+                startActivity(com.hydradragon.antivirus.engine.SelfProtection.activationIntent(requireContext()));
+            } else {
+                com.hydradragon.antivirus.engine.SelfProtection.deactivate(requireContext());
+                Toast.makeText(getContext(), getString(R.string.self_protection_off_toast), Toast.LENGTH_SHORT).show();
+            }
+        });
 
         addBtn("⏱ " + getString(R.string.scan_interval_btn), color(R.color.bg_secondary),
             v -> showScanIntervalDialog());

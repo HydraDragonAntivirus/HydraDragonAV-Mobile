@@ -141,6 +141,8 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="detect_cat_auto_rules">Kendi kendine öğrenen oto kurallar</string>
     <string name="detect_cat_permissions">Tehlikeli izinler</string>
     <string name="detect_cat_eicar">EICAR test dosyaları</string>
+    <string name="self_protection_toggle">Kendini Koruma (Cihaz Yöneticisi) — kaldırmayı engelle</string>
+    <string name="self_protection_off_toast">Kendini Koruma KAPALI — uygulama artık normal şekilde kaldırılabilir</string>
     <string name="scan_rescan_btn">YENİDEN TARA</string>
     <string name="scan_clean_system">✓ Tarama tamamlandı - Sistem temiz!</string>
     <string name="scan_threat_found">⚠ %1$s tehdit bulundu!</string>

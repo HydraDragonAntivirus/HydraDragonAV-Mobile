@@ -140,6 +140,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="detect_cat_auto_rules">Aturan otomatis yang dipelajari sendiri</string>
     <string name="detect_cat_permissions">Izin berbahaya</string>
     <string name="detect_cat_eicar">File uji EICAR</string>
+    <string name="self_protection_toggle">Perlindungan Diri (Admin Perangkat) — cegah pencopotan pemasangan</string>
+    <string name="self_protection_off_toast">Perlindungan Diri NONAKTIF — aplikasi kini dapat dicopot pemasangannya secara normal</string>
     <string name="scan_rescan_btn">PINDAI ULANG</string>
     <string name="scan_clean_system">✓ Pemindaian selesai - Sistem bersih!</string>
     <string name="scan_threat_found">⚠ %1$s ancaman ditemukan!</string>

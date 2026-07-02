@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">स्व-सीखे नियम</string>
     <string name="detect_cat_permissions">खतरनाक अनुमतियाँ</string>
     <string name="detect_cat_eicar">EICAR परीक्षण फ़ाइलें</string>
+    <string name="self_protection_toggle">स्व-सुरक्षा (डिवाइस एडमिन) — अनइंस्टॉल रोकें</string>
+    <string name="self_protection_off_toast">स्व-सुरक्षा बंद — अब ऐप को सामान्य रूप से अनइंस्टॉल किया जा सकता है</string>
     <string name="scan_rescan_btn">पुनः स्कैन करें</string>
     <string name="scan_clean_system">✓ स्कैन पूरा हुआ - सिस्टम स्वच्छ है!</string>
     <string name="scan_threat_found">⚠ %1$s खतरे मिले!</string>

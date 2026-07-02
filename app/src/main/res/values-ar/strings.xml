@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">قواعد ذاتية التعلّم</string>
     <string name="detect_cat_permissions">أذونات خطيرة</string>
     <string name="detect_cat_eicar">ملفات اختبار EICAR</string>
+    <string name="self_protection_toggle">الحماية الذاتية (مسؤول الجهاز) — منع إلغاء التثبيت</string>
+    <string name="self_protection_off_toast">الحماية الذاتية متوقفة — يمكن الآن إلغاء تثبيت التطبيق بشكل طبيعي</string>
     <string name="scan_rescan_btn">إعادة الفحص</string>
     <string name="scan_clean_system">✓ اكتمل الفحص - النظام نظيف!</string>
     <string name="scan_threat_found">⚠ تم العثور على %1$s تهديد!</string>

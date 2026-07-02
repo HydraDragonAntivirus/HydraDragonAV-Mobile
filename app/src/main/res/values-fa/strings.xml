@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">قوانین خودآموز</string>
     <string name="detect_cat_permissions">مجوزهای خطرناک</string>
     <string name="detect_cat_eicar">فایل‌های آزمایشی EICAR</string>
+    <string name="self_protection_toggle">خودمحافظتی (مدیر دستگاه) — جلوگیری از حذف نصب</string>
+    <string name="self_protection_off_toast">خودمحافظتی خاموش شد — اکنون برنامه به‌طور عادی قابل حذف نصب است</string>
     <string name="scan_rescan_btn">اسکن مجدد</string>
     <string name="scan_clean_system">✓ اسکن کامل شد - سیستم پاک است!</string>
     <string name="scan_threat_found">⚠ %1$s تهدید یافت شد!</string>

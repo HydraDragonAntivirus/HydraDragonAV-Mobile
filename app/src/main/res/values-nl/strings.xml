@@ -140,6 +140,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="detect_cat_auto_rules">Zelflerende automatische regels</string>
     <string name="detect_cat_permissions">Gevaarlijke machtigingen</string>
     <string name="detect_cat_eicar">EICAR-testbestanden</string>
+    <string name="self_protection_toggle">Zelfbescherming (Apparaatbeheerder) — verwijderen voorkomen</string>
+    <string name="self_protection_off_toast">Zelfbescherming UIT — de app kan nu weer normaal worden verwijderd</string>
     <string name="scan_rescan_btn">OPNIEUW SCANNEN</string>
     <string name="scan_clean_system">✓ Scan voltooid - Systeem is schoon!</string>
     <string name="scan_threat_found">⚠ %1$s dreigingen gevonden!</string>
