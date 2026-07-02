@@ -199,7 +199,7 @@ public class ScanFragment extends Fragment {
         // Surface the native (Rust) engine status so a silent init failure
         // (clamav DB / model / .yrc) is visible without adb.
         android.widget.Toast.makeText(getContext(),
-            "Engine: " + com.hydradragon.antivirus.engine.NativeScanner.status(),
+            getString(R.string.engine_status_format, com.hydradragon.antivirus.engine.NativeScanner.status()),
             android.widget.Toast.LENGTH_LONG).show();
 
         attachScanCallback();
@@ -399,7 +399,7 @@ private void scanCustomFile(android.net.Uri uri) {
                         stopScannerAnimation();
                         btnScan.setText(getString(R.string.rescan));
                         btnScan.setEnabled(true);
-                        tvScanStatus.setText("Error reading file");
+                        tvScanStatus.setText(getString(R.string.error_reading_file));
                     });
                 }
             }

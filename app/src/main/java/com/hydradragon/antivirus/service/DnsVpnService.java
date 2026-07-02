@@ -8,6 +8,7 @@ import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import com.hydradragon.antivirus.R;
 import com.hydradragon.antivirus.engine.UrlThreatScanner;
 
 import java.io.FileInputStream;
@@ -95,7 +96,7 @@ public class DnsVpnService extends VpnService {
     private boolean establish() {
         try {
             Builder b = new Builder()
-                .setSession("HydraDragon Web Shield")
+                .setSession(getString(R.string.dnsvpn_session_name))
                 .addAddress(TUN4, 32)
                 .addAddress(TUN6, 128)
                 .addDnsServer(DNS4)
@@ -569,7 +570,7 @@ public class DnsVpnService extends VpnService {
         try {
             NotificationManager nm = getSystemService(NotificationManager.class);
             nm.notify(host.hashCode(), new Notification.Builder(this, CH_ID)
-                .setContentTitle("Malicious site blocked")
+                .setContentTitle(getString(R.string.dnsvpn_malicious_blocked_title))
                 .setContentText(cat + ": " + host)
                 .setSmallIcon(android.R.drawable.stat_sys_warning)
                 .build());
@@ -579,10 +580,10 @@ public class DnsVpnService extends VpnService {
     private void startForegroundShield() {
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel(
-            CH_ID, "Web Shield", NotificationManager.IMPORTANCE_LOW));
+            CH_ID, getString(R.string.dnsvpn_channel_name), NotificationManager.IMPORTANCE_LOW));
         startForeground(0xD0A, new Notification.Builder(this, CH_ID)
-            .setContentTitle("HydraDragon Web Shield")
-            .setContentText("Filtering DNS for malicious sites")
+            .setContentTitle(getString(R.string.dnsvpn_notif_title))
+            .setContentText(getString(R.string.dnsvpn_notif_text))
             .setSmallIcon(android.R.drawable.stat_sys_warning)
             .build());
     }

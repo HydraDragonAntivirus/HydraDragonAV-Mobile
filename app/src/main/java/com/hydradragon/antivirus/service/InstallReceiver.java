@@ -56,13 +56,13 @@ public class InstallReceiver extends BroadcastReceiver {
 
                         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "hydradragon_dynamic_alert")
                                 .setSmallIcon(R.drawable.ic_threat)
-                                .setContentTitle("CRITICAL THREAT BLOCKED")
-                                .setContentText(result.getThreatType() + " detected: " + packageName + " — tap to remove")
+                                .setContentTitle(context.getString(R.string.notif_critical_threat_blocked))
+                                .setContentText(context.getString(R.string.notif_threat_detected_text, result.getThreatType(), packageName))
                                 .setPriority(NotificationCompat.PRIORITY_MAX)
                                 .setAutoCancel(true)
                                 .setColor(0xFF0000)
                                 .setContentIntent(pi)
-                                .addAction(R.drawable.ic_threat, "Remove", pi);
+                                .addAction(R.drawable.ic_threat, context.getString(R.string.notif_action_remove), pi);
                         if (nm != null) nm.notify((int)System.currentTimeMillis(), builder.build());
                     }
                 } catch (Exception e) {

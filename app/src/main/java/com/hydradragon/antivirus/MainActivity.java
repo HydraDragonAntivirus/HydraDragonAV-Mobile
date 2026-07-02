@@ -106,8 +106,8 @@ public class MainActivity extends AppCompatActivity {
     private void checkMandatoryPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
             showMandatoryPermissionDialog(
-                "All Files Access Required", 
-                "HydraDragon needs full file access to scan for malware.", 
+                getString(R.string.all_files_access_title),
+                getString(R.string.all_files_access_msg),
                 new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + getPackageName()))
             );
             return;
@@ -152,18 +152,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void showOptionalWebShieldDialog() {
         new AlertDialog.Builder(this)
-            .setTitle("Web Shield (VPN)")
-            .setMessage("HydraDragon can run a LOCAL DNS-filtering VPN to block malicious / phishing sites. "
-                + "It does NOT proxy, decrypt or inspect your traffic — only DNS lookups are filtered, on-device. "
-                + "Android shows a key icon while it's active.")
+            .setTitle(getString(R.string.web_shield_vpn_title))
+            .setMessage(getString(R.string.web_shield_vpn_msg))
             .setCancelable(false)
-            .setPositiveButton("Enable", (dialog, which) -> {
+            .setPositiveButton(getString(R.string.enable), (dialog, which) -> {
                 getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
                     .putBoolean("web_shield_decided", true)
                     .putBoolean("web_shield_enabled", true).apply();
                 startWebShield();
             })
-            .setNegativeButton("Skip", (dialog, which) -> {
+            .setNegativeButton(getString(R.string.skip), (dialog, which) -> {
                 getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
                     .putBoolean("web_shield_decided", true)
                     .putBoolean("web_shield_enabled", false).apply();
@@ -179,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
             prep = VpnService.prepare(this);
         } catch (Throwable t) {
             // Some devices/another always-on VPN can throw — degrade gracefully.
-            Toast.makeText(this, "VPN unavailable on this device", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.vpn_unavailable), Toast.LENGTH_LONG).show();
             getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
                 .putBoolean("web_shield_enabled", false).apply();
             startAppUIIfHidden();
@@ -222,20 +220,20 @@ public class MainActivity extends AppCompatActivity {
     private void showMandatoryPermissionDialog(String title, String message, Intent intent) {
         new AlertDialog.Builder(this)
             .setTitle(title)
-            .setMessage(message + "\n\nIf you don't grant this permission, the app will close.")
+            .setMessage(message + getString(R.string.mandatory_permission_suffix))
             .setCancelable(false)
-            .setPositiveButton("Grant Now", (dialog, which) -> startActivity(intent))
-            .setNegativeButton("Exit App", (dialog, which) -> finish())
+            .setPositiveButton(getString(R.string.btn_grant_now), (dialog, which) -> startActivity(intent))
+            .setNegativeButton(getString(R.string.btn_exit_app), (dialog, which) -> finish())
             .show();
     }
 
     private void showOptionalAccessibilityDialog() {
         new AlertDialog.Builder(this)
-            .setTitle("Accessibility Service (Optional)")
-            .setMessage("HydraDragon Dynamic Behavior Analysis needs Accessibility Service to actively monitor apps and stop ransomware in real-time.\n\nHowever, some devices restrict this. You can skip this if your device doesn't allow it, but Advanced Dynamic Protection will be disabled.")
+            .setTitle(getString(R.string.accessibility_optional_title))
+            .setMessage(getString(R.string.accessibility_optional_msg))
             .setCancelable(false)
-            .setPositiveButton("Grant Now", (dialog, which) -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
-            .setNegativeButton("Skip", (dialog, which) -> startAppUI())
+            .setPositiveButton(getString(R.string.btn_grant_now), (dialog, which) -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
+            .setNegativeButton(getString(R.string.skip), (dialog, which) -> startAppUI())
             .show();
     }
 
@@ -252,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 checkMandatoryPermissions(); 
             } else {
-                Toast.makeText(this, "Notification permission is required!", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.notification_permission_required), Toast.LENGTH_LONG).show();
                 finish();
             }
         }
@@ -291,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/settings/play_protect")));
             } catch (Throwable t2) {
-                Toast.makeText(this, "Could not open Play Protect settings", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.play_protect_open_failed), Toast.LENGTH_LONG).show();
             }
         }
     }

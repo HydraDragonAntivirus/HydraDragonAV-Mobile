@@ -63,11 +63,11 @@ public class NetworkEventAdapter extends RecyclerView.Adapter<NetworkEventAdapte
                 + " [" + event.protocol + "]");
 
             if (event.blocked) {
-                tvAction.setText("ENGELLENDİ");
+                tvAction.setText(R.string.net_event_blocked);
                 tvAction.setTextColor(0xFFFF0040);
                 itemView.setBackgroundColor(0x15FF0040);
             } else {
-                tvAction.setText("İZİN VERİLDİ");
+                tvAction.setText(R.string.net_event_allowed);
                 tvAction.setTextColor(0xFF00FF88);
                 itemView.setBackgroundColor(0x00000000);
             }

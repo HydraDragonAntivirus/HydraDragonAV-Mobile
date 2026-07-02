@@ -126,7 +126,7 @@ public class DashboardFragment extends Fragment {
 
         // İlk durum
         setSecureState();
-        tvEngineStatus.setText("Firewall Engine ACTIVE");
+        tvEngineStatus.setText(getString(R.string.dashboard_firewall_active));
 
         // Başlangıç animasyonu
         startStartupAnimation();
@@ -172,20 +172,20 @@ public class DashboardFragment extends Fragment {
     }
 
         private void setSecureState() {
-        tvStatus.setText("System Secure");
+        tvStatus.setText(getString(R.string.dashboard_system_secure));
         tvStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), com.hydradragon.antivirus.R.color.neon_green));
         
         com.hydradragon.antivirus.engine.NetworkSecurityScanner scanner = new com.hydradragon.antivirus.engine.NetworkSecurityScanner(getContext());
         com.hydradragon.antivirus.engine.NetworkSecurityScanner.SecurityReport report = scanner.scanCurrentNetwork();
 
         if (!report.isSecure) {
-            tvStatusDesc.setText("• Monitoring active\n• Network rules enforced\n" + report.statusMessage);
+            tvStatusDesc.setText(getString(R.string.dashboard_status_alert_desc, report.statusMessage));
             if (report.isArpSpoofing) {
                 setAlertState();
                 appendThreatFeed("🚨 " + report.statusMessage);
             } else tvStatus.setTextColor(android.graphics.Color.parseColor("#FFD700"));
         } else {
-            tvStatusDesc.setText("• Monitoring active\n• Network rules enforced\n• " + report.statusMessage);
+            tvStatusDesc.setText(getString(R.string.dashboard_status_secure_desc, report.statusMessage));
         }
         
         if (hexagonView != null && report.isSecure) hexagonView.setSecureState(true);

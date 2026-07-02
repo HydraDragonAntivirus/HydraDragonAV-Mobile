@@ -49,7 +49,7 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
         ThreatResult threat = threats.get(position);
         holder.tvAppName.setText(threat.getAppName());
         holder.tvPackage.setText(threat.getPackageName() != null ? threat.getPackageName() : threat.getApkPath());
-        holder.tvRiskScore.setText("Risk: " + threat.getRiskScore() + "/100");
+        holder.tvRiskScore.setText(holder.itemView.getContext().getString(R.string.risk_score_format, threat.getRiskScore()));
         
         String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
         holder.tvTime.setText(time);
@@ -65,13 +65,13 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
 
         // Renk Kodlaması
         if (threat.getRiskScore() >= 80) {
-            holder.tvThreatLevel.setText("KRİTİK");
+            holder.tvThreatLevel.setText(R.string.level_critical);
             holder.tvThreatLevel.setTextColor(0xFFFF0040); // Kırmızı
         } else if (threat.getRiskScore() >= 40) {
-            holder.tvThreatLevel.setText("ORTA");
+            holder.tvThreatLevel.setText(R.string.level_medium);
             holder.tvThreatLevel.setTextColor(0xFFFF8800); // Turuncu
         } else {
-            holder.tvThreatLevel.setText("DÜŞÜK");
+            holder.tvThreatLevel.setText(R.string.level_low);
             holder.tvThreatLevel.setTextColor(0xFFFFFF00); // Sarı
         }
 

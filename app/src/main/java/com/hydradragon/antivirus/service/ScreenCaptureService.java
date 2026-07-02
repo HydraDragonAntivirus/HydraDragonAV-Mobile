@@ -231,7 +231,7 @@ public class ScreenCaptureService extends Service {
         if (nm == null) return;
         NotificationCompat.Builder b = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_shield_alert)
-            .setContentTitle("Malicious on-screen text detected")
+            .setContentTitle(getString(R.string.screencapture_malicious_text_title))
             .setContentText((pkg != null ? pkg + ": " : "") + String.join(", ", hits))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true);
@@ -258,8 +258,8 @@ public class ScreenCaptureService extends Service {
             PendingIntent.FLAG_IMMUTABLE);
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_shield_secure)
-            .setContentTitle("Zero Trust screen scanning active")
-            .setContentText("Scanning on-screen text for threats (OCR)")
+            .setContentTitle(getString(R.string.screencapture_active_title))
+            .setContentText(getString(R.string.screencapture_active_text))
             .setContentIntent(pi)
             .setOngoing(true)
             .build();
@@ -268,7 +268,7 @@ public class ScreenCaptureService extends Service {
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationChannel ch = new NotificationChannel(
-            CHANNEL_ID, "Screen OCR scanning", NotificationManager.IMPORTANCE_LOW);
+            CHANNEL_ID, getString(R.string.screencapture_channel_name), NotificationManager.IMPORTANCE_LOW);
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) nm.createNotificationChannel(ch);
     }

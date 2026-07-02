@@ -96,9 +96,9 @@ public class GuardService extends Service {
     /** Fired by the Downloads-folder FileObserver on CLOSE_WRITE — a file just
      *  finished being written (download complete, or moved/copied in). Runs a
      *  REAL scan (native YARA/ClamAV/ML for any file type, the full analyzeApp
-     *  pipeline for an APK) off the observer thread; used to just flip a coin
-     *  ({@code Math.random() > 0.4}) and show a notification regardless of the
-     *  file's actual contents. */
+     *  pipeline for an APK) off the observer thread. On a hit, the file is NOT
+     *  auto-deleted — the user is asked via a Remove/Ignore notification, same
+     *  as every other detection path in this app. */
     private void scanDownloadedFile(java.io.File file) {
         new Thread(() -> {
             ThreatResult threat = null;
@@ -110,6 +110,7 @@ public class GuardService extends Service {
 
             android.app.NotificationManager nm = getSystemService(android.app.NotificationManager.class);
             if (nm == null) return;
+            int notifId = (int) System.currentTimeMillis();
             androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(this, "hydradragon_guard")
                     .setAutoCancel(true)
                     .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MAX)
@@ -125,12 +126,29 @@ public class GuardService extends Service {
                 ThreatLogger.logThreat(this, file.getAbsolutePath(), file.getName(),
                     getString(R.string.danger_download_desc));
                 if (callback != null) callback.onThreatDetected(threat);
+
+                android.content.Intent removeIntent = new android.content.Intent(this, UserActionReceiver.class)
+                        .setAction(UserActionReceiver.ACTION_REMOVE_FILE)
+                        .putExtra(UserActionReceiver.EXTRA_ID, file.getAbsolutePath())
+                        .putExtra(UserActionReceiver.EXTRA_NOTIF, notifId);
+                PendingIntent removePI = PendingIntent.getBroadcast(this, notifId, removeIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+                android.content.Intent ignoreIntent = new android.content.Intent(this, UserActionReceiver.class)
+                        .setAction(UserActionReceiver.ACTION_IGNORE)
+                        .putExtra(UserActionReceiver.EXTRA_ID, file.getAbsolutePath())
+                        .putExtra(UserActionReceiver.EXTRA_NOTIF, notifId);
+                PendingIntent ignorePI = PendingIntent.getBroadcast(this, notifId + 1, ignoreIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
                 builder.setSmallIcon(R.drawable.ic_shield_alert)
                        .setContentTitle(getString(R.string.danger_download_title))
-                       .setContentText(getString(R.string.danger_download_desc))
-                       .setColor(0xFF0040);
+                       .setContentText(file.getName() + ": " + getString(R.string.danger_download_desc))
+                       .setColor(0xFF0040)
+                       .addAction(0, getString(R.string.btn_destroy), removePI)
+                       .addAction(0, getString(R.string.btn_ignore), ignorePI);
             }
-            nm.notify((int) System.currentTimeMillis(), builder.build());
+            nm.notify(notifId, builder.build());
         }).start();
     }
 
@@ -178,7 +196,7 @@ public class GuardService extends Service {
         Log.i(TAG, "HydraDragon Guard başlatılıyor...");
         createNotificationChannel();
         initializeEngines();
-        startForeground(NOTIFICATION_ID, buildNotification("Sistem korunuyor", true));
+        startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.guard_protecting_status), true));
         startPeriodicScans();
         startDownloadMonitor();
         startFullStorageMonitor();
@@ -320,8 +338,8 @@ public class GuardService extends Service {
         if (nm == null) return;
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_process_alert)
-            .setContentTitle("🔓 Root Exploit Detected")
-            .setContentText("Device became rooted while running"
+            .setContentTitle(getString(R.string.notif_root_exploit_title))
+            .setContentText(getString(R.string.notif_root_exploit_text)
                 + (suspectPackage != null && !suspectPackage.isEmpty() ? " — " + suspectPackage : ""))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -369,7 +387,7 @@ public class GuardService extends Service {
         NotificationManager nm = getSystemService(NotificationManager.class);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_network_alert)
-            .setContentTitle("🛡 Şüpheli Ağ Bağlantısı Engellendi")
+            .setContentTitle(getString(R.string.notif_suspicious_network_title))
             .setContentText(event.destIp + ":" + event.destPort + " → " + event.reason)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
@@ -382,7 +400,7 @@ public class GuardService extends Service {
         NotificationManager nm = getSystemService(NotificationManager.class);
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_process_alert)
-            .setContentTitle("⚠ Şüpheli Process Tespit Edildi")
+            .setContentTitle(getString(R.string.notif_suspicious_process_title))
             .setContentText("PID:" + process.getPid() + " - " + process.getProcessName())
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
@@ -415,9 +433,9 @@ public class GuardService extends Service {
     private void createNotificationChannel() {
         NotificationChannel channel = new NotificationChannel(
             CHANNEL_ID,
-            "HydraDragon Koruma",
+            getString(R.string.guard_channel_name),
             NotificationManager.IMPORTANCE_LOW);
-        channel.setDescription("Gerçek zamanlı koruma bildirimleri");
+        channel.setDescription(getString(R.string.guard_channel_desc));
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) {
             nm.createNotificationChannel(channel);

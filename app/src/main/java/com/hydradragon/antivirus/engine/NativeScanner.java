@@ -83,7 +83,7 @@ public final class NativeScanner {
     /** Diagnostics: what loaded / failed during the last nativeInit. */
     private static native String nativeStatus();
 
-    private static native boolean nativeIsHashWhitelisted(String sha256);
+    private static native boolean nativeIsHashWhitelisted(String md5);
 
     private static native String nativeScanUrl(String url);
 
@@ -114,12 +114,12 @@ public final class NativeScanner {
         } catch (Throwable t) { return null; }
     }
 
-    /** True if {@code sha256} is in the NSRL whitelist (held in NATIVE memory as a
+    /** True if {@code md5} is in the NSRL whitelist (held in NATIVE memory as a
      *  fastbloom filter — never loaded into the Java heap). False if the native
      *  lib/whitelist isn't available. */
-    public static boolean isHashWhitelisted(String sha256) {
-        if (!LIB_LOADED || !ready || sha256 == null || sha256.isEmpty()) return false;
-        try { return nativeIsHashWhitelisted(sha256); } catch (Throwable t) { return false; }
+    public static boolean isHashWhitelisted(String md5) {
+        if (!LIB_LOADED || !ready || md5 == null || md5.isEmpty()) return false;
+        try { return nativeIsHashWhitelisted(md5); } catch (Throwable t) { return false; }
     }
 
     /** Scan OCR'd on-screen text (from ScreenCaptureService) against the

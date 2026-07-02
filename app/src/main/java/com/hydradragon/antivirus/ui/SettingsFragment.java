@@ -85,37 +85,37 @@ public class SettingsFragment extends Fragment {
                 Toast.makeText(getContext(), getString(R.string.protection_enabled), Toast.LENGTH_SHORT).show();
             } else {
                 requireContext().stopService(svc);
-                Toast.makeText(getContext(), "Protection paused — no alerts", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.protection_paused), Toast.LENGTH_SHORT).show();
             }
         });
 
         boolean shield = prefs().getBoolean(KEY_SHIELD, false);
-        addToggle("Web Shield (DNS VPN)", shield, (btn, on) -> {
+        addToggle(getString(R.string.web_shield), shield, (btn, on) -> {
             prefs().edit().putBoolean("web_shield_decided", true)
                           .putBoolean(KEY_SHIELD, on).apply();
             if (on) enableWebShield(btn);
             else disableWebShield();
         });
 
-        addHeader("Zero Trust (experimental)");
+        addHeader(getString(R.string.zero_trust_header));
         boolean zeroTrust = com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext());
-        addToggle("Zero Trust Mode — NOT RECOMMENDED", zeroTrust, (btn, on) -> {
+        addToggle(getString(R.string.zero_trust_toggle), zeroTrust, (btn, on) -> {
             com.hydradragon.antivirus.engine.ZeroTrustMode.setEnabled(requireContext(), on);
             Toast.makeText(getContext(), on
-                ? "Zero Trust ON: unmatched apps now show as unverified, not clean — expect false positives"
-                : "Zero Trust OFF", Toast.LENGTH_LONG).show();
+                ? getString(R.string.zero_trust_on_toast)
+                : getString(R.string.zero_trust_off_toast), Toast.LENGTH_LONG).show();
         });
 
         boolean screenOcr = prefs().getBoolean(KEY_SCREEN_OCR, false);
-        addToggle("Screen OCR scanning — NOT RECOMMENDED (battery)", screenOcr, (btn, on) -> {
+        addToggle(getString(R.string.screen_ocr_toggle), screenOcr, (btn, on) -> {
             if (on) requestScreenCapture(btn);
             else stopScreenCapture();
         });
 
-        addHeader("SMS Protection");
+        addHeader(getString(R.string.sms_protection_header));
         boolean smsGranted = ContextCompat.checkSelfPermission(requireContext(),
             android.Manifest.permission.RECEIVE_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED;
-        addToggle("Scan incoming SMS for scam links / phishing", smsGranted, (btn, on) -> {
+        addToggle(getString(R.string.sms_scan_toggle), smsGranted, (btn, on) -> {
             if (on) requestSmsPermission(btn);
             else openAppSettingsToRevokeSms();
         });
@@ -213,7 +213,7 @@ public class SettingsFragment extends Fragment {
         try {
             prep = VpnService.prepare(requireContext());
         } catch (Throwable t) {
-            Toast.makeText(getContext(), "VPN unavailable on this device", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), getString(R.string.vpn_unavailable), Toast.LENGTH_LONG).show();
             prefs().edit().putBoolean(KEY_SHIELD, false).apply();
             if (btn != null) btn.setChecked(false);
             return;
@@ -228,7 +228,7 @@ public class SettingsFragment extends Fragment {
     private void startShieldService() {
         ContextCompat.startForegroundService(requireContext(),
             new Intent(requireContext(), com.hydradragon.antivirus.service.DnsVpnService.class));
-        Toast.makeText(getContext(), "Web Shield enabled", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), getString(R.string.web_shield_enabled), Toast.LENGTH_SHORT).show();
     }
 
     private void disableWebShield() {
@@ -239,7 +239,7 @@ public class SettingsFragment extends Fragment {
         try { requireContext().startService(svc); } catch (Throwable ignore) {}
         requireContext().stopService(
             new Intent(requireContext(), com.hydradragon.antivirus.service.DnsVpnService.class));
-        Toast.makeText(getContext(), "Web Shield disabled", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), getString(R.string.web_shield_disabled), Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -251,7 +251,7 @@ public class SettingsFragment extends Fragment {
             } else {
                 // Consent denied — revert the toggle.
                 prefs().edit().putBoolean(KEY_SHIELD, false).apply();
-                Toast.makeText(getContext(), "VPN consent denied", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), getString(R.string.vpn_consent_denied), Toast.LENGTH_LONG).show();
                 buildUI();
             }
         } else if (requestCode == REQ_SCREEN_CAPTURE) {
@@ -262,10 +262,10 @@ public class SettingsFragment extends Fragment {
                 svc.putExtra(com.hydradragon.antivirus.service.ScreenCaptureService.EXTRA_RESULT_CODE, resultCode);
                 svc.putExtra(com.hydradragon.antivirus.service.ScreenCaptureService.EXTRA_RESULT_DATA, data);
                 ContextCompat.startForegroundService(requireContext(), svc);
-                Toast.makeText(getContext(), "Screen OCR scanning ON", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.screen_ocr_on_toast), Toast.LENGTH_SHORT).show();
             } else {
                 prefs().edit().putBoolean(KEY_SCREEN_OCR, false).apply();
-                Toast.makeText(getContext(), "Screen capture consent denied", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), getString(R.string.screen_capture_consent_denied), Toast.LENGTH_LONG).show();
                 buildUI();
             }
         }
@@ -277,7 +277,7 @@ public class SettingsFragment extends Fragment {
             (android.media.projection.MediaProjectionManager)
                 requireContext().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         if (mgr == null) {
-            Toast.makeText(getContext(), "Screen capture unavailable on this device", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), getString(R.string.screen_capture_unavailable), Toast.LENGTH_LONG).show();
             if (btn != null) btn.setChecked(false);
             return;
         }
@@ -288,7 +288,7 @@ public class SettingsFragment extends Fragment {
         prefs().edit().putBoolean(KEY_SCREEN_OCR, false).apply();
         requireContext().stopService(new Intent(requireContext(),
             com.hydradragon.antivirus.service.ScreenCaptureService.class));
-        Toast.makeText(getContext(), "Screen OCR scanning OFF", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), getString(R.string.screen_ocr_off_toast), Toast.LENGTH_SHORT).show();
     }
 
     // ─── SMS PROTECTION ─────────────────────────────────────────────
@@ -307,7 +307,7 @@ public class SettingsFragment extends Fragment {
     /** Android has no API to revoke a permission from within the app — send the
      *  user to this app's system App Info > Permissions screen to turn it off. */
     private void openAppSettingsToRevokeSms() {
-        Toast.makeText(getContext(), "Open Permissions > SMS to turn this off", Toast.LENGTH_LONG).show();
+        Toast.makeText(getContext(), getString(R.string.sms_open_permissions_toast), Toast.LENGTH_LONG).show();
         try {
             startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                 Uri.parse("package:" + requireContext().getPackageName())));
@@ -321,7 +321,7 @@ public class SettingsFragment extends Fragment {
         if (requestCode == REQ_SMS) {
             boolean granted = grantResults.length > 0
                 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED;
-            Toast.makeText(getContext(), granted ? "SMS scanning enabled" : "SMS permission denied",
+            Toast.makeText(getContext(), granted ? getString(R.string.sms_scanning_enabled) : getString(R.string.sms_permission_denied),
                 granted ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
             buildUI(); // reflect the actual granted state, whichever way it went
         }
@@ -383,7 +383,7 @@ public class SettingsFragment extends Fragment {
     }
     private void addAbout() {
         TextView v = new TextView(getContext());
-        v.setText("HydraDragon Antivirus v1.0.2\n━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+        v.setText("HydraDragon Antivirus v1.0.3\n━━━━━━━━━━━━━━━━━━━━━━\n\n" +
             "[ GELİŞTİRİCİLER ]\n\n  ◈  Musayev Yusif\n  ◈  Emirhan Uçan\n\n" +
             "━━━━━━━━━━━━━━━━━━━━━━\n" +
             "Engine : XOR Filter (Binary-Fuse) + X.509\nAI : Native Rust (MinHash/LSH + Isolation Forest)");

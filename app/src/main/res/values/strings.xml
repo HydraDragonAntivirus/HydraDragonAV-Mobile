@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">HydraDragon can run a LOCAL DNS-filtering VPN to block malicious / phishing sites. It does NOT proxy, decrypt or inspect your traffic — only DNS lookups are filtered, on-device. Android shows a key icon while it\'s active.</string>
     <string name="enable">Enable</string>
     <string name="skip">Skip</string>
-    <string name="app_title">ANTIVIRUS v1.0.2</string>
+    <string name="app_title">ANTIVIRUS v1.0.3</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="nav_dashboard">Dashboard</string>
     <string name="nav_scan">Scan</string>
@@ -79,7 +79,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="btn_full_scan">🔍 FULL SCAN</string>
     <string name="btn_quick_scan">🚀 QUICK SCAN</string>
     <string name="btn_cancel">Cancel</string>
-    <string name="system_clean">System Clean</string>
+    <string name="system_clean">System Clean According To Last Scan</string>
         <string name="risk_critical">CRITICAL</string>
     <string name="risk_high">HIGH RISK (%1$d)</string>
     <string name="risk_medium">MEDIUM RISK (%1$d)</string>
@@ -176,4 +176,63 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="sms_virus_title">Malicious SMS blocked</string>
     <string name="sms_virus_msg">A text message from %1$s contained a malicious link or scam wording and was flagged.</string>
     <string name="storage_watch_toggle">Real-time full storage monitoring (extra battery use)</string>
+
+    <string name="btn_grant_now">Grant Now</string>
+    <string name="btn_exit_app">Exit App</string>
+    <string name="mandatory_permission_suffix">\n\nIf you don\'t grant this permission, the app will close.</string>
+    <string name="all_files_access_title">All Files Access Required</string>
+    <string name="all_files_access_msg">HydraDragon needs full file access to scan for malware.</string>
+    <string name="accessibility_optional_title">Accessibility Service (Optional)</string>
+    <string name="accessibility_optional_msg">HydraDragon Dynamic Behavior Analysis needs Accessibility Service to actively monitor apps and stop ransomware in real-time.\n\nHowever, some devices restrict this. You can skip this if your device doesn\'t allow it, but Advanced Dynamic Protection will be disabled.</string>
+    <string name="notification_permission_required">Notification permission is required!</string>
+    <string name="play_protect_open_failed">Could not open Play Protect settings</string>
+
+    <string name="zero_trust_header">Zero Trust (experimental)</string>
+    <string name="zero_trust_toggle">Zero Trust Mode — NOT RECOMMENDED</string>
+    <string name="zero_trust_on_toast">Zero Trust ON: unmatched apps now show as unverified, not clean — expect false positives</string>
+    <string name="zero_trust_off_toast">Zero Trust OFF</string>
+    <string name="screen_ocr_toggle">Screen OCR scanning — NOT RECOMMENDED (battery)</string>
+    <string name="screen_ocr_on_toast">Screen OCR scanning ON</string>
+    <string name="screen_ocr_off_toast">Screen OCR scanning OFF</string>
+    <string name="screen_capture_unavailable">Screen capture unavailable on this device</string>
+    <string name="screen_capture_consent_denied">Screen capture consent denied</string>
+    <string name="sms_protection_header">SMS Protection</string>
+    <string name="sms_scan_toggle">Scan incoming SMS for scam links / phishing</string>
+    <string name="sms_open_permissions_toast">Open Permissions &gt; SMS to turn this off</string>
+    <string name="sms_scanning_enabled">SMS scanning enabled</string>
+    <string name="sms_permission_denied">SMS permission denied</string>
+
+    <string name="dashboard_firewall_active">Firewall Engine ACTIVE</string>
+    <string name="dashboard_system_secure">System Secure</string>
+    <string name="dashboard_status_secure_desc">• Monitoring active\n• Network rules enforced\n• %1$s</string>
+    <string name="dashboard_status_alert_desc">• Monitoring active\n• Network rules enforced\n%1$s</string>
+
+    <string name="notif_root_exploit_title">🔓 Root Exploit Detected</string>
+    <string name="notif_root_exploit_text">Device became rooted while running</string>
+    <string name="notif_suspicious_network_title">🛡 Suspicious Network Connection Blocked</string>
+    <string name="notif_suspicious_process_title">⚠ Suspicious Process Detected</string>
+    <string name="guard_channel_name">HydraDragon Protection</string>
+    <string name="guard_channel_desc">Real-time protection notifications</string>
+    <string name="guard_protecting_status">System protected</string>
+
+    <string name="dnsvpn_malicious_blocked_title">Malicious site blocked</string>
+    <string name="dnsvpn_channel_name">Web Shield</string>
+    <string name="dnsvpn_session_name">HydraDragon Web Shield</string>
+    <string name="dnsvpn_notif_title">HydraDragon Web Shield</string>
+    <string name="dnsvpn_notif_text">Filtering DNS for malicious sites</string>
+
+    <string name="screencapture_malicious_text_title">Malicious on-screen text detected</string>
+    <string name="screencapture_active_title">Zero Trust screen scanning active</string>
+    <string name="screencapture_active_text">Scanning on-screen text for threats (OCR)</string>
+    <string name="screencapture_channel_name">Screen OCR scanning</string>
+
+    <string name="notif_critical_threat_blocked">CRITICAL THREAT BLOCKED</string>
+    <string name="notif_threat_detected_text">%1$s detected: %2$s — tap to remove</string>
+    <string name="notif_action_remove">Remove</string>
+    <string name="engine_status_format">Engine: %1$s</string>
+    <string name="error_reading_file">Error reading file</string>
+    <string name="marked_safe_format">Marked safe: %1$s</string>
+    <string name="net_event_blocked">BLOCKED</string>
+    <string name="net_event_allowed">ALLOWED</string>
+    <string name="risk_score_format">Risk: %1$d/100</string>
 </resources>
