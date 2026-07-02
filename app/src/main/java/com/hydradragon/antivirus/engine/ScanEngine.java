@@ -66,6 +66,25 @@ public class ScanEngine {
         photonCache.clear();
     }
     private ScanCallback callback;
+    // Per-engine cumulative timing (ms) for the current/last scan — used to
+    // find the slowest engine. Reset at the start of each scanAllApps() run.
+    private final java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong> engineTimingMs = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private void addTiming(String engine, long ms) {
+        engineTimingMs.computeIfAbsent(engine, k -> new java.util.concurrent.atomic.AtomicLong()).addAndGet(ms);
+    }
+
+    private void logEngineTimings() {
+        List<java.util.Map.Entry<String, java.util.concurrent.atomic.AtomicLong>> entries =
+            new ArrayList<>(engineTimingMs.entrySet());
+        entries.sort((a, b) -> Long.compare(b.getValue().get(), a.getValue().get()));
+        for (java.util.Map.Entry<String, java.util.concurrent.atomic.AtomicLong> e : entries) {
+            Log.i(TAG, "ENGINE_TIMING " + e.getKey() + " = " + e.getValue().get() + "ms");
+        }
+        if (!entries.isEmpty()) {
+            Log.i(TAG, "SLOWEST_ENGINE " + entries.get(0).getKey() + " (" + entries.get(0).getValue().get() + "ms)");
+        }
+    }
     // SHA-256 hash whitelist now lives in NATIVE memory (fastbloom) — see
     // NativeScanner.isHashWhitelisted — so the large NSRL set never sits in the
     // Java heap. isHashWhitelisted() below delegates to it.
@@ -229,6 +248,7 @@ public class ScanEngine {
 
     public void scanAllApps(boolean isFullScan) {
         cancelRequested = false;
+        engineTimingMs.clear();
         scanExecutor.execute(() -> {
             PackageManager pm = context.getPackageManager();
             List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
@@ -257,10 +277,21 @@ public class ScanEngine {
                     //  4) accessible app-data & system directories
                     java.util.Set<String> installedPackages = new java.util.HashSet<>();
                     for (ApplicationInfo a : apps) if (a.packageName != null) installedPackages.add(a.packageName);
+                    long t0 = android.os.SystemClock.elapsedRealtime();
                     scanAllStorageRoots(pm, threats, installedPackages);
+                    addTiming("scanAllStorageRoots", android.os.SystemClock.elapsedRealtime() - t0);
+
+                    t0 = android.os.SystemClock.elapsedRealtime();
                     deepNativeScanInstalledApks(apps, pm, threats);
+                    addTiming("deepNativeScanInstalledApks", android.os.SystemClock.elapsedRealtime() - t0);
+
+                    t0 = android.os.SystemClock.elapsedRealtime();
                     scanRecentProcesses(pm, threats);
+                    addTiming("scanRecentProcesses", android.os.SystemClock.elapsedRealtime() - t0);
+
+                    t0 = android.os.SystemClock.elapsedRealtime();
                     scanAccessibleDataDirs(pm, threats);
+                    addTiming("scanAccessibleDataDirs", android.os.SystemClock.elapsedRealtime() - t0);
                 } else if (!cancelRequested) {
                     // Quick scan: only APKs in Downloads.
                     scanDirectoryForApks(
@@ -269,6 +300,7 @@ public class ScanEngine {
                 }
             } catch (Exception e) { }
 
+            logEngineTimings();
             if (callback != null)
                 callback.onScanComplete(new ScanResult(total + threats.size(), threats.size(), threats));
         });
@@ -716,7 +748,9 @@ public class ScanEngine {
                 // model, or a high dangerous-permission count) corroborates it —
                 // "code smells like malware" plus "the antivirus also found
                 // something" is what actually earns a MALWARE verdict.
+                long codeT0 = android.os.SystemClock.elapsedRealtime();
                 CodeAnalyzer.AnalysisResult codeResult = codeAnalyzer.analyzeApk(apkPath);
+                addTiming("CodeAnalyzer", android.os.SystemClock.elapsedRealtime() - codeT0);
 
                 // Native engine: clamav (type-gated YARA + signatures) + ML model.
                 // Hash-first: a known-good (whitelisted) APK skips the whole native
@@ -724,7 +758,9 @@ public class ScanEngine {
                 String apkMd5 = apkPath != null ? fileMd5(new java.io.File(apkPath)) : null;
                 boolean nativeCorroborated = false;
                 if (apkPath != null && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
+                    long nativeT0 = android.os.SystemClock.elapsedRealtime();
                     NativeScanner.Verdict v = NativeScanner.scan(apkPath, app.packageName, apkMd5, ZeroTrustMode.isEnabled(context));
+                    addTiming("NativeScanner", android.os.SystemClock.elapsedRealtime() - nativeT0);
                     saveGeneratedRule(v);
                     fileMd5Vt = v.md5;
                     nativePackages.addAll(v.packages);
