@@ -314,7 +314,7 @@ public class DnsVpnService extends VpnService {
 
             if (host != null && !host.isEmpty()) {
                 String cat = UrlThreatScanner.get(this).scanUrl("http://" + host);
-                if (cat != null) {
+                if (cat != null && !com.hydradragon.antivirus.engine.WebsiteWhitelist.isDomainWhitelisted(this, host)) {
                     byte[] dnsR = nxdomain(p, dnsStart, dnsStart + dnsLen);
                     byte[] framed = frameTcpDns(dnsR);
                     byte[] data = buildTcp(p, ver, ipHdr, srcOff, dstOff, tcp,
