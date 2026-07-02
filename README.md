@@ -47,6 +47,16 @@ HydraDragonAV Mobile operates across four core pillars:
 
 A local **DnsVpnService** additionally filters DNS lookups against known-malicious domains, and a **NetworkSecurityScanner**/**NetworkMonitor** pair watches live connections for MITM interception, ARP spoofing, and malicious IP/C2 traffic.
 
+## 🚫 Why Not Shizuku (or Similar Shell-Privilege Frameworks)?
+
+Tools like [Shizuku](https://github.com/thedjchi/Shizuku) grant an app ADB-shell-level privileges (process killing, `PackageManager` operations beyond the public API, real iptables-style firewalling, etc.) without full root. It's a legitimate, useful project — just not the right fit *inside a production antivirus*:
+
+- **It doesn't remove the attack surface, it relocates it.** Shizuku's own privileged service is reachable via Binder by any app that requests it; embedding a shell-privilege-escalation client inside an AV means a compromise of the AV process (or a bug in how it talks to Shizuku) inherits ADB-level reach across the device — the exact blast radius an AV is supposed to shrink, not grow.
+- **It can't self-activate in production.** Shizuku needs the user to start it every boot via `adb shell` (wireless or USB debugging) or root, each time, unless the device is already rooted — completely impractical for a mass-market install, and this app already refuses to run at all on rooted devices (`RootCheck`) and warns the user when USB/wireless debugging is left on (`DebugModeCheck`/`DebugModeWarning`) precisely because both states widen the attack surface.
+- **The marginal capability isn't worth the trust model change.** The main draw (a real packet-level firewall, force-stopping arbitrary apps) is already reasonably covered here by `VpnService`-based DNS/domain/IP filtering (Web Shield) without ever requiring the user to authorize shell access to a third-party broker service.
+
+In short: a security product that asks the user to first grant it debug-shell reach is solving its threat model backwards. The app's actual privilege escalation surface is intentionally kept to what Android's public APIs (`AccessibilityService`, `VpnService`, `PackageManager`) allow — nothing that requires ADB, root, or a privileged companion app.
+
 *Designed with 💻 by @elnureisayeva1-cloud (creator) & @Siradankullanici (backend development)*
 
 About original HydraDragonAntivirus: This only detects Android malwares and minimalist version of original HydraDragonAntivirus.
