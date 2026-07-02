@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">يمكن لـ HydraDragon تشغيل VPN محلي لتصفية DNS لحظر المواقع الضارة / التصيّد الاحتيالي. لا يقوم بالوساطة أو فك التشفير أو فحص حركة بياناتك — يتم تصفية طلبات DNS فقط، على الجهاز نفسه. يعرض Android أيقونة مفتاح أثناء تفعيله.</string>
     <string name="enable">تفعيل</string>
     <string name="skip">تخطي</string>
-    <string name="app_title">مضاد فيروسات v1.0</string>
+    <string name="app_title">مضاد فيروسات v1.0.1</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="nav_dashboard">لوحة التحكم</string>
     <string name="nav_scan">فحص</string>

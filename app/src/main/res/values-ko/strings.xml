@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">HydraDragon은 악성/피싱 사이트를 차단하기 위해 로컬 DNS 필터링 VPN을 실행할 수 있습니다. 트래픽을 프록시하거나 복호화하거나 검사하지 않으며, 기기 내에서 DNS 조회만 필터링합니다. 활성화되어 있는 동안 Android에 열쇠 아이콘이 표시됩니다.</string>
     <string name="enable">활성화</string>
     <string name="skip">건너뛰기</string>
-    <string name="app_title">안티바이러스 v1.0</string>
+    <string name="app_title">안티바이러스 v1.0.1</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="nav_dashboard">대시보드</string>
     <string name="nav_scan">스캔</string>

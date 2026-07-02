@@ -383,7 +383,7 @@ public class SettingsFragment extends Fragment {
     }
     private void addAbout() {
         TextView v = new TextView(getContext());
-        v.setText("HydraDragon Antivirus v1.0\n━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+        v.setText("HydraDragon Antivirus v1.0.1\n━━━━━━━━━━━━━━━━━━━━━━\n\n" +
             "[ GELİŞTİRİCİLER ]\n\n  ◈  Musayev Yusif\n  ◈  Emirhan Uçan\n\n" +
             "━━━━━━━━━━━━━━━━━━━━━━\n" +
             "Engine : XOR Filter (Binary-Fuse) + X.509\nAI : Native Rust (MinHash/LSH + Isolation Forest)");

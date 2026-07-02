@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">HydraDragon dapat menjalankan VPN penyaring DNS LOKAL untuk memblokir situs berbahaya/phishing. Ini TIDAK melakukan proxy, mendekripsi, atau memeriksa lalu lintas Anda — hanya permintaan DNS yang disaring, langsung di perangkat. Android menampilkan ikon kunci saat aktif.</string>
     <string name="enable">Aktifkan</string>
     <string name="skip">Lewati</string>
-    <string name="app_title">ANTIVIRUS v1.0</string>
+    <string name="app_title">ANTIVIRUS v1.0.1</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="nav_dashboard">Dasbor</string>
     <string name="nav_scan">Pindai</string>

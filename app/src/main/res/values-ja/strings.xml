@@ -18,7 +18,7 @@
     <string name="web_shield_vpn_msg">HydraDragonは、悪意のある/フィッシングサイトをブロックするために、ローカルのDNSフィルタリングVPNを実行できます。トラフィックをプロキシしたり、復号したり、検査したりすることはありません — デバイス上でDNSルックアップのみをフィルタリングします。有効な間、Androidに鍵のアイコンが表示されます。</string>
     <string name="enable">有効にする</string>
     <string name="skip">スキップ</string>
-    <string name="app_title">アンチウイルス v1.0</string>
+    <string name="app_title">アンチウイルス v1.0.1</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="nav_dashboard">ダッシュボード</string>
     <string name="nav_scan">スキャン</string>
