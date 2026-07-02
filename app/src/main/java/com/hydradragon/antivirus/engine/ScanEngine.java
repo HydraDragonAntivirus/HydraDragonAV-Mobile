@@ -446,6 +446,7 @@ public class ScanEngine {
             PackageManager pm = context.getPackageManager();
             List<ThreatResult> threats = new ArrayList<>();
             scanDirectoryForApks(dir, pm, threats, true);
+            logEngineTimings();
             int scannedTotal = filesScannedCount.get() + threats.size();
             if (callback != null)
                 callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats));
