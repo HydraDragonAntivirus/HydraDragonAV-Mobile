@@ -274,6 +274,7 @@
     <string name="file_trap_title">🪤 Сработала Файловая Ловушка от Вымогателей</string>
     <string name="file_trap_msg">%1$s коснулось файла-приманки, к которому ни у одного легитимного приложения нет причин обращаться — помечено как вымогатель, будет сообщено при следующем сканировании.</string>
     <string name="task_hijack_detected">Проверка безопасности не пройдена — похоже, что другое приложение наложено поверх этого экрана, закрытие для вашей защиты</string>
+    <string name="settings_automation_blocked">Заблокировано — настройки можно изменить только вручную, а не автоматически</string>
     <string name="notif_suspicious_network_title">🛡 Подозрительное Сетевое Соединение Заблокировано</string>
     <string name="notif_suspicious_process_title">⚠ Обнаружен Подозрительный Процесс</string>
     <string name="guard_channel_name">Защита HydraDragon</string>

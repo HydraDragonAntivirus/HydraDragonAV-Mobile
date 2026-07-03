@@ -45,6 +45,20 @@ public class SettingsFragment extends Fragment {
     private static final int REQ_SCREEN_CAPTURE = 1202;
     private static final int REQ_SMS = 1203;
 
+    // Self-protection: only the real user should be able to change settings.
+    // A transparent tapjacking overlay is caught by FLAG_WINDOW_IS_OBSCURED
+    // (setFilterTouchesWhenObscured, applied to every switch in addToggle()
+    // below) — but a malicious accessibility service calling
+    // AccessibilityNodeInfo.performAction(ACTION_CLICK) directly never
+    // generates a MotionEvent at all, so obscure-touch filtering can't see
+    // it. The only thing that technique CAN'T fake convincingly is HUMAN
+    // TIMING: no one deliberately flips several unrelated toggles within a
+    // fraction of a second. RECENT_TOGGLE_WINDOW_MS / RECENT_TOGGLE_BURST is
+    // that rate limit — a burst reverts itself and blocks with a warning.
+    private static final long RECENT_TOGGLE_WINDOW_MS = 1200;
+    private static final int RECENT_TOGGLE_BURST = 3;
+    private final java.util.ArrayDeque<Long> recentToggleTimes = new java.util.ArrayDeque<>();
+
     // Set right before launching exportRuleLauncher so the callback (which
     // gets only the destination Uri back) knows WHICH .yar file's content to
     // write there.
@@ -496,8 +510,39 @@ public class SettingsFragment extends Fragment {
         l.setTextColor(color(R.color.text_primary)); l.setTypeface(Typeface.MONOSPACE);
         l.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         r.addView(l);
-        Switch sw = new Switch(getContext()); sw.setChecked(state); sw.setOnCheckedChangeListener(cb);
+        Switch sw = new Switch(getContext()); sw.setChecked(state);
+        // Overlay-tapjacking defense — Android's own built-in
+        // FLAG_WINDOW_IS_OBSCURED/PARTIALLY_OBSCURED check, same technique
+        // SecurePinPad already used for the PIN pad.
+        sw.setFilterTouchesWhenObscured(true);
+        sw.setOnCheckedChangeListener(guardedToggleListener(cb));
         r.addView(sw); container.addView(r);
+    }
+
+    /** Wraps a toggle's real listener with the rate-limit described above the
+     *  RECENT_TOGGLE_* constants. Reverts (without re-invoking the real
+     *  listener) and warns instead of applying the change when a burst is
+     *  detected. */
+    private CompoundButton.OnCheckedChangeListener guardedToggleListener(
+            CompoundButton.OnCheckedChangeListener real) {
+        return (btn, checked) -> {
+            long now = System.currentTimeMillis();
+            recentToggleTimes.addLast(now);
+            while (!recentToggleTimes.isEmpty()
+                    && now - recentToggleTimes.peekFirst() > RECENT_TOGGLE_WINDOW_MS) {
+                recentToggleTimes.removeFirst();
+            }
+            if (recentToggleTimes.size() >= RECENT_TOGGLE_BURST) {
+                recentToggleTimes.clear();
+                btn.setOnCheckedChangeListener(null);
+                btn.setChecked(!checked); // revert
+                btn.setOnCheckedChangeListener(guardedToggleListener(real));
+                Toast.makeText(getContext(), getString(R.string.settings_automation_blocked),
+                    Toast.LENGTH_LONG).show();
+                return;
+            }
+            real.onCheckedChanged(btn, checked);
+        };
     }
     private void addBtn(String label, int bgColor, View.OnClickListener cl) {
         TextView b = new TextView(getContext()); b.setText(label);
@@ -508,6 +553,7 @@ public class SettingsFragment extends Fragment {
         b.setTextColor(color(R.color.text_primary)); b.setBackgroundColor(bgColor);
         b.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         b.setPadding(32,28,32,28); b.setTextSize(14); b.setGravity(Gravity.CENTER);
+        b.setFilterTouchesWhenObscured(true); // same overlay-tapjacking defense as addToggle()
         b.setOnClickListener(cl);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);

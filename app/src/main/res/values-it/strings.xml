@@ -274,6 +274,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="file_trap_title">🪤 Trappola per File Ransomware Attivata</string>
     <string name="file_trap_msg">%1$s ha toccato un file esca che nessuna app legittima ha motivo di accedere — contrassegnata come ransomware, verrà segnalata alla prossima scansione.</string>
     <string name="task_hijack_detected">Controllo di sicurezza non riuscito — un\'altra app sembra essere sovrapposta a questa schermata, chiusura per la tua protezione</string>
+    <string name="settings_automation_blocked">Bloccato — le impostazioni possono essere modificate solo da te, non automaticamente</string>
     <string name="notif_suspicious_network_title">🛡 Connessione di rete sospetta bloccata</string>
     <string name="notif_suspicious_process_title">⚠ Processo sospetto rilevato</string>
     <string name="guard_channel_name">Protezione HydraDragon</string>

@@ -274,6 +274,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="file_trap_title">🪤 Bẫy Tệp Ransomware Đã Kích Hoạt</string>
     <string name="file_trap_msg">%1$s đã chạm vào một tệp mồi mà không ứng dụng hợp pháp nào có lý do để truy cập — bị gắn cờ là ransomware, sẽ được báo cáo trong lần quét tiếp theo.</string>
     <string name="task_hijack_detected">Kiểm tra bảo mật thất bại — có vẻ như một ứng dụng khác đang chồng lên màn hình này, đang đóng để bảo vệ bạn</string>
+    <string name="settings_automation_blocked">Đã chặn — cài đặt chỉ có thể được thay đổi bởi bạn, không phải tự động</string>
     <string name="notif_suspicious_network_title">🛡 Đã chặn Kết nối Mạng Đáng ngờ</string>
     <string name="notif_suspicious_process_title">⚠ Phát hiện Tiến trình Đáng ngờ</string>
     <string name="guard_channel_name">Bảo vệ HydraDragon</string>

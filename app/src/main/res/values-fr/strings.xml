@@ -274,6 +274,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="file_trap_title">🪤 Piège à Fichier Rançongiciel Déclenché</string>
     <string name="file_trap_msg">%1$s a touché un fichier leurre qu\'aucune application légitime n\'a de raison d\'accéder — signalée comme rançongiciel, elle sera reportée au prochain scan.</string>
     <string name="task_hijack_detected">Échec du contrôle de sécurité — une autre application semble s\'être superposée à cet écran, fermeture pour votre protection</string>
+    <string name="settings_automation_blocked">Bloqué — les paramètres ne peuvent être modifiés que par vous, pas automatiquement</string>
     <string name="notif_suspicious_network_title">🛡 Connexion Réseau Suspecte Bloquée</string>
     <string name="notif_suspicious_process_title">⚠ Processus Suspect Détecté</string>
     <string name="guard_channel_name">Protection HydraDragon</string>

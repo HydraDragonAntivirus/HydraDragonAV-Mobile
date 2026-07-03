@@ -274,6 +274,7 @@ Puntuación de riesgo: %2$d/100
     <string name="file_trap_title">🪤 Trampa de Archivo Ransomware Activada</string>
     <string name="file_trap_msg">%1$s tocó un archivo señuelo que ninguna app legítima tiene motivo alguno para acceder — marcada como ransomware, se reportará en el próximo escaneo.</string>
     <string name="task_hijack_detected">Fallo en la comprobación de seguridad — parece que otra app se ha superpuesto a esta pantalla, cerrando para tu protección</string>
+    <string name="settings_automation_blocked">Bloqueado — los ajustes solo puedes cambiarlos tú, no de forma automática</string>
     <string name="notif_suspicious_network_title">🛡 Conexión de Red Sospechosa Bloqueada</string>
     <string name="notif_suspicious_process_title">⚠ Proceso Sospechoso Detectado</string>
     <string name="guard_channel_name">Protección HydraDragon</string>

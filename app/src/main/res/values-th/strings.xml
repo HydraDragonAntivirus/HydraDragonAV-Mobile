@@ -274,6 +274,7 @@
     <string name="file_trap_title">🪤 กับดักไฟล์แรนซัมแวร์ถูกกระตุ้น</string>
     <string name="file_trap_msg">%1$s แตะไฟล์ล่อที่ไม่มีแอปที่ถูกต้องตามกฎหมายใดมีเหตุผลจะเข้าถึง — ถูกตั้งค่าสถานะว่าเป็นแรนซัมแวร์ และจะถูกรายงานในการสแกนครั้งถัดไป</string>
     <string name="task_hijack_detected">การตรวจสอบความปลอดภัยล้มเหลว — ดูเหมือนมีแอปอื่นซ้อนทับอยู่บนหน้าจอนี้ กำลังปิดเพื่อความปลอดภัยของคุณ</string>
+    <string name="settings_automation_blocked">ถูกบล็อก — การตั้งค่าสามารถเปลี่ยนแปลงได้โดยคุณเท่านั้น ไม่ใช่โดยอัตโนมัติ</string>
     <string name="notif_suspicious_network_title">🛡 บล็อกการเชื่อมต่อเครือข่ายที่น่าสงสัยแล้ว</string>
     <string name="notif_suspicious_process_title">⚠ ตรวจพบกระบวนการที่น่าสงสัย</string>
     <string name="guard_channel_name">การป้องกัน HydraDragon</string>

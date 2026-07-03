@@ -274,6 +274,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="file_trap_title">🪤 Perangkap File Ransomware Terpicu</string>
     <string name="file_trap_msg">%1$s menyentuh file umpan yang tidak ada alasan bagi aplikasi sah untuk mengaksesnya — ditandai sebagai ransomware, akan dilaporkan pada pemindaian berikutnya.</string>
     <string name="task_hijack_detected">Pemeriksaan keamanan gagal — aplikasi lain tampaknya dilapisi di atas layar ini, ditutup demi perlindungan Anda</string>
+    <string name="settings_automation_blocked">Diblokir — pengaturan hanya dapat diubah oleh Anda, tidak secara otomatis</string>
     <string name="notif_suspicious_network_title">🛡 Koneksi Jaringan Mencurigakan Diblokir</string>
     <string name="notif_suspicious_process_title">⚠ Proses Mencurigakan Terdeteksi</string>
     <string name="guard_channel_name">Perlindungan HydraDragon</string>

@@ -44,6 +44,7 @@
     <string name="security_flag_lost">Security check failed — closing for your protection</string>
     <string name="obscured_touch_warning">Tap ignored — something is overlaying the screen</string>
     <string name="task_hijack_detected">Security check failed — another app appears to be layered on this screen, closing for your protection</string>
+    <string name="settings_automation_blocked">Blocked — settings can only be changed by you, not automatically</string>
     <string name="show_taps_warning_title">\"Show Taps\" Is Enabled</string>
     <string name="show_taps_warning_msg">Developer Options > Show Taps draws a visible dot wherever you touch the screen — a screen recording could reveal your PIN through it even with this screen protected. Please disable it before entering your PIN.</string>
     <string name="show_taps_open_settings">OPEN DEVELOPER OPTIONS</string>

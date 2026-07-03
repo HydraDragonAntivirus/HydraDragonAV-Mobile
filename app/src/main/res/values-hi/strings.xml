@@ -274,6 +274,7 @@
     <string name="file_trap_title">🪤 रैनसमवेयर फ़ाइल ट्रैप सक्रिय हुआ</string>
     <string name="file_trap_msg">%1$s ने एक छलावा फ़ाइल को छुआ जिसे किसी भी वैध ऐप को एक्सेस करने का कोई कारण नहीं है — रैनसमवेयर के रूप में चिह्नित, अगली स्कैन में रिपोर्ट किया जाएगा।</string>
     <string name="task_hijack_detected">सुरक्षा जांच विफल — इस स्क्रीन पर कोई अन्य ऐप ऊपर दिखाई दे रहा है, आपकी सुरक्षा के लिए बंद किया जा रहा है</string>
+    <string name="settings_automation_blocked">रोका गया — सेटिंग्स केवल आपके द्वारा बदली जा सकती हैं, अपने आप नहीं</string>
     <string name="notif_suspicious_network_title">🛡 संदिग्ध नेटवर्क कनेक्शन ब्लॉक किया गया</string>
     <string name="notif_suspicious_process_title">⚠ संदिग्ध प्रक्रिया का पता चला</string>
     <string name="guard_channel_name">HydraDragon सुरक्षा</string>

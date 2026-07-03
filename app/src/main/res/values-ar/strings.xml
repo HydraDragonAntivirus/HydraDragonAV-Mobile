@@ -274,6 +274,7 @@
     <string name="file_trap_title">🪤 تم تفعيل فخ ملف برنامج الفدية</string>
     <string name="file_trap_msg">%1$s لمس ملفًا خداعيًا لا يوجد أي سبب مشروع لأي تطبيق للوصول إليه — تم تصنيفه كبرنامج فدية، وسيُبلَّغ عنه في الفحص التالي.</string>
     <string name="task_hijack_detected">فشل فحص الأمان — يبدو أن تطبيقًا آخر مُوضّع فوق هذه الشاشة، يتم الإغلاق لحمايتك</string>
+    <string name="settings_automation_blocked">محظور — يمكن تغيير الإعدادات من قِبلك أنت فقط، وليس تلقائيًا</string>
     <string name="notif_suspicious_network_title">🛡 تم حظر اتصال شبكة مشبوه</string>
     <string name="notif_suspicious_process_title">⚠ تم اكتشاف عملية مشبوهة</string>
     <string name="guard_channel_name">حماية HydraDragon</string>

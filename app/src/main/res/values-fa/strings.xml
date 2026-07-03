@@ -274,6 +274,7 @@
     <string name="file_trap_title">🪤 تله فایل باج‌افزار فعال شد</string>
     <string name="file_trap_msg">‏%1$s یک فایل طعمه را لمس کرد که هیچ برنامه قانونی دلیلی برای دسترسی به آن ندارد — به‌عنوان باج‌افزار علامت‌گذاری شد و در بررسی بعدی گزارش خواهد شد.</string>
     <string name="task_hijack_detected">بررسی امنیتی ناموفق بود — به‌نظر می‌رسد برنامه‌ای دیگر روی این صفحه قرار گرفته است، برای محافظت از شما بسته می‌شود</string>
+    <string name="settings_automation_blocked">مسدود شد — تنظیمات فقط توسط خود شما قابل تغییر است، نه به‌طور خودکار</string>
     <string name="notif_suspicious_network_title">🛡 اتصال شبکه مشکوک مسدود شد</string>
     <string name="notif_suspicious_process_title">⚠ فرآیند مشکوک شناسایی شد</string>
     <string name="guard_channel_name">محافظت HydraDragon</string>

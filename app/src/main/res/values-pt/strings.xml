@@ -274,6 +274,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="file_trap_title">🪤 Armadilha de Arquivo Ransomware Acionada</string>
     <string name="file_trap_msg">%1$s tocou em um arquivo-isca que nenhum app legítimo tem motivo para acessar — sinalizada como ransomware, será reportada na próxima verificação.</string>
     <string name="task_hijack_detected">Falha na verificação de segurança — outro app parece estar sobreposto a esta tela, fechando para sua proteção</string>
+    <string name="settings_automation_blocked">Bloqueado — as configurações só podem ser alteradas por você, não automaticamente</string>
     <string name="notif_suspicious_network_title">🛡 Conexão de Rede Suspeita Bloqueada</string>
     <string name="notif_suspicious_process_title">⚠ Processo Suspeito Detectado</string>
     <string name="guard_channel_name">Proteção HydraDragon</string>

@@ -274,6 +274,7 @@
     <string name="file_trap_title">🪤 ランサムウェアファイルトラップが作動しました</string>
     <string name="file_trap_msg">%1$sは、正規のアプリがアクセスする理由のないおとりファイルに触れました — ランサムウェアとしてフラグが立てられ、次回のスキャンで報告されます。</string>
     <string name="task_hijack_detected">セキュリティチェックに失敗しました — 別のアプリがこの画面の上に重ねて表示されている可能性があるため、保護のため終了します</string>
+    <string name="settings_automation_blocked">ブロックされました — 設定はあなた自身の操作でのみ変更でき、自動では変更できません</string>
     <string name="notif_suspicious_network_title">🛡 不審なネットワーク接続をブロックしました</string>
     <string name="notif_suspicious_process_title">⚠ 不審なプロセスを検出</string>
     <string name="guard_channel_name">HydraDragon保護</string>

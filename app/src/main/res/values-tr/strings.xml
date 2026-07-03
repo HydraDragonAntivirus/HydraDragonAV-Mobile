@@ -293,6 +293,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="file_trap_title">🪤 Fidye Yazılımı Dosya Tuzağı Tetiklendi</string>
     <string name="file_trap_msg">%1$s, hiçbir meşru uygulamanın erişmesi için bir nedeni olmayan bir yem dosyaya dokundu — fidye yazılımı olarak işaretlendi, bir sonraki taramada bildirilecek.</string>
     <string name="task_hijack_detected">Güvenlik kontrolü başarısız — bu ekranın üzerine başka bir uygulama yerleştirilmiş görünüyor, korumanız için kapatılıyor</string>
+    <string name="settings_automation_blocked">Engellendi — ayarlar yalnızca sizin tarafınızdan değiştirilebilir, otomatik olarak değil</string>
     <string name="notif_suspicious_network_title">🛡 Şüpheli Ağ Bağlantısı Engellendi</string>
     <string name="notif_suspicious_process_title">⚠ Şüpheli Process Tespit Edildi</string>
     <string name="guard_channel_name">HydraDragon Koruma</string>

@@ -274,6 +274,7 @@
     <string name="file_trap_title">🪤 Спрацювала Файлова Пастка-вимагач</string>
     <string name="file_trap_msg">%1$s торкнувся файлу-приманки, до якого жодна легітимна програма не має причин звертатися — позначено як вимагач, буде повідомлено під час наступного сканування.</string>
     <string name="task_hijack_detected">Перевірку безпеки не пройдено — схоже, інший застосунок накладено поверх цього екрана, закривається для вашого захисту</string>
+    <string name="settings_automation_blocked">Заблоковано — налаштування може змінювати лише ви, а не автоматика</string>
     <string name="notif_suspicious_network_title">🛡 Підозріле мережеве з\'єднання заблоковано</string>
     <string name="notif_suspicious_process_title">⚠ Виявлено підозрілий процес</string>
     <string name="guard_channel_name">Захист HydraDragon</string>

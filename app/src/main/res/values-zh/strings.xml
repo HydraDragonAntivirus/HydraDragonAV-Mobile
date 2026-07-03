@@ -274,6 +274,7 @@
     <string name="file_trap_title">🪤 勒索软件文件陷阱已触发</string>
     <string name="file_trap_msg">%1$s 触碰了一个合法应用没有任何理由访问的诱饵文件 — 已被标记为勒索软件，将在下次扫描时上报。</string>
     <string name="task_hijack_detected">安全检查失败 — 似乎有其他应用覆盖在此屏幕上，为保护您的安全正在关闭</string>
+    <string name="settings_automation_blocked">已阻止 — 设置只能由您本人更改，不能自动更改</string>
     <string name="notif_suspicious_network_title">🛡 已阻止可疑网络连接</string>
     <string name="notif_suspicious_process_title">⚠ 检测到可疑进程</string>
     <string name="guard_channel_name">HydraDragon防护</string>

@@ -274,6 +274,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="file_trap_title">🪤 Uruchomiono Pułapkę Pliku Ransomware</string>
     <string name="file_trap_msg">%1$s dotknęła pliku wabikowego, do którego żadna legalna aplikacja nie ma powodu uzyskiwać dostępu — oznaczono jako ransomware, zostanie zgłoszone podczas następnego skanowania.</string>
     <string name="task_hijack_detected">Kontrola bezpieczeństwa nie powiodła się — wygląda na to, że inna aplikacja nakłada się na ten ekran, zamykanie w celu ochrony</string>
+    <string name="settings_automation_blocked">Zablokowano — ustawienia mogą być zmieniane tylko przez Ciebie, nie automatycznie</string>
     <string name="notif_suspicious_network_title">🛡 Zablokowano podejrzane połączenie sieciowe</string>
     <string name="notif_suspicious_process_title">⚠ Wykryto podejrzany proces</string>
     <string name="guard_channel_name">Ochrona HydraDragon</string>
