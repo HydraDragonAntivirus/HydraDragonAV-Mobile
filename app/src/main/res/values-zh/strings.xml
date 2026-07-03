@@ -145,6 +145,7 @@
     <string name="detect_cat_permissions">危险权限</string>
     <string name="detect_cat_eicar">EICAR 测试文件</string>
     <string name="detect_cat_url_strings">文件中的恶意/钓鱼 URL 字符串</string>
+    <string name="detect_cat_native_emulation">原生代码模拟（揭示隐藏/解码后的字符串）</string>
     <string name="behavior_detection_header">行为检测</string>
     <string name="behavior_ui_spam">界面/通知垃圾信息检测</string>
     <string name="behavior_root_exploit">Root 漏洞利用检测</string>

@@ -145,6 +145,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="detect_cat_permissions">Gefährliche Berechtigungen</string>
     <string name="detect_cat_eicar">EICAR-Testdateien</string>
     <string name="detect_cat_url_strings">Bösartige/Phishing-URL-Strings in Dateien</string>
+    <string name="detect_cat_native_emulation">Native-Code-Emulation (versteckte/entschlüsselte Strings aufdecken)</string>
     <string name="behavior_detection_header">Verhaltenserkennung</string>
     <string name="behavior_ui_spam">Erkennung von UI-/Benachrichtigungsspam</string>
     <string name="behavior_root_exploit">Erkennung von Root-Exploits</string>

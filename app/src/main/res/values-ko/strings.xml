@@ -145,6 +145,7 @@
     <string name="detect_cat_permissions">위험한 권한</string>
     <string name="detect_cat_eicar">EICAR 테스트 파일</string>
     <string name="detect_cat_url_strings">파일 내 악성/피싱 URL 문자열</string>
+    <string name="detect_cat_native_emulation">네이티브 코드 에뮬레이션(숨겨진/디코딩된 문자열 노출)</string>
     <string name="behavior_detection_header">행위 탐지</string>
     <string name="behavior_ui_spam">UI/알림 스팸 탐지</string>
     <string name="behavior_root_exploit">루트 익스플로잇 탐지</string>

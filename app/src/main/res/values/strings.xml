@@ -184,6 +184,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="detect_cat_permissions">Dangerous permissions</string>
     <string name="detect_cat_eicar">EICAR test files</string>
     <string name="detect_cat_url_strings">Malicious/phishing URL strings in files</string>
+    <string name="detect_cat_native_emulation">Native code emulation (reveal hidden/decoded strings)</string>
     <string name="behavior_detection_header">Behavior Detection</string>
     <string name="behavior_ui_spam">UI/notification spam detection</string>
     <string name="behavior_root_exploit">Root exploit detection</string>

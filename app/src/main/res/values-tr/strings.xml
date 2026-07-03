@@ -158,6 +158,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="detect_cat_permissions">Tehlikeli izinler</string>
     <string name="detect_cat_eicar">EICAR test dosyaları</string>
     <string name="detect_cat_url_strings">Dosyalarda kötü amaçlı/kimlik avı URL dizeleri</string>
+    <string name="detect_cat_native_emulation">Yerel kod emülasyonu (gizli/çözülmüş dizeleri ortaya çıkarır)</string>
     <string name="behavior_detection_header">Davranış Tespiti</string>
     <string name="behavior_ui_spam">UI/bildirim spamı tespiti</string>
     <string name="behavior_root_exploit">Root exploit tespiti</string>

@@ -66,6 +66,19 @@ public final class NativeScanner {
 
     private static native boolean nativeLearnRule(String yarPath);
 
+    private static native void nativeSetEmulationEnabled(boolean enabled);
+
+    /** Settings toggle for the Unicorn-based native-code emulation pass (runs
+     *  every embedded .so's JNI_OnLoad/entry point in a bounded, syscall-free
+     *  sandbox to reveal strings — e.g. a C2 URL — a decode routine only
+     *  produces at runtime, never as static plaintext). Applied immediately,
+     *  no engine reinit or app restart needed — actually skips the emulation
+     *  cost when off, not just its results. */
+    public static void setEmulationEnabled(boolean enabled) {
+        if (!LIB_LOADED) return;
+        try { nativeSetEmulationEnabled(enabled); } catch (Throwable ignore) { }
+    }
+
     /** Hot-load a single freshly auto-generated {@code .yar} rule (already written
      *  to disk by ScanEngine.saveGeneratedRule) into the LIVE native engine, so a
      *  family this device just caught is detected by every scan for the rest of
@@ -187,6 +200,10 @@ public final class NativeScanner {
         boolean loadAutoRules = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
             context, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
         ready = nativeInit(dir.getAbsolutePath(), loadAutoRules);
+        if (ready) {
+            setEmulationEnabled(com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
+                context, com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION));
+        }
         Log.i(TAG, "native init " + (ready ? "ok" : "FAILED") + " | " + status());
         return ready;
     }

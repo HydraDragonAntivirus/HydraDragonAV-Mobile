@@ -145,6 +145,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="detect_cat_permissions">Gevaarlijke machtigingen</string>
     <string name="detect_cat_eicar">EICAR-testbestanden</string>
     <string name="detect_cat_url_strings">Schadelijke/phishing-URL-strings in bestanden</string>
+    <string name="detect_cat_native_emulation">Native code-emulatie (onthult verborgen/gedecodeerde strings)</string>
     <string name="behavior_detection_header">Gedragsdetectie</string>
     <string name="behavior_ui_spam">Detectie van UI-/meldingsspam</string>
     <string name="behavior_root_exploit">Detectie van root-exploits</string>

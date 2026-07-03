@@ -145,6 +145,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="detect_cat_permissions">Permissões perigosas</string>
     <string name="detect_cat_eicar">Arquivos de teste EICAR</string>
     <string name="detect_cat_url_strings">Strings de URL maliciosas/de phishing em arquivos</string>
+    <string name="detect_cat_native_emulation">Emulação de código nativo (revela strings ocultas/decodificadas)</string>
     <string name="behavior_detection_header">Detecção de Comportamento</string>
     <string name="behavior_ui_spam">Detecção de spam de UI/notificações</string>
     <string name="behavior_root_exploit">Detecção de exploit de root</string>

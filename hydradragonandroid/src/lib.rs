@@ -19,6 +19,8 @@ use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 
 mod dex_scan;
+mod elf;
+mod emulate;
 mod ip_scan;
 mod url_scan;
 
@@ -157,6 +159,13 @@ fn record_clean_strings(engine: &Engine, dex_scans: &[Option<dex_scan::DexScan>]
 /// `nativeLearnRule` — instead of only taking effect after the next process
 /// restart reloads `generated_rules/*.yar` in `do_init`.
 static ENGINE: OnceLock<std::sync::RwLock<Engine>> = OnceLock::new();
+
+/// Java-side "Native code emulation" Settings toggle (DetectionCategories.
+/// NATIVE_EMULATION) — checked once per ELF buffer in run_scan(), so turning
+/// it off actually skips the emulation cost, not just its results. Settable
+/// at any time (see nativeSetEmulationEnabled), independent of engine init.
+static NATIVE_EMULATION_ENABLED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(true);
 
 /// Last panic's "message @ file:line", captured by our hook so we can report
 /// WHY a scan panicked (root cause) instead of just swallowing it.
@@ -464,6 +473,18 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }
 }
 
+/// `void nativeSetEmulationEnabled(boolean enabled)` — Settings toggle for the
+/// Unicorn-based native-code emulation pass (see emulate.rs), applied
+/// immediately without needing an engine reinit or app restart.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetEmulationEnabled(
+    _env: JNIEnv,
+    _class: JClass,
+    enabled: jboolean,
+) {
+    NATIVE_EMULATION_ENABLED.store(enabled != JNI_FALSE, std::sync::atomic::Ordering::Relaxed);
+}
+
 /// `boolean nativeLearnRule(String yarPath)` — hot-load ONE freshly
 /// auto-generated `.yar` file (already written to disk by
 /// ScanEngine.saveGeneratedRule) into the LIVE engine via a brief write lock,
@@ -706,6 +727,34 @@ fn scan_apk(
     }
 }
 
+/// Check every emulation-decoded string (see emulate.rs) that looks like a
+/// whole URL against the URL/domain blooms (`engine.url_scanner`) — a decoded
+/// C2 URL a signature/YARA rule was never written for can still be caught
+/// this way, the same as any other URL this engine sees. Returns
+/// "URL.<CATEGORY>: <url>" pseudo-detection names, matching the existing
+/// "YARA.<rule>" naming convention closely enough for Java's per-detection
+/// display to show something meaningful.
+fn extract_and_scan_urls(engine: &Engine, decoded: &[u8]) -> Vec<String> {
+    let Some(scanner) = engine.url_scanner.as_ref() else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for line in decoded.split(|&b| b == b'\n') {
+        let s = String::from_utf8_lossy(line);
+        let s = s.trim();
+        if !(s.starts_with("http://") || s.starts_with("https://")) {
+            continue;
+        }
+        if let Some(cat) = scanner.scan(s) {
+            out.push(format!("URL.{cat}: {s}"));
+            if out.len() >= 16 {
+                break;
+            }
+        }
+    }
+    out
+}
+
 fn run_scan(
     engine: &Engine,
     bytes: &[u8],
@@ -798,6 +847,36 @@ fn run_scan(
         })
         .collect();
 
+    // Emulate every native library (.so/ELF) buffer once, to reveal strings
+    // (e.g. a C2 URL) a decode routine only produces at runtime — see
+    // emulate.rs's module doc for the full rationale/safety scope. Bounded
+    // per-buffer cost (500ms/200k instructions), and gated by the Settings
+    // toggle so it can be turned off entirely if it's ever too slow.
+    let emulated_strings: Vec<Option<Vec<u8>>> = if NATIVE_EMULATION_ENABLED
+        .load(std::sync::atomic::Ordering::Relaxed)
+    {
+        buffers
+            .iter()
+            .enumerate()
+            .map(|(i, b)| {
+                if skip_heavy[i] || !b.data.starts_with(b"\x7fELF") {
+                    return None;
+                }
+                let strings = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    emulate::emulate_and_extract_strings(&b.data)
+                }))
+                .unwrap_or_default();
+                if strings.is_empty() {
+                    None
+                } else {
+                    Some(strings.join("\n").into_bytes())
+                }
+            })
+            .collect()
+    } else {
+        buffers.iter().map(|_| None).collect()
+    };
+
     // Each detection carries the APK lineage of the buffer it fired on, so Java
     // can suppress it iff one of those ancestor-APK hashes is whitelisted.
     let yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
@@ -830,6 +909,26 @@ fn run_scan(
                         let dname = format!("{name}#dex");
                         for m in clamav.scan_bytes_named(ds.text.as_bytes(), &dname, opts, &module_meta) {
                             dets.push((m.name, b.apk_lineage.clone()));
+                            if dets.len() >= opts.max_matches {
+                                return dets;
+                            }
+                        }
+                    }
+                    // Also scan whatever new strings emulating this ELF buffer's
+                    // native code revealed at runtime (see emulate.rs) — any
+                    // existing signature/YARA rule that matches a decoded C2
+                    // URL/string here is exactly as valid a hit as one found
+                    // statically, so it flows through the SAME rule database.
+                    if let Some(decoded) = &emulated_strings[i] {
+                        let ename = format!("{name}#emulated");
+                        for m in clamav.scan_bytes_named(decoded, &ename, opts, &module_meta) {
+                            dets.push((m.name, b.apk_lineage.clone()));
+                            if dets.len() >= opts.max_matches {
+                                return dets;
+                            }
+                        }
+                        for url in extract_and_scan_urls(engine, decoded) {
+                            dets.push((url, b.apk_lineage.clone()));
                             if dets.len() >= opts.max_matches {
                                 return dets;
                             }

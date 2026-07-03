@@ -166,6 +166,13 @@ public class SettingsFragment extends Fragment {
         addCategoryToggle(R.string.detect_cat_permissions, com.hydradragon.antivirus.engine.DetectionCategories.PERMISSIONS);
         addCategoryToggle(R.string.detect_cat_eicar, com.hydradragon.antivirus.engine.DetectionCategories.EICAR);
         addCategoryToggle(R.string.detect_cat_url_strings, com.hydradragon.antivirus.engine.DetectionCategories.URL_STRINGS);
+        boolean nativeEmuOn = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
+            requireContext(), com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION);
+        addToggle(getString(R.string.detect_cat_native_emulation), nativeEmuOn, (btn, checked) -> {
+            com.hydradragon.antivirus.engine.DetectionCategories.setEnabled(requireContext(),
+                com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION, checked);
+            com.hydradragon.antivirus.engine.NativeScanner.setEmulationEnabled(checked);
+        });
 
         addHeader(getString(R.string.behavior_detection_header));
         addBehaviorToggle(R.string.behavior_ui_spam, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.UI_SPAM);

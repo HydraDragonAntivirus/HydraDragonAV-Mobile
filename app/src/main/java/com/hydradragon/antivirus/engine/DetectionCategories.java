@@ -27,6 +27,11 @@ public final class DetectionCategories {
      *  check: a full URL (with path) is much more specific than a domain
      *  alone, so a bloom hit here means much more). */
     public static final String URL_STRINGS = "detect_cat_url_strings";
+    /** Unicorn-based native-code (.so/ELF) emulation to reveal runtime-only
+     *  decoded strings (see NativeScanner.setEmulationEnabled / emulate.rs).
+     *  Applied to the native engine immediately on toggle, actually skipping
+     *  the emulation cost when off — not just suppressing its results. */
+    public static final String NATIVE_EMULATION = "detect_cat_native_emulation";
 
     private DetectionCategories() {}
 

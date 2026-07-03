@@ -34,6 +34,7 @@ dex-analysis = { git = "https://github.com/FossRust/dex-parser-analyzer", branch
 # rescanning what Java's whitelist already vouches for. "bundled" statically
 # links sqlite3 (no cross-compiled system dependency needed for the .so).
 rusqlite = { version = "0.31", features = ["bundled"] }
+unicorn-engine = { version = "2.1.5", default-features = false, features = ["arch_arm", "arch_aarch64", "arch_x86"] }
 
 [profile.release]
 opt-level = "z"
