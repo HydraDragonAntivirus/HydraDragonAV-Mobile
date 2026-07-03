@@ -129,6 +129,8 @@ public class DynamicAnalysisService extends AccessibilityService {
 
             if (rapidClickCount >= 3 && (isInstaller || isSettings)) {
                 Log.w(TAG, "DETECTED: Automated Clickjacking/Permission granting!");
+                com.hydradragon.antivirus.engine.HipsMonitor.reportClickjack(pkg, rapidClickCount,
+                    packageName.toString(), 2, true);
                 sendAlert("CRITICAL: Automated UI Hijacking Detected", "Malware is trying to auto-click permissions. Action blocked!", pkg);
 
                 performGlobalAction(GLOBAL_ACTION_BACK);   // dismiss the overlay
@@ -276,6 +278,8 @@ public class DynamicAnalysisService extends AccessibilityService {
                 spamCounters.put(sig, new long[]{now, 1});
             } else {
                 c[1]++;
+                // Report to HIPS monitor regardless of threshold
+                com.hydradragon.antivirus.engine.HipsMonitor.reportUiSpam(pkg, (int)c[1], 1, SPAM_WINDOW_MS, c[1] >= SPAM_THRESHOLD);
                 if (c[1] >= SPAM_THRESHOLD) {
                     // Rate-limit alerts per package to once per window.
                     Long last = spamFlagged.get(pkg);
@@ -312,6 +316,8 @@ public class DynamicAnalysisService extends AccessibilityService {
                 notifCounters.put(pkg, new long[]{now, 1});
             } else {
                 c[1]++;
+                // Report to HIPS monitor
+                com.hydradragon.antivirus.engine.HipsMonitor.reportNotificationSpam(pkg, (int)c[1], NOTIF_WINDOW_MS, c[1] >= NOTIF_THRESHOLD);
                 if (c[1] >= NOTIF_THRESHOLD
                         && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg)) {
                     String reason = "Notification spam: " + c[1] + " notifications in "

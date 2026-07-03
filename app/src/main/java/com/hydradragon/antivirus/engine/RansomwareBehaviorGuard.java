@@ -182,6 +182,8 @@ public final class RansomwareBehaviorGuard {
             + "s of this app being granted " + (wasAllFiles ? "All Files Access" : "file access");
         Log.e(TAG, "RANSOMWARE BEHAVIOUR (" + pkg + "): " + reason);
         BehaviorFlags.flag(c, pkg, reason);
+        HipsMonitor.reportRansomware(pkg, (int)burst[1], sampleExt.get(pkg),
+            true, wasAllFiles, RENAME_BURST_WINDOW_MS, true);
         com.hydradragon.antivirus.service.ThreatLogger.logThreat(c, pkg, pkg, reason);
         alert(c, pkg);
         BehaviorResponse.killAndPromptUninstall(c, pkg);

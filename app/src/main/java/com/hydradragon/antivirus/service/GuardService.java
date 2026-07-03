@@ -397,6 +397,7 @@ public class GuardService extends Service {
                 com.hydradragon.antivirus.engine.BehaviorDetectionSettings.ROOT_EXPLOIT)) return;
         try {
             boolean rooted = com.hydradragon.antivirus.engine.RootCheck.isRooted();
+            com.hydradragon.antivirus.engine.HipsMonitor.setRooted(rooted);
             if (rooted && !wasRooted) {
                 wasRooted = true;
                 String suspect = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();

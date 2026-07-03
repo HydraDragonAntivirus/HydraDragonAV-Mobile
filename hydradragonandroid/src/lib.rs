@@ -66,6 +66,7 @@ const YRC_FILES: &[&str] = &[
     "clean_rules_filtered_verified.yrc",
     "valhalla-rules_filtered_verified.yrc",
     "AndroidOS_filtered.yrc",
+    "hips_rules_filtered_verified.yrc",
 ];
 const MODEL_BIN: &str = "apk_model.bin";
 /// Malware TLSH similarity database (one T1 digest per line), built from the
@@ -647,6 +648,70 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         Ok(s) => s.into_raw(),
         Err(_) => std::ptr::null_mut(),
     }
+}
+
+/// `String nativeScanHips(String hipsJson)` — runs the
+/// clamav/YARA engine (hips module) against behavioral metadata collected
+/// by the Android HipsMonitor service and returns a JSON verdict with
+/// matched rule names and suggested actions ("uninstall", "warn", "ignore").
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanHips<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    hips_json: JString<'local>,
+) -> jstring {
+    let json: String = match env.get_string(&hips_json) {
+        Ok(s) => s.into(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let result = scan_hips(&json);
+    match env.new_string(&result) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+fn scan_hips(hips_json: &str) -> String {
+    if hips_json.is_empty() {
+        return r#"{"malicious":false}"#.to_string();
+    }
+    let Some(guard) = ENGINE.get().and_then(|l| l.read().ok()) else {
+        return r#"{"error":"not initialised"}"#.to_string();
+    };
+    let Some(clamav) = &guard.clamav else {
+        return r#"{"error":"engine not ready"}"#.to_string();
+    };
+    // Validate JSON by parsing it
+    if serde_json::from_str::<serde_json::Value>(hips_json).is_err() {
+        return r#"{"error":"invalid JSON"}"#.to_string();
+    }
+    let meta_json = hips_json.as_bytes();
+    let module_meta: Vec<(&str, &[u8])> = vec![("hydradragon", meta_json)];
+    let opts = ScanOptions {
+        strict_targets: false,
+        max_matches: 32,
+        ..ScanOptions::default()
+    };
+    let detections = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        clamav
+            .scan_bytes_named(meta_json, "hips_behavior", opts, &module_meta)
+            .into_iter()
+            .map(|m| m.name)
+            .collect::<Vec<_>>()
+    }))
+    .unwrap_or_default();
+    let malicious = !detections.is_empty();
+    let hits_json = detections
+        .iter()
+        .map(|h| format!("\"{}\"", json_escape(h)))
+        .collect::<Vec<_>>()
+        .join(",");
+    // If malicious, suggest uninstall
+    let suggestion = if malicious { "uninstall" } else { "none" };
+    format!(
+        r#"{{"malicious":{},"matches":[{}],"suggestion":"{}"}}"#,
+        malicious, hits_json, suggestion
+    )
 }
 
 fn scan_text(text: &str) -> String {

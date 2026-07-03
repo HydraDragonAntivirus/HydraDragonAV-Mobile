@@ -4,7 +4,7 @@ import android.content.Context;
 
 /**
  * Controls whether a confirmed-malware hit gets turned into a self-learned
- * "YARA.auto_*" rule (see ScanEngine#saveGeneratedRule). NOT RECOMMENDED
+ * "YARA-X.auto_*" rule (see ScanEngine#saveGeneratedRule). NOT RECOMMENDED
  * (high FP risk): a rule generated from one sample's raw strings can later
  * match unrelated clean apps that happen to share those strings. Off by
  * default — the user must opt in from Settings.

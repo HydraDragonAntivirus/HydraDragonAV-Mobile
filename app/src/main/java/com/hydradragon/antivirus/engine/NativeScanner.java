@@ -34,7 +34,7 @@ public final class NativeScanner {
 
     /**
      * Assets sub-folder holding the full scan bundle (copied flat to internal
-     * storage so native code can read it): compiled {@code .yrc} YARA rulesets,
+     * storage so native code can read it): compiled {@code .yrc} YARA-X rulesets,
      * the ML model, the clamav signature DBs (.ndb/.ldb/.ldu/.db), the file-type
      * magics (.ftm) needed for the supported-type gate, and the bytecode (.cbc).
      */
@@ -116,6 +116,82 @@ public final class NativeScanner {
     /** Comma-joined matched rule/signature names for OCR'd on-screen text
      *  ("" if clean or engine not ready). Backs {@link #scanText}. */
     private static native String nativeScanText(String text);
+
+    private static native String nativeScanHips(String hipsJson);
+
+    /** Result of a HIPS behavioral scan. */
+    public static final class HipsResult {
+        public boolean malicious;
+        public final java.util.List<String> matches = new java.util.ArrayList<>();
+        /** Suggestion: "uninstall", "warn", or "none". */
+        public String suggestion = "none";
+
+        public boolean isMalicious() { return malicious; }
+    }
+
+    /** Scan all behavioral HIPS metadata against the YARA-X hydradragon module
+     *  HIPS rules. Returns the verdict including matched rules and suggestion. */
+    public static HipsResult scanHips() {
+        HipsResult r = new HipsResult();
+        if (!LIB_LOADED || !ready) return r;
+        try {
+            String json = HipsMonitor.buildReportJson();
+            if (json == null || json.isEmpty()) return r;
+            String result = nativeScanHips(json);
+            if (result == null || result.isEmpty()) return r;
+            org.json.JSONObject o = new org.json.JSONObject(result);
+            if (o.has("error")) return r;
+            r.malicious = o.optBoolean("malicious", false);
+            if (o.has("suggestion")) r.suggestion = o.optString("suggestion", "none");
+            org.json.JSONArray arr = o.optJSONArray("matches");
+            if (arr != null) {
+                for (int i = 0; i < arr.length(); i++) {
+                    String m = arr.optString(i, null);
+                    if (m != null && !m.isEmpty()) r.matches.add(m);
+                }
+            }
+        } catch (Throwable t) { /* degrade gracefully */ }
+        return r;
+    }
+
+    /** Convenience: scan HIPS and auto-trigger uninstall if behavioral malware
+     *  is detected with "uninstall" suggestion. */
+    public static void scanAndRespond(android.content.Context context) {
+        HipsResult result = scanHips();
+        if (result.isMalicious() && "uninstall".equals(result.suggestion)) {
+            String flaggedPkg = null;
+            for (String match : result.matches) {
+                String pkg = extractPackageFromMatch(match);
+                if (pkg != null) {
+                    flaggedPkg = pkg;
+                    break;
+                }
+            }
+            if (flaggedPkg != null) {
+                BehaviorResponse.killAndPromptUninstall(context, flaggedPkg);
+            }
+        }
+    }
+
+    /** Extract a package name from a HIPS match identifier.
+     *  e.g. "YARA-X.com.evil.app.Ransomware" -> "com.evil.app" */
+    private static String extractPackageFromMatch(String match) {
+        if (match == null || match.isEmpty()) return null;
+        String s = match;
+        if (s.startsWith("YARA-X.")) s = s.substring(7);
+        else if (s.startsWith("YARA.")) s = s.substring(5);
+        else if (s.startsWith("HIPS.")) s = s.substring(5);
+        String[] parts = s.split("\\.");
+        if (parts.length >= 3) {
+            StringBuilder pkg = new StringBuilder();
+            for (int i = 0; i < parts.length - 1 && i < 4; i++) {
+                if (pkg.length() > 0) pkg.append('.');
+                pkg.append(parts[i]);
+            }
+            return pkg.toString();
+        }
+        return null;
+    }
 
     /** Malicious category (e.g. "MALWARE_IP") for a resolved IP, or null if clean.
      *  Exact match against the native per-category xor filters (no CIDR/subnet). */

@@ -133,10 +133,10 @@ impl YaraEngine {
             let mut matches = Vec::new();
             for rule in results.matching_rules() {
                 matches.push(ScanMatch {
-                    name: format!("YARA.{}", rule.identifier()),
+                    name: format!("YARA-X.{}", rule.identifier()),
                     kind: crate::scanner::SignatureKind::Yara,
                     source: crate::database::SourceLocation {
-                        path: Arc::from(PathBuf::from("yara")),
+                        path: Arc::from(PathBuf::from("yara-x")),
                         line: 0,
                     },
                     object_path: object_path.to_string(),
