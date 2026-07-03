@@ -39,13 +39,24 @@ public class GuardService extends Service {
     private void startDownloadMonitor() {
         java.io.File downloadDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
         if (downloadDir.exists()) {
-            downloadObserver = new android.os.FileObserver(downloadDir.getAbsolutePath(), android.os.FileObserver.CLOSE_WRITE) {
+            // CLOSE_WRITE alone isn't enough: while a download is still in
+            // progress, Android/the browser writes to a TEMPORARY
+            // ".pending-<id>-realname.ext" file (MediaStore's "pending"
+            // convention) — CLOSE_WRITE can fire on THAT file while it's
+            // still incomplete (zip central directory not fully written
+            // yet), so scanning it there fails to even open the archive and
+            // never finds anything. Once the download finishes, the system
+            // renames it to its final visible name — a MOVED_TO event, not
+            // another CLOSE_WRITE — which the old mask never listened for,
+            // so the completed file was never scanned at all. Also skip the
+            // ".pending-" file itself outright: it's guaranteed incomplete.
+            downloadObserver = new android.os.FileObserver(downloadDir.getAbsolutePath(),
+                    android.os.FileObserver.CLOSE_WRITE | android.os.FileObserver.MOVED_TO) {
                 @Override
                 public void onEvent(int event, String path) {
-                    if (path != null) {
-                        java.io.File file = new java.io.File(downloadDir, path);
-                        scanDownloadedFile(file);
-                    }
+                    if (path == null || path.startsWith(".pending-")) return;
+                    java.io.File file = new java.io.File(downloadDir, path);
+                    scanDownloadedFile(file);
                 }
             };
             downloadObserver.startWatching();

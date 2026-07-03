@@ -495,6 +495,11 @@ public class ScanEngine {
         if (files == null) return;
         for (java.io.File file : files) {
             if (cancelRequested) return;
+            // Still mid-download (MediaStore's ".pending-<id>-realname" temp
+            // file) — guaranteed incomplete, parsing it as a zip/APK fails
+            // outright. It'll get scanned under its real name once the
+            // download finishes and the system renames it away from this.
+            if (file.getName().startsWith(".pending-")) continue;
             if (file.isDirectory()) {
                 scanDirectoryForApks(file, pm, threats, fullScan, skipPackages);
             } else if (file.getName().toLowerCase().endsWith(".apk")) {
