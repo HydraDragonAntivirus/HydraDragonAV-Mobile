@@ -276,4 +276,19 @@
     <string name="net_event_blocked">مسدود شده</string>
     <string name="net_event_allowed">مجاز</string>
     <string name="risk_score_format">ریسک: %1$d/100</string>
+    <string name="auto_rules_manager_btn">قوانین تولیدشده خودکار</string>
+    <string name="auto_rules_empty">هنوز هیچ قانون خودآموزی وجود ندارد — اولین بار که یک تهدید واقعی تأیید شود، یکی ایجاد می‌شود (اگر تولیدکننده خودکار قوانین روشن باشد)</string>
+    <string name="auto_rule_exported">قانون صادر شد</string>
+    <string name="auto_rule_export_failed">صدور قانون ناموفق بود</string>
+    <string name="auto_rule_delete_failed">حذف قانون ناموفق بود</string>
+    <string name="auto_rule_read_failed">این فایل قانون قابل خواندن نبود</string>
+    <string name="lock_confirm_pin">تأیید پین جدید</string>
+    <string name="security_flag_lost">بررسی امنیتی ناموفق بود — برای محافظت از شما بسته می‌شود</string>
+    <string name="obscured_touch_warning">لمس نادیده گرفته شد — چیزی روی صفحه را پوشانده است</string>
+    <string name="show_taps_warning_title">\"نمایش لمس‌ها\" فعال است</string>
+    <string name="show_taps_warning_msg">گزینه‌های توسعه‌دهنده &gt; نمایش لمس‌ها هر جای صفحه که لمس کنید یک نقطه قابل مشاهده رسم می‌کند — ضبط صفحه می‌تواند پین شما را از این طریق فاش کند، حتی با محافظت این صفحه. لطفاً قبل از وارد کردن پین آن را غیرفعال کنید.</string>
+    <string name="show_taps_open_settings">باز کردن گزینه‌های توسعه‌دهنده</string>
+    <string name="malware_has_admin_title">این برنامه دارای دسترسی مدیر دستگاه است</string>
+    <string name="malware_has_admin_msg">%1$s خودش را مدیر دستگاه کرده است، که مانع حذف نصب مستقیم آن می‌شود — ترفندی رایج که بدافزارها برای مقاومت در برابر حذف استفاده می‌کنند. آن را در صفحه‌ای که باز می‌شود غیرفعال کنید (%1$s را پیدا کرده و روی غیرفعال کردن ضربه بزنید)، سپس پنجره حذف نصب به‌طور خودکار باز خواهد شد.</string>
+    <string name="malware_has_admin_open_settings">باز کردن تنظیمات مدیر دستگاه</string>
 </resources>

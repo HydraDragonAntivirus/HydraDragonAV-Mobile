@@ -276,4 +276,19 @@
     <string name="net_event_blocked">ブロック済み</string>
     <string name="net_event_allowed">許可済み</string>
     <string name="risk_score_format">リスク: %1$d/100</string>
+    <string name="auto_rules_manager_btn">自動生成ルール</string>
+    <string name="auto_rules_empty">自己学習型ルールはまだありません — 実際の脅威が初めて確認されたときに作成されます（自動ルール生成がオンの場合）</string>
+    <string name="auto_rule_exported">ルールをエクスポートしました</string>
+    <string name="auto_rule_export_failed">ルールのエクスポートに失敗しました</string>
+    <string name="auto_rule_delete_failed">ルールの削除に失敗しました</string>
+    <string name="auto_rule_read_failed">このルールファイルを読み取れませんでした</string>
+    <string name="lock_confirm_pin">新しいPINを確認</string>
+    <string name="security_flag_lost">セキュリティチェックに失敗しました — 保護のため終了します</string>
+    <string name="obscured_touch_warning">タップを無視しました — 画面上に何かが重なっています</string>
+    <string name="show_taps_warning_title">「タップを表示」が有効です</string>
+    <string name="show_taps_warning_msg">開発者向けオプション &gt; タップを表示は、画面に触れた場所に見える点を表示します — この画面が保護されていても、画面録画によってPINが漏えいする可能性があります。PINを入力する前に無効にしてください。</string>
+    <string name="show_taps_open_settings">開発者向けオプションを開く</string>
+    <string name="malware_has_admin_title">このアプリはデバイス管理者権限を持っています</string>
+    <string name="malware_has_admin_msg">%1$sは自身をデバイス管理者にしており、直接アンインストールできないようにしています — これはマルウェアが削除に抵抗するためによく使う手口です。開いた画面で無効化してください（%1$sを見つけて「無効にする」をタップ）。その後、アンインストールのプロンプトが自動的に開きます。</string>
+    <string name="malware_has_admin_open_settings">デバイス管理者の設定を開く</string>
 </resources>

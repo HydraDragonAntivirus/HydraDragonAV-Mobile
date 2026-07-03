@@ -276,4 +276,19 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="net_event_blocked">ZABLOKOWANO</string>
     <string name="net_event_allowed">DOZWOLONO</string>
     <string name="risk_score_format">Ryzyko: %1$d/100</string>
+    <string name="auto_rules_manager_btn">Automatycznie wygenerowane reguły</string>
+    <string name="auto_rules_empty">Brak jeszcze samodzielnie wyuczonej reguły — pierwsza zostanie utworzona, gdy potwierdzone zostanie rzeczywiste zagrożenie (jeśli Generator reguł automatyczny jest włączony)</string>
+    <string name="auto_rule_exported">Reguła wyeksportowana</string>
+    <string name="auto_rule_export_failed">Nie udało się wyeksportować reguły</string>
+    <string name="auto_rule_delete_failed">Nie udało się usunąć reguły</string>
+    <string name="auto_rule_read_failed">Nie można odczytać tego pliku reguły</string>
+    <string name="lock_confirm_pin">Potwierdź nowy PIN</string>
+    <string name="security_flag_lost">Kontrola bezpieczeństwa nie powiodła się — zamykanie w celu ochrony</string>
+    <string name="obscured_touch_warning">Zignorowano dotknięcie — coś zasłania ekran</string>
+    <string name="show_taps_warning_title">Włączono \"Pokaż dotknięcia\"</string>
+    <string name="show_taps_warning_msg">Opcje deweloperskie &gt; Pokaż dotknięcia rysuje widoczną kropkę w miejscu dotknięcia ekranu — nagranie ekranu mogłoby ujawnić Twój PIN mimo ochrony tego ekranu. Wyłącz tę opcję przed wprowadzeniem kodu PIN.</string>
+    <string name="show_taps_open_settings">OTWÓRZ OPCJE DEWELOPERSKIE</string>
+    <string name="malware_has_admin_title">Ta aplikacja ma uprawnienia administratora urządzenia</string>
+    <string name="malware_has_admin_msg">%1$s uczyniła się Administratorem urządzenia, co blokuje bezpośrednie odinstalowanie — jest to popularna sztuczka malware, aby uniknąć usunięcia. Dezaktywuj to na ekranie, który się otworzy (znajdź %1$s i dotknij Dezaktywuj), a następnie automatycznie otworzy się okno odinstalowywania.</string>
+    <string name="malware_has_admin_open_settings">OTWÓRZ USTAWIENIA ADMINISTRATORA URZĄDZENIA</string>
 </resources>

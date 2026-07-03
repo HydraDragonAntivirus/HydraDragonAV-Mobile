@@ -27,7 +27,33 @@ public final class AppLockManager {
      *  persisted on purpose. */
     private static volatile boolean unlockedThisSession = false;
 
+    /** How long the app can sit in the background before the next foreground
+     *  requires the PIN again. Must stay well above the time a quick system
+     *  screen (permission prompt, Device Admin, file picker) takes to return
+     *  control to us, or App Lock would re-prompt mid-onboarding every time —
+     *  see AppLifecycleTracker, which is what actually measures this. */
+    private static final long RELOCK_GRACE_MS = 60_000L;
+
+    private static volatile long backgroundedAtElapsedMs = 0L;
+
     private AppLockManager() {}
+
+    /** AppLifecycleTracker calls this when HydraDragon's own foreground
+     *  activity count drops to zero (real backgrounding, not a same-app
+     *  activity handoff like MainActivity -> AppLockActivity). */
+    public static void onAppBackgrounded(long elapsedRealtimeMs) {
+        backgroundedAtElapsedMs = elapsedRealtimeMs;
+    }
+
+    /** AppLifecycleTracker calls this when the app becomes visible again. If
+     *  it was backgrounded long enough, require the PIN again. */
+    public static void onAppForegrounded(long elapsedRealtimeMs) {
+        long bgAt = backgroundedAtElapsedMs;
+        backgroundedAtElapsedMs = 0L;
+        if (bgAt != 0L && (elapsedRealtimeMs - bgAt) >= RELOCK_GRACE_MS) {
+            markLocked();
+        }
+    }
 
     private static SharedPreferences p(Context c) {
         return c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);

@@ -77,6 +77,7 @@ public final class SecureWindowGuard {
     public void startWatching(OnSecureFlagLost cb, long intervalMs) {
         this.callback = cb;
         this.watching = true;
+        this.intervalMs = intervalMs;
         handler.postDelayed(selfCheck, intervalMs);
     }
 
@@ -92,6 +93,6 @@ public final class SecureWindowGuard {
             if (callback != null) callback.onSecureFlagLost();
             return; // don't reschedule past a detected tamper — caller decides what happens next
         }
-        handler.postDelayed(selfCheck, 2000);
+        handler.postDelayed(selfCheck, intervalMs);
     }
 }

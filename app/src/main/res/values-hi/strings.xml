@@ -276,4 +276,19 @@
     <string name="net_event_blocked">ब्लॉक किया गया</string>
     <string name="net_event_allowed">अनुमति दी गई</string>
     <string name="risk_score_format">जोखिम: %1$d/100</string>
+    <string name="auto_rules_manager_btn">ऑटो-जनरेटेड नियम</string>
+    <string name="auto_rules_empty">अभी तक कोई स्व-सीखा नियम नहीं है — जब पहली बार किसी असली खतरे की पुष्टि होती है (यदि ऑटो रूल जेनरेटर चालू है) तो एक नियम बनाया जाता है</string>
+    <string name="auto_rule_exported">नियम निर्यात किया गया</string>
+    <string name="auto_rule_export_failed">नियम निर्यात करने में विफल</string>
+    <string name="auto_rule_delete_failed">नियम हटाने में विफल</string>
+    <string name="auto_rule_read_failed">यह नियम फ़ाइल पढ़ी नहीं जा सकी</string>
+    <string name="lock_confirm_pin">नया पिन पुष्टि करें</string>
+    <string name="security_flag_lost">सुरक्षा जांच विफल — आपकी सुरक्षा के लिए बंद किया जा रहा है</string>
+    <string name="obscured_touch_warning">टैप को अनदेखा किया गया — स्क्रीन पर कुछ ओवरले है</string>
+    <string name="show_taps_warning_title">\"टैप दिखाएं\" चालू है</string>
+    <string name="show_taps_warning_msg">डेवलपर विकल्प &gt; टैप दिखाएं, जहाँ भी आप स्क्रीन को छूते हैं वहाँ एक दिखाई देने वाला बिंदु बनाता है — स्क्रीन सुरक्षित होने पर भी स्क्रीन रिकॉर्डिंग से आपका पिन इसके ज़रिए उजागर हो सकता है। कृपया अपना पिन दर्ज करने से पहले इसे बंद करें।</string>
+    <string name="show_taps_open_settings">डेवलपर विकल्प खोलें</string>
+    <string name="malware_has_admin_title">इस ऐप के पास डिवाइस एडमिन अधिकार हैं</string>
+    <string name="malware_has_admin_msg">%1$s ने खुद को डिवाइस एडमिनिस्ट्रेटर बना लिया है, जो इसे सीधे अनइंस्टॉल करने से रोकता है — यह मैलवेयर द्वारा हटाए जाने से बचने के लिए इस्तेमाल की जाने वाली एक आम तरकीब है। खुलने वाली स्क्रीन में इसे निष्क्रिय करें (%1$s को ढूंढें और निष्क्रिय करें पर टैप करें), फिर अनइंस्टॉल प्रॉम्प्ट अपने आप खुल जाएगा।</string>
+    <string name="malware_has_admin_open_settings">डिवाइस एडमिन सेटिंग्स खोलें</string>
 </resources>

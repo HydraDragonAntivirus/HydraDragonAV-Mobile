@@ -276,4 +276,19 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="net_event_blocked">GEBLOKKEERD</string>
     <string name="net_event_allowed">TOEGESTAAN</string>
     <string name="risk_score_format">Risico: %1$d/100</string>
+    <string name="auto_rules_manager_btn">Automatisch gegenereerde regels</string>
+    <string name="auto_rules_empty">Nog geen zelflerende regel — er wordt er een aangemaakt zodra een echte dreiging voor het eerst wordt bevestigd (als de Automatische regelgenerator aanstaat)</string>
+    <string name="auto_rule_exported">Regel geëxporteerd</string>
+    <string name="auto_rule_export_failed">Regel exporteren mislukt</string>
+    <string name="auto_rule_delete_failed">Regel verwijderen mislukt</string>
+    <string name="auto_rule_read_failed">Kon dit regelbestand niet lezen</string>
+    <string name="lock_confirm_pin">Bevestig nieuwe pincode</string>
+    <string name="security_flag_lost">Beveiligingscontrole mislukt — wordt gesloten ter bescherming</string>
+    <string name="obscured_touch_warning">Tik genegeerd — er ligt iets over het scherm</string>
+    <string name="show_taps_warning_title">\"Tikken weergeven\" staat aan</string>
+    <string name="show_taps_warning_msg">Ontwikkelaarsopties &gt; Tikken weergeven tekent een zichtbare stip waar je het scherm ook aanraakt — een schermopname kan hierdoor je pincode onthullen, zelfs met deze schermbeveiliging. Schakel dit uit voordat je je pincode invoert.</string>
+    <string name="show_taps_open_settings">ONTWIKKELAARSOPTIES OPENEN</string>
+    <string name="malware_has_admin_title">Deze app heeft apparaatbeheerderrechten</string>
+    <string name="malware_has_admin_msg">%1$s heeft zichzelf tot Apparaatbeheerder gemaakt, waardoor directe verwijdering wordt geblokkeerd — een veelgebruikte truc van malware om verwijdering te weerstaan. Deactiveer dit in het scherm dat opent (zoek %1$s en tik op Deactiveren), waarna de verwijdervraag automatisch verschijnt.</string>
+    <string name="malware_has_admin_open_settings">APPARAATBEHEERDERINSTELLINGEN OPENEN</string>
 </resources>

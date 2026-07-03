@@ -45,6 +45,27 @@ public class SettingsFragment extends Fragment {
     private static final int REQ_SCREEN_CAPTURE = 1202;
     private static final int REQ_SMS = 1203;
 
+    // Whether the pending Set/Change PIN flow should also turn App Lock ON
+    // once the new PIN is saved (the toggle's own on-path routes through
+    // here instead of setEnabled() directly — see the app_lock addToggle).
+    private boolean enableAppLockAfterSettingPin = false;
+    private final androidx.activity.result.ActivityResultLauncher<Intent> setPinLauncher =
+        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == android.app.Activity.RESULT_OK && enableAppLockAfterSettingPin) {
+                    com.hydradragon.antivirus.engine.AppLockManager.setEnabled(requireContext(), true);
+                }
+                enableAppLockAfterSettingPin = false;
+                if (container != null) buildUI();
+            });
+
+    private void launchSetPin(boolean enableAfter) {
+        enableAppLockAfterSettingPin = enableAfter;
+        setPinLauncher.launch(new Intent(requireContext(), com.hydradragon.antivirus.ui.AppLockActivity.class)
+            .putExtra(com.hydradragon.antivirus.ui.AppLockActivity.EXTRA_MODE,
+                com.hydradragon.antivirus.ui.AppLockActivity.MODE_SET));
+    }
+
     // Set right before launching exportRuleLauncher so the callback (which
     // gets only the destination Uri back) knows WHICH .yar file's content to
     // write there.
@@ -245,8 +266,23 @@ public class SettingsFragment extends Fragment {
         addBtn("📜 " + getString(R.string.auto_rules_manager_btn), color(R.color.bg_secondary),
             v -> showAutoRulesManagerDialog());
 
+        addHeader(getString(R.string.app_lock));
+        boolean appLockOn = com.hydradragon.antivirus.engine.AppLockManager.isEnabled(requireContext());
+        addToggle(getString(R.string.app_lock), appLockOn, (btn, on) -> {
+            if (on && !com.hydradragon.antivirus.engine.AppLockManager.hasPin(requireContext())) {
+                // Enabling without a PIN set yet — go straight to setting one;
+                // AppLockManager.setEnabled(true) only happens once it's saved
+                // (see the SET-mode launcher's callback below).
+                btn.setChecked(false);
+                launchSetPin(true);
+                return;
+            }
+            com.hydradragon.antivirus.engine.AppLockManager.setEnabled(requireContext(), on);
+        });
+        addBtn("🔑 " + getString(R.string.lock_set_pin), color(R.color.bg_secondary),
+            v -> launchSetPin(false));
+
         addHeader(getString(R.string.system));
-        // app lock removed });
         addBtn(getString(R.string.bloatware_cleaner), color(R.color.neon_cyan), v -> runCleanup());
 
         addHeader(getString(R.string.about));

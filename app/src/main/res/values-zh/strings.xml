@@ -276,4 +276,19 @@
     <string name="net_event_blocked">已拦截</string>
     <string name="net_event_allowed">已允许</string>
     <string name="risk_score_format">风险：%1$d/100</string>
+    <string name="auto_rules_manager_btn">自动生成的规则</string>
+    <string name="auto_rules_empty">目前还没有自学习规则 — 首次确认真实威胁时会自动创建一条（如果已开启自动规则生成器）</string>
+    <string name="auto_rule_exported">规则已导出</string>
+    <string name="auto_rule_export_failed">导出规则失败</string>
+    <string name="auto_rule_delete_failed">删除规则失败</string>
+    <string name="auto_rule_read_failed">无法读取此规则文件</string>
+    <string name="lock_confirm_pin">确认新PIN码</string>
+    <string name="security_flag_lost">安全检查失败 — 为保护您的安全正在关闭</string>
+    <string name="obscured_touch_warning">已忽略点击 — 屏幕上有内容遮挡</string>
+    <string name="show_taps_warning_title">已启用「显示点按操作」</string>
+    <string name="show_taps_warning_msg">开发者选项 &gt; 显示点按操作 会在您触摸屏幕的任何位置绘制一个可见的圆点 — 即使此屏幕已受保护，屏幕录制也可能借此暴露您的PIN码。请在输入PIN码前将其关闭。</string>
+    <string name="show_taps_open_settings">打开开发者选项</string>
+    <string name="malware_has_admin_title">此应用拥有设备管理员权限</string>
+    <string name="malware_has_admin_msg">%1$s 已将自身设为设备管理员，这会阻止直接卸载它 — 这是恶意软件常用来抵抗被移除的一种手段。请在打开的界面中先停用它（找到 %1$s 并点击停用），之后卸载提示将自动打开。</string>
+    <string name="malware_has_admin_open_settings">打开设备管理员设置</string>
 </resources>

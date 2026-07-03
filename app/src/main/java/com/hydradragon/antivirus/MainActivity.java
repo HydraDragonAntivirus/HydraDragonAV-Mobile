@@ -34,6 +34,7 @@ import com.hydradragon.antivirus.ui.ThreatLogFragment;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_VPN = 102;
+    private static final int REQ_APP_LOCK = 103;
 
     private BottomNavigationView bottomNav;
     // checkMandatoryPermissions() can be re-entered from more than one
@@ -53,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
         AppCompatDelegate.setDefaultNightMode(dark ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
 
         super.onCreate(savedInstanceState);
+
+        com.hydradragon.antivirus.engine.AppLifecycleTracker.register(getApplication());
 
         // Refuse to run a repackaged/re-signed copy of this APK (see
         // IntegrityCheck — signing certificate no longer matches the one this
@@ -78,6 +81,17 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.root_blocked_exit, (d, w) -> finish())
                 .setOnDismissListener(d -> finish())
                 .show();
+            return;
+        }
+
+        // App Lock (PIN, see AppLockManager/AppLockActivity) — checked once
+        // per process (unlockedThisSession resets on process death, which is
+        // exactly when re-authentication should be required again). Blocks
+        // reaching the real UI entirely on anything other than RESULT_OK.
+        if (com.hydradragon.antivirus.engine.AppLockManager.isLockRequired(this)) {
+            startActivityForResult(new Intent(this, com.hydradragon.antivirus.ui.AppLockActivity.class)
+                .putExtra(com.hydradragon.antivirus.ui.AppLockActivity.EXTRA_MODE,
+                    com.hydradragon.antivirus.ui.AppLockActivity.MODE_VERIFY), REQ_APP_LOCK);
             return;
         }
 
@@ -147,6 +161,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // AppLifecycleTracker may have just flagged a real background stay
+        // (not a same-app handoff) as long enough to require the PIN again.
+        if (com.hydradragon.antivirus.engine.AppLockManager.isLockRequired(this)) {
+            startActivityForResult(new Intent(this, com.hydradragon.antivirus.ui.AppLockActivity.class)
+                .putExtra(com.hydradragon.antivirus.ui.AppLockActivity.EXTRA_MODE,
+                    com.hydradragon.antivirus.ui.AppLockActivity.MODE_VERIFY), REQ_APP_LOCK);
+            return;
+        }
         if (findViewById(R.id.content_frame).getVisibility() != View.VISIBLE) {
             checkMandatoryPermissions();
         }
@@ -305,6 +327,17 @@ public class MainActivity extends AppCompatActivity {
                 getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
                     .putBoolean("web_shield_enabled", false).apply();
                 startAppUIIfHidden();
+            }
+        } else if (requestCode == REQ_APP_LOCK) {
+            if (resultCode == RESULT_OK) {
+                // Correct PIN entered (AppLockManager.verifyPin already marked
+                // the session unlocked) — recreate() re-runs onCreate, which
+                // now passes the isLockRequired() check and shows the real UI.
+                recreate();
+            } else {
+                // Wrong PIN abandoned / back button / FLAG_SECURE tamper
+                // detected in AppLockActivity — refuse to show the app at all.
+                finish();
             }
         }
     }

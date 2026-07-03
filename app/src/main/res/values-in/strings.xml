@@ -276,4 +276,19 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="net_event_blocked">DIBLOKIR</string>
     <string name="net_event_allowed">DIIZINKAN</string>
     <string name="risk_score_format">Risiko: %1$d/100</string>
+    <string name="auto_rules_manager_btn">Aturan Buatan Otomatis</string>
+    <string name="auto_rules_empty">Belum ada aturan yang dipelajari sendiri — satu dibuat saat ancaman nyata pertama kali dikonfirmasi (jika Auto Rule Generator aktif)</string>
+    <string name="auto_rule_exported">Aturan diekspor</string>
+    <string name="auto_rule_export_failed">Gagal mengekspor aturan</string>
+    <string name="auto_rule_delete_failed">Gagal menghapus aturan</string>
+    <string name="auto_rule_read_failed">Tidak dapat membaca file aturan ini</string>
+    <string name="lock_confirm_pin">Konfirmasi PIN Baru</string>
+    <string name="security_flag_lost">Pemeriksaan keamanan gagal — ditutup demi perlindungan Anda</string>
+    <string name="obscured_touch_warning">Ketukan diabaikan — ada sesuatu yang menutupi layar</string>
+    <string name="show_taps_warning_title">\"Tampilkan Ketukan\" Aktif</string>
+    <string name="show_taps_warning_msg">Opsi Pengembang &gt; Tampilkan Ketukan menggambar titik yang terlihat di mana pun Anda menyentuh layar — perekaman layar dapat mengungkap PIN Anda melalui ini meskipun layar ini dilindungi. Harap nonaktifkan sebelum memasukkan PIN Anda.</string>
+    <string name="show_taps_open_settings">BUKA OPSI PENGEMBANG</string>
+    <string name="malware_has_admin_title">Aplikasi Ini Memiliki Hak Admin Perangkat</string>
+    <string name="malware_has_admin_msg">%1$s telah menjadikan dirinya Admin Perangkat, yang mencegah pencopotan pemasangan langsung — ini adalah trik umum yang digunakan malware untuk menolak dihapus. Nonaktifkan di layar yang terbuka (cari %1$s dan ketuk Nonaktifkan), lalu prompt pencopotan pemasangan akan terbuka secara otomatis.</string>
+    <string name="malware_has_admin_open_settings">BUKA PENGATURAN ADMIN PERANGKAT</string>
 </resources>

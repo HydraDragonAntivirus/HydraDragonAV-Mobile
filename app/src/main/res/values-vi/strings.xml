@@ -276,4 +276,19 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="net_event_blocked">ĐÃ CHẶN</string>
     <string name="net_event_allowed">ĐÃ CHO PHÉP</string>
     <string name="risk_score_format">Rủi ro: %1$d/100</string>
+    <string name="auto_rules_manager_btn">Quy Tắc Tự Động Tạo</string>
+    <string name="auto_rules_empty">Chưa có quy tắc tự học nào — một quy tắc sẽ được tạo ngay khi một mối đe dọa thực sự được xác nhận lần đầu (nếu Trình tạo quy tắc tự động đang bật)</string>
+    <string name="auto_rule_exported">Đã xuất quy tắc</string>
+    <string name="auto_rule_export_failed">Không thể xuất quy tắc</string>
+    <string name="auto_rule_delete_failed">Không thể xóa quy tắc</string>
+    <string name="auto_rule_read_failed">Không thể đọc tệp quy tắc này</string>
+    <string name="lock_confirm_pin">Xác Nhận PIN Mới</string>
+    <string name="security_flag_lost">Kiểm tra bảo mật thất bại — đang đóng để bảo vệ bạn</string>
+    <string name="obscured_touch_warning">Đã bỏ qua thao tác chạm — có thứ gì đó đang che phủ màn hình</string>
+    <string name="show_taps_warning_title">Đã Bật \"Hiển Thị Điểm Chạm\"</string>
+    <string name="show_taps_warning_msg">Tùy chọn nhà phát triển &gt; Hiển thị điểm chạm sẽ vẽ một chấm hiển thị ở bất cứ đâu bạn chạm vào màn hình — một bản ghi màn hình có thể tiết lộ mã PIN của bạn qua đó, ngay cả khi màn hình này đã được bảo vệ. Vui lòng tắt tính năng này trước khi nhập mã PIN.</string>
+    <string name="show_taps_open_settings">MỞ TÙY CHỌN NHÀ PHÁT TRIỂN</string>
+    <string name="malware_has_admin_title">Ứng Dụng Này Có Quyền Quản Trị Thiết Bị</string>
+    <string name="malware_has_admin_msg">%1$s đã tự đặt mình làm Quản trị viên thiết bị, điều này ngăn việc gỡ cài đặt trực tiếp — đây là một thủ thuật phổ biến mà phần mềm độc hại dùng để chống lại việc bị gỡ bỏ. Hãy vô hiệu hóa nó trong màn hình sẽ mở ra (tìm %1$s và nhấn Vô hiệu hóa), sau đó lời nhắc gỡ cài đặt sẽ tự động mở ra.</string>
+    <string name="malware_has_admin_open_settings">MỞ CÀI ĐẶT QUẢN TRỊ THIẾT BỊ</string>
 </resources>

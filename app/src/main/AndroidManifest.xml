@@ -57,6 +57,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.AppLockActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.HydraDragon"/>
+
         <service
             android:name=".service.GuardService"
             android:exported="false"

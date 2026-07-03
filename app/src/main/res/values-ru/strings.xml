@@ -276,4 +276,19 @@
     <string name="net_event_blocked">ЗАБЛОКИРОВАНО</string>
     <string name="net_event_allowed">РАЗРЕШЕНО</string>
     <string name="risk_score_format">Риск: %1$d/100</string>
+    <string name="auto_rules_manager_btn">Автоматически созданные правила</string>
+    <string name="auto_rules_empty">Пока нет самообучающихся правил — первое создаётся при подтверждении реальной угрозы (если включён Автоматический генератор правил)</string>
+    <string name="auto_rule_exported">Правило экспортировано</string>
+    <string name="auto_rule_export_failed">Не удалось экспортировать правило</string>
+    <string name="auto_rule_delete_failed">Не удалось удалить правило</string>
+    <string name="auto_rule_read_failed">Не удалось прочитать этот файл правила</string>
+    <string name="lock_confirm_pin">Подтвердите новый PIN-код</string>
+    <string name="security_flag_lost">Проверка безопасности не пройдена — закрытие для вашей защиты</string>
+    <string name="obscured_touch_warning">Касание проигнорировано — что-то перекрывает экран</string>
+    <string name="show_taps_warning_title">Включена функция \"Показ касаний\"</string>
+    <string name="show_taps_warning_msg">Для разработчиков &gt; Показ касаний рисует видимую точку в месте касания экрана — запись экрана может раскрыть ваш PIN-код таким образом, даже при защищённом экране. Пожалуйста, отключите это перед вводом PIN-кода.</string>
+    <string name="show_taps_open_settings">ОТКРЫТЬ ПАРАМЕТРЫ РАЗРАБОТЧИКА</string>
+    <string name="malware_has_admin_title">Это приложение имеет права администратора устройства</string>
+    <string name="malware_has_admin_msg">%1$s сделало себя Администратором устройства, что блокирует прямое удаление — это распространённый приём вредоносного ПО, позволяющий сопротивляться удалению. Деактивируйте его на открывшемся экране (найдите %1$s и нажмите Деактивировать), после чего запрос на удаление откроется автоматически.</string>
+    <string name="malware_has_admin_open_settings">ОТКРЫТЬ НАСТРОЙКИ АДМИНИСТРАТОРА УСТРОЙСТВА</string>
 </resources>

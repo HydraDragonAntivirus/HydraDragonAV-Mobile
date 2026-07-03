@@ -276,4 +276,19 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="net_event_blocked">BLOCKIERT</string>
     <string name="net_event_allowed">ZUGELASSEN</string>
     <string name="risk_score_format">Risiko: %1$d/100</string>
+    <string name="auto_rules_manager_btn">Automatisch generierte Regeln</string>
+    <string name="auto_rules_empty">Noch keine selbst erlernten Regeln — die erste wird erstellt, sobald eine echte Bedrohung bestätigt wird (wenn der Automatische Regelgenerator aktiviert ist)</string>
+    <string name="auto_rule_exported">Regel exportiert</string>
+    <string name="auto_rule_export_failed">Regel konnte nicht exportiert werden</string>
+    <string name="auto_rule_delete_failed">Regel konnte nicht gelöscht werden</string>
+    <string name="auto_rule_read_failed">Diese Regeldatei konnte nicht gelesen werden</string>
+    <string name="lock_confirm_pin">Neue PIN bestätigen</string>
+    <string name="security_flag_lost">Sicherheitsprüfung fehlgeschlagen — wird zu deinem Schutz geschlossen</string>
+    <string name="obscured_touch_warning">Tippen ignoriert — etwas überlagert den Bildschirm</string>
+    <string name="show_taps_warning_title">\"Tipps anzeigen\" ist aktiviert</string>
+    <string name="show_taps_warning_msg">Entwickleroptionen &gt; Tipps anzeigen zeichnet einen sichtbaren Punkt, wo immer du den Bildschirm berührst — eine Bildschirmaufnahme könnte deine PIN dadurch preisgeben, selbst wenn dieser Bildschirm geschützt ist. Bitte deaktiviere es, bevor du deine PIN eingibst.</string>
+    <string name="show_taps_open_settings">ENTWICKLEROPTIONEN ÖFFNEN</string>
+    <string name="malware_has_admin_title">Diese App hat Geräteadministrator-Rechte</string>
+    <string name="malware_has_admin_msg">%1$s hat sich selbst zum Geräteadministrator gemacht, was eine direkte Deinstallation verhindert — ein gängiger Trick von Malware, um einer Entfernung zu widerstehen. Deaktiviere es auf dem sich öffnenden Bildschirm (finde %1$s und tippe auf Deaktivieren), dann öffnet sich die Deinstallationsaufforderung automatisch.</string>
+    <string name="malware_has_admin_open_settings">GERÄTEADMINISTRATOR-EINSTELLUNGEN ÖFFNEN</string>
 </resources>

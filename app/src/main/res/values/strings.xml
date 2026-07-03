@@ -36,6 +36,12 @@
     <string name="auto_rule_export_failed">Failed to export the rule</string>
     <string name="auto_rule_delete_failed">Failed to delete the rule</string>
     <string name="auto_rule_read_failed">Could not read this rule file</string>
+    <string name="lock_confirm_pin">Confirm New PIN</string>
+    <string name="security_flag_lost">Security check failed — closing for your protection</string>
+    <string name="obscured_touch_warning">Tap ignored — something is overlaying the screen</string>
+    <string name="show_taps_warning_title">\"Show Taps\" Is Enabled</string>
+    <string name="show_taps_warning_msg">Developer Options > Show Taps draws a visible dot wherever you touch the screen — a screen recording could reveal your PIN through it even with this screen protected. Please disable it before entering your PIN.</string>
+    <string name="show_taps_open_settings">OPEN DEVELOPER OPTIONS</string>
     <string name="btn_ignore_signature">IGNORE SIGNATURE</string>
     <string name="no_signature_to_ignore">No specific signature to ignore for this threat</string>
     <string name="signature_ignored_toast">%1$d signature(s) will now be ignored on every app/file</string>

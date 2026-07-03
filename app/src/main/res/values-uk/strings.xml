@@ -276,4 +276,19 @@
     <string name="net_event_blocked">ЗАБЛОКОВАНО</string>
     <string name="net_event_allowed">ДОЗВОЛЕНО</string>
     <string name="risk_score_format">Ризик: %1$d/100</string>
+    <string name="auto_rules_manager_btn">Автоматично створені правила</string>
+    <string name="auto_rules_empty">Ще немає самонавчених правил — перше створюється, коли підтверджується реальна загроза (якщо увімкнено автоматичний генератор правил)</string>
+    <string name="auto_rule_exported">Правило експортовано</string>
+    <string name="auto_rule_export_failed">Не вдалося експортувати правило</string>
+    <string name="auto_rule_delete_failed">Не вдалося видалити правило</string>
+    <string name="auto_rule_read_failed">Не вдалося прочитати цей файл правила</string>
+    <string name="lock_confirm_pin">Підтвердіть новий PIN-код</string>
+    <string name="security_flag_lost">Перевірку безпеки не пройдено — закривається для вашого захисту</string>
+    <string name="obscured_touch_warning">Дотик проігноровано — щось перекриває екран</string>
+    <string name="show_taps_warning_title">Увімкнено \"Показ дотиків\"</string>
+    <string name="show_taps_warning_msg">Параметри розробника &gt; Показ дотиків малює видиму крапку в місці кожного дотику до екрана — запис екрана може розкрити ваш PIN-код через це, навіть якщо цей екран захищено. Будь ласка, вимкніть цю функцію перед введенням PIN-коду.</string>
+    <string name="show_taps_open_settings">ВІДКРИТИ ПАРАМЕТРИ РОЗРОБНИКА</string>
+    <string name="malware_has_admin_title">Цей додаток має права адміністратора пристрою</string>
+    <string name="malware_has_admin_msg">%1$s зробив себе адміністратором пристрою, що блокує його пряме видалення — це поширений прийом, яким користується шкідливе ПЗ, щоб опиратися видаленню. Деактивуйте це на екрані, що відкриється (знайдіть %1$s і натисніть Деактивувати), після чого запит на видалення відкриється автоматично.</string>
+    <string name="malware_has_admin_open_settings">ВІДКРИТИ НАЛАШТУВАННЯ АДМІНІСТРАТОРА ПРИСТРОЮ</string>
 </resources>

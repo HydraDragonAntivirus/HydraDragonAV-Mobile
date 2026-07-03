@@ -276,4 +276,19 @@
     <string name="net_event_blocked">محظور</string>
     <string name="net_event_allowed">مسموح</string>
     <string name="risk_score_format">الخطورة: %1$d/100</string>
+    <string name="auto_rules_manager_btn">القواعد المولّدة تلقائيًا</string>
+    <string name="auto_rules_empty">لا توجد قواعد ذاتية التعلّم بعد — يتم إنشاء أول قاعدة عند تأكيد تهديد حقيقي (إذا كان مولّد القواعد التلقائي مفعّلاً)</string>
+    <string name="auto_rule_exported">تم تصدير القاعدة</string>
+    <string name="auto_rule_export_failed">فشل تصدير القاعدة</string>
+    <string name="auto_rule_delete_failed">فشل حذف القاعدة</string>
+    <string name="auto_rule_read_failed">تعذّرت قراءة ملف القاعدة هذا</string>
+    <string name="lock_confirm_pin">تأكيد رمز PIN الجديد</string>
+    <string name="security_flag_lost">فشل فحص الأمان — يتم الإغلاق لحمايتك</string>
+    <string name="obscured_touch_warning">تم تجاهل اللمس — هناك شيء يغطي الشاشة</string>
+    <string name="show_taps_warning_title">\"إظهار اللمسات\" مفعّل</string>
+    <string name="show_taps_warning_msg">خيارات المطوّرين &gt; إظهار اللمسات يرسم نقطة مرئية أينما لمست الشاشة — يمكن لتسجيل الشاشة كشف رمز PIN الخاص بك من خلالها حتى مع حماية هذه الشاشة. يرجى تعطيله قبل إدخال رمز PIN.</string>
+    <string name="show_taps_open_settings">افتح خيارات المطوّرين</string>
+    <string name="malware_has_admin_title">هذا التطبيق يملك صلاحيات مسؤول الجهاز</string>
+    <string name="malware_has_admin_msg">جعل %1$s نفسه مسؤول جهاز، مما يمنع إلغاء تثبيته مباشرة — وهي حيلة شائعة تستخدمها البرمجيات الخبيثة لمقاومة الإزالة. عطّله في الشاشة التي ستفتح (ابحث عن %1$s واضغط إلغاء التفعيل)، ثم ستفتح رسالة إلغاء التثبيت تلقائيًا.</string>
+    <string name="malware_has_admin_open_settings">افتح إعدادات مسؤول الجهاز</string>
 </resources>

@@ -276,4 +276,19 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="net_event_blocked">BLOCCATO</string>
     <string name="net_event_allowed">CONSENTITO</string>
     <string name="risk_score_format">Rischio: %1$d/100</string>
+    <string name="auto_rules_manager_btn">Regole generate automaticamente</string>
+    <string name="auto_rules_empty">Nessuna regola auto-appresa ancora — una viene creata la prima volta che una minaccia reale è confermata (se il Generatore di regole automatico è attivo)</string>
+    <string name="auto_rule_exported">Regola esportata</string>
+    <string name="auto_rule_export_failed">Esportazione della regola non riuscita</string>
+    <string name="auto_rule_delete_failed">Eliminazione della regola non riuscita</string>
+    <string name="auto_rule_read_failed">Impossibile leggere questo file di regola</string>
+    <string name="lock_confirm_pin">Conferma nuovo PIN</string>
+    <string name="security_flag_lost">Controllo di sicurezza non riuscito — chiusura per la tua protezione</string>
+    <string name="obscured_touch_warning">Tocco ignorato — qualcosa sta coprendo lo schermo</string>
+    <string name="show_taps_warning_title">\"Mostra tocchi\" è attivo</string>
+    <string name="show_taps_warning_msg">Opzioni sviluppatore &gt; Mostra tocchi disegna un punto visibile ovunque tu tocchi lo schermo — una registrazione dello schermo potrebbe rivelare il tuo PIN attraverso di esso anche con questa schermata protetta. Disattivalo prima di inserire il PIN.</string>
+    <string name="show_taps_open_settings">APRI OPZIONI SVILUPPATORE</string>
+    <string name="malware_has_admin_title">Questa app ha i diritti di Amministratore dispositivo</string>
+    <string name="malware_has_admin_msg">%1$s si è resa Amministratore dispositivo, il che impedisce di disinstallarla direttamente — è un trucco comune usato dal malware per resistere alla rimozione. Disattivala nella schermata che si apre (trova %1$s e tocca Disattiva), quindi la richiesta di disinstallazione si aprirà automaticamente.</string>
+    <string name="malware_has_admin_open_settings">APRI IMPOSTAZIONI AMMINISTRATORE DISPOSITIVO</string>
 </resources>

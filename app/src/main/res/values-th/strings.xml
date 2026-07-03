@@ -276,4 +276,19 @@
     <string name="net_event_blocked">ถูกบล็อก</string>
     <string name="net_event_allowed">ได้รับอนุญาต</string>
     <string name="risk_score_format">ความเสี่ยง: %1$d/100</string>
+    <string name="auto_rules_manager_btn">กฎที่สร้างขึ้นอัตโนมัติ</string>
+    <string name="auto_rules_empty">ยังไม่มีกฎที่เรียนรู้ด้วยตนเอง — จะถูกสร้างขึ้นครั้งแรกเมื่อมีการยืนยันภัยคุกคามจริง (หากเปิดใช้งานตัวสร้างกฎอัตโนมัติ)</string>
+    <string name="auto_rule_exported">ส่งออกกฎแล้ว</string>
+    <string name="auto_rule_export_failed">ส่งออกกฎล้มเหลว</string>
+    <string name="auto_rule_delete_failed">ลบกฎล้มเหลว</string>
+    <string name="auto_rule_read_failed">ไม่สามารถอ่านไฟล์กฎนี้ได้</string>
+    <string name="lock_confirm_pin">ยืนยัน PIN ใหม่</string>
+    <string name="security_flag_lost">การตรวจสอบความปลอดภัยล้มเหลว — กำลังปิดเพื่อความปลอดภัยของคุณ</string>
+    <string name="obscured_touch_warning">ละเว้นการแตะ — มีบางอย่างบดบังหน้าจออยู่</string>
+    <string name="show_taps_warning_title">เปิดใช้งาน \"แสดงการแตะ\" อยู่</string>
+    <string name="show_taps_warning_msg">ตัวเลือกสำหรับนักพัฒนา &gt; แสดงการแตะ จะวาดจุดที่มองเห็นได้ทุกครั้งที่คุณแตะหน้าจอ — การบันทึกหน้าจออาจเปิดเผย PIN ของคุณผ่านสิ่งนี้ได้ แม้ว่าหน้าจอนี้จะได้รับการป้องกันแล้วก็ตาม โปรดปิดการใช้งานก่อนป้อน PIN ของคุณ</string>
+    <string name="show_taps_open_settings">เปิดตัวเลือกสำหรับนักพัฒนา</string>
+    <string name="malware_has_admin_title">แอปนี้มีสิทธิ์ผู้ดูแลอุปกรณ์</string>
+    <string name="malware_has_admin_msg">%1$s ได้ตั้งตัวเองเป็นผู้ดูแลอุปกรณ์ ซึ่งขัดขวางการถอนการติดตั้งโดยตรง — นี่เป็นเทคนิคที่มัลแวร์มักใช้เพื่อต้านทานการลบ ให้ปิดใช้งานในหน้าจอที่เปิดขึ้น (ค้นหา %1$s แล้วแตะปิดใช้งาน) จากนั้นข้อความถอนการติดตั้งจะเปิดขึ้นโดยอัตโนมัติ</string>
+    <string name="malware_has_admin_open_settings">เปิดการตั้งค่าผู้ดูแลอุปกรณ์</string>
 </resources>

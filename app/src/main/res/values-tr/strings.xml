@@ -36,6 +36,12 @@
     <string name="auto_rule_export_failed">Kural dışa aktarılamadı</string>
     <string name="auto_rule_delete_failed">Kural silinemedi</string>
     <string name="auto_rule_read_failed">Bu kural dosyası okunamadı</string>
+    <string name="lock_confirm_pin">Yeni PIN\'i Onayla</string>
+    <string name="security_flag_lost">Güvenlik kontrolü başarısız — korumanız için kapatılıyor</string>
+    <string name="obscured_touch_warning">Dokunma yok sayıldı — ekranın üzerinde bir şey var</string>
+    <string name="show_taps_warning_title">\"Dokunmaları Göster\" Açık</string>
+    <string name="show_taps_warning_msg">Geliştirici Seçenekleri &gt; Dokunmaları Göster, ekrana her dokunduğunda görünür bir nokta çiziyor — bu ekran korunuyor olsa bile bir ekran kaydı PIN\'ini bu şekilde açığa çıkarabilir. Lütfen PIN girmeden önce bunu kapat.</string>
+    <string name="show_taps_open_settings">GELİŞTİRİCİ SEÇENEKLERİNİ AÇ</string>
     <string name="btn_ignore_signature">İMZAYI YOKSAY</string>
     <string name="no_signature_to_ignore">Bu tehdit için yoksayılacak belirli bir imza yok</string>
     <string name="signature_ignored_toast">Artık %1$d imza her uygulamada/dosyada yoksayılacak</string>
@@ -208,6 +214,9 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="cert_untrusted">GÜVENSİZ SERTİFİKA (Test Anahtarı)</string>
     <string name="cert_signature">✍️ İmza: %1$s</string>
     <string name="threat_adware">ADWARE TESPİTİ: Aşırı Reklam İçeriyor!</string>
+    <string name="accessibility_service_description">HydraDragon Dinamik Analiz Motoru. Gerçek zamanlı arayüz manipülasyonunu izler ve kötü amaçlı yazılımların clickjacking/overlay saldırılarını engeller.</string>
+    <string name="system_safe">SİSTEM GÜVENDE</string>
+    <string name="accessibility_desc">HydraDragon, kötü amaçlı web sitelerinden korumak için tarayıcı URL\'lerini izler.</string>
     <string name="ransomware_blocked_title">FIDYE YAZILIMI ENGELLENDİ</string>
     <string name="ransomware_blocked_msg">Fidye yazılımı kilit ekranı tespit edildi — HydraDragon açıldı.</string>
     <string name="scam_page_title">Olası dolandırıcılık sayfası</string>

@@ -276,4 +276,19 @@ Puntuación de riesgo: %2$d/100
     <string name="net_event_blocked">BLOQUEADO</string>
     <string name="net_event_allowed">PERMITIDO</string>
     <string name="risk_score_format">Riesgo: %1$d/100</string>
+    <string name="auto_rules_manager_btn">Reglas Generadas Automáticamente</string>
+    <string name="auto_rules_empty">Aún no hay reglas auto-aprendidas — se crea una la primera vez que se confirma una amenaza real (si el Generador de Reglas Automático está activado)</string>
+    <string name="auto_rule_exported">Regla exportada</string>
+    <string name="auto_rule_export_failed">No se pudo exportar la regla</string>
+    <string name="auto_rule_delete_failed">No se pudo eliminar la regla</string>
+    <string name="auto_rule_read_failed">No se pudo leer este archivo de regla</string>
+    <string name="lock_confirm_pin">Confirmar Nuevo PIN</string>
+    <string name="security_flag_lost">Fallo en la comprobación de seguridad — cerrando para tu protección</string>
+    <string name="obscured_touch_warning">Toque ignorado — algo está superpuesto sobre la pantalla</string>
+    <string name="show_taps_warning_title">\"Mostrar Toques\" Está Activado</string>
+    <string name="show_taps_warning_msg">Opciones de desarrollador &gt; Mostrar toques dibuja un punto visible allí donde toques la pantalla — una grabación de pantalla podría revelar tu PIN a través de ello incluso con esta pantalla protegida. Desactívalo antes de introducir tu PIN.</string>
+    <string name="show_taps_open_settings">ABRIR OPCIONES DE DESARROLLADOR</string>
+    <string name="malware_has_admin_title">Esta App Tiene Derechos de Administrador del Dispositivo</string>
+    <string name="malware_has_admin_msg">%1$s se ha convertido en Administrador del dispositivo, lo que impide desinstalarla directamente — un truco común que usa el malware para resistirse a ser eliminado. Desactívalo en la pantalla que se abre (busca %1$s y toca Desactivar), y luego el aviso de desinstalación se abrirá automáticamente.</string>
+    <string name="malware_has_admin_open_settings">ABRIR AJUSTES DE ADMINISTRADOR DEL DISPOSITIVO</string>
 </resources>

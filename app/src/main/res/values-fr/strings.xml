@@ -276,4 +276,19 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="net_event_blocked">BLOQUÉ</string>
     <string name="net_event_allowed">AUTORISÉ</string>
     <string name="risk_score_format">Risque : %1$d/100</string>
+    <string name="auto_rules_manager_btn">Règles Générées Automatiquement</string>
+    <string name="auto_rules_empty">Aucune règle auto-apprise pour l\'instant — une règle est créée la première fois qu\'une menace réelle est confirmée (si le Générateur de règles automatique est activé)</string>
+    <string name="auto_rule_exported">Règle exportée</string>
+    <string name="auto_rule_export_failed">Échec de l\'exportation de la règle</string>
+    <string name="auto_rule_delete_failed">Échec de la suppression de la règle</string>
+    <string name="auto_rule_read_failed">Impossible de lire ce fichier de règle</string>
+    <string name="lock_confirm_pin">Confirmer le Nouveau PIN</string>
+    <string name="security_flag_lost">Échec du contrôle de sécurité — fermeture pour votre protection</string>
+    <string name="obscured_touch_warning">Appui ignoré — quelque chose recouvre l\'écran</string>
+    <string name="show_taps_warning_title">\"Afficher les appuis\" est activé</string>
+    <string name="show_taps_warning_msg">Options pour les développeurs &gt; Afficher les appuis dessine un point visible partout où vous touchez l\'écran — un enregistrement d\'écran pourrait révéler votre PIN par ce biais, même avec cet écran protégé. Veuillez le désactiver avant de saisir votre PIN.</string>
+    <string name="show_taps_open_settings">OUVRIR LES OPTIONS POUR DÉVELOPPEURS</string>
+    <string name="malware_has_admin_title">Cette Application a des Droits d\'Administrateur de l\'Appareil</string>
+    <string name="malware_has_admin_msg">%1$s s\'est fait Administrateur de l\'appareil, ce qui empêche sa désinstallation directe — une astuce courante utilisée par les malwares pour résister à la suppression. Désactivez-le sur l\'écran qui s\'ouvre (trouvez %1$s et appuyez sur Désactiver), puis l\'invite de désinstallation s\'ouvrira automatiquement.</string>
+    <string name="malware_has_admin_open_settings">OUVRIR LES PARAMÈTRES D\'ADMINISTRATEUR DE L\'APPAREIL</string>
 </resources>
