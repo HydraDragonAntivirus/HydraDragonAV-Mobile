@@ -144,6 +144,7 @@
     <string name="detect_cat_auto_rules">قوانین خودآموز</string>
     <string name="detect_cat_permissions">مجوزهای خطرناک</string>
     <string name="detect_cat_eicar">فایل‌های آزمایشی EICAR</string>
+    <string name="detect_cat_url_strings">رشته‌های URL مخرب/فیشینگ در فایل‌ها</string>
     <string name="behavior_detection_header">تشخیص رفتار</string>
     <string name="behavior_ui_spam">تشخیص هرزنامه رابط کاربری/اعلان</string>
     <string name="behavior_root_exploit">تشخیص اکسپلویت روت</string>

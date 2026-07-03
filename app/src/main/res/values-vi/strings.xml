@@ -144,6 +144,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="detect_cat_auto_rules">Quy tắc tự động tự học</string>
     <string name="detect_cat_permissions">Quyền nguy hiểm</string>
     <string name="detect_cat_eicar">Tệp kiểm tra EICAR</string>
+    <string name="detect_cat_url_strings">Chuỗi URL độc hại/lừa đảo trong tệp</string>
     <string name="behavior_detection_header">Phát hiện hành vi</string>
     <string name="behavior_ui_spam">Phát hiện spam giao diện/thông báo</string>
     <string name="behavior_root_exploit">Phát hiện khai thác root</string>

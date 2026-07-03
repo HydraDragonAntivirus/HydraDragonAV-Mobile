@@ -144,6 +144,7 @@
     <string name="detect_cat_auto_rules">自学习自动规则</string>
     <string name="detect_cat_permissions">危险权限</string>
     <string name="detect_cat_eicar">EICAR 测试文件</string>
+    <string name="detect_cat_url_strings">文件中的恶意/钓鱼 URL 字符串</string>
     <string name="behavior_detection_header">行为检测</string>
     <string name="behavior_ui_spam">界面/通知垃圾信息检测</string>
     <string name="behavior_root_exploit">Root 漏洞利用检测</string>

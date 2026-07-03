@@ -117,9 +117,17 @@ impl UrlScanner {
             host = &host[..colon];
         }
 
-        // http + path => URL scan (URL blooms, full URL); else domain scan
-        // (registrable main domain against the domain blooms).
-        let url_scan = scheme_http && has_path;
+        // Any http(s) URL with a real path => URL scan (URL blooms, full
+        // scheme-less URL); else domain scan (registrable main domain against
+        // the domain blooms). `norm` is already scheme-stripped above, so an
+        // http:// and an https:// URL to the same host+path normalize to the
+        // IDENTICAL bloom lookup key — there is no reason to special-case the
+        // scheme here. This used to require `scheme_http` (plain http://)
+        // specifically, which silently skipped the URL-path blooms for EVERY
+        // https:// URL (the overwhelming majority of real traffic today) —
+        // falling through to a domain-only check that can't see the specific
+        // malicious/phishing PATH at all, only the bare domain.
+        let url_scan = has_path;
         let main = if url_scan { String::new() } else { self.main_domain(host) };
         for f in &self.filters {
             if url_scan {

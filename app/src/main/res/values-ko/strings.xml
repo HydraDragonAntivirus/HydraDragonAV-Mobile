@@ -144,6 +144,7 @@
     <string name="detect_cat_auto_rules">자가 학습 자동 규칙</string>
     <string name="detect_cat_permissions">위험한 권한</string>
     <string name="detect_cat_eicar">EICAR 테스트 파일</string>
+    <string name="detect_cat_url_strings">파일 내 악성/피싱 URL 문자열</string>
     <string name="behavior_detection_header">행위 탐지</string>
     <string name="behavior_ui_spam">UI/알림 스팸 탐지</string>
     <string name="behavior_root_exploit">루트 익스플로잇 탐지</string>

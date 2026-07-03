@@ -602,8 +602,22 @@ public class ScanEngine {
             // hash. Keep only the detections that survive.
             List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
             boolean malicious = !live.isEmpty();
-            // Act on a surviving hit OR a dangerous-permission count.
-            if (!malicious && v.permissions < 6) return;
+
+            // Static string-based URL scan: extract every http(s) URL straight
+            // from the file's bytes and check it against the malware/phishing
+            // blooms. A FULL URL (with path) is far more specific than a bare
+            // domain — much less collision-prone, so a hit here is stronger
+            // evidence with fewer false positives than domain-only matching,
+            // and it catches malicious/phishing links dropped in plain text
+            // files (not just APKs) that never go through analyzeApp at all.
+            java.util.Map<String, String> urlHits = java.util.Collections.emptyMap();
+            if (DetectionCategories.isEnabled(context, DetectionCategories.URL_STRINGS)) {
+                urlHits = scanFileForMaliciousUrls(file);
+            }
+
+            // Act on a surviving native hit, a dangerous-permission count, or a
+            // malicious/phishing URL string.
+            if (!malicious && v.permissions < 6 && urlHits.isEmpty()) return;
 
             ThreatResult.Builder b = new ThreatResult.Builder(path);
             List<String> reasons = new java.util.ArrayList<>();
@@ -671,6 +685,24 @@ public class ScanEngine {
                 reasons.add(String.format(java.util.Locale.US,
                     "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
             }
+            if (!urlHits.isEmpty()) {
+                boolean anyMalware = false;
+                for (java.util.Map.Entry<String, String> hit : urlHits.entrySet()) {
+                    boolean isPhishing = hit.getValue().contains("PHISHING");
+                    if (!isPhishing) anyMalware = true;
+                    reasons.add((isPhishing ? "🎣 [PHISHING URL] " : "☠️ [MALWARE URL] ")
+                        + hit.getValue() + ": " + hit.getKey());
+                }
+                // Malware URL takes priority over phishing if both kinds of hit
+                // are present in the same file. A full-URL bloom hit is treated
+                // as certain (100), same weight as a native signature match —
+                // see DetectionCategories.URL_STRINGS' javadoc for why a full
+                // URL (not just a domain) is specific enough to earn that.
+                riskScore = 100;
+                b.setThreatType(anyMalware
+                    ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
+                    : com.hydradragon.antivirus.model.ThreatResult.ThreatType.PHISHING);
+            }
             if (v.md5 != null && !v.md5.isEmpty()) {
                 reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
             }
@@ -684,6 +716,36 @@ public class ScanEngine {
                 if (callback != null) callback.onThreatFound(r);
             }
         } catch (Throwable t) { /* degrade gracefully */ }
+    }
+
+    /** Read a bounded prefix of {@code file} as text and check every embedded
+     *  http(s) URL against the native malware/phishing URL blooms. Bounded
+     *  read (not the whole file) keeps this cheap even for large files — a
+     *  malicious/phishing link is a short ASCII string, so it's virtually
+     *  always found well within the first few MB regardless of overall file
+     *  size.
+     *  @return map of malicious URL -> category (empty if none / unreadable). */
+    private static final int URL_SCAN_MAX_BYTES = 4 * 1024 * 1024;
+
+    private java.util.Map<String, String> scanFileForMaliciousUrls(java.io.File file) {
+        java.util.Map<String, String> hits = new java.util.LinkedHashMap<>();
+        try (java.io.InputStream in = new java.io.FileInputStream(file)) {
+            byte[] buf = new byte[64 * 1024];
+            StringBuilder sb = new StringBuilder();
+            int n, total = 0;
+            while ((n = in.read(buf)) != -1) {
+                sb.append(new String(buf, 0, n, java.nio.charset.StandardCharsets.ISO_8859_1));
+                total += n;
+                if (total >= URL_SCAN_MAX_BYTES) break;
+            }
+            UrlThreatScanner scanner = UrlThreatScanner.get(context);
+            for (String url : UrlThreatScanner.extractUrls(sb.toString())) {
+                if (hits.containsKey(url)) continue;
+                String cat = scanner.scanUrl(url);
+                if (cat != null) hits.put(url, cat);
+            }
+        } catch (Throwable ignore) { }
+        return hits;
     }
 
     // ──────────────────────── FULL-SCAN EXTRA PASSES ────────────────────────

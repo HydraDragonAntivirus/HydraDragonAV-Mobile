@@ -165,6 +165,7 @@ public class SettingsFragment extends Fragment {
         addCategoryToggle(R.string.detect_cat_auto_rules, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
         addCategoryToggle(R.string.detect_cat_permissions, com.hydradragon.antivirus.engine.DetectionCategories.PERMISSIONS);
         addCategoryToggle(R.string.detect_cat_eicar, com.hydradragon.antivirus.engine.DetectionCategories.EICAR);
+        addCategoryToggle(R.string.detect_cat_url_strings, com.hydradragon.antivirus.engine.DetectionCategories.URL_STRINGS);
 
         addHeader(getString(R.string.behavior_detection_header));
         addBehaviorToggle(R.string.behavior_ui_spam, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.UI_SPAM);

@@ -19,6 +19,7 @@ public class ThreatResult {
         ADWARE,         // Reklam yazılımı
         TROJAN,         // Truva atı
         BACKDOOR,       // Arka kapı
+        PHISHING,       // Kimlik avı (embedded phishing/typosquat URL)
         PUA,            // Potansiyel istenmeyen uygulama (PUA.* / PUA_*)
         TEST_MALWARE    // EICAR standard AV test signature — a deliberate test
                          // file, not a real threat; kept distinct so the UI can

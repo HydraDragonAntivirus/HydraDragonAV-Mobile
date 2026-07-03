@@ -144,6 +144,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="detect_cat_auto_rules">Règles auto-apprises</string>
     <string name="detect_cat_permissions">Autorisations dangereuses</string>
     <string name="detect_cat_eicar">Fichiers de test EICAR</string>
+    <string name="detect_cat_url_strings">Chaînes d\'URL malveillantes/de phishing dans les fichiers</string>
     <string name="behavior_detection_header">Détection Comportementale</string>
     <string name="behavior_ui_spam">Détection de spam d\'interface/notifications</string>
     <string name="behavior_root_exploit">Détection d\'exploit root</string>

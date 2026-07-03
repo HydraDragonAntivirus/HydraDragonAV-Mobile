@@ -144,6 +144,7 @@
     <string name="detect_cat_auto_rules">กฎอัตโนมัติที่เรียนรู้ด้วยตนเอง</string>
     <string name="detect_cat_permissions">สิทธิ์ที่เป็นอันตราย</string>
     <string name="detect_cat_eicar">ไฟล์ทดสอบ EICAR</string>
+    <string name="detect_cat_url_strings">สตริง URL ที่เป็นอันตราย/ฟิชชิงในไฟล์</string>
     <string name="behavior_detection_header">การตรวจจับพฤติกรรม</string>
     <string name="behavior_ui_spam">การตรวจจับสแปม UI/การแจ้งเตือน</string>
     <string name="behavior_root_exploit">การตรวจจับการเจาะระบบด้วย root</string>

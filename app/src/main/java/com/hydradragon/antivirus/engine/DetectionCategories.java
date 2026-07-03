@@ -21,6 +21,12 @@ public final class DetectionCategories {
     public static final String AUTO_RULES = "detect_cat_auto_rules";
     public static final String PERMISSIONS = "detect_cat_permissions";
     public static final String EICAR = "detect_cat_eicar";
+    /** Embedded malicious/phishing URL strings inside an APK (ScanEngine's
+     *  reinstated {@code UrlThreatScanner.scanApk()} call — see its javadoc
+     *  for why this is far less false-positive-prone than a bare-domain
+     *  check: a full URL (with path) is much more specific than a domain
+     *  alone, so a bloom hit here means much more). */
+    public static final String URL_STRINGS = "detect_cat_url_strings";
 
     private DetectionCategories() {}
 

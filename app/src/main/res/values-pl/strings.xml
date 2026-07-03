@@ -144,6 +144,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="detect_cat_auto_rules">Samouczące się reguły automatyczne</string>
     <string name="detect_cat_permissions">Niebezpieczne uprawnienia</string>
     <string name="detect_cat_eicar">Pliki testowe EICAR</string>
+    <string name="detect_cat_url_strings">Złośliwe/phishingowe ciągi URL w plikach</string>
     <string name="behavior_detection_header">Wykrywanie zachowań</string>
     <string name="behavior_ui_spam">Wykrywanie spamu UI/powiadomień</string>
     <string name="behavior_root_exploit">Wykrywanie exploitów root</string>
