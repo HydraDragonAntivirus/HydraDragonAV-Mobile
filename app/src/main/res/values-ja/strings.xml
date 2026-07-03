@@ -153,6 +153,7 @@
     <string name="behavior_ransomware">ランサムウェアのファイル名変更検出</string>
     <string name="behavior_task_hijack">タスクハイジャック（StrandHogg）検出</string>
     <string name="behavior_screen_security">画面録画保護</string>
+    <string name="behavior_file_canary">ランサムウェアファイルトラップ（一時的なおとりファイル）</string>
     <string name="self_protection_dialog_title">自己保護を有効にしますか？</string>
     <string name="self_protection_dialog_msg">HydraDragonはデバイス管理者権限をリクエストし、あなたが先に無効化しない限り他のアプリ（例：アンチウイルスを削除しようとするマルウェア）によってアンインストールされないようにできます。ロック/ワイプ/パスワードの権限は使用されません — 設定からいつでもオフにできます。</string>
     <string name="self_protection_toggle">自己保護（デバイス管理者）— アンインストールを防止</string>
@@ -270,6 +271,8 @@
     <string name="dynamic_risk_msg">%1$sは危険な権限と匿名化ネットワーク通信を組み合わせています — マルウェアとしてフラグが立てられ、次回のスキャンで報告されます。</string>
     <string name="ransomware_behavior_title">🔒 ランサムウェアの挙動を検出</string>
     <string name="ransomware_behavior_msg">%1$sはファイルアクセス権限が付与された直後に大量のファイルの名前を変更しました — ランサムウェアとしてフラグが立てられ、次回のスキャンで報告されます。</string>
+    <string name="file_trap_title">🪤 ランサムウェアファイルトラップが作動しました</string>
+    <string name="file_trap_msg">%1$sは、正規のアプリがアクセスする理由のないおとりファイルに触れました — ランサムウェアとしてフラグが立てられ、次回のスキャンで報告されます。</string>
     <string name="task_hijack_detected">セキュリティチェックに失敗しました — 別のアプリがこの画面の上に重ねて表示されている可能性があるため、保護のため終了します</string>
     <string name="notif_suspicious_network_title">🛡 不審なネットワーク接続をブロックしました</string>
     <string name="notif_suspicious_process_title">⚠ 不審なプロセスを検出</string>

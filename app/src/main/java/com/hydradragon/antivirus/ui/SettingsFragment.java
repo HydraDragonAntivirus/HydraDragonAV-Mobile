@@ -179,6 +179,7 @@ public class SettingsFragment extends Fragment {
         addBehaviorToggle(R.string.behavior_root_exploit, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.ROOT_EXPLOIT);
         addBehaviorToggle(R.string.behavior_dynamic_risk, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.DYNAMIC_RISK);
         addBehaviorToggle(R.string.behavior_ransomware, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.RANSOMWARE);
+        addBehaviorToggle(R.string.behavior_file_canary, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.FILE_CANARY);
         addBehaviorToggle(R.string.behavior_task_hijack, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.TASK_HIJACK);
         addBehaviorToggle(R.string.behavior_screen_security, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY);
 

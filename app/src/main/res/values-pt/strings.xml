@@ -153,6 +153,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="behavior_ransomware">Detecção de renomeação de arquivos por ransomware</string>
     <string name="behavior_task_hijack">Detecção de sequestro de tarefas (StrandHogg)</string>
     <string name="behavior_screen_security">Proteção contra gravação de tela</string>
+    <string name="behavior_file_canary">Armadilhas de arquivo ransomware (arquivos-isca temporários)</string>
     <string name="self_protection_dialog_title">Ativar Autoproteção?</string>
     <string name="self_protection_dialog_msg">O HydraDragon pode solicitar Administrador do dispositivo para que não possa ser desinstalado por outro app (ex.: malware tentando remover seu antivírus) sem que você o desative primeiro. Nenhum poder de bloqueio/apagamento/senha é usado — você pode desativar isso a qualquer momento nas Configurações.</string>
     <string name="self_protection_toggle">Autoproteção (Administrador do dispositivo) — impedir desinstalação</string>
@@ -270,6 +271,8 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="dynamic_risk_msg">%1$s combina permissões arriscadas com tráfego de rede anonimizado — sinalizada como malware, será reportada na próxima verificação.</string>
     <string name="ransomware_behavior_title">🔒 Comportamento de Ransomware Detectado</string>
     <string name="ransomware_behavior_msg">%1$s renomeou em massa arquivos logo após receber acesso a arquivos — sinalizada como ransomware, será reportada na próxima verificação.</string>
+    <string name="file_trap_title">🪤 Armadilha de Arquivo Ransomware Acionada</string>
+    <string name="file_trap_msg">%1$s tocou em um arquivo-isca que nenhum app legítimo tem motivo para acessar — sinalizada como ransomware, será reportada na próxima verificação.</string>
     <string name="task_hijack_detected">Falha na verificação de segurança — outro app parece estar sobreposto a esta tela, fechando para sua proteção</string>
     <string name="notif_suspicious_network_title">🛡 Conexão de Rede Suspeita Bloqueada</string>
     <string name="notif_suspicious_process_title">⚠ Processo Suspeito Detectado</string>

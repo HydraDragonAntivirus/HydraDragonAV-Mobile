@@ -153,6 +153,7 @@
     <string name="behavior_ransomware">اكتشاف إعادة تسمية ملفات برامج الفدية</string>
     <string name="behavior_task_hijack">اكتشاف اختطاف المهام (StrandHogg)</string>
     <string name="behavior_screen_security">حماية تسجيل الشاشة</string>
+    <string name="behavior_file_canary">فخاخ ملفات برامج الفدية (ملفات خداعية مؤقتة)</string>
     <string name="self_protection_dialog_title">تفعيل الحماية الذاتية؟</string>
     <string name="self_protection_dialog_msg">يمكن لـ HydraDragon طلب صلاحية مسؤول الجهاز حتى لا يتمكن تطبيق آخر (مثل برمجية خبيثة تحاول إزالة مضاد الفيروسات) من إلغاء تثبيته دون أن تقوم أنت بإلغاء تفعيلها أولاً. لا يتم استخدام أي صلاحيات قفل/مسح/كلمة مرور — يمكنك إيقاف هذا في أي وقت من الإعدادات.</string>
     <string name="self_protection_toggle">الحماية الذاتية (مسؤول الجهاز) — منع إلغاء التثبيت</string>
@@ -270,6 +271,8 @@
     <string name="dynamic_risk_msg">‏%1$s يجمع بين أذونات خطرة وحركة شبكة عبر شبكة تعمية (anonymizer) — تم تصنيفه كبرمجية خبيثة وسيُبلَّغ عنه في الفحص التالي.</string>
     <string name="ransomware_behavior_title">🔒 تم اكتشاف سلوك برنامج فدية</string>
     <string name="ransomware_behavior_msg">%1$s قام بإعادة تسمية جماعية للملفات فور منحه إذن الوصول إلى الملفات — تم تصنيفه كبرنامج فدية وسيُبلَّغ عنه في الفحص التالي.</string>
+    <string name="file_trap_title">🪤 تم تفعيل فخ ملف برنامج الفدية</string>
+    <string name="file_trap_msg">%1$s لمس ملفًا خداعيًا لا يوجد أي سبب مشروع لأي تطبيق للوصول إليه — تم تصنيفه كبرنامج فدية، وسيُبلَّغ عنه في الفحص التالي.</string>
     <string name="task_hijack_detected">فشل فحص الأمان — يبدو أن تطبيقًا آخر مُوضّع فوق هذه الشاشة، يتم الإغلاق لحمايتك</string>
     <string name="notif_suspicious_network_title">🛡 تم حظر اتصال شبكة مشبوه</string>
     <string name="notif_suspicious_process_title">⚠ تم اكتشاف عملية مشبوهة</string>

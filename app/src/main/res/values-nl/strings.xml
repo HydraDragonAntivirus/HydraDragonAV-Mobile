@@ -153,6 +153,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="behavior_ransomware">Detectie van ransomware-bestandshernoeming</string>
     <string name="behavior_task_hijack">Detectie van taakkaping (StrandHogg)</string>
     <string name="behavior_screen_security">Beveiliging tegen schermopname</string>
+    <string name="behavior_file_canary">Ransomware-bestandsvallen (tijdelijke lokbestanden)</string>
     <string name="self_protection_dialog_title">Zelfbescherming inschakelen?</string>
     <string name="self_protection_dialog_msg">HydraDragon kan Apparaatbeheerder aanvragen zodat het niet door een andere app (bijv. malware die je antivirus probeert te verwijderen) kan worden verwijderd zonder dat jij dit eerst uitschakelt. Er worden geen vergrendel-/wis-/wachtwoordbevoegdheden gebruikt — je kunt dit altijd uitzetten via Instellingen.</string>
     <string name="self_protection_toggle">Zelfbescherming (Apparaatbeheerder) — verwijderen voorkomen</string>
@@ -270,6 +271,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="dynamic_risk_msg">%1$s combineert riskante machtigingen met anonimiserend netwerkverkeer — gemarkeerd als malware, wordt bij de volgende scan gemeld.</string>
     <string name="ransomware_behavior_title">🔒 Ransomware-Gedrag Gedetecteerd</string>
     <string name="ransomware_behavior_msg">%1$s heeft direct na het verkrijgen van bestandstoegang massaal bestanden hernoemd — gemarkeerd als ransomware, wordt bij de volgende scan gemeld.</string>
+    <string name="file_trap_title">🪤 Ransomware-bestandsval Geactiveerd</string>
+    <string name="file_trap_msg">%1$s raakte een lokbestand aan waar geen enkele legitieme app reden toe heeft om toegang te krijgen — gemarkeerd als ransomware, wordt bij de volgende scan gemeld.</string>
     <string name="task_hijack_detected">Beveiligingscontrole mislukt — een andere app lijkt over dit scherm te zijn gelegd, wordt gesloten ter bescherming</string>
     <string name="notif_suspicious_network_title">🛡 Verdachte netwerkverbinding geblokkeerd</string>
     <string name="notif_suspicious_process_title">⚠ Verdacht proces gedetecteerd</string>

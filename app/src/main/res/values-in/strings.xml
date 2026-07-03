@@ -153,6 +153,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="behavior_ransomware">Deteksi penggantian nama file ransomware</string>
     <string name="behavior_task_hijack">Deteksi pembajakan tugas (StrandHogg)</string>
     <string name="behavior_screen_security">Perlindungan perekaman layar</string>
+    <string name="behavior_file_canary">Perangkap file ransomware (file umpan sementara)</string>
     <string name="self_protection_dialog_title">Aktifkan Perlindungan Diri?</string>
     <string name="self_protection_dialog_msg">HydraDragon dapat meminta Admin Perangkat agar tidak dapat dicopot pemasangannya oleh aplikasi lain (misalnya malware yang mencoba menghapus antivirus Anda) tanpa Anda menonaktifkannya terlebih dahulu. Tidak ada kekuatan kunci/hapus/kata sandi yang digunakan — Anda dapat mematikannya kapan saja dari Pengaturan.</string>
     <string name="self_protection_toggle">Perlindungan Diri (Admin Perangkat) — cegah pencopotan pemasangan</string>
@@ -270,6 +271,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="dynamic_risk_msg">%1$s menggabungkan izin berisiko dengan lalu lintas jaringan anonymizer — ditandai sebagai malware, akan dilaporkan pada pemindaian berikutnya.</string>
     <string name="ransomware_behavior_title">🔒 Perilaku Ransomware Terdeteksi</string>
     <string name="ransomware_behavior_msg">%1$s baru saja mengganti nama file secara massal segera setelah diberi akses file — ditandai sebagai ransomware, akan dilaporkan pada pemindaian berikutnya.</string>
+    <string name="file_trap_title">🪤 Perangkap File Ransomware Terpicu</string>
+    <string name="file_trap_msg">%1$s menyentuh file umpan yang tidak ada alasan bagi aplikasi sah untuk mengaksesnya — ditandai sebagai ransomware, akan dilaporkan pada pemindaian berikutnya.</string>
     <string name="task_hijack_detected">Pemeriksaan keamanan gagal — aplikasi lain tampaknya dilapisi di atas layar ini, ditutup demi perlindungan Anda</string>
     <string name="notif_suspicious_network_title">🛡 Koneksi Jaringan Mencurigakan Diblokir</string>
     <string name="notif_suspicious_process_title">⚠ Proses Mencurigakan Terdeteksi</string>

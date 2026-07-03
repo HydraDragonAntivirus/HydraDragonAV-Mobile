@@ -153,6 +153,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="behavior_ransomware">Wykrywanie zmiany nazw plików przez ransomware</string>
     <string name="behavior_task_hijack">Wykrywanie przechwytywania zadań (StrandHogg)</string>
     <string name="behavior_screen_security">Ochrona przed nagrywaniem ekranu</string>
+    <string name="behavior_file_canary">Pułapki plikowe ransomware (tymczasowe pliki wabikowe)</string>
     <string name="self_protection_dialog_title">Włączyć samoobronę?</string>
     <string name="self_protection_dialog_msg">HydraDragon może poprosić o uprawnienia administratora urządzenia, aby nie mogła zostać odinstalowana przez inną aplikację (np. złośliwe oprogramowanie próbujące usunąć antywirusa) bez wcześniejszego dezaktywowania tego przez ciebie. Nie są używane żadne uprawnienia blokady/wymazywania/hasła — możesz to wyłączyć w dowolnym momencie w Ustawieniach.</string>
     <string name="self_protection_toggle">Samoobrona (Administrator urządzenia) — zapobiega odinstalowaniu</string>
@@ -270,6 +271,8 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="dynamic_risk_msg">%1$s łączy ryzykowne uprawnienia z ruchem sieciowym typu anonimizer — oznaczono jako złośliwe oprogramowanie, zostanie zgłoszone podczas następnego skanowania.</string>
     <string name="ransomware_behavior_title">🔒 Wykryto Zachowanie Ransomware</string>
     <string name="ransomware_behavior_msg">%1$s masowo zmieniła nazwy plików zaraz po uzyskaniu dostępu do plików — oznaczono jako ransomware, zostanie zgłoszone podczas następnego skanowania.</string>
+    <string name="file_trap_title">🪤 Uruchomiono Pułapkę Pliku Ransomware</string>
+    <string name="file_trap_msg">%1$s dotknęła pliku wabikowego, do którego żadna legalna aplikacja nie ma powodu uzyskiwać dostępu — oznaczono jako ransomware, zostanie zgłoszone podczas następnego skanowania.</string>
     <string name="task_hijack_detected">Kontrola bezpieczeństwa nie powiodła się — wygląda na to, że inna aplikacja nakłada się na ten ekran, zamykanie w celu ochrony</string>
     <string name="notif_suspicious_network_title">🛡 Zablokowano podejrzane połączenie sieciowe</string>
     <string name="notif_suspicious_process_title">⚠ Wykryto podejrzany proces</string>

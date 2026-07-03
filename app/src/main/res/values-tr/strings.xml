@@ -166,6 +166,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="behavior_ransomware">Ransomware dosya yeniden adlandırma tespiti</string>
     <string name="behavior_task_hijack">Görev ele geçirme (StrandHogg) tespiti</string>
     <string name="behavior_screen_security">Ekran kaydı koruması</string>
+    <string name="behavior_file_canary">Fidye yazılımı dosya tuzakları (geçici yem dosyalar)</string>
     <string name="malware_has_admin_title">Bu Uygulama Cihaz Yöneticisi Hakkına Sahip</string>
     <string name="malware_has_admin_msg">%1$s kendini Cihaz Yöneticisi yapmış, bu da doğrudan kaldırılmasını engelliyor — zararlı yazılımların kaldırılmaya direnmek için sık kullandığı bir yöntem. Açılan ekranda önce onu devre dışı bırak (%1$s uygulamasını bulup Devre Dışı Bırak\'a dokun), ardından kaldırma ekranı otomatik açılacak.</string>
     <string name="malware_has_admin_open_settings">CİHAZ YÖNETİCİSİ AYARLARINI AÇ</string>
@@ -289,6 +290,8 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="dynamic_risk_msg">%1$s riskli izinleri anonimleştirici ağ trafiğiyle birleştiriyor — kötü amaçlı yazılım olarak işaretlendi, bir sonraki taramada bildirilecek.</string>
     <string name="ransomware_behavior_title">🔒 Fidye Yazılımı Davranışı Tespit Edildi</string>
     <string name="ransomware_behavior_msg">%1$s, dosya erişimi verildikten hemen sonra dosyaları toplu olarak yeniden adlandırdı — fidye yazılımı olarak işaretlendi, bir sonraki taramada bildirilecek.</string>
+    <string name="file_trap_title">🪤 Fidye Yazılımı Dosya Tuzağı Tetiklendi</string>
+    <string name="file_trap_msg">%1$s, hiçbir meşru uygulamanın erişmesi için bir nedeni olmayan bir yem dosyaya dokundu — fidye yazılımı olarak işaretlendi, bir sonraki taramada bildirilecek.</string>
     <string name="task_hijack_detected">Güvenlik kontrolü başarısız — bu ekranın üzerine başka bir uygulama yerleştirilmiş görünüyor, korumanız için kapatılıyor</string>
     <string name="notif_suspicious_network_title">🛡 Şüpheli Ağ Bağlantısı Engellendi</string>
     <string name="notif_suspicious_process_title">⚠ Şüpheli Process Tespit Edildi</string>

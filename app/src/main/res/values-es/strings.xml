@@ -153,6 +153,7 @@ Puntuación de riesgo: %2$d/100
     <string name="behavior_ransomware">Detección de renombrado masivo de archivos por ransomware</string>
     <string name="behavior_task_hijack">Detección de secuestro de tareas (StrandHogg)</string>
     <string name="behavior_screen_security">Protección contra grabación de pantalla</string>
+    <string name="behavior_file_canary">Trampas de archivos ransomware (archivos señuelo temporales)</string>
     <string name="self_protection_dialog_title">¿Activar Autoprotección?</string>
     <string name="self_protection_dialog_msg">HydraDragon puede solicitar Administrador del dispositivo para que no pueda ser desinstalado por otra app (p. ej. malware intentando eliminar tu antivirus) sin que tú lo desactives primero. No se usan poderes de bloqueo/borrado/contraseña — puedes desactivarlo en cualquier momento desde Ajustes.</string>
     <string name="self_protection_toggle">Autoprotección (Administrador del dispositivo) — evitar desinstalación</string>
@@ -270,6 +271,8 @@ Puntuación de riesgo: %2$d/100
     <string name="dynamic_risk_msg">%1$s combina permisos de riesgo con tráfico de red anonimizado — marcada como malware, se reportará en el próximo escaneo.</string>
     <string name="ransomware_behavior_title">🔒 Comportamiento de Ransomware Detectado</string>
     <string name="ransomware_behavior_msg">%1$s renombró masivamente archivos justo después de que se le concediera acceso a archivos — marcada como ransomware, se reportará en el próximo escaneo.</string>
+    <string name="file_trap_title">🪤 Trampa de Archivo Ransomware Activada</string>
+    <string name="file_trap_msg">%1$s tocó un archivo señuelo que ninguna app legítima tiene motivo alguno para acceder — marcada como ransomware, se reportará en el próximo escaneo.</string>
     <string name="task_hijack_detected">Fallo en la comprobación de seguridad — parece que otra app se ha superpuesto a esta pantalla, cerrando para tu protección</string>
     <string name="notif_suspicious_network_title">🛡 Conexión de Red Sospechosa Bloqueada</string>
     <string name="notif_suspicious_process_title">⚠ Proceso Sospechoso Detectado</string>

@@ -153,6 +153,7 @@
     <string name="behavior_ransomware">रैनसमवेयर फ़ाइल-नाम-परिवर्तन पहचान</string>
     <string name="behavior_task_hijack">टास्क हाईजैकिंग (StrandHogg) पहचान</string>
     <string name="behavior_screen_security">स्क्रीन रिकॉर्डिंग सुरक्षा</string>
+    <string name="behavior_file_canary">रैनसमवेयर फ़ाइल जाल (अस्थायी छलावा फ़ाइलें)</string>
     <string name="self_protection_dialog_title">स्व-सुरक्षा सक्षम करें?</string>
     <string name="self_protection_dialog_msg">HydraDragon डिवाइस एडमिन अनुरोध कर सकता है ताकि इसे किसी अन्य ऐप (जैसे आपके एंटीवायरस को हटाने की कोशिश करने वाला मैलवेयर) द्वारा तब तक अनइंस्टॉल न किया जा सके जब तक आप इसे पहले निष्क्रिय न करें। कोई लॉक/वाइप/पासवर्ड शक्तियों का उपयोग नहीं किया जाता — आप इसे कभी भी सेटिंग्स से बंद कर सकते हैं।</string>
     <string name="self_protection_toggle">स्व-सुरक्षा (डिवाइस एडमिन) — अनइंस्टॉल रोकें</string>
@@ -270,6 +271,8 @@
     <string name="dynamic_risk_msg">%1$s जोखिम भरी अनुमतियों को एनोनिमाइज़र-नेटवर्क ट्रैफ़िक के साथ जोड़ता है — मैलवेयर के रूप में चिह्नित, अगली स्कैन में रिपोर्ट किया जाएगा।</string>
     <string name="ransomware_behavior_title">🔒 रैनसमवेयर व्यवहार का पता चला</string>
     <string name="ransomware_behavior_msg">%1$s ने फ़ाइल एक्सेस की अनुमति मिलते ही फ़ाइलों का सामूहिक नाम बदल दिया — रैनसमवेयर के रूप में चिह्नित, अगली स्कैन में रिपोर्ट किया जाएगा।</string>
+    <string name="file_trap_title">🪤 रैनसमवेयर फ़ाइल ट्रैप सक्रिय हुआ</string>
+    <string name="file_trap_msg">%1$s ने एक छलावा फ़ाइल को छुआ जिसे किसी भी वैध ऐप को एक्सेस करने का कोई कारण नहीं है — रैनसमवेयर के रूप में चिह्नित, अगली स्कैन में रिपोर्ट किया जाएगा।</string>
     <string name="task_hijack_detected">सुरक्षा जांच विफल — इस स्क्रीन पर कोई अन्य ऐप ऊपर दिखाई दे रहा है, आपकी सुरक्षा के लिए बंद किया जा रहा है</string>
     <string name="notif_suspicious_network_title">🛡 संदिग्ध नेटवर्क कनेक्शन ब्लॉक किया गया</string>
     <string name="notif_suspicious_process_title">⚠ संदिग्ध प्रक्रिया का पता चला</string>

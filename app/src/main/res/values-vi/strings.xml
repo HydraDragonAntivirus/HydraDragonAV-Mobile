@@ -153,6 +153,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="behavior_ransomware">Phát hiện đổi tên tệp do ransomware</string>
     <string name="behavior_task_hijack">Phát hiện chiếm quyền tác vụ (StrandHogg)</string>
     <string name="behavior_screen_security">Bảo vệ chống quay màn hình</string>
+    <string name="behavior_file_canary">Bẫy tệp ransomware (tệp mồi tạm thời)</string>
     <string name="self_protection_dialog_title">Bật Tự bảo vệ?</string>
     <string name="self_protection_dialog_msg">HydraDragon có thể yêu cầu Quản trị viên thiết bị để không bị gỡ cài đặt bởi ứng dụng khác (vd: phần mềm độc hại cố gắng xóa phần mềm diệt virus của bạn) mà không cần bạn vô hiệu hóa trước. Không có quyền khóa/xóa/mật khẩu nào được sử dụng — bạn có thể tắt tính năng này bất cứ lúc nào từ Cài đặt.</string>
     <string name="self_protection_toggle">Tự bảo vệ (Quản trị viên thiết bị) — ngăn gỡ cài đặt</string>
@@ -270,6 +271,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="dynamic_risk_msg">%1$s kết hợp các quyền rủi ro với lưu lượng mạng ẩn danh (anonymizer) — bị gắn cờ là phần mềm độc hại, sẽ được báo cáo trong lần quét tiếp theo.</string>
     <string name="ransomware_behavior_title">🔒 Phát hiện Hành vi Ransomware</string>
     <string name="ransomware_behavior_msg">%1$s vừa đổi tên hàng loạt tệp ngay sau khi được cấp quyền truy cập tệp — bị gắn cờ là ransomware, sẽ được báo cáo trong lần quét tiếp theo.</string>
+    <string name="file_trap_title">🪤 Bẫy Tệp Ransomware Đã Kích Hoạt</string>
+    <string name="file_trap_msg">%1$s đã chạm vào một tệp mồi mà không ứng dụng hợp pháp nào có lý do để truy cập — bị gắn cờ là ransomware, sẽ được báo cáo trong lần quét tiếp theo.</string>
     <string name="task_hijack_detected">Kiểm tra bảo mật thất bại — có vẻ như một ứng dụng khác đang chồng lên màn hình này, đang đóng để bảo vệ bạn</string>
     <string name="notif_suspicious_network_title">🛡 Đã chặn Kết nối Mạng Đáng ngờ</string>
     <string name="notif_suspicious_process_title">⚠ Phát hiện Tiến trình Đáng ngờ</string>

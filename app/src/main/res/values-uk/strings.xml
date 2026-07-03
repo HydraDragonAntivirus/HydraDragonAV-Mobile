@@ -153,6 +153,7 @@
     <string name="behavior_ransomware">Виявлення перейменування файлів програмами-вимагачами</string>
     <string name="behavior_task_hijack">Виявлення перехоплення завдань (StrandHogg)</string>
     <string name="behavior_screen_security">Захист від запису екрана</string>
+    <string name="behavior_file_canary">Файлові пастки-вимагачі (тимчасові файли-приманки)</string>
     <string name="self_protection_dialog_title">Увімкнути самозахист?</string>
     <string name="self_protection_dialog_msg">HydraDragon може запросити права адміністратора пристрою, щоб інший додаток (напр. шкідливе ПЗ, яке намагається видалити ваш антивірус) не міг видалити його без попередньої деактивації вами. Жодні функції блокування/стирання/пароля не використовуються — ви можете вимкнути це будь-коли в Налаштуваннях.</string>
     <string name="self_protection_toggle">Самозахист (Адміністратор пристрою) — запобігання видаленню</string>
@@ -270,6 +271,8 @@
     <string name="dynamic_risk_msg">%1$s поєднує ризиковані дозволи з мережевим трафіком через анонімайзер — позначено як шкідливе ПЗ, буде повідомлено під час наступного сканування.</string>
     <string name="ransomware_behavior_title">🔒 Виявлено Поведінку Вимагача</string>
     <string name="ransomware_behavior_msg">%1$s щойно масово перейменував файли одразу після надання доступу до файлів — позначено як вимагач, буде повідомлено під час наступного сканування.</string>
+    <string name="file_trap_title">🪤 Спрацювала Файлова Пастка-вимагач</string>
+    <string name="file_trap_msg">%1$s торкнувся файлу-приманки, до якого жодна легітимна програма не має причин звертатися — позначено як вимагач, буде повідомлено під час наступного сканування.</string>
     <string name="task_hijack_detected">Перевірку безпеки не пройдено — схоже, інший застосунок накладено поверх цього екрана, закривається для вашого захисту</string>
     <string name="notif_suspicious_network_title">🛡 Підозріле мережеве з\'єднання заблоковано</string>
     <string name="notif_suspicious_process_title">⚠ Виявлено підозрілий процес</string>

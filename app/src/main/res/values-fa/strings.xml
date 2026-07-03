@@ -153,6 +153,7 @@
     <string name="behavior_ransomware">تشخیص تغییر نام انبوه فایل توسط باج‌افزار</string>
     <string name="behavior_task_hijack">تشخیص ربودن Task (StrandHogg)</string>
     <string name="behavior_screen_security">محافظت در برابر ضبط صفحه</string>
+    <string name="behavior_file_canary">تله‌های فایل باج‌افزار (فایل‌های طعمه موقت)</string>
     <string name="self_protection_dialog_title">خودمحافظتی فعال شود؟</string>
     <string name="self_protection_dialog_msg">HydraDragon می‌تواند مجوز مدیر دستگاه را درخواست کند تا برنامه دیگری (مثلاً بدافزاری که می‌خواهد آنتی‌ویروس شما را حذف کند) نتواند بدون غیرفعال کردن اول توسط شما آن را حذف نصب کند. هیچ اختیار قفل/پاک‌سازی/رمز عبوری استفاده نمی‌شود — می‌توانید هر زمان از تنظیمات آن را خاموش کنید.</string>
     <string name="self_protection_toggle">خودمحافظتی (مدیر دستگاه) — جلوگیری از حذف نصب</string>
@@ -270,6 +271,8 @@
     <string name="dynamic_risk_msg">‏%1$s مجوزهای پرخطر را با ترافیک شبکه ناشناس‌ساز (anonymizer) ترکیب می‌کند — به‌عنوان بدافزار علامت‌گذاری شد و در بررسی بعدی گزارش خواهد شد.</string>
     <string name="ransomware_behavior_title">🔒 رفتار باج‌افزار شناسایی شد</string>
     <string name="ransomware_behavior_msg">‏%1$s بلافاصله پس از دریافت مجوز دسترسی به فایل‌ها، نام‌گذاری انبوه فایل‌ها را انجام داد — به‌عنوان باج‌افزار علامت‌گذاری شد و در بررسی بعدی گزارش خواهد شد.</string>
+    <string name="file_trap_title">🪤 تله فایل باج‌افزار فعال شد</string>
+    <string name="file_trap_msg">‏%1$s یک فایل طعمه را لمس کرد که هیچ برنامه قانونی دلیلی برای دسترسی به آن ندارد — به‌عنوان باج‌افزار علامت‌گذاری شد و در بررسی بعدی گزارش خواهد شد.</string>
     <string name="task_hijack_detected">بررسی امنیتی ناموفق بود — به‌نظر می‌رسد برنامه‌ای دیگر روی این صفحه قرار گرفته است، برای محافظت از شما بسته می‌شود</string>
     <string name="notif_suspicious_network_title">🛡 اتصال شبکه مشکوک مسدود شد</string>
     <string name="notif_suspicious_process_title">⚠ فرآیند مشکوک شناسایی شد</string>

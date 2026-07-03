@@ -153,6 +153,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="behavior_ransomware">Erkennung von Ransomware-Dateiumbenennungen</string>
     <string name="behavior_task_hijack">Erkennung von Task-Hijacking (StrandHogg)</string>
     <string name="behavior_screen_security">Schutz vor Bildschirmaufnahme</string>
+    <string name="behavior_file_canary">Ransomware-Dateifallen (temporäre Köderdateien)</string>
     <string name="self_protection_dialog_title">Selbstschutz aktivieren?</string>
     <string name="self_protection_dialog_msg">HydraDragon kann Geräteadministrator anfordern, damit es nicht von einer anderen App (z. B. Malware, die dein Antivirenprogramm entfernen will) deinstalliert werden kann, ohne dass du dies vorher deaktivierst. Es werden keine Sperr-/Lösch-/Passwortrechte verwendet — du kannst dies jederzeit in den Einstellungen ausschalten.</string>
     <string name="self_protection_toggle">Selbstschutz (Geräteadministrator) — Deinstallation verhindern</string>
@@ -270,6 +271,8 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="dynamic_risk_msg">%1$s kombiniert riskante Berechtigungen mit Anonymisierungs-Netzwerkverkehr — als Malware eingestuft, wird beim nächsten Scan gemeldet.</string>
     <string name="ransomware_behavior_title">🔒 Ransomware-Verhalten Erkannt</string>
     <string name="ransomware_behavior_msg">%1$s hat direkt nach Erhalt des Dateizugriffs massenhaft Dateien umbenannt — als Ransomware eingestuft, wird beim nächsten Scan gemeldet.</string>
+    <string name="file_trap_title">🪤 Ransomware-Dateifalle Ausgelöst</string>
+    <string name="file_trap_msg">%1$s hat eine Köderdatei berührt, auf die keine legitime App einen Grund hätte zuzugreifen — als Ransomware eingestuft, wird beim nächsten Scan gemeldet.</string>
     <string name="task_hijack_detected">Sicherheitsprüfung fehlgeschlagen — eine andere App scheint über diesen Bildschirm gelegt zu sein, wird zu deinem Schutz geschlossen</string>
     <string name="notif_suspicious_network_title">🛡 Verdächtige Netzwerkverbindung Blockiert</string>
     <string name="notif_suspicious_process_title">⚠ Verdächtiger Prozess Erkannt</string>

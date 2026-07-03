@@ -153,6 +153,7 @@
     <string name="behavior_ransomware">การตรวจจับการเปลี่ยนชื่อไฟล์โดยแรนซัมแวร์</string>
     <string name="behavior_task_hijack">การตรวจจับการแย่งชิงงาน (StrandHogg)</string>
     <string name="behavior_screen_security">การป้องกันการบันทึกหน้าจอ</string>
+    <string name="behavior_file_canary">กับดักไฟล์แรนซัมแวร์ (ไฟล์ล่อชั่วคราว)</string>
     <string name="self_protection_dialog_title">เปิดใช้งานการป้องกันตนเองหรือไม่?</string>
     <string name="self_protection_dialog_msg">HydraDragon สามารถขอสิทธิ์ผู้ดูแลอุปกรณ์เพื่อไม่ให้แอปอื่น (เช่น มัลแวร์ที่พยายามลบแอนตี้ไวรัสของคุณ) ถอนการติดตั้งได้โดยไม่ต้องปิดใช้งานก่อน ไม่มีการใช้สิทธิ์ล็อก/ล้างข้อมูล/รหัสผ่าน — คุณสามารถปิดสิ่งนี้ได้ทุกเมื่อจากการตั้งค่า</string>
     <string name="self_protection_toggle">การป้องกันตนเอง (ผู้ดูแลอุปกรณ์) — ป้องกันการถอนการติดตั้ง</string>
@@ -270,6 +271,8 @@
     <string name="dynamic_risk_msg">%1$s ใช้สิทธิ์เสี่ยงร่วมกับการรับส่งข้อมูลเครือข่ายแบบไม่ระบุตัวตน (anonymizer) — ถูกตั้งค่าสถานะว่าเป็นมัลแวร์ และจะถูกรายงานในการสแกนครั้งถัดไป</string>
     <string name="ransomware_behavior_title">🔒 ตรวจพบพฤติกรรมแรนซัมแวร์</string>
     <string name="ransomware_behavior_msg">%1$s เพิ่งเปลี่ยนชื่อไฟล์จำนวนมากทันทีหลังจากได้รับสิทธิ์เข้าถึงไฟล์ — ถูกตั้งค่าสถานะว่าเป็นแรนซัมแวร์ และจะถูกรายงานในการสแกนครั้งถัดไป</string>
+    <string name="file_trap_title">🪤 กับดักไฟล์แรนซัมแวร์ถูกกระตุ้น</string>
+    <string name="file_trap_msg">%1$s แตะไฟล์ล่อที่ไม่มีแอปที่ถูกต้องตามกฎหมายใดมีเหตุผลจะเข้าถึง — ถูกตั้งค่าสถานะว่าเป็นแรนซัมแวร์ และจะถูกรายงานในการสแกนครั้งถัดไป</string>
     <string name="task_hijack_detected">การตรวจสอบความปลอดภัยล้มเหลว — ดูเหมือนมีแอปอื่นซ้อนทับอยู่บนหน้าจอนี้ กำลังปิดเพื่อความปลอดภัยของคุณ</string>
     <string name="notif_suspicious_network_title">🛡 บล็อกการเชื่อมต่อเครือข่ายที่น่าสงสัยแล้ว</string>
     <string name="notif_suspicious_process_title">⚠ ตรวจพบกระบวนการที่น่าสงสัย</string>

@@ -94,6 +94,9 @@ public final class RansomwareBehaviorGuard {
             boolean isAllFiles = (state & FLAG_ALL_FILES) != 0 && (prev & FLAG_ALL_FILES) == 0;
             grantWasAllFiles.put(pkg, isAllFiles);
             Log.d(TAG, (isAllFiles ? "All-files-access" : "File-access") + " grant observed for " + pkg);
+            if (isAllFiles) {
+                FileCanaryGuard.maybeDeployFor(c, pkg);
+            }
         }
     }
 
@@ -181,6 +184,7 @@ public final class RansomwareBehaviorGuard {
         BehaviorFlags.flag(c, pkg, reason);
         com.hydradragon.antivirus.service.ThreatLogger.logThreat(c, pkg, pkg, reason);
         alert(c, pkg);
+        BehaviorResponse.killAndPromptUninstall(c, pkg);
     }
 
     private static void alert(Context context, String pkg) {

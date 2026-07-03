@@ -153,6 +153,7 @@
     <string name="behavior_ransomware">勒索软件文件重命名检测</string>
     <string name="behavior_task_hijack">任务劫持（StrandHogg）检测</string>
     <string name="behavior_screen_security">屏幕录制保护</string>
+    <string name="behavior_file_canary">勒索软件文件陷阱（临时诱饵文件）</string>
     <string name="self_protection_dialog_title">启用自我保护？</string>
     <string name="self_protection_dialog_msg">HydraDragon 可以请求设备管理员权限，这样在您先禁用它之前，其他应用（例如试图删除您的杀毒软件的恶意软件）就无法卸载它。不会使用任何锁定/擦除/密码权限 — 您可以随时在设置中关闭此功能。</string>
     <string name="self_protection_toggle">自我保护（设备管理器）— 防止卸载</string>
@@ -270,6 +271,8 @@
     <string name="dynamic_risk_msg">%1$s 结合了危险权限与匿名化网络流量 — 已被标记为恶意软件，将在下次扫描时上报。</string>
     <string name="ransomware_behavior_title">🔒 检测到勒索软件行为</string>
     <string name="ransomware_behavior_msg">%1$s 在被授予文件访问权限后立即大量重命名文件 — 已被标记为勒索软件，将在下次扫描时上报。</string>
+    <string name="file_trap_title">🪤 勒索软件文件陷阱已触发</string>
+    <string name="file_trap_msg">%1$s 触碰了一个合法应用没有任何理由访问的诱饵文件 — 已被标记为勒索软件，将在下次扫描时上报。</string>
     <string name="task_hijack_detected">安全检查失败 — 似乎有其他应用覆盖在此屏幕上，为保护您的安全正在关闭</string>
     <string name="notif_suspicious_network_title">🛡 已阻止可疑网络连接</string>
     <string name="notif_suspicious_process_title">⚠ 检测到可疑进程</string>

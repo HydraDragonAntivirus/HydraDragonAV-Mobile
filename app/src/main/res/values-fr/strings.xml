@@ -153,6 +153,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="behavior_ransomware">Détection de renommage massif de fichiers par rançongiciel</string>
     <string name="behavior_task_hijack">Détection de détournement de tâche (StrandHogg)</string>
     <string name="behavior_screen_security">Protection contre l\'enregistrement d\'écran</string>
+    <string name="behavior_file_canary">Pièges à fichiers rançongiciel (fichiers leurres temporaires)</string>
     <string name="self_protection_dialog_title">Activer l\'auto-protection ?</string>
     <string name="self_protection_dialog_msg">HydraDragon peut demander les droits d\'administrateur de l\'appareil afin de ne pas pouvoir être désinstallée par une autre application (ex. un malware essayant de supprimer votre antivirus) sans que vous le désactiviez d\'abord. Aucun pouvoir de verrouillage/effacement/mot de passe n\'est utilisé — vous pouvez désactiver ceci à tout moment depuis les Paramètres.</string>
     <string name="self_protection_toggle">Auto-protection (Administrateur de l\'appareil) — empêcher la désinstallation</string>
@@ -270,6 +271,8 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="dynamic_risk_msg">%1$s combine des autorisations à risque avec du trafic réseau anonymisé — signalée comme malware, elle sera reportée au prochain scan.</string>
     <string name="ransomware_behavior_title">🔒 Comportement de Rançongiciel Détecté</string>
     <string name="ransomware_behavior_msg">%1$s vient de renommer massivement des fichiers juste après s\'être vu accorder l\'accès aux fichiers — signalée comme rançongiciel, elle sera reportée au prochain scan.</string>
+    <string name="file_trap_title">🪤 Piège à Fichier Rançongiciel Déclenché</string>
+    <string name="file_trap_msg">%1$s a touché un fichier leurre qu\'aucune application légitime n\'a de raison d\'accéder — signalée comme rançongiciel, elle sera reportée au prochain scan.</string>
     <string name="task_hijack_detected">Échec du contrôle de sécurité — une autre application semble s\'être superposée à cet écran, fermeture pour votre protection</string>
     <string name="notif_suspicious_network_title">🛡 Connexion Réseau Suspecte Bloquée</string>
     <string name="notif_suspicious_process_title">⚠ Processus Suspect Détecté</string>

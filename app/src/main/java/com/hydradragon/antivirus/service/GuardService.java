@@ -412,6 +412,7 @@ public class GuardService extends Service {
                         && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, suspect)) {
                     com.hydradragon.antivirus.engine.BehaviorFlags.flag(this, suspect,
                         "🔓 Root exploit: device rooted while this app was in the foreground");
+                    com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, suspect);
                 }
             } else if (!rooted) {
                 // Recheck each tick — a root manager app can be uninstalled/su

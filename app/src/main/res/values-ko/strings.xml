@@ -153,6 +153,7 @@
     <string name="behavior_ransomware">랜섬웨어 파일명 변경 탐지</string>
     <string name="behavior_task_hijack">태스크 하이재킹(StrandHogg) 탐지</string>
     <string name="behavior_screen_security">화면 녹화 보호</string>
+    <string name="behavior_file_canary">랜섬웨어 파일 함정 (임시 미끼 파일)</string>
     <string name="self_protection_dialog_title">자체 보호를 활성화할까요?</string>
     <string name="self_protection_dialog_msg">HydraDragon은 기기 관리자 권한을 요청하여 사용자가 먼저 비활성화하지 않는 한 다른 앱(예: 백신을 제거하려는 악성코드)이 제거할 수 없도록 할 수 있습니다. 잠금/초기화/비밀번호 권한은 사용되지 않습니다 — 설정에서 언제든지 끌 수 있습니다.</string>
     <string name="self_protection_toggle">자체 보호 (기기 관리자) — 제거 방지</string>
@@ -270,6 +271,8 @@
     <string name="dynamic_risk_msg">%1$s이(가) 위험한 권한과 익명화 네트워크 트래픽을 결합하고 있습니다 — 악성코드로 표시되었으며 다음 검사 시 신고됩니다.</string>
     <string name="ransomware_behavior_title">🔒 랜섬웨어 행위 감지됨</string>
     <string name="ransomware_behavior_msg">%1$s이(가) 파일 접근 권한을 부여받은 직후 파일 이름을 대량으로 변경했습니다 — 랜섬웨어로 표시되었으며 다음 검사 시 신고됩니다.</string>
+    <string name="file_trap_title">🪤 랜섬웨어 파일 함정 작동됨</string>
+    <string name="file_trap_msg">%1$s이(가) 정상적인 앱이라면 접근할 이유가 없는 미끼 파일을 건드렸습니다 — 랜섬웨어로 표시되었으며 다음 검사 시 신고됩니다.</string>
     <string name="task_hijack_detected">보안 검사 실패 — 다른 앱이 이 화면 위에 겹쳐진 것으로 보여 보호를 위해 종료합니다</string>
     <string name="notif_suspicious_network_title">🛡 의심스러운 네트워크 연결 차단됨</string>
     <string name="notif_suspicious_process_title">⚠ 의심스러운 프로세스 감지됨</string>

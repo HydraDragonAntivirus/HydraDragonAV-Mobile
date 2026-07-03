@@ -192,6 +192,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="behavior_ransomware">Ransomware file-rename detection</string>
     <string name="behavior_task_hijack">Task hijacking (StrandHogg) detection</string>
     <string name="behavior_screen_security">Screen recording protection</string>
+    <string name="behavior_file_canary">Ransomware file traps (temporary decoy files)</string>
     <string name="malware_has_admin_title">This App Has Device Admin Rights</string>
     <string name="malware_has_admin_msg">%1$s has made itself a Device Administrator, which blocks uninstalling it directly — this is a common trick malware uses to resist removal. Deactivate it in the screen that opens (find %1$s and tap Deactivate), then the uninstall prompt will open automatically.</string>
     <string name="malware_has_admin_open_settings">OPEN DEVICE ADMIN SETTINGS</string>
@@ -294,6 +295,8 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="dynamic_risk_msg">%1$s combines risky permissions with suspicious anonymizer/tunnel-service DNS lookups — flagged as malware, will be reported on the next scan.</string>
     <string name="ransomware_behavior_title">🔒 Ransomware Behaviour Detected</string>
     <string name="ransomware_behavior_msg">%1$s just mass-renamed files right after being granted file access — flagged as ransomware, will be reported on the next scan.</string>
+    <string name="file_trap_title">🪤 Ransomware File Trap Triggered</string>
+    <string name="file_trap_msg">%1$s touched a decoy file no legitimate app has any reason to access — flagged as ransomware, will be reported on the next scan.</string>
     <string name="notif_suspicious_network_title">🛡 Suspicious Network Connection Blocked</string>
     <string name="notif_suspicious_process_title">⚠ Suspicious Process Detected</string>
     <string name="guard_channel_name">HydraDragon Protection</string>

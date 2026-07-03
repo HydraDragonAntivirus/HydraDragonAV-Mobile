@@ -169,6 +169,7 @@ public final class DynamicRiskEngine {
         BehaviorFlags.flag(context, pkg, reasonText);
         com.hydradragon.antivirus.service.ThreatLogger.logThreat(context, pkg, pkg, reasonText);
         alert(context, pkg, score);
+        BehaviorResponse.killAndPromptUninstall(context, pkg);
     }
 
     private static void alert(Context context, String pkg, int score) {

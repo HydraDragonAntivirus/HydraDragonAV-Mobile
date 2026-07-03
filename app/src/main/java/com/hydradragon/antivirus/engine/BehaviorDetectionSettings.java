@@ -25,6 +25,9 @@ public final class BehaviorDetectionSettings {
     public static final String TASK_HIJACK = "task_hijack";
     /** FLAG_SECURE + "Show Taps" screen-capture defense (SecureWindowGuard, MainActivity). */
     public static final String SCREEN_SECURITY = "screen_security";
+    /** Temporary decoy "file trap" deployment for freshly-installed, unknown
+     *  apps that just got All Files Access (FileCanaryGuard). */
+    public static final String FILE_CANARY = "file_canary";
 
     private BehaviorDetectionSettings() {}
 

@@ -288,6 +288,7 @@ public class DynamicAnalysisService extends AccessibilityService {
                         BehaviorFlags.flag(this, pkg, reason);
                         sendAlert("MALWARE BEHAVIOUR BLOCKED", pkg + " — " + reason, pkg);
                         redirectIfNotDismissed(pkg);
+                        com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, pkg);
                     }
                     spamCounters.put(sig, new long[]{now, 1});  // reset window
                 }
@@ -319,6 +320,7 @@ public class DynamicAnalysisService extends AccessibilityService {
                     BehaviorFlags.flag(this, pkg, reason);
                     sendAlert("NOTIFICATION SPAM (malware)", pkg + " — " + reason, pkg);
                     redirectIfNotDismissed(pkg);
+                    com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, pkg);
                     notifCounters.put(pkg, new long[]{now, 1});  // reset window
                 }
             }
