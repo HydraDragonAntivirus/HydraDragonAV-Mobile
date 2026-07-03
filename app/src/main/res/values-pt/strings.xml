@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">Verificação completa a cada (minutos):</string>
     <string name="scan_interval_hint">Mínimo de %1$d minutos — um intervalo mais curto não é permitido (impacto na bateria/CPU)</string>
     <string name="scan_interval_saved">Intervalo de verificação salvo</string>
+    <string name="max_scan_file_size_btn">Tamanho Máximo de Arquivo para Verificar</string>
+    <string name="max_scan_file_size_label">Pular arquivos maiores que (MB):</string>
+    <string name="max_scan_file_size_hint">Entre %1$d e %2$d MB — arquivos maiores levam muito mais tempo para verificar (arquivo inteiro com hash + ClamAV/YARA/ML); arquivos acima desse tamanho são totalmente ignorados em vez de verificados parcialmente</string>
+    <string name="max_scan_file_size_saved">Tamanho máximo de arquivo para verificar salvo</string>
     <string name="whitelists_header">Listas de permissões</string>
     <string name="ignored_signatures_btn">Assinaturas ignoradas</string>
     <string name="ignored_signatures_hint">Digite um nome exato de assinatura/detecção (ex.: PUA.SomeAdware, YARA.auto_...) para suprimi-la em todos os apps/arquivos, não apenas um</string>
@@ -140,6 +144,13 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="detect_cat_auto_rules">Regras autoaprendidas</string>
     <string name="detect_cat_permissions">Permissões perigosas</string>
     <string name="detect_cat_eicar">Arquivos de teste EICAR</string>
+    <string name="behavior_detection_header">Detecção de Comportamento</string>
+    <string name="behavior_ui_spam">Detecção de spam de UI/notificações</string>
+    <string name="behavior_root_exploit">Detecção de exploit de root</string>
+    <string name="behavior_dynamic_risk">Padrão suspeito de permissões e rede</string>
+    <string name="behavior_ransomware">Detecção de renomeação de arquivos por ransomware</string>
+    <string name="behavior_task_hijack">Detecção de sequestro de tarefas (StrandHogg)</string>
+    <string name="behavior_screen_security">Proteção contra gravação de tela</string>
     <string name="self_protection_dialog_title">Ativar Autoproteção?</string>
     <string name="self_protection_dialog_msg">O HydraDragon pode solicitar Administrador do dispositivo para que não possa ser desinstalado por outro app (ex.: malware tentando remover seu antivírus) sem que você o desative primeiro. Nenhum poder de bloqueio/apagamento/senha é usado — você pode desativar isso a qualquer momento nas Configurações.</string>
     <string name="self_protection_toggle">Autoproteção (Administrador do dispositivo) — impedir desinstalação</string>

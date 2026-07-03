@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">Tam tarama her (dakika):</string>
     <string name="scan_interval_hint">Minimum %1$d dakika — daha kısa bir aralığa izin verilmez (pil/CPU etkisi)</string>
     <string name="scan_interval_saved">Tarama aralığı kaydedildi</string>
+    <string name="max_scan_file_size_btn">Taranacak Maksimum Dosya Boyutu</string>
+    <string name="max_scan_file_size_label">Bundan büyük dosyaları atla (MB):</string>
+    <string name="max_scan_file_size_hint">%1$d ile %2$d MB arasında — daha büyük dosyaların taranması çok daha uzun sürer (tüm dosya hash\'lenir + ClamAV/YARA/ML); bu boyutun üzerindeki dosyalar kısmen taranmak yerine tamamen atlanır</string>
+    <string name="max_scan_file_size_saved">Taranacak maksimum dosya boyutu kaydedildi</string>
     <string name="whitelists_header">Beyaz Listeler</string>
     <string name="ignored_signatures_btn">Yoksayılan İmzalar</string>
     <string name="ignored_signatures_hint">Tam bir imza/tespit adı yazın (ör. PUA.SomeAdware, YARA.auto_...), böylece sadece bir uygulama değil, tüm uygulamalar/dosyalar için bastırılsın</string>
@@ -153,6 +157,13 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="detect_cat_auto_rules">Kendi kendine öğrenen oto kurallar</string>
     <string name="detect_cat_permissions">Tehlikeli izinler</string>
     <string name="detect_cat_eicar">EICAR test dosyaları</string>
+    <string name="behavior_detection_header">Davranış Tespiti</string>
+    <string name="behavior_ui_spam">UI/bildirim spamı tespiti</string>
+    <string name="behavior_root_exploit">Root exploit tespiti</string>
+    <string name="behavior_dynamic_risk">Şüpheli izin + ağ deseni</string>
+    <string name="behavior_ransomware">Ransomware dosya yeniden adlandırma tespiti</string>
+    <string name="behavior_task_hijack">Görev ele geçirme (StrandHogg) tespiti</string>
+    <string name="behavior_screen_security">Ekran kaydı koruması</string>
     <string name="malware_has_admin_title">Bu Uygulama Cihaz Yöneticisi Hakkına Sahip</string>
     <string name="malware_has_admin_msg">%1$s kendini Cihaz Yöneticisi yapmış, bu da doğrudan kaldırılmasını engelliyor — zararlı yazılımların kaldırılmaya direnmek için sık kullandığı bir yöntem. Açılan ekranda önce onu devre dışı bırak (%1$s uygulamasını bulup Devre Dışı Bırak\'a dokun), ardından kaldırma ekranı otomatik açılacak.</string>
     <string name="malware_has_admin_open_settings">CİHAZ YÖNETİCİSİ AYARLARINI AÇ</string>

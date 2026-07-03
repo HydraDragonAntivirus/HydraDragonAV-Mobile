@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">اسکن کامل هر (دقیقه):</string>
     <string name="scan_interval_hint">حداقل %1$d دقیقه — بازه کوتاه‌تر مجاز نیست (تأثیر بر باتری/پردازنده)</string>
     <string name="scan_interval_saved">بازه اسکن ذخیره شد</string>
+    <string name="max_scan_file_size_btn">حداکثر اندازه فایل برای اسکن</string>
+    <string name="max_scan_file_size_label">رد کردن فایل‌های بزرگ‌تر از (مگابایت):</string>
+    <string name="max_scan_file_size_hint">بین %1$d و %2$d مگابایت — فایل‌های بزرگ‌تر زمان بسیار بیشتری برای اسکن نیاز دارند (هش کل فایل + ClamAV/YARA/یادگیری ماشین)؛ فایل‌های بزرگ‌تر از این اندازه به‌جای اسکن جزئی، کاملاً رد می‌شوند</string>
+    <string name="max_scan_file_size_saved">حداکثر اندازه فایل برای اسکن ذخیره شد</string>
     <string name="whitelists_header">لیست‌های سفید</string>
     <string name="ignored_signatures_btn">امضاهای نادیده‌گرفته‌شده</string>
     <string name="ignored_signatures_hint">یک نام دقیق امضا/تشخیص (مانند PUA.SomeAdware یا YARA.auto_...) تایپ کنید تا برای همه برنامه‌ها/فایل‌ها نادیده گرفته شود، نه فقط یکی</string>
@@ -140,6 +144,13 @@
     <string name="detect_cat_auto_rules">قوانین خودآموز</string>
     <string name="detect_cat_permissions">مجوزهای خطرناک</string>
     <string name="detect_cat_eicar">فایل‌های آزمایشی EICAR</string>
+    <string name="behavior_detection_header">تشخیص رفتار</string>
+    <string name="behavior_ui_spam">تشخیص هرزنامه رابط کاربری/اعلان</string>
+    <string name="behavior_root_exploit">تشخیص اکسپلویت روت</string>
+    <string name="behavior_dynamic_risk">الگوی مشکوک مجوز و شبکه</string>
+    <string name="behavior_ransomware">تشخیص تغییر نام انبوه فایل توسط باج‌افزار</string>
+    <string name="behavior_task_hijack">تشخیص ربودن Task (StrandHogg)</string>
+    <string name="behavior_screen_security">محافظت در برابر ضبط صفحه</string>
     <string name="self_protection_dialog_title">خودمحافظتی فعال شود؟</string>
     <string name="self_protection_dialog_msg">HydraDragon می‌تواند مجوز مدیر دستگاه را درخواست کند تا برنامه دیگری (مثلاً بدافزاری که می‌خواهد آنتی‌ویروس شما را حذف کند) نتواند بدون غیرفعال کردن اول توسط شما آن را حذف نصب کند. هیچ اختیار قفل/پاک‌سازی/رمز عبوری استفاده نمی‌شود — می‌توانید هر زمان از تنظیمات آن را خاموش کنید.</string>
     <string name="self_protection_toggle">خودمحافظتی (مدیر دستگاه) — جلوگیری از حذف نصب</string>

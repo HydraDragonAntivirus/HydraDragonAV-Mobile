@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">फुल स्कैन हर (मिनट):</string>
     <string name="scan_interval_hint">न्यूनतम %1$d मिनट — इससे छोटा अंतराल अनुमत नहीं है (बैटरी/CPU प्रभाव)</string>
     <string name="scan_interval_saved">स्कैन अंतराल सहेजा गया</string>
+    <string name="max_scan_file_size_btn">स्कैन के लिए अधिकतम फ़ाइल आकार</string>
+    <string name="max_scan_file_size_label">इससे बड़ी फ़ाइलें छोड़ें (MB):</string>
+    <string name="max_scan_file_size_hint">%1$d और %2$d MB के बीच — बड़ी फ़ाइलों को स्कैन करने में बहुत अधिक समय लगता है (पूरी फ़ाइल हैश + ClamAV/YARA/ML); इस आकार से बड़ी फ़ाइलों को आंशिक रूप से स्कैन करने के बजाय पूरी तरह छोड़ दिया जाता है</string>
+    <string name="max_scan_file_size_saved">स्कैन के लिए अधिकतम फ़ाइल आकार सहेजा गया</string>
     <string name="whitelists_header">व्हाइटलिस्ट</string>
     <string name="ignored_signatures_btn">अनदेखे किए गए सिग्नेचर</string>
     <string name="ignored_signatures_hint">एक सटीक सिग्नेचर/डिटेक्शन नाम टाइप करें (जैसे PUA.SomeAdware, YARA.auto_...) ताकि इसे सिर्फ एक नहीं, हर ऐप/फ़ाइल के लिए अनदेखा किया जाए</string>
@@ -140,6 +144,13 @@
     <string name="detect_cat_auto_rules">स्व-सीखे नियम</string>
     <string name="detect_cat_permissions">खतरनाक अनुमतियाँ</string>
     <string name="detect_cat_eicar">EICAR परीक्षण फ़ाइलें</string>
+    <string name="behavior_detection_header">व्यवहार पहचान</string>
+    <string name="behavior_ui_spam">UI/नोटिफिकेशन स्पैम पहचान</string>
+    <string name="behavior_root_exploit">रूट एक्सप्लॉइट पहचान</string>
+    <string name="behavior_dynamic_risk">संदिग्ध अनुमति + नेटवर्क पैटर्न</string>
+    <string name="behavior_ransomware">रैनसमवेयर फ़ाइल-नाम-परिवर्तन पहचान</string>
+    <string name="behavior_task_hijack">टास्क हाईजैकिंग (StrandHogg) पहचान</string>
+    <string name="behavior_screen_security">स्क्रीन रिकॉर्डिंग सुरक्षा</string>
     <string name="self_protection_dialog_title">स्व-सुरक्षा सक्षम करें?</string>
     <string name="self_protection_dialog_msg">HydraDragon डिवाइस एडमिन अनुरोध कर सकता है ताकि इसे किसी अन्य ऐप (जैसे आपके एंटीवायरस को हटाने की कोशिश करने वाला मैलवेयर) द्वारा तब तक अनइंस्टॉल न किया जा सके जब तक आप इसे पहले निष्क्रिय न करें। कोई लॉक/वाइप/पासवर्ड शक्तियों का उपयोग नहीं किया जाता — आप इसे कभी भी सेटिंग्स से बंद कर सकते हैं।</string>
     <string name="self_protection_toggle">स्व-सुरक्षा (डिवाइस एडमिन) — अनइंस्टॉल रोकें</string>

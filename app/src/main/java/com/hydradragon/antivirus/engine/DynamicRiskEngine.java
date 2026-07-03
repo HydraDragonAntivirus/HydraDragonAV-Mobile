@@ -77,6 +77,7 @@ public final class DynamicRiskEngine {
      *  see DnsVpnService's handleUdpDns/handleTcpDns (NetworkObservations.addDomain
      *  call sites). Cheap no-op for the overwhelming majority of normal domains. */
     public static void onDomainObserved(Context context, String pkg, String host) {
+        if (!BehaviorDetectionSettings.isEnabled(context, BehaviorDetectionSettings.DYNAMIC_RISK)) return;
         if (pkg == null || pkg.isEmpty() || host == null) return;
         if (BehaviorFlags.isFlagged(context, pkg)) return; // already flagged, don't re-score
         if (TrustedPackages.isTrusted(context, pkg)) return; // never flag Google/OEM/system apps

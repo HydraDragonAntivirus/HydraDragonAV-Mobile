@@ -92,10 +92,12 @@ public class DynamicAnalysisService extends AccessibilityService {
         // Whitelist: never flag trusted apps (Google/OEM/system) as behavioural
         // malware — keeps legit apps from being called a virus.
         boolean trusted = com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, pkg);
+        boolean uiSpamEnabled = com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(
+            this, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.UI_SPAM);
 
         // Notification spam: an app firing many notifications in a short window.
         if (eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
-            if (!trusted) checkNotificationSpam(pkg);
+            if (!trusted && uiSpamEnabled) checkNotificationSpam(pkg);
             return;
         }
 
@@ -107,7 +109,7 @@ public class DynamicAnalysisService extends AccessibilityService {
         // player's progress ticking, a chat/game UI updating) and were
         // tripping this at 30 identical events / 8s — a false positive, not a
         // sign of adware/clicker/ransomware behaviour.
-        if (!trusted && (eventType == AccessibilityEvent.TYPE_VIEW_CLICKED
+        if (!trusted && uiSpamEnabled && (eventType == AccessibilityEvent.TYPE_VIEW_CLICKED
                 || eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)) {
             checkSpamBehavior(event, pkg);
         }

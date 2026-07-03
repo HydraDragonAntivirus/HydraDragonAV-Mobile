@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">Full scan every (minutes):</string>
     <string name="scan_interval_hint">Minimum %1$d minutes — a shorter interval isn\'t allowed (battery/CPU impact)</string>
     <string name="scan_interval_saved">Scan interval saved</string>
+    <string name="max_scan_file_size_btn">Max File Size to Scan</string>
+    <string name="max_scan_file_size_label">Skip files larger than (MB):</string>
+    <string name="max_scan_file_size_hint">Between %1$d and %2$d MB — larger files take much longer to scan (whole file hashed + ClamAV/YARA/ML); files above this size are skipped entirely rather than partially scanned</string>
+    <string name="max_scan_file_size_saved">Max scan file size saved</string>
     <string name="whitelists_header">Whitelists</string>
     <string name="ignored_signatures_btn">Ignored Signatures</string>
     <string name="ignored_signatures_hint">Type an exact signature/detection name (e.g. PUA.SomeAdware, YARA.auto_...) to suppress it for every app/file, not just one</string>
@@ -179,6 +183,13 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="detect_cat_auto_rules">Self-learned auto rules</string>
     <string name="detect_cat_permissions">Dangerous permissions</string>
     <string name="detect_cat_eicar">EICAR test files</string>
+    <string name="behavior_detection_header">Behavior Detection</string>
+    <string name="behavior_ui_spam">UI/notification spam detection</string>
+    <string name="behavior_root_exploit">Root exploit detection</string>
+    <string name="behavior_dynamic_risk">Suspicious permission + network pattern</string>
+    <string name="behavior_ransomware">Ransomware file-rename detection</string>
+    <string name="behavior_task_hijack">Task hijacking (StrandHogg) detection</string>
+    <string name="behavior_screen_security">Screen recording protection</string>
     <string name="malware_has_admin_title">This App Has Device Admin Rights</string>
     <string name="malware_has_admin_msg">%1$s has made itself a Device Administrator, which blocks uninstalling it directly — this is a common trick malware uses to resist removal. Deactivate it in the screen that opens (find %1$s and tap Deactivate), then the uninstall prompt will open automatically.</string>
     <string name="malware_has_admin_open_settings">OPEN DEVICE ADMIN SETTINGS</string>

@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">Volledige scan elke (minuten):</string>
     <string name="scan_interval_hint">Minimaal %1$d minuten — een korter interval is niet toegestaan (batterij-/CPU-impact)</string>
     <string name="scan_interval_saved">Scaninterval opgeslagen</string>
+    <string name="max_scan_file_size_btn">Maximale bestandsgrootte om te scannen</string>
+    <string name="max_scan_file_size_label">Bestanden groter dan overslaan (MB):</string>
+    <string name="max_scan_file_size_hint">Tussen %1$d en %2$d MB — grotere bestanden duren veel langer om te scannen (volledig bestand gehasht + ClamAV/YARA/ML); bestanden boven deze grootte worden volledig overgeslagen in plaats van gedeeltelijk gescand</string>
+    <string name="max_scan_file_size_saved">Maximale scanbestandsgrootte opgeslagen</string>
     <string name="whitelists_header">Whitelists</string>
     <string name="ignored_signatures_btn">Genegeerde signaturen</string>
     <string name="ignored_signatures_hint">Typ een exacte signatuur-/detectienaam (bijv. PUA.SomeAdware, YARA.auto_...) om deze voor elke app/bestand te onderdrukken, niet slechts één</string>
@@ -140,6 +144,13 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="detect_cat_auto_rules">Zelflerende automatische regels</string>
     <string name="detect_cat_permissions">Gevaarlijke machtigingen</string>
     <string name="detect_cat_eicar">EICAR-testbestanden</string>
+    <string name="behavior_detection_header">Gedragsdetectie</string>
+    <string name="behavior_ui_spam">Detectie van UI-/meldingsspam</string>
+    <string name="behavior_root_exploit">Detectie van root-exploits</string>
+    <string name="behavior_dynamic_risk">Verdacht patroon van machtigingen en netwerkgebruik</string>
+    <string name="behavior_ransomware">Detectie van ransomware-bestandshernoeming</string>
+    <string name="behavior_task_hijack">Detectie van taakkaping (StrandHogg)</string>
+    <string name="behavior_screen_security">Beveiliging tegen schermopname</string>
     <string name="self_protection_dialog_title">Zelfbescherming inschakelen?</string>
     <string name="self_protection_dialog_msg">HydraDragon kan Apparaatbeheerder aanvragen zodat het niet door een andere app (bijv. malware die je antivirus probeert te verwijderen) kan worden verwijderd zonder dat jij dit eerst uitschakelt. Er worden geen vergrendel-/wis-/wachtwoordbevoegdheden gebruikt — je kunt dit altijd uitzetten via Instellingen.</string>
     <string name="self_protection_toggle">Zelfbescherming (Apparaatbeheerder) — verwijderen voorkomen</string>

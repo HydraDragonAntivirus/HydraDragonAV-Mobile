@@ -34,8 +34,9 @@ import com.hydradragon.antivirus.ui.ThreatLogFragment;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_VPN = 102;
-    private static final int REQ_APP_LOCK = 103;
 
+    private com.hydradragon.antivirus.security.StrandHoggGuard strandHoggGuard;
+    private com.hydradragon.antivirus.security.SecureWindowGuard windowGuard;
     private BottomNavigationView bottomNav;
     // checkMandatoryPermissions() can be re-entered from more than one
     // lifecycle path in quick succession — onResume() (fired whenever a
@@ -53,9 +54,19 @@ public class MainActivity extends AppCompatActivity {
         boolean dark = prefs.getBoolean("dark_mode", true);
         AppCompatDelegate.setDefaultNightMode(dark ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
 
+        // FLAG_SECURE (screenshot/screen-recording + Recents-thumbnail block)
+        // must be set before super.onCreate()/setContentView() — scan results,
+        // threat details and network activity shown in this app are sensitive.
+        windowGuard = new com.hydradragon.antivirus.security.SecureWindowGuard(this);
+        if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+                com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY)) {
+            windowGuard.applyFlagSecure();
+        }
+
         super.onCreate(savedInstanceState);
 
         com.hydradragon.antivirus.engine.AppLifecycleTracker.register(getApplication());
+        strandHoggGuard = new com.hydradragon.antivirus.security.StrandHoggGuard(this);
 
         // Refuse to run a repackaged/re-signed copy of this APK (see
         // IntegrityCheck — signing certificate no longer matches the one this
@@ -81,17 +92,6 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.root_blocked_exit, (d, w) -> finish())
                 .setOnDismissListener(d -> finish())
                 .show();
-            return;
-        }
-
-        // App Lock (PIN, see AppLockManager/AppLockActivity) — checked once
-        // per process (unlockedThisSession resets on process death, which is
-        // exactly when re-authentication should be required again). Blocks
-        // reaching the real UI entirely on anything other than RESULT_OK.
-        if (com.hydradragon.antivirus.engine.AppLockManager.isLockRequired(this)) {
-            startActivityForResult(new Intent(this, com.hydradragon.antivirus.ui.AppLockActivity.class)
-                .putExtra(com.hydradragon.antivirus.ui.AppLockActivity.EXTRA_MODE,
-                    com.hydradragon.antivirus.ui.AppLockActivity.MODE_VERIFY), REQ_APP_LOCK);
             return;
         }
 
@@ -161,17 +161,42 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // AppLifecycleTracker may have just flagged a real background stay
-        // (not a same-app handoff) as long enough to require the PIN again.
-        if (com.hydradragon.antivirus.engine.AppLockManager.isLockRequired(this)) {
-            startActivityForResult(new Intent(this, com.hydradragon.antivirus.ui.AppLockActivity.class)
-                .putExtra(com.hydradragon.antivirus.ui.AppLockActivity.EXTRA_MODE,
-                    com.hydradragon.antivirus.ui.AppLockActivity.MODE_VERIFY), REQ_APP_LOCK);
-            return;
+        if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+                com.hydradragon.antivirus.engine.BehaviorDetectionSettings.TASK_HIJACK)) {
+            strandHoggGuard.startWatching(this::onTaskHijackDetected, 1500);
+        }
+        if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+                com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY)) {
+            windowGuard.startWatching(this::onSecureFlagLost, 2000);
         }
         if (findViewById(R.id.content_frame).getVisibility() != View.VISIBLE) {
             checkMandatoryPermissions();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        strandHoggGuard.stopWatching();
+        windowGuard.stopWatching();
+    }
+
+    /** See StrandHoggGuard's javadoc — something other than HydraDragon itself
+     *  is present in this activity's task. Fail closed: don't keep showing
+     *  the app's UI once this is possible. */
+    private void onTaskHijackDetected(int expected, int actual) {
+        android.util.Log.e("HydraDragon-MainActivity", "Task hijack suspected: expected "
+            + expected + " activities in our task, found " + actual);
+        Toast.makeText(this, getString(R.string.task_hijack_detected), Toast.LENGTH_LONG).show();
+        finishAndRemoveTask();
+    }
+
+    /** See SecureWindowGuard's javadoc — a runtime hook stripped FLAG_SECURE
+     *  from our own window after we set it. Fail closed the same way. */
+    private void onSecureFlagLost() {
+        android.util.Log.e("HydraDragon-MainActivity", "FLAG_SECURE lost on live window");
+        Toast.makeText(this, getString(R.string.security_flag_lost), Toast.LENGTH_LONG).show();
+        finishAndRemoveTask();
     }
 
     private void checkMandatoryPermissions() {
@@ -327,17 +352,6 @@ public class MainActivity extends AppCompatActivity {
                 getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
                     .putBoolean("web_shield_enabled", false).apply();
                 startAppUIIfHidden();
-            }
-        } else if (requestCode == REQ_APP_LOCK) {
-            if (resultCode == RESULT_OK) {
-                // Correct PIN entered (AppLockManager.verifyPin already marked
-                // the session unlocked) — recreate() re-runs onCreate, which
-                // now passes the isLockRequired() check and shows the real UI.
-                recreate();
-            } else {
-                // Wrong PIN abandoned / back button / FLAG_SECURE tamper
-                // detected in AppLockActivity — refuse to show the app at all.
-                finish();
             }
         }
     }

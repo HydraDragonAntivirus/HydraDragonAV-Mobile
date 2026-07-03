@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">Pemindaian lengkap setiap (menit):</string>
     <string name="scan_interval_hint">Minimal %1$d menit — interval yang lebih pendek tidak diizinkan (dampak baterai/CPU)</string>
     <string name="scan_interval_saved">Interval pemindaian disimpan</string>
+    <string name="max_scan_file_size_btn">Ukuran File Maksimum untuk Dipindai</string>
+    <string name="max_scan_file_size_label">Lewati file yang lebih besar dari (MB):</string>
+    <string name="max_scan_file_size_hint">Antara %1$d dan %2$d MB — file yang lebih besar membutuhkan waktu jauh lebih lama untuk dipindai (seluruh file di-hash + ClamAV/YARA/ML); file yang melebihi ukuran ini akan dilewati sepenuhnya, bukan dipindai sebagian</string>
+    <string name="max_scan_file_size_saved">Ukuran file maksimum untuk dipindai disimpan</string>
     <string name="whitelists_header">Daftar Putih</string>
     <string name="ignored_signatures_btn">Tanda Tangan yang Diabaikan</string>
     <string name="ignored_signatures_hint">Ketik nama tanda tangan/deteksi yang tepat (mis. PUA.SomeAdware, YARA.auto_...) untuk mengabaikannya di semua aplikasi/file, bukan hanya satu</string>
@@ -140,6 +144,13 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="detect_cat_auto_rules">Aturan otomatis yang dipelajari sendiri</string>
     <string name="detect_cat_permissions">Izin berbahaya</string>
     <string name="detect_cat_eicar">File uji EICAR</string>
+    <string name="behavior_detection_header">Deteksi Perilaku</string>
+    <string name="behavior_ui_spam">Deteksi spam UI/notifikasi</string>
+    <string name="behavior_root_exploit">Deteksi eksploitasi root</string>
+    <string name="behavior_dynamic_risk">Pola izin + jaringan yang mencurigakan</string>
+    <string name="behavior_ransomware">Deteksi penggantian nama file ransomware</string>
+    <string name="behavior_task_hijack">Deteksi pembajakan tugas (StrandHogg)</string>
+    <string name="behavior_screen_security">Perlindungan perekaman layar</string>
     <string name="self_protection_dialog_title">Aktifkan Perlindungan Diri?</string>
     <string name="self_protection_dialog_msg">HydraDragon dapat meminta Admin Perangkat agar tidak dapat dicopot pemasangannya oleh aplikasi lain (misalnya malware yang mencoba menghapus antivirus Anda) tanpa Anda menonaktifkannya terlebih dahulu. Tidak ada kekuatan kunci/hapus/kata sandi yang digunakan — Anda dapat mematikannya kapan saja dari Pengaturan.</string>
     <string name="self_protection_toggle">Perlindungan Diri (Admin Perangkat) — cegah pencopotan pemasangan</string>

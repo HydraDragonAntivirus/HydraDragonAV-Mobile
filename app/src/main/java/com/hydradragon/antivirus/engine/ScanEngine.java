@@ -578,6 +578,10 @@ public class ScanEngine {
     private void scanGenericFile(java.io.File file, List<ThreatResult> threats) {
         try {
             if (!NativeScanner.isReady()) return;
+            if (!MaxScanFileSize.isWithinLimit(context, file)) {
+                Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + file.getAbsolutePath());
+                return;
+            }
             String path = file.getAbsolutePath();
             // Hash-first fast path: known-good whole file → skip the scan entirely.
             // MD5 computed once here and reused natively.
@@ -730,6 +734,12 @@ public class ScanEngine {
                         || app.sourceDir.startsWith("/product/") || app.sourceDir.startsWith("/apex/")) continue;
                 if (app.packageName != null && (app.packageName.equals(context.getPackageName())
                         || seen.contains(app.packageName))) continue;
+                // Size check BEFORE hashing — an oversized file shouldn't pay
+                // for a full-file MD5 read just to be skipped a moment later.
+                if (!MaxScanFileSize.isWithinLimit(context, new java.io.File(app.sourceDir))) {
+                    Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + app.packageName);
+                    continue;
+                }
                 // Hash-first fast path: known-good APK (MD5 match) → skip.
                 // (No package-name skip — a package name is spoofable.)
                 // MD5 computed once here and reused natively.
@@ -1006,12 +1016,20 @@ public class ScanEngine {
                 // Native engine: clamav (type-gated YARA + signatures) + ML model.
                 // Hash-first: a known-good (whitelisted) APK skips the whole native
                 // block. The file MD5 is computed once here and reused natively.
-                String apkMd5 = apkPath != null ? fileMd5(new java.io.File(apkPath)) : null;
+                // Size is checked BEFORE hashing — an oversized file shouldn't pay
+                // for a full-file MD5 read just to be skipped a moment later.
+                boolean withinSizeLimit = apkPath != null
+                    && MaxScanFileSize.isWithinLimit(context, new java.io.File(apkPath));
+                String apkMd5 = withinSizeLimit ? fileMd5(new java.io.File(apkPath)) : null;
                 boolean nativeCorroborated = false;
                 if (apkPath == null) {
                     Log.d(TAG, "NATIVE-SKIP[apkPath null] " + app.packageName);
                     Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
                         + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped slowest=CodeAnalyzer");
+                } else if (!withinSizeLimit) {
+                    Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + app.packageName + " path=" + apkPath);
+                    Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
+                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped(over-size-limit) slowest=CodeAnalyzer");
                 } else if (!NativeScanner.isReady()) {
                     Log.d(TAG, "NATIVE-SKIP[engine not ready] " + app.packageName);
                     Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
@@ -1021,7 +1039,7 @@ public class ScanEngine {
                     Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
                         + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped(hash-whitelisted) slowest=CodeAnalyzer");
                 }
-                if (apkPath != null && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
+                if (withinSizeLimit && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
                     long nativeT0 = android.os.SystemClock.elapsedRealtime();
                     NativeScanner.Verdict v = runNativeInterruptible(() ->
                         NativeScanner.scan(apkPath, app.packageName, apkMd5, ZeroTrustMode.isEnabled(context)));

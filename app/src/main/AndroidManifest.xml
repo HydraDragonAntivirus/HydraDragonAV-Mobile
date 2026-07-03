@@ -9,16 +9,22 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission"/>
+    <!-- Required (not optional) for Intent.ACTION_DELETE against a package: URI
+         on targetSdk >= 26 — every uninstall path in this app (GuardService,
+         InstallReceiver, ScanFragment, SettingsFragment) uses that exact intent. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.GET_TASKS"/>
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES"/>
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions"/>
 
         <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- One of the documented exemptions to Android 10+'s "background activity
+         start" restriction — several redirect-to-app-UI code paths (e.g.
+         GuardService's root-exploit alert) call startActivity() from a plain
+         Service, not a foreground-user-triggered context. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!-- SMS virus/scam detection: incoming texts are checked for malicious
@@ -56,12 +62,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".ui.AppLockActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:theme="@style/Theme.HydraDragon"/>
 
         <service
             android:name=".service.GuardService"

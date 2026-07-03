@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">Quét đầy đủ mỗi (phút):</string>
     <string name="scan_interval_hint">Tối thiểu %1$d phút — không cho phép chu kỳ ngắn hơn (ảnh hưởng pin/CPU)</string>
     <string name="scan_interval_saved">Đã lưu chu kỳ quét</string>
+    <string name="max_scan_file_size_btn">Kích thước Tệp Tối đa để Quét</string>
+    <string name="max_scan_file_size_label">Bỏ qua tệp lớn hơn (MB):</string>
+    <string name="max_scan_file_size_hint">Từ %1$d đến %2$d MB — tệp lớn hơn sẽ mất nhiều thời gian hơn để quét (băm toàn bộ tệp + ClamAV/YARA/ML); tệp vượt quá kích thước này sẽ bị bỏ qua hoàn toàn thay vì quét một phần</string>
+    <string name="max_scan_file_size_saved">Đã lưu kích thước tệp tối đa để quét</string>
     <string name="whitelists_header">Danh sách trắng</string>
     <string name="ignored_signatures_btn">Chữ ký bị bỏ qua</string>
     <string name="ignored_signatures_hint">Nhập tên chữ ký/phát hiện chính xác (vd: PUA.SomeAdware, YARA.auto_...) để bỏ qua nó cho mọi ứng dụng/tệp, không chỉ một</string>
@@ -140,6 +144,13 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="detect_cat_auto_rules">Quy tắc tự động tự học</string>
     <string name="detect_cat_permissions">Quyền nguy hiểm</string>
     <string name="detect_cat_eicar">Tệp kiểm tra EICAR</string>
+    <string name="behavior_detection_header">Phát hiện hành vi</string>
+    <string name="behavior_ui_spam">Phát hiện spam giao diện/thông báo</string>
+    <string name="behavior_root_exploit">Phát hiện khai thác root</string>
+    <string name="behavior_dynamic_risk">Mẫu quyền + mạng đáng ngờ</string>
+    <string name="behavior_ransomware">Phát hiện đổi tên tệp do ransomware</string>
+    <string name="behavior_task_hijack">Phát hiện chiếm quyền tác vụ (StrandHogg)</string>
+    <string name="behavior_screen_security">Bảo vệ chống quay màn hình</string>
     <string name="self_protection_dialog_title">Bật Tự bảo vệ?</string>
     <string name="self_protection_dialog_msg">HydraDragon có thể yêu cầu Quản trị viên thiết bị để không bị gỡ cài đặt bởi ứng dụng khác (vd: phần mềm độc hại cố gắng xóa phần mềm diệt virus của bạn) mà không cần bạn vô hiệu hóa trước. Không có quyền khóa/xóa/mật khẩu nào được sử dụng — bạn có thể tắt tính năng này bất cứ lúc nào từ Cài đặt.</string>
     <string name="self_protection_toggle">Tự bảo vệ (Quản trị viên thiết bị) — ngăn gỡ cài đặt</string>

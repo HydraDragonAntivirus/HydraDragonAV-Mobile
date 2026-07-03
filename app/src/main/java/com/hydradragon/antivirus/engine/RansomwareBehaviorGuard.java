@@ -83,6 +83,7 @@ public final class RansomwareBehaviorGuard {
      *  not something the user just approved on screen), so it is deliberately
      *  NOT treated as "recent". */
     public static synchronized void onForegroundPermissionCheck(Context c, String pkg) {
+        if (!BehaviorDetectionSettings.isEnabled(c, BehaviorDetectionSettings.RANSOMWARE)) return;
         if (pkg == null || pkg.isEmpty()) return;
         int state = storageState(c, pkg);
         Integer prev = lastStorageState.put(pkg, state);
@@ -122,6 +123,7 @@ public final class RansomwareBehaviorGuard {
     /** Called for every file created/finalized in a watched directory (see
      *  GuardService's Downloads/full-storage FileObservers). */
     public static synchronized void onFileEvent(Context c, String dirPath, String fileName) {
+        if (!BehaviorDetectionSettings.isEnabled(c, BehaviorDetectionSettings.RANSOMWARE)) return;
         if (dirPath == null || fileName == null || fileName.isEmpty()) return;
 
         LinkedHashMap<String, Long> known = knownNamesByDir.get(dirPath);

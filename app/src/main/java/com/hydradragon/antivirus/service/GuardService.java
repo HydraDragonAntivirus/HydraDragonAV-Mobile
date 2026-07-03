@@ -393,6 +393,8 @@ public class GuardService extends Service {
     }
 
     private void checkRootTransition() {
+        if (!com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+                com.hydradragon.antivirus.engine.BehaviorDetectionSettings.ROOT_EXPLOIT)) return;
         try {
             boolean rooted = com.hydradragon.antivirus.engine.RootCheck.isRooted();
             if (rooted && !wasRooted) {

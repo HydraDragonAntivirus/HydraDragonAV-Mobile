@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">Повне сканування кожні (хвилин):</string>
     <string name="scan_interval_hint">Мінімум %1$d хвилин — коротший інтервал не дозволяється (вплив на батарею/ЦП)</string>
     <string name="scan_interval_saved">Інтервал сканування збережено</string>
+    <string name="max_scan_file_size_btn">Максимальний розмір файлу для сканування</string>
+    <string name="max_scan_file_size_label">Пропускати файли більші за (МБ):</string>
+    <string name="max_scan_file_size_hint">Від %1$d до %2$d МБ — більші файли скануються значно довше (хешується весь файл + ClamAV/YARA/ML); файли більші за цей розмір повністю пропускаються, а не скануються частково</string>
+    <string name="max_scan_file_size_saved">Максимальний розмір файлу для сканування збережено</string>
     <string name="whitelists_header">Білі списки</string>
     <string name="ignored_signatures_btn">Ігноровані сигнатури</string>
     <string name="ignored_signatures_hint">Введіть точну назву сигнатури/виявлення (напр. PUA.SomeAdware, YARA.auto_...), щоб придушувати її для всіх додатків/файлів, а не лише одного</string>
@@ -140,6 +144,13 @@
     <string name="detect_cat_auto_rules">Автоматичні самонавчальні правила</string>
     <string name="detect_cat_permissions">Небезпечні дозволи</string>
     <string name="detect_cat_eicar">Тестові файли EICAR</string>
+    <string name="behavior_detection_header">Виявлення поведінки</string>
+    <string name="behavior_ui_spam">Виявлення спаму інтерфейсу/сповіщень</string>
+    <string name="behavior_root_exploit">Виявлення root-експлойтів</string>
+    <string name="behavior_dynamic_risk">Підозрілий шаблон дозволів і мережі</string>
+    <string name="behavior_ransomware">Виявлення перейменування файлів програмами-вимагачами</string>
+    <string name="behavior_task_hijack">Виявлення перехоплення завдань (StrandHogg)</string>
+    <string name="behavior_screen_security">Захист від запису екрана</string>
     <string name="self_protection_dialog_title">Увімкнути самозахист?</string>
     <string name="self_protection_dialog_msg">HydraDragon може запросити права адміністратора пристрою, щоб інший додаток (напр. шкідливе ПЗ, яке намагається видалити ваш антивірус) не міг видалити його без попередньої деактивації вами. Жодні функції блокування/стирання/пароля не використовуються — ви можете вимкнути це будь-коли в Налаштуваннях.</string>
     <string name="self_protection_toggle">Самозахист (Адміністратор пристрою) — запобігання видаленню</string>

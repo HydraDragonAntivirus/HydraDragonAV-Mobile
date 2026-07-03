@@ -45,27 +45,6 @@ public class SettingsFragment extends Fragment {
     private static final int REQ_SCREEN_CAPTURE = 1202;
     private static final int REQ_SMS = 1203;
 
-    // Whether the pending Set/Change PIN flow should also turn App Lock ON
-    // once the new PIN is saved (the toggle's own on-path routes through
-    // here instead of setEnabled() directly — see the app_lock addToggle).
-    private boolean enableAppLockAfterSettingPin = false;
-    private final androidx.activity.result.ActivityResultLauncher<Intent> setPinLauncher =
-        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == android.app.Activity.RESULT_OK && enableAppLockAfterSettingPin) {
-                    com.hydradragon.antivirus.engine.AppLockManager.setEnabled(requireContext(), true);
-                }
-                enableAppLockAfterSettingPin = false;
-                if (container != null) buildUI();
-            });
-
-    private void launchSetPin(boolean enableAfter) {
-        enableAppLockAfterSettingPin = enableAfter;
-        setPinLauncher.launch(new Intent(requireContext(), com.hydradragon.antivirus.ui.AppLockActivity.class)
-            .putExtra(com.hydradragon.antivirus.ui.AppLockActivity.EXTRA_MODE,
-                com.hydradragon.antivirus.ui.AppLockActivity.MODE_SET));
-    }
-
     // Set right before launching exportRuleLauncher so the callback (which
     // gets only the destination Uri back) knows WHICH .yar file's content to
     // write there.
@@ -176,6 +155,9 @@ public class SettingsFragment extends Fragment {
         addBtn("⏱ " + getString(R.string.scan_interval_btn), color(R.color.bg_secondary),
             v -> showScanIntervalDialog());
 
+        addBtn("📦 " + getString(R.string.max_scan_file_size_btn), color(R.color.bg_secondary),
+            v -> showMaxScanFileSizeDialog());
+
         addHeader(getString(R.string.detection_categories_header));
         addCategoryToggle(R.string.detect_cat_signatures, com.hydradragon.antivirus.engine.DetectionCategories.SIGNATURES);
         addCategoryToggle(R.string.detect_cat_ml, com.hydradragon.antivirus.engine.DetectionCategories.ML);
@@ -183,6 +165,14 @@ public class SettingsFragment extends Fragment {
         addCategoryToggle(R.string.detect_cat_auto_rules, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
         addCategoryToggle(R.string.detect_cat_permissions, com.hydradragon.antivirus.engine.DetectionCategories.PERMISSIONS);
         addCategoryToggle(R.string.detect_cat_eicar, com.hydradragon.antivirus.engine.DetectionCategories.EICAR);
+
+        addHeader(getString(R.string.behavior_detection_header));
+        addBehaviorToggle(R.string.behavior_ui_spam, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.UI_SPAM);
+        addBehaviorToggle(R.string.behavior_root_exploit, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.ROOT_EXPLOIT);
+        addBehaviorToggle(R.string.behavior_dynamic_risk, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.DYNAMIC_RISK);
+        addBehaviorToggle(R.string.behavior_ransomware, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.RANSOMWARE);
+        addBehaviorToggle(R.string.behavior_task_hijack, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.TASK_HIJACK);
+        addBehaviorToggle(R.string.behavior_screen_security, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY);
 
         // Web Shield is core protection (malicious-domain/IP DNS filtering),
         // not an extra — it lives in Protection, not Premium Features.
@@ -265,22 +255,6 @@ public class SettingsFragment extends Fragment {
                 com.hydradragon.antivirus.engine.WebsiteWhitelist::remove));
         addBtn("📜 " + getString(R.string.auto_rules_manager_btn), color(R.color.bg_secondary),
             v -> showAutoRulesManagerDialog());
-
-        addHeader(getString(R.string.app_lock));
-        boolean appLockOn = com.hydradragon.antivirus.engine.AppLockManager.isEnabled(requireContext());
-        addToggle(getString(R.string.app_lock), appLockOn, (btn, on) -> {
-            if (on && !com.hydradragon.antivirus.engine.AppLockManager.hasPin(requireContext())) {
-                // Enabling without a PIN set yet — go straight to setting one;
-                // AppLockManager.setEnabled(true) only happens once it's saved
-                // (see the SET-mode launcher's callback below).
-                btn.setChecked(false);
-                launchSetPin(true);
-                return;
-            }
-            com.hydradragon.antivirus.engine.AppLockManager.setEnabled(requireContext(), on);
-        });
-        addBtn("🔑 " + getString(R.string.lock_set_pin), color(R.color.bg_secondary),
-            v -> launchSetPin(false));
 
         addHeader(getString(R.string.system));
         addBtn(getString(R.string.bloatware_cleaner), color(R.color.neon_cyan), v -> runCleanup());
@@ -643,6 +617,18 @@ public class SettingsFragment extends Fragment {
         });
     }
 
+    /** One row for a single BehaviorDetectionSettings toggle — a dynamic
+     *  (runtime-behavior) detector, as opposed to addCategoryToggle's
+     *  static scan-time engines. Turning one off is read by that detector's
+     *  own entry point, so it's a genuine no-op, not just a silenced alert;
+     *  see BehaviorDetectionSettings' javadoc for which detector each key
+     *  maps to. */
+    private void addBehaviorToggle(int labelRes, String key) {
+        boolean on = com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(requireContext(), key);
+        addToggle(getString(labelRes), on, (btn, checked) ->
+            com.hydradragon.antivirus.engine.BehaviorDetectionSettings.setEnabled(requireContext(), key, checked));
+    }
+
     private int parseMinutesOrDefault(String text, int def) {
         try {
             int v = Integer.parseInt(text.trim());
@@ -650,6 +636,45 @@ public class SettingsFragment extends Fragment {
         } catch (Exception e) {
             return def;
         }
+    }
+
+    /** Max-file-size-to-scan config (see MaxScanFileSize) — same
+     *  EditText-in-AlertDialog pattern as showScanIntervalDialog(). Takes
+     *  effect on the NEXT scan (each ScanEngine call site reads it live, no
+     *  service restart needed, unlike the interval setting). */
+    private void showMaxScanFileSizeDialog() {
+        LinearLayout box = new LinearLayout(requireContext());
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(48, 24, 48, 0);
+
+        TextView label = new TextView(requireContext());
+        label.setText(getString(R.string.max_scan_file_size_label));
+        label.setTextColor(color(R.color.text_primary));
+        box.addView(label);
+        android.widget.EditText input = new android.widget.EditText(requireContext());
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setText(String.valueOf(
+            com.hydradragon.antivirus.engine.MaxScanFileSize.getMaxMb(requireContext())));
+        box.addView(input);
+
+        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.max_scan_file_size_btn))
+            .setMessage(getString(R.string.max_scan_file_size_hint,
+                com.hydradragon.antivirus.engine.MaxScanFileSize.MIN_MB,
+                com.hydradragon.antivirus.engine.MaxScanFileSize.MAX_MB))
+            .setView(box)
+            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
+                int mb;
+                try {
+                    mb = Integer.parseInt(input.getText().toString().trim());
+                } catch (Exception e) {
+                    mb = com.hydradragon.antivirus.engine.MaxScanFileSize.DEFAULT_MB;
+                }
+                com.hydradragon.antivirus.engine.MaxScanFileSize.setMaxMb(requireContext(), mb);
+                Toast.makeText(getContext(), getString(R.string.max_scan_file_size_saved), Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
     }
 
     /** Lists every self-learned "generated_rules/*.yar" file (see

@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">フルスキャンの間隔（分）：</string>
     <string name="scan_interval_hint">最小 %1$d 分 — これより短い間隔は許可されません（バッテリー/CPUへの影響）</string>
     <string name="scan_interval_saved">スキャン間隔を保存しました</string>
+    <string name="max_scan_file_size_btn">スキャンする最大ファイルサイズ</string>
+    <string name="max_scan_file_size_label">これより大きいファイルをスキップ（MB）：</string>
+    <string name="max_scan_file_size_hint">%1$d〜%2$d MBの範囲 — ファイルが大きいほどスキャンに時間がかかります（ファイル全体のハッシュ化＋ClamAV/YARA/ML）。この上限を超えるファイルは部分的にではなく完全にスキップされます</string>
+    <string name="max_scan_file_size_saved">スキャンする最大ファイルサイズを保存しました</string>
     <string name="whitelists_header">ホワイトリスト</string>
     <string name="ignored_signatures_btn">無視するシグネチャ</string>
     <string name="ignored_signatures_hint">正確なシグネチャ/検出名（例: PUA.SomeAdware、YARA.auto_...）を入力すると、1つのアプリだけでなくすべてのアプリ/ファイルで抑制されます</string>
@@ -140,6 +144,13 @@
     <string name="detect_cat_auto_rules">自己学習型自動ルール</string>
     <string name="detect_cat_permissions">危険な権限</string>
     <string name="detect_cat_eicar">EICARテストファイル</string>
+    <string name="behavior_detection_header">動作検出</string>
+    <string name="behavior_ui_spam">UI/通知スパム検出</string>
+    <string name="behavior_root_exploit">Root化エクスプロイト検出</string>
+    <string name="behavior_dynamic_risk">不審な権限＋ネットワークパターン</string>
+    <string name="behavior_ransomware">ランサムウェアのファイル名変更検出</string>
+    <string name="behavior_task_hijack">タスクハイジャック（StrandHogg）検出</string>
+    <string name="behavior_screen_security">画面録画保護</string>
     <string name="self_protection_dialog_title">自己保護を有効にしますか？</string>
     <string name="self_protection_dialog_msg">HydraDragonはデバイス管理者権限をリクエストし、あなたが先に無効化しない限り他のアプリ（例：アンチウイルスを削除しようとするマルウェア）によってアンインストールされないようにできます。ロック/ワイプ/パスワードの権限は使用されません — 設定からいつでもオフにできます。</string>
     <string name="self_protection_toggle">自己保護（デバイス管理者）— アンインストールを防止</string>

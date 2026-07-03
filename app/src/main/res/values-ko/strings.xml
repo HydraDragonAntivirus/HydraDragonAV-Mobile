@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">전체 검사 주기(분):</string>
     <string name="scan_interval_hint">최소 %1$d분 — 이보다 짧은 주기는 허용되지 않습니다(배터리/CPU 영향)</string>
     <string name="scan_interval_saved">스캔 주기가 저장되었습니다</string>
+    <string name="max_scan_file_size_btn">스캔할 최대 파일 크기</string>
+    <string name="max_scan_file_size_label">이보다 큰 파일 건너뛰기(MB):</string>
+    <string name="max_scan_file_size_hint">%1$d~%2$d MB 사이 — 파일이 클수록 스캔에 훨씬 더 오래 걸립니다(전체 파일 해시 + ClamAV/YARA/ML). 이 크기를 초과하는 파일은 부분적으로가 아니라 완전히 건너뜁니다</string>
+    <string name="max_scan_file_size_saved">스캔할 최대 파일 크기가 저장되었습니다</string>
     <string name="whitelists_header">화이트리스트</string>
     <string name="ignored_signatures_btn">무시된 시그니처</string>
     <string name="ignored_signatures_hint">정확한 시그니처/탐지 이름(예: PUA.SomeAdware, YARA.auto_...)을 입력하면 하나의 앱뿐만 아니라 모든 앱/파일에서 억제됩니다</string>
@@ -140,6 +144,13 @@
     <string name="detect_cat_auto_rules">자가 학습 자동 규칙</string>
     <string name="detect_cat_permissions">위험한 권한</string>
     <string name="detect_cat_eicar">EICAR 테스트 파일</string>
+    <string name="behavior_detection_header">행위 탐지</string>
+    <string name="behavior_ui_spam">UI/알림 스팸 탐지</string>
+    <string name="behavior_root_exploit">루트 익스플로잇 탐지</string>
+    <string name="behavior_dynamic_risk">의심스러운 권한 + 네트워크 패턴</string>
+    <string name="behavior_ransomware">랜섬웨어 파일명 변경 탐지</string>
+    <string name="behavior_task_hijack">태스크 하이재킹(StrandHogg) 탐지</string>
+    <string name="behavior_screen_security">화면 녹화 보호</string>
     <string name="self_protection_dialog_title">자체 보호를 활성화할까요?</string>
     <string name="self_protection_dialog_msg">HydraDragon은 기기 관리자 권한을 요청하여 사용자가 먼저 비활성화하지 않는 한 다른 앱(예: 백신을 제거하려는 악성코드)이 제거할 수 없도록 할 수 있습니다. 잠금/초기화/비밀번호 권한은 사용되지 않습니다 — 설정에서 언제든지 끌 수 있습니다.</string>
     <string name="self_protection_toggle">자체 보호 (기기 관리자) — 제거 방지</string>

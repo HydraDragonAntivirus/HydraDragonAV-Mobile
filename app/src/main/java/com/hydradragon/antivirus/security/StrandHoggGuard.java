@@ -14,7 +14,7 @@ import java.util.List;
  * Guardsquare "Activities count check" — detects task hijacking (StrandHogg):
  * a malicious app inserting one of ITS OWN activities into OUR task's back
  * stack so it renders on top of (or instead of) a genuine HydraDragon screen,
- * e.g. to overlay a fake PIN prompt on top of the real AppLockActivity.
+ * e.g. to overlay a fake login/permission prompt on top of the real app UI.
  *
  * <p>{@link ActivityManager.TaskInfo#numActivities} counts every activity in
  * a task's back stack, regardless of which app put it there.

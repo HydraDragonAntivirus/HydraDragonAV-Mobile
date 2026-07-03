@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">สแกนแบบเต็มทุก (นาที):</string>
     <string name="scan_interval_hint">ขั้นต่ำ %1$d นาที — ไม่อนุญาตให้ตั้งช่วงเวลาสั้นกว่านี้ (ผลกระทบต่อแบตเตอรี่/CPU)</string>
     <string name="scan_interval_saved">บันทึกช่วงเวลาสแกนแล้ว</string>
+    <string name="max_scan_file_size_btn">ขนาดไฟล์สูงสุดที่จะสแกน</string>
+    <string name="max_scan_file_size_label">ข้ามไฟล์ที่ใหญ่กว่า (MB):</string>
+    <string name="max_scan_file_size_hint">ระหว่าง %1$d ถึง %2$d MB — ไฟล์ที่ใหญ่กว่าจะใช้เวลาสแกนนานกว่ามาก (แฮชไฟล์ทั้งหมด + ClamAV/YARA/ML) ไฟล์ที่มีขนาดเกินนี้จะถูกข้ามทั้งหมดแทนที่จะสแกนบางส่วน</string>
+    <string name="max_scan_file_size_saved">บันทึกขนาดไฟล์สูงสุดที่จะสแกนแล้ว</string>
     <string name="whitelists_header">รายการที่อนุญาต</string>
     <string name="ignored_signatures_btn">ลายเซ็นที่ถูกละเว้น</string>
     <string name="ignored_signatures_hint">พิมพ์ชื่อลายเซ็น/การตรวจจับที่แน่นอน (เช่น PUA.SomeAdware, YARA.auto_...) เพื่อระงับสำหรับทุกแอป/ไฟล์ ไม่ใช่แค่รายการเดียว</string>
@@ -140,6 +144,13 @@
     <string name="detect_cat_auto_rules">กฎอัตโนมัติที่เรียนรู้ด้วยตนเอง</string>
     <string name="detect_cat_permissions">สิทธิ์ที่เป็นอันตราย</string>
     <string name="detect_cat_eicar">ไฟล์ทดสอบ EICAR</string>
+    <string name="behavior_detection_header">การตรวจจับพฤติกรรม</string>
+    <string name="behavior_ui_spam">การตรวจจับสแปม UI/การแจ้งเตือน</string>
+    <string name="behavior_root_exploit">การตรวจจับการเจาะระบบด้วย root</string>
+    <string name="behavior_dynamic_risk">รูปแบบสิทธิ์และเครือข่ายที่น่าสงสัย</string>
+    <string name="behavior_ransomware">การตรวจจับการเปลี่ยนชื่อไฟล์โดยแรนซัมแวร์</string>
+    <string name="behavior_task_hijack">การตรวจจับการแย่งชิงงาน (StrandHogg)</string>
+    <string name="behavior_screen_security">การป้องกันการบันทึกหน้าจอ</string>
     <string name="self_protection_dialog_title">เปิดใช้งานการป้องกันตนเองหรือไม่?</string>
     <string name="self_protection_dialog_msg">HydraDragon สามารถขอสิทธิ์ผู้ดูแลอุปกรณ์เพื่อไม่ให้แอปอื่น (เช่น มัลแวร์ที่พยายามลบแอนตี้ไวรัสของคุณ) ถอนการติดตั้งได้โดยไม่ต้องปิดใช้งานก่อน ไม่มีการใช้สิทธิ์ล็อก/ล้างข้อมูล/รหัสผ่าน — คุณสามารถปิดสิ่งนี้ได้ทุกเมื่อจากการตั้งค่า</string>
     <string name="self_protection_toggle">การป้องกันตนเอง (ผู้ดูแลอุปกรณ์) — ป้องกันการถอนการติดตั้ง</string>

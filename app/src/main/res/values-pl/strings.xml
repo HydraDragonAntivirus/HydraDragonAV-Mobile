@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">Pełne skanowanie co (minuty):</string>
     <string name="scan_interval_hint">Minimum %1$d minut — krótszy interwał jest niedozwolony (wpływ na baterię/CPU)</string>
     <string name="scan_interval_saved">Zapisano interwał skanowania</string>
+    <string name="max_scan_file_size_btn">Maksymalny rozmiar pliku do skanowania</string>
+    <string name="max_scan_file_size_label">Pomijaj pliki większe niż (MB):</string>
+    <string name="max_scan_file_size_hint">Od %1$d do %2$d MB — większe pliki zajmują znacznie więcej czasu podczas skanowania (cały plik jest hashowany + ClamAV/YARA/ML); pliki powyżej tego rozmiaru są całkowicie pomijane, a nie skanowane częściowo</string>
+    <string name="max_scan_file_size_saved">Zapisano maksymalny rozmiar pliku do skanowania</string>
     <string name="whitelists_header">Białe listy</string>
     <string name="ignored_signatures_btn">Ignorowane sygnatury</string>
     <string name="ignored_signatures_hint">Wpisz dokładną nazwę sygnatury/wykrycia (np. PUA.SomeAdware, YARA.auto_...), aby ją pomijać dla każdej aplikacji/pliku, nie tylko jednego</string>
@@ -140,6 +144,13 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="detect_cat_auto_rules">Samouczące się reguły automatyczne</string>
     <string name="detect_cat_permissions">Niebezpieczne uprawnienia</string>
     <string name="detect_cat_eicar">Pliki testowe EICAR</string>
+    <string name="behavior_detection_header">Wykrywanie zachowań</string>
+    <string name="behavior_ui_spam">Wykrywanie spamu UI/powiadomień</string>
+    <string name="behavior_root_exploit">Wykrywanie exploitów root</string>
+    <string name="behavior_dynamic_risk">Podejrzany wzorzec uprawnień i ruchu sieciowego</string>
+    <string name="behavior_ransomware">Wykrywanie zmiany nazw plików przez ransomware</string>
+    <string name="behavior_task_hijack">Wykrywanie przechwytywania zadań (StrandHogg)</string>
+    <string name="behavior_screen_security">Ochrona przed nagrywaniem ekranu</string>
     <string name="self_protection_dialog_title">Włączyć samoobronę?</string>
     <string name="self_protection_dialog_msg">HydraDragon może poprosić o uprawnienia administratora urządzenia, aby nie mogła zostać odinstalowana przez inną aplikację (np. złośliwe oprogramowanie próbujące usunąć antywirusa) bez wcześniejszego dezaktywowania tego przez ciebie. Nie są używane żadne uprawnienia blokady/wymazywania/hasła — możesz to wyłączyć w dowolnym momencie w Ustawieniach.</string>
     <string name="self_protection_toggle">Samoobrona (Administrator urządzenia) — zapobiega odinstalowaniu</string>

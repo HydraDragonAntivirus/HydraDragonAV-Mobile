@@ -25,6 +25,10 @@
     <string name="scan_interval_full_label">الفحص الكامل كل (بالدقائق):</string>
     <string name="scan_interval_hint">الحد الأدنى %1$d دقيقة — لا يُسمح بفترة أقصر (تأثير على البطارية/المعالج)</string>
     <string name="scan_interval_saved">تم حفظ فترة الفحص</string>
+    <string name="max_scan_file_size_btn">الحد الأقصى لحجم الملف للفحص</string>
+    <string name="max_scan_file_size_label">تخطي الملفات الأكبر من (ميجابايت):</string>
+    <string name="max_scan_file_size_hint">بين %1$d و %2$d ميجابايت — الملفات الأكبر تستغرق وقتاً أطول للفحص (تجزئة الملف بالكامل + ClamAV/YARA/تعلم آلي)؛ يتم تخطي الملفات الأكبر من هذا الحجم بالكامل بدلاً من فحصها جزئياً</string>
+    <string name="max_scan_file_size_saved">تم حفظ الحد الأقصى لحجم الملف للفحص</string>
     <string name="whitelists_header">القوائم البيضاء</string>
     <string name="ignored_signatures_btn">التوقيعات المتجاهلة</string>
     <string name="ignored_signatures_hint">اكتب اسم توقيع/اكتشاف دقيق (مثل PUA.SomeAdware أو YARA.auto_...) لتجاهله في كل تطبيق/ملف، وليس واحداً فقط</string>
@@ -140,6 +144,13 @@
     <string name="detect_cat_auto_rules">قواعد ذاتية التعلّم</string>
     <string name="detect_cat_permissions">أذونات خطيرة</string>
     <string name="detect_cat_eicar">ملفات اختبار EICAR</string>
+    <string name="behavior_detection_header">اكتشاف السلوك</string>
+    <string name="behavior_ui_spam">اكتشاف إغراق الواجهة/الإشعارات</string>
+    <string name="behavior_root_exploit">اكتشاف استغلال Root</string>
+    <string name="behavior_dynamic_risk">نمط أذونات ونشاط شبكة مشبوه</string>
+    <string name="behavior_ransomware">اكتشاف إعادة تسمية ملفات برامج الفدية</string>
+    <string name="behavior_task_hijack">اكتشاف اختطاف المهام (StrandHogg)</string>
+    <string name="behavior_screen_security">حماية تسجيل الشاشة</string>
     <string name="self_protection_dialog_title">تفعيل الحماية الذاتية؟</string>
     <string name="self_protection_dialog_msg">يمكن لـ HydraDragon طلب صلاحية مسؤول الجهاز حتى لا يتمكن تطبيق آخر (مثل برمجية خبيثة تحاول إزالة مضاد الفيروسات) من إلغاء تثبيته دون أن تقوم أنت بإلغاء تفعيلها أولاً. لا يتم استخدام أي صلاحيات قفل/مسح/كلمة مرور — يمكنك إيقاف هذا في أي وقت من الإعدادات.</string>
     <string name="self_protection_toggle">الحماية الذاتية (مسؤول الجهاز) — منع إلغاء التثبيت</string>
