@@ -181,6 +181,49 @@ public class MainActivity extends AppCompatActivity {
         windowGuard.stopWatching();
     }
 
+    // Overriding every startActivity/startActivityForResult entry point (this
+    // catches Fragment.startActivity() too — it delegates to the host
+    // Activity's own methods) closes a real race: our own navigation calls
+    // (Accessibility Settings, Play Protect, Developer Options, VPN/screen-
+    // capture consent...) return immediately, but onPause() — which stops
+    // the watchers above — only fires once Android actually processes the
+    // activity transition a moment later. If a watcher's already-scheduled
+    // tick lands in that gap, it sees the system screen we JUST launched
+    // sitting in our own task (bumping its activity count) while our own
+    // createdCount never incremented for it (ActivityLifecycleCallbacks only
+    // ever fires for OUR OWN activities) — a guaranteed false "task hijack"
+    // that kicked the user straight out of the app. Stopping both watchers
+    // before every intentional navigation removes that window entirely;
+    // onResume() restarts them once we're actually back.
+    @Override
+    public void startActivity(Intent intent) {
+        stopSecurityWatchers();
+        super.startActivity(intent);
+    }
+
+    @Override
+    public void startActivity(Intent intent, android.os.Bundle options) {
+        stopSecurityWatchers();
+        super.startActivity(intent, options);
+    }
+
+    @Override
+    public void startActivityForResult(Intent intent, int requestCode) {
+        stopSecurityWatchers();
+        super.startActivityForResult(intent, requestCode);
+    }
+
+    @Override
+    public void startActivityForResult(Intent intent, int requestCode, android.os.Bundle options) {
+        stopSecurityWatchers();
+        super.startActivityForResult(intent, requestCode, options);
+    }
+
+    private void stopSecurityWatchers() {
+        if (strandHoggGuard != null) strandHoggGuard.stopWatching();
+        if (windowGuard != null) windowGuard.stopWatching();
+    }
+
     /** See StrandHoggGuard's javadoc — something other than HydraDragon itself
      *  is present in this activity's task. Fail closed: don't keep showing
      *  the app's UI once this is possible. */
