@@ -1,6 +1,27 @@
 use crate::scanner::ScanMatch;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+
+static NEXT_ENGINE_ID: AtomicU64 = AtomicU64::new(0);
+
+thread_local! {
+    /// One cached `yara_x::Scanner` per `YaraEngine`, per thread. `Scanner::new`
+    /// is not free (it allocates its own match-tracking state and instantiates
+    /// a WASM runtime for the rules' compiled condition bytecode) — the scan
+    /// path calls `YaraEngine::scan` once per (ruleset × extracted buffer ×
+    /// normalized view), so building a brand-new `Scanner` on every single one
+    /// of those calls was multiplying that non-trivial setup cost by a factor
+    /// that scales with how many nested files an APK contains, on top of the
+    /// actual scanning work — this is why the native engine measured
+    /// (FILE_ENGINE_TIMING) as consistently and disproportionately slow.
+    /// Reusing one `Scanner` per ruleset per thread amortizes that setup cost
+    /// across every scan instead of paying it every time.
+    static SCANNER_CACHE: RefCell<HashMap<u64, yara_x::Scanner<'static>>> =
+        RefCell::new(HashMap::new());
+}
 
 /// Android-relevant ClamAV target types that get YARA scanning.
 ///
@@ -23,10 +44,15 @@ pub fn is_target_allowed(target: Option<u32>) -> bool {
 /// A compiled YARA ruleset ready for scanning.
 #[derive(Debug)]
 pub struct YaraEngine {
+    id: u64,
     rules: yara_x::Rules,
 }
 
 impl YaraEngine {
+    fn new(rules: yara_x::Rules) -> Self {
+        Self { id: NEXT_ENGINE_ID.fetch_add(1, Ordering::Relaxed), rules }
+    }
+
     /// Compile a YARA source file and build the engine.
     ///
     /// Returns `None` if the file does not exist or compilation fails
@@ -35,16 +61,14 @@ impl YaraEngine {
         let src = std::fs::read_to_string(path.as_ref()).ok()?;
         let mut compiler = yara_x::Compiler::new();
         compiler.add_source(src.as_str()).ok()?;
-        let rules = compiler.build();
-        Some(Self { rules })
+        Some(Self::new(compiler.build()))
     }
 
     /// Compile YARA source directly.
     pub fn from_source(source: &str) -> Option<Self> {
         let mut compiler = yara_x::Compiler::new();
         compiler.add_source(source).ok()?;
-        let rules = compiler.build();
-        Some(Self { rules })
+        Some(Self::new(compiler.build()))
     }
 
     /// Load a pre-compiled `.yrc` ruleset (produced by `Rules::serialize`).
@@ -54,7 +78,7 @@ impl YaraEngine {
     /// compiling thousands of rules every launch.
     pub fn from_compiled(bytes: &[u8]) -> Option<Self> {
         let rules = yara_x::Rules::deserialize(bytes).ok()?;
-        Some(Self { rules })
+        Some(Self::new(rules))
     }
 
     /// Load a pre-compiled `.yrc` file from disk.
@@ -70,39 +94,57 @@ impl YaraEngine {
         object_path: &str,
         module_meta: &[(&str, &[u8])],
     ) -> Vec<ScanMatch> {
-        let mut scanner = yara_x::Scanner::new(&self.rules);
-        // Feed any per-module JSON reports (androguard manifest report,
-        // hydradragon live-network report, ...) so those modules' functions can
-        // query them.
-        let results = if module_meta.is_empty() {
-            match scanner.scan(data) {
-                Ok(r) => r,
-                Err(_) => return Vec::new(),
-            }
-        } else {
-            let mut opts = yara_x::ScanOptions::new();
-            for (name, meta) in module_meta {
-                opts = opts.set_module_metadata(name, meta);
-            }
-            match scanner.scan_with_options(data, opts) {
-                Ok(r) => r,
-                Err(_) => return Vec::new(),
-            }
-        };
-        let mut matches = Vec::new();
-        for rule in results.matching_rules() {
-            matches.push(ScanMatch {
-                name: format!("YARA.{}", rule.identifier()),
-                kind: crate::scanner::SignatureKind::Yara,
-                source: crate::database::SourceLocation {
-                    path: Arc::from(PathBuf::from("yara")),
-                    line: 0,
-                },
-                object_path: object_path.to_string(),
-                view: crate::scanner::ScanView::Raw,
-                arenas: Vec::new(),
+        SCANNER_CACHE.with(|cache| {
+            let mut cache = cache.borrow_mut();
+            let scanner = cache.entry(self.id).or_insert_with(|| {
+                // SAFETY: `self.rules` lives inside a `YaraEngine` that is
+                // itself only ever constructed once, up front, into the
+                // process-global `static ENGINE: OnceLock<RwLock<Engine>>`
+                // (see hydradragonandroid/src/lib.rs) — `ENGINE.set()` is
+                // called exactly once and there is no reload/replace path,
+                // so this `Rules` value is never dropped or moved for the
+                // remaining lifetime of the process. Extending the borrow to
+                // 'static here is therefore sound: every thread-local
+                // `Scanner` cached against it is genuinely outlived by the
+                // `Rules` it borrows from.
+                let rules_static: &'static yara_x::Rules =
+                    unsafe { std::mem::transmute::<&yara_x::Rules, &'static yara_x::Rules>(&self.rules) };
+                yara_x::Scanner::new(rules_static)
             });
-        }
-        matches
+
+            // Feed any per-module JSON reports (androguard manifest report,
+            // hydradragon live-network report, ...) so those modules'
+            // functions can query them.
+            let results = if module_meta.is_empty() {
+                match scanner.scan(data) {
+                    Ok(r) => r,
+                    Err(_) => return Vec::new(),
+                }
+            } else {
+                let mut opts = yara_x::ScanOptions::new();
+                for (name, meta) in module_meta {
+                    opts = opts.set_module_metadata(name, meta);
+                }
+                match scanner.scan_with_options(data, opts) {
+                    Ok(r) => r,
+                    Err(_) => return Vec::new(),
+                }
+            };
+            let mut matches = Vec::new();
+            for rule in results.matching_rules() {
+                matches.push(ScanMatch {
+                    name: format!("YARA.{}", rule.identifier()),
+                    kind: crate::scanner::SignatureKind::Yara,
+                    source: crate::database::SourceLocation {
+                        path: Arc::from(PathBuf::from("yara")),
+                        line: 0,
+                    },
+                    object_path: object_path.to_string(),
+                    view: crate::scanner::ScanView::Raw,
+                    arenas: Vec::new(),
+                });
+            }
+            matches
+        })
     }
 }

@@ -256,10 +256,16 @@ public class GuardService extends Service {
             @Override
             public void onThreatFound(ThreatResult threat) {
                 // Always record to history; stay silent (no notification) while
-                // protection is paused.
-                ThreatLogger.logThreat(GuardService.this, threat.getPackageName(),
-                    threat.getAppName(),
-                    threat.getThreatType() + " (scan, risk " + threat.getRiskScore() + ")");
+                // protection is paused. Isolated like sendThreatNotification
+                // below — a logging failure must never block the UI
+                // forwarding at the end of this method.
+                try {
+                    ThreatLogger.logThreat(GuardService.this, threat.getPackageName(),
+                        threat.getAppName(),
+                        threat.getThreatType() + " (scan, risk " + threat.getRiskScore() + ")");
+                } catch (Throwable t) {
+                    Log.e(TAG, "ThreatLogger.logThreat failed", t);
+                }
                 // Isolated in its own try/catch: this whole onThreatFound() call
                 // runs INSIDE ScanEngine's per-app loop, itself wrapped in a
                 // silent catch(Exception) — any exception thrown here (bad
@@ -281,11 +287,23 @@ public class GuardService extends Service {
 
             @Override
             public void onScanComplete(com.hydradragon.antivirus.model.ScanResult result) {
-                String status = result.isClean()
-                    ? getString(R.string.system_clean)
-                    : "⚠ " + result.getThreatsFound() + " " + getString(R.string.threat);
-                updateNotification(status, result.isClean());
-                if (callback != null) callback.onStatusUpdate(status);
+                // Isolated in its own try/catch for the same reason as
+                // onThreatFound above: this whole method used to run as one
+                // unguarded block, so an exception in updateNotification (or
+                // anywhere before the UI forwarding below) aborted the method
+                // entirely — ui.onScanComplete(result) never ran, which meant
+                // ScanFragment never heard the scan finished and stayed stuck
+                // showing "Stopping…"/a disabled button forever, even though
+                // the engine thread itself had already finished.
+                try {
+                    String status = result.isClean()
+                        ? getString(R.string.system_clean)
+                        : "⚠ " + result.getThreatsFound() + " " + getString(R.string.threat);
+                    updateNotification(status, result.isClean());
+                    if (callback != null) callback.onStatusUpdate(status);
+                } catch (Throwable t) {
+                    Log.e(TAG, "onScanComplete notification/status update failed", t);
+                }
                 ScanEngine.ScanCallback ui = uiScanCallback;
                 if (ui != null) ui.onScanComplete(result);
             }
@@ -496,6 +514,7 @@ public class GuardService extends Service {
 
     private void updateNotification(String text, boolean secure) {
         NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm == null) return;
         nm.notify(NOTIFICATION_ID, buildNotification(text, secure));
     }
 
