@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">กฎอัตโนมัติที่เรียนรู้ด้วยตนเอง</string>
     <string name="detect_cat_permissions">สิทธิ์ที่เป็นอันตราย</string>
     <string name="detect_cat_eicar">ไฟล์ทดสอบ EICAR</string>
+    <string name="self_protection_dialog_title">เปิดใช้งานการป้องกันตนเองหรือไม่?</string>
+    <string name="self_protection_dialog_msg">HydraDragon สามารถขอสิทธิ์ผู้ดูแลอุปกรณ์เพื่อไม่ให้แอปอื่น (เช่น มัลแวร์ที่พยายามลบแอนตี้ไวรัสของคุณ) ถอนการติดตั้งได้โดยไม่ต้องปิดใช้งานก่อน ไม่มีการใช้สิทธิ์ล็อก/ล้างข้อมูล/รหัสผ่าน — คุณสามารถปิดสิ่งนี้ได้ทุกเมื่อจากการตั้งค่า</string>
     <string name="self_protection_toggle">การป้องกันตนเอง (ผู้ดูแลอุปกรณ์) — ป้องกันการถอนการติดตั้ง</string>
     <string name="self_protection_off_toast">การป้องกันตนเองปิด — ตอนนี้สามารถถอนการติดตั้งแอปได้ตามปกติ</string>
     <string name="scan_rescan_btn">สแกนอีกครั้ง</string>

@@ -212,7 +212,7 @@ fn set_status(s: String) {
     }
 }
 
-fn do_init(dir: &str) -> Engine {
+fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
     let base = std::path::Path::new(dir);
     let mut report = String::new();
     // ClamAV engine from the bundled DB, then add the compiled .yrc rulesets
@@ -242,19 +242,28 @@ fn do_init(dir: &str) -> Engine {
             // scans, without waiting for a signature-database update. Persists
             // across app restarts (loaded fresh every init); a fresh process
             // within the SAME session doesn't retroactively rescan past files.
+            // load_auto_rules is the Java-side "Auto Rule Generator" Settings
+            // toggle (DetectionCategories.AUTO_RULES / AutoRuleGeneration —
+            // see NativeScanner.init). Turning it off used to only stop NEW
+            // rules from being written; every rule already on disk from
+            // before still got loaded and matched here regardless. Now OFF
+            // means these files aren't even read, not just "generation
+            // paused" — a real, user-controlled off switch.
             let learned_dir = base.join("generated_rules");
             let mut learned = 0usize;
-            if let Ok(entries) = std::fs::read_dir(&learned_dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.extension().and_then(|e| e.to_str()) != Some("yar") {
-                        continue;
-                    }
-                    let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        eng.add_yara_source_file(&path)
-                    }));
-                    if matches!(added, Ok(Some(_))) {
-                        learned += 1;
+            if load_auto_rules {
+                if let Ok(entries) = std::fs::read_dir(&learned_dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        if path.extension().and_then(|e| e.to_str()) != Some("yar") {
+                            continue;
+                        }
+                        let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            eng.add_yara_source_file(&path)
+                        }));
+                        if matches!(added, Ok(Some(_))) {
+                            learned += 1;
+                        }
                     }
                 }
             }
@@ -426,21 +435,23 @@ where
         .join()
 }
 
-/// `boolean nativeInit(String dir)`
+/// `boolean nativeInit(String dir, boolean loadAutoRules)`
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeInit(
     mut env: JNIEnv,
     _class: JClass,
     dir: JString,
+    load_auto_rules: jboolean,
 ) -> jboolean {
     let dir: String = match env.get_string(&dir) {
         Ok(s) => s.into(),
         Err(_) => return JNI_FALSE,
     };
+    let load_auto_rules = load_auto_rules != JNI_FALSE;
     install_panic_hook();
     // Init on a big-stack thread: yara_x deserialization of the .yrc recurses
     // deeply enough to overflow the JNI thread's stack (the on-device crash).
-    let engine = match on_big_stack(move || do_init(&dir)) {
+    let engine = match on_big_stack(move || do_init(&dir, load_auto_rules)) {
         Ok(e) => e,
         Err(_) => return JNI_FALSE,
     };

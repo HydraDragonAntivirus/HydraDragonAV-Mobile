@@ -140,6 +140,8 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="detect_cat_auto_rules">Regole auto-apprese</string>
     <string name="detect_cat_permissions">Permessi pericolosi</string>
     <string name="detect_cat_eicar">File di test EICAR</string>
+    <string name="self_protection_dialog_title">Attivare l\'Autoprotezione?</string>
+    <string name="self_protection_dialog_msg">HydraDragon può richiedere i permessi di Amministratore dispositivo così da non poter essere disinstallata da un\'altra app (es. malware che cerca di rimuovere il tuo antivirus) senza che tu la disattivi prima. Non vengono usati poteri di blocco/cancellazione/password — puoi disattivarla in qualsiasi momento dalle Impostazioni.</string>
     <string name="self_protection_toggle">Autoprotezione (Amministratore dispositivo) — impedisci la disinstallazione</string>
     <string name="self_protection_off_toast">Autoprotezione DISATTIVATA — l\'app può ora essere disinstallata normalmente</string>
     <string name="scan_rescan_btn">RISCANSIONA</string>

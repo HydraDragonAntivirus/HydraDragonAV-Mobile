@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">自己学習型自動ルール</string>
     <string name="detect_cat_permissions">危険な権限</string>
     <string name="detect_cat_eicar">EICARテストファイル</string>
+    <string name="self_protection_dialog_title">自己保護を有効にしますか？</string>
+    <string name="self_protection_dialog_msg">HydraDragonはデバイス管理者権限をリクエストし、あなたが先に無効化しない限り他のアプリ（例：アンチウイルスを削除しようとするマルウェア）によってアンインストールされないようにできます。ロック/ワイプ/パスワードの権限は使用されません — 設定からいつでもオフにできます。</string>
     <string name="self_protection_toggle">自己保護（デバイス管理者）— アンインストールを防止</string>
     <string name="self_protection_off_toast">自己保護OFF — アプリは通常どおりアンインストールできるようになりました</string>
     <string name="scan_rescan_btn">再スキャン</string>

@@ -62,7 +62,7 @@ public final class NativeScanner {
     private NativeScanner() {
     }
 
-    private static native boolean nativeInit(String dir);
+    private static native boolean nativeInit(String dir, boolean loadAutoRules);
 
     private static native boolean nativeLearnRule(String yarPath);
 
@@ -179,7 +179,14 @@ public final class NativeScanner {
             Log.e(TAG, "asset copy failed", e);
             return false;
         }
-        ready = nativeInit(dir.getAbsolutePath());
+        // Auto Rule Generator OFF (DetectionCategories.AUTO_RULES / Settings)
+        // now also stops the native side from loading past self-learned
+        // "generated_rules/*.yar" files at all — previously OFF only stopped
+        // NEW ones from being written; old ones on disk kept matching
+        // regardless of the setting.
+        boolean loadAutoRules = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
+            context, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
+        ready = nativeInit(dir.getAbsolutePath(), loadAutoRules);
         Log.i(TAG, "native init " + (ready ? "ok" : "FAILED") + " | " + status());
         return ready;
     }

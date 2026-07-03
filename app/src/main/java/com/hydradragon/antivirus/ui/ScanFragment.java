@@ -245,6 +245,59 @@ public class ScanFragment extends Fragment {
      *  from this screen's list (same behavior for both the direct-delete path
      *  and the "ask to generate a signature first" path above). */
     private void uninstallInstalledThreat(ThreatResult threat) {
+        String pkg = threat.getPackageName();
+
+        // Kill any running (background) process of the malware FIRST, before
+        // asking the system to uninstall it — a still-running process can
+        // otherwise keep re-spawning a service/receiver during the brief
+        // window the uninstall confirmation UI is up. KILL_BACKGROUND_PROCESSES
+        // is a normal (auto-granted) permission; there's no stronger
+        // "force-stop any app" API available to a regular (non-system) app.
+        if (pkg != null && !pkg.isEmpty()) {
+            try {
+                android.app.ActivityManager am =
+                    (android.app.ActivityManager) requireContext().getSystemService(Context.ACTIVITY_SERVICE);
+                if (am != null) am.killBackgroundProcesses(pkg);
+            } catch (Exception ignore) { }
+        }
+
+        // Some malware self-grants Device Admin specifically to resist
+        // uninstallation (Android blocks uninstalling an active admin app
+        // until it's deactivated). There's no API for a regular app to revoke
+        // ANOTHER app's admin status — only the user, from the system's
+        // "Device admin apps" screen — so detect it and send them straight
+        // there instead of letting the uninstall silently fail.
+        if (isActiveDeviceAdmin(pkg)) {
+            new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(getString(R.string.malware_has_admin_title))
+                .setMessage(getString(R.string.malware_has_admin_msg, threat.getAppName()))
+                .setCancelable(false)
+                .setPositiveButton(getString(R.string.malware_has_admin_open_settings), (d, w) -> {
+                    startActivity(new Intent(android.app.admin.DevicePolicyManager.ACTION_DEVICE_ADMIN_SETTINGS));
+                    proceedWithUninstall(threat);
+                })
+                .setNegativeButton(getString(R.string.btn_cancel), null)
+                .show();
+            return;
+        }
+
+        proceedWithUninstall(threat);
+    }
+
+    private boolean isActiveDeviceAdmin(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return false;
+        try {
+            android.app.admin.DevicePolicyManager dpm = (android.app.admin.DevicePolicyManager)
+                requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
+            if (dpm == null) return false;
+            for (android.content.ComponentName admin : dpm.getActiveAdmins()) {
+                if (admin != null && pkg.equals(admin.getPackageName())) return true;
+            }
+        } catch (Exception ignore) { }
+        return false;
+    }
+
+    private void proceedWithUninstall(ThreatResult threat) {
         Intent intent = new Intent(Intent.ACTION_DELETE);
         intent.setData(Uri.parse("package:" + threat.getPackageName()));
         startActivity(intent);

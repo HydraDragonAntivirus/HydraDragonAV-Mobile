@@ -30,6 +30,12 @@
     <string name="ignored_signatures_hint">Tam bir imza/tespit adı yazın (ör. PUA.SomeAdware, YARA.auto_...), böylece sadece bir uygulama değil, tüm uygulamalar/dosyalar için bastırılsın</string>
     <string name="website_whitelist_btn">Web Sitesi Beyaz Listesi</string>
     <string name="website_whitelist_hint">Web Shield\'de asla engellenmemesi için bir alan adı (example.com), tek başına bir IP veya bir CIDR aralığı (ör. 10.0.0.0/24) ekleyin</string>
+    <string name="auto_rules_manager_btn">Otomatik Oluşturulan Kurallar</string>
+    <string name="auto_rules_empty">Henüz kendi kendine öğrenilmiş bir kural yok — Auto Rule Generator açıksa, gerçek bir tehdit onaylandığında ilk kural oluşturulur</string>
+    <string name="auto_rule_exported">Kural dışa aktarıldı</string>
+    <string name="auto_rule_export_failed">Kural dışa aktarılamadı</string>
+    <string name="auto_rule_delete_failed">Kural silinemedi</string>
+    <string name="auto_rule_read_failed">Bu kural dosyası okunamadı</string>
     <string name="btn_ignore_signature">İMZAYI YOKSAY</string>
     <string name="no_signature_to_ignore">Bu tehdit için yoksayılacak belirli bir imza yok</string>
     <string name="signature_ignored_toast">Artık %1$d imza her uygulamada/dosyada yoksayılacak</string>
@@ -141,6 +147,11 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="detect_cat_auto_rules">Kendi kendine öğrenen oto kurallar</string>
     <string name="detect_cat_permissions">Tehlikeli izinler</string>
     <string name="detect_cat_eicar">EICAR test dosyaları</string>
+    <string name="malware_has_admin_title">Bu Uygulama Cihaz Yöneticisi Hakkına Sahip</string>
+    <string name="malware_has_admin_msg">%1$s kendini Cihaz Yöneticisi yapmış, bu da doğrudan kaldırılmasını engelliyor — zararlı yazılımların kaldırılmaya direnmek için sık kullandığı bir yöntem. Açılan ekranda önce onu devre dışı bırak (%1$s uygulamasını bulup Devre Dışı Bırak\'a dokun), ardından kaldırma ekranı otomatik açılacak.</string>
+    <string name="malware_has_admin_open_settings">CİHAZ YÖNETİCİSİ AYARLARINI AÇ</string>
+    <string name="self_protection_dialog_title">Kendini Koruma etkinleştirilsin mi?</string>
+    <string name="self_protection_dialog_msg">HydraDragon, önce sen devre dışı bırakmadan başka bir uygulama (ör. antivirüsünü kaldırmaya çalışan zararlı yazılım) tarafından kaldırılamaması için Cihaz Yöneticisi izni isteyebilir. Kilitleme/silme/şifre yetkisi kullanılmaz — istediğin zaman Ayarlar\'dan kapatabilirsin.</string>
     <string name="self_protection_toggle">Kendini Koruma (Cihaz Yöneticisi) — kaldırmayı engelle</string>
     <string name="self_protection_off_toast">Kendini Koruma KAPALI — uygulama artık normal şekilde kaldırılabilir</string>
     <string name="scan_rescan_btn">YENİDEN TARA</string>

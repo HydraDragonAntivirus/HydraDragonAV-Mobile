@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">Автоматичні самонавчальні правила</string>
     <string name="detect_cat_permissions">Небезпечні дозволи</string>
     <string name="detect_cat_eicar">Тестові файли EICAR</string>
+    <string name="self_protection_dialog_title">Увімкнути самозахист?</string>
+    <string name="self_protection_dialog_msg">HydraDragon може запросити права адміністратора пристрою, щоб інший додаток (напр. шкідливе ПЗ, яке намагається видалити ваш антивірус) не міг видалити його без попередньої деактивації вами. Жодні функції блокування/стирання/пароля не використовуються — ви можете вимкнути це будь-коли в Налаштуваннях.</string>
     <string name="self_protection_toggle">Самозахист (Адміністратор пристрою) — запобігання видаленню</string>
     <string name="self_protection_off_toast">Самозахист ВИМКНЕНО — тепер додаток можна видалити звичайним способом</string>
     <string name="scan_rescan_btn">ПОВТОРНЕ СКАНУВАННЯ</string>

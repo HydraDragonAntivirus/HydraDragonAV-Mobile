@@ -140,6 +140,8 @@ Puntuación de riesgo: %2$d/100
     <string name="detect_cat_auto_rules">Reglas auto-aprendidas</string>
     <string name="detect_cat_permissions">Permisos peligrosos</string>
     <string name="detect_cat_eicar">Archivos de prueba EICAR</string>
+    <string name="self_protection_dialog_title">¿Activar Autoprotección?</string>
+    <string name="self_protection_dialog_msg">HydraDragon puede solicitar Administrador del dispositivo para que no pueda ser desinstalado por otra app (p. ej. malware intentando eliminar tu antivirus) sin que tú lo desactives primero. No se usan poderes de bloqueo/borrado/contraseña — puedes desactivarlo en cualquier momento desde Ajustes.</string>
     <string name="self_protection_toggle">Autoprotección (Administrador del dispositivo) — evitar desinstalación</string>
     <string name="self_protection_off_toast">Autoprotección DESACTIVADA — la app ya puede desinstalarse normalmente</string>
     <string name="scan_rescan_btn">REESCANEAR</string>

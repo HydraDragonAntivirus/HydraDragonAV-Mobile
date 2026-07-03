@@ -140,6 +140,8 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="detect_cat_auto_rules">Samouczące się reguły automatyczne</string>
     <string name="detect_cat_permissions">Niebezpieczne uprawnienia</string>
     <string name="detect_cat_eicar">Pliki testowe EICAR</string>
+    <string name="self_protection_dialog_title">Włączyć samoobronę?</string>
+    <string name="self_protection_dialog_msg">HydraDragon może poprosić o uprawnienia administratora urządzenia, aby nie mogła zostać odinstalowana przez inną aplikację (np. złośliwe oprogramowanie próbujące usunąć antywirusa) bez wcześniejszego dezaktywowania tego przez ciebie. Nie są używane żadne uprawnienia blokady/wymazywania/hasła — możesz to wyłączyć w dowolnym momencie w Ustawieniach.</string>
     <string name="self_protection_toggle">Samoobrona (Administrator urządzenia) — zapobiega odinstalowaniu</string>
     <string name="self_protection_off_toast">Samoobrona WYŁĄCZONA — aplikację można teraz normalnie odinstalować</string>
     <string name="scan_rescan_btn">SKANUJ PONOWNIE</string>

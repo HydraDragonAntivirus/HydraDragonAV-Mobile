@@ -140,6 +140,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="detect_cat_auto_rules">Zelflerende automatische regels</string>
     <string name="detect_cat_permissions">Gevaarlijke machtigingen</string>
     <string name="detect_cat_eicar">EICAR-testbestanden</string>
+    <string name="self_protection_dialog_title">Zelfbescherming inschakelen?</string>
+    <string name="self_protection_dialog_msg">HydraDragon kan Apparaatbeheerder aanvragen zodat het niet door een andere app (bijv. malware die je antivirus probeert te verwijderen) kan worden verwijderd zonder dat jij dit eerst uitschakelt. Er worden geen vergrendel-/wis-/wachtwoordbevoegdheden gebruikt — je kunt dit altijd uitzetten via Instellingen.</string>
     <string name="self_protection_toggle">Zelfbescherming (Apparaatbeheerder) — verwijderen voorkomen</string>
     <string name="self_protection_off_toast">Zelfbescherming UIT — de app kan nu weer normaal worden verwijderd</string>
     <string name="scan_rescan_btn">OPNIEUW SCANNEN</string>

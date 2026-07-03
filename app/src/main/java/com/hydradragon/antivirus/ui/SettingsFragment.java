@@ -45,6 +45,26 @@ public class SettingsFragment extends Fragment {
     private static final int REQ_SCREEN_CAPTURE = 1202;
     private static final int REQ_SMS = 1203;
 
+    // Set right before launching exportRuleLauncher so the callback (which
+    // gets only the destination Uri back) knows WHICH .yar file's content to
+    // write there.
+    private java.io.File pendingExportRuleFile;
+    private final androidx.activity.result.ActivityResultLauncher<String> exportRuleLauncher =
+        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream"),
+            uri -> {
+                if (uri == null || pendingExportRuleFile == null) return;
+                try (java.io.InputStream in = new java.io.FileInputStream(pendingExportRuleFile);
+                     java.io.OutputStream out = requireContext().getContentResolver().openOutputStream(uri)) {
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+                    Toast.makeText(getContext(), getString(R.string.auto_rule_exported), Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(getContext(), getString(R.string.auto_rule_export_failed), Toast.LENGTH_SHORT).show();
+                }
+                pendingExportRuleFile = null;
+            });
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup p, @Nullable Bundle s) {
@@ -222,6 +242,8 @@ public class SettingsFragment extends Fragment {
                 com.hydradragon.antivirus.engine.WebsiteWhitelist.getAll(requireContext()),
                 com.hydradragon.antivirus.engine.WebsiteWhitelist::add,
                 com.hydradragon.antivirus.engine.WebsiteWhitelist::remove));
+        addBtn("📜 " + getString(R.string.auto_rules_manager_btn), color(R.color.bg_secondary),
+            v -> showAutoRulesManagerDialog());
 
         addHeader(getString(R.string.system));
         // app lock removed });
@@ -568,11 +590,21 @@ public class SettingsFragment extends Fragment {
     }
 
     /** One row for a single DetectionCategories toggle — same on/off contract
-     *  as every other category, just parameterized by string res + pref key. */
+     *  as every other category, just parameterized by string res + pref key.
+     *  AUTO_RULES is special: it also gates what the NATIVE engine loads at
+     *  init (see NativeScanner.init), so toggling it restarts GuardService —
+     *  same pattern as the storage-watch toggle — instead of only taking
+     *  effect on the next full app restart. */
     private void addCategoryToggle(int labelRes, String category) {
         boolean on = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(requireContext(), category);
-        addToggle(getString(labelRes), on, (btn, checked) ->
-            com.hydradragon.antivirus.engine.DetectionCategories.setEnabled(requireContext(), category, checked));
+        addToggle(getString(labelRes), on, (btn, checked) -> {
+            com.hydradragon.antivirus.engine.DetectionCategories.setEnabled(requireContext(), category, checked);
+            if (com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES.equals(category)) {
+                Intent svc = new Intent(requireContext(), com.hydradragon.antivirus.service.GuardService.class);
+                requireContext().stopService(svc);
+                ContextCompat.startForegroundService(requireContext(), svc);
+            }
+        });
     }
 
     private int parseMinutesOrDefault(String text, int def) {
@@ -582,6 +614,104 @@ public class SettingsFragment extends Fragment {
         } catch (Exception e) {
             return def;
         }
+    }
+
+    /** Lists every self-learned "generated_rules/*.yar" file (see
+     *  ScanEngine#saveGeneratedRule) this device has ever auto-produced from a
+     *  confirmed detection — same directory the native engine reloads at
+     *  every init (NativeScanner.init / DetectionCategories.AUTO_RULES).
+     *  Each row: tap to view the raw YARA source, ✎ to export it via SAF
+     *  (Storage Access Framework — user picks the destination), ✕ to delete
+     *  it from disk (also means the native engine stops matching it on the
+     *  NEXT init/restart, not retroactively for the current session). */
+    private void showAutoRulesManagerDialog() {
+        java.io.File dir = new java.io.File(new java.io.File(requireContext().getFilesDir(), "hydra-scan"), "generated_rules");
+        java.io.File[] files = dir.exists() ? dir.listFiles((d, name) -> name.endsWith(".yar")) : null;
+        java.util.List<java.io.File> rules = new java.util.ArrayList<>();
+        if (files != null) rules.addAll(java.util.Arrays.asList(files));
+        rules.sort((a, b) -> b.lastModified() > a.lastModified() ? 1 : -1);
+
+        LinearLayout listBox = new LinearLayout(requireContext());
+        listBox.setOrientation(LinearLayout.VERTICAL);
+
+        AlertDialog dlg = new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.auto_rules_manager_btn))
+            .setView(listBox)
+            .setNegativeButton(getString(R.string.btn_close), null)
+            .create();
+
+        Runnable[] refresh = new Runnable[1];
+        refresh[0] = () -> {
+            listBox.removeAllViews();
+            if (rules.isEmpty()) {
+                TextView empty = new TextView(requireContext());
+                empty.setText(getString(R.string.auto_rules_empty));
+                empty.setTextColor(color(R.color.text_secondary));
+                empty.setPadding(0, 16, 0, 16);
+                listBox.addView(empty);
+            }
+            for (java.io.File f : rules) {
+                LinearLayout r = row();
+                TextView name = new TextView(requireContext());
+                name.setText(f.getName());
+                name.setTextColor(color(R.color.text_primary));
+                name.setTypeface(Typeface.MONOSPACE);
+                name.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                name.setOnClickListener(v -> showAutoRuleContentDialog(f));
+                r.addView(name);
+
+                TextView exportBtn = new TextView(requireContext());
+                exportBtn.setText("⭳");
+                exportBtn.setTextColor(color(R.color.neon_cyan));
+                exportBtn.setPadding(24, 0, 24, 0);
+                exportBtn.setOnClickListener(v -> {
+                    pendingExportRuleFile = f;
+                    exportRuleLauncher.launch(f.getName());
+                });
+                r.addView(exportBtn);
+
+                TextView deleteBtn = new TextView(requireContext());
+                deleteBtn.setText("✕");
+                deleteBtn.setTextColor(0xFFFF0040);
+                deleteBtn.setPadding(0, 0, 8, 0);
+                deleteBtn.setOnClickListener(v -> {
+                    if (f.delete()) {
+                        rules.remove(f);
+                        refresh[0].run();
+                    } else {
+                        Toast.makeText(getContext(), getString(R.string.auto_rule_delete_failed), Toast.LENGTH_SHORT).show();
+                    }
+                });
+                r.addView(deleteBtn);
+                listBox.addView(r);
+            }
+        };
+        refresh[0].run();
+        dlg.show();
+    }
+
+    /** Read-only view of one .yar file's raw source — tapped from the Auto
+     *  Rules manager list. */
+    private void showAutoRuleContentDialog(java.io.File file) {
+        String content;
+        try {
+            content = new String(java.nio.file.Files.readAllBytes(file.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            content = getString(R.string.auto_rule_read_failed);
+        }
+        TextView tv = new TextView(requireContext());
+        tv.setText(content);
+        tv.setTextColor(color(R.color.text_primary));
+        tv.setTypeface(Typeface.MONOSPACE);
+        tv.setTextIsSelectable(true);
+        tv.setPadding(24, 16, 24, 16);
+        ScrollView scroll = new ScrollView(requireContext());
+        scroll.addView(tv);
+        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(file.getName())
+            .setView(scroll)
+            .setPositiveButton(getString(R.string.btn_close), null)
+            .show();
     }
 
     /** Generic "type to add / tap to remove" manager, shared by Ignored

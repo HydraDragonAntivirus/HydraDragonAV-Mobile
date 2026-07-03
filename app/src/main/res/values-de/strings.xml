@@ -140,6 +140,8 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="detect_cat_auto_rules">Selbst erlernte Auto-Regeln</string>
     <string name="detect_cat_permissions">Gefährliche Berechtigungen</string>
     <string name="detect_cat_eicar">EICAR-Testdateien</string>
+    <string name="self_protection_dialog_title">Selbstschutz aktivieren?</string>
+    <string name="self_protection_dialog_msg">HydraDragon kann Geräteadministrator anfordern, damit es nicht von einer anderen App (z. B. Malware, die dein Antivirenprogramm entfernen will) deinstalliert werden kann, ohne dass du dies vorher deaktivierst. Es werden keine Sperr-/Lösch-/Passwortrechte verwendet — du kannst dies jederzeit in den Einstellungen ausschalten.</string>
     <string name="self_protection_toggle">Selbstschutz (Geräteadministrator) — Deinstallation verhindern</string>
     <string name="self_protection_off_toast">Selbstschutz AUS — die App kann jetzt wieder normal deinstalliert werden</string>
     <string name="scan_rescan_btn">ERNEUT SCANNEN</string>

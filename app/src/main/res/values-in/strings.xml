@@ -140,6 +140,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="detect_cat_auto_rules">Aturan otomatis yang dipelajari sendiri</string>
     <string name="detect_cat_permissions">Izin berbahaya</string>
     <string name="detect_cat_eicar">File uji EICAR</string>
+    <string name="self_protection_dialog_title">Aktifkan Perlindungan Diri?</string>
+    <string name="self_protection_dialog_msg">HydraDragon dapat meminta Admin Perangkat agar tidak dapat dicopot pemasangannya oleh aplikasi lain (misalnya malware yang mencoba menghapus antivirus Anda) tanpa Anda menonaktifkannya terlebih dahulu. Tidak ada kekuatan kunci/hapus/kata sandi yang digunakan — Anda dapat mematikannya kapan saja dari Pengaturan.</string>
     <string name="self_protection_toggle">Perlindungan Diri (Admin Perangkat) — cegah pencopotan pemasangan</string>
     <string name="self_protection_off_toast">Perlindungan Diri NONAKTIF — aplikasi kini dapat dicopot pemasangannya secara normal</string>
     <string name="scan_rescan_btn">PINDAI ULANG</string>

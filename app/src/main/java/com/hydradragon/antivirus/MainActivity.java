@@ -192,6 +192,16 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // Self-Protection (Device Admin) — see SelfProtection. Asked once at
+        // first launch, same "decided" pattern as Web Shield below, instead
+        // of only being reachable if the user happens to find it in Settings
+        // (it existed in the codebase but was never surfaced anywhere before).
+        SharedPreferences selfProtPrefs = getSharedPreferences("hydra_prefs", MODE_PRIVATE);
+        if (!selfProtPrefs.getBoolean("self_protection_decided", false)) {
+            showOptionalSelfProtectionDialog();
+            return;
+        }
+
         // Optional local DNS-filtering VPN (Web Shield). The system VPN/key icon
         // only appears once VpnService.prepare() consent is granted AND the
         // service establishes the tunnel — so we must request consent here.
@@ -206,6 +216,27 @@ public class MainActivity extends AppCompatActivity {
         }
 
         startAppUI();
+    }
+
+    private void showOptionalSelfProtectionDialog() {
+        permissionDialogShowing = true;
+        new AlertDialog.Builder(this)
+            .setTitle(getString(R.string.self_protection_dialog_title))
+            .setMessage(getString(R.string.self_protection_dialog_msg))
+            .setCancelable(false)
+            .setPositiveButton(getString(R.string.enable), (dialog, which) -> {
+                permissionDialogShowing = false;
+                getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("self_protection_decided", true).apply();
+                startActivity(com.hydradragon.antivirus.engine.SelfProtection.activationIntent(this));
+            })
+            .setNegativeButton(getString(R.string.skip), (dialog, which) -> {
+                permissionDialogShowing = false;
+                getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("self_protection_decided", true).apply();
+                checkMandatoryPermissions();
+            })
+            .show();
     }
 
     private void showOptionalWebShieldDialog() {

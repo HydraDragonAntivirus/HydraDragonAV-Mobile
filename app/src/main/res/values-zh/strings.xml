@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">自学习自动规则</string>
     <string name="detect_cat_permissions">危险权限</string>
     <string name="detect_cat_eicar">EICAR 测试文件</string>
+    <string name="self_protection_dialog_title">启用自我保护？</string>
+    <string name="self_protection_dialog_msg">HydraDragon 可以请求设备管理员权限，这样在您先禁用它之前，其他应用（例如试图删除您的杀毒软件的恶意软件）就无法卸载它。不会使用任何锁定/擦除/密码权限 — 您可以随时在设置中关闭此功能。</string>
     <string name="self_protection_toggle">自我保护（设备管理器）— 防止卸载</string>
     <string name="self_protection_off_toast">自我保护已关闭 — 现在可以正常卸载该应用</string>
     <string name="scan_rescan_btn">重新扫描</string>

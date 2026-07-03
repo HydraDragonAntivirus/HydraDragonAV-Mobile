@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">Самообучающиеся автоправила</string>
     <string name="detect_cat_permissions">Опасные разрешения</string>
     <string name="detect_cat_eicar">Тестовые файлы EICAR</string>
+    <string name="self_protection_dialog_title">Включить самозащиту?</string>
+    <string name="self_protection_dialog_msg">HydraDragon может запросить права администратора устройства, чтобы его нельзя было удалить другим приложением (например, вредоносным ПО, пытающимся удалить ваш антивирус) без предварительной деактивации вами. Никакие функции блокировки/стирания/пароля не используются — вы можете отключить это в любое время в Настройках.</string>
     <string name="self_protection_toggle">Самозащита (Администратор устройства) — предотвращение удаления</string>
     <string name="self_protection_off_toast">Самозащита ВЫКЛ — теперь приложение можно удалить обычным способом</string>
     <string name="scan_rescan_btn">ПЕРЕСКАНИРОВАТЬ</string>

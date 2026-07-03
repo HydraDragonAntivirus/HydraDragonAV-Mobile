@@ -140,6 +140,8 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="detect_cat_auto_rules">Règles auto-apprises</string>
     <string name="detect_cat_permissions">Autorisations dangereuses</string>
     <string name="detect_cat_eicar">Fichiers de test EICAR</string>
+    <string name="self_protection_dialog_title">Activer l\'auto-protection ?</string>
+    <string name="self_protection_dialog_msg">HydraDragon peut demander les droits d\'administrateur de l\'appareil afin de ne pas pouvoir être désinstallée par une autre application (ex. un malware essayant de supprimer votre antivirus) sans que vous le désactiviez d\'abord. Aucun pouvoir de verrouillage/effacement/mot de passe n\'est utilisé — vous pouvez désactiver ceci à tout moment depuis les Paramètres.</string>
     <string name="self_protection_toggle">Auto-protection (Administrateur de l\'appareil) — empêcher la désinstallation</string>
     <string name="self_protection_off_toast">Auto-protection DÉSACTIVÉE — l\'application peut de nouveau être désinstallée normalement</string>
     <string name="scan_rescan_btn">RÉANALYSER</string>

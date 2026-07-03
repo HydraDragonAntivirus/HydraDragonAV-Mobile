@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">قوانین خودآموز</string>
     <string name="detect_cat_permissions">مجوزهای خطرناک</string>
     <string name="detect_cat_eicar">فایل‌های آزمایشی EICAR</string>
+    <string name="self_protection_dialog_title">خودمحافظتی فعال شود؟</string>
+    <string name="self_protection_dialog_msg">HydraDragon می‌تواند مجوز مدیر دستگاه را درخواست کند تا برنامه دیگری (مثلاً بدافزاری که می‌خواهد آنتی‌ویروس شما را حذف کند) نتواند بدون غیرفعال کردن اول توسط شما آن را حذف نصب کند. هیچ اختیار قفل/پاک‌سازی/رمز عبوری استفاده نمی‌شود — می‌توانید هر زمان از تنظیمات آن را خاموش کنید.</string>
     <string name="self_protection_toggle">خودمحافظتی (مدیر دستگاه) — جلوگیری از حذف نصب</string>
     <string name="self_protection_off_toast">خودمحافظتی خاموش شد — اکنون برنامه به‌طور عادی قابل حذف نصب است</string>
     <string name="scan_rescan_btn">اسکن مجدد</string>

@@ -140,6 +140,8 @@
     <string name="detect_cat_auto_rules">स्व-सीखे नियम</string>
     <string name="detect_cat_permissions">खतरनाक अनुमतियाँ</string>
     <string name="detect_cat_eicar">EICAR परीक्षण फ़ाइलें</string>
+    <string name="self_protection_dialog_title">स्व-सुरक्षा सक्षम करें?</string>
+    <string name="self_protection_dialog_msg">HydraDragon डिवाइस एडमिन अनुरोध कर सकता है ताकि इसे किसी अन्य ऐप (जैसे आपके एंटीवायरस को हटाने की कोशिश करने वाला मैलवेयर) द्वारा तब तक अनइंस्टॉल न किया जा सके जब तक आप इसे पहले निष्क्रिय न करें। कोई लॉक/वाइप/पासवर्ड शक्तियों का उपयोग नहीं किया जाता — आप इसे कभी भी सेटिंग्स से बंद कर सकते हैं।</string>
     <string name="self_protection_toggle">स्व-सुरक्षा (डिवाइस एडमिन) — अनइंस्टॉल रोकें</string>
     <string name="self_protection_off_toast">स्व-सुरक्षा बंद — अब ऐप को सामान्य रूप से अनइंस्टॉल किया जा सकता है</string>
     <string name="scan_rescan_btn">पुनः स्कैन करें</string>
