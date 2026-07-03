@@ -63,6 +63,10 @@ public final class StrandHoggGuard {
 
     private void checkOnce(OnHijackDetected callback) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return; // numActivities needs API 29
+        // Screen pinning (App Pinning / lock task mode) legitimately changes
+        // how the system reports this task — not a hijack, the user pinned
+        // it themselves. Skip the check entirely while pinned.
+        if (activity.isInLockTaskMode()) return;
         try {
             ActivityManager am = activity.getSystemService(ActivityManager.class);
             if (am == null) return;
@@ -73,7 +77,7 @@ public final class StrandHoggGuard {
                 if (info == null || info.taskId != taskId) continue;
                 int actual = info.numActivities;
                 int expected = AppLifecycleTracker.getExpectedActivityCount();
-                if (actual > expected) {
+                if (actual > expected && isSuspectForeignForeground()) {
                     callback.onHijackDetected(expected, actual);
                 }
                 return;
@@ -82,5 +86,21 @@ public final class StrandHoggGuard {
             // Resource-intensive-but-best-effort by design (Guardsquare's own
             // caveat) — never crash the host activity over this check.
         }
+    }
+
+    /** A numActivities mismatch only means anything if it was actually caused
+     *  by an untrusted THIRD-PARTY app landing on top of us — our own
+     *  legitimate same-task navigation (Play Protect, Accessibility/Security
+     *  Settings, VPN/screen-capture consent...) also bumps the task's real
+     *  activity count without a hijacker involved, and none of those should
+     *  ever trip this. {@link com.hydradragon.antivirus.service.DynamicAnalysisService}
+     *  already tracks whichever package the accessibility service last saw in
+     *  the foreground — if that's still us, or a known/trusted (system/OEM)
+     *  package, this isn't a hijack. */
+    private boolean isSuspectForeignForeground() {
+        String fg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+        if (fg == null || fg.isEmpty()) return false; // unknown — not enough evidence either way
+        if (fg.equals(activity.getPackageName())) return false; // still our own app
+        return !com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(activity, fg);
     }
 }
