@@ -17,6 +17,16 @@ public final class AppLifecycleTracker implements Application.ActivityLifecycleC
 
     private static volatile boolean registered = false;
 
+    /** How many of OUR OWN activities are currently alive (created, not yet
+     *  destroyed) — i.e. what this app itself put in its task's back stack.
+     *  Compared by StrandHoggGuard against the task's actual activity count
+     *  (which also includes any foreign activity injected into our task by a
+     *  StrandHogg-style task-hijacking attack) — a mismatch means something
+     *  is in our task that we didn't create. */
+    private static volatile int createdCount = 0;
+
+    public static int getExpectedActivityCount() { return createdCount; }
+
     private int startedCount = 0;
 
     private AppLifecycleTracker() {}
@@ -25,6 +35,16 @@ public final class AppLifecycleTracker implements Application.ActivityLifecycleC
         if (registered) return;
         registered = true;
         app.registerActivityLifecycleCallbacks(new AppLifecycleTracker());
+    }
+
+    @Override
+    public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+        createdCount++;
+    }
+
+    @Override
+    public void onActivityDestroyed(Activity activity) {
+        createdCount--;
     }
 
     @Override
@@ -43,9 +63,7 @@ public final class AppLifecycleTracker implements Application.ActivityLifecycleC
         }
     }
 
-    @Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
     @Override public void onActivityResumed(Activity activity) {}
     @Override public void onActivityPaused(Activity activity) {}
     @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
-    @Override public void onActivityDestroyed(Activity activity) {}
 }

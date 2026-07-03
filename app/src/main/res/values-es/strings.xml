@@ -253,6 +253,11 @@ Puntuación de riesgo: %2$d/100
     <string name="dashboard_status_alert_desc">• Monitoreo activo\n• Reglas de red aplicadas\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 Exploit de Root Detectado</string>
     <string name="notif_root_exploit_text">El dispositivo obtuvo root mientras se ejecutaba</string>
+    <string name="dynamic_risk_title">⚠ Comportamiento Sospechoso Detectado</string>
+    <string name="dynamic_risk_msg">%1$s combina permisos de riesgo con tráfico de red anonimizado — marcada como malware, se reportará en el próximo escaneo.</string>
+    <string name="ransomware_behavior_title">🔒 Comportamiento de Ransomware Detectado</string>
+    <string name="ransomware_behavior_msg">%1$s renombró masivamente archivos justo después de que se le concediera acceso a archivos — marcada como ransomware, se reportará en el próximo escaneo.</string>
+    <string name="task_hijack_detected">Fallo en la comprobación de seguridad — parece que otra app se ha superpuesto a esta pantalla, cerrando para tu protección</string>
     <string name="notif_suspicious_network_title">🛡 Conexión de Red Sospechosa Bloqueada</string>
     <string name="notif_suspicious_process_title">⚠ Proceso Sospechoso Detectado</string>
     <string name="guard_channel_name">Protección HydraDragon</string>

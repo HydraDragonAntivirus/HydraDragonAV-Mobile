@@ -583,8 +583,13 @@ public class ScanEngine {
             // MD5 computed once here and reused natively.
             String md5 = fileMd5(new java.io.File(path));
             if (isHashWhitelisted(md5)) return;
+            long nativeT0 = android.os.SystemClock.elapsedRealtime();
             NativeScanner.Verdict v = runNativeInterruptible(() ->
                 NativeScanner.scan(path, null, md5, ZeroTrustMode.isEnabled(context)));
+            long nativeMs = android.os.SystemClock.elapsedRealtime() - nativeT0;
+            addTiming("NativeScanner", nativeMs);
+            Log.i(TAG, "FILE_ENGINE_TIMING " + file.getName()
+                + " NativeScanner=" + nativeMs + "ms slowest=NativeScanner");
             if (v == null) return;
             saveGeneratedRule(v);
             // Per-detection whitelist suppression: a hit INSIDE a known-good
@@ -730,8 +735,13 @@ public class ScanEngine {
                 // MD5 computed once here and reused natively.
                 String appMd5 = fileMd5(new java.io.File(app.sourceDir));
                 if (isHashWhitelisted(appMd5)) continue;
+                long nativeT0 = android.os.SystemClock.elapsedRealtime();
                 NativeScanner.Verdict v = runNativeInterruptible(() ->
                     NativeScanner.scan(app.sourceDir, app.packageName, appMd5, ZeroTrustMode.isEnabled(context)));
+                long nativeMs = android.os.SystemClock.elapsedRealtime() - nativeT0;
+                addTiming("NativeScanner", nativeMs);
+                Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
+                    + " NativeScanner=" + nativeMs + "ms slowest=NativeScanner");
                 if (v == null) continue;
                 // Per-detection suppression (a hit inside a whitelisted APK is an
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
@@ -990,7 +1000,8 @@ public class ScanEngine {
                 // something" is what actually earns a MALWARE verdict.
                 long codeT0 = android.os.SystemClock.elapsedRealtime();
                 CodeAnalyzer.AnalysisResult codeResult = codeAnalyzer.analyzeApk(apkPath);
-                addTiming("CodeAnalyzer", android.os.SystemClock.elapsedRealtime() - codeT0);
+                long codeMs = android.os.SystemClock.elapsedRealtime() - codeT0;
+                addTiming("CodeAnalyzer", codeMs);
 
                 // Native engine: clamav (type-gated YARA + signatures) + ML model.
                 // Hash-first: a known-good (whitelisted) APK skips the whole native
@@ -999,16 +1010,30 @@ public class ScanEngine {
                 boolean nativeCorroborated = false;
                 if (apkPath == null) {
                     Log.d(TAG, "NATIVE-SKIP[apkPath null] " + app.packageName);
+                    Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
+                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped slowest=CodeAnalyzer");
                 } else if (!NativeScanner.isReady()) {
                     Log.d(TAG, "NATIVE-SKIP[engine not ready] " + app.packageName);
+                    Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
+                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped slowest=CodeAnalyzer");
                 } else if (isHashWhitelisted(apkMd5)) {
                     Log.d(TAG, "NATIVE-SKIP[hash-whitelisted] " + app.packageName + " md5=" + apkMd5);
+                    Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
+                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped(hash-whitelisted) slowest=CodeAnalyzer");
                 }
                 if (apkPath != null && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
                     long nativeT0 = android.os.SystemClock.elapsedRealtime();
                     NativeScanner.Verdict v = runNativeInterruptible(() ->
                         NativeScanner.scan(apkPath, app.packageName, apkMd5, ZeroTrustMode.isEnabled(context)));
-                    addTiming("NativeScanner", android.os.SystemClock.elapsedRealtime() - nativeT0);
+                    long nativeMs = android.os.SystemClock.elapsedRealtime() - nativeT0;
+                    addTiming("NativeScanner", nativeMs);
+                    // Per-FILE breakdown (not the cumulative session totals
+                    // logEngineTimings() prints at the end of a whole scan) —
+                    // which engine was slowest for THIS specific app/file.
+                    String slowestHere = nativeMs >= codeMs ? "NativeScanner" : "CodeAnalyzer";
+                    Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
+                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=" + nativeMs
+                        + "ms slowest=" + slowestHere);
                     Log.d(TAG, "NATIVE-RESULT " + app.packageName + " verdict="
                         + (v == null ? "NULL(cancelled/error)" : ("detections=" + v.detections.size()
                             + " permissions=" + v.permissions + " jaccard=" + v.jaccard + " anomaly=" + v.anomaly

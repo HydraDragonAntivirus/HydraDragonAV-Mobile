@@ -253,6 +253,11 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="dashboard_status_alert_desc">• Surveillance active\n• Règles réseau appliquées\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 Exploit Root Détecté</string>
     <string name="notif_root_exploit_text">L\'appareil a été rooté pendant son fonctionnement</string>
+    <string name="dynamic_risk_title">⚠ Comportement Suspect Détecté</string>
+    <string name="dynamic_risk_msg">%1$s combine des autorisations à risque avec du trafic réseau anonymisé — signalée comme malware, elle sera reportée au prochain scan.</string>
+    <string name="ransomware_behavior_title">🔒 Comportement de Rançongiciel Détecté</string>
+    <string name="ransomware_behavior_msg">%1$s vient de renommer massivement des fichiers juste après s\'être vu accorder l\'accès aux fichiers — signalée comme rançongiciel, elle sera reportée au prochain scan.</string>
+    <string name="task_hijack_detected">Échec du contrôle de sécurité — une autre application semble s\'être superposée à cet écran, fermeture pour votre protection</string>
     <string name="notif_suspicious_network_title">🛡 Connexion Réseau Suspecte Bloquée</string>
     <string name="notif_suspicious_process_title">⚠ Processus Suspect Détecté</string>
     <string name="guard_channel_name">Protection HydraDragon</string>

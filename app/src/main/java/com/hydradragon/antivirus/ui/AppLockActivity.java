@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,7 @@ import com.hydradragon.antivirus.R;
 import com.hydradragon.antivirus.engine.AppLockManager;
 import com.hydradragon.antivirus.security.SecurePinPad;
 import com.hydradragon.antivirus.security.SecureWindowGuard;
+import com.hydradragon.antivirus.security.StrandHoggGuard;
 
 /**
  * Full-screen PIN lock, in two modes (see {@link #EXTRA_MODE}):
@@ -46,6 +48,7 @@ public class AppLockActivity extends AppCompatActivity {
     private static final int PIN_LENGTH = 4;
 
     private SecureWindowGuard windowGuard;
+    private StrandHoggGuard strandHoggGuard;
     private TextView tvMessage;
     private TextView tvDots;
     private StringBuilder entered = new StringBuilder();
@@ -59,6 +62,8 @@ public class AppLockActivity extends AppCompatActivity {
         windowGuard.applyFlagSecure(); // MUST be before super.onCreate/setContentView
         super.onCreate(savedInstanceState);
 
+        strandHoggGuard = new StrandHoggGuard(this);
+
         mode = getIntent().getStringExtra(EXTRA_MODE);
         if (mode == null) mode = MODE_VERIFY;
 
@@ -71,12 +76,25 @@ public class AppLockActivity extends AppCompatActivity {
         super.onResume();
         checkShowTaps();
         windowGuard.startWatching(this::onSecureFlagLost, 2000);
+        strandHoggGuard.startWatching(this::onTaskHijackDetected, 1500);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         windowGuard.stopWatching();
+        strandHoggGuard.stopWatching();
+    }
+
+    /** See StrandHoggGuard's javadoc — something other than HydraDragon itself
+     *  is present in this activity's task. Fail closed exactly like a lost
+     *  FLAG_SECURE: never keep showing the PIN pad once this is possible. */
+    private void onTaskHijackDetected(int expected, int actual) {
+        Log.e("HydraDragon-AppLock", "Task hijack suspected: expected " + expected
+            + " activities in our task, found " + actual);
+        Toast.makeText(this, getString(R.string.task_hijack_detected), Toast.LENGTH_LONG).show();
+        setResult(RESULT_CANCELED);
+        finish();
     }
 
     /** See SecureWindowGuard's javadoc: this fires only if something (e.g. a

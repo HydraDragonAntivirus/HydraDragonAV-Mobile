@@ -253,6 +253,11 @@
     <string name="dashboard_status_alert_desc">• Мониторинг активен\n• Сетевые правила применены\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 Обнаружен Root-эксплойт</string>
     <string name="notif_root_exploit_text">Устройство получило root-права во время работы</string>
+    <string name="dynamic_risk_title">⚠ Обнаружено подозрительное поведение</string>
+    <string name="dynamic_risk_msg">%1$s сочетает опасные разрешения с сетевым трафиком через анонимайзер — помечено как вредоносное ПО, будет сообщено при следующем сканировании.</string>
+    <string name="ransomware_behavior_title">🔒 Обнаружено поведение вымогателя</string>
+    <string name="ransomware_behavior_msg">%1$s массово переименовало файлы сразу после получения доступа к файлам — помечено как вымогатель, будет сообщено при следующем сканировании.</string>
+    <string name="task_hijack_detected">Проверка безопасности не пройдена — похоже, что другое приложение наложено поверх этого экрана, закрытие для вашей защиты</string>
     <string name="notif_suspicious_network_title">🛡 Подозрительное Сетевое Соединение Заблокировано</string>
     <string name="notif_suspicious_process_title">⚠ Обнаружен Подозрительный Процесс</string>
     <string name="guard_channel_name">Защита HydraDragon</string>

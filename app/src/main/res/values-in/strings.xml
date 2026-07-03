@@ -253,6 +253,11 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="dashboard_status_alert_desc">• Pemantauan aktif\n• Aturan jaringan diterapkan\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 Eksploitasi Root Terdeteksi</string>
     <string name="notif_root_exploit_text">Perangkat menjadi ter-root saat berjalan</string>
+    <string name="dynamic_risk_title">⚠ Perilaku Mencurigakan Terdeteksi</string>
+    <string name="dynamic_risk_msg">%1$s menggabungkan izin berisiko dengan lalu lintas jaringan anonymizer — ditandai sebagai malware, akan dilaporkan pada pemindaian berikutnya.</string>
+    <string name="ransomware_behavior_title">🔒 Perilaku Ransomware Terdeteksi</string>
+    <string name="ransomware_behavior_msg">%1$s baru saja mengganti nama file secara massal segera setelah diberi akses file — ditandai sebagai ransomware, akan dilaporkan pada pemindaian berikutnya.</string>
+    <string name="task_hijack_detected">Pemeriksaan keamanan gagal — aplikasi lain tampaknya dilapisi di atas layar ini, ditutup demi perlindungan Anda</string>
     <string name="notif_suspicious_network_title">🛡 Koneksi Jaringan Mencurigakan Diblokir</string>
     <string name="notif_suspicious_process_title">⚠ Proses Mencurigakan Terdeteksi</string>
     <string name="guard_channel_name">Perlindungan HydraDragon</string>

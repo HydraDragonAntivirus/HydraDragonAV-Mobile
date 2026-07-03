@@ -39,6 +39,7 @@
     <string name="lock_confirm_pin">Confirm New PIN</string>
     <string name="security_flag_lost">Security check failed — closing for your protection</string>
     <string name="obscured_touch_warning">Tap ignored — something is overlaying the screen</string>
+    <string name="task_hijack_detected">Security check failed — another app appears to be layered on this screen, closing for your protection</string>
     <string name="show_taps_warning_title">\"Show Taps\" Is Enabled</string>
     <string name="show_taps_warning_msg">Developer Options > Show Taps draws a visible dot wherever you touch the screen — a screen recording could reveal your PIN through it even with this screen protected. Please disable it before entering your PIN.</string>
     <string name="show_taps_open_settings">OPEN DEVELOPER OPTIONS</string>
@@ -276,6 +277,10 @@ Do you want to completely remove this malicious file/app?</string>
 
     <string name="notif_root_exploit_title">🔓 Root Exploit Detected</string>
     <string name="notif_root_exploit_text">Device became rooted while running</string>
+    <string name="dynamic_risk_title">⚠ Suspicious Behaviour Detected</string>
+    <string name="dynamic_risk_msg">%1$s combines risky permissions with suspicious anonymizer/tunnel-service DNS lookups — flagged as malware, will be reported on the next scan.</string>
+    <string name="ransomware_behavior_title">🔒 Ransomware Behaviour Detected</string>
+    <string name="ransomware_behavior_msg">%1$s just mass-renamed files right after being granted file access — flagged as ransomware, will be reported on the next scan.</string>
     <string name="notif_suspicious_network_title">🛡 Suspicious Network Connection Blocked</string>
     <string name="notif_suspicious_process_title">⚠ Suspicious Process Detected</string>
     <string name="guard_channel_name">HydraDragon Protection</string>

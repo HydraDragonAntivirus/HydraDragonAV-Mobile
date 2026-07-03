@@ -253,6 +253,11 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="dashboard_status_alert_desc">• Überwachung aktiv\n• Netzwerkregeln durchgesetzt\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 Root-Exploit Erkannt</string>
     <string name="notif_root_exploit_text">Gerät wurde während der Ausführung gerootet</string>
+    <string name="dynamic_risk_title">⚠ Verdächtiges Verhalten Erkannt</string>
+    <string name="dynamic_risk_msg">%1$s kombiniert riskante Berechtigungen mit Anonymisierungs-Netzwerkverkehr — als Malware eingestuft, wird beim nächsten Scan gemeldet.</string>
+    <string name="ransomware_behavior_title">🔒 Ransomware-Verhalten Erkannt</string>
+    <string name="ransomware_behavior_msg">%1$s hat direkt nach Erhalt des Dateizugriffs massenhaft Dateien umbenannt — als Ransomware eingestuft, wird beim nächsten Scan gemeldet.</string>
+    <string name="task_hijack_detected">Sicherheitsprüfung fehlgeschlagen — eine andere App scheint über diesen Bildschirm gelegt zu sein, wird zu deinem Schutz geschlossen</string>
     <string name="notif_suspicious_network_title">🛡 Verdächtige Netzwerkverbindung Blockiert</string>
     <string name="notif_suspicious_process_title">⚠ Verdächtiger Prozess Erkannt</string>
     <string name="guard_channel_name">HydraDragon-Schutz</string>

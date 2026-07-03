@@ -140,6 +140,9 @@ public class DynamicAnalysisService extends AccessibilityService {
 
             fgPackage = pkg;   // remember which app's content we're scanning
             sForegroundPackage = pkg;
+            if (!trusted) {
+                com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.onForegroundPermissionCheck(this, pkg);
+            }
             AccessibilityNodeInfo rootNode = getRootInActiveWindow();
             if (rootNode != null) {
                 checkNodesForSuspiciousKeywords(rootNode);

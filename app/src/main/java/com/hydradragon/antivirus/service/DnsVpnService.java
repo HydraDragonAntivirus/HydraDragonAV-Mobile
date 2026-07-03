@@ -184,6 +184,7 @@ public class DnsVpnService extends VpnService {
         String pkg = ownerPackage(android.system.OsConstants.IPPROTO_UDP, p, ver,
             srcOff, dstOff, u16(p, ipHdr), u16(p, ipHdr + 2));
         com.hydradragon.antivirus.engine.NetworkObservations.addDomain(pkg, host);
+        com.hydradragon.antivirus.engine.DynamicRiskEngine.onDomainObserved(this, pkg, host);
 
         String cat = UrlThreatScanner.get(this).scanUrl("http://" + host);
         if (cat != null && !com.hydradragon.antivirus.engine.WebsiteWhitelist.isDomainWhitelisted(this, host)) {
@@ -315,6 +316,7 @@ public class DnsVpnService extends VpnService {
                 : null;
             if (host != null && !host.isEmpty()) {
                 com.hydradragon.antivirus.engine.NetworkObservations.addDomain(fpkg, host);
+                com.hydradragon.antivirus.engine.DynamicRiskEngine.onDomainObserved(this, fpkg, host);
             }
             long clientNext = (seq + payloadLen) & 0xFFFFFFFFL;   // ack their data
             long ourSeq = 1001L;                                  // after our SYN

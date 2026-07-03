@@ -253,6 +253,11 @@
     <string name="dashboard_status_alert_desc">• 監視は有効です\n• ネットワークルールが適用されています\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 Root化エクスプロイトを検出</string>
     <string name="notif_root_exploit_text">実行中にデバイスがRoot化されました</string>
+    <string name="dynamic_risk_title">⚠ 不審な挙動を検出</string>
+    <string name="dynamic_risk_msg">%1$sは危険な権限と匿名化ネットワーク通信を組み合わせています — マルウェアとしてフラグが立てられ、次回のスキャンで報告されます。</string>
+    <string name="ransomware_behavior_title">🔒 ランサムウェアの挙動を検出</string>
+    <string name="ransomware_behavior_msg">%1$sはファイルアクセス権限が付与された直後に大量のファイルの名前を変更しました — ランサムウェアとしてフラグが立てられ、次回のスキャンで報告されます。</string>
+    <string name="task_hijack_detected">セキュリティチェックに失敗しました — 別のアプリがこの画面の上に重ねて表示されている可能性があるため、保護のため終了します</string>
     <string name="notif_suspicious_network_title">🛡 不審なネットワーク接続をブロックしました</string>
     <string name="notif_suspicious_process_title">⚠ 不審なプロセスを検出</string>
     <string name="guard_channel_name">HydraDragon保護</string>

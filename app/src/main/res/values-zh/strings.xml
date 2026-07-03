@@ -253,6 +253,11 @@
     <string name="dashboard_status_alert_desc">• 实时监控已启用\n• 网络规则已应用\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 检测到Root漏洞利用</string>
     <string name="notif_root_exploit_text">设备在运行期间已获取Root权限</string>
+    <string name="dynamic_risk_title">⚠ 检测到可疑行为</string>
+    <string name="dynamic_risk_msg">%1$s 结合了危险权限与匿名化网络流量 — 已被标记为恶意软件，将在下次扫描时上报。</string>
+    <string name="ransomware_behavior_title">🔒 检测到勒索软件行为</string>
+    <string name="ransomware_behavior_msg">%1$s 在被授予文件访问权限后立即大量重命名文件 — 已被标记为勒索软件，将在下次扫描时上报。</string>
+    <string name="task_hijack_detected">安全检查失败 — 似乎有其他应用覆盖在此屏幕上，为保护您的安全正在关闭</string>
     <string name="notif_suspicious_network_title">🛡 已阻止可疑网络连接</string>
     <string name="notif_suspicious_process_title">⚠ 检测到可疑进程</string>
     <string name="guard_channel_name">HydraDragon防护</string>

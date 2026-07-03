@@ -272,6 +272,11 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="dashboard_status_alert_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 Root Exploit Tespit Edildi</string>
     <string name="notif_root_exploit_text">Cihaz çalışırken root\'landı</string>
+    <string name="dynamic_risk_title">⚠ Şüpheli Davranış Tespit Edildi</string>
+    <string name="dynamic_risk_msg">%1$s riskli izinleri anonimleştirici ağ trafiğiyle birleştiriyor — kötü amaçlı yazılım olarak işaretlendi, bir sonraki taramada bildirilecek.</string>
+    <string name="ransomware_behavior_title">🔒 Fidye Yazılımı Davranışı Tespit Edildi</string>
+    <string name="ransomware_behavior_msg">%1$s, dosya erişimi verildikten hemen sonra dosyaları toplu olarak yeniden adlandırdı — fidye yazılımı olarak işaretlendi, bir sonraki taramada bildirilecek.</string>
+    <string name="task_hijack_detected">Güvenlik kontrolü başarısız — bu ekranın üzerine başka bir uygulama yerleştirilmiş görünüyor, korumanız için kapatılıyor</string>
     <string name="notif_suspicious_network_title">🛡 Şüpheli Ağ Bağlantısı Engellendi</string>
     <string name="notif_suspicious_process_title">⚠ Şüpheli Process Tespit Edildi</string>
     <string name="guard_channel_name">HydraDragon Koruma</string>

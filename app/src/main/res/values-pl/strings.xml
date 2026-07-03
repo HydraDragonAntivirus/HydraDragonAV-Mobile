@@ -253,6 +253,11 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="dashboard_status_alert_desc">• Monitorowanie aktywne\n• Reguły sieciowe egzekwowane\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 Wykryto exploit root</string>
     <string name="notif_root_exploit_text">Urządzenie uzyskało dostęp root podczas działania</string>
+    <string name="dynamic_risk_title">⚠ Wykryto podejrzane zachowanie</string>
+    <string name="dynamic_risk_msg">%1$s łączy ryzykowne uprawnienia z ruchem sieciowym typu anonimizer — oznaczono jako złośliwe oprogramowanie, zostanie zgłoszone podczas następnego skanowania.</string>
+    <string name="ransomware_behavior_title">🔒 Wykryto Zachowanie Ransomware</string>
+    <string name="ransomware_behavior_msg">%1$s masowo zmieniła nazwy plików zaraz po uzyskaniu dostępu do plików — oznaczono jako ransomware, zostanie zgłoszone podczas następnego skanowania.</string>
+    <string name="task_hijack_detected">Kontrola bezpieczeństwa nie powiodła się — wygląda na to, że inna aplikacja nakłada się na ten ekran, zamykanie w celu ochrony</string>
     <string name="notif_suspicious_network_title">🛡 Zablokowano podejrzane połączenie sieciowe</string>
     <string name="notif_suspicious_process_title">⚠ Wykryto podejrzany proces</string>
     <string name="guard_channel_name">Ochrona HydraDragon</string>

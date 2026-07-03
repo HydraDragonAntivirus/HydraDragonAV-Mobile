@@ -253,6 +253,11 @@
     <string name="dashboard_status_alert_desc">• การตรวจสอบทำงานอยู่\n• ใช้กฎเครือข่ายแล้ว\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 ตรวจพบการโจมตีแบบรูท</string>
     <string name="notif_root_exploit_text">อุปกรณ์ถูกรูทขณะกำลังทำงาน</string>
+    <string name="dynamic_risk_title">⚠ ตรวจพบพฤติกรรมน่าสงสัย</string>
+    <string name="dynamic_risk_msg">%1$s ใช้สิทธิ์เสี่ยงร่วมกับการรับส่งข้อมูลเครือข่ายแบบไม่ระบุตัวตน (anonymizer) — ถูกตั้งค่าสถานะว่าเป็นมัลแวร์ และจะถูกรายงานในการสแกนครั้งถัดไป</string>
+    <string name="ransomware_behavior_title">🔒 ตรวจพบพฤติกรรมแรนซัมแวร์</string>
+    <string name="ransomware_behavior_msg">%1$s เพิ่งเปลี่ยนชื่อไฟล์จำนวนมากทันทีหลังจากได้รับสิทธิ์เข้าถึงไฟล์ — ถูกตั้งค่าสถานะว่าเป็นแรนซัมแวร์ และจะถูกรายงานในการสแกนครั้งถัดไป</string>
+    <string name="task_hijack_detected">การตรวจสอบความปลอดภัยล้มเหลว — ดูเหมือนมีแอปอื่นซ้อนทับอยู่บนหน้าจอนี้ กำลังปิดเพื่อความปลอดภัยของคุณ</string>
     <string name="notif_suspicious_network_title">🛡 บล็อกการเชื่อมต่อเครือข่ายที่น่าสงสัยแล้ว</string>
     <string name="notif_suspicious_process_title">⚠ ตรวจพบกระบวนการที่น่าสงสัย</string>
     <string name="guard_channel_name">การป้องกัน HydraDragon</string>

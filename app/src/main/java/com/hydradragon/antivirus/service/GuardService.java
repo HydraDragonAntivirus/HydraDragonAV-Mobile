@@ -55,6 +55,8 @@ public class GuardService extends Service {
                 @Override
                 public void onEvent(int event, String path) {
                     if (path == null || path.startsWith(".pending-")) return;
+                    com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
+                        .onFileEvent(GuardService.this, downloadDir.getAbsolutePath(), path);
                     java.io.File file = new java.io.File(downloadDir, path);
                     scanDownloadedFile(file);
                 }
@@ -95,7 +97,10 @@ public class GuardService extends Service {
             android.os.FileObserver obs = new android.os.FileObserver(rootPath, android.os.FileObserver.CLOSE_WRITE) {
                 @Override
                 public void onEvent(int event, String path) {
-                    if (path != null) scanDownloadedFile(new java.io.File(root, path));
+                    if (path == null) return;
+                    com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
+                        .onFileEvent(GuardService.this, rootPath, path);
+                    scanDownloadedFile(new java.io.File(root, path));
                 }
             };
             obs.startWatching();
@@ -383,6 +388,7 @@ public class GuardService extends Service {
                     "Device became rooted while running — foreground app: "
                         + (suspect != null && !suspect.isEmpty() ? suspect : "unknown"));
                 if (suspect != null && !suspect.isEmpty()
+                        && !com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, suspect)
                         && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, suspect)) {
                     com.hydradragon.antivirus.engine.BehaviorFlags.flag(this, suspect,
                         "🔓 Root exploit: device rooted while this app was in the foreground");

@@ -253,6 +253,11 @@
     <string name="dashboard_status_alert_desc">• 모니터링 활성화됨\n• 네트워크 규칙 적용됨\n%1$s</string>
     <string name="notif_root_exploit_title">🔓 루트 익스플로잇 감지됨</string>
     <string name="notif_root_exploit_text">실행 중 기기가 루팅되었습니다</string>
+    <string name="dynamic_risk_title">⚠ 의심스러운 동작 감지됨</string>
+    <string name="dynamic_risk_msg">%1$s이(가) 위험한 권한과 익명화 네트워크 트래픽을 결합하고 있습니다 — 악성코드로 표시되었으며 다음 검사 시 신고됩니다.</string>
+    <string name="ransomware_behavior_title">🔒 랜섬웨어 행위 감지됨</string>
+    <string name="ransomware_behavior_msg">%1$s이(가) 파일 접근 권한을 부여받은 직후 파일 이름을 대량으로 변경했습니다 — 랜섬웨어로 표시되었으며 다음 검사 시 신고됩니다.</string>
+    <string name="task_hijack_detected">보안 검사 실패 — 다른 앱이 이 화면 위에 겹쳐진 것으로 보여 보호를 위해 종료합니다</string>
     <string name="notif_suspicious_network_title">🛡 의심스러운 네트워크 연결 차단됨</string>
     <string name="notif_suspicious_process_title">⚠ 의심스러운 프로세스 감지됨</string>
     <string name="guard_channel_name">HydraDragon 보호</string>

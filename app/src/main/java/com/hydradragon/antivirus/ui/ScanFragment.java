@@ -273,7 +273,14 @@ public class ScanFragment extends Fragment {
                 .setMessage(getString(R.string.malware_has_admin_msg, threat.getAppName()))
                 .setCancelable(false)
                 .setPositiveButton(getString(R.string.malware_has_admin_open_settings), (d, w) -> {
-                    startActivity(new Intent(android.app.admin.DevicePolicyManager.ACTION_DEVICE_ADMIN_SETTINGS));
+                    // There's no public constant for the exact "Device admin
+                    // apps" screen (it's an internal Settings activity that
+                    // varies by OEM) — Security settings is the reliable,
+                    // documented entry point every device has, and the
+                    // device-admin list is always reachable from there.
+                    try {
+                        startActivity(new Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS));
+                    } catch (Exception ignore) { }
                     proceedWithUninstall(threat);
                 })
                 .setNegativeButton(getString(R.string.btn_cancel), null)
