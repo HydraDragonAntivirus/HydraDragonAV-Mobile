@@ -28,6 +28,39 @@ use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jstring, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 
+// Direct FFI into Android's liblog.so (always present in an app process,
+// unlike the desktop-only `HDA_PROF`/eprintln! profiling in
+// hydradragonclamav's scanner.rs — an env var and stderr writes are both
+// invisible on a real device, which is exactly why "which Rust engine is
+// slowest" never showed up in logcat before this). No extra crate needed:
+// this .so already links against liblog transitively via the NDK toolchain,
+// same as every other Android native library.
+#[link(name = "log")]
+unsafe extern "C" {
+    fn __android_log_write(
+        prio: std::os::raw::c_int,
+        tag: *const std::os::raw::c_char,
+        text: *const std::os::raw::c_char,
+    ) -> std::os::raw::c_int;
+}
+const ANDROID_LOG_INFO: std::os::raw::c_int = 4;
+
+/// Writes one line to logcat under the tag `HydraDragon-RustTiming` — filter
+/// with `adb logcat -s HydraDragon-RustTiming` to see which internal stage
+/// (dex scan, clamav/YARA, ML model, native-code emulation, ...) is actually
+/// slow for a given file, not just "NativeScanner" as one lump sum the way
+/// the Java-side FILE_ENGINE_TIMING/SLOWEST_ENGINE logs already do.
+fn android_log(msg: &str) {
+    use std::ffi::CString;
+    let (Ok(tag), Ok(text)) = (
+        CString::new("HydraDragon-RustTiming"),
+        CString::new(msg),
+    ) else {
+        return;
+    };
+    unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
+}
+
 /// Asset file names expected inside the init directory.
 const YRC_FILES: &[&str] = &[
     "clean_rules_filtered_verified.yrc",
@@ -776,7 +809,9 @@ fn run_scan(
     // vice-versa), and `err` names WHICH engine + the panic location so the root
     // cause is pinpointed, not just swallowed.
     let mut err: Option<String> = None;
+    let t_extract = std::time::Instant::now();
     let buffers = collect_buffers(bytes, file_md5);
+    let extract_ms = t_extract.elapsed().as_millis();
     // Dangerous-permission count from the (in-memory) manifest bytes, so an APK
     // reached only by extraction still gets permission-based detection. Java
     // applies the suspicious(5)/malware(6) threshold.
@@ -835,6 +870,7 @@ fn run_scan(
 
     // Decode + statically analyse every DEX buffer once (strings + method/class
     // names), reused below for both the clamav/YARA text pass and findings.
+    let t_dex = std::time::Instant::now();
     let dex_scans: Vec<Option<dex_scan::DexScan>> = buffers
         .iter()
         .enumerate()
@@ -846,12 +882,14 @@ fn run_scan(
             }
         })
         .collect();
+    let dex_ms = t_dex.elapsed().as_millis();
 
     // Emulate every native library (.so/ELF) buffer once, to reveal strings
     // (e.g. a C2 URL) a decode routine only produces at runtime — see
     // emulate.rs's module doc for the full rationale/safety scope. Bounded
     // per-buffer cost (500ms/200k instructions), and gated by the Settings
     // toggle so it can be turned off entirely if it's ever too slow.
+    let t_emulate = std::time::Instant::now();
     let emulated_strings: Vec<Option<Vec<u8>>> = if NATIVE_EMULATION_ENABLED
         .load(std::sync::atomic::Ordering::Relaxed)
     {
@@ -876,9 +914,11 @@ fn run_scan(
     } else {
         buffers.iter().map(|_| None).collect()
     };
+    let emulate_ms = t_emulate.elapsed().as_millis();
 
     // Each detection carries the APK lineage of the buffer it fired on, so Java
     // can suppress it iff one of those ancestor-APK hashes is whitelisted.
+    let t_clamav = std::time::Instant::now();
     let yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
         Some(clamav) => {
             let opts = ScanOptions {
@@ -946,10 +986,12 @@ fn run_scan(
         }
         None => Vec::new(),
     };
+    let clamav_ms = t_clamav.elapsed().as_millis();
 
     // one-class ML model (independent of clamav's type gate), over the SAME
     // buffers — so an APK nested inside a zip (or any other extracted member)
     // also gets an ML verdict. The strongest signal across all buffers wins.
+    let t_ml = std::time::Instant::now();
     let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest, ml_lineages) = match &engine.model {
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -1010,6 +1052,7 @@ fn run_scan(
         }
         None => (false, 0.0, 0.0, None, Vec::new()),
     };
+    let ml_ms = t_ml.elapsed().as_millis();
 
     // `matches` stays the clamav/YARA names only (display + PUA classification).
     let hits_json = yara_dets
@@ -1040,6 +1083,7 @@ fn run_scan(
     // TLSH against the MalwareBazaar database; a small distance => a likely
     // variant. Tagged with the buffer's APK lineage so a whitelisted APK is
     // still suppressed.
+    let t_tlsh = std::time::Instant::now();
     for (i, b) in buffers.iter().enumerate() {
         if skip_heavy[i] {
             continue;
@@ -1049,6 +1093,32 @@ fn run_scan(
                 detections.push((format!("TLSH.Malware/dist={}", dist), b.apk_lineage.clone()));
             }
         }
+    }
+    let tlsh_ms = t_tlsh.elapsed().as_millis();
+
+    // Per-stage breakdown for THIS file — filter logcat with
+    // `adb logcat -s HydraDragon-RustTiming` to see which Rust-side stage is
+    // actually the bottleneck (extraction, dex analysis, native-code
+    // emulation, clamav/YARA, ML model, or TLSH), not just "NativeScanner" as
+    // one lump sum the way the Java-side FILE_ENGINE_TIMING log already does.
+    let stages = [
+        ("extract", extract_ms),
+        ("dex", dex_ms),
+        ("emulate", emulate_ms),
+        ("clamav_yara", clamav_ms),
+        ("ml", ml_ms),
+        ("tlsh", tlsh_ms),
+    ];
+    let slowest = stages.iter().max_by_key(|(_, ms)| *ms);
+    let breakdown = stages
+        .iter()
+        .map(|(name, ms)| format!("{name}={ms}ms"))
+        .collect::<Vec<_>>()
+        .join(" ");
+    if let Some((slowest_name, slowest_ms)) = slowest {
+        android_log(&format!(
+            "{path} :: {breakdown} :: slowest={slowest_name}({slowest_ms}ms)"
+        ));
     }
 
     let malicious = !detections.is_empty();
