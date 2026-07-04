@@ -419,6 +419,7 @@ public class ScanFragment extends Fragment {
             @Override
             public void onThreatFound(ThreatResult threat) {
                 if (getActivity() == null) return;
+                if (!threat.isThreat()) return;
                 getActivity().runOnUiThread(() -> {
                     if (!foundThreats.contains(threat)) {
                         foundThreats.add(threat);
