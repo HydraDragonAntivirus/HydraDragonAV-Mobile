@@ -7,17 +7,6 @@ fn ninja_available() -> bool {
     Command::new("ninja").arg("--version").spawn().is_ok()
 }
 
-fn which_ninja() -> Option<String> {
-    // Try `which` on Unix, `where` on Windows
-    let cmd = if cfg!(windows) { "where" } else { "which" };
-    let output = Command::new(cmd).arg("ninja").output().ok()?;
-    if output.status.success() {
-        Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
-    } else {
-        None
-    }
-}
-
 fn msvc_cmake_tools_available() -> bool {
     Command::new("cmake").arg("--version").spawn().is_ok() && ninja_available()
 }
@@ -89,6 +78,20 @@ fn build_with_cmake() {
                 config.define("CMAKE_TOOLCHAIN_FILE", tc.to_str().unwrap());
             }
         }
+    }
+
+    // ANDROID_ABI must match TARGET, otherwise the NDK toolchain defaults to
+    // armeabi-v7a and injects -march=armv7-a which conflicts with the
+    // --target=aarch64-linux-android26 in CFLAGS.
+    let android_abi = match target.as_str() {
+        "aarch64-linux-android" => "arm64-v8a",
+        "armv7-linux-androideabi" => "armeabi-v7a",
+        "x86_64-linux-android" => "x86_64",
+        "i686-linux-android" => "x86",
+        _ => "",
+    };
+    if !android_abi.is_empty() {
+        config.define("ANDROID_ABI", android_abi);
     }
 
     // Check for tools and set up configuration
