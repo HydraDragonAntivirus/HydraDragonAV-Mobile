@@ -1,31 +1,21 @@
 package com.hydradragon.antivirus.engine;
 
 import android.content.Context;
-import android.util.Log;
 
-import com.google.common.base.Charsets;
-
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * URL/domain threat lookup. The bloom membership now lives entirely on the
  * native (Rust/fastbloom) side — {@link NativeScanner#scanUrl} — so the domain
  * blooms and the public-suffix list are loaded into NATIVE memory, not the Java
  * heap. This class is a thin wrapper that keeps the Java-side helpers (URL
- * extraction from APK entries, the steamcommunity typosquat guard).
+ * extraction, the steamcommunity typosquat guard).
  */
 public final class UrlThreatScanner {
-
-    private static final String TAG = "UrlThreatScanner";
 
     /** Matches http:// and https:// URLs in arbitrary text. */
     private static final Pattern URL_RE =
@@ -37,9 +27,6 @@ public final class UrlThreatScanner {
      */
     private static final Pattern STEAM_FAKE = Pattern.compile(
             "^https://s[cftz]y?[ace][aemnu][a-z]{1,4}o[mn][a-z]{4,8}[iy][a-z]?\\.com/$");
-
-    /** Per-entry scan cap when reading APK entries (DEX can be large). */
-    private static final int MAX_ENTRY_BYTES = 16 * 1024 * 1024;
 
     private static volatile UrlThreatScanner instance;
 
@@ -110,48 +97,16 @@ public final class UrlThreatScanner {
         return host.isEmpty() ? null : host;
     }
 
-    /**
-     * Extract URLs embedded in an APK (DEX, resources, manifest, native libs)
-     * and look them up. APK entries are zlib-compressed, so we must decompress
-     * each entry before scanning.
-     *
-     * @return map of malicious URL -> category (empty if none).
-     */
-    public Map<String, String> scanApk(String apkPath) {
-        Map<String, String> hits = new LinkedHashMap<>();
-        try (ZipFile zip = new ZipFile(apkPath)) {
-            java.util.Enumeration<? extends ZipEntry> en = zip.entries();
-            while (en.hasMoreElements()) {
-                ZipEntry entry = en.nextElement();
-                if (entry.isDirectory() || entry.getSize() == 0) continue;
-                if (entry.getSize() > MAX_ENTRY_BYTES) continue;
-                try (InputStream is = zip.getInputStream(entry)) {
-                    String text = readAsLatin1(is);
-                    for (String url : extractUrls(text)) {
-                        if (hits.containsKey(url)) continue;
-                        String cat = scanUrl(url);
-                        if (cat != null) hits.put(url, cat);
-                    }
-                } catch (Exception ignore) {
-                }
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "scanApk failed: " + e.getMessage());
-        }
-        return hits;
-    }
-
     /** Read a stream as Latin-1 so every byte maps 1:1 to a char (URLs are ASCII). */
     private static String readAsLatin1(InputStream is) throws Exception {
-        byte[] buf = new byte[64 * 1024];
-        StringBuilder sb = new StringBuilder();
-        int n;
+        int maxBytes = MAX_ENTRY_BYTES;
+        byte[] fullBuf = new byte[maxBytes];
         int total = 0;
-        while ((n = is.read(buf)) != -1) {
-            sb.append(new String(buf, 0, n, Charsets.ISO_8859_1));
+        while (total < maxBytes) {
+            int n = is.read(fullBuf, total, maxBytes - total);
+            if (n < 0) break;
             total += n;
-            if (total > MAX_ENTRY_BYTES) break;
         }
-        return sb.toString();
+        return new String(fullBuf, 0, total, Charsets.ISO_8859_1);
     }
 }

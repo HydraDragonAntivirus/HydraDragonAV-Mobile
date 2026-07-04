@@ -165,8 +165,7 @@ public class ScanEngine {
     public boolean generateRuleForApp(String apkPath, String packageName) {
         if (apkPath == null || !NativeScanner.isReady()) return false;
         try {
-            String md5 = fileMd5(new java.io.File(apkPath));
-            NativeScanner.Verdict v = NativeScanner.scan(apkPath, packageName, md5, true);
+            NativeScanner.Verdict v = NativeScanner.scan(apkPath, packageName, null, true);
             if (v == null || v.generatedRule == null || v.generatedRule.isEmpty()) return false;
             saveGeneratedRule(v);
             return true;
@@ -273,24 +272,6 @@ public class ScanEngine {
      *  its own, so callers must combine it with a trusted-store install. */
     private boolean isPackageWhitelisted(String pkg) {
         return pkg != null && whitelistPackages.contains(pkg);
-    }
-
-    /** Lowercase-hex MD5 of a file's bytes (streamed), or null on error. We
-     *  compute it in Java — the native side never sends raw bytes back, only the
-     *  hash — so a known-good whole file can be cleared BEFORE the expensive
-     *  yara/clamav/ML scan even runs (the "hash first" fast path). Reused natively
-     *  (passed to scan) so the file isn't hashed a second time. */
-    static String fileMd5(java.io.File file) {
-        try (java.io.InputStream in = new java.io.FileInputStream(file)) {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
-            byte[] buf = new byte[64 * 1024];
-            int n;
-            while ((n = in.read(buf)) != -1) md.update(buf, 0, n);
-            StringBuilder sb = new StringBuilder(32);
-            for (byte b : md.digest()) sb.append(Character.forDigit((b >> 4) & 0xF, 16))
-                                         .append(Character.forDigit(b & 0xF, 16));
-            return sb.toString();
-        } catch (Exception e) { return null; }
     }
 
     /** A native detection is a false positive iff one of the APKs in its
@@ -583,13 +564,9 @@ public class ScanEngine {
                 return;
             }
             String path = file.getAbsolutePath();
-            // Hash-first fast path: known-good whole file → skip the scan entirely.
-            // MD5 computed once here and reused natively.
-            String md5 = fileMd5(new java.io.File(path));
-            if (isHashWhitelisted(md5)) return;
             long nativeT0 = android.os.SystemClock.elapsedRealtime();
             NativeScanner.Verdict v = runNativeInterruptible(() ->
-                NativeScanner.scan(path, null, md5, ZeroTrustMode.isEnabled(context)));
+                NativeScanner.scan(path, null, null, ZeroTrustMode.isEnabled(context)));
             long nativeMs = android.os.SystemClock.elapsedRealtime() - nativeT0;
             addTiming("NativeScanner", nativeMs);
             Log.i(TAG, "FILE_ENGINE_TIMING " + file.getName()
@@ -603,21 +580,7 @@ public class ScanEngine {
             List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
             boolean malicious = !live.isEmpty();
 
-            // Static string-based URL scan: extract every http(s) URL straight
-            // from the file's bytes and check it against the malware/phishing
-            // blooms. A FULL URL (with path) is far more specific than a bare
-            // domain — much less collision-prone, so a hit here is stronger
-            // evidence with fewer false positives than domain-only matching,
-            // and it catches malicious/phishing links dropped in plain text
-            // files (not just APKs) that never go through analyzeApp at all.
-            java.util.Map<String, String> urlHits = java.util.Collections.emptyMap();
-            if (DetectionCategories.isEnabled(context, DetectionCategories.URL_STRINGS)) {
-                urlHits = scanFileForMaliciousUrls(file);
-            }
-
-            // Act on a surviving native hit, a dangerous-permission count, or a
-            // malicious/phishing URL string.
-            if (!malicious && v.permissions < 6 && urlHits.isEmpty()) return;
+            if (!malicious && v.permissions < 6) return;
 
             ThreatResult.Builder b = new ThreatResult.Builder(path);
             List<String> reasons = new java.util.ArrayList<>();
@@ -685,24 +648,6 @@ public class ScanEngine {
                 reasons.add(String.format(java.util.Locale.US,
                     "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
             }
-            if (!urlHits.isEmpty()) {
-                boolean anyMalware = false;
-                for (java.util.Map.Entry<String, String> hit : urlHits.entrySet()) {
-                    boolean isPhishing = hit.getValue().contains("PHISHING");
-                    if (!isPhishing) anyMalware = true;
-                    reasons.add((isPhishing ? "🎣 [PHISHING URL] " : "☠️ [MALWARE URL] ")
-                        + hit.getValue() + ": " + hit.getKey());
-                }
-                // Malware URL takes priority over phishing if both kinds of hit
-                // are present in the same file. A full-URL bloom hit is treated
-                // as certain (100), same weight as a native signature match —
-                // see DetectionCategories.URL_STRINGS' javadoc for why a full
-                // URL (not just a domain) is specific enough to earn that.
-                riskScore = 100;
-                b.setThreatType(anyMalware
-                    ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
-                    : com.hydradragon.antivirus.model.ThreatResult.ThreatType.PHISHING);
-            }
             if (v.md5 != null && !v.md5.isEmpty()) {
                 reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
             }
@@ -716,36 +661,6 @@ public class ScanEngine {
                 if (callback != null) callback.onThreatFound(r);
             }
         } catch (Throwable t) { /* degrade gracefully */ }
-    }
-
-    /** Read a bounded prefix of {@code file} as text and check every embedded
-     *  http(s) URL against the native malware/phishing URL blooms. Bounded
-     *  read (not the whole file) keeps this cheap even for large files — a
-     *  malicious/phishing link is a short ASCII string, so it's virtually
-     *  always found well within the first few MB regardless of overall file
-     *  size.
-     *  @return map of malicious URL -> category (empty if none / unreadable). */
-    private static final int URL_SCAN_MAX_BYTES = 4 * 1024 * 1024;
-
-    private java.util.Map<String, String> scanFileForMaliciousUrls(java.io.File file) {
-        java.util.Map<String, String> hits = new java.util.LinkedHashMap<>();
-        try (java.io.InputStream in = new java.io.FileInputStream(file)) {
-            byte[] buf = new byte[64 * 1024];
-            StringBuilder sb = new StringBuilder();
-            int n, total = 0;
-            while ((n = in.read(buf)) != -1) {
-                sb.append(new String(buf, 0, n, java.nio.charset.StandardCharsets.ISO_8859_1));
-                total += n;
-                if (total >= URL_SCAN_MAX_BYTES) break;
-            }
-            UrlThreatScanner scanner = UrlThreatScanner.get(context);
-            for (String url : UrlThreatScanner.extractUrls(sb.toString())) {
-                if (hits.containsKey(url)) continue;
-                String cat = scanner.scanUrl(url);
-                if (cat != null) hits.put(url, cat);
-            }
-        } catch (Throwable ignore) { }
-        return hits;
     }
 
     // ──────────────────────── FULL-SCAN EXTRA PASSES ────────────────────────
@@ -797,20 +712,13 @@ public class ScanEngine {
                 if (app.packageName != null && (app.packageName.equals(context.getPackageName())
                         || seen.contains(app.packageName)
                         || photonCache.containsKey(app.packageName))) continue;
-                // Size check BEFORE hashing — an oversized file shouldn't pay
-                // for a full-file MD5 read just to be skipped a moment later.
                 if (!MaxScanFileSize.isWithinLimit(context, new java.io.File(app.sourceDir))) {
                     Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + app.packageName);
                     continue;
                 }
-                // Hash-first fast path: known-good APK (MD5 match) → skip.
-                // (No package-name skip — a package name is spoofable.)
-                // MD5 computed once here and reused natively.
-                String appMd5 = fileMd5(new java.io.File(app.sourceDir));
-                if (isHashWhitelisted(appMd5)) continue;
                 long nativeT0 = android.os.SystemClock.elapsedRealtime();
                 NativeScanner.Verdict v = runNativeInterruptible(() ->
-                    NativeScanner.scan(app.sourceDir, app.packageName, appMd5, ZeroTrustMode.isEnabled(context)));
+                    NativeScanner.scan(app.sourceDir, app.packageName, null, ZeroTrustMode.isEnabled(context)));
                 long nativeMs = android.os.SystemClock.elapsedRealtime() - nativeT0;
                 addTiming("NativeScanner", nativeMs);
                 Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
@@ -1077,13 +985,10 @@ public class ScanEngine {
                 addTiming("CodeAnalyzer", codeMs);
 
                 // Native engine: clamav (type-gated YARA + signatures) + ML model.
-                // Hash-first: a known-good (whitelisted) APK skips the whole native
-                // block. The file MD5 is computed once here and reused natively.
-                // Size is checked BEFORE hashing — an oversized file shouldn't pay
-                // for a full-file MD5 read just to be skipped a moment later.
+                // The native scanner (Rust) reads the file once and computes MD5
+                // from bytes already in memory — no need for a separate Java read.
                 boolean withinSizeLimit = apkPath != null
                     && MaxScanFileSize.isWithinLimit(context, new java.io.File(apkPath));
-                String apkMd5 = withinSizeLimit ? fileMd5(new java.io.File(apkPath)) : null;
                 boolean nativeCorroborated = false;
                 if (apkPath == null) {
                     Log.d(TAG, "NATIVE-SKIP[apkPath null] " + app.packageName);
@@ -1097,15 +1002,11 @@ public class ScanEngine {
                     Log.d(TAG, "NATIVE-SKIP[engine not ready] " + app.packageName);
                     Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
                         + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped slowest=CodeAnalyzer");
-                } else if (isHashWhitelisted(apkMd5)) {
-                    Log.d(TAG, "NATIVE-SKIP[hash-whitelisted] " + app.packageName + " md5=" + apkMd5);
-                    Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
-                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped(hash-whitelisted) slowest=CodeAnalyzer");
                 }
-                if (withinSizeLimit && NativeScanner.isReady() && !isHashWhitelisted(apkMd5)) {
+                if (withinSizeLimit && NativeScanner.isReady()) {
                     long nativeT0 = android.os.SystemClock.elapsedRealtime();
                     NativeScanner.Verdict v = runNativeInterruptible(() ->
-                        NativeScanner.scan(apkPath, app.packageName, apkMd5, ZeroTrustMode.isEnabled(context)));
+                        NativeScanner.scan(apkPath, app.packageName, null, ZeroTrustMode.isEnabled(context)));
                     long nativeMs = android.os.SystemClock.elapsedRealtime() - nativeT0;
                     addTiming("NativeScanner", nativeMs);
                     // Per-FILE breakdown (not the cumulative session totals

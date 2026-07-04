@@ -65,18 +65,27 @@ public class CodeAnalyzer {
             ZipFile zipFile = new ZipFile(apkFile);
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
-            StringBuilder bytecodeContent = new StringBuilder();
+            byte[] buffer = new byte[204800];
+            int totalDexSize = 0;
             int dexCount = 0;
 
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
                 if (entry.getName().startsWith("classes") && entry.getName().endsWith(".dex")) {
                     dexCount++;
+                    totalDexSize += Math.min((int) entry.getSize(), 204800);
+                }
+            }
+
+            StringBuilder bytecodeContent = new StringBuilder(Math.max(totalDexSize, 128));
+            entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (entry.getName().startsWith("classes") && entry.getName().endsWith(".dex")) {
                     java.io.InputStream is = zipFile.getInputStream(entry);
-                    byte[] buffer = new byte[Math.min((int) entry.getSize(), 204800)];
-                    int read = is.read(buffer);
+                    int read = is.read(buffer, 0, Math.min((int) entry.getSize(), 204800));
                     is.close();
-                    bytecodeContent.append(new String(buffer, 0, read, "ISO-8859-1"));
+                    if (read > 0) bytecodeContent.append(new String(buffer, 0, read, "ISO-8859-1"));
                 }
             }
             zipFile.close();

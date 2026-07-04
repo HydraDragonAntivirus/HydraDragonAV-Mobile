@@ -24,6 +24,7 @@ public class InstallReceiver extends BroadcastReceiver {
             android.net.Uri data = intent.getData();
             if (data == null) return;
             String packageName = data.getEncodedSchemeSpecificPart();
+            if (packageName == null || packageName.isEmpty()) return;
             Log.i(TAG, "On-Install scan triggered for: " + packageName);
 
             // New install / update -> drop any stale cached result so this exact
@@ -33,7 +34,35 @@ public class InstallReceiver extends BroadcastReceiver {
             new Thread(() -> {
                 try {
                     PackageManager pm = context.getPackageManager();
-                    ApplicationInfo appInfo = pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA);
+
+                    // Retry getApplicationInfo with backoff — on some devices/Android
+                    // versions the package may not be fully visible yet when the
+                    // broadcast arrives (especially for ADB-installed packages).
+                    ApplicationInfo appInfo = null;
+                    int attempt = 0;
+                    while (appInfo == null && attempt < 5) {
+                        try {
+                            appInfo = pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA);
+                        } catch (PackageManager.NameNotFoundException e) {
+                            attempt++;
+                            if (attempt >= 5) {
+                                // Last resort: scan through all installed apps
+                                for (ApplicationInfo ai : pm.getInstalledApplications(PackageManager.GET_META_DATA)) {
+                                    if (packageName.equals(ai.packageName)) {
+                                        appInfo = ai;
+                                        break;
+                                    }
+                                }
+                                if (appInfo == null) {
+                                    Log.e(TAG, "Package not found after retries: " + packageName);
+                                    return;
+                                }
+                            } else {
+                                try { Thread.sleep(500L * attempt); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return; }
+                            }
+                        }
+                    }
+
                     AIEngine ai = new AIEngine(context);
                     ScanEngine engine = new ScanEngine(context, ai);
                     ThreatResult result = engine.analyzeSingleApp(appInfo, pm, false);
