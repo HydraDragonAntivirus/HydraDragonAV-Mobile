@@ -66,10 +66,10 @@ public final class StrandHoggGuard {
         // Screen pinning (App Pinning / lock task mode) legitimately changes
         // how the system reports this task — not a hijack, the user pinned
         // it themselves. Skip the check entirely while pinned.
-        if (activity.isInLockTaskMode()) return;
         try {
             ActivityManager am = activity.getSystemService(ActivityManager.class);
             if (am == null) return;
+            if (am.isInLockTaskMode()) return;
             int taskId = activity.getTaskId();
             List<ActivityManager.AppTask> tasks = am.getAppTasks();
             for (ActivityManager.AppTask t : tasks) {
