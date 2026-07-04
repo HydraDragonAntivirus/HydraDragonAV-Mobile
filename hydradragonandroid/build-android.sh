@@ -12,6 +12,30 @@
 #   ./build-android.sh            # builds all 4 ABIs, release
 set -euo pipefail
 
+# ---- Prerequisite checks ------------------------------------------------
+fail="" msg() { echo "  * $1"; fail=1; }
+
+command -v cmake &>/dev/null || msg "cmake is required (sudo apt install cmake)"
+command -v ninja &>/dev/null || msg "ninja is required (sudo apt install ninja-build)"
+command -v cargo &>/dev/null || msg "Rust/Cargo is required (rustup)"
+
+if ! cargo ndk --version &>/dev/null 2>&1; then
+  msg "cargo-ndk is required (cargo install cargo-ndk)"
+fi
+
+if [ -z "${ANDROID_NDK_HOME:-}" ]; then
+  msg "ANDROID_NDK_HOME is not set (export ANDROID_NDK_HOME=~/Android/Sdk/ndk/<version>)"
+elif [ ! -d "$ANDROID_NDK_HOME" ]; then
+  msg "ANDROID_NDK_HOME ($ANDROID_NDK_HOME) does not exist"
+fi
+
+for target in aarch64-linux-android armv7-linux-androideabi \
+              x86_64-linux-android i686-linux-android; do
+  rustup target list --installed | grep -qx "$target" || msg "rustup target add $target"
+done
+
+[ -n "$fail" ] && { echo "Missing prerequisites:" >&2; echo "$fail"; exit 1; }
+
 cd "$(dirname "$0")"
 
 JNILIBS="../app/src/main/jniLibs"

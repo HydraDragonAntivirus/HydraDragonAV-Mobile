@@ -30,11 +30,20 @@ Verdict JSON:
 
 ## Prerequisites
 
-On Linux (including WSL), `bindgen` requires `libclang`. Install it with:
+On Linux (including WSL), `bindgen` requires `libclang`. The native-code
+emulation (Unicorn Engine) also needs `cmake` and `ninja-build`. Install with:
 
 ```sh
-sudo apt-get install -y libclang-dev   # Debian/Ubuntu
+sudo apt-get install -y libclang-dev cmake ninja-build   # Debian/Ubuntu
 ```
+
+**`ANDROID_NDK_HOME`** must be set to your NDK path (e.g. `~/Android/Sdk/ndk/<version>`),
+otherwise the Unicorn Engine CMake build cannot find the Android toolchain:
+
+```sh
+export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk/27.3.13750724
+```
+Add this to `~/.bashrc` to make it permanent.
 
 If the build still fails with `Unable to find libclang`, set:
 
@@ -47,8 +56,9 @@ export LIBCLANG_PATH=/usr/lib/llvm-<version>/lib
 ```sh
 rustup target add aarch64-linux-android armv7-linux-androideabi \
                   x86_64-linux-android i686-linux-android
-cargo install cargo-ndk            # needs Android NDK + ANDROID_NDK_HOME
-./build-android.sh                 # -> app/src/main/jniLibs/<abi>/libhydradragonandroid.so
+cargo install cargo-ndk
+export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk/<version>   # required!
+./build-android.sh                                          # -> app/src/main/jniLibs/<abi>/libhydradragonandroid.so
 ```
 
 Gradle bundles `jniLibs/` and `app/src/main/assets/*.yrc|apk_model.json`
