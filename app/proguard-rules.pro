@@ -24,3 +24,12 @@
 
 # MPAndroidChart.
 -keep class com.github.mikephil.charting.** { *; }
+
+# Room database _Impl classes (loaded by reflection — name-pattern matching is brittle,
+# so we keep the exact known classes by fully-qualified name).
+-keep class androidx.work.impl.WorkDatabase_Impl { *; }
+
+# ML Kit / Firebase component registrars (loaded via ComponentDiscovery reflection).
+-keep class com.google.mlkit.common.internal.CommonComponentRegistrar { *; }
+-keep class com.google.mlkit.vision.text.internal.TextRegistrar { *; }
+-keep class com.google.mlkit.vision.common.internal.VisionCommonRegistrar { *; }
