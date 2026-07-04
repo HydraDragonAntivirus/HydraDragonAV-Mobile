@@ -18,6 +18,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,6 +42,9 @@ public class DnsVpnService extends VpnService {
 
     private static final String TAG = "DnsVpnService";
     private static final String CH_ID = "hydra_webshield";
+    /** Intent extra to enable full-traffic capture mode (not just DNS). */
+    public static final String EXTRA_FULL_CAPTURE = "full_capture";
+
     /** Explicit stop command — delivered via {@code startService(intent)} so the
      *  running service tears the tunnel down deterministically (more reliable than
      *  {@code stopService()} alone for a sticky foreground VPN). */
@@ -59,6 +64,73 @@ public class DnsVpnService extends VpnService {
     /** CIDR blacklist for resolved-IP sinkholing (loaded once). */
     private com.hydradragon.antivirus.engine.CidrBlacklist cidr;
 
+    // ── Full-traffic capture mode (Suricata-style payload matching) ──────────
+    /** When true, route ALL traffic through the tunnel and capture payloads. */
+    private static volatile boolean fullCapture = false;
+
+    /** Ring buffer of captured packet payloads (max entries). */
+    private static final int MAX_CAPTURED_PACKETS = 50;
+    private static final int MAX_PAYLOAD_CAPTURE = 2048;
+    private static final java.util.List<CapturedPacket> capturedPackets = new ArrayList<>();
+
+    /** A single captured packet entry. */
+    public static class CapturedPacket {
+        public final String srcIp;
+        public final String dstIp;
+        public final int srcPort;
+        public final int dstPort;
+        public final String protocol;
+        public final byte[] payload;
+        public final String payloadB64;
+        CapturedPacket(String srcIp, String dstIp, int srcPort, int dstPort,
+                       String protocol, byte[] payload) {
+            this.srcIp = srcIp;
+            this.dstIp = dstIp;
+            this.srcPort = srcPort;
+            this.dstPort = dstPort;
+            this.protocol = protocol;
+            this.payload = payload;
+            int capLen = Math.min(payload.length, MAX_PAYLOAD_CAPTURE);
+            byte[] cap = new byte[capLen];
+            System.arraycopy(payload, 0, cap, 0, capLen);
+            this.payloadB64 = Base64.getEncoder().encodeToString(cap);
+        }
+    }
+
+    /** Enable or disable full-traffic capture mode. */
+    public static void setFullCapture(boolean enabled) {
+        fullCapture = enabled;
+    }
+
+    public static boolean isFullCapture() {
+        return fullCapture;
+    }
+
+    /** Serialize captured packets to a JSON array for the hydradragon module. */
+    public static synchronized String getCapturedPacketsJson() {
+        StringBuilder sb = new StringBuilder("[");
+        boolean first = true;
+        for (CapturedPacket p : capturedPackets) {
+            if (!first) sb.append(",");
+            first = false;
+            sb.append("{\"src_ip\":\"").append(jsonEscape(p.srcIp))
+              .append("\",\"dst_ip\":\"").append(jsonEscape(p.dstIp))
+              .append("\",\"src_port\":").append(p.srcPort)
+              .append(",\"dst_port\":").append(p.dstPort)
+              .append(",\"protocol\":\"").append(jsonEscape(p.protocol))
+              .append("\",\"payload_b64\":\"").append(p.payloadB64).append("\"}");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private static String jsonEscape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // Explicit stop from the Settings toggle: tear down and don't come back.
@@ -66,6 +138,9 @@ public class DnsVpnService extends VpnService {
             teardown();
             stopSelf();
             return START_NOT_STICKY;
+        }
+        if (intent != null) {
+            fullCapture = intent.getBooleanExtra(EXTRA_FULL_CAPTURE, false);
         }
         if (running) return START_NOT_STICKY;
         startForegroundShield();
@@ -107,11 +182,21 @@ public class DnsVpnService extends VpnService {
                 .addAddress(TUN4, 32)
                 .addAddress(TUN6, 128)
                 .addDnsServer(DNS4)
-                .addDnsServer(DNS6)
-                .addRoute(DNS4, 32)     // ONLY DNS goes through the tunnel
-                .addRoute(DNS6, 128);
+                .addDnsServer(DNS6);
+            if (fullCapture) {
+                // Full-traffic capture: route everything through the tunnel.
+                b.addRoute("0.0.0.0", 0);
+                b.addRoute("::", 0);
+            } else {
+                // DNS-only mode: only route DNS traffic.
+                b.addRoute(DNS4, 32);
+                b.addRoute(DNS6, 128);
+            }
             try { b.addDisallowedApplication(getPackageName()); } catch (Exception ignore) {}
             vpnInterface = b.establish();
+            if (fullCapture && vpnInterface != null) {
+                synchronized (capturedPackets) { capturedPackets.clear(); }
+            }
             return vpnInterface != null;
         } catch (Throwable t) {
             Log.e(TAG, "establish failed", t);
@@ -158,6 +243,14 @@ public class DnsVpnService extends VpnService {
             } else {
                 return;
             }
+
+            if (fullCapture) {
+                // Full-traffic capture: store the packet payload and forward.
+                capturePacket(p, len, version, ipHdr, srcOff, dstOff, proto);
+                writeTun(slice(p, 0, len));
+                return;
+            }
+
             int trans = ipHdr;
             int dstPort = u16(p, trans + 2);
             if (dstPort != 53) return;
@@ -170,6 +263,44 @@ public class DnsVpnService extends VpnService {
         } catch (Exception e) {
             Log.w(TAG, "packet error: " + e.getMessage());
         }
+    }
+
+    /** Capture a packet payload into the ring buffer for hydradragon matching. */
+    private void capturePacket(byte[] p, int len, int ver, int ipHdr,
+                                int srcOff, int dstOff, int proto) {
+        try {
+            int addrLen = (ver == 4) ? 4 : 16;
+            byte[] srcBytes = new byte[addrLen];
+            byte[] dstBytes = new byte[addrLen];
+            System.arraycopy(p, srcOff, srcBytes, 0, addrLen);
+            System.arraycopy(p, dstOff, dstBytes, 0, addrLen);
+            String srcIp = InetAddress.getByAddress(srcBytes).getHostAddress();
+            String dstIp = InetAddress.getByAddress(dstBytes).getHostAddress();
+            int srcPort = u16(p, ipHdr);
+            int dstPort = u16(p, ipHdr + 2);
+            String protoName;
+            if (proto == 6) protoName = "TCP";
+            else if (proto == 17) protoName = "UDP";
+            else protoName = "IP_" + proto;
+            int payloadOff = ipHdr;
+            if (proto == 6) {
+                int dataOff = ((p[ipHdr + 12] & 0xF0) >> 4) * 4;
+                payloadOff = ipHdr + dataOff;
+            } else if (proto == 17) {
+                payloadOff = ipHdr + 8;
+            }
+            int payloadLen = len - payloadOff;
+            if (payloadLen <= 0) return;
+            byte[] payload = new byte[payloadLen];
+            System.arraycopy(p, payloadOff, payload, 0, payloadLen);
+            CapturedPacket cp = new CapturedPacket(srcIp, dstIp, srcPort, dstPort, protoName, payload);
+            synchronized (capturedPackets) {
+                capturedPackets.add(cp);
+                while (capturedPackets.size() > MAX_CAPTURED_PACKETS) {
+                    capturedPackets.remove(0);
+                }
+            }
+        } catch (Exception ignore) {}
     }
 
     // ── UDP DNS ─────────────────────────────────────────────────────────────

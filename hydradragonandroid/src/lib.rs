@@ -67,6 +67,7 @@ const YRC_FILES: &[&str] = &[
     "valhalla-rules_filtered_verified.yrc",
     "AndroidOS_filtered.yrc",
     "hips_rules_filtered_verified.yrc",
+    "emerging-all.yrc",
 ];
 const MODEL_BIN: &str = "apk_model.bin";
 /// Malware TLSH similarity database (one T1 digest per line), built from the

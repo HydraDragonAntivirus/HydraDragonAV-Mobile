@@ -322,6 +322,16 @@ public final class HipsMonitor {
             root.put("network_events", netArr);
             networkEvents.clear();
 
+            // Captured packets (VpnService full-tunnel mode) for Suricata
+            // payload matching via hydradragon.network.payload_hex.
+            String pktsJson = com.hydradragon.antivirus.service.DnsVpnService.getCapturedPacketsJson();
+            if (!pktsJson.isEmpty() && !pktsJson.equals("[]")) {
+                JSONObject netObj = root.optJSONObject("network");
+                if (netObj == null) netObj = new JSONObject();
+                netObj.put("packets", new JSONArray(pktsJson));
+                root.put("network", netObj);
+            }
+
             // StrandHogg events
             JSONArray shArr = new JSONArray();
             for (StrandHoggEvent e : strandhoggEvents) {
