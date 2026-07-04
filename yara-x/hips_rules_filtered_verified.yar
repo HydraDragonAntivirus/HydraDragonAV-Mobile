@@ -246,5 +246,5 @@ rule HIPS_Foreground_Threat
     category = "FOREGROUND"
     suggestion = "warn"
   condition:
-    hydradragon.behavior_flagged(hydradragon.foreground_package(/./)) >= 1
+    hydradragon.foreground_package(/./) >= 1 and hydradragon.behavior_flagged(/./) >= 1
 }

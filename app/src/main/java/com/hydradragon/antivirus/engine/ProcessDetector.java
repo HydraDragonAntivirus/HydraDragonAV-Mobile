@@ -176,29 +176,54 @@ public class ProcessDetector {
         return builder.build();
     }
 
+    private List<ProcessInfo> cachedProcScan = null;
+    private long lastProcScanMs = 0;
+    private static final long PROC_SCAN_TTL_MS = 300_000;
+
     /**
      * /proc/ filesystem'i tara (gizli processler için)
      */
     private List<ProcessInfo> scanProcFilesystem() {
+        long now = System.currentTimeMillis();
+        if (cachedProcScan != null && (now - lastProcScanMs) < PROC_SCAN_TTL_MS) {
+            return cachedProcScan;
+        }
+
         List<ProcessInfo> processes = new ArrayList<>();
         File procDir = new File("/proc");
 
         if (!procDir.exists() || !procDir.canRead()) {
             Log.d(TAG, "/proc okunamadı (root gerekebilir)");
+            cachedProcScan = processes;
+            lastProcScanMs = now;
             return processes;
         }
 
-        File[] procEntries = procDir.listFiles();
-        if (procEntries == null) return processes;
+        File[] procEntries;
+        try {
+            procEntries = procDir.listFiles();
+        } catch (SecurityException e) {
+            Log.w(TAG, "/proc listeleme reddedildi: " + e.getMessage());
+            cachedProcScan = processes;
+            lastProcScanMs = now;
+            return processes;
+        }
+        if (procEntries == null) {
+            cachedProcScan = processes;
+            lastProcScanMs = now;
+            return processes;
+        }
 
         for (File entry : procEntries) {
-            if (!entry.isDirectory()) continue;
             String name = entry.getName();
-
-            // Sayısal klasörler PID'leri temsil eder
             if (!name.matches("\\d+")) continue;
 
-            int pid = Integer.parseInt(name);
+            int pid;
+            try {
+                pid = Integer.parseInt(name);
+            } catch (NumberFormatException e) {
+                continue;
+            }
             String processName = readProcessName(pid);
             long memoryKb = readProcessMemory(pid);
 
@@ -228,6 +253,8 @@ public class ProcessDetector {
             processes.add(builder.build());
         }
 
+        cachedProcScan = processes;
+        lastProcScanMs = now;
         return processes;
     }
 

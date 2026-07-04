@@ -32,12 +32,18 @@ fn main() {
     let out_dir = if check_only {
         None
     } else {
-        let dir = Path::new(pos_args[2]);
-        fs::create_dir_all(dir).unwrap_or_else(|e| {
+        let dir = if pos_args.len() >= 3 {
+            Path::new(pos_args[2]).to_path_buf()
+        } else {
+            let default_out = src_dir.join("compiled");
+            eprintln!("INFO: no output directory given, defaulting to {}", default_out.display());
+            default_out
+        };
+        fs::create_dir_all(&dir).unwrap_or_else(|e| {
             eprintln!("ERROR: cannot create output directory: {}", e);
             std::process::exit(1);
         });
-        Some(dir.to_path_buf())
+        Some(dir)
     };
 
     let mut yar_files: Vec<PathBuf> = Vec::new();

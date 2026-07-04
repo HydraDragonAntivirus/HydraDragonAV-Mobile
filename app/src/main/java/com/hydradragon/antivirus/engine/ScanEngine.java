@@ -795,7 +795,8 @@ public class ScanEngine {
                         || app.sourceDir.startsWith("/system/") || app.sourceDir.startsWith("/vendor/")
                         || app.sourceDir.startsWith("/product/") || app.sourceDir.startsWith("/apex/")) continue;
                 if (app.packageName != null && (app.packageName.equals(context.getPackageName())
-                        || seen.contains(app.packageName))) continue;
+                        || seen.contains(app.packageName)
+                        || photonCache.containsKey(app.packageName))) continue;
                 // Size check BEFORE hashing — an oversized file shouldn't pay
                 // for a full-file MD5 read just to be skipped a moment later.
                 if (!MaxScanFileSize.isWithinLimit(context, new java.io.File(app.sourceDir))) {

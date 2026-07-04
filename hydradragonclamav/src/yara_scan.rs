@@ -109,7 +109,9 @@ impl YaraEngine {
                 // `Rules` it borrows from.
                 let rules_static: &'static yara_x::Rules =
                     unsafe { std::mem::transmute::<&yara_x::Rules, &'static yara_x::Rules>(&self.rules) };
-                yara_x::Scanner::new(rules_static)
+                let mut scanner = yara_x::Scanner::new(rules_static);
+                scanner.fast_scan(true);
+                scanner
             });
 
             // Feed any per-module JSON reports (androguard manifest report,
