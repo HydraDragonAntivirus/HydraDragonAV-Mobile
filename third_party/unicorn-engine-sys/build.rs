@@ -7,6 +7,17 @@ fn ninja_available() -> bool {
     Command::new("ninja").arg("--version").spawn().is_ok()
 }
 
+fn which_ninja() -> Option<String> {
+    // Try `which` on Unix, `where` on Windows
+    let cmd = if cfg!(windows) { "where" } else { "which" };
+    let output = Command::new(cmd).arg("ninja").output().ok()?;
+    if output.status.success() {
+        Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    } else {
+        None
+    }
+}
+
 fn msvc_cmake_tools_available() -> bool {
     Command::new("cmake").arg("--version").spawn().is_ok() && ninja_available()
 }
@@ -56,6 +67,30 @@ fn build_with_cmake() {
     // Initialize configuration
     let mut config = cmake::Config::new(uc_dir);
 
+    // Android NDK auto-detection: derive CMAKE_TOOLCHAIN_FILE from the CC path
+    // (cargo-ndk sets CC to the NDK clang but does NOT export CMAKE_TOOLCHAIN_FILE).
+    let target = env::var("TARGET").unwrap_or_default();
+    if target.contains("android") || compiler.path().to_string_lossy().contains("ndk") {
+        if let Ok(cc_path) = env::var(format!("CC_{}", target.replace('-', "_"))) {
+            let cc = PathBuf::from(&cc_path);
+            // NDK clang lives at $NDK/toolchains/llvm/prebuilt/<host>/bin/clang
+            for ancestor in cc.ancestors() {
+                let tc = ancestor.join("build/cmake/android.toolchain.cmake");
+                if tc.exists() {
+                    config.define("CMAKE_TOOLCHAIN_FILE", tc.to_str().unwrap());
+                    break;
+                }
+            }
+        }
+        // Also try ANDROID_NDK_HOME as fallback
+        if let Ok(ndk) = env::var("ANDROID_NDK_HOME") {
+            let tc = PathBuf::from(ndk).join("build/cmake/android.toolchain.cmake");
+            if tc.exists() {
+                config.define("CMAKE_TOOLCHAIN_FILE", tc.to_str().unwrap());
+            }
+        }
+    }
+
     // Check for tools and set up configuration
     let has_ninja = if compiler.is_like_msvc() {
         // MSVC-specific setup
@@ -74,8 +109,12 @@ fn build_with_cmake() {
     };
 
     // Configure build generator
-    if has_ninja {
+    if has_ninja && !target.contains("android") {
         config.generator("Ninja");
+    } else {
+        // Android cross-compilation: ninja PATH issues are common with cargo-ndk;
+        // "Unix Makefiles" avoids the CMAKE_MAKE_PROGRAM problem entirely.
+        config.generator("Unix Makefiles");
     }
 
     let mut archs = String::new();
