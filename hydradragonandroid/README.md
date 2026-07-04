@@ -28,6 +28,20 @@ Verdict JSON:
  "ml":{"malicious":false,"jaccard":0.61,"anomaly":0.42,"nearest":"<sha>"}}
 ```
 
+## Prerequisites
+
+On Linux (including WSL), `bindgen` requires `libclang`. Install it with:
+
+```sh
+sudo apt-get install -y libclang-dev   # Debian/Ubuntu
+```
+
+If the build still fails with `Unable to find libclang`, set:
+
+```sh
+export LIBCLANG_PATH=/usr/lib/llvm-<version>/lib
+```
+
 ## Build the .so
 
 ```sh
