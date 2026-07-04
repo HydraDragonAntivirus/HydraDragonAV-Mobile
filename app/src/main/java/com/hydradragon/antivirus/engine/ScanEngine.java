@@ -70,6 +70,12 @@ public class ScanEngine {
     public static void clearCache() {
         photonCache.clear();
     }
+
+    private boolean photonCacheEnabled() {
+        return context.getSharedPreferences("hydra_prefs", 0)
+            .getBoolean("scan_cache_enabled", true);
+    }
+
     private ScanCallback callback;
     // Per-engine cumulative timing (ms) for the current/last scan — used to
     // find the slowest engine. Reset at the start of each scanAllApps() run.
@@ -116,8 +122,11 @@ public class ScanEngine {
      *  in flight are ABANDONED (see runNativeInterruptible), not killed —
      *  they keep running to completion on their own thread, but the scan loop
      *  stops waiting for them almost immediately instead of blocking until
-     *  they return. */
-    public void cancelScan() { cancelRequested = true; }
+     *  they return. analyzeApp will skip caching the current app's result
+     *  when cancelRequested is true, so the next scan re-evaluates it fresh. */
+    public void cancelScan() {
+        cancelRequested = true;
+    }
 
     /** Whether a stop was requested for the current/last scan. */
     public boolean isCancelled() { return cancelRequested; }
@@ -843,7 +852,8 @@ public class ScanEngine {
     }
 
     public ThreatResult analyzeApp(ApplicationInfo app, PackageManager pm, boolean isApkFile) {
-        if (app.packageName != null && photonCache.containsKey(app.packageName)) {
+        if (app.packageName != null && photonCache.containsKey(app.packageName)
+                && photonCacheEnabled()) {
             Log.i(TAG, "Photon Cache Hit: " + app.packageName);
             return photonCache.get(app.packageName);
         }
@@ -1224,7 +1234,7 @@ public class ScanEngine {
         builder.setApkPath(app.sourceDir);
         
         ThreatResult finalRes = builder.build();
-        if (app.packageName != null) photonCache.put(app.packageName, finalRes);
+        if (!cancelRequested && app.packageName != null) photonCache.put(app.packageName, finalRes);
         return finalRes;
     }
 }

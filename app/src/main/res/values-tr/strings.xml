@@ -280,6 +280,10 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="sms_open_permissions_toast">Bunu kapatmak için İzinler &gt; SMS bölümünü açın</string>
     <string name="sms_scanning_enabled">SMS taraması etkinleştirildi</string>
     <string name="sms_permission_denied">SMS izni reddedildi</string>
+    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
+    <string name="scan_cache_on_toast">Scan Cache ON</string>
+    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+
     <string name="dashboard_firewall_active">Güvenlik Duvarı Motoru AKTİF</string>
     <string name="dashboard_system_secure">Sistem Güvende</string>
     <string name="dashboard_status_secure_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n• %1$s</string>

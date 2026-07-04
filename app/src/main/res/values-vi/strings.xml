@@ -261,6 +261,10 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="sms_open_permissions_toast">Mở Quyền &gt; SMS để tắt tính năng này</string>
     <string name="sms_scanning_enabled">Đã bật quét SMS</string>
     <string name="sms_permission_denied">Quyền SMS bị từ chối</string>
+    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
+    <string name="scan_cache_on_toast">Scan Cache ON</string>
+    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+
     <string name="dashboard_firewall_active">Công cụ Tường lửa ĐANG HOẠT ĐỘNG</string>
     <string name="dashboard_system_secure">Hệ thống An toàn</string>
     <string name="dashboard_status_secure_desc">• Giám sát đang hoạt động\n• Đã áp dụng quy tắc mạng\n• %1$s</string>

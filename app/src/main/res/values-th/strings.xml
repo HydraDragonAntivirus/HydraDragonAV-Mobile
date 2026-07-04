@@ -261,6 +261,10 @@
     <string name="sms_open_permissions_toast">เปิดสิทธิ์ &gt; SMS เพื่อปิดสิ่งนี้</string>
     <string name="sms_scanning_enabled">เปิดใช้งานการสแกน SMS แล้ว</string>
     <string name="sms_permission_denied">สิทธิ์ SMS ถูกปฏิเสธ</string>
+    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
+    <string name="scan_cache_on_toast">Scan Cache ON</string>
+    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+
     <string name="dashboard_firewall_active">เอนจิ้นไฟร์วอลล์ทำงานอยู่</string>
     <string name="dashboard_system_secure">ระบบปลอดภัย</string>
     <string name="dashboard_status_secure_desc">• การตรวจสอบทำงานอยู่\n• ใช้กฎเครือข่ายแล้ว\n• %1$s</string>

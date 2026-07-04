@@ -261,6 +261,10 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="sms_open_permissions_toast">Open Machtigingen &gt; Sms om dit uit te schakelen</string>
     <string name="sms_scanning_enabled">Sms-scannen ingeschakeld</string>
     <string name="sms_permission_denied">Sms-toestemming geweigerd</string>
+    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
+    <string name="scan_cache_on_toast">Scan Cache ON</string>
+    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+
     <string name="dashboard_firewall_active">Firewall-engine ACTIEF</string>
     <string name="dashboard_system_secure">Systeem beveiligd</string>
     <string name="dashboard_status_secure_desc">• Bewaking actief\n• Netwerkregels afgedwongen\n• %1$s</string>

@@ -261,6 +261,10 @@
     <string name="sms_open_permissions_toast">इसे बंद करने के लिए अनुमतियां &gt; SMS खोलें</string>
     <string name="sms_scanning_enabled">SMS स्कैनिंग सक्षम है</string>
     <string name="sms_permission_denied">SMS अनुमति अस्वीकृत</string>
+    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
+    <string name="scan_cache_on_toast">Scan Cache ON</string>
+    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+
     <string name="dashboard_firewall_active">फ़ायरवॉल इंजन सक्रिय है</string>
     <string name="dashboard_system_secure">सिस्टम सुरक्षित है</string>
     <string name="dashboard_status_secure_desc">• निगरानी सक्रिय\n• नेटवर्क नियम लागू\n• %1$s</string>

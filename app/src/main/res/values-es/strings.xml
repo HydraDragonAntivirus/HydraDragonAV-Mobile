@@ -261,6 +261,10 @@ Puntuación de riesgo: %2$d/100
     <string name="sms_open_permissions_toast">Abre Permisos &gt; SMS para desactivar esto</string>
     <string name="sms_scanning_enabled">Escaneo de SMS activado</string>
     <string name="sms_permission_denied">Permiso de SMS denegado</string>
+    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
+    <string name="scan_cache_on_toast">Scan Cache ON</string>
+    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+
     <string name="dashboard_firewall_active">Motor de Firewall ACTIVO</string>
     <string name="dashboard_system_secure">Sistema Seguro</string>
     <string name="dashboard_status_secure_desc">• Monitoreo activo\n• Reglas de red aplicadas\n• %1$s</string>

@@ -232,6 +232,15 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.ask_sig_on_remove_off_toast), Toast.LENGTH_LONG).show();
         });
 
+        boolean scanCache = prefs().getBoolean("scan_cache_enabled", true);
+        addToggle(getString(R.string.scan_cache_toggle), scanCache, (btn, on) -> {
+            prefs().edit().putBoolean("scan_cache_enabled", on).apply();
+            if (!on) com.hydradragon.antivirus.engine.ScanEngine.clearCache();
+            Toast.makeText(getContext(), on
+                ? getString(R.string.scan_cache_on_toast)
+                : getString(R.string.scan_cache_off_toast), Toast.LENGTH_SHORT).show();
+        });
+
         boolean screenOcr = prefs().getBoolean(KEY_SCREEN_OCR, false);
         addToggle(getString(R.string.screen_ocr_toggle), screenOcr, (btn, on) -> {
             if (on) requestScreenCapture(btn);

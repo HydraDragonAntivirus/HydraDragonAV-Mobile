@@ -261,6 +261,10 @@
     <string name="sms_open_permissions_toast">Відкрийте Дозволи &gt; SMS, щоб вимкнути це</string>
     <string name="sms_scanning_enabled">Сканування SMS увімкнено</string>
     <string name="sms_permission_denied">Дозвіл на SMS відхилено</string>
+    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
+    <string name="scan_cache_on_toast">Scan Cache ON</string>
+    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+
     <string name="dashboard_firewall_active">Двигун брандмауера АКТИВНИЙ</string>
     <string name="dashboard_system_secure">Система захищена</string>
     <string name="dashboard_status_secure_desc">• Моніторинг активний\n• Мережеві правила застосовано\n• %1$s</string>
