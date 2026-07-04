@@ -13,28 +13,33 @@
 set -euo pipefail
 
 # ---- Prerequisite checks ------------------------------------------------
-fail="" msg() { echo "  * $1"; fail=1; }
+_missing=""
+_preq() { _missing="$_missing  * $1\n"; }
 
-command -v cmake &>/dev/null || msg "cmake is required (sudo apt install cmake)"
-command -v ninja &>/dev/null || msg "ninja is required (sudo apt install ninja-build)"
-command -v cargo &>/dev/null || msg "Rust/Cargo is required (rustup)"
-
-if ! cargo ndk --version &>/dev/null 2>&1; then
-  msg "cargo-ndk is required (cargo install cargo-ndk)"
-fi
+command -v cmake &>/dev/null || _preq "cmake is required (sudo apt install cmake)"
+command -v ninja &>/dev/null || _preq "ninja is required (sudo apt install ninja-build)"
+command -v cargo &>/dev/null || _preq "Rust/Cargo is required (rustup)"
 
 if [ -z "${ANDROID_NDK_HOME:-}" ]; then
-  msg "ANDROID_NDK_HOME is not set (export ANDROID_NDK_HOME=~/Android/Sdk/ndk/<version>)"
+  _preq "ANDROID_NDK_HOME is not set (export ANDROID_NDK_HOME=~/Android/Sdk/ndk/<version>)"
 elif [ ! -d "$ANDROID_NDK_HOME" ]; then
-  msg "ANDROID_NDK_HOME ($ANDROID_NDK_HOME) does not exist"
+  _preq "ANDROID_NDK_HOME ($ANDROID_NDK_HOME) does not exist"
 fi
 
-for target in aarch64-linux-android armv7-linux-androideabi \
-              x86_64-linux-android i686-linux-android; do
-  rustup target list --installed | grep -qx "$target" || msg "rustup target add $target"
+if ! cargo ndk --version &>/dev/null 2>&1; then
+  _preq "cargo-ndk is required (cargo install cargo-ndk)"
+fi
+
+for _target in aarch64-linux-android armv7-linux-androideabi \
+               x86_64-linux-android i686-linux-android; do
+  rustup target list --installed | grep -qx "$_target" || _preq "rustup target add $_target"
 done
 
-[ -n "$fail" ] && { echo "Missing prerequisites:" >&2; echo "$fail"; exit 1; }
+if [ -n "$_missing" ]; then
+  echo "Missing prerequisites:" >&2
+  printf "$_missing" >&2
+  exit 1
+fi
 
 cd "$(dirname "$0")"
 
