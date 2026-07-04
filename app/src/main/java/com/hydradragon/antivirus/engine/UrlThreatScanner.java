@@ -2,7 +2,6 @@ package com.hydradragon.antivirus.engine;
 
 import android.content.Context;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -97,16 +96,4 @@ public final class UrlThreatScanner {
         return host.isEmpty() ? null : host;
     }
 
-    /** Read a stream as Latin-1 so every byte maps 1:1 to a char (URLs are ASCII). */
-    private static String readAsLatin1(InputStream is) throws Exception {
-        int maxBytes = MAX_ENTRY_BYTES;
-        byte[] fullBuf = new byte[maxBytes];
-        int total = 0;
-        while (total < maxBytes) {
-            int n = is.read(fullBuf, total, maxBytes - total);
-            if (n < 0) break;
-            total += n;
-        }
-        return new String(fullBuf, 0, total, Charsets.ISO_8859_1);
-    }
 }
