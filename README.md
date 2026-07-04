@@ -77,10 +77,10 @@ About original HydraDragonAntivirus: This only detects Android malwares and mini
    cd HydraDragonAV-Mobile
    ```
 
-2. Build the native Rust engine for Android (see `hydradragonandroid/build-android.sh` for prerequisites — `rustup` Android targets, `cargo-ndk`, `cmake`, `ninja-build`, and `ANDROID_NDK_HOME`):
-   ```bash
+2. Build the native Rust engine for Android (see `hydradragonandroid/README.md` for prerequisites):
+   ```cmd
    cd hydradragonandroid
-   ./build-android.sh
+   build-android.cmd
    ```
 
 3. Build the Android app as usual (Gradle) — the native `.so` output is picked up automatically from `app/src/main/jniLibs/`.

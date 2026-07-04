@@ -30,35 +30,46 @@ Verdict JSON:
 
 ## Prerequisites
 
-On Linux (including WSL), `bindgen` requires `libclang`. The native-code
-emulation (Unicorn Engine) also needs `cmake` and `ninja-build`. Install with:
-
-```sh
-sudo apt-get install -y libclang-dev cmake ninja-build   # Debian/Ubuntu
-```
-
-**`ANDROID_NDK_HOME`** must be set to your NDK path (e.g. `~/Android/Sdk/ndk/<version>`),
-otherwise the Unicorn Engine CMake build cannot find the Android toolchain:
-
-```sh
-export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk/27.3.13750724
-```
-Add this to `~/.bashrc` to make it permanent.
-
-If the build still fails with `Unable to find libclang`, set:
-
-```sh
-export LIBCLANG_PATH=/usr/lib/llvm-<version>/lib
-```
+- [Android NDK](https://developer.android.com/ndk/downloads) (tested with r27)
+- Rust Android targets:
+  ```sh
+  rustup target add aarch64-linux-android armv7-linux-androideabi \
+                    x86_64-linux-android i686-linux-android
+  ```
+- `cargo-ndk`:
+  ```sh
+  cargo install cargo-ndk
+  ```
+- [Unicorn Engine](https://github.com/unicorn-engine/unicorn) must be built
+  separately with the NDK (see [Cross build with NDK](#cross-build-with-ndk)).
 
 ## Build the .so
 
+```cmd
+build-android.cmd
+```
+
+The script auto-detects the NDK path, builds Unicorn Engine (one-time cache),
+builds all four ABIs via `cargo ndk`, and copies the `.so` files into
+`app/src/main/jniLibs/<abi>/`.
+
+## Cross build with NDK
+
+Unicorn Engine's cmake build requires the NDK toolchain. Build it once:
+
 ```sh
-rustup target add aarch64-linux-android armv7-linux-androideabi \
-                  x86_64-linux-android i686-linux-android
-cargo install cargo-ndk
-export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk/<version>   # required!
-./build-android.sh                                          # -> app/src/main/jniLibs/<abi>/libhydradragonandroid.so
+git clone https://github.com/unicorn-engine/unicorn /tmp/unicorn
+cd /tmp/unicorn && mkdir build && cd build
+cmake .. \
+  -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_NATIVE_API_LEVEL=21 \
+  -DCMAKE_INSTALL_PREFIX=$PWD/install
+make -j$(nproc)
+make install
+export PKG_CONFIG_PATH=/tmp/unicorn/build/install/lib/pkgconfig
+export PKG_CONFIG_ALLOW_CROSS=1
+cargo ndk -t arm64-v8a build --release
 ```
 
 Gradle bundles `jniLibs/` and `app/src/main/assets/*.yrc|apk_model.json`

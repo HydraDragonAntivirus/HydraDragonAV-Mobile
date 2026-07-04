@@ -17,6 +17,8 @@ xf_build/
 whitelist.xf
 allips/IPv4Malware.optimized.csv
 
+third_party/unicorn/
+
 .gradle
 **/build/
 !**/src/**/build/
