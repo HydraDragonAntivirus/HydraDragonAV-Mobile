@@ -57,25 +57,14 @@ if (-not (Get-Command "cargo-ndk" -ErrorAction SilentlyContinue)) {
     cargo install cargo-ndk
 }
 
-# ---------- Pre-fetch crate sources so the registry source is available ------
-Write-Host "Fetching crate sources..."
-Push-Location $PSScriptRoot
-cargo fetch --quiet 2>&1 | Out-Null
-Pop-Location
-
 # ---------- Unicorn per-ABI build (pkg-config bypass) ----------
-# Build unicorn from the registry's bundled source with NDK cmake per-ABI,
+# Build unicorn from the workspace's unicorn C submodule source with NDK cmake per-ABI,
 # then set PKG_CONFIG_PATH so unicorn-engine-sys build.rs finds the .pc file
 # and skips its own broken cmake-rs cross-compile step.
 $unicornRoot = "$env:LOCALAPPDATA\unicorn-android"
 $env:PKG_CONFIG_ALLOW_CROSS = "1"
 
-$registrySrc = "$env:USERPROFILE\.cargo\registry\src"
-$unicornDir = Get-ChildItem "$registrySrc\index.crates.io-*\unicorn-engine-sys-2.1.5" -Directory `
-    | Select-Object -First 1
-if (-not $unicornDir) {
-    Write-Warning "unicorn-engine-sys source not found in registry; falling back to cmake-rs path"
-}
+$unicornDir = Resolve-Path "$PSScriptRoot\..\patches\unicorn-engine-rs\crates\unicorn-sys\unicorn"
 
 foreach ($a in $abiList) {
     $abi = $a.Trim()
