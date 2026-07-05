@@ -986,7 +986,7 @@ def filter_string_set(string_set):
             # Suspicious strings - combo / special characters
             if re.search(r"([a-z]{4,}[!\?]|\[[!+\-]\] |[a-zA-Z]{4,}...)", string, re.IGNORECASE):
                 localStringScores[string] += 3
-            if re.search(r"(-->|!!!| <<< | >>> )", string, re.IGNORECASE):
+            if re.search(r"(--!?>|!!!| <<< | >>> )", string, re.IGNORECASE):
                 localStringScores[string] += 5
             # Swear words
             if re.search(r"\b(fuck|damn|shit|penis)\b", string, re.IGNORECASE):
