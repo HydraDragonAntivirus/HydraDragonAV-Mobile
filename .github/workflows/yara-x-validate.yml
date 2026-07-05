@@ -30,7 +30,7 @@ jobs:
         run: |
           git clone https://github.com/HydraDragonAntivirus/yara-x.git _yara-x
           cd _yara-x
-          cargo build --release --bin yr
+          RUSTFLAGS="-A dead_code" cargo build --release --bin yr
           echo "_yara-x/target/release" >> $GITHUB_PATH
 
       - name: Validate YARA-X rules
