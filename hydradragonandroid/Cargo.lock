@@ -2911,8 +2911,7 @@ checksum = "b4ac048d71ede7ee76d585517add45da530660ef4390e49b098733c6e897f254"
 [[package]]
 name = "unicorn-engine"
 version = "2.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c16b5d5186d9400cd3bf9f892ed826cb724f69b906bbe66811527df73eaf7a33"
+source = "git+https://github.com/HydraDragonAntivirus/unicorn-engine-rs#a745c998e48776e8e18eee786848273a3c55f0d9"
 dependencies = [
  "bindgen",
  "cc",
@@ -2924,6 +2923,7 @@ dependencies = [
 [[package]]
 name = "unicorn-engine-sys"
 version = "2.1.5"
+source = "git+https://github.com/HydraDragonAntivirus/unicorn-engine-rs#a745c998e48776e8e18eee786848273a3c55f0d9"
 dependencies = [
  "bindgen",
  "cc",
@@ -2935,8 +2935,7 @@ dependencies = [
 [[package]]
 name = "unrar-ng"
 version = "0.7.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ff7a01700c732826b5a3414f911cb72015642ebdf16566f2e88b36d5dc49aec"
+source = "git+https://github.com/HydraDragonAntivirus/unrar.rs#b778a7af7c5be294355ebd07080c42749c9abcd6"
 dependencies = [
  "bitflags",
  "regex",
@@ -2947,6 +2946,7 @@ dependencies = [
 [[package]]
 name = "unrar-ng-sys"
 version = "0.7.7"
+source = "git+https://github.com/HydraDragonAntivirus/unrar.rs#b778a7af7c5be294355ebd07080c42749c9abcd6"
 dependencies = [
  "cc",
  "libc",
@@ -3620,6 +3620,7 @@ checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 [[package]]
 name = "yara-x"
 version = "1.19.0"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#ba81edaa7afaa998ccdf423a85a1f01a1a39ce39"
 dependencies = [
  "annotate-snippets",
  "anyhow",
@@ -3688,6 +3689,7 @@ dependencies = [
 [[package]]
 name = "yara-x-macros"
 version = "1.19.0"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#ba81edaa7afaa998ccdf423a85a1f01a1a39ce39"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -3698,6 +3700,7 @@ dependencies = [
 [[package]]
 name = "yara-x-parser"
 version = "1.19.0"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#ba81edaa7afaa998ccdf423a85a1f01a1a39ce39"
 dependencies = [
  "ascii_tree",
  "bitflags",
@@ -3714,6 +3717,7 @@ dependencies = [
 [[package]]
 name = "yara-x-proto"
 version = "1.19.0"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#ba81edaa7afaa998ccdf423a85a1f01a1a39ce39"
 dependencies = [
  "base64",
  "chrono",
