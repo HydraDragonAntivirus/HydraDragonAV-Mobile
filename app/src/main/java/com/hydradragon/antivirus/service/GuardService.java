@@ -565,31 +565,6 @@ public class GuardService extends Service {
         if (downloadObserver != null) downloadObserver.stopWatching();
         for (android.os.FileObserver obs : extraStorageObservers) obs.stopWatching();
         extraStorageObservers.clear();
-        scheduleRestart();
         Log.i(TAG, "Guard Service destroyed");
-    }
-
-    /**
-     * onDestroy() alone can't tell "app is being uninstalled" apart from
-     * "system/user killed this service" — the app's own components are still
-     * resolvable while an uninstall is in progress. Scheduling a restart via
-     * AlarmManager sidesteps that: the moment an uninstall actually completes,
-     * Android cancels every pending alarm/PendingIntent that belongs to the
-     * removed package, so this restart simply never fires. If the package is
-     * still installed, the alarm fires and the protection service comes back.
-     */
-    private void scheduleRestart() {
-        Intent restart = new Intent(getApplicationContext(), GuardService.class);
-        PendingIntent pi = PendingIntent.getService(getApplicationContext(), 0, restart,
-            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        android.app.AlarmManager am =
-            (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
-        if (am == null) return;
-        long triggerAt = android.os.SystemClock.elapsedRealtime() + 1000;
-        try {
-            am.setExactAndAllowWhileIdle(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
-        } catch (Exception e) {
-            am.set(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
-        }
     }
 }
