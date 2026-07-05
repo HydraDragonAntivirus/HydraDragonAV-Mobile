@@ -26,7 +26,7 @@ mod url_scan;
 
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jstring, JNI_FALSE, JNI_TRUE};
-use jni::JNIEnv;
+use jni::{Env, EnvUnowned};
 
 // Direct FFI into Android's liblog.so (always present in an app process,
 // unlike the desktop-only `HDA_PROF`/eprintln! profiling in
@@ -482,30 +482,30 @@ where
 /// `boolean nativeInit(String dir, boolean loadAutoRules)`
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeInit(
-    mut env: JNIEnv,
+    mut env: EnvUnowned,
     _class: JClass,
     dir: JString,
     load_auto_rules: jboolean,
 ) -> jboolean {
-    let dir: String = match env.get_string(&dir) {
-        Ok(s) => s.into(),
-        Err(_) => return JNI_FALSE,
-    };
-    let load_auto_rules = load_auto_rules != JNI_FALSE;
-    install_panic_hook();
-    // Init on a big-stack thread: yara_x deserialization of the .yrc recurses
-    // deeply enough to overflow the JNI thread's stack (the on-device crash).
-    let engine = match on_big_stack(move || do_init(&dir, load_auto_rules)) {
-        Ok(e) => e,
-        Err(_) => return JNI_FALSE,
-    };
-    let ok = engine.clamav.is_some() || engine.model.is_some();
-    let _ = ENGINE.set(std::sync::RwLock::new(engine));
-    if ok && ENGINE.get().is_some() {
-        JNI_TRUE
-    } else {
-        JNI_FALSE
-    }
+    env.with_env(|env| {
+        let dir: String = match env.get_string(&dir) {
+            Ok(s) => s.into(),
+            Err(_) => return Ok(JNI_FALSE),
+        };
+        let load_auto_rules = load_auto_rules != JNI_FALSE;
+        install_panic_hook();
+        let engine = match on_big_stack(move || do_init(&dir, load_auto_rules)) {
+            Ok(e) => e,
+            Err(_) => return Ok(JNI_FALSE),
+        };
+        let ok = engine.clamav.is_some() || engine.model.is_some();
+        let _ = ENGINE.set(std::sync::RwLock::new(engine));
+        if ok && ENGINE.get().is_some() {
+            Ok(JNI_TRUE)
+        } else {
+            Ok(JNI_FALSE)
+        }
+    }).unwrap_or(JNI_FALSE)
 }
 
 /// `void nativeSetEmulationEnabled(boolean enabled)` — Settings toggle for the
@@ -513,7 +513,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 /// immediately without needing an engine reinit or app restart.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetEmulationEnabled(
-    _env: JNIEnv,
+    _env: EnvUnowned,
     _class: JClass,
     enabled: jboolean,
 ) {
@@ -528,34 +528,35 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 /// already reloads every past `generated_rules/*.yar` file from `do_init`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeLearnRule<'local>(
-    mut env: JNIEnv<'local>,
+    mut env: EnvUnowned<'local>,
     _class: JClass<'local>,
     yar_path: JString<'local>,
 ) -> jboolean {
-    let path: String = match env.get_string(&yar_path) {
-        Ok(s) => s.into(),
-        Err(_) => return JNI_FALSE,
-    };
-    let Some(lock) = ENGINE.get() else { return JNI_FALSE };
-    let Ok(mut guard) = lock.write() else { return JNI_FALSE };
-    let Some(clamav) = guard.clamav.as_mut() else { return JNI_FALSE };
-    let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        clamav.add_yara_source_file(&path)
-    }));
-    if matches!(added, Ok(Some(_))) { JNI_TRUE } else { JNI_FALSE }
+    env.with_env(|env| {
+        let path: String = match env.get_string(&yar_path) {
+            Ok(s) => s.into(),
+            Err(_) => return Ok(JNI_FALSE),
+        };
+        let Some(lock) = ENGINE.get() else { return Ok(JNI_FALSE) };
+        let Ok(mut guard) = lock.write() else { return Ok(JNI_FALSE) };
+        let Some(clamav) = guard.clamav.as_mut() else { return Ok(JNI_FALSE) };
+        let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            clamav.add_yara_source_file(&path)
+        }));
+        Ok(if matches!(added, Ok(Some(_))) { JNI_TRUE } else { JNI_FALSE })
+    }).unwrap_or(JNI_FALSE)
 }
 
 /// `String nativeStatus()` — what loaded / failed during init (diagnostics).
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeStatus(
-    env: JNIEnv,
+    env: EnvUnowned,
     _class: JClass,
 ) -> jstring {
-    let s = INIT_STATUS.lock().map(|g| g.clone()).unwrap_or_default();
-    match env.new_string(&s) {
-        Ok(j) => j.into_raw(),
-        Err(_) => std::ptr::null_mut(),
-    }
+    env.with_env(|env| {
+        let s = INIT_STATUS.lock().map(|g| g.clone()).unwrap_or_default();
+        env.new_string(&s).map(|j| j.into_raw())
+    }).unwrap_or(std::ptr::null_mut())
 }
 
 /// `boolean nativeIsHashWhitelisted(String md5)` — true if the MD5 is in the
@@ -563,21 +564,22 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 /// by hash without holding the filter in the Java heap.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeIsHashWhitelisted<'local>(
-    mut env: JNIEnv<'local>,
+    mut env: EnvUnowned<'local>,
     _class: JClass<'local>,
     hash: JString<'local>,
 ) -> jboolean {
-    let h: String = match env.get_string(&hash) {
-        Ok(s) => s.into(),
-        Err(_) => return JNI_FALSE,
-    };
-    let hit = ENGINE
-        .get()
-        .and_then(|l| l.read().ok())
-        // XorFilter::contains lowercases internally, so pass the hash as-is.
-        .map(|e| e.whitelist.as_ref().map(|wl| wl.contains(&h)).unwrap_or(false))
-        .unwrap_or(false);
-    if hit { JNI_TRUE } else { JNI_FALSE }
+    env.with_env(|env| {
+        let h: String = match env.get_string(&hash) {
+            Ok(s) => s.into(),
+            Err(_) => return Ok(JNI_FALSE),
+        };
+        let hit = ENGINE
+            .get()
+            .and_then(|l| l.read().ok())
+            .map(|e| e.whitelist.as_ref().map(|wl| wl.contains(&h)).unwrap_or(false))
+            .unwrap_or(false);
+        Ok(if hit { JNI_TRUE } else { JNI_FALSE })
+    }).unwrap_or(JNI_FALSE)
 }
 
 /// `String nativeScanUrl(String url)` — malicious category (e.g. "PHISHING")
@@ -585,23 +587,22 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 /// xor-filter URL/domain scanner, so no filter sits in the Java heap.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanUrl<'local>(
-    mut env: JNIEnv<'local>,
+    mut env: EnvUnowned<'local>,
     _class: JClass<'local>,
     url: JString<'local>,
 ) -> jstring {
-    let u: String = match env.get_string(&url) {
-        Ok(s) => s.into(),
-        Err(_) => return std::ptr::null_mut(),
-    };
-    let cat = ENGINE
-        .get()
-        .and_then(|l| l.read().ok())
-        .and_then(|e| e.url_scanner.as_ref().and_then(|s| s.scan(&u)))
-        .unwrap_or("");
-    match env.new_string(cat) {
-        Ok(s) => s.into_raw(),
-        Err(_) => std::ptr::null_mut(),
-    }
+    env.with_env(|env| {
+        let u: String = match env.get_string(&url) {
+            Ok(s) => s.into(),
+            Err(_) => return Ok(std::ptr::null_mut()),
+        };
+        let cat = ENGINE
+            .get()
+            .and_then(|l| l.read().ok())
+            .and_then(|e| e.url_scanner.as_ref().and_then(|s| s.scan(&u)))
+            .unwrap_or("");
+        env.new_string(cat).map(|s| s.into_raw())
+    }).unwrap_or(std::ptr::null_mut())
 }
 
 /// `String nativeScanIp(String ip)` — category (e.g. "MALWARE_IP") for a
@@ -609,23 +610,22 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 /// filters (allips non-CIDR); no subnet/CIDR matching.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanIp<'local>(
-    mut env: JNIEnv<'local>,
+    mut env: EnvUnowned<'local>,
     _class: JClass<'local>,
     ip: JString<'local>,
 ) -> jstring {
-    let ip: String = match env.get_string(&ip) {
-        Ok(s) => s.into(),
-        Err(_) => return std::ptr::null_mut(),
-    };
-    let cat = ENGINE
-        .get()
-        .and_then(|l| l.read().ok())
-        .and_then(|e| e.ip_scanner.as_ref().and_then(|s| s.scan(&ip)))
-        .unwrap_or("");
-    match env.new_string(cat) {
-        Ok(s) => s.into_raw(),
-        Err(_) => std::ptr::null_mut(),
-    }
+    env.with_env(|env| {
+        let ip: String = match env.get_string(&ip) {
+            Ok(s) => s.into(),
+            Err(_) => return Ok(std::ptr::null_mut()),
+        };
+        let cat = ENGINE
+            .get()
+            .and_then(|l| l.read().ok())
+            .and_then(|e| e.ip_scanner.as_ref().and_then(|s| s.scan(&ip)))
+            .unwrap_or("");
+        env.new_string(cat).map(|s| s.into_raw())
+    }).unwrap_or(std::ptr::null_mut())
 }
 
 /// `String nativeScanText(String text, String packageName)` — runs the
@@ -636,19 +636,18 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 /// when it never touches the APK's own bytes.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanText<'local>(
-    mut env: JNIEnv<'local>,
+    mut env: EnvUnowned<'local>,
     _class: JClass<'local>,
     text: JString<'local>,
 ) -> jstring {
-    let t: String = match env.get_string(&text) {
-        Ok(s) => s.into(),
-        Err(_) => return std::ptr::null_mut(),
-    };
-    let result = scan_text(&t);
-    match env.new_string(&result) {
-        Ok(s) => s.into_raw(),
-        Err(_) => std::ptr::null_mut(),
-    }
+    env.with_env(|env| {
+        let t: String = match env.get_string(&text) {
+            Ok(s) => s.into(),
+            Err(_) => return Ok(std::ptr::null_mut()),
+        };
+        let result = scan_text(&t);
+        env.new_string(&result).map(|s| s.into_raw())
+    }).unwrap_or(std::ptr::null_mut())
 }
 
 /// `String nativeScanHips(String hipsJson)` — runs the
@@ -657,19 +656,18 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 /// matched rule names and suggested actions ("uninstall", "warn", "ignore").
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanHips<'local>(
-    mut env: JNIEnv<'local>,
+    mut env: EnvUnowned<'local>,
     _class: JClass<'local>,
     hips_json: JString<'local>,
 ) -> jstring {
-    let json: String = match env.get_string(&hips_json) {
-        Ok(s) => s.into(),
-        Err(_) => return std::ptr::null_mut(),
-    };
-    let result = scan_hips(&json);
-    match env.new_string(&result) {
-        Ok(s) => s.into_raw(),
-        Err(_) => std::ptr::null_mut(),
-    }
+    env.with_env(|env| {
+        let json: String = match env.get_string(&hips_json) {
+            Ok(s) => s.into(),
+            Err(_) => return Ok(std::ptr::null_mut()),
+        };
+        let result = scan_hips(&json);
+        env.new_string(&result).map(|s| s.into_raw())
+    }).unwrap_or(std::ptr::null_mut())
 }
 
 fn scan_hips(hips_json: &str) -> String {
@@ -751,22 +749,21 @@ fn scan_text(text: &str) -> String {
 /// Trust Mode never treats "nothing matched" as "nothing worth recording").
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanApk<'local>(
-    mut env: JNIEnv<'local>,
+    mut env: EnvUnowned<'local>,
     _class: JClass<'local>,
     path: JString<'local>,
     hydradragon_json: JString<'local>,
     file_md5: JString<'local>,
     zero_trust: jboolean,
 ) -> jstring {
-    let result = scan_apk(&mut env, path, hydradragon_json, file_md5, zero_trust == JNI_TRUE);
-    match env.new_string(&result) {
-        Ok(s) => s.into_raw(),
-        Err(_) => std::ptr::null_mut(),
-    }
+    env.with_env(|env| {
+        let result = scan_apk(env, path, hydradragon_json, file_md5, zero_trust == JNI_TRUE);
+        env.new_string(&result).map(|s| s.into_raw())
+    }).unwrap_or(std::ptr::null_mut())
 }
 
 fn scan_apk(
-    env: &mut JNIEnv,
+    env: &mut jni::Env,
     path: JString,
     hydradragon_json: JString,
     file_md5: JString,
