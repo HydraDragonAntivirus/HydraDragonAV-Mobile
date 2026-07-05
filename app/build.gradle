@@ -37,7 +37,7 @@ def signingCertSha256(config) {
 
 android {
     namespace 'com.hydradragon.antivirus'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.hydradragon.antivirus"
