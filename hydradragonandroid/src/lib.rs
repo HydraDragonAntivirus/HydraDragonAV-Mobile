@@ -260,21 +260,27 @@ fn set_status(s: String) {
 fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
     let base = std::path::Path::new(dir);
     let mut report = String::new();
+    let t0 = std::time::Instant::now();
     // ClamAV engine from the bundled DB, then add the compiled .yrc rulesets
     // (compiled only — never .yar source on-device).
+    let t_db = std::time::Instant::now();
     let clamav = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         ClamavEngine::from_database_dir(base)
     })) {
         Ok(Ok((mut eng, _report))) => {
-            report.push_str("clamav=ok");
+            let db_ms = t_db.elapsed().as_millis();
+            android_log(&format!("init :: from_database_dir={db_ms}ms"));
+            report.push_str(&format!("clamav=ok({db_ms}ms)"));
             for name in YRC_FILES {
+                let t_yrc = std::time::Instant::now();
                 let path = base.join(name);
                 let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                     eng.add_compiled_yara_file(&path)
                 }));
+                let yrc_ms = t_yrc.elapsed().as_millis();
                 match added {
-                    Ok(Some(_)) => report.push_str(&format!(" yrc[{}]=ok", name)),
-                    Ok(None) => report.push_str(&format!(" yrc[{}]=ERR(load/deserialize)", name)),
+                    Ok(Some(_)) => report.push_str(&format!(" yrc[{}]=ok({yrc_ms}ms)", name)),
+                    Ok(None) => report.push_str(&format!(" yrc[{}]=ERR({yrc_ms}ms)", name)),
                     Err(_) => report.push_str(&format!(" yrc[{}]=PANIC({})", name, last_panic())),
                 }
             }
@@ -303,11 +309,16 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
                         if path.extension().and_then(|e| e.to_str()) != Some("yar") {
                             continue;
                         }
+                        let t_learn = std::time::Instant::now();
                         let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                             eng.add_yara_source_file(&path)
                         }));
                         if matches!(added, Ok(Some(_))) {
                             learned += 1;
+                        }
+                        let learn_ms = t_learn.elapsed().as_millis();
+                        if learn_ms > 50 {
+                            android_log(&format!("init :: learned[{learned}] {} {learn_ms}ms", path.display()));
                         }
                     }
                 }
@@ -324,11 +335,14 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
             None
         }
     };
+    let t_model = std::time::Instant::now();
     let model = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         Model::load_bin(&base.join(MODEL_BIN))
     })) {
         Ok(Ok(m)) => {
-            report.push_str(" model=ok");
+            let model_ms = t_model.elapsed().as_millis();
+            android_log(&format!("init :: model={model_ms}ms"));
+            report.push_str(&format!(" model=ok({model_ms}ms)"));
             Some(m)
         }
         Ok(Err(e)) => {
@@ -340,29 +354,41 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
             None
         }
     };
+    let t_tlsh = std::time::Instant::now();
     let tlsh_db = load_tlsh_db(&base.join(TLSH_DB));
-    report.push_str(&format!(" tlsh={}", tlsh_db.len()));
+    let tlsh_ms = t_tlsh.elapsed().as_millis();
+    report.push_str(&format!(" tlsh={}({tlsh_ms}ms)", tlsh_db.len()));
 
+    let t_wl = std::time::Instant::now();
     let whitelist = load_whitelist(&base.join(WHITELIST_XF));
-    report.push_str(&format!(" whitelist={}", if whitelist.is_some() { "ok" } else { "none" }));
+    let wl_ms = t_wl.elapsed().as_millis();
+    report.push_str(&format!(" whitelist={wl_ms}ms"));
 
+    let t_pkg = std::time::Instant::now();
     let package_whitelist = load_package_whitelist(&base.join(WHITELIST_PACKAGES_DB));
-    report.push_str(&format!(" package_whitelist={}", package_whitelist.len()));
+    let pkg_ms = t_pkg.elapsed().as_millis();
+    report.push_str(&format!(" pkg_wl={pkg_ms}ms({})", package_whitelist.len()));
 
+    let t_url = std::time::Instant::now();
     let url_scanner = std::panic::catch_unwind(|| url_scan::UrlScanner::load(base))
         .ok()
         .flatten();
-    report.push_str(&format!(" url={}", if url_scanner.is_some() { "ok" } else { "none" }));
+    let url_ms = t_url.elapsed().as_millis();
+    report.push_str(&format!(" url={url_ms}ms"));
 
+    let t_ip = std::time::Instant::now();
     let ip_scanner = std::panic::catch_unwind(|| ip_scan::IpScanner::load(base))
         .ok()
         .flatten();
-    report.push_str(&format!(" ip={}", if ip_scanner.is_some() { "ok" } else { "none" }));
+    let ip_ms = t_ip.elapsed().as_millis();
+    report.push_str(&format!(" ip={ip_ms}ms"));
 
     let clean_strings_path = base.join(CLEAN_STRINGS_FILE);
     let clean_strings = load_clean_strings(&clean_strings_path);
     report.push_str(&format!(" clean_strings={}", clean_strings.len()));
 
+    let total_ms = t0.elapsed().as_millis();
+    android_log(&format!("init :: TOTAL={total_ms}ms | {report}"));
     set_status(report);
     Engine {
         clamav,

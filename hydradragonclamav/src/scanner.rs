@@ -3,6 +3,7 @@ use crate::logical::Subsignature;
 use std::fs;
 use std::io;
 use std::path::Path;
+use std::time::Instant;
 
 #[derive(Debug)]
 pub struct Engine {
@@ -58,6 +59,26 @@ pub struct ScanMatch {
     /// These map to file offsets only for `view == Raw` on the top-level object
     /// (an `object_path` with no `#archive[...]` segment). Used for disinfection.
     pub arenas: Vec<(usize, usize)>,
+}
+
+#[link(name = "log")]
+unsafe extern "C" {
+    fn __android_log_write(
+        prio: std::os::raw::c_int,
+        tag: *const std::os::raw::c_char,
+        text: *const std::os::raw::c_char,
+    );
+}
+const ANDROID_LOG_INFO: std::os::raw::c_int = 4;
+fn android_log(msg: &str) {
+    use std::ffi::CString;
+    let (Ok(tag), Ok(text)) = (
+        CString::new("HydraDragon-RustTiming"),
+        CString::new(msg),
+    ) else {
+        return;
+    };
+    unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
 }
 
 /// Upper bound on arenas recorded per signature match, to keep memory bounded.
@@ -169,13 +190,18 @@ impl Engine {
 
     pub fn from_database_dir(path: impl AsRef<Path>) -> io::Result<(Self, crate::LoadReport)> {
         let path = path.as_ref();
+        let t0 = Instant::now();
         let (mut database, mut report) = Database::load_dir(path)?;
+        let load_ms = t0.elapsed().as_millis();
+        android_log(&format!("from_database_dir :: load_dir={load_ms}ms files={} ext={} logical={} container={}",
+            report.files_seen, database.extended.len(), database.logical.len(), database.container.len()));
         // Load bytecode containers, then decode + interpreter-prepare each program
         // and register its trigger as a logical signature linked to the program
         // (ClamAV's bytecode-lsig wiring). Must happen BEFORE the prefilter is
         // built so the triggers are indexed as candidates.
         // The raw Bytecode structs (with source strings) are DROPPED after decoding
         // — their source text is not needed at scan time, saving 50-200 MB.
+        let t_bc = Instant::now();
         let bc = crate::bytecode::BytecodeSet::load_from_dir(path);
         report.bytecodes_loaded = bc.report.loaded;
         for prog in bc.bytecodes {
@@ -206,13 +232,20 @@ impl Engine {
                 database.logical.push(sig);
             }
         }
+        let bc_ms = t_bc.elapsed().as_millis();
+        android_log(&format!("from_database_dir :: bytecode={bc_ms}ms loaded={}", report.bytecodes_loaded));
         // Atom prefilter (daachorse): one selective required atom per signature,
         // built via a compact CSR mapping. One pass per buffer picks the few
         // candidate signatures instead of scanning all ~500k — fast scans and
         // far fewer page faults.
         // Build the Aho-Corasick automata in memory from the loaded rules (no
         // on-disk `.bin` cache); the load high-water-mark is trimmed afterwards.
+        let t_pf = Instant::now();
         let prefilter = crate::prefilter::AtomPrefilter::build(&database);
+        let pf_ms = t_pf.elapsed().as_millis();
+        android_log(&format!("from_database_dir :: prefilter_build={pf_ms}ms"));
+        let total_ms = t0.elapsed().as_millis();
+        android_log(&format!("from_database_dir :: TOTAL={total_ms}ms"));
         Ok((Self { database, prefilter, yara: Vec::new() }, report))
     }
 
