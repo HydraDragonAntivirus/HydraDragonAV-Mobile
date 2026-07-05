@@ -148,6 +148,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="scan_btn">TARA</string>
     <string name="scan_initial_status">Taramayı başlatmak için TARA butonuna basın</string>
     <string name="scan_scanning_btn">TARANIYOR...</string>
+    <string name="engine_loading_warning">⚠ Motor yükleniyor… Tarama başlatılamaz</string>
     <string name="background_scan_running">⏳ Arka planda tarama çalışıyor…</string>
     <string name="scan_already_running">Arka planda zaten bir tarama sürüyor — lütfen bitmesini bekleyin</string>
     <string name="detection_categories_header">Tespit Kategorileri</string>

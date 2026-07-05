@@ -136,6 +136,7 @@
     <string name="scan_initial_status">शुरू करने के लिए स्कैन दबाएँ</string>
     <string name="scan_scanning_btn">स्कैन हो रहा है...</string>
     <string name="scan_already_running">पृष्ठभूमि में पहले से एक स्कैन चल रहा है — कृपया इसके समाप्त होने की प्रतीक्षा करें</string>
+    <string name="engine_loading_warning">⚠ इंजन लोड हो रहा है… स्कैन उपलब्ध नहीं</string>
     <string name="background_scan_running">⏳ बैकग्राउंड स्कैन चल रहा है…</string>
     <string name="detection_categories_header">डिटेक्शन श्रेणियाँ</string>
     <string name="detect_cat_signatures">सिग्नेचर-आधारित (YARA/ClamAV)</string>

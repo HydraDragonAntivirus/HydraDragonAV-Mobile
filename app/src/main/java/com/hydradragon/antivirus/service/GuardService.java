@@ -189,6 +189,7 @@ public class GuardService extends Service {
     private ScanEngine scanEngine;
     private NetworkMonitor networkMonitor;
     private ProcessDetector processDetector;
+    private volatile boolean engineLoading = true;
     private ScheduledExecutorService scheduler;
     private int alertNotificationId = ALERT_NOTIFICATION_BASE;
     /** Root state as of the LAST check — starts false since MainActivity already
@@ -243,6 +244,8 @@ public class GuardService extends Service {
         }
         new Thread(() -> {
             initializeEngines();
+            engineLoading = false;
+            Log.i(TAG, "engineLoading=false (engines ready)");
             startPeriodicScans();
             startDownloadMonitor();
             startFullStorageMonitor();
@@ -546,6 +549,7 @@ public class GuardService extends Service {
         }
     }
 
+    public boolean isEngineLoading() { return engineLoading; }
     public void setCallback(GuardCallback cb) { this.callback = cb; }
     public ScanEngine getScanEngine() { return scanEngine; }
     public AIEngine getAiEngine() { return aiEngine; }

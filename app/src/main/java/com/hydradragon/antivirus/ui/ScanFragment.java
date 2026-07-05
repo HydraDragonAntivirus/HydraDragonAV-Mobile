@@ -41,7 +41,7 @@ public class ScanFragment extends Fragment {
 
     private Button btnScan;
     private ProgressBar progressBar;
-    private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats, tvThreatLabel;
+    private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats, tvThreatLabel, tvEngineWarning;
     private ImageView ivScannerIcon;
     private RecyclerView rvThreats;
 
@@ -71,6 +71,7 @@ public class ScanFragment extends Fragment {
         public void onServiceConnected(android.content.ComponentName name, android.os.IBinder service) {
             guardService = ((com.hydradragon.antivirus.service.GuardService.GuardBinder) service).getService();
             serviceBound = true;
+            checkEngineLoading();
             if (isScanning && pendingCustomScanUri == null && pendingCustomScanDir == null) attachScanCallback();
 
             // A file or folder was picked while the engine was still asleep —
@@ -107,6 +108,7 @@ public class ScanFragment extends Fragment {
         tvScanned = view.findViewById(R.id.tv_scanned_count);
         tvThreats = view.findViewById(R.id.tv_threat_count);
         tvThreatLabel = view.findViewById(R.id.tv_threat_label);
+        tvEngineWarning = view.findViewById(R.id.tv_engine_warning);
         ivScannerIcon = view.findViewById(R.id.iv_scanner_icon);
         rvThreats = view.findViewById(R.id.rv_threats);
 
@@ -125,6 +127,11 @@ public class ScanFragment extends Fragment {
                 tvThreatLabel.setVisibility(View.VISIBLE);
             }
         }
+
+        // Engine loading check — run on a delay to give onServiceConnected time
+        // to fire if the service is still binding.
+        view.postDelayed(this::checkEngineLoading, 300);
+        pollEngineLoading();
 
         if (isScanning) {
             btnScan.setText(getString(R.string.scan_stop));
@@ -323,6 +330,10 @@ public class ScanFragment extends Fragment {
 
             }
     private void showScanTypeDialog() {
+        if (guardService != null && guardService.isEngineLoading()) {
+            Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
+            return;
+        }
         String[] options = {
             getString(R.string.btn_quick_scan),
             getString(R.string.btn_full_scan),
@@ -343,6 +354,10 @@ public class ScanFragment extends Fragment {
 
     private void startScan(boolean isFullScan) {
         if (!serviceBound || guardService == null) return;
+        if (guardService.isEngineLoading()) {
+            Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
+            return;
+        }
         // GuardService's own periodic background scan (see startPeriodicScans)
         // shares this same ScanEngine. A pre-check here alone isn't race-free
         // — a background scan can start in the gap between it and the actual
@@ -496,6 +511,37 @@ public class ScanFragment extends Fragment {
 
     private void stopScannerAnimation() { ivScannerIcon.clearAnimation(); }
 
+    private void checkEngineLoading() {
+        boolean loading = guardService != null && guardService.isEngineLoading();
+        if (loading) {
+            tvEngineWarning.setVisibility(View.VISIBLE);
+            btnScan.setEnabled(false);
+            tvScanStatus.setText(getString(R.string.scan_prompt));
+            tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+        } else {
+            tvEngineWarning.setVisibility(View.GONE);
+            if (!isScanning) btnScan.setEnabled(true);
+        }
+    }
+
+    // Polls every 2s while the engine is still loading so the warning
+    // auto-disappears and the scan button re-enables when init finishes.
+    private final android.os.Handler engineLoadPoller = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable engineLoadCheck = new Runnable() {
+        @Override
+        public void run() {
+            if (serviceBound && guardService != null && guardService.isEngineLoading()) {
+                tvEngineWarning.setVisibility(View.VISIBLE);
+                btnScan.setEnabled(false);
+                engineLoadPoller.postDelayed(this, 2000);
+            } else {
+                tvEngineWarning.setVisibility(View.GONE);
+                if (!isScanning) btnScan.setEnabled(true);
+            }
+        }
+    };
+    private void pollEngineLoading() { engineLoadPoller.post(engineLoadCheck); }
+
     // Surfaces GuardService's own periodic BACKGROUND scan (see
     // GuardService#startPeriodicScans) on this screen even when the user
     // never tapped the Scan button themselves — previously it ran completely
@@ -609,6 +655,10 @@ public class ScanFragment extends Fragment {
      *  since ScanEngine.scanCustomFolder() reports through it identically. */
     private void startCustomFolderScan(File dir) {
         if (!serviceBound || guardService == null) return;
+        if (guardService.isEngineLoading()) {
+            Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
+            return;
+        }
         isScanning = true;
         hasScanned = true;
         foundThreats.clear();
@@ -639,6 +689,10 @@ public class ScanFragment extends Fragment {
 
 private void scanCustomFile(android.net.Uri uri) {
         if (!serviceBound || guardService == null) return;
+        if (guardService.isEngineLoading()) {
+            Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
+            return;
+        }
         isScanning = true;
         hasScanned = true;
         foundThreats.clear();
