@@ -101,8 +101,8 @@ public final class NativeScanner {
     private static native String nativeScanUrl(String url);
 
     /** Malicious category (e.g. "PHISHING") for an http(s) URL, or null if clean
-     *  / not a URL. Membership is the native fastbloom URL/domain scanner — no
-     *  bloom is held in the Java heap. */
+     *  / not a URL. Membership is the native xor filter URL/domain scanner — no
+     *  xor filter is held in the Java heap. */
     public static String scanUrl(String url) {
         if (!LIB_LOADED || !ready || url == null || url.isEmpty()) return null;
         try {
@@ -204,7 +204,7 @@ public final class NativeScanner {
     }
 
     /** True if {@code md5} is in the NSRL whitelist (held in NATIVE memory as a
-     *  fastbloom filter — never loaded into the Java heap). False if the native
+     *  xor filter — never loaded into the Java heap). False if the native
      *  lib/whitelist isn't available. */
     public static boolean isHashWhitelisted(String md5) {
         if (!LIB_LOADED || !ready || md5 == null || md5.isEmpty()) return false;

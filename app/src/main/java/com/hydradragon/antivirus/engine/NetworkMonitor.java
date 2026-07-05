@@ -36,7 +36,7 @@ import okhttp3.Response;
  * Ağ trafiğini izler, şüpheli bağlantıları tespit eder.
  *
  * Özellikler:
- * - Şüpheli IP/domain tespiti (bloom filter + hardcoded rules)
+ * - Şüpheli IP/domain tespiti (xor filter + hardcoded rules)
  * - C2 (Command & Control) server bağlantısı tespiti
  * - Tor/VPN kullanım tespiti
  * - DNS leak tespiti
@@ -62,14 +62,14 @@ public class NetworkMonitor {
         31337, 12345, 54321           // Bilinen backdoor portları
     ));
 
-    // Şüpheli domain anahtar kelimeleri (bloom filter yedeği)
+    // Şüpheli domain anahtar kelimeleri (xor filter yedeği)
     private static final List<String> SUSPICIOUS_DOMAIN_PATTERNS = Arrays.asList(
         ".onion", "tor2web", "i2p",
         "ngrok.io", "serveo.net",    // Tünel servisleri - malware sıkça kullanır
         "dyndns", "no-ip", "ddns"    // Dynamic DNS - C2 sıkça kullanır
     );
 
-    // Bloom filter asset
+    // Xor filter asset
 
     private final Context context;
     private final ConnectivityManager connectivityManager;
@@ -88,7 +88,7 @@ public class NetworkMonitor {
     private static volatile NetworkCallback staticCallback;
     private boolean isMonitoring = false;
 
-    // Domain bloom filter
+    // Domain xor filter
 
     private long bytesReceived = 0;
     private long bytesSent = 0;
@@ -147,10 +147,10 @@ public class NetworkMonitor {
         loadDomainFilters();
     }
 
-    /** Domain bloom lookups now run natively (fastbloom) via
+    /** Domain xor filter lookups now run natively via
      *  {@link UrlThreatScanner#scanUrl}, so there's nothing to load here. */
     private void loadDomainFilters() {
-        // no-op — domain/URL blooms live on the native side.
+        // no-op — domain/URL xor filters live on the native side.
     }
 
     public void setCallback(NetworkCallback callback) {
@@ -315,7 +315,7 @@ public class NetworkMonitor {
     }
 
     /**
-     * Domain'i bloom filter + pattern listesine karşı kontrol et.
+     * Domain'i xor filter + pattern listesine karşı kontrol et.
      * @return true: şüpheli/zararlı domain
      */
     public boolean isSuspiciousDomain(String domain) {
@@ -327,8 +327,8 @@ public class NetworkMonitor {
             if (lower.contains(pattern)) return true;
         }
 
-        // Native fastbloom domain/URL kontrolü — domain'i http:// formuna çevirip
-        // (URL bloom'ları http:// string'lerinden üretildi) tüm kategorilere bak.
+        // Native xor filter domain/URL kontrolü — domain'i http:// formuna çevirip
+        // (URL xor filtreleri http:// string'lerinden üretildi) tüm kategorilere bak.
         try {
             if (UrlThreatScanner.get(context).scanUrl("http://" + lower) != null) {
                 return true;
@@ -359,7 +359,7 @@ public class NetworkMonitor {
      */
     private void checkThreatIntelligence() {
         // TODO: HydraDragon cloud threat feed'den güncelleme al
-        // Şimdilik local bloom filter + blacklist kullanıyor
+        // Şimdilik local xor filter + blacklist kullanıyor
     }
 
     private void logEvent(String destIp, int port, String protocol,

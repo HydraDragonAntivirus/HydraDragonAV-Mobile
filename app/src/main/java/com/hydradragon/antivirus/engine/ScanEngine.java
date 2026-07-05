@@ -107,7 +107,7 @@ public class ScanEngine {
             Log.i(TAG, "SLOWEST_ENGINE " + entries.get(0).getKey() + " (" + entries.get(0).getValue().get() + "ms)");
         }
     }
-    // SHA-256 hash whitelist now lives in NATIVE memory (fastbloom) — see
+    // SHA-256 hash whitelist now lives in NATIVE memory (xor filter) — see
     // NativeScanner.isHashWhitelisted — so the large NSRL set never sits in the
     // Java heap. isHashWhitelisted() below delegates to it.
     /** EXACT known-good package names (NSRL Android, extension=apk). NOT a
@@ -248,7 +248,7 @@ public class ScanEngine {
         // whitelist_package, column "key" = package_id^^file_name) into an exact
         // HashSet. Only clears an app WITH a trusted-store install (spoofable
         // alone). The SHA-256 hash whitelist is separate and lives natively
-        // (fastbloom) — see NativeScanner.isHashWhitelisted.
+        // (xor filter) — see NativeScanner.isHashWhitelisted.
         // Lives under assets/scan/ (not the assets root) so NativeScanner.init()
         // also copies it into the "hydra-scan" dir the Rust engine reads at
         // nativeInit — the same DB file backs both the Java package check here
@@ -272,7 +272,7 @@ public class ScanEngine {
     }
 
     /** True if {@code hash} (a whole-APK/file SHA-256) is a known-good NSRL hash.
-     *  Delegates to the native fastbloom whitelist (native memory). */
+     *  Delegates to the native xor filter whitelist (native memory). */
     private boolean isHashWhitelisted(String hash) {
         return hash != null && NativeScanner.isHashWhitelisted(hash.toLowerCase(java.util.Locale.US));
     }

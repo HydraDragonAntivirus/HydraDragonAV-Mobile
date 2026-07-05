@@ -15,7 +15,7 @@ import java.util.TreeSet;
  * User-maintained allowlist for Web Shield (DnsVpnService): a domain, bare IP,
  * or CIDR range the user has explicitly said to never block, even if it later
  * matches the malicious-domain/IP lists. Small, user-edited list — checked
- * linearly (no bloom filter needed, unlike the ~thousands-of-entries
+ * linearly (no xor filter needed, unlike the ~thousands-of-entries
  * CidrBlacklist/UrlThreatScanner data sets).
  */
 public final class WebsiteWhitelist {

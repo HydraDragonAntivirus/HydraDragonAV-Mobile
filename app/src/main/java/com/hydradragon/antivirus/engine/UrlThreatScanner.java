@@ -9,9 +9,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * URL/domain threat lookup. The bloom membership now lives entirely on the
- * native (Rust/fastbloom) side — {@link NativeScanner#scanUrl} — so the domain
- * blooms and the public-suffix list are loaded into NATIVE memory, not the Java
+ * URL/domain threat lookup. The xor filter membership now lives entirely on the
+ * native (Rust) side — {@link NativeScanner#scanUrl} — so the domain
+ * xor filters and the public-suffix list are loaded into NATIVE memory, not the Java
  * heap. This class is a thin wrapper that keeps the Java-side helpers (URL
  * extraction, the steamcommunity typosquat guard).
  */
@@ -60,7 +60,7 @@ public final class UrlThreatScanner {
     /**
      * Look a single URL up. Returns the matching category (e.g. "PHISHING_URL")
      * or null if clean. The steamcommunity typosquat guard runs first (Java); the
-     * actual bloom membership is the native fastbloom URL/domain scanner.
+     * actual xor filter membership is the native xor filter URL/domain scanner.
      */
     public String scanUrl(String url) {
         if (isSteamFake(url)) return "STEAM_PHISHING";

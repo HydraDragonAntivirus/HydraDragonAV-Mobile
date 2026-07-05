@@ -36,7 +36,7 @@ import java.util.concurrent.Executors;
  * <p>Scope/limits: IPv4 + IPv6, UDP/53 (robust, stateless) and TCP/53
  * (best-effort: assumes the query arrives in one segment, one query per
  * connection — covers normal resolver behaviour). DoH/DoT (encrypted DNS) is
- * out of scope by design — block those resolver IPs via the blooms if needed.
+ * out of scope by design — block those resolver IPs via the xor filters if needed.
  */
 public class DnsVpnService extends VpnService {
 

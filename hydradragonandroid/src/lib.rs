@@ -824,7 +824,7 @@ fn scan_apk(
 }
 
 /// Check every emulation-decoded string (see emulate.rs) that looks like a
-/// whole URL against the URL/domain blooms (`engine.url_scanner`) — a decoded
+/// whole URL against the URL/domain xor filters (`engine.url_scanner`) — a decoded
 /// C2 URL a signature/YARA rule was never written for can still be caught
 /// this way, the same as any other URL this engine sees. Returns
 /// "URL.<CATEGORY>: <url>" pseudo-detection names, matching the existing

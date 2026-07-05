@@ -4,9 +4,9 @@
 //! Mirrors the Java logic exactly:
 //!
 //!   * `http://domain` / `https://...`           -> domain scan (registrable
-//!     main domain checked against the domain blooms).
+//!     main domain checked against the domain xor filters).
 //!   * `http://domain/path` (has a real path)     -> URL scan (full scheme-less
-//!     URL checked against the `*_URL` blooms).
+//!     URL checked against the `*_URL` xor filters).
 //!
 //! Registrable (main) domain is derived with the public-suffix list
 //! (`public_suffixes.txt`), identical to the Java `getMainDomain`.
@@ -27,7 +27,7 @@ pub struct UrlScanner {
     suffixes: HashSet<String>,
 }
 
-/// (asset stem, category, is_url_filter) — same order/labels as the Java BLOOMS.
+/// (asset stem, category, is_url_filter) — same order/labels as the Java XOR_FILTERS.
 const CATS: &[(&str, &str, bool)] = &[
     ("malwareurl", "MALWARE_URL", true),
     ("phishingurl", "PHISHING_URL", true),
@@ -117,13 +117,13 @@ impl UrlScanner {
             host = &host[..colon];
         }
 
-        // Any http(s) URL with a real path => URL scan (URL blooms, full
+        // Any http(s) URL with a real path => URL scan (URL xor filters, full
         // scheme-less URL); else domain scan (registrable main domain against
-        // the domain blooms). `norm` is already scheme-stripped above, so an
+        // the domain xor filters). `norm` is already scheme-stripped above, so an
         // http:// and an https:// URL to the same host+path normalize to the
-        // IDENTICAL bloom lookup key — there is no reason to special-case the
+        // IDENTICAL xor filter lookup key — there is no reason to special-case the
         // scheme here. This used to require `scheme_http` (plain http://)
-        // specifically, which silently skipped the URL-path blooms for EVERY
+        // specifically, which silently skipped the URL-path xor filters for EVERY
         // https:// URL (the overwhelming majority of real traffic today) —
         // falling through to a domain-only check that can't see the specific
         // malicious/phishing PATH at all, only the bare domain.

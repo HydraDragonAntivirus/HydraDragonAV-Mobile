@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Direct CIDR blacklist matcher (no bloom) for resolved/contacted IPs, loaded
+ * Direct CIDR blacklist matcher (no xor filter) for resolved/contacted IPs, loaded
  * from the plain {@code CIDRBlackListIPv4.txt} / {@code CIDRBlackListIPv6.txt}
  * asset lists (sourced from https://github.com/T145/black-mirror).
  *

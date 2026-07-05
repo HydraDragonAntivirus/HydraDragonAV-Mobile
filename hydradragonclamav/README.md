@@ -20,7 +20,7 @@ database formats that match file bodies:
   uses it to type files; in `--strict-targets` mode the detected `CL_TYPE_*`
   refines target filtering instead of the built-in heuristics.
 - Skips hash databases (`.hdb`, `.hsb`, `.hdu`, `.hsu`, `.mdb`, `.msb`, `.mdu`,
-  `.msu`) because HydraDragon uses Bloom filters for hashes.
+  `.msu`) because HydraDragon uses xor filters for hashes.
 - Classifies non-body formats such as `.idb`, `.pdb`, `.wdb`, bytecode (`.cbc`),
   allow/ignore lists, and config databases as unsupported metadata for now.
 

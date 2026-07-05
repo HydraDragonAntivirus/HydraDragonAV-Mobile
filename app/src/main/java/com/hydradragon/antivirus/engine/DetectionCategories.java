@@ -25,7 +25,7 @@ public final class DetectionCategories {
      *  reinstated {@code UrlThreatScanner.scanApk()} call — see its javadoc
      *  for why this is far less false-positive-prone than a bare-domain
      *  check: a full URL (with path) is much more specific than a domain
-     *  alone, so a bloom hit here means much more). */
+     *  alone, so a xor filter hit here means much more). */
     public static final String URL_STRINGS = "detect_cat_url_strings";
     /** Unicorn-based native-code (.so/ELF) emulation to reveal runtime-only
      *  decoded strings (see NativeScanner.setEmulationEnabled / emulate.rs).
