@@ -93,6 +93,10 @@ public class NetworkFragment extends Fragment {
     }
 
     private void setupNetworkCallback() {
+        if (guardService.getNetworkMonitor() == null) {
+            handler.postDelayed(this::setupNetworkCallback, 500);
+            return;
+        }
         guardService.getNetworkMonitor().setCallback(new NetworkMonitor.NetworkCallback() {
             @Override
             public void onSuspiciousActivity(NetworkMonitor.NetworkEvent event) {
@@ -136,7 +140,7 @@ public class NetworkFragment extends Fragment {
         statsUpdater = new Runnable() {
             @Override
             public void run() {
-                if (!serviceBound) return;
+                if (!serviceBound || guardService == null || guardService.getNetworkMonitor() == null) return;
                 // Mevcut event listesini güncelle
                 List<NetworkMonitor.NetworkEvent> currentEvents =
                     guardService.getNetworkMonitor().getEventLog();
