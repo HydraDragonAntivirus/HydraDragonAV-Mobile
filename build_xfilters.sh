@@ -4,11 +4,11 @@
 #
 #   website (domain/url) filters -> fpp 1e-6   (these run on live DNS + APK URLs;
 #                                               a false positive blocks a site)
-#   whitelist (md5 hashes)       -> fpp 1e-4   (built SEPARATELY from all_md5.txt;
+#   whitelist (md5 hashes)       -> fpp 1e-6   (built SEPARATELY from all_md5.txt;
 #                                               see the whitelist command at the end)
 #
 # The shared crate maps fpp to a binary-fuse width: 1e-6 -> BinaryFuse32,
-# 1e-4 -> BinaryFuse16.
+# 0.015 -> BinaryFuse16.
 #
 # Pipeline:
 #   1. gen_domain_bloom.py      -> xf_build/<stem>.txt  (phishing, abuse, spam,
@@ -63,4 +63,4 @@ done
 echo
 echo "Done. Website .xf written to $SCAN/."
 echo "Whitelist (run once, ~minutes, 7GB input):"
-echo "  $WRITER all_md5.txt $SCAN/whitelist.xf 0.0001"
+echo "  $WRITER all_md5.txt $SCAN/whitelist.xf $WEB_FPP"
