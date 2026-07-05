@@ -24,9 +24,10 @@ mod emulate;
 mod ip_scan;
 mod url_scan;
 
+use jni::errors::LogErrorAndDefault;
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jstring, JNI_FALSE, JNI_TRUE};
-use jni::{Env, EnvUnowned};
+use jni::EnvUnowned;
 
 // Direct FFI into Android's liblog.so (always present in an app process,
 // unlike the desktop-only `HDA_PROF`/eprintln! profiling in
@@ -487,9 +488,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     dir: JString,
     load_auto_rules: jboolean,
 ) -> jboolean {
-    env.with_env(|env| {
-        let dir: String = match env.get_string(&dir) {
-            Ok(s) => s.into(),
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let dir: String = match dir.try_to_string(env) {
+            Ok(s) => s,
             Err(_) => return Ok(JNI_FALSE),
         };
         let load_auto_rules = load_auto_rules != JNI_FALSE;
@@ -505,7 +506,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         } else {
             Ok(JNI_FALSE)
         }
-    }).unwrap_or(JNI_FALSE)
+    }).resolve::<LogErrorAndDefault>()
 }
 
 /// `void nativeSetEmulationEnabled(boolean enabled)` — Settings toggle for the
@@ -532,9 +533,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass<'local>,
     yar_path: JString<'local>,
 ) -> jboolean {
-    env.with_env(|env| {
-        let path: String = match env.get_string(&yar_path) {
-            Ok(s) => s.into(),
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let path: String = match yar_path.try_to_string(env) {
+            Ok(s) => s,
             Err(_) => return Ok(JNI_FALSE),
         };
         let Some(lock) = ENGINE.get() else { return Ok(JNI_FALSE) };
@@ -544,19 +545,19 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
             clamav.add_yara_source_file(&path)
         }));
         Ok(if matches!(added, Ok(Some(_))) { JNI_TRUE } else { JNI_FALSE })
-    }).unwrap_or(JNI_FALSE)
+    }).resolve::<LogErrorAndDefault>()
 }
 
 /// `String nativeStatus()` — what loaded / failed during init (diagnostics).
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeStatus(
-    env: EnvUnowned,
+    mut env: EnvUnowned,
     _class: JClass,
 ) -> jstring {
-    env.with_env(|env| {
+    env.with_env(|env| -> jni::errors::Result<_> {
         let s = INIT_STATUS.lock().map(|g| g.clone()).unwrap_or_default();
         env.new_string(&s).map(|j| j.into_raw())
-    }).unwrap_or(std::ptr::null_mut())
+    }).resolve::<LogErrorAndDefault>()
 }
 
 /// `boolean nativeIsHashWhitelisted(String md5)` — true if the MD5 is in the
@@ -568,9 +569,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass<'local>,
     hash: JString<'local>,
 ) -> jboolean {
-    env.with_env(|env| {
-        let h: String = match env.get_string(&hash) {
-            Ok(s) => s.into(),
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let h: String = match hash.try_to_string(env) {
+            Ok(s) => s,
             Err(_) => return Ok(JNI_FALSE),
         };
         let hit = ENGINE
@@ -579,7 +580,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
             .map(|e| e.whitelist.as_ref().map(|wl| wl.contains(&h)).unwrap_or(false))
             .unwrap_or(false);
         Ok(if hit { JNI_TRUE } else { JNI_FALSE })
-    }).unwrap_or(JNI_FALSE)
+    }).resolve::<LogErrorAndDefault>()
 }
 
 /// `String nativeScanUrl(String url)` — malicious category (e.g. "PHISHING")
@@ -591,9 +592,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass<'local>,
     url: JString<'local>,
 ) -> jstring {
-    env.with_env(|env| {
-        let u: String = match env.get_string(&url) {
-            Ok(s) => s.into(),
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let u: String = match url.try_to_string(env) {
+            Ok(s) => s,
             Err(_) => return Ok(std::ptr::null_mut()),
         };
         let cat = ENGINE
@@ -602,7 +603,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
             .and_then(|e| e.url_scanner.as_ref().and_then(|s| s.scan(&u)))
             .unwrap_or("");
         env.new_string(cat).map(|s| s.into_raw())
-    }).unwrap_or(std::ptr::null_mut())
+    }).resolve::<LogErrorAndDefault>()
 }
 
 /// `String nativeScanIp(String ip)` — category (e.g. "MALWARE_IP") for a
@@ -614,9 +615,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass<'local>,
     ip: JString<'local>,
 ) -> jstring {
-    env.with_env(|env| {
-        let ip: String = match env.get_string(&ip) {
-            Ok(s) => s.into(),
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let ip: String = match ip.try_to_string(env) {
+            Ok(s) => s,
             Err(_) => return Ok(std::ptr::null_mut()),
         };
         let cat = ENGINE
@@ -625,7 +626,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
             .and_then(|e| e.ip_scanner.as_ref().and_then(|s| s.scan(&ip)))
             .unwrap_or("");
         env.new_string(cat).map(|s| s.into_raw())
-    }).unwrap_or(std::ptr::null_mut())
+    }).resolve::<LogErrorAndDefault>()
 }
 
 /// `String nativeScanText(String text, String packageName)` — runs the
@@ -640,14 +641,14 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass<'local>,
     text: JString<'local>,
 ) -> jstring {
-    env.with_env(|env| {
-        let t: String = match env.get_string(&text) {
-            Ok(s) => s.into(),
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let t: String = match text.try_to_string(env) {
+            Ok(s) => s,
             Err(_) => return Ok(std::ptr::null_mut()),
         };
         let result = scan_text(&t);
         env.new_string(&result).map(|s| s.into_raw())
-    }).unwrap_or(std::ptr::null_mut())
+    }).resolve::<LogErrorAndDefault>()
 }
 
 /// `String nativeScanHips(String hipsJson)` — runs the
@@ -660,14 +661,14 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass<'local>,
     hips_json: JString<'local>,
 ) -> jstring {
-    env.with_env(|env| {
-        let json: String = match env.get_string(&hips_json) {
-            Ok(s) => s.into(),
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let json: String = match hips_json.try_to_string(env) {
+            Ok(s) => s,
             Err(_) => return Ok(std::ptr::null_mut()),
         };
         let result = scan_hips(&json);
         env.new_string(&result).map(|s| s.into_raw())
-    }).unwrap_or(std::ptr::null_mut())
+    }).resolve::<LogErrorAndDefault>()
 }
 
 fn scan_hips(hips_json: &str) -> String {
@@ -756,10 +757,10 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     file_md5: JString<'local>,
     zero_trust: jboolean,
 ) -> jstring {
-    env.with_env(|env| {
+    env.with_env(|env| -> jni::errors::Result<_> {
         let result = scan_apk(env, path, hydradragon_json, file_md5, zero_trust == JNI_TRUE);
         env.new_string(&result).map(|s| s.into_raw())
-    }).unwrap_or(std::ptr::null_mut())
+    }).resolve::<LogErrorAndDefault>()
 }
 
 fn scan_apk(
@@ -769,22 +770,21 @@ fn scan_apk(
     file_md5: JString,
     zero_trust: bool,
 ) -> String {
-    let path: String = match env.get_string(&path) {
-        Ok(s) => s.into(),
+    let path: String = match path.try_to_string(env) {
+        Ok(s) => s,
         Err(_) => return r#"{"error":"bad path"}"#.to_string(),
     };
     // Live-network report from Java (hydradragon module). Empty/absent → None.
-    let hydradragon: Option<Vec<u8>> = env
-        .get_string(&hydradragon_json)
+    let hydradragon: Option<Vec<u8>> = hydradragon_json
+        .try_to_string(env)
         .ok()
-        .map(|s| String::from(s).into_bytes())
+        .map(|s| s.into_bytes())
         .filter(|b| !b.is_empty());
     // MD5 Java already computed for the whole file (hash-first fast path). Reused
     // for the top-level buffer so it isn't hashed again here. Empty → None.
-    let file_md5: Option<String> = env
-        .get_string(&file_md5)
+    let file_md5: Option<String> = file_md5
+        .try_to_string(env)
         .ok()
-        .map(String::from)
         .filter(|s| !s.is_empty());
     let Some(engine_lock) = ENGINE.get() else {
         return r#"{"error":"not initialised"}"#.to_string();
