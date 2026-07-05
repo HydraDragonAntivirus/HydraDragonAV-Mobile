@@ -71,7 +71,10 @@ public class ScanFragment extends Fragment {
         public void onServiceConnected(android.content.ComponentName name, android.os.IBinder service) {
             guardService = ((com.hydradragon.antivirus.service.GuardService.GuardBinder) service).getService();
             serviceBound = true;
-            checkEngineLoading();
+            // Run the merged status check immediately so the scan page shows the
+            // correct text (engine loading / background scan / scan prompt)
+            // right when the service connects, not 2s later on the next poll.
+            statusPollCheck.run();
             if (isScanning && pendingCustomScanUri == null && pendingCustomScanDir == null) attachScanCallback();
 
             // A file or folder was picked while the engine was still asleep —
@@ -517,74 +520,60 @@ public class ScanFragment extends Fragment {
         if (loading) {
             tvEngineWarning.setVisibility(View.VISIBLE);
             btnScan.setEnabled(false);
-            tvScanStatus.setText(getString(R.string.engine_loading_status));
-            tvScanStatus.setTextColor(0xFFFFAA00);
         } else {
             tvEngineWarning.setVisibility(View.GONE);
             if (!isScanning) {
                 btnScan.setEnabled(true);
-                tvScanStatus.setText(getString(R.string.scan_prompt));
-                tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
             }
         }
     }
 
-    // Polls every 2s while the engine is still loading so the warning
-    // auto-disappears and the scan button re-enables when init finishes.
-    private final android.os.Handler engineLoadPoller = new android.os.Handler(android.os.Looper.getMainLooper());
-    private final Runnable engineLoadCheck = new Runnable() {
+    // Single poller that checks engine loading, background scan, and idle state
+    // — merged into ONE loop so two separate timers don't fight over
+    // tvScanStatus and cause flickering between "Engine loading…",
+    // "Background scan running…", and the normal prompt.
+    private final android.os.Handler statusPoller = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable statusPollCheck = new Runnable() {
         @Override
         public void run() {
             if (!isAdded()) return;
-            if (serviceBound && guardService != null && guardService.isEngineLoading()) {
-                tvEngineWarning.setVisibility(View.VISIBLE);
-                btnScan.setEnabled(false);
-                tvScanStatus.setText(getString(R.string.engine_loading_status));
-                tvScanStatus.setTextColor(0xFFFFAA00);
-                engineLoadPoller.postDelayed(this, 2000);
-            } else {
-                tvEngineWarning.setVisibility(View.GONE);
-                if (!isScanning) {
-                    btnScan.setEnabled(true);
-                    tvScanStatus.setText(getString(R.string.scan_prompt));
-                    tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+            if (serviceBound && guardService != null) {
+                if (guardService.isEngineLoading()) {
+                    tvEngineWarning.setVisibility(View.VISIBLE);
+                    btnScan.setEnabled(false);
+                    tvScanStatus.setText(getString(R.string.engine_loading_status));
+                    tvScanStatus.setTextColor(0xFFFFAA00);
+                } else {
+                    tvEngineWarning.setVisibility(View.GONE);
+                    if (guardService.getScanEngine() != null
+                            && guardService.getScanEngine().isScanRunning()
+                            && !isScanning) {
+                        tvScanStatus.setText(getString(R.string.background_scan_running));
+                        tvScanStatus.setTextColor(0xFF00D9FF);
+                        btnScan.setEnabled(false);
+                    } else if (!isScanning) {
+                        btnScan.setEnabled(true);
+                        tvScanStatus.setText(getString(R.string.scan_prompt));
+                        tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+                    }
                 }
             }
+            statusPoller.postDelayed(this, 2000);
         }
     };
-    private void pollEngineLoading() { engineLoadPoller.post(engineLoadCheck); }
-
-    // Surfaces GuardService's own periodic BACKGROUND scan (see
-    // GuardService#startPeriodicScans) on this screen even when the user
-    // never tapped the Scan button themselves — previously it ran completely
-    // invisibly, so a user looking at this screen while it happened had no
-    // way to tell a scan was in progress at all.
-    private final android.os.Handler backgroundScanPoller = new android.os.Handler(android.os.Looper.getMainLooper());
-    private final Runnable backgroundScanCheck = new Runnable() {
-        @Override
-        public void run() {
-            if (serviceBound && guardService != null && !isScanning
-                    && guardService.getScanEngine() != null
-                    && guardService.getScanEngine().isScanRunning()) {
-                tvScanStatus.setText(getString(R.string.background_scan_running));
-                tvScanStatus.setTextColor(0xFF00D9FF);
-            }
-            backgroundScanPoller.postDelayed(this, 3000);
-        }
-    };
+    private void pollEngineLoading() { statusPoller.post(statusPollCheck); }
 
     @Override
     public void onStart() {
         super.onStart();
         requireContext().bindService(new Intent(getContext(), GuardService.class), serviceConnection, Context.BIND_AUTO_CREATE);
-        backgroundScanPoller.post(backgroundScanCheck);
+        pollEngineLoading();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        engineLoadPoller.removeCallbacks(engineLoadCheck);
-        backgroundScanPoller.removeCallbacks(backgroundScanCheck);
+        statusPoller.removeCallbacks(statusPollCheck);
         if (serviceBound) {
             // GuardService keeps scanning/notifying/logging on its own even
             // with no UI attached — just drop this screen's reference so it's

@@ -58,6 +58,7 @@ public class DashboardFragment extends Fragment {
     private boolean serviceBound = false;
     private Handler uiHandler;
     private Runnable statsUpdater;
+    private Runnable engineStatusPoller;
 
     // Last value shown for each counter, so each 1s tick animates from the
     // PREVIOUS value instead of always from 0 (that made the counters visibly
@@ -139,6 +140,7 @@ public class DashboardFragment extends Fragment {
 
         // Başlangıç animasyonu
         startStartupAnimation();
+        startEngineStatusPoller();
     }
 
     private void startStartupAnimation() {
@@ -229,6 +231,27 @@ public class DashboardFragment extends Fragment {
         tvStatusDesc.setText(status);
     }
 
+    private void startEngineStatusPoller() {
+        engineStatusPoller = new Runnable() {
+            @Override
+            public void run() {
+                if (!isAdded()) return;
+                if (serviceBound && guardService != null) {
+                    if (guardService.isEngineLoading()) {
+                        tvEngineStatus.setText(getString(R.string.engine_loading_status));
+                        tvEngineStatus.setTextColor(0xFFFFAA00);
+                    } else {
+                        tvEngineStatus.setText(getString(R.string.dashboard_firewall_active));
+                        tvEngineStatus.setTextColor(androidx.core.content.ContextCompat.getColor(
+                            requireContext(), com.hydradragon.antivirus.R.color.neon_green));
+                    }
+                }
+                uiHandler.postDelayed(this, 2000);
+            }
+        };
+        uiHandler.post(engineStatusPoller);
+    }
+
     @Override
     public void onStart() {
         super.onStart();
@@ -241,6 +264,7 @@ public class DashboardFragment extends Fragment {
         super.onStop();
         if (serviceBound) {
             if (statsUpdater != null) uiHandler.removeCallbacks(statsUpdater);
+            if (engineStatusPoller != null) uiHandler.removeCallbacks(engineStatusPoller);
             requireContext().unbindService(serviceConnection);
             serviceBound = false;
         }
