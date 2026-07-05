@@ -170,6 +170,7 @@
 
     <!-- Bulunan Tehditler Listesi -->
     <TextView
+        android:id="@+id/tv_threat_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/found_threats"
@@ -177,7 +178,8 @@
         android:textSize="11sp"
         android:fontFamily="monospace"
         android:letterSpacing="0.1"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_threats"

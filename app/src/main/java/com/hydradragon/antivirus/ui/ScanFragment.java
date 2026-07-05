@@ -41,7 +41,7 @@ public class ScanFragment extends Fragment {
 
     private Button btnScan;
     private ProgressBar progressBar;
-    private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats;
+    private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats, tvThreatLabel;
     private ImageView ivScannerIcon;
     private RecyclerView rvThreats;
 
@@ -106,6 +106,7 @@ public class ScanFragment extends Fragment {
         tvScanStatus = view.findViewById(R.id.tv_scan_status);
         tvScanned = view.findViewById(R.id.tv_scanned_count);
         tvThreats = view.findViewById(R.id.tv_threat_count);
+        tvThreatLabel = view.findViewById(R.id.tv_threat_label);
         ivScannerIcon = view.findViewById(R.id.iv_scanner_icon);
         rvThreats = view.findViewById(R.id.rv_threats);
 
@@ -119,7 +120,10 @@ public class ScanFragment extends Fragment {
             tvThreats.setText(String.valueOf(foundThreats.size()));
             tvScanStatus.setText(lastScanStatus);
             btnScan.setText(getString(R.string.rescan));
-            if (foundThreats.size() > 0) tvThreats.setTextColor(0xFFFF0040);
+            if (foundThreats.size() > 0) {
+                tvThreats.setTextColor(0xFFFF0040);
+                tvThreatLabel.setVisibility(View.VISIBLE);
+            }
         }
 
         if (isScanning) {
@@ -156,6 +160,7 @@ public class ScanFragment extends Fragment {
                             foundThreats.remove(threat);
                             threatAdapter.notifyDataSetChanged();
                             tvThreats.setText(String.valueOf(foundThreats.size()));
+                            if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
                         } else {
                             Toast.makeText(getContext(), getString(R.string.file_delete_failed), Toast.LENGTH_SHORT).show();
                         }
@@ -193,6 +198,7 @@ public class ScanFragment extends Fragment {
                     foundThreats.remove(threat);
                     threatAdapter.notifyDataSetChanged();
                     tvThreats.setText(String.valueOf(foundThreats.size()));
+                    if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
                 })
                 .setNeutralButton(getString(R.string.btn_ignore_signature), (dialog, which) ->
                     showIgnoreSignatureDialog(threat))
@@ -312,9 +318,10 @@ public class ScanFragment extends Fragment {
         // Hide it from the screen right away so it feels instantly removed
         foundThreats.remove(threat);
         threatAdapter.notifyDataSetChanged();
-        tvThreats.setText(String.valueOf(foundThreats.size()));
-    }
+                            tvThreats.setText(String.valueOf(foundThreats.size()));
+                            if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
 
+            }
     private void showScanTypeDialog() {
         String[] options = {
             getString(R.string.btn_quick_scan),
@@ -361,6 +368,7 @@ public class ScanFragment extends Fragment {
         tvScanStatus.setText(lastScanStatus);
         tvScanStatus.setTextColor(0xFF00D9FF);
         tvThreats.setText("0");
+        tvThreatLabel.setVisibility(View.GONE);
 
         attachScanCallback();
         if (guardService.getScanEngine() == null || !guardService.getScanEngine().scanAllApps(isFullScan)) {
@@ -424,8 +432,10 @@ public class ScanFragment extends Fragment {
                     if (!foundThreats.contains(threat)) {
                         foundThreats.add(threat);
                         threatAdapter.notifyItemInserted(foundThreats.size() - 1);
-                        tvThreats.setText(String.valueOf(foundThreats.size()));
-                        tvThreats.setTextColor(0xFFFF0040);
+                    tvThreats.setText(String.valueOf(foundThreats.size()));
+                    tvThreats.setTextColor(0xFFFF0040);
+                    tvThreatLabel.setVisibility(View.VISIBLE);
+                        tvThreatLabel.setVisibility(View.VISIBLE);
                     }
                 });
             }
@@ -451,10 +461,12 @@ public class ScanFragment extends Fragment {
                         lastScanStatus = getString(R.string.scan_clean_system);
                         tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFF00FF88);
+                        tvThreatLabel.setVisibility(View.GONE);
                     } else {
                         lastScanStatus = getString(R.string.threats_found_count, foundThreats.size());
                         tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFFFF0040);
+                        if (foundThreats.size() > 0) tvThreatLabel.setVisibility(View.VISIBLE);
                     }
                 });
             }
@@ -613,6 +625,7 @@ public class ScanFragment extends Fragment {
         tvScanStatus.setText(lastScanStatus);
         tvScanStatus.setTextColor(0xFF00D9FF);
         tvThreats.setText("0");
+        tvThreatLabel.setVisibility(View.GONE);
 
         attachScanCallback();
         if (!guardService.getScanEngine().scanCustomFolder(dir)) {
@@ -687,9 +700,11 @@ private void scanCustomFile(android.net.Uri uri) {
                             tvThreats.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.threat_red));
                             tvScanStatus.setText(getString(R.string.threats_found_count, 1));
                             tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.threat_red));
-                        } else {
+                            tvThreatLabel.setVisibility(View.VISIBLE);
+
                             tvThreats.setText("0");
                             tvThreats.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.neon_green));
+                            tvThreatLabel.setVisibility(View.GONE);
                             tvScanStatus.setText(getString(R.string.system_clean));
                             tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.neon_green));
                         }
