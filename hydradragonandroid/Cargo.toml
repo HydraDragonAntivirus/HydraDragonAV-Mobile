@@ -33,7 +33,7 @@ dex-analysis = { git = "https://github.com/FossRust/dex-parser-analyzer", branch
 # NSRL-known-good row skips the heavy clamav/YARA/ML/TLSH pass instead of
 # rescanning what Java's whitelist already vouches for. "bundled" statically
 # links sqlite3 (no cross-compiled system dependency needed for the .so).
-rusqlite = { version = "0.31", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 unicorn-engine = { git = "https://github.com/HydraDragonAntivirus/unicorn-engine-rs", default-features = false, features = ["arch_arm", "arch_aarch64", "arch_x86"] }
 serde_json = "1.0"
 
