@@ -14,10 +14,31 @@ import com.hydradragon.antivirus.engine.BehaviorFlags;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DynamicAnalysisService extends AccessibilityService {
     private static final String TAG = "HydraDragon-Dynamic";
     private static final String CHANNEL_ID = "hydradragon_dynamic_alert";
+
+    // Each AccessibilityNodeInfo access (getChild/getText) is a Binder call
+    // into the FOREGROUND app's own process. A slow, hung, or deliberately
+    // obstructive app (the exact profile of "unknown/malware") can stall
+    // those calls indefinitely; running the walk on this service's event
+    // thread would then block all further accessibility event delivery until
+    // it finally returns. Run it on its own thread instead, so a stuck target
+    // app only stalls this one worker, never event dispatch. Single-threaded:
+    // walks are cheap/rare enough (window-switch only) that overlap isn't a
+    // concern, and it keeps ordering simple.
+    private final ExecutorService nodeWalkExecutor = Executors.newSingleThreadExecutor();
+    /** True while a walk is in flight — a second window switch during a stuck
+     *  walk is dropped rather than queued, since a queued backlog against a
+     *  hung target would only grow forever. */
+    private final AtomicBoolean nodeWalkBusy = new AtomicBoolean(false);
+    /** Hard cap on nodes visited per walk — bounds worst-case cost even
+     *  against a hostile app that returns a huge/cyclic-looking tree. */
+    private static final int MAX_NODES_PER_WALK = 500;
 
     private long lastClickTime = 0;
     private int rapidClickCount = 0;
@@ -148,29 +169,48 @@ public class DynamicAnalysisService extends AccessibilityService {
                 com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.onForegroundPermissionCheck(this, pkg);
             }
 
-            // The recursive node walk below is expensive: every getText()/
-            // getChild() is a Binder round-trip into system_server. Trusted
-            // system apps (Settings, SystemUI, ...) have no legitimate reason
-            // to be scanned for ransomware/phishing text, and running it on
-            // TYPE_WINDOW_CONTENT_CHANGED — which fires continuously during
-            // scrolling/list updates, not just on a window switch — was
-            // hammering system_server with binder traffic hard enough to
-            // start ANRs in OTHER apps (observed: com.android.settings ANR'd
-            // while system_server sat at 66% CPU during Accessibility
-            // Settings list scrolling). Only walk on an actual window switch.
+            // Trusted system apps (Settings, SystemUI, ...) have no legitimate
+            // reason to be scanned for ransomware/phishing text. Also only on
+            // an actual window switch, not TYPE_WINDOW_CONTENT_CHANGED (fires
+            // continuously during scrolling/list updates).
             if (!trusted && eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
                 AccessibilityNodeInfo rootNode = getRootInActiveWindow();
                 if (rootNode != null) {
-                    checkNodesForSuspiciousKeywords(rootNode);
-                    rootNode.recycle();
+                    // Every node.getChild()/getText() below is a Binder call
+                    // into the FOREGROUND app's own process. A slow, hung, or
+                    // deliberately obstructive app — the exact profile of
+                    // "unknown/malware" — can stall those calls for a long
+                    // time; running the walk inline here would block this
+                    // service's event-handling thread until it returns,
+                    // backing up ALL further accessibility event delivery
+                    // (the actual cause of the lag, not event frequency).
+                    // Offload to a dedicated worker so a stuck target only
+                    // stalls that one thread. Drop (don't queue) a new walk
+                    // while one is still in flight — queuing against a
+                    // genuinely hung target would only grow unbounded.
+                    if (nodeWalkBusy.compareAndSet(false, true)) {
+                        nodeWalkExecutor.execute(() -> {
+                            try {
+                                checkNodesForSuspiciousKeywords(rootNode, new int[]{0});
+                            } finally {
+                                rootNode.recycle();
+                                nodeWalkBusy.set(false);
+                            }
+                        });
+                    } else {
+                        rootNode.recycle();
+                    }
                 }
             }
         }
     }
 
-    private void checkNodesForSuspiciousKeywords(AccessibilityNodeInfo node) {
-        if (node == null) return;
-        
+    /** {@code budget[0]} is the running node count, shared across the whole
+     *  recursive walk — caps total Binder calls even against a hostile app
+     *  that returns a huge or effectively-cyclic-looking tree. */
+    private void checkNodesForSuspiciousKeywords(AccessibilityNodeInfo node, int[] budget) {
+        if (node == null || budget[0]++ >= MAX_NODES_PER_WALK) return;
+
         CharSequence text = node.getText();
         if (text != null) {
             String lowerText = text.toString().toLowerCase();
@@ -262,10 +302,10 @@ public class DynamicAnalysisService extends AccessibilityService {
             }
         }
         
-        for (int i = 0; i < node.getChildCount(); i++) {
+        for (int i = 0; i < node.getChildCount() && budget[0] < MAX_NODES_PER_WALK; i++) {
             AccessibilityNodeInfo child = node.getChild(i);
             if (child != null) {
-                checkNodesForSuspiciousKeywords(child);
+                checkNodesForSuspiciousKeywords(child, budget);
                 child.recycle();
             }
         }
@@ -350,6 +390,12 @@ public class DynamicAnalysisService extends AccessibilityService {
 
     @Override
     public void onInterrupt() {}
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        nodeWalkExecutor.shutdownNow();
+    }
 
     private void sendAlert(String title, String message) {
         sendAlert(title, message, null);
