@@ -512,15 +512,20 @@ public class ScanFragment extends Fragment {
     private void stopScannerAnimation() { ivScannerIcon.clearAnimation(); }
 
     private void checkEngineLoading() {
+        if (!isAdded()) return;
         boolean loading = guardService != null && guardService.isEngineLoading();
         if (loading) {
             tvEngineWarning.setVisibility(View.VISIBLE);
             btnScan.setEnabled(false);
-            tvScanStatus.setText(getString(R.string.scan_prompt));
-            tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+            tvScanStatus.setText(getString(R.string.engine_loading_status));
+            tvScanStatus.setTextColor(0xFFFFAA00);
         } else {
             tvEngineWarning.setVisibility(View.GONE);
-            if (!isScanning) btnScan.setEnabled(true);
+            if (!isScanning) {
+                btnScan.setEnabled(true);
+                tvScanStatus.setText(getString(R.string.scan_prompt));
+                tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+            }
         }
     }
 
@@ -530,13 +535,20 @@ public class ScanFragment extends Fragment {
     private final Runnable engineLoadCheck = new Runnable() {
         @Override
         public void run() {
+            if (!isAdded()) return;
             if (serviceBound && guardService != null && guardService.isEngineLoading()) {
                 tvEngineWarning.setVisibility(View.VISIBLE);
                 btnScan.setEnabled(false);
+                tvScanStatus.setText(getString(R.string.engine_loading_status));
+                tvScanStatus.setTextColor(0xFFFFAA00);
                 engineLoadPoller.postDelayed(this, 2000);
             } else {
                 tvEngineWarning.setVisibility(View.GONE);
-                if (!isScanning) btnScan.setEnabled(true);
+                if (!isScanning) {
+                    btnScan.setEnabled(true);
+                    tvScanStatus.setText(getString(R.string.scan_prompt));
+                    tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+                }
             }
         }
     };
@@ -571,6 +583,7 @@ public class ScanFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
+        engineLoadPoller.removeCallbacks(engineLoadCheck);
         backgroundScanPoller.removeCallbacks(backgroundScanCheck);
         if (serviceBound) {
             // GuardService keeps scanning/notifying/logging on its own even

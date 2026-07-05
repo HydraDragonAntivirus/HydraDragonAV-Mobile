@@ -177,6 +177,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="scan_custom_folder">🗂 Custom Scan (folder)</string>
     <string name="scan_custom_folder_unsupported">Can\'t resolve that folder to a real path (e.g. a cloud-backed provider) — pick a folder on local/SD storage instead</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
+    <string name="engine_loading_status">Engine loading…</string>
     <string name="background_scan_running">⏳ Background scan running…</string>
     <string name="detection_categories_header">Detection Categories</string>
     <string name="detect_cat_signatures">Signature-based (YARA/ClamAV)</string>
