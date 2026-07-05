@@ -147,10 +147,23 @@ public class DynamicAnalysisService extends AccessibilityService {
             if (!trusted) {
                 com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.onForegroundPermissionCheck(this, pkg);
             }
-            AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-            if (rootNode != null) {
-                checkNodesForSuspiciousKeywords(rootNode);
-                rootNode.recycle();
+
+            // The recursive node walk below is expensive: every getText()/
+            // getChild() is a Binder round-trip into system_server. Trusted
+            // system apps (Settings, SystemUI, ...) have no legitimate reason
+            // to be scanned for ransomware/phishing text, and running it on
+            // TYPE_WINDOW_CONTENT_CHANGED — which fires continuously during
+            // scrolling/list updates, not just on a window switch — was
+            // hammering system_server with binder traffic hard enough to
+            // start ANRs in OTHER apps (observed: com.android.settings ANR'd
+            // while system_server sat at 66% CPU during Accessibility
+            // Settings list scrolling). Only walk on an actual window switch.
+            if (!trusted && eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+                if (rootNode != null) {
+                    checkNodesForSuspiciousKeywords(rootNode);
+                    rootNode.recycle();
+                }
             }
         }
     }
