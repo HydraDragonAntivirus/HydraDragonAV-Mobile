@@ -61,13 +61,18 @@ fn android_log(msg: &str) {
     unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
 }
 
-/// Asset file names expected inside the init directory.
+/// Asset file names expected inside the init directory (static scanner).
 const YRC_FILES: &[&str] = &[
     "clean_rules_filtered_verified.yrc",
     "valhalla-rules_filtered_verified.yrc",
-    "hips_rules_filtered_verified.yrc",
-    "emerging-all.yrc",
     "machine_learning_apk.yrc",
+];
+/// HIPS / dynamic-analysis rules — loaded lazily on first nativeScanHips call
+/// so they don't slow down the static scanner init or consume memory for rules
+/// that only match on behavioral/HIPS metadata.
+const DYNAMIC_YRC_FILES: &[&str] = &[
+    "emerging-all.yrc",
+    "hips_rules_filtered_verified.yrc",
 ];
 const MODEL_BIN: &str = "apk_model.bin";
 /// Malware TLSH similarity database (one T1 digest per line), built from the
@@ -202,6 +207,16 @@ static ENGINE: OnceLock<std::sync::RwLock<Engine>> = OnceLock::new();
 static NATIVE_EMULATION_ENABLED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(true);
 
+/// Whether the DYNAMIC_YRC_FILES have been loaded into the live engine (lazy,
+/// first nativeScanHips call). Avoids re-loading them on every HIPS scan tick.
+static DYNAMIC_RULES_LOADED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Base directory path, set once during do_init(), so lazy dynamic-rule loading
+/// in scan_hips() knows where to find the .yrc files without threading a
+/// reference through every read-lock acquisition.
+static INIT_DIR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
 /// Last panic's "message @ file:line", captured by our hook so we can report
 /// WHY a scan panicked (root cause) instead of just swallowing it.
 static LAST_PANIC: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
@@ -270,17 +285,43 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
             let db_ms = t_db.elapsed().as_millis();
             android_log(&format!("init :: from_database_dir={db_ms}ms"));
             report.push_str(&format!("clamav=ok({db_ms}ms)"));
-            for name in YRC_FILES {
-                let t_yrc = std::time::Instant::now();
-                let path = base.join(name);
-                let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    eng.add_compiled_yara_file(&path)
-                }));
-                let yrc_ms = t_yrc.elapsed().as_millis();
-                match added {
-                    Ok(Some(_)) => report.push_str(&format!(" yrc[{}]=ok({yrc_ms}ms)", name)),
-                    Ok(None) => report.push_str(&format!(" yrc[{}]=ERR({yrc_ms}ms)", name)),
-                    Err(_) => report.push_str(&format!(" yrc[{}]=PANIC({})", name, last_panic())),
+            // Load every .yrc file in parallel — each thread reads the file and
+            // parses the compiled rules from its bytes, then the main thread
+            // pushes the ready YaraEngine objects onto the engine list.
+            let yrc_results: Vec<(String, u128, Option<hydradragonclamav::yara_scan::YaraEngine>)> =
+                std::thread::scope(|s| {
+                    YRC_FILES
+                        .iter()
+                        .map(|name| {
+                            let path = base.join(name);
+                            s.spawn(|| {
+                                let t0 = std::time::Instant::now();
+                                let engine =
+                                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+                                        || -> Option<hydradragonclamav::yara_scan::YaraEngine> {
+                                            let bytes = std::fs::read(&path).ok()?;
+                                            hydradragonclamav::yara_scan::YaraEngine::from_compiled(
+                                                &bytes,
+                                            )
+                                        },
+                                    ))
+                                    .ok()
+                                    .flatten();
+                                (name.to_string(), t0.elapsed().as_millis(), engine)
+                            })
+                        })
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .map(|h| h.join().unwrap_or_default())
+                        .collect()
+                });
+            for (name, yrc_ms, engine) in yrc_results {
+                match engine {
+                    Some(e) => {
+                        eng.add_compiled_yara(e);
+                        report.push_str(&format!(" yrc[{}]=ok({yrc_ms}ms)", name));
+                    }
+                    None => report.push_str(&format!(" yrc[{}]=ERR({yrc_ms}ms)", name)),
                 }
             }
             // Self-learning: every rule this device has
@@ -524,6 +565,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
             Ok(e) => e,
             Err(_) => return Ok(JNI_FALSE),
         };
+        let _ = INIT_DIR.set(dir.clone());
         let ok = engine.clamav.is_some() || engine.model.is_some();
         let _ = ENGINE.set(std::sync::RwLock::new(engine));
         if ok && ENGINE.get().is_some() {
@@ -700,16 +742,36 @@ fn scan_hips(hips_json: &str) -> String {
     if hips_json.is_empty() {
         return r#"{"malicious":false}"#.to_string();
     }
+    // Validate JSON early so we don't bother loading rules for garbage input.
+    if serde_json::from_str::<serde_json::Value>(hips_json).is_err() {
+        return r#"{"error":"invalid JSON"}"#.to_string();
+    }
+    // Lazily load DYNAMIC_YRC_FILES on first HIPS scan (write lock, brief).
+    if !DYNAMIC_RULES_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
+        if let Some(lock) = ENGINE.get() {
+            if let Ok(mut guard) = lock.write() {
+                if let Some(clamav) = &mut guard.clamav {
+                    if let Some(base) = INIT_DIR.get() {
+                        for name in DYNAMIC_YRC_FILES {
+                            let path = std::path::Path::new(base).join(name);
+                            let _ = std::panic::catch_unwind(
+                                std::panic::AssertUnwindSafe(|| {
+                                    clamav.add_compiled_yara_file(&path)
+                                }),
+                            );
+                        }
+                    }
+                }
+                DYNAMIC_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
+            }
+        }
+    }
     let Some(guard) = ENGINE.get().and_then(|l| l.read().ok()) else {
         return r#"{"error":"not initialised"}"#.to_string();
     };
     let Some(clamav) = &guard.clamav else {
         return r#"{"error":"engine not ready"}"#.to_string();
     };
-    // Validate JSON by parsing it
-    if serde_json::from_str::<serde_json::Value>(hips_json).is_err() {
-        return r#"{"error":"invalid JSON"}"#.to_string();
-    }
     let meta_json = hips_json.as_bytes();
     let module_meta: Vec<(&str, &[u8])> = vec![("hydradragon", meta_json)];
     let opts = ScanOptions {

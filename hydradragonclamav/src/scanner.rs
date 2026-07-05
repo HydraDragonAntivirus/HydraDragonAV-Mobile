@@ -272,6 +272,14 @@ impl Engine {
         Some(())
     }
 
+    /// Add an already-loaded YARA engine (parsed from compiled bytes).
+    /// Useful when the `.yrc` was read + parsed in a background thread to
+    /// parallelise the init phase — the caller passes back the ready engine
+    /// and this method just pushes it onto the engine list (no I/O, no parse).
+    pub fn add_compiled_yara(&mut self, engine: crate::yara_scan::YaraEngine) {
+        self.yara.push(engine);
+    }
+
     pub fn scan_path(
         &self,
         path: impl AsRef<Path>,
