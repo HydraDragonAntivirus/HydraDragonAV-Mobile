@@ -2945,7 +2945,7 @@ dependencies = [
 [[package]]
 name = "unrar-ng"
 version = "0.7.7"
-source = "git+https://github.com/HydraDragonAntivirus/unrar.rs#b778a7af7c5be294355ebd07080c42749c9abcd6"
+source = "git+https://github.com/HydraDragonAntivirus/unrar.rs#da3b2203b2a2739dd26c6b87552dd0d2bd3bddc2"
 dependencies = [
  "bitflags",
  "regex",
@@ -2956,7 +2956,7 @@ dependencies = [
 [[package]]
 name = "unrar-ng-sys"
 version = "0.7.7"
-source = "git+https://github.com/HydraDragonAntivirus/unrar.rs#b778a7af7c5be294355ebd07080c42749c9abcd6"
+source = "git+https://github.com/HydraDragonAntivirus/unrar.rs#da3b2203b2a2739dd26c6b87552dd0d2bd3bddc2"
 dependencies = [
  "cc",
  "libc",

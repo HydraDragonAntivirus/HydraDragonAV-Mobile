@@ -81,7 +81,7 @@ public class ProcessDetector {
             activityManager.getRunningAppProcesses();
 
         if (runningApps == null) {
-            Log.w(TAG, "Process listesi alınamadı");
+            Log.w(TAG, "Could not get process list");
             return processList;
         }
 
@@ -193,7 +193,7 @@ public class ProcessDetector {
         File procDir = new File("/proc");
 
         if (!procDir.exists() || !procDir.canRead()) {
-            Log.d(TAG, "/proc okunamadı (root gerekebilir)");
+            Log.d(TAG, "/proc not readable (root may be required)");
             cachedProcScan = processes;
             lastProcScanMs = now;
             return processes;
@@ -203,7 +203,7 @@ public class ProcessDetector {
         try {
             procEntries = procDir.listFiles();
         } catch (SecurityException e) {
-            Log.w(TAG, "/proc listeleme reddedildi: " + e.getMessage());
+            Log.w(TAG, "/proc listing denied: " + e.getMessage());
             cachedProcScan = processes;
             lastProcScanMs = now;
             return processes;

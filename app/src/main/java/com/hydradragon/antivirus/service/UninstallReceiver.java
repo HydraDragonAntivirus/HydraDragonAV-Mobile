@@ -16,7 +16,7 @@ public class UninstallReceiver extends BroadcastReceiver {
             boolean replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
             if (!replacing) {
                 String packageName = intent.getData().getSchemeSpecificPart();
-                Log.d("HydraDragon", "Uygulama silindi: " + packageName);
+                Log.d("HydraDragon", "App removed: " + packageName);
 
                 // Purge ALL remembered state for this package so a removed virus
                 // doesn't "come back": cached scan result, behaviour flag, and any
@@ -26,7 +26,7 @@ public class UninstallReceiver extends BroadcastReceiver {
                 BehaviorFlags.clear(context, packageName);
                 UserDecisions.revokeThreatAllowance(context, packageName);
 
-                ThreatLogger.logThreat(context, packageName, "Bilinmeyen Uygulama", "TEHDİT SİLİNDİ (GÜVENLİ)");
+                ThreatLogger.logThreat(context, packageName, "Unknown App", "THREAT REMOVED (SAFE)");
             }
         }
     }

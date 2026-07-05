@@ -226,16 +226,24 @@ public class GuardService extends Service {
 
     @Override
     public void onCreate() {
-        
+
         super.onCreate();
-        Log.i(TAG, "HydraDragon Guard başlatılıyor...");
+        Log.i(TAG, "HydraDragon Guard starting...");
         createNotificationChannel();
-        initializeEngines();
+        // startForeground() MUST run before any heavy init: initializeEngines()
+        // copies the whole native scan asset bundle to disk and runs nativeInit
+        // (YARA/ClamAV/xor filter loading), which can take longer than the
+        // few seconds Android allows between startForegroundService() and
+        // Service.startForeground() before raising an ANR — this used to be
+        // masked because the native .so failed to load, making init a no-op.
         startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.guard_protecting_status), true));
-        startPeriodicScans();
-        startDownloadMonitor();
-        startFullStorageMonitor();
-        Log.i(TAG, "✓ Guard Service aktif");
+        new Thread(() -> {
+            initializeEngines();
+            startPeriodicScans();
+            startDownloadMonitor();
+            startFullStorageMonitor();
+            Log.i(TAG, "Guard Service active");
+        }, "guard-init").start();
     }
 
     private void initializeEngines() {
@@ -310,7 +318,7 @@ public class GuardService extends Service {
 
             @Override
             public void onError(String error) {
-                Log.e(TAG, "Tarama hatası: " + error);
+                Log.e(TAG, "Scan error: " + error);
                 ScanEngine.ScanCallback ui = uiScanCallback;
                 if (ui != null) ui.onError(error);
             }
@@ -330,7 +338,7 @@ public class GuardService extends Service {
 
             @Override
             public void onNetworkChange(boolean isConnected, String networkType) {
-                Log.d(TAG, "Ağ değişti: " + networkType);
+                Log.d(TAG, "Network changed: " + networkType);
             }
         });
 
@@ -363,7 +371,7 @@ public class GuardService extends Service {
         int fullDelay = Math.min(45, fullMin);
 
         scheduler.scheduleAtFixedRate(() -> {
-            Log.d(TAG, "Periyodik tarama başladı");
+            Log.d(TAG, "Periodic scan started");
             scanEngine.scanAllApps(false); // default: QUICK SCAN
         }, quickDelay, quickMin, TimeUnit.MINUTES);
 
@@ -374,7 +382,7 @@ public class GuardService extends Service {
         // taps Full Scan. Periodic Full Scan (all storage roots + SD card) closes
         // that gap without needing always-on real-time watchers on every folder.
         scheduler.scheduleAtFixedRate(() -> {
-            Log.d(TAG, "Periyodik FULL tarama başladı (harici depolama kapsaması)");
+            Log.d(TAG, "Periodic FULL scan started (external storage coverage)");
             scanEngine.scanAllApps(true);
         }, fullDelay, fullMin, TimeUnit.MINUTES);
 
@@ -557,6 +565,31 @@ public class GuardService extends Service {
         if (downloadObserver != null) downloadObserver.stopWatching();
         for (android.os.FileObserver obs : extraStorageObservers) obs.stopWatching();
         extraStorageObservers.clear();
-        Log.i(TAG, "Guard Service durduruldu");
+        scheduleRestart();
+        Log.i(TAG, "Guard Service destroyed");
+    }
+
+    /**
+     * onDestroy() alone can't tell "app is being uninstalled" apart from
+     * "system/user killed this service" — the app's own components are still
+     * resolvable while an uninstall is in progress. Scheduling a restart via
+     * AlarmManager sidesteps that: the moment an uninstall actually completes,
+     * Android cancels every pending alarm/PendingIntent that belongs to the
+     * removed package, so this restart simply never fires. If the package is
+     * still installed, the alarm fires and the protection service comes back.
+     */
+    private void scheduleRestart() {
+        Intent restart = new Intent(getApplicationContext(), GuardService.class);
+        PendingIntent pi = PendingIntent.getService(getApplicationContext(), 0, restart,
+            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        android.app.AlarmManager am =
+            (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+        if (am == null) return;
+        long triggerAt = android.os.SystemClock.elapsedRealtime() + 1000;
+        try {
+            am.setExactAndAllowWhileIdle(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
+        } catch (Exception e) {
+            am.set(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
+        }
     }
 }

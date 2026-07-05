@@ -11,10 +11,10 @@ public class BootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             if (!com.hydradragon.antivirus.engine.BootAutoStart.isEnabled(context)) {
-                Log.i("HydraDragon", "Cihaz açıldı, ama otomatik başlatma kullanıcı tarafından kapatılmış.");
+                Log.i("HydraDragon", "Device booted, but auto-start was disabled by the user.");
                 return;
             }
-            Log.i("HydraDragon", "Cihaz açıldı, GuardService sessizce başlatılıyor...");
+            Log.i("HydraDragon", "Device booted, starting GuardService silently...");
             Intent serviceIntent = new Intent(context, GuardService.class);
             ContextCompat.startForegroundService(context, serviceIntent);
         }
