@@ -294,7 +294,7 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
                         .iter()
                         .map(|name| {
                             let path = base.join(name);
-                            s.spawn(|| {
+                            s.spawn(move || {
                                 let t0 = std::time::Instant::now();
                                 let engine =
                                     std::panic::catch_unwind(std::panic::AssertUnwindSafe(
@@ -561,11 +561,12 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         };
         let load_auto_rules = load_auto_rules != JNI_FALSE;
         install_panic_hook();
+        let init_dir = dir.clone();
         let engine = match on_big_stack(move || do_init(&dir, load_auto_rules)) {
             Ok(e) => e,
             Err(_) => return Ok(JNI_FALSE),
         };
-        let _ = INIT_DIR.set(dir.clone());
+        let _ = INIT_DIR.set(init_dir);
         let ok = engine.clamav.is_some() || engine.model.is_some();
         let _ = ENGINE.set(std::sync::RwLock::new(engine));
         if ok && ENGINE.get().is_some() {
