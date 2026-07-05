@@ -288,7 +288,7 @@ public final class NativeScanner {
      * Scan a single APK file.
      *
      * @return JSON verdict, e.g.
-     *         {@code {"malicious":true,"yara":["AndroidOS_filtered.yrc::YARA.Foo"],
+         *         {@code {"malicious":true,"yara":["YARA.Foo"],
      *         "ml":{"malicious":false,"jaccard":0.61,"anomaly":0.42,"nearest":"..."}}}
      *         or {@code {"error":"..."}} on failure.
      */

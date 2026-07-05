@@ -45,7 +45,6 @@ fn run() {
         for name in [
             "clean_rules_filtered_verified.yrc",
             "valhalla-rules_filtered_verified.yrc",
-            "AndroidOS_filtered.yrc",
         ] {
             eprintln!("STEP: add_yrc {name}");
             let _ = c.add_compiled_yara_file(base.join(name));

@@ -9,8 +9,7 @@
 //! Detection combines three signals; an APK is flagged if ANY fires:
 //!   1. clean_rules_filtered_verified.yrc  (generic Android/Linux malware)
 //!   2. valhalla-rules_filtered_verified.yrc
-//!   3. AndroidOS_filtered.yrc             (AndroidOS-family signatures)
-//!   4. the one-class MinHash/LSH + Isolation Forest model (apk_model.json)
+//!   3. the one-class MinHash/LSH + Isolation Forest model (apk_model.json)
 
 use std::sync::OnceLock;
 
@@ -66,9 +65,9 @@ fn android_log(msg: &str) {
 const YRC_FILES: &[&str] = &[
     "clean_rules_filtered_verified.yrc",
     "valhalla-rules_filtered_verified.yrc",
-    "AndroidOS_filtered.yrc",
     "hips_rules_filtered_verified.yrc",
     "emerging-all.yrc",
+    "machine_learning_apk.yrc",
 ];
 const MODEL_BIN: &str = "apk_model.bin";
 /// Malware TLSH similarity database (one T1 digest per line), built from the
