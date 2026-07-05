@@ -1,0 +1,51 @@
+[package]
+name = "unrar-ng-sys"
+version = "0.7.7"
+authors = [
+  "Danyel Bayraktar <rust@danyel.io>",
+  "ttys3 <41882455+ttys3@users.noreply.github.com>",
+]
+
+build = "build.rs"
+license = "MIT OR Apache-2.0"
+description = "FFI bindings to unrar (with minimal abstractions). Actively maintained fork of unrar_sys."
+repository = "https://github.com/ttys3/unrar.rs"
+edition = "2024"
+rust-version = "1.85"
+
+# Files excluded from the published crate. These are maintainer-facing
+# (patch series, upgrade script) or unrelated to the build (RAR API
+# documentation shipped by upstream).
+exclude = [
+    "vendor/patches/**",
+    "vendor/patches.txt",   # defensive: file removed when migrating from cherry-pick to git-apply
+    "vendor/upgrade.sh",
+    "vendor/README.md",
+    "vendor/Documentation/**",
+]
+
+[lib]
+name = "unrar_ng_sys"
+
+[features]
+default = ["std", "linux-batch-extract-utf8"]
+std = ["libc/std", "winapi/std"]
+
+# When enabled, build.rs defines UNRAR_NG_FORCE_UTF8 on non-Apple non-Windows
+# Unix targets, routing libunrar's wide<->8bit filename conversions
+# (`WideToChar` / `CharToWide` in `unicode.cpp`) through `WideToUtf` /
+# `UtfToWide` (locale-independent UTF-8 transforms - the same path macOS
+# has used for years via the auto-defined `_APPLE` macro). When disabled,
+# libunrar falls back to its upstream `wcsrtombs` / `mbsrtowcs` path which
+# honors `LC_CTYPE`. See the high-level `unrar-ng` crate's doc for the
+# full rationale and the companion `linux-batch-extract-setlocale` feature.
+linux-batch-extract-utf8 = []
+
+[dependencies]
+libc = { version = "0.2", default-features = false }
+
+[build-dependencies]
+cc = "1"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["minwindef", "ntdef"] }

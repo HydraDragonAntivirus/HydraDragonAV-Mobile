@@ -10,5 +10,5 @@ tar = "0.4"
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 lzma-rust2 = "0.16"
 sevenz-rust2 = { version = "0.20", features = ["brotli", "deflate", "lz4", "zstd"] }
-unrar = "0.5"
+unrar = { package = "unrar-ng", version = "0.7" }
 thiserror = "2"
