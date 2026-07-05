@@ -27,8 +27,8 @@ $env:ANDROID_SDK_ROOT = $sdkRoot
 # unicorn-engine-sys and similar crates that use cmake-rs for Android).
 $env:CMAKE_TOOLCHAIN_FILE = "$NdkHome\build\cmake\android.toolchain.cmake"
 
-# Add Git Bash's usr/bin to PATH so cmake can run `sh` (needed by unicorn's
-# QEMU configure scripts to generate config-host.h and config-target.h).
+# Add Git Bash's usr/bin to PATH so cmake (via cmake-rs in unicorn-engine-sys
+# build.rs) can run `sh` for QEMU configure scripts (config-host.h).
 $gitBin = "C:\Program Files\Git\usr\bin"
 if (Test-Path "$gitBin\sh.exe") { $env:PATH = "$gitBin;$env:PATH" }
 
@@ -57,79 +57,16 @@ if (-not (Get-Command "cargo-ndk" -ErrorAction SilentlyContinue)) {
     cargo install cargo-ndk
 }
 
-# ---------- Unicorn per-ABI build (pkg-config bypass) ----------
-# Build unicorn from the workspace's unicorn C submodule source with NDK cmake per-ABI,
-# then set PKG_CONFIG_PATH so unicorn-engine-sys build.rs finds the .pc file
-# and skips its own broken cmake-rs cross-compile step.
-$unicornRoot = "$env:LOCALAPPDATA\unicorn-android"
+# ---------- per-ABI cargo-ndk build ----------
+# unicorn-engine-sys is now a git dependency whose build.rs defines
+# ANDROID_ABI so cmake-rs cross-compiles correctly with the NDK
+# toolchain (CMAKE_TOOLCHAIN_FILE set above). No manual unicorn
+# C-source build or pkg-config bypass needed.
 $env:PKG_CONFIG_ALLOW_CROSS = "1"
-
-$unicornDir = Resolve-Path "$PSScriptRoot\..\patches\unicorn-engine-rs\crates\unicorn-sys\unicorn"
 
 foreach ($a in $abiList) {
     $abi = $a.Trim()
     $triple = $targetMap[$abi]
-    $installDir = "$unicornRoot\$abi"
-    $pcDir = "$installDir\lib\pkgconfig"
-
-    if ($unicornDir -and -not (Test-Path "$pcDir\unicorn.pc")) {
-        Write-Host "Building Unicorn for $abi from $($unicornDir.Name)..."
-        $buildDir = "$env:TEMP\unicorn-$abi"
-        New-Item -ItemType Directory -Force -Path $buildDir | Out-Null
-
-        # Patch unicorn source for NDK r27 compatibility
-        $int128 = Join-Path $unicornDir.FullName "qemu/include/qemu/int128.h"
-        $osdep  = Join-Path $unicornDir.FullName "qemu/util/osdep.c"
-        if (-not ((Get-Content $int128 -Raw) -match "__SIZEOF_INT128__")) {
-            Write-Host "Patching int128.h for NDK r27..."
-            $ic = Get-Content $int128 -Raw
-            $rep = "#ifndef __SIZEOF_INT128__`ntypedef Int128 __int128_t;`n#endif"
-            $ic = $ic.Replace("typedef Int128 __int128_t;", $rep)
-            Set-Content -Path $int128 -Value $ic -NoNewline
-        }
-        if (-not ((Get-Content $osdep -Raw) -match "sys/mman.h")) {
-            Write-Host "Patching osdep.c for NDK r27..."
-            $oc = Get-Content $osdep -Raw
-            $oc = $oc.Replace('#include "qemu/cutils.h"', '#include "qemu/cutils.h"`n#include <sys/mman.h>')
-            Set-Content -Path $osdep -Value $oc -NoNewline
-        }
-        # Also patch oslib-posix.c which uses mmap/munmap family
-        $oslib = Join-Path $unicornDir.FullName "qemu/util/oslib-posix.c"
-        if (-not ((Get-Content $oslib -Raw) -match "sys/mman.h")) {
-            Write-Host "Patching oslib-posix.c for NDK r27..."
-            $ol = Get-Content $oslib -Raw
-            $ol = $ol.Replace('#include "qemu/osdep.h"', '#include "qemu/osdep.h"`n#include <sys/mman.h>')
-            Set-Content -Path $oslib -Value $ol -NoNewline
-        }
-
-        Push-Location $buildDir
-        cmake "$($unicornDir.FullName)" -G "Ninja" `
-            -DCMAKE_TOOLCHAIN_FILE="$NdkHome\build\cmake\android.toolchain.cmake" `
-            -DANDROID_ABI="$abi" -DANDROID_NATIVE_API_LEVEL=21 `
-            -DCMAKE_INSTALL_PREFIX="$installDir" `
-            -DUNICORN_BUILD_TESTS=OFF
-        if ($LASTEXITCODE -ne 0) { throw "cmake configure failed for $abi" }
-
-        # If config-host.h is empty/stub (cmake's sh-based qemu configure
-        # scripts fail on Windows without Git Bash in PATH), create minimal
-        # config files so compilation can proceed.
-        $ch = "$buildDir\config-host.h"
-        if ((Get-Item $ch -ErrorAction SilentlyContinue).Length -eq 0) {
-            Write-Host "config-host.h empty; creating stubs for NDK r27..."
-            Set-Content -Path $ch -Value "#define CONFIG_POSIX 1`n#define CONFIG_LINUX 1`n"
-            foreach ($td in @("x86_64-softmmu","arm-softmmu","aarch64-softmmu","mips-softmmu","mipsel-softmmu","mips64-softmmu","mips64el-softmmu","sparc-softmmu","sparc64-softmmu","ppc-softmmu","ppc64-softmmu","riscv32-softmmu","riscv64-softmmu","s390x-softmmu","tricore-softmmu","m68k-softmmu")) {
-                $tdir = "$buildDir\$td"
-                New-Item -ItemType Directory -Force -Path $tdir | Out-Null
-                Set-Content -Path "$tdir\config-target.h" -Value "/* stub */`n"
-            }
-        }
-        cmake --build . --target install
-        if ($LASTEXITCODE -ne 0) { throw "cmake build failed for $abi" }
-        Pop-Location
-        Write-Host "Unicorn $abi built and installed"
-    }
-
-    if ($unicornDir) { $env:PKG_CONFIG_PATH = $pcDir }
 
     $cfg = if ($Configuration -eq "release") { "--release" } else { "" }
     Write-Host "Building hydradragonandroid for $abi ($triple)..."

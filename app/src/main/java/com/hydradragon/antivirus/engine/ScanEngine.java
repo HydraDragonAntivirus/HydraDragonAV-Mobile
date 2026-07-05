@@ -961,10 +961,6 @@ public class ScanEngine {
                         break;
                     }
 
-                if (!isWhitelisted && (subject.contains("Android Debug") || subject.contains("test-keys"))) {
-                    riskScore += 60;
-                    reasons.add("INSECURE CERTIFICATE (Test Key)");
-                }
             } else {
                 riskScore += 100;
                 reasons.add("CRITICAL: Digital signature not found!");
