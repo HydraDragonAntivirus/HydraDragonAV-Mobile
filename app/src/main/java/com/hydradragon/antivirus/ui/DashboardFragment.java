@@ -165,6 +165,10 @@ public class DashboardFragment extends Fragment {
             public void run() {
                 if (!serviceBound || guardService == null) return;
                 NetworkMonitor nm = guardService.getNetworkMonitor();
+                if (nm == null) {
+                    uiHandler.postDelayed(this, 1000);
+                    return;
+                }
 
                 int blocked = nm.getBlockedCount();
                 int allowed = nm.getAllowedCount();
