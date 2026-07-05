@@ -70,7 +70,7 @@ def main():
     new_code = update_build_gradle(gradle_content, old_code, new_version)
 
     print(f"{old_version} (code {old_code})  ->  {new_version} (code {new_code})")
-    print(f"app/build.gradle: updated")
+    print("app/build.gradle: updated")
 
 
 if __name__ == "__main__":

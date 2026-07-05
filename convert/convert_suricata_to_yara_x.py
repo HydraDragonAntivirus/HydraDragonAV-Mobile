@@ -8,7 +8,6 @@ strings section, no other module dependency.
 
 import re
 import sys
-import os
 
 SURICATA_RE = re.compile(
     r'^(alert|drop|pass|activate|dynamic)\s+'
@@ -148,13 +147,13 @@ def convert_rule(rule, idx):
 
     lines = []
     lines.append(f'rule {rule_name}')
-    lines.append(f'{{')
-    lines.append(f'  meta:')
+    lines.append('{')
+    lines.append('  meta:')
     lines.append(f'    description = "{escape_yara(msg)}"')
     lines.append(f'    sid = "{sid}"')
     lines.append(f'    rev = "{rev}"')
     lines.append(f'    classtype = "{classtype}"')
-    lines.append(f'    source = "EmergingThreats"')
+    lines.append('    source = "EmergingThreats"')
 
     for k, v in opts.items():
         if k.startswith('reference'):
@@ -181,7 +180,7 @@ def convert_rule(rule, idx):
         conds = [f'hydradragon.network.payload_hex("{p}") >= 1' for p in hex_patterns]
         lines.append(f'    {" and ".join(conds)}')
     else:
-        lines.append(f'    hydradragon.network_connections(/./) >= 1')
+        lines.append('    hydradragon.network_connections(/./) >= 1')
     lines.append('}')
 
     return '\n'.join(lines)

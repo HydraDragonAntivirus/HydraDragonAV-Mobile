@@ -28,7 +28,6 @@ MEMBER_RE = re.compile(r'\bcuckoo\.')
 
 
 def convert_text(text: str) -> tuple[str, int]:
-    n = 0
     text, c1 = IMPORT_RE.subn(r'\1"hydradragon"', text)
     text, c2 = MEMBER_RE.subn("hydradragon.", text)
     return text, c1 + c2
