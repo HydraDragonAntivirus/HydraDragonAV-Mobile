@@ -1,0 +1,48 @@
+name: Python Lint
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - '*.py'
+      - 'convert/**'
+      - 'av_test/**'
+      - 'dev-tools/**'
+      - '.github/workflows/python-lint.yml'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - '*.py'
+      - 'convert/**'
+      - 'av_test/**'
+      - 'dev-tools/**'
+      - '.github/workflows/python-lint.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Run flake8 fatal checks
+        run: |
+          flake8 . --count --statistics --select=F --max-line-length=240 \
+            --exclude=.git,.gradle,build,venv,node_modules,__pycache__,app
+
+      - name: Show flake8 style hints
+        run: |
+          flake8 . --count --statistics --select=E,W --exit-zero --max-line-length=240 \
+            --exclude=.git,.gradle,build,venv,node_modules,__pycache__,app

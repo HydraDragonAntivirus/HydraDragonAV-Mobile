@@ -1,0 +1,26 @@
+version: 2
+
+updates:
+  # Gradle (Android dependencies)
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Rust (Cargo) — native scan engine
+  - package-ecosystem: "cargo"
+    directory: "hydradragonandroid/"
+    schedule:
+      interval: "weekly"
+
+  # Python (pip) — data pipeline scripts
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

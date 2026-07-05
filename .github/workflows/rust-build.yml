@@ -1,0 +1,58 @@
+name: Rust Native Engine
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'hydradragonandroid/**'
+      - 'hydradragonclamav/**'
+      - 'hydradragonml/**'
+      - 'hydradragonextractor/**'
+      - 'hydradragonxorfilter/**'
+      - '.github/workflows/rust-build.yml'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'hydradragonandroid/**'
+      - 'hydradragonclamav/**'
+      - 'hydradragonml/**'
+      - 'hydradragonextractor/**'
+      - 'hydradragonxorfilter/**'
+      - '.github/workflows/rust-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            hydradragonandroid
+            hydradragonclamav
+            hydradragonml
+            hydradragonextractor
+            hydradragonxorfilter
+
+      - name: cargo check (host)
+        run: cargo check
+        working-directory: hydradragonandroid
+
+      - name: cargo clippy
+        run: cargo clippy -- -D warnings
+        working-directory: hydradragonandroid
+        continue-on-error: true
