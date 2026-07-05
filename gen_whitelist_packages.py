@@ -26,6 +26,7 @@ Usage:
 
 import os
 import sys
+import sqlite3
 from pathlib import Path
 
 import nsrl_sql

@@ -578,7 +578,6 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     src = args.src or os.path.join(script_dir, "clean_rules.yar")
     src_base, src_ext = os.path.splitext(src)
-    dst = args.dst or f"{src_base}_filtered{src_ext}"
 
     if os.path.basename(src).startswith("AndroidOS"):
         print(f"Skipping '{src}': AndroidOS files are excluded from filtering.")
