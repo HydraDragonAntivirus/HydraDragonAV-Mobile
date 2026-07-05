@@ -14,7 +14,7 @@ hydradragonclamav = { path = "../hydradragonclamav" }
 hydradragonml = { path = "../hydradragonml" }
 hydradragonextractor = { path = "../hydradragonextractor" }
 md-5 = "0.11"
-jni = "0.21"
+jni = "0.22"
 # Pure-Rust TLSH fuzzy hashing for malware-similarity detection against the
 # MalwareBazaar (apk/elf/so/dex) TLSH database.
 tlsh-rs = "0.1.0"
