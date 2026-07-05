@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_blocked_title">Root化されたデバイス</string>
@@ -136,8 +136,8 @@
     <string name="scan_initial_status">スキャンを押して開始</string>
     <string name="scan_scanning_btn">スキャン中...</string>
     <string name="scan_already_running">バックグラウンドスキャンが既に実行中です — 終了までお待ちください</string>
-    <string name="engine_loading_warning">? Engine loading� Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading�</string>
+    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
+    <string name="engine_loading_status">Engine loading…</string>
 
     <string name="background_scan_running">⏳ バックグラウンドスキャン実行中…</string>
     <string name="detection_categories_header">検出カテゴリ</string>

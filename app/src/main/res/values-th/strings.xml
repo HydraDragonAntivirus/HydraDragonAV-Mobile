@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_blocked_title">อุปกรณ์ที่รูท</string>
@@ -136,8 +136,8 @@
     <string name="scan_initial_status">กดสแกนเพื่อเริ่มต้น</string>
     <string name="scan_scanning_btn">กำลังสแกน...</string>
     <string name="scan_already_running">มีการสแกนเบื้องหลังทำงานอยู่แล้ว — โปรดรอจนกว่าจะเสร็จสิ้น</string>
-    <string name="engine_loading_warning">? Engine loading� Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading�</string>
+    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
+    <string name="engine_loading_status">Engine loading…</string>
 
     <string name="background_scan_running">⏳ กำลังสแกนพื้นหลัง…</string>
     <string name="detection_categories_header">หมวดหมู่การตรวจจับ</string>

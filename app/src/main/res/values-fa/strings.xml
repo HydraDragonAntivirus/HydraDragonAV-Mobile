@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_blocked_title">دستگاه روت‌شده</string>
@@ -136,8 +136,8 @@
     <string name="scan_initial_status">برای شروع دکمه اسکن را فشار دهید</string>
     <string name="scan_scanning_btn">در حال اسکن...</string>
     <string name="scan_already_running">یک اسکن در پس‌زمینه در حال اجراست — لطفاً منتظر پایان آن بمانید</string>
-    <string name="engine_loading_warning">? Engine loading� Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading�</string>
+    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
+    <string name="engine_loading_status">Engine loading…</string>
 
     <string name="background_scan_running">⏳ اسکن پس‌زمینه در حال اجراست…</string>
     <string name="detection_categories_header">دسته‌های تشخیص</string>

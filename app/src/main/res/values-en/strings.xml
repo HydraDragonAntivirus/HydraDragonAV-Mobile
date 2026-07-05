@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_blocked_title">Rooted Device</string>
     <string name="root_blocked_msg">This app cannot run on rooted devices.</string>

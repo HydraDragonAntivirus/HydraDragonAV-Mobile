@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_blocked_title">Gerootetes Gerät</string>
@@ -136,8 +136,8 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="scan_initial_status">SCAN drücken, um zu starten</string>
     <string name="scan_scanning_btn">SCANNEN...</string>
     <string name="scan_already_running">Im Hintergrund läuft bereits ein Scan — bitte warten, bis er abgeschlossen ist</string>
-    <string name="engine_loading_warning">? Engine loading� Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading�</string>
+    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
+    <string name="engine_loading_status">Engine loading…</string>
 
     <string name="background_scan_running">⏳ Hintergrundscan läuft…</string>
     <string name="detection_categories_header">Erkennungskategorien</string>

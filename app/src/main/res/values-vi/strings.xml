@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_blocked_title">Thiết bị đã Root</string>
@@ -136,8 +136,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scan_initial_status">Nhấn QUÉT để bắt đầu</string>
     <string name="scan_scanning_btn">ĐANG QUÉT...</string>
     <string name="scan_already_running">Đã có một lượt quét nền đang chạy — vui lòng đợi cho đến khi hoàn tất</string>
-    <string name="engine_loading_warning">? Engine loading� Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading�</string>
+    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
+    <string name="engine_loading_status">Engine loading…</string>
 
     <string name="background_scan_running">⏳ Đang quét nền…</string>
     <string name="detection_categories_header">Danh mục Phát hiện</string>

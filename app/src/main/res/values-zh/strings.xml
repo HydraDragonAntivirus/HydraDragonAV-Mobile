@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_blocked_title">设备已获取Root权限</string>
@@ -136,8 +136,8 @@
     <string name="scan_initial_status">按下扫描开始</string>
     <string name="scan_scanning_btn">扫描中...</string>
     <string name="scan_already_running">后台已经在进行扫描 — 请等待其完成</string>
-    <string name="engine_loading_warning">? Engine loading� Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading�</string>
+    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
+    <string name="engine_loading_status">Engine loading…</string>
 
     <string name="background_scan_running">⏳ 后台扫描运行中…</string>
     <string name="detection_categories_header">检测类别</string>
