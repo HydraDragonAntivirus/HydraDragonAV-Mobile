@@ -363,7 +363,7 @@ public class ScanFragment extends Fragment {
         tvThreats.setText("0");
 
         attachScanCallback();
-        if (!guardService.getScanEngine().scanAllApps(isFullScan)) {
+        if (guardService.getScanEngine() == null || !guardService.getScanEngine().scanAllApps(isFullScan)) {
             // Lost the race to a background scan — undo the optimistic UI
             // state instead of leaving this screen stuck on "SCANNING..."
             // forever with nothing to ever complete it.
@@ -384,7 +384,7 @@ public class ScanFragment extends Fragment {
     /** Stop button: request the engine to abort. The in-flight scan ends at its
      *  next file/app boundary and fires onScanComplete with what was found. */
     private void stopScan() {
-        if (!serviceBound || guardService == null) return;
+        if (!serviceBound || guardService == null || guardService.getScanEngine() == null) return;
         guardService.getScanEngine().cancelScan();
         btnScan.setText(getString(R.string.scan_stopping));
         btnScan.setEnabled(false);
