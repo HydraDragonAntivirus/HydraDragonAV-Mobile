@@ -1,11 +1,11 @@
-""" Extract per-category domain/URL lists from allblooms/ datasets into xf_build/.
+""" Extract per-category domain/URL lists from allxfilters/ datasets into xf_build/.
 
 Each xf_build/<stem>.txt is then turned into assets/scan/<stem>.xf by the Rust
 `xorfilter_writer` (see build_xfilters.sh). No bloom/Guava code here — filter
 construction lives entirely on the Rust side.
 
 Usage:
-    python gen_domain_bloom.py
+    python gen_domain_xfilter.py
 """
 
 import csv
@@ -13,7 +13,7 @@ import json
 import os
 from pathlib import Path
 
-BLOOMS_DIR = Path("allblooms")
+XFILTERS_DIR = Path("allxfilters")
 ASSETS_DIR = Path("app/src/main/assets")
 # Staging dir for the per-category entry lists. These .txt files are the INPUT to
 # `xorfilter_writer` (see build_xfilters.sh), which builds one `<stem>.xf` per file
@@ -33,7 +33,7 @@ def extract_domains_from_csv(filepath: str, column: int = 0) -> set:
 def extract_hostnames_from_urls(filepath: str) -> set:
     # Keep the FULL scheme-less URL (host/path), NOT just the host. Malware is
     # often hosted on legit platforms (github.com, ...); reducing to the host
-    # would flag the whole platform. The full URL goes into the URL bloom.
+    # would flag the whole platform. The full URL goes into the URL xor filter.
     urls = set()
     with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
         for line in f:
@@ -61,7 +61,7 @@ def extract_urls_from_urlhaus_csv(filepath: str) -> set:
 
 
 def extract_from_optimized(prefix: str, tag: str) -> set:
-    path = BLOOMS_DIR / f"{prefix}.optimized.csv"
+    path = XFILTERS_DIR / f"{prefix}.optimized.csv"
     if not path.exists():
         return set()
     domains = extract_domains_from_csv(str(path))
@@ -110,10 +110,10 @@ def main():
 
     # urlhaus + MaliciousLinks = malwareurl
     mal_urls = set()
-    mal_txt = BLOOMS_DIR / "MaliciousLinks.txt"
+    mal_txt = XFILTERS_DIR / "MaliciousLinks.txt"
     if mal_txt.exists():
         mal_urls |= extract_hostnames_from_urls(str(mal_txt))
-    urlhaus = BLOOMS_DIR / "urlhaus.csv"
+    urlhaus = XFILTERS_DIR / "urlhaus.csv"
     if urlhaus.exists():
         mal_urls |= extract_urls_from_urlhaus_csv(str(urlhaus))
     if mal_urls:
@@ -123,7 +123,7 @@ def main():
     # MalwareDomains/MalwareSubDomains: drop referenceless (,0) entries — mostly FP.
     categories["malware"] = set()
     for prefix in ("MalwareDomains", "MalwareSubDomains"):
-        p = BLOOMS_DIR / f"{prefix}.optimized.csv"
+        p = XFILTERS_DIR / f"{prefix}.optimized.csv"
         if p.exists():
             d = extract_domains_skip_zero(str(p))
             print(f"  [MWDOM] {p.name}: {len(d):,} domains (,0 referenceless skipped)")
@@ -135,7 +135,7 @@ def main():
 
     # phishing_links.json → phishingurl  (URLs live under the "data" key)
     phish_urls = set()
-    phish_json = BLOOMS_DIR / "phishing_links.json"
+    phish_json = XFILTERS_DIR / "phishing_links.json"
     if phish_json.exists():
         try:
             with open(str(phish_json), "r", encoding="utf-8", errors="ignore") as f:
@@ -159,8 +159,8 @@ def main():
     categories["phishingurl"] = phish_urls
 
     # Categories that feed the combined malicious set but get NO standalone
-    # .bloom of their own. "malware" is huge (~8M) and fully covered by the
-    # combined malicious.bloom, so we don't ship a separate malware.bloom.
+    # .xf of their own. "malware" is huge (~8M) and fully covered by the
+    # combined malicious.xf, so we don't ship a separate malware.xf.
     COMBINED_ONLY = {"malware"}
 
     # ── Write category text files (staging, stems match the Rust CATS) ──────
@@ -186,7 +186,7 @@ def main():
     print(f"\n  malicious.txt: {len(combined):,} entries,"
           f" {os.path.getsize(str(combined_txt)):,} bytes")
 
-    print("\n  Next: build_url_blooms.py (writes whitelist-FILTERED malwareurl.txt /")
+    print("\n  Next: build_url_xfilters.py (writes whitelist-FILTERED malwareurl.txt /")
     print("  phishingurl.txt into xf_build/), then ./build_xfilters.sh to turn every")
     print("  xf_build/<stem>.txt into assets/scan/<stem>.xf via xorfilter_writer (1e-6).")
 

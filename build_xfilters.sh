@@ -11,10 +11,10 @@
 # 0.015 -> BinaryFuse16.
 #
 # Pipeline:
-#   1. gen_domain_bloom.py      -> xf_build/<stem>.txt  (phishing, abuse, spam,
+#   1. gen_domain_xfilter.py    -> xf_build/<stem>.txt  (phishing, abuse, spam,
 #                                  mining, malicious_mail, malwareurl, phishingurl,
 #                                  malicious[combined])
-#   2. build_url_blooms.py      -> overwrites xf_build/{malwareurl,phishingurl}.txt
+#   2. build_url_xfilters.py    -> overwrites xf_build/{malwareurl,phishingurl}.txt
 #                                  with the whitelist-FILTERED versions
 #   3. xorfilter_writer per stem -> app/src/main/assets/scan/<stem>.xf
 set -euo pipefail
@@ -29,9 +29,9 @@ WEB_FPP=0.000001   # 1e-6 for website filters
 mkdir -p "$SCAN"
 
 echo "=== 1/3 extracting category lists ==="
-python gen_domain_bloom.py
+python gen_domain_xfilter.py
 echo "=== 2/3 whitelist-filtering URL lists ==="
-python build_url_blooms.py
+python build_url_xfilters.py
 
 echo "=== 3/3 building website .xf (fpp $WEB_FPP) ==="
 # Stems MUST match the CATS table in hydradragonandroid/src/url_scan.rs.

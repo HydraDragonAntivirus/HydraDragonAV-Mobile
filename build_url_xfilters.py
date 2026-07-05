@@ -9,7 +9,7 @@ Each entry has ONLY the leading scheme stripped (http:// / https:// removed,
 host[:port]/path kept, lowercased). BOTH lists are then filtered against ALL the
 whitelist/ CSVs: any entry whose host (or a parent domain) is whitelisted is
 dropped, to avoid flagging legit/popular sites. These overwrite the unfiltered
-malwareurl.txt / phishingurl.txt that gen_domain_bloom.py wrote.
+malwareurl.txt / phishingurl.txt that gen_domain_xfilter.py wrote.
 
 Memory-safe: we collect the (small) set of candidate hosts from the URL lists,
 stream the huge whitelist CSVs once to mark which are whitelisted, then drop.
@@ -22,7 +22,7 @@ from pathlib import Path
 
 os.chdir(Path(__file__).parent)
 
-BLOOMS_DIR = Path("allblooms")
+XFILTERS_DIR = Path("allxfilters")
 WHITELIST_DIR = Path("whitelist")
 STAGE_DIR = Path("xf_build")
 WHITELIST_CSVS = [
@@ -155,8 +155,8 @@ def write_txt(stem: str, entries: set):
 
 
 def main():
-    mal = from_links_txt(BLOOMS_DIR / "MaliciousLinks.txt") | from_urlhaus(BLOOMS_DIR / "urlhaus.csv")
-    phish = from_phishing_json(BLOOMS_DIR / "phishing_links.json")
+    mal = from_links_txt(XFILTERS_DIR / "MaliciousLinks.txt") | from_urlhaus(XFILTERS_DIR / "urlhaus.csv")
+    phish = from_phishing_json(XFILTERS_DIR / "phishing_links.json")
     print(f"raw: malwareurl={len(mal):,}, phishingurl={len(phish):,}")
 
     print("=== whitelist filtering (all CSVs) ===")

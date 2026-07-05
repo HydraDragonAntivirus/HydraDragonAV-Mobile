@@ -92,7 +92,7 @@ The on-device detection assets are generated offline from public threat-intel an
 - **`gen_whitelist_packages.py`** — builds `whitelist_packages.db` (SQLite), a full-detail NSRL Android package whitelist (name, version, manufacturer, OS, hashes) joined from the NSRL RDS database.
 - **`gen_whitelist_apk.py`** — extracts whole-APK NSRL MD5 hashes for the native binary-fuse XOR whitelist filter.
 - **`gen_tlsh_db.py`** — builds a TLSH fuzzy-hash database from MalwareBazaar samples (APK/ELF/SO/DEX) for similarity-based malware detection.
-- **`gen_ip_lists.py`** / **`build_url_blooms.py`** / **`build_xfilters.sh`** — build the malicious IP/URL/domain filters (XOR-filter based) used by the native IP/URL threat scanners.
+- **`gen_ip_lists.py`** / **`build_url_xfilters.py`** / **`build_xfilters.sh`** — build the malicious IP/URL/domain filters (XOR-filter based) used by the native IP/URL threat scanners.
 - **`clam_juice.py`** — filters ClamAV signatures to keep only Android-relevant platforms (Andr, Unix, Linux, Email, PUA) plus all Phishing signatures; excludes Win/Osx/Java:
   ```bash
   python clam_juice.py --directory database_non_filtered --output database_filtered --profile cross-platform

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Filter allblooms/MaliciousLinks.txt against the whitelist/ CSVs.
+Filter allxfilters/MaliciousLinks.txt against the whitelist/ CSVs.
 
 MaliciousLinks.txt holds scheme-less URLs (host[:port]/path). For each link we
 take the host, derive its subdomain->registrable-domain candidates, and drop the
 link if ANY candidate appears in the whitelist (popular/known-good domains &
-subdomains). Output: allblooms/MaliciousLinks_filtered.txt.
+subdomains). Output: allxfilters/MaliciousLinks_filtered.txt.
 
 Memory-safe: the whitelist CSVs are huge (~12M lines), so instead of loading
 them we first collect the (small) set of candidate hosts from MaliciousLinks,
@@ -15,8 +15,8 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-LINKS = os.path.join(ROOT, "allblooms", "MaliciousLinks.txt")
-OUT = os.path.join(ROOT, "allblooms", "MaliciousLinks_filtered.txt")
+LINKS = os.path.join(ROOT, "allxfilters", "MaliciousLinks.txt")
+OUT = os.path.join(ROOT, "allxfilters", "MaliciousLinks_filtered.txt")
 WHITELIST_DIR = os.path.join(ROOT, "whitelist")
 WHITELIST_CSVS = [
     "DomainsPopularityWhiteList.optimized.csv",
