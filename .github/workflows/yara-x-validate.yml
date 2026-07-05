@@ -26,12 +26,16 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Install yara-x
-        run: cargo install yara-x
+      - name: Clone and build yara-x CLI (HydraDragon fork)
+        run: |
+          git clone https://github.com/HydraDragonAntivirus/yara-x.git _yara-x
+          cd _yara-x
+          cargo build --release --bin yr
+          echo "_yara-x/target/release" >> $GITHUB_PATH
 
       - name: Validate YARA-X rules
         run: |
           for f in $(find yara-x -name '*.yar' -o -name '*.yarx'); do
             echo "Validating: $f"
-            yara-x check "$f" || exit 1
+            yr check "$f" || exit 1
           done
