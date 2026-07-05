@@ -236,7 +236,11 @@ public class GuardService extends Service {
         // few seconds Android allows between startForegroundService() and
         // Service.startForeground() before raising an ANR — this used to be
         // masked because the native .so failed to load, making init a no-op.
-        startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.guard_protecting_status), true));
+        try {
+            startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.guard_protecting_status), true));
+        } catch (Throwable t) {
+            Log.e(TAG, "startForeground failed", t);
+        }
         new Thread(() -> {
             initializeEngines();
             startPeriodicScans();
@@ -553,7 +557,16 @@ public class GuardService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY; // auto-restart if the system kills this service
+        // Belt-and-suspenders: if the process was re-created by START_STICKY
+        // and onCreate()'s startForeground() was never reached (e.g. crash
+        // during early init), the service would otherwise run as a background
+        // service with a 200s ANR timeout instead of the 20s foreground one.
+        if (intent != null) try {
+            startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.guard_protecting_status), true));
+        } catch (Throwable t) {
+            Log.e(TAG, "onStartCommand startForeground failed", t);
+        }
+        return START_STICKY;
     }
 
     @Override
