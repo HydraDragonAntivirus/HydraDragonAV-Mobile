@@ -66,7 +66,11 @@
         <service
             android:name=".service.GuardService"
             android:exported="false"
-            android:foregroundServiceType="dataSync"/>
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Real-time malware scanning, network monitoring, and process detection (persistent antivirus protection)" />
+        </service>
 
         <service
             android:name=".service.DnsVpnService"

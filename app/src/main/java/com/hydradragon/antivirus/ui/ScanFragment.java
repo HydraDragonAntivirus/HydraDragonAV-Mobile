@@ -494,6 +494,7 @@ public class ScanFragment extends Fragment {
         @Override
         public void run() {
             if (serviceBound && guardService != null && !isScanning
+                    && guardService.getScanEngine() != null
                     && guardService.getScanEngine().isScanRunning()) {
                 tvScanStatus.setText(getString(R.string.background_scan_running));
                 tvScanStatus.setTextColor(0xFF00D9FF);
