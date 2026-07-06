@@ -40,7 +40,6 @@ pub struct Engine {
 pub struct ScanOptions {
     pub strict_targets: bool,
     pub max_matches: usize,
-    pub max_subsignature_matches: usize,
     pub scan_archives: bool,
     pub scan_normalized: bool,
     pub max_recursion: usize,
@@ -53,7 +52,6 @@ impl Default for ScanOptions {
         Self {
             strict_targets: false,
             max_matches: 1,
-            max_subsignature_matches: 256,
             scan_archives: true,
             scan_normalized: true,
             max_recursion: 8,
@@ -70,10 +68,6 @@ pub struct ScanMatch {
     pub source: SourceLocation,
     pub object_path: String,
     pub view: ScanView,
-    /// Byte ranges `[start, end)` in the scanned object that produced this match.
-    /// These map to file offsets only for `view == Raw` on the top-level object
-    /// (an `object_path` with no `#archive[...]` segment). Used for disinfection.
-    pub arenas: Vec<(usize, usize)>,
 }
 
 #[link(name = "log")]
@@ -95,9 +89,6 @@ fn android_log(msg: &str) {
     };
     unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
 }
-
-/// Upper bound on arenas recorded per signature match, to keep memory bounded.
-const ARENA_CAP: usize = 64;
 
 /// Whether `HDA_PROF` profiling is on (checked once). Gates slow-candidate logs.
 fn prof_enabled() -> bool {
@@ -193,7 +184,6 @@ struct ScanState {
 struct LogicalScanBufs {
     counts: Vec<usize>,
     last_offsets: Vec<Option<usize>>,
-    body_arenas: Vec<Vec<(usize, usize)>>,
     evaluated: Vec<bool>,
 }
 
@@ -460,7 +450,6 @@ impl Engine {
                 source: hit.source,
                 object_path: object_path.to_string(),
                 view: ScanView::Raw,
-                arenas: Vec::new(),
             });
         }
     }
@@ -687,17 +676,14 @@ impl Engine {
             return;
         }
         let prof = prof_enabled().then(std::time::Instant::now);
-        let mut arenas: Vec<(usize, usize)> = Vec::new();
+        let mut count = 0usize;
         for pattern in &signature.patterns {
             let hits = match hints {
-                Some(h) => pattern.find_all_at(ctx.data, &ranges, ARENA_CAP, h),
-                None => pattern.find_all(ctx.data, &ranges, ARENA_CAP),
+                Some(h) => pattern.find_all_at(ctx.data, &ranges, usize::MAX, h),
+                None => pattern.find_all(ctx.data, &ranges, usize::MAX),
             };
             for hit in hits {
-                if arenas.len() >= ARENA_CAP {
-                    break;
-                }
-                arenas.push((hit.start, hit.end));
+                count += 1;
             }
         }
         if let Some(t) = prof {
@@ -712,14 +698,13 @@ impl Engine {
                 );
             }
         }
-        if !arenas.is_empty() {
+        if count > 0 {
             matches.push(ScanMatch {
                 name: self.database.ext_name(signature).to_string(),
                 kind: SignatureKind::Extended,
                 source: signature.source.clone(),
                 object_path: ctx.object_path.to_string(),
                 view: ctx.view,
-                arenas,
             });
         }
     }
@@ -736,7 +721,6 @@ impl Engine {
         let mut bufs = LogicalScanBufs {
             counts: Vec::new(),
             last_offsets: Vec::new(),
-            body_arenas: Vec::new(),
             evaluated: Vec::new(),
         };
         match cands {
@@ -835,13 +819,10 @@ impl Engine {
         bufs.counts.resize(n, 0);
         bufs.last_offsets.clear();
         bufs.last_offsets.resize(n, None);
-        bufs.body_arenas.clear();
-        bufs.body_arenas.resize_with(n, Vec::new);
         bufs.evaluated.clear();
         bufs.evaluated.resize(n, false);
         let counts = &mut bufs.counts;
         let last_offsets = &mut bufs.last_offsets;
-        let body_arenas = &mut bufs.body_arenas;
         let evaluated = &mut bufs.evaluated;
 
         // Early cutoff: evaluate the gating subsig first; if the gate is absent
@@ -875,11 +856,11 @@ impl Engine {
                 if !ranges.is_empty() {
                     let gate_hints = if g.threadable { hints } else { None };
                     let prof = prof_enabled().then(std::time::Instant::now);
-                    let (count, arenas) = body_matches(
+                    let count = body_matches(
                         patterns,
                         ctx.data,
                         &ranges,
-                        options.max_subsignature_matches,
+                        usize::MAX,
                         gate_hints,
                     );
                     if let Some(t) = prof {
@@ -899,8 +880,7 @@ impl Engine {
                         return; // gate absent → signature cannot match
                     }
                     counts[gi] = count;
-                    last_offsets[gi] = arenas.iter().map(|a| a.0).max();
-                    body_arenas[gi] = arenas;
+                    last_offsets[gi] = None;
                     evaluated[gi] = true;
                     gating_done = Some(gi);
                 }
@@ -961,16 +941,15 @@ impl Engine {
                 } else {
                     &base_ranges
                 };
-                let (count, arenas) = body_matches(
+                let count = body_matches(
                     patterns,
                     ctx.data,
                     ranges,
-                    options.max_subsignature_matches,
+                    usize::MAX,
                     None,
                 );
                 counts[i] = count;
-                last_offsets[i] = arenas.iter().map(|a| a.0).max();
-                body_arenas[i] = arenas;
+                last_offsets[i] = None;
                 evaluated[i] = true;
                 // Short-circuit: if this absent subsig already makes the signature
                 // unsatisfiable (a missing AND term), skip every remaining subsig.
@@ -1001,9 +980,7 @@ impl Engine {
                         // never fire, so they stay uncompiled and cost no RAM).
                         if let Some(re) = pcre.regex.get() {
                             counts[i] = if pcre.global {
-                                re.find_iter(ctx.data)
-                                    .take(options.max_subsignature_matches)
-                                    .count()
+                                re.find_iter(ctx.data).count()
                             } else {
                                 usize::from(pcre.regex.is_match(ctx.data))
                             };
@@ -1048,20 +1025,9 @@ impl Engine {
                         source: signature.source.clone(),
                         object_path: ctx.object_path.to_string(),
                         view: ctx.view,
-                        arenas: Vec::new(),
                     });
                 }
                 return;
-            }
-            // Collect the matched body arenas (capped) for disinfection.
-            let mut arenas: Vec<(usize, usize)> = Vec::new();
-            for sub in body_arenas.iter() {
-                for &range in sub {
-                    if arenas.len() >= ARENA_CAP {
-                        break;
-                    }
-                    arenas.push(range);
-                }
             }
             matches.push(ScanMatch {
                 name: signature.name.to_string(),
@@ -1069,7 +1035,6 @@ impl Engine {
                 source: signature.source.clone(),
                 object_path: ctx.object_path.to_string(),
                 view: ctx.view,
-                arenas,
             });
         }
     }
@@ -1095,10 +1060,6 @@ impl Engine {
     }
 }
 
-/// Count pattern hits within `ranges` and collect the matched byte ranges
-/// (capped at `ARENA_CAP`) for disinfection. When `hints` is `Some`, each
-/// pattern is verified only at the prefilter-provided atom offsets
-/// (`find_all_at`) instead of rescanning the whole buffer; `None` is a full scan.
 /// The largest match length across a subsignature's pattern variants, or `None`
 /// if any variant is unbounded (open gap) — in which case its scan can't be
 /// window-restricted.
@@ -1163,9 +1124,8 @@ fn body_matches(
     ranges: &[(usize, usize)],
     limit: usize,
     hints: Option<&[u32]>,
-) -> (usize, Vec<(usize, usize)>) {
+) -> usize {
     let mut count = 0usize;
-    let mut arenas: Vec<(usize, usize)> = Vec::new();
     for pattern in patterns {
         let remaining = limit.saturating_sub(count);
         if remaining == 0 {
@@ -1177,12 +1137,9 @@ fn body_matches(
         };
         for hit in hits {
             count += 1;
-            if arenas.len() < ARENA_CAP {
-                arenas.push((hit.start, hit.end));
-            }
         }
     }
-    (count, arenas)
+    count
 }
 
 fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>, strict: bool) -> bool {

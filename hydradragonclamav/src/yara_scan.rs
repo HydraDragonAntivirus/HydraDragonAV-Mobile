@@ -144,7 +144,6 @@ impl YaraEngine {
                     },
                     object_path: object_path.to_string(),
                     view: crate::scanner::ScanView::Raw,
-                    arenas: Vec::new(),
                 });
             }
             matches
