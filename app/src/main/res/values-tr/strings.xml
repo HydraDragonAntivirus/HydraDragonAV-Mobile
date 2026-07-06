@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirüs</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ KÖKLÜ (ROOT) CİHAZ</string>
+    <string name="root_warning_msg">Bu cihazda ROOT erişimi var.\n\nHydraDragon Antivirüs, root düzeyi özelliklerini DESTEKLEMEZ. USB hata ayıklama (ADB) de üretim kullanımı için desteklenmez.\n\n⚠️ KESİNLİKLE ÖNERİLİR: Bu uygulamayı kullanmadan önce root erişimini kaldırın ve USB hata ayıklamayı devre dışı bırakın. Rootlu bir cihazda ADB etkin şekilde çalıştırmak güvenliğinizi ciddi şekilde tehlikeye atar.\n\nKötücül yazılımın sizin bilginiz dışında cihazınıza root erişimi sağladığına inanıyorsanız, SINIRLI koruma ile devam edebilirsiniz.</string>
+    <string name="root_warning_continue">ANLIYORUM, DEVAM ET</string>
+    <string name="root_warning_exit">ÇIKIŞ</string>
+    <string name="root_warning_dont_ask">BİR DAHA SORMA</string>
+    <string name="root_warning_toggle">Cihaz rootlu olduğunda uyar</string>
+    <string name="uninstall_failed_title">⚠ Kaldırma Başarısız</string>
+    <string name="uninstall_failed_msg">%1$s kaldırılamadı — kaldırma işlemi iptal edildi veya başarısız oldu.\n\nKötücül yazılımı kaldırmak için Güvenli Mod\'u kullanın: cihazınızı yeniden başlatın, açılışta ses kısma tuşuna basılı tutun, ardından tam tarama yapın.</string>
+    <string name="uninstall_failed_safe_mode">GÜVENLI MOD\'A YENIDEN BAŞLATMAK IÇIN AYARLARI AÇ</string>
+    <string name="uninstall_failed_safe_mode_toast">Güvenli Mod\'a yeniden başlattıktan sonra HydraDragon\'u açın ve kötücül yazılımı kaldırmak için tam tarama yapın</string>
     <string name="integrity_blocked_title">Değiştirilmiş APK Tespit Edildi</string>
     <string name="integrity_blocked_msg">Bu kopyanın imzası orijinal sürümle eşleşmiyor — kod değiştirilmiş olabilir ve zararlı olabilir. Bu uygulama çalışmayacak.</string>
     <string name="integrity_blocked_exit">Çıkış</string>
@@ -326,4 +330,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="net_event_blocked">ENGELLENDİ</string>
     <string name="net_event_allowed">İZİN VERİLDİ</string>
     <string name="risk_score_format">Risk: %1$d/100</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+

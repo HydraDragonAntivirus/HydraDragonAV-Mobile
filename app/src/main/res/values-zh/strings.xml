@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ ⚠ 已 ROOT 设备</string>
+    <string name="root_warning_msg">此设备具有 ROOT 权限。\n\nHydraDragon Antivirus 不支持 root 级别功能。USB 调试（ADB）也不支持用于生产环境。\n\n⚠️ 强烈建议：在使用此应用前移除 root 权限并禁用 USB 调试。在已 root 的设备上启用 ADB 运行将严重危害您的安全。\n\n如果您认为恶意软件在您不知情的情况下 root 了您的设备，您可以继续使用有限保护。</string>
+    <string name="root_warning_continue">我了解，继续</string>
+    <string name="root_warning_exit">退出</string>
+    <string name="root_warning_dont_ask">不再询问</string>
+    <string name="root_warning_toggle">设备已 root 时发出警告</string>
+    <string name="uninstall_failed_title">⚠ ⚠ 卸载失败</string>
+    <string name="uninstall_failed_msg">%1$s 无法移除 — 卸载已取消或失败。\n\n使用安全模式运行杀毒软件以移除恶意软件：重启设备，在启动时按住音量减小键，然后执行完整扫描。</string>
+    <string name="uninstall_failed_safe_mode">打开设置以重启到安全模式</string>
+    <string name="uninstall_failed_safe_mode_toast">重启到安全模式后，打开 HydraDragon 并执行完整扫描以移除恶意软件</string>
     <string name="integrity_blocked_title">检测到已修改的 APK</string>
     <string name="integrity_blocked_msg">此副本的签名与原始版本不匹配 — 代码可能已被篡改，可能存在恶意。此应用将无法运行。</string>
     <string name="integrity_blocked_exit">退出</string>
@@ -323,5 +327,8 @@
     <string name="malware_has_admin_title">此应用拥有设备管理员权限</string>
     <string name="malware_has_admin_msg">%1$s 已将自身设为设备管理员，这会阻止直接卸载它 — 这是恶意软件常用来抵抗被移除的一种手段。请在打开的界面中先停用它（找到 %1$s 并点击停用），之后卸载提示将自动打开。</string>
     <string name="malware_has_admin_open_settings">打开设备管理员设置</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

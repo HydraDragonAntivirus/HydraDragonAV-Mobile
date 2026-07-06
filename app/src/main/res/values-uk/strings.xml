@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ РУТОВАНИЙ ПРИСТРІЙ</string>
+    <string name="root_warning_msg">Цей пристрій має ROOT-доступ.\n\nHydraDragon Antivirus НЕ підтримує функції рівня root. Налагодження USB (ADB) також не підтримується для виробничого використання.\n\n⚠️ НАСТІЙНО РЕКОМЕНДУЄТЬСЯ: Видаліть root-доступ і вимкніть налагодження USB перед використанням цього додатка. Робота на рутованому пристрої з увімкненим ADB серйозно загрожує вашій безпеці.\n\nЯкщо ви вважаєте, що шкідливе програмне забезпечення рутувало ваш пристрій без вашого відома, ви можете продовжити з ОБМЕЖЕНИМ захистом.</string>
+    <string name="root_warning_continue">Я РОЗУМІЮ, ПРОДОВЖИТИ</string>
+    <string name="root_warning_exit">ВИЙТИ</string>
+    <string name="root_warning_dont_ask">БІЛЬШЕ НЕ ПИТАТИ</string>
+    <string name="root_warning_toggle">Попереджати, коли пристрій рутовано</string>
+    <string name="uninstall_failed_title">⚠ Видалення не вдалося</string>
+    <string name="uninstall_failed_msg">%1$s не вдалося видалити — видалення було скасовано або не вдалося.\n\nВикористовуйте безпечний режим для запуску антивіруса та видалення шкідливих програм: перезавантажте пристрій, утримуйте кнопку зменшення гучності під час завантаження, потім виконайте повне сканування.</string>
+    <string name="uninstall_failed_safe_mode">ВІДКРИТИ НАЛАШТУВАННЯ ДЛЯ ПЕРЕЗАВАНТАЖЕННЯ В БЕЗПЕЧНИЙ РЕЖИМ</string>
+    <string name="uninstall_failed_safe_mode_toast">Після перезавантаження в безпечний режим відкрийте HydraDragon і виконайте повне сканування для видалення шкідливого ПЗ</string>
     <string name="integrity_blocked_title">Виявлено змінений APK</string>
     <string name="integrity_blocked_msg">Підпис цієї копії не збігається з оригінальним випуском — код міг бути змінений і може бути шкідливим. Цей додаток не запуститься.</string>
     <string name="integrity_blocked_exit">Вихід</string>
@@ -323,5 +327,8 @@
     <string name="malware_has_admin_title">Цей додаток має права адміністратора пристрою</string>
     <string name="malware_has_admin_msg">%1$s зробив себе адміністратором пристрою, що блокує його пряме видалення — це поширений прийом, яким користується шкідливе ПЗ, щоб опиратися видаленню. Деактивуйте це на екрані, що відкриється (знайдіть %1$s і натисніть Деактивувати), після чого запит на видалення відкриється автоматично.</string>
     <string name="malware_has_admin_open_settings">ВІДКРИТИ НАЛАШТУВАННЯ АДМІНІСТРАТОРА ПРИСТРОЮ</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ GEROOTED APPARAAT</string>
+    <string name="root_warning_msg">Dit apparaat heeft ROOT-toegang.\n\nHydraDragon Antivirus ondersteunt GEEN root-level functies. USB-foutopsporing (ADB) wordt ook niet ondersteund voor productiegebruik.\n\n⚠️ STERK AANBEVOLEN: Verwijder root-toegang en schakel USB-foutopsporing uit voordat u deze app gebruikt. Werken op een geroot apparaat met ingeschakelde ADB brengt uw beveiliging ernstig in gevaar.\n\nAls u denkt dat malware uw apparaat zonder uw medeweten heeft geroot, kunt u doorgaan met BEPERKTE bescherming.</string>
+    <string name="root_warning_continue">IK BEGRIJP, DOORGAAN</string>
+    <string name="root_warning_exit">AFSLUITEN</string>
+    <string name="root_warning_dont_ask">NIET OPNIEUW VRAGEN</string>
+    <string name="root_warning_toggle">Waarschuwen wanneer apparaat is geroot</string>
+    <string name="uninstall_failed_title">⚠ Verwijderen mislukt</string>
+    <string name="uninstall_failed_msg">%1$s kon niet worden verwijderd — het verwijderen is geannuleerd of mislukt.\n\nGebruik de Veilige modus om de antivirus uit te voeren en malware te verwijderen: start uw apparaat opnieuw op, houd de volumenknop omlaag ingedrukt tijdens het opstarten en voer vervolgens een volledige scan uit.</string>
+    <string name="uninstall_failed_safe_mode">OPEN INSTELLINGEN OM OP TE STARTEN IN VEILIGE MODUS</string>
+    <string name="uninstall_failed_safe_mode_toast">Na het opnieuw opstarten in de veilige modus, opent u HydraDragon en voert u een volledige scan uit om de malware te verwijderen</string>
     <string name="integrity_blocked_title">Gewijzigde APK gedetecteerd</string>
     <string name="integrity_blocked_msg">De handtekening van deze kopie komt niet overeen met de originele release — de code is mogelijk gewijzigd en kan schadelijk zijn. Deze app wordt niet uitgevoerd.</string>
     <string name="integrity_blocked_exit">Afsluiten</string>
@@ -323,5 +327,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="malware_has_admin_title">Deze app heeft apparaatbeheerderrechten</string>
     <string name="malware_has_admin_msg">%1$s heeft zichzelf tot Apparaatbeheerder gemaakt, waardoor directe verwijdering wordt geblokkeerd — een veelgebruikte truc van malware om verwijdering te weerstaan. Deactiveer dit in het scherm dat opent (zoek %1$s en tik op Deactiveren), waarna de verwijdervraag automatisch verschijnt.</string>
     <string name="malware_has_admin_open_settings">APPARAATBEHEERDERINSTELLINGEN OPENEN</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

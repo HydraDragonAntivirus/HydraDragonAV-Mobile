@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ DISPOSITIVO ROOT</string>
+    <string name="root_warning_msg">Questo dispositivo ha accesso ROOT.\n\nHydraDragon Antivirus NON supporta le funzionalità di livello root. Il debug USB (ADB) non è supportato per l\'uso in produzione.\n\n⚠️ FORTEMENTE RACCOMANDATO: Rimuovere l\'accesso root e disabilitare il debug USB prima di utilizzare questa app. L\'esecuzione su un dispositivo rooted con ADB abilitato compromette gravemente la sicurezza.\n\nSe ritieni che un malware abbia ottenuto l\'accesso root sul tuo dispositivo all\'insaputa, puoi continuare con protezione LIMITATA.</string>
+    <string name="root_warning_continue">HO CAPITO, CONTINUA</string>
+    <string name="root_warning_exit">ESCI</string>
+    <string name="root_warning_dont_ask">NON CHIEDERE PIÙ</string>
+    <string name="root_warning_toggle">Avvisa quando il dispositivo è rooted</string>
+    <string name="uninstall_failed_title">⚠ Disinstallazione fallita</string>
+    <string name="uninstall_failed_msg">%1$s non può essere rimosso — la disinstallazione è stata annullata o non è riuscita.\n\nUtilizza la Modalità provvisoria per eseguire l\'antivirus e rimuovere malware: riavvia il dispositivo, tieni premuto il tasto volume giù durante l\'avvio, quindi esegui una scansione completa.</string>
+    <string name="uninstall_failed_safe_mode">APRI IMPOSTAZIONI PER RIAVVIARE IN MODALITÀ PROVVISORIA</string>
+    <string name="uninstall_failed_safe_mode_toast">Dopo il riavvio in modalità provvisoria, apri HydraDragon ed esegui una scansione completa per rimuovere il malware</string>
     <string name="integrity_blocked_title">Rilevato APK modificato</string>
     <string name="integrity_blocked_msg">La firma di questa copia non corrisponde alla versione originale — il codice potrebbe essere stato alterato ed essere dannoso. Questa app non verrà eseguita.</string>
     <string name="integrity_blocked_exit">Esci</string>
@@ -323,5 +327,8 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="malware_has_admin_title">Questa app ha i diritti di Amministratore dispositivo</string>
     <string name="malware_has_admin_msg">%1$s si è resa Amministratore dispositivo, il che impedisce di disinstallarla direttamente — è un trucco comune usato dal malware per resistere alla rimozione. Disattivala nella schermata che si apre (trova %1$s e tocca Disattiva), quindi la richiesta di disinstallazione si aprirà automaticamente.</string>
     <string name="malware_has_admin_open_settings">APRI IMPOSTAZIONI AMMINISTRATORE DISPOSITIVO</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

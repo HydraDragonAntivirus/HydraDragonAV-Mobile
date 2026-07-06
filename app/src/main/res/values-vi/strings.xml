@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ THIẾT BỊ ĐÃ ROOT</string>
+    <string name="root_warning_msg">Thiết bị này có quyền truy cập ROOT.\n\nHydraDragon Antivirus KHÔNG hỗ trợ các tính năng cấp root. Gỡ lỗi USB (ADB) cũng không được hỗ trợ cho mục đích sản xuất.\n\n⚠️ KHUYẾN CÁO MẠNH MẼ: Loại bỏ quyền truy cập root và tắt gỡ lỗi USB trước khi sử dụng ứng dụng này. Chạy trên thiết bị đã root với ADB được bật sẽ làm tổn hại nghiêm trọng đến bảo mật của bạn.\n\nNếu bạn tin rằng phần mềm độc hại đã root thiết bị của bạn mà bạn không biết, bạn có thể tiếp tục với bảo vệ GIỚI HẠN.</string>
+    <string name="root_warning_continue">TÔI HIỂU, TIẾP TỤC</string>
+    <string name="root_warning_exit">THOÁT</string>
+    <string name="root_warning_dont_ask">ĐỪNG HỎI LẠI</string>
+    <string name="root_warning_toggle">Cảnh báo khi thiết bị đã root</string>
+    <string name="uninstall_failed_title">⚠ Gỡ cài đặt thất bại</string>
+    <string name="uninstall_failed_msg">%1$s không thể bị xóa — quá trình gỡ cài đặt đã bị hủy hoặc thất bại.\n\nSử dụng Chế độ An toàn để chạy phần mềm diệt virus và loại bỏ phần mềm độc hại: khởi động lại thiết bị của bạn, giữ phím giảm âm lượng trong khi khởi động, sau đó chạy quét toàn bộ.</string>
+    <string name="uninstall_failed_safe_mode">MỞ CÀI ĐẶT ĐỂ KHỞI ĐỘNG LẠI Ở CHẾ ĐỘ AN TOÀN</string>
+    <string name="uninstall_failed_safe_mode_toast">Sau khi khởi động lại ở Chế độ An toàn, hãy mở HydraDragon và chạy quét toàn bộ để loại bỏ phần mềm độc hại</string>
     <string name="integrity_blocked_title">Phát hiện APK đã bị sửa đổi</string>
     <string name="integrity_blocked_msg">Chữ ký của bản sao này không khớp với bản phát hành gốc — mã có thể đã bị thay đổi và có thể độc hại. Ứng dụng này sẽ không chạy.</string>
     <string name="integrity_blocked_exit">Thoát</string>
@@ -323,5 +327,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="malware_has_admin_title">Ứng Dụng Này Có Quyền Quản Trị Thiết Bị</string>
     <string name="malware_has_admin_msg">%1$s đã tự đặt mình làm Quản trị viên thiết bị, điều này ngăn việc gỡ cài đặt trực tiếp — đây là một thủ thuật phổ biến mà phần mềm độc hại dùng để chống lại việc bị gỡ bỏ. Hãy vô hiệu hóa nó trong màn hình sẽ mở ra (tìm %1$s và nhấn Vô hiệu hóa), sau đó lời nhắc gỡ cài đặt sẽ tự động mở ra.</string>
     <string name="malware_has_admin_open_settings">MỞ CÀI ĐẶT QUẢN TRỊ THIẾT BỊ</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

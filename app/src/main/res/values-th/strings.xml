@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ อุปกรณ์ที่รูทแล้ว</string>
+    <string name="root_warning_msg">อุปกรณ์นี้มีการเข้าถึง ROOT\n\nHydraDragon Antivirus ไม่สนับสนุนคุณสมบัติระดับรูท การดีบัก USB (ADB) ก็ไม่สนับสนุนสำหรับการใช้งานจริงเช่นกัน\n\n⚠️ ขอแนะนำอย่างยิ่ง: ให้ลบการเข้าถึงรูทและปิดการดีบัก USB ก่อนใช้แอปนี้ การทำงานบนอุปกรณ์ที่รูทแล้วโดยเปิด ADB ไว้จะทำให้ความปลอดภัยของคุณลดลงอย่างร้ายแรง\n\nหากคุณเชื่อว่ามัลแวร์ได้รูทอุปกรณ์ของคุณโดยที่คุณไม่รู้ คุณสามารถดำเนินการต่อด้วยการป้องกันแบบจำกัด</string>
+    <string name="root_warning_continue">ฉันเข้าใจ ดำเนินการต่อ</string>
+    <string name="root_warning_exit">ออก</string>
+    <string name="root_warning_dont_ask">อย่าถามอีก</string>
+    <string name="root_warning_toggle">เตือนเมื่ออุปกรณ์ถูก root</string>
+    <string name="uninstall_failed_title">⚠ การถอนการติดตั้งล้มเหลว</string>
+    <string name="uninstall_failed_msg">%1$s ไม่สามารถลบออกได้ — การถอนการติดตั้งถูกยกเลิกหรือล้มเหลว\n\nใช้เซฟโหมดเพื่อเรียกใช้โปรแกรมป้องกันไวรัสและลบมัลแวร์: รีสตาร์ทอุปกรณ์ กดปุ่มลดระดับเสียงค้างไว้ระหว่างบูต จากนั้นเรียกใช้การสแกนแบบเต็ม</string>
+    <string name="uninstall_failed_safe_mode">เปิดการตั้งค่าเพื่อรีบูตไปยังเซฟโหมด</string>
+    <string name="uninstall_failed_safe_mode_toast">หลังจากรีบูตไปยังเซฟโหมด ให้เปิด HydraDragon และเรียกใช้การสแกนแบบเต็มเพื่อลบมัลแวร์</string>
     <string name="integrity_blocked_title">ตรวจพบ APK ที่ถูกดัดแปลง</string>
     <string name="integrity_blocked_msg">ลายเซ็นของสำเนานี้ไม่ตรงกับเวอร์ชันต้นฉบับ — โค้ดอาจถูกเปลี่ยนแปลงและอาจเป็นอันตราย แอปนี้จะไม่ทำงาน</string>
     <string name="integrity_blocked_exit">ออก</string>
@@ -323,5 +327,8 @@
     <string name="malware_has_admin_title">แอปนี้มีสิทธิ์ผู้ดูแลอุปกรณ์</string>
     <string name="malware_has_admin_msg">%1$s ได้ตั้งตัวเองเป็นผู้ดูแลอุปกรณ์ ซึ่งขัดขวางการถอนการติดตั้งโดยตรง — นี่เป็นเทคนิคที่มัลแวร์มักใช้เพื่อต้านทานการลบ ให้ปิดใช้งานในหน้าจอที่เปิดขึ้น (ค้นหา %1$s แล้วแตะปิดใช้งาน) จากนั้นข้อความถอนการติดตั้งจะเปิดขึ้นโดยอัตโนมัติ</string>
     <string name="malware_has_admin_open_settings">เปิดการตั้งค่าผู้ดูแลอุปกรณ์</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

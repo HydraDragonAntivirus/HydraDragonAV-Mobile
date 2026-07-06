@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ ⚠ 루팅된 장치</string>
+    <string name="root_warning_msg">이 장치에 ROOT 액세스 권한이 있습니다.\n\nHydraDragon Antivirus는 루트 수준 기능을 지원하지 않습니다. USB 디버깅(ADB)도 프로덕션 용도로 지원되지 않습니다.\n\n⚠️ 강력 권장: 이 앱을 사용하기 전에 루트 액세스를 제거하고 USB 디버깅을 비활성화하세요. ADB가 활성화된 루팅된 장치에서 실행하면 보안이 심각하게 손상됩니다.\n\n악성코드가 사용자 모르게 장치를 루팅했다고 생각되면 제한된 보호로 계속할 수 있습니다.</string>
+    <string name="root_warning_continue">이해합니다, 계속</string>
+    <string name="root_warning_exit">종료</string>
+    <string name="root_warning_dont_ask">다시 묻지 않음</string>
+    <string name="root_warning_toggle">장치가 루팅된 경우 경고</string>
+    <string name="uninstall_failed_title">⚠ ⚠ 제거 실패</string>
+    <string name="uninstall_failed_msg">%1$s을(를) 제거할 수 없습니다 — 제거가 취소되거나 실패했습니다.\n\n안전 모드를 사용하여 바이러스 백신을 실행하고 악성코드를 제거하세요: 장치를 다시 시작하고 부팅 중 볼륨 작게 키를 길게 누른 다음 전체 검사를 실행하세요.</string>
+    <string name="uninstall_failed_safe_mode">설정을 열어 안전 모드로 재부팅</string>
+    <string name="uninstall_failed_safe_mode_toast">안전 모드로 재부팅한 후 HydraDragon을 열고 전체 검사를 실행하여 악성코드를 제거하세요</string>
     <string name="integrity_blocked_title">수정된 APK가 감지되었습니다</string>
     <string name="integrity_blocked_msg">이 사본의 서명이 원본 릴리스와 일치하지 않습니다 — 코드가 변조되었을 수 있으며 악성일 수 있습니다. 이 앱은 실행되지 않습니다.</string>
     <string name="integrity_blocked_exit">종료</string>
@@ -323,5 +327,8 @@
     <string name="malware_has_admin_title">이 앱은 기기 관리자 권한을 가지고 있습니다</string>
     <string name="malware_has_admin_msg">%1$s이(가) 스스로를 기기 관리자로 설정하여 직접 제거하지 못하도록 막고 있습니다 — 이는 악성코드가 제거에 저항하기 위해 흔히 사용하는 수법입니다. 열리는 화면에서 이를 비활성화하세요 (%1$s을(를) 찾아 비활성화를 탭). 그러면 제거 프롬프트가 자동으로 열립니다.</string>
     <string name="malware_has_admin_open_settings">기기 관리자 설정 열기</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

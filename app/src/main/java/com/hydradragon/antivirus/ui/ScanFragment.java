@@ -48,6 +48,7 @@ public class ScanFragment extends Fragment {
     private GuardService guardService;
     private boolean serviceBound = false;
     private android.net.Uri pendingCustomScanUri = null;
+    private String pendingUninstallPkg = null;
     private File pendingCustomScanDir = null;
     
     // STATIC MEMORY: survives switching between tabs — this data stays put.
@@ -321,17 +322,55 @@ public class ScanFragment extends Fragment {
     }
 
     private void proceedWithUninstall(ThreatResult threat) {
+        String pkg = threat.getPackageName();
         Intent intent = new Intent(Intent.ACTION_DELETE);
-        intent.setData(Uri.parse("package:" + threat.getPackageName()));
+        intent.setData(Uri.parse("package:" + pkg));
         startActivity(intent);
 
         // Hide it from the screen right away so it feels instantly removed
         foundThreats.remove(threat);
         threatAdapter.notifyDataSetChanged();
-                            tvThreats.setText(String.valueOf(foundThreats.size()));
-                            if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
+        tvThreats.setText(String.valueOf(foundThreats.size()));
+        if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
 
-            }
+        // Check after a few seconds if the uninstall was cancelled or failed
+        pendingUninstallPkg = pkg;
+        View root = getView();
+        if (root != null && requireContext().getSharedPreferences("hydra_prefs", 0)
+                .getBoolean("uninstall_warning_enabled", true)) {
+            root.postDelayed(() -> {
+                if (pendingUninstallPkg != null && isPackageInstalled(pendingUninstallPkg)) {
+                    showUninstallFailedDialog(threat);
+                }
+                pendingUninstallPkg = null;
+            }, 3000);
+        }
+    }
+
+    private boolean isPackageInstalled(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return false;
+        try {
+            requireContext().getPackageManager().getPackageInfo(pkg, 0);
+            return true;
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    private void showUninstallFailedDialog(ThreatResult threat) {
+        if (!isAdded()) return;
+        new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.uninstall_failed_title))
+            .setMessage(getString(R.string.uninstall_failed_msg, threat.getAppName()))
+            .setCancelable(false)
+            .setPositiveButton(getString(R.string.uninstall_failed_safe_mode), (d, w) -> {
+                Intent intent = new Intent(android.provider.Settings.ACTION_SETTINGS);
+                startActivity(intent);
+                Toast.makeText(getContext(), getString(R.string.uninstall_failed_safe_mode_toast), Toast.LENGTH_LONG).show();
+            })
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
+    }
     private void showScanTypeDialog() {
         if (guardService != null && guardService.isEngineLoading()) {
             Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();

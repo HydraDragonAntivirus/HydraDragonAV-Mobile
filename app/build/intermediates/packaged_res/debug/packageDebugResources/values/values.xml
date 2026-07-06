@@ -323,6 +323,11 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="threat_suspicious_behavior">Suspicious API behavior detected</string>
     <string name="threats_found_count">⚠ %1$d malicious file(s) found! Tap to destroy.</string>
     <string name="total_traffic">TOTAL TRAFFIC</string>
+    <string name="uninstall_failed_msg">%1$s could not be removed — the uninstall was cancelled or failed.\n\nUse Safe Mode to run the antivirus and remove malware: restart your device, hold the volume-down key during boot, then run a full scan.</string>
+    <string name="uninstall_failed_safe_mode">OPEN SETTINGS TO REBOOT TO SAFE MODE</string>
+    <string name="uninstall_failed_safe_mode_toast">After reboot into Safe Mode, open HydraDragon and run a full scan to remove the malware</string>
+    <string name="uninstall_failed_title">⚠ Uninstall Failed</string>
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
     <string name="untrusted_cert">UNTRUSTED CERTIFICATE (Test Key)</string>
     <string name="vpn_consent_denied">VPN consent denied</string>
     <string name="vpn_unavailable">VPN unavailable on this device</string>

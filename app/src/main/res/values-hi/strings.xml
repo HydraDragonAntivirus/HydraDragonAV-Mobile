@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon एंटीवायरस</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ ⚠ रूटेड डिवाइस</string>
+    <string name="root_warning_msg">इस डिवाइस में ROOT पहुंच है।\n\nHydraDragon Antivirus रूट स्तर की सुविधाओं का समर्थन नहीं करता है। USB डिबगिंग (ADB) भी उत्पादन उपयोग के लिए समर्थित नहीं है।\n\n⚠️ दृढ़ता से अनुशंसित: इस ऐप का उपयोग करने से पहले रूट एक्सेस हटाएं और USB डिबगिंग अक्षम करें। ADB सक्षम के साथ रूटेड डिवाइस पर चलाना आपकी सुरक्षा से गंभीर रूप से समझौता करता है।\n\nयदि आपको लगता है कि मैलवेयर ने आपकी जानकारी के बिना आपके डिवाइस को रूट किया है, तो आप सीमित सुरक्षा के साथ जारी रख सकते हैं।</string>
+    <string name="root_warning_continue">मैं समझ गया, जारी रखें</string>
+    <string name="root_warning_exit">बाहर निकलें</string>
+    <string name="root_warning_dont_ask">दोबारा न पूछें</string>
+    <string name="root_warning_toggle">डिवाइस रूट होने पर चेतावनी दें</string>
+    <string name="uninstall_failed_title">⚠ ⚠ अनइंस्टॉल विफल</string>
+    <string name="uninstall_failed_msg">%1$s को हटाया नहीं जा सका — अनइंस्टॉल रद्द या विफल हुआ।\n\nएंटीवायरस चलाने और मैलवेयर हटाने के लिए सेफ मोड का उपयोग करें: अपने डिवाइस को पुनरारंभ करें, बूट के दौरान वॉल्यूम डाउन की दबाकर रखें, फिर पूर्ण स्कैन चलाएं।</string>
+    <string name="uninstall_failed_safe_mode">सेफ मोड में रीबूट करने के लिए सेटिंग्स खोलें</string>
+    <string name="uninstall_failed_safe_mode_toast">सेफ मोड में रीबूट करने के बाद, मैलवेयर हटाने के लिए HydraDragon खोलें और पूर्ण स्कैन चलाएं</string>
     <string name="integrity_blocked_title">संशोधित APK मिला</string>
     <string name="integrity_blocked_msg">इस प्रति का हस्ताक्षर मूल रिलीज़ से मेल नहीं खाता — कोड में बदलाव हो सकता है और यह हानिकारक हो सकता है। यह ऐप नहीं चलेगा।</string>
     <string name="integrity_blocked_exit">बाहर निकलें</string>
@@ -322,4 +326,7 @@
     <string name="malware_has_admin_title">इस ऐप के पास डिवाइस एडमिन अधिकार हैं</string>
     <string name="malware_has_admin_msg">%1$s ने खुद को डिवाइस एडमिनिस्ट्रेटर बना लिया है, जो इसे सीधे अनइंस्टॉल करने से रोकता है — यह मैलवेयर द्वारा हटाए जाने से बचने के लिए इस्तेमाल की जाने वाली एक आम तरकीब है। खुलने वाली स्क्रीन में इसे निष्क्रिय करें (%1$s को ढूंढें और निष्क्रिय करें पर टैप करें), फिर अनइंस्टॉल प्रॉम्प्ट अपने आप खुल जाएगा।</string>
     <string name="malware_has_admin_open_settings">डिवाइस एडमिन सेटिंग्स खोलें</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+

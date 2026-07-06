@@ -25,6 +25,11 @@
     <string name="scan_stopping">Stopping…</string>
     <string name="skip">Skip</string>
     <string name="system_safe">SYSTEM SAFE</string>
+    <string name="uninstall_failed_msg">%1$s could not be removed — the uninstall was cancelled or failed.\n\nUse Safe Mode to run the antivirus and remove malware: restart your device, hold the volume-down key during boot, then run a full scan.</string>
+    <string name="uninstall_failed_safe_mode">OPEN SETTINGS TO REBOOT TO SAFE MODE</string>
+    <string name="uninstall_failed_safe_mode_toast">After reboot into Safe Mode, open HydraDragon and run a full scan to remove the malware</string>
+    <string name="uninstall_failed_title">⚠ Uninstall Failed</string>
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
     <string name="vpn_consent_denied">VPN consent denied</string>
     <string name="vpn_unavailable">VPN unavailable on this device</string>
     <string name="web_shield">Web Shield (DNS VPN)</string>

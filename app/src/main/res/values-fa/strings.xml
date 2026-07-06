@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ دستگاه روت شده</string>
+    <string name="root_warning_msg">این دستگاه دارای دسترسی ROOT است.\n\nHydraDragon Antivirus از ویژگی‌های سطح روت پشتیبانی نمی‌کند. اشکال‌زدایی USB (ADB) نیز برای استفاده تولیدی پشتیبانی نمی‌شود.\n\n⚠️ به شدت توصیه می‌شود: قبل از استفاده از این برنامه، دسترسی روت را حذف و اشکال‌زدایی USB را غیرفعال کنید. اجرا بر روی دستگاه روت شده با ADB فعال، امنیت شما را به شدت به خطر می‌اندازد.\n\nاگر معتقدید بدافزار بدون اطلاع شما دستگاه شما را روت کرده است، می‌توانید با حفاظت محدود ادامه دهید.</string>
+    <string name="root_warning_continue">متوجه شدم، ادامه</string>
+    <string name="root_warning_exit">خروج</string>
+    <string name="root_warning_dont_ask">دیگر نپرس</string>
+    <string name="root_warning_toggle">هشدار وقتی دستگاه روت شده است</string>
+    <string name="uninstall_failed_title">⚠ حذف نصب ناموفق</string>
+    <string name="uninstall_failed_msg">%1$s قابل حذف نیست — حذف نصب لغو یا ناموفق بود.\n\nبرای اجرای آنتی‌ویروس و حذف بدافزار از حالت امن استفاده کنید: دستگاه خود را راه‌اندازی مجدد کنید، دکمه کاهش صدا را در هنگام بوت نگه دارید، سپس یک اسکن کامل اجرا کنید.</string>
+    <string name="uninstall_failed_safe_mode">باز کردن تنظیمات برای راه‌اندازی مجدد به حالت امن</string>
+    <string name="uninstall_failed_safe_mode_toast">پس از راه‌اندازی مجدد به حالت امن، HydraDragon را باز کنید و برای حذف بدافزار یک اسکن کامل اجرا کنید</string>
     <string name="integrity_blocked_title">APK تغییر یافته شناسایی شد</string>
     <string name="integrity_blocked_msg">امضای این نسخه با نسخه اصلی مطابقت ندارد — ممکن است کد تغییر یافته و مخرب باشد. این برنامه اجرا نخواهد شد.</string>
     <string name="integrity_blocked_exit">خروج</string>
@@ -323,5 +327,8 @@
     <string name="malware_has_admin_title">این برنامه دارای دسترسی مدیر دستگاه است</string>
     <string name="malware_has_admin_msg">%1$s خودش را مدیر دستگاه کرده است، که مانع حذف نصب مستقیم آن می‌شود — ترفندی رایج که بدافزارها برای مقاومت در برابر حذف استفاده می‌کنند. آن را در صفحه‌ای که باز می‌شود غیرفعال کنید (%1$s را پیدا کرده و روی غیرفعال کردن ضربه بزنید)، سپس پنجره حذف نصب به‌طور خودکار باز خواهد شد.</string>
     <string name="malware_has_admin_open_settings">باز کردن تنظیمات مدیر دستگاه</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

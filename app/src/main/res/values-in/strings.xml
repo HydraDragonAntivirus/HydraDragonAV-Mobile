@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ PERANGKAT DI-ROOT</string>
+    <string name="root_warning_msg">Perangkat ini memiliki akses ROOT.\n\nHydraDragon Antivirus TIDAK mendukung fitur level root. Debugging USB (ADB) juga tidak didukung untuk penggunaan produksi.\n\n⚠️ SANGAT DISARANKAN: Hapus akses root dan nonaktifkan debugging USB sebelum menggunakan aplikasi ini. Menjalankan pada perangkat yang di-root dengan ADB aktif sangat membahayakan keamanan Anda.\n\nJika Anda yakin malware telah me-root perangkat Anda tanpa sepengetahuan Anda, Anda dapat melanjutkan dengan perlindungan TERBATAS.</string>
+    <string name="root_warning_continue">SAYA MENGERTI, LANJUTKAN</string>
+    <string name="root_warning_exit">KELUAR</string>
+    <string name="root_warning_dont_ask">JANGAN TANYA LAGI</string>
+    <string name="root_warning_toggle">Peringatkan saat perangkat di-root</string>
+    <string name="uninstall_failed_title">⚠ Penghapusan Gagal</string>
+    <string name="uninstall_failed_msg">%1$s tidak dapat dihapus — penghapusan dibatalkan atau gagal.\n\nGunakan Mode Aman untuk menjalankan antivirus dan menghapus malware: mulai ulang perangkat Anda, tahan tombol volume bawah saat boot, lalu jalankan pemindaian penuh.</string>
+    <string name="uninstall_failed_safe_mode">BUKA PENGATURAN UNTUK REBOOT KE MODE AMAN</string>
+    <string name="uninstall_failed_safe_mode_toast">Setelah reboot ke Mode Aman, buka HydraDragon dan jalankan pemindaian penuh untuk menghapus malware</string>
     <string name="integrity_blocked_title">APK yang Dimodifikasi Terdeteksi</string>
     <string name="integrity_blocked_msg">Tanda tangan salinan ini tidak cocok dengan rilis aslinya — kode mungkin telah diubah dan bisa berbahaya. Aplikasi ini tidak akan berjalan.</string>
     <string name="integrity_blocked_exit">Keluar</string>
@@ -323,5 +327,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="malware_has_admin_title">Aplikasi Ini Memiliki Hak Admin Perangkat</string>
     <string name="malware_has_admin_msg">%1$s telah menjadikan dirinya Admin Perangkat, yang mencegah pencopotan pemasangan langsung — ini adalah trik umum yang digunakan malware untuk menolak dihapus. Nonaktifkan di layar yang terbuka (cari %1$s dan ketuk Nonaktifkan), lalu prompt pencopotan pemasangan akan terbuka secara otomatis.</string>
     <string name="malware_has_admin_open_settings">BUKA PENGATURAN ADMIN PERANGKAT</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

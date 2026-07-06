@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ جهاز ذو صلاحية روت (ROOT)</string>
+    <string name="root_warning_msg">هذا الجهاز لديه صلاحية ROOT.\n\nHydraDragon Antivirus لا يدعم ميزات مستوى الروت. تصحيح أخطاء USB (ADB) أيضًا غير مدعوم للاستخدام الإنتاجي.\n\n⚠️ موصى به بشدة: قم بإزالة صلاحية الروت وتعطيل تصحيح أخطاء USB قبل استخدام هذا التطبيق. التشغيل على جهاز ذي صلاحية روت مع تمكين ADB يعرض أمانك للخطر بشكل كبير.\n\nإذا كنت تعتقد أن برنامجًا ضارًا قد منح جهازك صلاحية الروت دون علمك، يمكنك المتابعة بحماية محدودة.</string>
+    <string name="root_warning_continue">أفهم، متابعة</string>
+    <string name="root_warning_exit">خروج</string>
+    <string name="root_warning_dont_ask">لا تسأل مرة أخرى</string>
+    <string name="root_warning_toggle">تحذير عند كون الجهاز ذو صلاحية روت</string>
+    <string name="uninstall_failed_title">⚠ فشل إلغاء التثبيت</string>
+    <string name="uninstall_failed_msg">%1$s تعذرت إزالته — تم إلغاء إلغاء التثبيت أو فشل.\n\nاستخدم الوضع الآمن لتشغيل مضاد الفيروسات وإزالة البرامج الضارة: أعد تشغيل جهازك، اضغط مع الاستمرار على زر خفض الصوت أثناء التشغيل، ثم قم بإجراء فحص كامل.</string>
+    <string name="uninstall_failed_safe_mode">فتح الإعدادات لإعادة التشغيل إلى الوضع الآمن</string>
+    <string name="uninstall_failed_safe_mode_toast">بعد إعادة التشغيل إلى الوضع الآمن، افتح HydraDragon وقم بإجراء فحص كامل لإزالة البرامج الضارة</string>
     <string name="integrity_blocked_title">تم اكتشاف APK معدَّل</string>
     <string name="integrity_blocked_msg">توقيع هذه النسخة لا يطابق الإصدار الأصلي — قد يكون الكود قد تم تعديله وقد يكون ضارًا. لن يعمل هذا التطبيق.</string>
     <string name="integrity_blocked_exit">خروج</string>
@@ -323,5 +327,8 @@
     <string name="malware_has_admin_title">هذا التطبيق يملك صلاحيات مسؤول الجهاز</string>
     <string name="malware_has_admin_msg">جعل %1$s نفسه مسؤول جهاز، مما يمنع إلغاء تثبيته مباشرة — وهي حيلة شائعة تستخدمها البرمجيات الخبيثة لمقاومة الإزالة. عطّله في الشاشة التي ستفتح (ابحث عن %1$s واضغط إلغاء التفعيل)، ثم ستفتح رسالة إلغاء التثبيت تلقائيًا.</string>
     <string name="malware_has_admin_open_settings">افتح إعدادات مسؤول الجهاز</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 

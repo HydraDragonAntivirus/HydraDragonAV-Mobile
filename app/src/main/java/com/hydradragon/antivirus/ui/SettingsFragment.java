@@ -154,6 +154,10 @@ public class SettingsFragment extends Fragment {
         addToggle(getString(R.string.root_warning_toggle), rootWarn, (btn, on) ->
             com.hydradragon.antivirus.engine.RootWarning.setEnabled(requireContext(), on));
 
+        boolean uninstallWarn = prefs().getBoolean("uninstall_warning_enabled", true);
+        addToggle(getString(R.string.uninstall_warning_toggle), uninstallWarn, (btn, on) ->
+            prefs().edit().putBoolean("uninstall_warning_enabled", on).apply());
+
         // Device Admin self-protection (SelfProtection/AdminReceiver) existed
         // in the codebase but was never actually wired up anywhere — this is
         // the first place the user can turn it on/off. Turning ON opens the

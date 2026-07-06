@@ -1,12 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
-    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
-    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
-    <string name="root_warning_exit">EXIT</string>
-    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
-    <string name="root_warning_toggle">Warn when device is rooted</string>
+    <string name="root_warning_title">⚠ ⚠ ルート化された端末</string>
+    <string name="root_warning_msg">この端末は ROOT アクセス権限があります。\n\nHydraDragon Antivirus は root レベルの機能をサポートしていません。USB デバッグ（ADB）も本番環境ではサポートされていません。\n\n⚠️ 強く推奨：このアプリを使用する前に、root アクセスを削除し、USB デバッグを無効にしてください。ADB が有効なルート化端末での実行は、セキュリティを著しく危険にさらします。\n\nマルウェアがあなたの知らないうちに端末をルート化したと思われる場合は、制限付きの保護で続行できます。</string>
+    <string name="root_warning_continue">理解しました、続行</string>
+    <string name="root_warning_exit">終了</string>
+    <string name="root_warning_dont_ask">次回から表示しない</string>
+    <string name="root_warning_toggle">端末がルート化されている場合に警告</string>
+    <string name="uninstall_failed_title">⚠ ⚠ アンインストール失敗</string>
+    <string name="uninstall_failed_msg">%1$s を削除できませんでした — アンインストールがキャンセルされるか失敗しました。\n\nセーフモードを使用してアンチウイルスを実行し、マルウェアを削除してください：端末を再起動し、起動中に音量小キーを押し続け、完全スキャンを実行してください。</string>
+    <string name="uninstall_failed_safe_mode">設定を開いてセーフモードで再起動</string>
+    <string name="uninstall_failed_safe_mode_toast">セーフモードで再起動したら、HydraDragon を開いて完全スキャンを実行し、マルウェアを削除してください</string>
     <string name="integrity_blocked_title">改ざんされたAPKを検出</string>
     <string name="integrity_blocked_msg">このコピーの署名は元のリリースと一致しません — コードが改変され、悪意のあるものである可能性があります。このアプリは実行されません。</string>
     <string name="integrity_blocked_exit">終了</string>
@@ -323,5 +327,8 @@
     <string name="malware_has_admin_title">このアプリはデバイス管理者権限を持っています</string>
     <string name="malware_has_admin_msg">%1$sは自身をデバイス管理者にしており、直接アンインストールできないようにしています — これはマルウェアが削除に抵抗するためによく使う手口です。開いた画面で無効化してください（%1$sを見つけて「無効にする」をタップ）。その後、アンインストールのプロンプトが自動的に開きます。</string>
     <string name="malware_has_admin_open_settings">デバイス管理者の設定を開く</string>
+
+    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
 
