@@ -285,6 +285,8 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="dynamic_risk_msg">%1$s combina permissões arriscadas com tráfego de rede anonimizado — sinalizada como malware, será reportada na próxima verificação.</string>
     <string name="ransomware_behavior_title">🔒 Comportamento de Ransomware Detectado</string>
     <string name="ransomware_behavior_msg">%1$s renomeou em massa arquivos logo após receber acesso a arquivos — sinalizada como ransomware, será reportada na próxima verificação.</string>
+    <string name="removal_resistance_title">🚫 Resistência à Remoção Detectada</string>
+    <string name="removal_resistance_msg">%1$s te expulsa repetidamente de sua própria tela de desinstalação/administrador do dispositivo — sinalizada como malware, será reportada na próxima verificação.</string>
     <string name="file_trap_title">🪤 Armadilha de Arquivo Ransomware Acionada</string>
     <string name="file_trap_msg">%1$s tocou em um arquivo-isca que nenhum app legítimo tem motivo para acessar — sinalizada como ransomware, será reportada na próxima verificação.</string>
     <string name="task_hijack_detected">Falha na verificação de segurança — outro app parece estar sobreposto a esta tela, fechando para sua proteção</string>

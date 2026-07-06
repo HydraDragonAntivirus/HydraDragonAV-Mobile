@@ -285,6 +285,8 @@
     <string name="dynamic_risk_msg">%1$s이(가) 위험한 권한과 익명화 네트워크 트래픽을 결합하고 있습니다 — 악성코드로 표시되었으며 다음 검사 시 신고됩니다.</string>
     <string name="ransomware_behavior_title">🔒 랜섬웨어 행위 감지됨</string>
     <string name="ransomware_behavior_msg">%1$s이(가) 파일 접근 권한을 부여받은 직후 파일 이름을 대량으로 변경했습니다 — 랜섬웨어로 표시되었으며 다음 검사 시 신고됩니다.</string>
+    <string name="removal_resistance_title">🚫 제거 저항 감지됨</string>
+    <string name="removal_resistance_msg">%1$s이(가) 자신의 제거/기기 관리자 화면에서 반복적으로 사용자를 쫓아냅니다 — 악성코드로 표시되었으며 다음 검사 시 신고됩니다.</string>
     <string name="file_trap_title">🪤 랜섬웨어 파일 함정 작동됨</string>
     <string name="file_trap_msg">%1$s이(가) 정상적인 앱이라면 접근할 이유가 없는 미끼 파일을 건드렸습니다 — 랜섬웨어로 표시되었으며 다음 검사 시 신고됩니다.</string>
     <string name="task_hijack_detected">보안 검사 실패 — 다른 앱이 이 화면 위에 겹쳐진 것으로 보여 보호를 위해 종료합니다</string>

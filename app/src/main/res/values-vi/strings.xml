@@ -285,6 +285,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="dynamic_risk_msg">%1$s kết hợp các quyền rủi ro với lưu lượng mạng ẩn danh (anonymizer) — bị gắn cờ là phần mềm độc hại, sẽ được báo cáo trong lần quét tiếp theo.</string>
     <string name="ransomware_behavior_title">🔒 Phát hiện Hành vi Ransomware</string>
     <string name="ransomware_behavior_msg">%1$s vừa đổi tên hàng loạt tệp ngay sau khi được cấp quyền truy cập tệp — bị gắn cờ là ransomware, sẽ được báo cáo trong lần quét tiếp theo.</string>
+    <string name="removal_resistance_title">🚫 Phát hiện Kháng cự Gỡ cài đặt</string>
+    <string name="removal_resistance_msg">%1$s liên tục đá bạn ra khỏi màn hình gỡ cài đặt/quản trị viên thiết bị của chính nó — bị gắn cờ là phần mềm độc hại, sẽ được báo cáo trong lần quét tiếp theo.</string>
     <string name="file_trap_title">🪤 Bẫy Tệp Ransomware Đã Kích Hoạt</string>
     <string name="file_trap_msg">%1$s đã chạm vào một tệp mồi mà không ứng dụng hợp pháp nào có lý do để truy cập — bị gắn cờ là ransomware, sẽ được báo cáo trong lần quét tiếp theo.</string>
     <string name="task_hijack_detected">Kiểm tra bảo mật thất bại — có vẻ như một ứng dụng khác đang chồng lên màn hình này, đang đóng để bảo vệ bạn</string>

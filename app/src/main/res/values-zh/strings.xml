@@ -285,6 +285,8 @@
     <string name="dynamic_risk_msg">%1$s 结合了危险权限与匿名化网络流量 — 已被标记为恶意软件，将在下次扫描时上报。</string>
     <string name="ransomware_behavior_title">🔒 检测到勒索软件行为</string>
     <string name="ransomware_behavior_msg">%1$s 在被授予文件访问权限后立即大量重命名文件 — 已被标记为勒索软件，将在下次扫描时上报。</string>
+    <string name="removal_resistance_title">🚫 检测到卸载阻挠行为</string>
+    <string name="removal_resistance_msg">%1$s 反复将你踢出其自身的卸载/设备管理员界面 — 已被标记为恶意软件，将在下次扫描时上报。</string>
     <string name="file_trap_title">🪤 勒索软件文件陷阱已触发</string>
     <string name="file_trap_msg">%1$s 触碰了一个合法应用没有任何理由访问的诱饵文件 — 已被标记为勒索软件，将在下次扫描时上报。</string>
     <string name="task_hijack_detected">安全检查失败 — 似乎有其他应用覆盖在此屏幕上，为保护您的安全正在关闭</string>

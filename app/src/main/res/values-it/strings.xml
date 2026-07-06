@@ -285,6 +285,8 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="dynamic_risk_msg">%1$s combina autorizzazioni rischiose con traffico di rete anonimizzato — contrassegnata come malware, verrà segnalata alla prossima scansione.</string>
     <string name="ransomware_behavior_title">🔒 Comportamento da Ransomware Rilevato</string>
     <string name="ransomware_behavior_msg">%1$s ha rinominato in massa i file subito dopo aver ottenuto l\'accesso ai file — contrassegnata come ransomware, verrà segnalata alla prossima scansione.</string>
+    <string name="removal_resistance_title">🚫 Resistenza alla Rimozione Rilevata</string>
+    <string name="removal_resistance_msg">%1$s ti espelle ripetutamente dalla propria schermata di disinstallazione/amministratore del dispositivo — contrassegnata come malware, verrà segnalata alla prossima scansione.</string>
     <string name="file_trap_title">🪤 Trappola per File Ransomware Attivata</string>
     <string name="file_trap_msg">%1$s ha toccato un file esca che nessuna app legittima ha motivo di accedere — contrassegnata come ransomware, verrà segnalata alla prossima scansione.</string>
     <string name="task_hijack_detected">Controllo di sicurezza non riuscito — un\'altra app sembra essere sovrapposta a questa schermata, chiusura per la tua protezione</string>

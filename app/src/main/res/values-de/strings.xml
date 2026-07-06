@@ -285,6 +285,8 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="dynamic_risk_msg">%1$s kombiniert riskante Berechtigungen mit Anonymisierungs-Netzwerkverkehr — als Malware eingestuft, wird beim nächsten Scan gemeldet.</string>
     <string name="ransomware_behavior_title">🔒 Ransomware-Verhalten Erkannt</string>
     <string name="ransomware_behavior_msg">%1$s hat direkt nach Erhalt des Dateizugriffs massenhaft Dateien umbenannt — als Ransomware eingestuft, wird beim nächsten Scan gemeldet.</string>
+    <string name="removal_resistance_title">🚫 Entfernungswiderstand Erkannt</string>
+    <string name="removal_resistance_msg">%1$s blockiert wiederholt den Deinstallations-/Geräteadministrator-Bildschirm und kickt dich zurück — als Malware eingestuft, wird beim nächsten Scan gemeldet.</string>
     <string name="file_trap_title">🪤 Ransomware-Dateifalle Ausgelöst</string>
     <string name="file_trap_msg">%1$s hat eine Köderdatei berührt, auf die keine legitime App einen Grund hätte zuzugreifen — als Ransomware eingestuft, wird beim nächsten Scan gemeldet.</string>
     <string name="task_hijack_detected">Sicherheitsprüfung fehlgeschlagen — eine andere App scheint über diesen Bildschirm gelegt zu sein, wird zu deinem Schutz geschlossen</string>

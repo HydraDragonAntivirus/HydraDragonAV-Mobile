@@ -285,6 +285,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="dynamic_risk_msg">%1$s combineert riskante machtigingen met anonimiserend netwerkverkeer — gemarkeerd als malware, wordt bij de volgende scan gemeld.</string>
     <string name="ransomware_behavior_title">🔒 Ransomware-Gedrag Gedetecteerd</string>
     <string name="ransomware_behavior_msg">%1$s heeft direct na het verkrijgen van bestandstoegang massaal bestanden hernoemd — gemarkeerd als ransomware, wordt bij de volgende scan gemeld.</string>
+    <string name="removal_resistance_title">🚫 Verwijderingsweerstand Gedetecteerd</string>
+    <string name="removal_resistance_msg">%1$s schopt je herhaaldelijk van zijn eigen verwijder-/apparaatbeheerderscherm — gemarkeerd als malware, wordt bij de volgende scan gemeld.</string>
     <string name="file_trap_title">🪤 Ransomware-bestandsval Geactiveerd</string>
     <string name="file_trap_msg">%1$s raakte een lokbestand aan waar geen enkele legitieme app reden toe heeft om toegang te krijgen — gemarkeerd als ransomware, wordt bij de volgende scan gemeld.</string>
     <string name="task_hijack_detected">Beveiligingscontrole mislukt — een andere app lijkt over dit scherm te zijn gelegd, wordt gesloten ter bescherming</string>

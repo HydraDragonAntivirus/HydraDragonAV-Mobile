@@ -285,6 +285,8 @@
     <string name="dynamic_risk_msg">‏%1$s يجمع بين أذونات خطرة وحركة شبكة عبر شبكة تعمية (anonymizer) — تم تصنيفه كبرمجية خبيثة وسيُبلَّغ عنه في الفحص التالي.</string>
     <string name="ransomware_behavior_title">🔒 تم اكتشاف سلوك برنامج فدية</string>
     <string name="ransomware_behavior_msg">%1$s قام بإعادة تسمية جماعية للملفات فور منحه إذن الوصول إلى الملفات — تم تصنيفه كبرنامج فدية وسيُبلَّغ عنه في الفحص التالي.</string>
+    <string name="removal_resistance_title">🚫 تم اكتشاف مقاومة الإزالة</string>
+    <string name="removal_resistance_msg">%1$s يستمر في طردك من شاشة إلغاء التثبيت / مسؤول الجهاز الخاصة به — تم تصنيفه كبرنامج ضار وسيُبلَّغ عنه في الفحص التالي.</string>
     <string name="file_trap_title">🪤 تم تفعيل فخ ملف برنامج الفدية</string>
     <string name="file_trap_msg">%1$s لمس ملفًا خداعيًا لا يوجد أي سبب مشروع لأي تطبيق للوصول إليه — تم تصنيفه كبرنامج فدية، وسيُبلَّغ عنه في الفحص التالي.</string>
     <string name="task_hijack_detected">فشل فحص الأمان — يبدو أن تطبيقًا آخر مُوضّع فوق هذه الشاشة، يتم الإغلاق لحمايتك</string>

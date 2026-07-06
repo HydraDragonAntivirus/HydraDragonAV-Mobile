@@ -285,6 +285,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="dynamic_risk_msg">%1$s menggabungkan izin berisiko dengan lalu lintas jaringan anonymizer — ditandai sebagai malware, akan dilaporkan pada pemindaian berikutnya.</string>
     <string name="ransomware_behavior_title">🔒 Perilaku Ransomware Terdeteksi</string>
     <string name="ransomware_behavior_msg">%1$s baru saja mengganti nama file secara massal segera setelah diberi akses file — ditandai sebagai ransomware, akan dilaporkan pada pemindaian berikutnya.</string>
+    <string name="removal_resistance_title">🚫 Perlawanan Terhadap Penghapusan Terdeteksi</string>
+    <string name="removal_resistance_msg">%1$s berulang kali mengusir Anda dari layar copot pemasangan/admin perangkat miliknya sendiri — ditandai sebagai malware, akan dilaporkan pada pemindaian berikutnya.</string>
     <string name="file_trap_title">🪤 Perangkap File Ransomware Terpicu</string>
     <string name="file_trap_msg">%1$s menyentuh file umpan yang tidak ada alasan bagi aplikasi sah untuk mengaksesnya — ditandai sebagai ransomware, akan dilaporkan pada pemindaian berikutnya.</string>
     <string name="task_hijack_detected">Pemeriksaan keamanan gagal — aplikasi lain tampaknya dilapisi di atas layar ini, ditutup demi perlindungan Anda</string>

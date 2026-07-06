@@ -285,6 +285,8 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="dynamic_risk_msg">%1$s łączy ryzykowne uprawnienia z ruchem sieciowym typu anonimizer — oznaczono jako złośliwe oprogramowanie, zostanie zgłoszone podczas następnego skanowania.</string>
     <string name="ransomware_behavior_title">🔒 Wykryto Zachowanie Ransomware</string>
     <string name="ransomware_behavior_msg">%1$s masowo zmieniła nazwy plików zaraz po uzyskaniu dostępu do plików — oznaczono jako ransomware, zostanie zgłoszone podczas następnego skanowania.</string>
+    <string name="removal_resistance_title">🚫 Wykryto Opór Przed Usunięciem</string>
+    <string name="removal_resistance_msg">%1$s wielokrotnie wyrzuca cię z własnego ekranu odinstalowywania/administratora urządzenia — oznaczono jako malware, zostanie zgłoszone podczas następnego skanowania.</string>
     <string name="file_trap_title">🪤 Uruchomiono Pułapkę Pliku Ransomware</string>
     <string name="file_trap_msg">%1$s dotknęła pliku wabikowego, do którego żadna legalna aplikacja nie ma powodu uzyskiwać dostępu — oznaczono jako ransomware, zostanie zgłoszone podczas następnego skanowania.</string>
     <string name="task_hijack_detected">Kontrola bezpieczeństwa nie powiodła się — wygląda na to, że inna aplikacja nakłada się na ten ekran, zamykanie w celu ochrony</string>
