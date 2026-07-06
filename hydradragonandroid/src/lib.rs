@@ -1671,8 +1671,10 @@ fn axml_package(data: &[u8]) -> Option<String> {
 // live-network/HIPS JSON, under a `dex_findings` array, so `.yar` rules can
 // query them via `hydradragon.dex_finding(regex)` /
 // `hydradragon.dex_severe_finding_count()`.
+// Also merges every unique API call from all DEX buffers into an `api_calls`
+// array, queryable via `hydradragon.api_call(regex)`.
 
-/// Returns `None` when there's neither a Java report nor any DEX finding.
+/// Returns `None` when there's neither a Java report nor any DEX data.
 fn merge_dex_findings(
     hydradragon: Option<&[u8]>,
     dex_scans: &[Option<dex_scan::DexScan>],
@@ -1691,12 +1693,35 @@ fn merge_dex_findings(
         })
         .collect();
 
+    // Aggregate invocation counts per API signature across all DEX buffers.
+    let mut api_agg: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    for ds in dex_scans.iter().flatten() {
+        for entry in &ds.api_calls {
+            // Each entry is "sig\tcount"
+            if let Some(tab) = entry.rfind('\t') {
+                let sig = &entry[..tab];
+                let cnt: u32 = entry[tab + 1..].parse().unwrap_or(1);
+                if api_agg.len() >= 4096 { break; }
+                *api_agg.entry(sig.to_string()).or_insert(0) += cnt;
+            }
+        }
+    }
+    let mut api_keys: Vec<String> = api_agg.into_iter().map(|(k, v)| format!("{k}\t{v}")).collect();
+    api_keys.sort();
+    let api_json: Vec<serde_json::Value> = api_keys
+        .into_iter()
+        .map(serde_json::Value::String)
+        .collect();
+
     let mut root: serde_json::Value = hydradragon
         .and_then(|h| serde_json::from_slice(h).ok())
         .filter(serde_json::Value::is_object)
         .unwrap_or_else(|| serde_json::json!({}));
     if !findings.is_empty() {
         root["dex_findings"] = serde_json::Value::Array(findings);
+    }
+    if !api_json.is_empty() {
+        root["api_calls"] = serde_json::Value::Array(api_json);
     }
 
     if root.as_object().map(|m| m.is_empty()).unwrap_or(true) {
