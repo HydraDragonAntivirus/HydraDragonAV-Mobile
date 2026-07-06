@@ -116,82 +116,6 @@ struct Engine {
     url_scanner: Option<url_scan::UrlScanner>,
     /// Malicious-IP xor filters (per category).
     ip_scanner: Option<ip_scan::IpScanner>,
-    /// Goodware string DB (yarGen-style): DEX strings this device has seen in
-    /// its own CLEAN scans (no detections), remembered across restarts so
-    /// `generate_yara_rule` can drop them from a future auto-rule instead of
-    /// building on a string that also shows up in legitimate apps. Grows
-    /// on-device only — never bundled/shared. `RwLock` because a clean scan
-    /// writes to it (see `record_clean_strings`) while rule generation reads it.
-    clean_strings: std::sync::RwLock<std::collections::HashSet<String>>,
-    /// Where `clean_strings` is persisted (`<base>/clean_strings.txt`, one
-    /// string per line) — new entries are appended here as they're learned.
-    clean_strings_path: std::path::PathBuf,
-}
-
-/// Cap on how many goodware strings this device remembers — a plain growing
-/// file would otherwise creep unbounded over a device's lifetime of scans.
-const CLEAN_STRINGS_CAP: usize = 50_000;
-const CLEAN_STRINGS_FILE: &str = "clean_strings.txt";
-
-fn load_clean_strings(path: &std::path::Path) -> std::collections::HashSet<String> {
-    match std::fs::read_to_string(path) {
-        Ok(s) => s
-            .lines()
-            .map(|l| l.to_string())
-            .take(CLEAN_STRINGS_CAP)
-            .collect(),
-        Err(_) => std::collections::HashSet::new(),
-    }
-}
-
-/// Extract this sample's candidate rule-strings (same filter as
-/// `generate_yara_rule`'s own extraction) and, if the scan was CLEAN, add any
-/// new ones to the goodware DB — in memory now, appended to disk so future
-/// process restarts remember them too. Never runs on a malicious/flagged
-/// sample: that would poison the goodware DB with the malware's own strings.
-fn record_clean_strings(engine: &Engine, dex_scans: &[Option<dex_scan::DexScan>]) {
-    let mut fresh: Vec<String> = Vec::new();
-    {
-        let Ok(clean) = engine.clean_strings.read() else { return };
-        if clean.len() >= CLEAN_STRINGS_CAP {
-            return;
-        }
-        for ds in dex_scans.iter().flatten() {
-            for line in ds.text.lines() {
-                let l = line.trim();
-                if l.len() < 8 || l.len() > 128 || l.chars().any(|c| c.is_control()) {
-                    continue;
-                }
-                if !clean.contains(l) {
-                    fresh.push(l.to_string());
-                }
-            }
-        }
-    }
-    if fresh.is_empty() {
-        return;
-    }
-    let Ok(mut clean) = engine.clean_strings.write() else { return };
-    let mut appended = String::new();
-    for s in fresh {
-        if clean.len() >= CLEAN_STRINGS_CAP {
-            break;
-        }
-        if clean.insert(s.clone()) {
-            appended.push_str(&s);
-            appended.push('\n');
-        }
-    }
-    if !appended.is_empty() {
-        use std::io::Write;
-        if let Ok(mut f) = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&engine.clean_strings_path)
-        {
-            let _ = f.write_all(appended.as_bytes());
-        }
-    }
 }
 
 /// `RwLock` (not a bare `Engine`) so a freshly auto-generated rule can be
@@ -273,159 +197,239 @@ fn set_status(s: String) {
 
 fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
     let base = std::path::Path::new(dir);
-    let mut report = String::new();
     let t0 = std::time::Instant::now();
-    // ClamAV engine from the bundled DB, then add the compiled .yrc rulesets
-    // (compiled only — never .yar source on-device).
-    let t_db = std::time::Instant::now();
-    let clamav = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        ClamavEngine::from_database_dir(base)
-    })) {
-        Ok(Ok((mut eng, _report))) => {
-            let db_ms = t_db.elapsed().as_millis();
-            android_log(&format!("init :: from_database_dir={db_ms}ms"));
-            report.push_str(&format!("clamav=ok({db_ms}ms)"));
-            // Load every .yrc file in parallel — each thread reads the file and
-            // parses the compiled rules from its bytes, then the main thread
-            // pushes the ready YaraEngine objects onto the engine list.
-            let yrc_results: Vec<(String, u128, Option<hydradragonclamav::yara_scan::YaraEngine>)> =
-                std::thread::scope(|s| {
-                    YRC_FILES
-                        .iter()
-                        .map(|name| {
-                            let path = base.join(name);
-                            s.spawn(move || {
-                                let t0 = std::time::Instant::now();
-                                let engine =
-                                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(
-                                        || -> Option<hydradragonclamav::yara_scan::YaraEngine> {
-                                            let bytes = std::fs::read(&path).ok()?;
-                                            hydradragonclamav::yara_scan::YaraEngine::from_compiled(
-                                                &bytes,
-                                            )
-                                        },
-                                    ))
-                                    .ok()
-                                    .flatten();
-                                (name.to_string(), t0.elapsed().as_millis(), engine)
-                            })
-                        })
-                        .collect::<Vec<_>>()
-                        .into_iter()
-                        .map(|h| h.join().unwrap_or_default())
-                        .collect()
-                });
-            for (name, yrc_ms, engine) in yrc_results {
-                match engine {
-                    Some(e) => {
-                        eng.add_compiled_yara(e);
-                        report.push_str(&format!(" yrc[{}]=ok({yrc_ms}ms)", name));
+
+    // Every stage below reads a different file/DB into its own independent
+    // corner of Engine — nothing here depends on anything else finishing
+    // first, so each runs on its own thread instead of one after another.
+    // Total init time now tracks the SLOWEST single stage instead of their
+    // sum (previously: clamav db -> yrc files -> model -> tlsh -> whitelist
+    // -> pkg_wl -> url -> ip, all strictly back to back).
+    // Bonus: each stage's `catch_unwind`/thread boundary already isolated
+    // its own panics from the others; now a panic in, say, tlsh loading
+    // can't also take whitelist/model/etc. down with it the way a panic
+    // partway through the old sequential chain would have.
+    // (last_panic() is a single global — if two stages panic in the same
+    // instant, the PANIC(...) message attached to one MAY actually belong
+    // to the other. Harmless for diagnosis: both stages still correctly
+    // fall back to None/empty either way.)
+    let (clamav_out, model_out, tlsh_out, whitelist_out, pkg_out, url_out, ip_out) =
+        std::thread::scope(|s| {
+            let clamav_handle = s.spawn(move || {
+                // ClamAV engine from the bundled DB, then add the compiled .yrc
+                // rulesets (compiled only — never .yar source on-device).
+                let t_db = std::time::Instant::now();
+                let mut report = String::new();
+                let clamav = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    ClamavEngine::from_database_dir(base)
+                })) {
+                    Ok(Ok((mut eng, _report))) => {
+                        let db_ms = t_db.elapsed().as_millis();
+                        android_log(&format!("init :: from_database_dir={db_ms}ms"));
+                        report.push_str(&format!("clamav=ok({db_ms}ms)"));
+                        // Load every .yrc file in parallel — each thread reads the
+                        // file and parses the compiled rules from its bytes, then
+                        // this thread pushes the ready YaraEngine objects onto the
+                        // engine list.
+                        let yrc_results: Vec<(
+                            String,
+                            u128,
+                            Option<hydradragonclamav::yara_scan::YaraEngine>,
+                        )> = std::thread::scope(|s2| {
+                            YRC_FILES
+                                .iter()
+                                .map(|name| {
+                                    let path = base.join(name);
+                                    s2.spawn(move || {
+                                        let t0 = std::time::Instant::now();
+                                        let engine = std::panic::catch_unwind(
+                                            std::panic::AssertUnwindSafe(
+                                                || -> Option<hydradragonclamav::yara_scan::YaraEngine> {
+                                                    let bytes = std::fs::read(&path).ok()?;
+                                                    hydradragonclamav::yara_scan::YaraEngine::from_compiled(
+                                                        &bytes,
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                        .ok()
+                                        .flatten();
+                                        (name.to_string(), t0.elapsed().as_millis(), engine)
+                                    })
+                                })
+                                .collect::<Vec<_>>()
+                                .into_iter()
+                                .map(|h| h.join().unwrap_or_default())
+                                .collect()
+                        });
+                        for (name, yrc_ms, engine) in yrc_results {
+                            match engine {
+                                Some(e) => {
+                                    eng.add_compiled_yara(e);
+                                    report.push_str(&format!(" yrc[{}]=ok({yrc_ms}ms)", name));
+                                }
+                                None => report.push_str(&format!(" yrc[{}]=ERR({yrc_ms}ms)", name)),
+                            }
+                        }
+                        // Self-learning: every rule this device has
+                        // ever auto-generated from a real detection (see generate_yara_rule /
+                        // ScanEngine.saveGeneratedRule, written to <dir>/generated_rules/) is
+                        // recompiled and added to the live engine alongside the bundled
+                        // rulesets — so a re-run or recompiled variant of a family this
+                        // device has ALREADY caught once is detected immediately on future
+                        // scans, without waiting for a signature-database update. Persists
+                        // across app restarts (loaded fresh every init); a fresh process
+                        // within the SAME session doesn't retroactively rescan past files.
+                        // load_auto_rules is the Java-side "Auto Rule Generator" Settings
+                        // toggle (DetectionCategories.AUTO_RULES / AutoRuleGeneration —
+                        // see NativeScanner.init). Turning it off used to only stop NEW
+                        // rules from being written; every rule already on disk from
+                        // before still got loaded and matched here regardless. Now OFF
+                        // means these files aren't even read, not just "generation
+                        // paused" — a real, user-controlled off switch.
+                        let learned_dir = base.join("generated_rules");
+                        let mut learned = 0usize;
+                        if load_auto_rules {
+                            if let Ok(entries) = std::fs::read_dir(&learned_dir) {
+                                for entry in entries.flatten() {
+                                    let path = entry.path();
+                                    if path.extension().and_then(|e| e.to_str()) != Some("yar") {
+                                        continue;
+                                    }
+                                    let t_learn = std::time::Instant::now();
+                                    let added =
+                                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                            eng.add_yara_source_file(&path)
+                                        }));
+                                    if matches!(added, Ok(Some(_))) {
+                                        learned += 1;
+                                    }
+                                    let learn_ms = t_learn.elapsed().as_millis();
+                                    if learn_ms > 50 {
+                                        android_log(&format!(
+                                            "init :: learned[{learned}] {} {learn_ms}ms",
+                                            path.display()
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+                        report.push_str(&format!(" learned={}", learned));
+                        Some(eng)
                     }
-                    None => report.push_str(&format!(" yrc[{}]=ERR({yrc_ms}ms)", name)),
-                }
-            }
-            // Self-learning: every rule this device has
-            // ever auto-generated from a real detection (see generate_yara_rule /
-            // ScanEngine.saveGeneratedRule, written to <dir>/generated_rules/) is
-            // recompiled and added to the live engine alongside the bundled
-            // rulesets — so a re-run or recompiled variant of a family this
-            // device has ALREADY caught once is detected immediately on future
-            // scans, without waiting for a signature-database update. Persists
-            // across app restarts (loaded fresh every init); a fresh process
-            // within the SAME session doesn't retroactively rescan past files.
-            // load_auto_rules is the Java-side "Auto Rule Generator" Settings
-            // toggle (DetectionCategories.AUTO_RULES / AutoRuleGeneration —
-            // see NativeScanner.init). Turning it off used to only stop NEW
-            // rules from being written; every rule already on disk from
-            // before still got loaded and matched here regardless. Now OFF
-            // means these files aren't even read, not just "generation
-            // paused" — a real, user-controlled off switch.
-            let learned_dir = base.join("generated_rules");
-            let mut learned = 0usize;
-            if load_auto_rules {
-                if let Ok(entries) = std::fs::read_dir(&learned_dir) {
-                    for entry in entries.flatten() {
-                        let path = entry.path();
-                        if path.extension().and_then(|e| e.to_str()) != Some("yar") {
-                            continue;
-                        }
-                        let t_learn = std::time::Instant::now();
-                        let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            eng.add_yara_source_file(&path)
-                        }));
-                        if matches!(added, Ok(Some(_))) {
-                            learned += 1;
-                        }
-                        let learn_ms = t_learn.elapsed().as_millis();
-                        if learn_ms > 50 {
-                            android_log(&format!("init :: learned[{learned}] {} {learn_ms}ms", path.display()));
-                        }
+                    Ok(Err(e)) => {
+                        report.push_str(&format!("clamav=ERR({})", e));
+                        None
                     }
-                }
-            }
-            report.push_str(&format!(" learned={}", learned));
-            Some(eng)
-        }
-        Ok(Err(e)) => {
-            report.push_str(&format!("clamav=ERR({})", e));
-            None
-        }
-        Err(_) => {
-            report.push_str(&format!("clamav=PANIC({})", last_panic()));
-            None
-        }
-    };
-    let t_model = std::time::Instant::now();
-    let model = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        Model::load_bin(&base.join(MODEL_BIN))
-    })) {
-        Ok(Ok(m)) => {
-            let model_ms = t_model.elapsed().as_millis();
-            android_log(&format!("init :: model={model_ms}ms"));
-            report.push_str(&format!(" model=ok({model_ms}ms)"));
-            Some(m)
-        }
-        Ok(Err(e)) => {
-            report.push_str(&format!(" model=ERR({})", e));
-            None
-        }
-        Err(_) => {
-            report.push_str(&format!(" model=PANIC({})", last_panic()));
-            None
-        }
-    };
-    let t_tlsh = std::time::Instant::now();
-    let tlsh_db = load_tlsh_db(&base.join(TLSH_DB));
-    let tlsh_ms = t_tlsh.elapsed().as_millis();
-    report.push_str(&format!(" tlsh={}({tlsh_ms}ms)", tlsh_db.len()));
+                    Err(_) => {
+                        report.push_str(&format!("clamav=PANIC({})", last_panic()));
+                        None
+                    }
+                };
+                (clamav, report)
+            });
 
-    let t_wl = std::time::Instant::now();
-    let whitelist = load_whitelist(&base.join(WHITELIST_XF));
-    let wl_ms = t_wl.elapsed().as_millis();
-    report.push_str(&format!(" whitelist={wl_ms}ms"));
+            let model_handle = s.spawn(move || {
+                let t_model = std::time::Instant::now();
+                let mut report = String::new();
+                let model = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    Model::load_bin(&base.join(MODEL_BIN))
+                })) {
+                    Ok(Ok(m)) => {
+                        let model_ms = t_model.elapsed().as_millis();
+                        android_log(&format!("init :: model={model_ms}ms"));
+                        report.push_str(&format!(" model=ok({model_ms}ms)"));
+                        Some(m)
+                    }
+                    Ok(Err(e)) => {
+                        report.push_str(&format!(" model=ERR({})", e));
+                        None
+                    }
+                    Err(_) => {
+                        report.push_str(&format!(" model=PANIC({})", last_panic()));
+                        None
+                    }
+                };
+                (model, report)
+            });
 
-    let t_pkg = std::time::Instant::now();
-    let package_whitelist = load_package_whitelist(&base.join(WHITELIST_PACKAGES_DB));
-    let pkg_ms = t_pkg.elapsed().as_millis();
-    report.push_str(&format!(" pkg_wl={pkg_ms}ms({})", package_whitelist.len()));
+            let tlsh_handle = s.spawn(move || {
+                let t_tlsh = std::time::Instant::now();
+                let tlsh_db = load_tlsh_db(&base.join(TLSH_DB));
+                let tlsh_ms = t_tlsh.elapsed().as_millis();
+                let report = format!(" tlsh={}({tlsh_ms}ms)", tlsh_db.len());
+                (tlsh_db, report)
+            });
 
-    let t_url = std::time::Instant::now();
-    let url_scanner = std::panic::catch_unwind(|| url_scan::UrlScanner::load(base))
-        .ok()
-        .flatten();
-    let url_ms = t_url.elapsed().as_millis();
-    report.push_str(&format!(" url={url_ms}ms"));
+            let whitelist_handle = s.spawn(move || {
+                let t_wl = std::time::Instant::now();
+                let whitelist = load_whitelist(&base.join(WHITELIST_XF));
+                let wl_ms = t_wl.elapsed().as_millis();
+                (whitelist, format!(" whitelist={wl_ms}ms"))
+            });
 
-    let t_ip = std::time::Instant::now();
-    let ip_scanner = std::panic::catch_unwind(|| ip_scan::IpScanner::load(base))
-        .ok()
-        .flatten();
-    let ip_ms = t_ip.elapsed().as_millis();
-    report.push_str(&format!(" ip={ip_ms}ms"));
+            let pkg_handle = s.spawn(move || {
+                let t_pkg = std::time::Instant::now();
+                let package_whitelist = load_package_whitelist(&base.join(WHITELIST_PACKAGES_DB));
+                let pkg_ms = t_pkg.elapsed().as_millis();
+                let report = format!(" pkg_wl={pkg_ms}ms({})", package_whitelist.len());
+                (package_whitelist, report)
+            });
 
-    let clean_strings_path = base.join(CLEAN_STRINGS_FILE);
-    let clean_strings = load_clean_strings(&clean_strings_path);
-    report.push_str(&format!(" clean_strings={}", clean_strings.len()));
+            let url_handle = s.spawn(move || {
+                let t_url = std::time::Instant::now();
+                let url_scanner = std::panic::catch_unwind(|| url_scan::UrlScanner::load(base))
+                    .ok()
+                    .flatten();
+                let url_ms = t_url.elapsed().as_millis();
+                (url_scanner, format!(" url={url_ms}ms"))
+            });
+
+            let ip_handle = s.spawn(move || {
+                let t_ip = std::time::Instant::now();
+                let ip_scanner = std::panic::catch_unwind(|| ip_scan::IpScanner::load(base))
+                    .ok()
+                    .flatten();
+                let ip_ms = t_ip.elapsed().as_millis();
+                (ip_scanner, format!(" ip={ip_ms}ms"))
+            });
+
+            (
+                clamav_handle.join().unwrap_or_else(|_| {
+                    (None, format!("clamav=PANIC({})", last_panic()))
+                }),
+                model_handle.join().unwrap_or_else(|_| {
+                    (None, format!(" model=PANIC({})", last_panic()))
+                }),
+                tlsh_handle.join().unwrap_or_else(|_| {
+                    (Vec::new(), format!(" tlsh=PANIC({})", last_panic()))
+                }),
+                whitelist_handle.join().unwrap_or_else(|_| {
+                    (None, format!(" whitelist=PANIC({})", last_panic()))
+                }),
+                pkg_handle.join().unwrap_or_else(|_| {
+                    (std::collections::HashMap::new(), format!(" pkg_wl=PANIC({})", last_panic()))
+                }),
+                url_handle.join().unwrap_or_else(|_| {
+                    (None, format!(" url=PANIC({})", last_panic()))
+                }),
+                ip_handle.join().unwrap_or_else(|_| {
+                    (None, format!(" ip=PANIC({})", last_panic()))
+                }),
+            )
+        });
+
+    let (clamav, clamav_report) = clamav_out;
+    let (model, model_report) = model_out;
+    let (tlsh_db, tlsh_report) = tlsh_out;
+    let (whitelist, whitelist_report) = whitelist_out;
+    let (package_whitelist, pkg_report) = pkg_out;
+    let (url_scanner, url_report) = url_out;
+    let (ip_scanner, ip_report) = ip_out;
+
+    let report = format!(
+        "{clamav_report}{model_report}{tlsh_report}{whitelist_report}{pkg_report}{url_report}{ip_report}"
+    );
 
     let total_ms = t0.elapsed().as_millis();
     android_log(&format!("init :: TOTAL={total_ms}ms | {report}"));
@@ -438,8 +442,6 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
         package_whitelist,
         url_scanner,
         ip_scanner,
-        clean_strings: std::sync::RwLock::new(clean_strings),
-        clean_strings_path,
     }
 }
 
@@ -1273,24 +1275,15 @@ fn run_scan(
     }
 
     let malicious = !detections.is_empty();
-    // Genuinely clean sample: remember its DEX strings as goodware so a LATER
-    // auto-rule (built from some other, actually malicious sample) doesn't key
-    // off a string this device has independently seen in a clean app.
-    if !malicious && !zero_trust {
-        record_clean_strings(engine, &dex_scans);
-    }
     // yarGen-style auto-generated rule — strings come from this sample's own
-    // DEX string pool, MINUS any string this device has already seen in one
-    // of its own clean scans (see `clean_strings` / `record_clean_strings`) —
-    // a lightweight, on-device approximation of real yarGen's goodware-DB
-    // filtering. References the androguard and hydradragon modules in its
-    // condition, not just literal strings, so it also fires on package-name/
-    // network reruns of the same family. Built for a malicious verdict OR
-    // (Java's) Zero Trust Mode — Zero Trust never treats "nothing matched" as
-    // "nothing worth cataloguing"; the rule is then based on the sample's own
-    // strings/package rather than a named detection.
+    // DEX string pool. References the androguard and hydradragon modules in
+    // its condition, not just literal strings, so it also fires on
+    // package-name/network reruns of the same family. Built for a malicious
+    // verdict OR (Java's) Zero Trust Mode — Zero Trust never treats "nothing
+    // matched" as "nothing worth cataloguing"; the rule is then based on the
+    // sample's own strings/package rather than a named detection.
     let generated_rule = if malicious || zero_trust {
-        generate_yara_rule(&file_hash, &packages, &detections, &dex_scans, engine)
+        generate_yara_rule(&file_hash, &packages, &detections, &dex_scans)
     } else {
         None
     };
@@ -1336,9 +1329,7 @@ fn run_scan(
     )
 }
 
-/// Build a yarGen-style YARA rule from THIS scan's own results, filtered
-/// against `engine.clean_strings` — the on-device goodware DB built from this
-/// device's own past clean scans (see `record_clean_strings`). Called when
+/// Build a yarGen-style YARA rule from THIS scan's own results. Called when
 /// the scan is malicious OR Zero Trust
 /// Mode is on (so an unmatched/"unknown" sample is catalogued too, not just a
 /// confirmed-bad one) — `detections` may be empty in the Zero Trust case, in
@@ -1351,9 +1342,7 @@ fn generate_yara_rule(
     packages: &[String],
     detections: &[(String, Vec<String>)],
     dex_scans: &[Option<dex_scan::DexScan>],
-    engine: &Engine,
 ) -> Option<String> {
-    let clean = engine.clean_strings.read().ok();
     let mut strings: Vec<String> = Vec::new();
     let mut seen = std::collections::HashSet::new();
     'outer: for ds in dex_scans.iter().flatten() {
@@ -1361,14 +1350,6 @@ fn generate_yara_rule(
             let l = line.trim();
             if l.len() < 8 || l.len() > 128 || l.chars().any(|c| c.is_control()) {
                 continue;
-            }
-            // Skip strings this device has independently seen in one of its
-            // own CLEAN scans — a goodware-DB hit means the string isn't
-            // distinctive of THIS malware, it's just common app boilerplate.
-            if let Some(clean) = &clean {
-                if clean.contains(l) {
-                    continue;
-                }
             }
             if !seen.insert(l.to_string()) {
                 continue;
@@ -1388,7 +1369,7 @@ fn generate_yara_rule(
     out.push_str("import \"androguard\"\nimport \"hydradragon\"\n\n");
     out.push_str(&format!("rule {} {{\n", rule_name));
     out.push_str("  meta:\n");
-    out.push_str("    generator = \"hydradragon-autogen (yarGen-style, on-device goodware filtering)\"\n");
+    out.push_str("    generator = \"hydradragon-autogen (yarGen-style)\"\n");
     out.push_str(&format!("    sample_md5 = \"{}\"\n", file_hash));
     let det_names: Vec<String> = detections.iter().map(|(n, _)| n.replace('"', "'")).collect();
     let based_on = if det_names.is_empty() {
