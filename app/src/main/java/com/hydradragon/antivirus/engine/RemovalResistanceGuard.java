@@ -130,13 +130,13 @@ public final class RemovalResistanceGuard {
 
         Notification n = new NotificationCompat.Builder(context, "hydradragon_guard")
             .setSmallIcon(com.hydradragon.antivirus.R.drawable.ic_threat)
-            .setContentTitle("Malware is resisting removal")
-            .setContentText(appName + " keeps kicking you off its uninstall/admin screen — " + reason)
+            .setContentTitle(context.getString(com.hydradragon.antivirus.R.string.removal_resistance_title))
+            .setContentText(context.getString(com.hydradragon.antivirus.R.string.removal_resistance_msg, appName))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
             .setColor(0xFF0000)
-            .addAction(0, "Safe (ignore)", ignorePi)
+            .addAction(0, context.getString(com.hydradragon.antivirus.R.string.btn_ignore), ignorePi)
             .build();
         nm.notify(id, n);
     }

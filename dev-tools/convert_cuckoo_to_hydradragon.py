@@ -2,10 +2,12 @@
 """Convert YARA rules that use the `cuckoo` module to the Android-native
 `hydradragon` module.
 
-`hydradragon` exposes the exact same API as `cuckoo`
+`hydradragon` exposes the Android-relevant subset of the `cuckoo` API
 (network.{dns_lookup,http_request,http_get,http_post,http_user_agent,host,tcp,
-udp}, registry.key_access, filesystem.file_access, sync.mutex) plus the extra
-`hydradragon.url(...)`, so converting is a straight rename:
+udp}) plus `hydradragon.url(...)` and behavioral HIPS functions, so converting
+cuckoo network rules is a straight rename. Windows-only cuckoo features
+(registry.key_access, filesystem.file_access, sync.mutex) are intentionally
+absent — they have no Android equivalent.
 
     import "cuckoo"   ->  import "hydradragon"
     cuckoo.<...>      ->  hydradragon.<...>

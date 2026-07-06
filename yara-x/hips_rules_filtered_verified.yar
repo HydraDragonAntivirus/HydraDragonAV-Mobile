@@ -236,21 +236,6 @@ rule HIPS_Network_And_Flags
     hydradragon.network_connections(/./) >= 10 and hydradragon.behavior_flagged(/./) >= 1
 }
 
-// ── Screen Text Ransomware ───────────────────────────────────────────────────
-
-rule HIPS_Ransomware_Screen_Text
-{
-  meta:
-    description = "Detects ransomware ransom note strings on screen via OCR (2+ matches)"
-    severity = "critical"
-    category = "RANSOMWARE"
-    suggestion = "uninstall"
-    reference = "https://github.com/petermstewart/100DaysofYARA-2024/blob/main/petermstewart/HUNT_Ransomware_generic_strings.yar"
-    author = "Emirhan Uçan"
-  condition:
-    hydradragon.screen_text(/(?i)(Install TOR Browser|Download Tor|decrypt your files|your company is fully|recover your files|files were encrypted|files will be decrypted|Contact us|decrypt 1 file|has been encrypted|Contact information|pay the ransom|Decryption ID|are encrypted)/) >= 2
-}
-
 // ── Foreground Threats ───────────────────────────────────────────────────────
 
 rule HIPS_Foreground_Threat
@@ -262,4 +247,190 @@ rule HIPS_Foreground_Threat
     suggestion = "warn"
   condition:
     hydradragon.foreground_package(/./) >= 1 and hydradragon.behavior_flagged(/./) >= 1
+}
+
+// ── URL Threats ──────────────────────────────────────────────────────────────
+
+rule HIPS_Malicious_URL
+{
+  meta:
+    description = "Detects apps communicating with known malicious URL patterns"
+    severity = "high"
+    category = "URL"
+    suggestion = "warn"
+  condition:
+    hydradragon.url(/(?i)(tor2web|\.onion\/|\.i2p\/|bitcoin:|malware|exploit|shell|cmd=download|payload|backdoor|rat\b|crypt)/) >= 1
+}
+
+rule HIPS_Phishing_URL
+{
+  meta:
+    description = "Detects phishing URLs in app network traffic"
+    severity = "critical"
+    category = "URL"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.url(/(?i)(login|signin|verify.*account|secure.*bank|paypal.*auth|password.*reset|credential|2fa.*bypass)/) >= 1
+}
+
+rule HIPS_URL_And_Flags
+{
+  meta:
+    description = "Detects malicious URLs combined with behavioral flags"
+    severity = "critical"
+    category = "URL"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.url(/(?i)(tor2web|\.onion\/|\.i2p\/|bitcoin:|malware|exploit|backdoor|rat\b)/) >= 1 and hydradragon.behavior_flagged(/./) >= 1
+}
+
+// ── DEX Static Analysis ──────────────────────────────────────────────────────
+
+rule HIPS_DEX_Severe_Finding
+{
+  meta:
+    description = "Detects severe static DEX analysis findings (High/Critical)"
+    severity = "high"
+    category = "DEX"
+    suggestion = "warn"
+  condition:
+    hydradragon.dex_severe_finding_count() >= 1
+}
+
+rule HIPS_DEX_Multiple_Severe_Findings
+{
+  meta:
+    description = "Detects multiple severe DEX analysis findings"
+    severity = "critical"
+    category = "DEX"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.dex_severe_finding_count() >= 3
+}
+
+rule HIPS_DEX_Code_Injection
+{
+  meta:
+    description = "Detects DEX static findings related to code injection or runtime execution"
+    severity = "critical"
+    category = "DEX"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.dex_finding(/(?i)(reflection|classloader|dynamic_load|dex_class|native_code|code_inject|runtime_exec|dexload|inject|payload)/) >= 1
+}
+
+rule HIPS_DEX_Privilege_Escalation
+{
+  meta:
+    description = "Detects DEX static findings related to privilege escalation or root exploits"
+    severity = "critical"
+    category = "DEX"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.dex_finding(/(?i)(root|exploit|escalation|\bsu\b|superuser|magisk|setuid|privesc|elevat)/) >= 1
+}
+
+rule HIPS_DEX_And_Behavior
+{
+  meta:
+    description = "Detects severe DEX findings combined with behavioral flags"
+    severity = "critical"
+    category = "DEX"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.dex_severe_finding_count() >= 1 and hydradragon.behavior_flagged(/./) >= 1
+}
+
+// ── System Package (self-protection observation) ─────────────────────────────
+
+rule HIPS_Suspicious_System_Package
+{
+  meta:
+    description = "Detects suspicious package name in system self-protection state"
+    severity = "high"
+    category = "SYSTEM"
+    suggestion = "warn"
+  condition:
+    hydradragon.system_package(/(?i)(spy|stalk|camera|sms|call_recorder|keylogger|trojan|malware|rat|backdoor)/) >= 1
+}
+
+// ── Observed Packages ────────────────────────────────────────────────────────
+
+rule HIPS_Multiple_Observed_Packages
+{
+  meta:
+    description = "Detects an unusually high number of observed packages (scatter-gather behavior)"
+    severity = "low"
+    category = "OBSERVED"
+    suggestion = "warn"
+  condition:
+    hydradragon.observed_packages(/./) >= 50
+}
+
+// ── Cuckoo-Compatible Network (HTTP from packet captures) ────────────────────
+
+rule HIPS_HTTP_Suspicious_Request
+{
+  meta:
+    description = "Detects HTTP requests to suspicious URIs (cleartext packet capture)"
+    severity = "high"
+    category = "HTTP"
+    suggestion = "warn"
+  condition:
+    hydradragon.network.http_request(/(?i)(admin|config|shell|cmd|exec|upload|download|bypass|backdoor|phpmyadmin|wp-admin)/) >= 1
+}
+
+rule HIPS_HTTP_Data_Exfil
+{
+  meta:
+    description = "Detects potential data exfiltration via HTTP POST"
+    severity = "critical"
+    category = "HTTP"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.network.http_post(/(?i)(upload|send|data|log|report|collect|sync|submit|gate)/) >= 1 and hydradragon.behavior_flagged(/./) >= 1
+}
+
+rule HIPS_HTTP_Suspicious_UserAgent
+{
+  meta:
+    description = "Detects suspicious or spoofed HTTP User-Agent strings"
+    severity = "medium"
+    category = "HTTP"
+    suggestion = "warn"
+  condition:
+    hydradragon.network.http_user_agent(/(?i)(curl|wget|python|perl|ruby|java|php|powershell|go-http|okhttp|dalvik)/) >= 1
+}
+
+rule HIPS_TCP_Suspicious_Port
+{
+  meta:
+    description = "Detects TCP connections to suspicious ports"
+    severity = "medium"
+    category = "NETWORK"
+    suggestion = "warn"
+  condition:
+    hydradragon.network.tcp(/^(4444|5555|6666|6667|6668|6669|1337|1338|4443|4445|8080|8443|9000|9001)$/) >= 1
+}
+
+rule HIPS_TCP_Unknown_Service
+{
+  meta:
+    description = "Detects TCP connections to high/dynamic ports (potential C2)"
+    severity = "high"
+    category = "NETWORK"
+    suggestion = "warn"
+  condition:
+    hydradragon.network.tcp(/^(1024\d{0,}|[1-9]\d{4,})$/) >= 1
+}
+
+rule HIPS_UDP_Suspicious_Port
+{
+  meta:
+    description = "Detects UDP connections to suspicious ports"
+    severity = "medium"
+    category = "NETWORK"
+    suggestion = "warn"
+  condition:
+    hydradragon.network.udp(/^(4444|5353|6666|6667|1337|1900|4500|5000|5001|8080)$/) >= 1
 }

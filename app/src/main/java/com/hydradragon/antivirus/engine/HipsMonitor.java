@@ -213,6 +213,7 @@ public final class HipsMonitor {
         e.timeWindowMs = windowMs; e.malicious = malicious; e.timestamp = System.currentTimeMillis();
         removalResistanceEvents.add(e);
         if (removalResistanceEvents.size() > MAX_EVENTS_PER_TYPE) removalResistanceEvents.remove(0);
+        addBehaviorFlag(pkg, "REMOVAL_RESISTANCE");
         observePackage(pkg);
     }
 
