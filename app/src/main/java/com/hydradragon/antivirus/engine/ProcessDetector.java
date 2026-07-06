@@ -1,4 +1,4 @@
-// DOSYA: app/src/main/java/com/hydradragon/antivirus/engine/ProcessDetector.java
+// FILE: app/src/main/java/com/hydradragon/antivirus/engine/ProcessDetector.java
 package com.hydradragon.antivirus.engine;
 
 import android.app.ActivityManager;
@@ -21,20 +21,20 @@ import java.util.Set;
 
 /**
  * HydraDragon Process Detector
- * Gizli ve şüpheli process tespiti.
+ * Hidden and suspicious process detection.
  *
- * Tespit yöntemleri:
- * - /proc/ filesystem analizi (root gerekebilir)
- * - ActivityManager process listesi
- * - Gizlenmiş process adı tespiti
- * - Yüksek CPU/RAM kullanan şüpheli processler
- * - Root/su process tespiti
+ * Detection methods:
+ * - /proc/ filesystem analysis (may require root)
+ * - ActivityManager process list
+ * - Hidden process name detection
+ * - Suspicious processes with high CPU/RAM usage
+ * - Root/su process detection
  */
 public class ProcessDetector {
 
     private static final String TAG = "HydraDragon-ProcDet";
 
-    // Bilinen tehlikeli process adları
+    // Known dangerous process names
     private static final Set<String> DANGEROUS_PROCESS_NAMES = new HashSet<>(Arrays.asList(
         "su", "supersu", "magisk", "daemonsu",
         "netcat", "nc", "ncat",
@@ -45,9 +45,9 @@ public class ProcessDetector {
         "keylogger", "spyware"
     ));
 
-    // Normal olmayan yüksek memory kullanım eşiği (MB)
+    // Abnormal high memory usage threshold (MB)
     private static final long HIGH_MEMORY_THRESHOLD_MB = 500;
-    // Normal olmayan yüksek CPU kullanım eşiği (%)
+    // Abnormal high CPU usage threshold (%)
     private static final float HIGH_CPU_THRESHOLD = 80.0f;
 
     private final Context context;
@@ -71,12 +71,12 @@ public class ProcessDetector {
     }
 
     /**
-     * Tüm çalışan processleri tara
+     * Scan all running processes
      */
     public List<ProcessInfo> scanRunningProcesses() {
         List<ProcessInfo> processList = new ArrayList<>();
 
-        // ActivityManager ile process listesi al
+        // Get process list via ActivityManager
         List<ActivityManager.RunningAppProcessInfo> runningApps =
             activityManager.getRunningAppProcesses();
 
@@ -94,7 +94,7 @@ public class ProcessDetector {
             }
         }
 
-        // /proc/ analizi (root olmayan cihazlarda sınırlı)
+        // /proc/ analysis (limited on non-root devices)
         List<ProcessInfo> procFsProcesses = scanProcFilesystem();
         for (ProcessInfo p : procFsProcesses) {
             if (!containsProcess(processList, p.getPid())) {
@@ -110,7 +110,7 @@ public class ProcessDetector {
     }
 
     /**
-     * Tek process analizi
+     * Single process analysis
      */
     private ProcessInfo analyzeProcess(ActivityManager.RunningAppProcessInfo rawInfo) {
         ProcessInfo.Builder builder = new ProcessInfo.Builder();
@@ -121,7 +121,7 @@ public class ProcessDetector {
         int riskScore = 0;
         List<String> flags = new ArrayList<>();
 
-        // 1. Tehlikeli isim kontrolü
+        // 1. Dangerous name check
         String name = rawInfo.processName.toLowerCase();
         for (String dangerous : DANGEROUS_PROCESS_NAMES) {
             if (name.contains(dangerous)) {
@@ -131,13 +131,13 @@ public class ProcessDetector {
             }
         }
 
-        // 2. Anonim/gizlenmiş process kontrolü
+        // 2. Anonymous/hidden process check
         if (name.startsWith(":") || name.matches(".*\\d{4,}.*")) {
             riskScore += 20;
             flags.add("Gizlenmiş process adı");
         }
 
-        // 3. Memory kullanımı
+        // 3. Memory usage
         ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
         activityManager.getMemoryInfo(memInfo);
         int[] pids = {rawInfo.pid};
@@ -151,7 +151,7 @@ public class ProcessDetector {
             }
         }
 
-        // 4. Uygulama bilgisi
+        // 4. Application info
         String[] packages = rawInfo.pkgList;
         if (packages != null && packages.length > 0) {
             try {
@@ -160,15 +160,15 @@ public class ProcessDetector {
                 builder.setSystemProcess(isSystem);
                 builder.setAppName((String) packageManager.getApplicationLabel(appInfo));
             } catch (PackageManager.NameNotFoundException e) {
-                // Package bulunamadı - şüpheli!
+                // Package not found - suspicious!
                 riskScore += 30;
                 flags.add("Bilinmeyen uygulama paketi");
             }
         }
 
-        // 5. Arka plan servis kontrolü
+        // 5. Background service check
         if (rawInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_SERVICE) {
-            // Arka plan servisi - normal olabilir ama kontrol et
+            // Background service - may be normal but check
         }
 
         builder.setRiskScore(riskScore);
@@ -181,7 +181,7 @@ public class ProcessDetector {
     private static final long PROC_SCAN_TTL_MS = 300_000;
 
     /**
-     * /proc/ filesystem'i tara (gizli processler için)
+     * Scan /proc/ filesystem (for hidden processes)
      */
     private List<ProcessInfo> scanProcFilesystem() {
         long now = System.currentTimeMillis();

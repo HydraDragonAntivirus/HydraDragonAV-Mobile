@@ -1,4 +1,4 @@
-// DOSYA: app/src/main/java/com/hydradragon/antivirus/ui/NetworkFragment.java
+// FILE: app/src/main/java/com/hydradragon/antivirus/ui/NetworkFragment.java
 package com.hydradragon.antivirus.ui;
 
 import android.content.ComponentName;
@@ -32,7 +32,7 @@ import java.util.Locale;
 
 /**
  * Network Fragment
- * Canlı ağ trafiği izleme ekranı.
+ * Live network traffic monitoring screen.
  */
 public class NetworkFragment extends Fragment {
 
@@ -141,7 +141,7 @@ public class NetworkFragment extends Fragment {
             @Override
             public void run() {
                 if (!serviceBound || guardService == null || guardService.getNetworkMonitor() == null) return;
-                // Mevcut event listesini güncelle
+                // Update current event list
                 List<NetworkMonitor.NetworkEvent> currentEvents =
                     guardService.getNetworkMonitor().getEventLog();
                 if (events.isEmpty() && !currentEvents.isEmpty()) {

@@ -63,23 +63,23 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
         android.text.util.Linkify.addLinks(holder.tvReason, android.text.util.Linkify.WEB_URLS);
         holder.tvReason.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
 
-        // Renk Kodlaması
+        // Color Coding
         if (threat.getRiskScore() >= 80) {
             holder.tvThreatLevel.setText(R.string.level_critical);
-            holder.tvThreatLevel.setTextColor(0xFFFF0040); // Kırmızı
+            holder.tvThreatLevel.setTextColor(0xFFFF0040); // Red
         } else if (threat.getRiskScore() >= 40) {
             holder.tvThreatLevel.setText(R.string.level_medium);
-            holder.tvThreatLevel.setTextColor(0xFFFF8800); // Turuncu
+            holder.tvThreatLevel.setTextColor(0xFFFF8800); // Orange
         } else {
             holder.tvThreatLevel.setText(R.string.level_low);
-            holder.tvThreatLevel.setTextColor(0xFFFFFF00); // Sarı
+            holder.tvThreatLevel.setTextColor(0xFFFFFF00); // Yellow
         }
 
-        // --- DİNAMİK İKON YÜKLEME SİSTEMİ ---
+        // --- DYNAMIC ICON LOADING SYSTEM ---
         PackageManager pm = holder.itemView.getContext().getPackageManager();
         try {
             Drawable icon = null;
-            // Eğer bu SD Karttaki ham bir .apk dosyasıysa ikonunu içinden çekip çıkar
+            // If this is a raw .apk file on SD Card, extract the icon from inside it
             if (threat.getApkPath() != null && threat.getApkPath().endsWith(".apk")) {
                 PackageInfo pkgInfo = pm.getPackageArchiveInfo(threat.getApkPath(), 0);
                 if (pkgInfo != null) {
@@ -88,11 +88,11 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
                     icon = pkgInfo.applicationInfo.loadIcon(pm);
                 }
             } else {
-                // Eğer telefona kurulu bir uygulamaysa doğrudan ikonunu getir
+                // If it's an app installed on the phone, directly fetch its icon
                 icon = pm.getApplicationIcon(threat.getPackageName());
             }
             
-            // İkonu ekrana bas
+            // Display the icon
             if (icon != null) {
                 holder.ivAppIcon.setImageDrawable(icon);
             } else {
@@ -107,7 +107,7 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
             holder.ivAppIcon.setImageResource(android.R.mipmap.sym_def_app_icon);
         }
 
-        // Tıklama olayı
+        // Click event
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onThreatClick(threat);
@@ -122,11 +122,11 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
 
     static class ThreatViewHolder extends RecyclerView.ViewHolder {
         TextView tvAppName, tvThreatLevel, tvPackage, tvReason, tvRiskScore, tvTime;
-        ImageView ivAppIcon; // İkon nesnesi
+        ImageView ivAppIcon; // Icon object
 
         public ThreatViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivAppIcon = itemView.findViewById(R.id.iv_app_icon); // İkonu bağla
+            ivAppIcon = itemView.findViewById(R.id.iv_app_icon); // Bind icon
             tvAppName = itemView.findViewById(R.id.tv_app_name);
             tvThreatLevel = itemView.findViewById(R.id.tv_threat_level);
             tvPackage = itemView.findViewById(R.id.tv_package);

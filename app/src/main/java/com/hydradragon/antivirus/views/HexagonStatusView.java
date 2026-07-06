@@ -1,4 +1,4 @@
-// DOSYA: app/src/main/java/com/hydradragon/antivirus/views/HexagonStatusView.java
+// FILE: app/src/main/java/com/hydradragon/antivirus/views/HexagonStatusView.java
 package com.hydradragon.antivirus.views;
 
 import android.animation.ValueAnimator;
@@ -12,8 +12,8 @@ import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
 /**
- * Özel hexagon güvenlik durumu göstergesi.
- * Windows versiyonundaki hexagon animasyonunu birebir taklit eder.
+ * Custom hexagon security status indicator.
+ * Mimics the hexagon animation from the Windows version exactly.
  */
 public class HexagonStatusView extends View {
 
@@ -27,7 +27,7 @@ public class HexagonStatusView extends View {
     private float pulseAlpha = 1f;
     private ValueAnimator pulseAnimator;
 
-    // Renk paletleri
+    // Color palettes
     private static final int COLOR_SECURE = 0xFF00FF88;
     private static final int COLOR_ALERT  = 0xFFFF0040;
     private static final int COLOR_WARN   = 0xFFFFD700;
@@ -92,7 +92,7 @@ public class HexagonStatusView extends View {
         float cy = getHeight() / 2f;
         float radius = Math.min(cx, cy) * 0.75f;
 
-        // Pulse dalgası (arka plan)
+        // Pulse wave (background)
         if (pulseRadius > 0) {
             Paint pulsePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             pulsePaint.setStyle(Paint.Style.STROKE);
@@ -102,25 +102,25 @@ public class HexagonStatusView extends View {
             canvas.drawCircle(cx, cy, radius + pulseRadius * 40, pulsePaint);
         }
 
-        // Hexagon çiz
+        // Draw hexagon
         Path hexPath = createHexagonPath(cx, cy, radius);
         canvas.drawPath(hexPath, hexPaint);
         canvas.drawPath(hexPath, borderPaint);
 
-        // İç hexagon (ikinci katman)
+        // Inner hexagon (second layer)
         Path innerHex = createHexagonPath(cx, cy, radius * 0.88f);
         Paint innerPaint = new Paint(hexPaint);
         innerPaint.setAlpha(60);
         canvas.drawPath(innerHex, borderPaint);
 
-        // Check veya X işareti
+        // Check or X mark
         if (isSecure) {
             drawCheckmark(canvas, cx, cy, radius * 0.45f);
         } else {
             drawX(canvas, cx, cy, radius * 0.35f);
         }
 
-        // Köşe parıltıları
+        // Corner glints
         drawCornerGlints(canvas, cx, cy, radius);
     }
 

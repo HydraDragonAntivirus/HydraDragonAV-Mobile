@@ -1,4 +1,4 @@
-// DOSYA: app/src/main/java/com/hydradragon/antivirus/views/LiveNetworkChart.java
+// FILE: app/src/main/java/com/hydradragon/antivirus/views/LiveNetworkChart.java
 package com.hydradragon.antivirus.views;
 
 import android.content.Context;
@@ -16,8 +16,8 @@ import java.util.Deque;
 import java.util.Iterator;
 
 /**
- * Canlı ağ aktivitesi grafiği
- * Windows versiyonundaki mavi dalga grafiğini taklit eder.
+ * Live network activity chart
+ * Mimics the blue wave graph from the Windows version.
  */
 public class LiveNetworkChart extends View {
 
@@ -43,7 +43,7 @@ public class LiveNetworkChart extends View {
         linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         linePaint.setStyle(Paint.Style.STROKE);
         linePaint.setStrokeWidth(3f);
-        linePaint.setColor(0xFF00D4FF); // Cyan - Windows versiyonuyla aynı
+        linePaint.setColor(0xFF00D4FF); // Cyan - Same as Windows version
 
         glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         glowPaint.setStyle(Paint.Style.STROKE);
@@ -61,7 +61,7 @@ public class LiveNetworkChart extends View {
         linePath = new Path();
         fillPath = new Path();
 
-        // Başlangıç veri noktaları
+        // Initial data points
         for (int i = 0; i < MAX_POINTS; i++) dataPoints.addLast(0f);
     }
 
@@ -80,10 +80,10 @@ public class LiveNetworkChart extends View {
 
         if (w == 0 || h == 0) return;
 
-        // Arka plan grid çizgileri
+        // Background grid lines
         drawGrid(canvas, w, h);
 
-        // Gradient dolgu
+        // Gradient fill
         fillPaint.setShader(new LinearGradient(
             0, 0, 0, h,
             new int[]{0x6000D4FF, 0x0000D4FF},
@@ -118,18 +118,18 @@ public class LiveNetworkChart extends View {
             }
         }
 
-        // Fill path kapat
+        // Close fill path
         fillPath.lineTo((points.length - 1) * stepX, h);
         fillPath.close();
 
-        // Glow efekti (önce)
+        // Glow effect (first)
         canvas.drawPath(linePath, glowPaint);
         // Dolgu
         canvas.drawPath(fillPath, fillPaint);
-        // Ana çizgi
+        // Main line
         canvas.drawPath(linePath, linePaint);
 
-        // Peak noktası
+        // Peak point
         float maxPoint = 0;
         int maxIdx = 0;
         for (int i = 0; i < points.length; i++) {
@@ -146,13 +146,13 @@ public class LiveNetworkChart extends View {
     }
 
     private void drawGrid(Canvas canvas, int w, int h) {
-        // Yatay çizgiler
+        // Horizontal lines
         int lines = 4;
         for (int i = 1; i < lines; i++) {
             float y = h * i / lines;
             canvas.drawLine(0, y, w, y, gridPaint);
         }
-        // Dikey çizgiler
+        // Vertical lines
         for (int i = 1; i < 6; i++) {
             float x = w * i / 6f;
             canvas.drawLine(x, 0, x, h, gridPaint);

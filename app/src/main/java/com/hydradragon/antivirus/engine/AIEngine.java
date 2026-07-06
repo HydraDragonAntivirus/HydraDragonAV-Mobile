@@ -22,7 +22,7 @@ public class AIEngine {
 
     private static final double BIAS = -2.0;
 
-    // GuardService ile geriye dönük uyumluluk için (Hata Çözümü)
+    // For backward compatibility with GuardService (Error Resolution)
     public AIEngine() {}
     public AIEngine(android.content.Context context) {}
     public void close() {}

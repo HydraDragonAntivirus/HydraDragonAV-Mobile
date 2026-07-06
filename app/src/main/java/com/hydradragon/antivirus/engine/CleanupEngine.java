@@ -59,7 +59,7 @@ public class CleanupEngine {
             int found = 0;
 
             for (ActivityManager.RunningAppProcessInfo proc : procs) {
-                // Sadece arka plan / servis / önbellektekiler
+                // Only background / service / cached
                 if (proc.importance < ActivityManager.RunningAppProcessInfo.IMPORTANCE_SERVICE)
                     continue;
                 if (proc.processName.equals(ctx.getPackageName())) continue;
@@ -72,12 +72,12 @@ public class CleanupEngine {
                 if (seen.contains(pkg)) continue;
                 seen.add(pkg);
 
-                // Güvenli önekler
+                // Safe prefixes
                 boolean safe = false;
                 for (String s : SAFE) { if (pkg.startsWith(s)) { safe = true; break; } }
                 if (safe) continue;
 
-                // RAM ölçüm
+                // RAM measurement
                 long memKb = 0;
                 try {
                     android.os.Debug.MemoryInfo[] mi =
@@ -85,7 +85,7 @@ public class CleanupEngine {
                     if (mi != null && mi.length > 0) memKb = mi[0].getTotalPss();
                 } catch (Exception ignored) {}
 
-                // Uygulama bilgisi
+                // App info
                 String appName = pkg;
                 android.graphics.drawable.Drawable icon = null;
                 try {
@@ -98,7 +98,7 @@ public class CleanupEngine {
                     if (isSys) continue;
                 } catch (PackageManager.NameNotFoundException e) { continue; }
 
-                // switch yerine if-else (duplicate case hatası önlenir)
+                // if-else instead of switch (prevents duplicate case error)
                 String reason;
                 int imp = proc.importance;
                 if (imp == ActivityManager.RunningAppProcessInfo.IMPORTANCE_BACKGROUND) {
@@ -119,7 +119,7 @@ public class CleanupEngine {
         });
     }
 
-    /** Root ile devre dışı bırak. Başarısızsa false döner. */
+    /** Disable with root. Returns false on failure. */
     public static boolean disableWithRoot(String pkg) {
         try {
             Process p = Runtime.getRuntime().exec(

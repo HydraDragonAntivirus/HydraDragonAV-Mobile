@@ -1,25 +1,25 @@
-// DOSYA: app/src/main/java/com/hydradragon/antivirus/model/ThreatResult.java
+// FILE: app/src/main/java/com/hydradragon/antivirus/model/ThreatResult.java
 package com.hydradragon.antivirus.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Tehdit tespiti sonuç modeli
+ * Threat detection result model
  */
 public class ThreatResult {
 
     public enum ThreatType {
-        CLEAN,          // Temiz
+        CLEAN,          // Clean
         UNKNOWN,        // Zero Trust: no detector matched — NOT verified clean
-        SUSPICIOUS,     // Şüpheli (düşük risk)
-        MALWARE,        // Bilinen malware
-        SPYWARE,        // Casus yazılım
-        RANSOMWARE,     // Fidye yazılımı
-        ADWARE,         // Reklam yazılımı
-        TROJAN,         // Truva atı
-        BACKDOOR,       // Arka kapı
-        PHISHING,       // Kimlik avı (embedded phishing/typosquat URL)
+        SUSPICIOUS,     // Suspicious (low risk)
+        MALWARE,        // Known malware
+        SPYWARE,        // Spyware
+        RANSOMWARE,     // Ransomware
+        ADWARE,         // Adware
+        TROJAN,         // Trojan
+        BACKDOOR,       // Backdoor
+        PHISHING,       // Phishing (embedded phishing/typosquat URL)
         PUA,            // Potansiyel istenmeyen uygulama (PUA.* / PUA_*)
         TEST_MALWARE    // EICAR standard AV test signature — a deliberate test
                          // file, not a real threat; kept distinct so the UI can

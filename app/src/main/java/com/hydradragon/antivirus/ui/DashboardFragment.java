@@ -31,14 +31,14 @@ import com.hydradragon.antivirus.views.LiveNetworkChart;
 import java.util.Locale;
 
 /**
- * Dashboard Fragment - Ana ekran
- * Windows versiyonunu taklit eden cyberpunk dashboard.
+ * Dashboard Fragment - Main screen
+ * Cyberpunk dashboard mimicking the Windows version.
  *
- * Göstergeler:
- * - Hexagon güvenlik durumu (yeşil/sarı/kırmızı)
- * - Canlı ağ aktivite grafiği
- * - Toplam trafik / Engellenen / İzin verilen sayaçları
- * - Gerçek zamanlı tehdit akışı
+ * Indicators:
+ * - Hexagon security status (green/yellow/red)
+ * - Live network activity chart
+ * - Total traffic / Blocked / Allowed counters
+ * - Real-time threat feed
  */
 public class DashboardFragment extends Fragment {
 
@@ -134,20 +134,20 @@ public class DashboardFragment extends Fragment {
         tvThreatFeed = view.findViewById(R.id.tv_threat_feed);
         tvEngineStatus = view.findViewById(R.id.tv_engine_status);
 
-        // İlk durum
+        // Initial state
         setSecureState();
         tvEngineStatus.setText(getString(R.string.dashboard_firewall_active));
 
-        // Başlangıç animasyonu
+        // Startup animation
         startStartupAnimation();
         startEngineStatusPoller();
     }
 
     private void startStartupAnimation() {
-        // Hexagon pulse animasyonu
+        // Hexagon pulse animation
         if (hexagonView != null) hexagonView.startPulseAnimation();
 
-        // Counter animasyonu
+        // Counter animation
         animateCounter(tvTotalTraffic, 0, 0);
         animateCounter(tvBlocked, 0, 0);
         animateCounter(tvAllowed, 0, 0);
@@ -241,7 +241,7 @@ public class DashboardFragment extends Fragment {
                         tvEngineStatus.setText(getString(R.string.engine_loading_status));
                         tvEngineStatus.setTextColor(0xFFFFAA00);
                     } else {
-                        tvEngineStatus.setText(getString(R.string.dashboard_firewall_active));
+                        tvEngineStatus.setText(getString(R.string.dashboard_system_secure));
                         tvEngineStatus.setTextColor(androidx.core.content.ContextCompat.getColor(
                             requireContext(), com.hydradragon.antivirus.R.color.neon_green));
                     }

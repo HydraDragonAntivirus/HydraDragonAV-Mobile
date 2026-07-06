@@ -1,4 +1,4 @@
-// DOSYA: app/src/main/java/com/hydradragon/antivirus/engine/NetworkMonitor.java
+// FILE: app/src/main/java/com/hydradragon/antivirus/engine/NetworkMonitor.java
 package com.hydradragon.antivirus.engine;
 
 import android.content.Context;
@@ -33,40 +33,40 @@ import okhttp3.Response;
 
 /**
  * HydraDragon Network Monitor
- * Ağ trafiğini izler, şüpheli bağlantıları tespit eder.
+ * Monitors network traffic, detects suspicious connections.
  *
- * Özellikler:
- * - Şüpheli IP/domain tespiti (xor filter + hardcoded rules)
- * - C2 (Command & Control) server bağlantısı tespiti
- * - Tor/VPN kullanım tespiti
- * - DNS leak tespiti
- * - Canlı trafik istatistikleri
+ * Features:
+ * - Suspicious IP/domain detection (xor filter + hardcoded rules)
+ * - C2 (Command & Control) server connection detection
+ * - Tor/VPN usage detection
+ * - DNS leak detection
+ * - Live traffic statistics
  */
 public class NetworkMonitor {
 
     private static final String TAG = "HydraDragon-NetMon";
 
-    // Bilinen kötü amaçlı IP aralıkları / C2 sunucuları
+    // Known malicious IP ranges / C2 servers
     private static final Set<String> BLACKLISTED_IPS = new HashSet<>(Arrays.asList(
         "185.220.101.", // Tor exit nodes
         "198.96.155.",
         "45.142.212.",
-        "91.108.4.",    // Telegram (bazı malwareler kullanır)
+        "91.108.4.",    // Telegram (some malware use it)
         "176.31.208."
     ));
 
-    // Şüpheli portlar
+    // Suspicious ports
     private static final Set<Integer> SUSPICIOUS_PORTS = new HashSet<>(Arrays.asList(
-        4444, 4445, 5555, 6666, 7777, // Metasploit default portları
+        4444, 4445, 5555, 6666, 7777, // Metasploit default ports
         8080, 8443, 9999, 1337,
-        31337, 12345, 54321           // Bilinen backdoor portları
+        31337, 12345, 54321           // Known backdoor ports
     ));
 
-    // Şüpheli domain anahtar kelimeleri (xor filter yedeği)
+    // Suspicious domain keywords (xor filter backup)
     private static final List<String> SUSPICIOUS_DOMAIN_PATTERNS = Arrays.asList(
         ".onion", "tor2web", "i2p",
-        "ngrok.io", "serveo.net",    // Tünel servisleri - malware sıkça kullanır
-        "dyndns", "no-ip", "ddns"    // Dynamic DNS - C2 sıkça kullanır
+        "ngrok.io", "serveo.net",    // Tunnel services - malware frequently uses
+        "dyndns", "no-ip", "ddns"    // Dynamic DNS - C2 frequently uses
     );
 
     // Xor filter asset
@@ -185,13 +185,13 @@ public class NetworkMonitor {
     }
 
     /**
-     * Ağ izlemesini başlat
+     * Start network monitoring
      */
     public void startMonitoring() {
         if (isMonitoring) return;
         isMonitoring = true;
 
-        // Ağ değişikliklerini izle
+        // Monitor network changes
         NetworkRequest networkRequest = new NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .build();
@@ -212,20 +212,20 @@ public class NetworkMonitor {
 
         connectivityManager.registerNetworkCallback(networkRequest, cmCallback);
 
-        // Periyodik istatistik güncelleme (her 1 saniye)
+        // Periodic statistics update (every 1 second)
         scheduler.scheduleAtFixedRate(() -> {
             updateTrafficStats();
             checkThreatIntelligence();
         }, 0, 1, TimeUnit.SECONDS);
 
-        // DNS leak testi (her 5 dakika)
+        // DNS leak test (every 5 minutes)
         scheduler.scheduleAtFixedRate(this::checkDnsLeak, 0, 5, TimeUnit.MINUTES);
 
         Log.i(TAG, "✓ Network monitoring started");
     }
 
     /**
-     * Gerçek zamanlı trafik istatistikleri güncelle
+     * Update real-time traffic statistics
      */
     // Previous cumulative sample for computing the per-tick rate. -1 = no sample
     // yet, so the first tick doesn't emit a huge bogus spike.
@@ -288,11 +288,11 @@ public class NetworkMonitor {
     }
 
     /**
-     * Bağlantı güvenlik kontrolü
-     * @return true: güvenli, false: şüpheli/engellendi
+     * Connection security check
+     * @return true: safe, false: suspicious/blocked
      */
     public boolean checkConnection(String destIp, int destPort, String packageName) {
-        // Blacklist IP kontrolü
+        // Blacklist IP check
         for (String blacklistedPrefix : BLACKLISTED_IPS) {
             if (destIp.startsWith(blacklistedPrefix)) {
                 logEvent(destIp, destPort, "TCP", true, "Blacklisted IP: " + blacklistedPrefix, 0);
@@ -301,7 +301,7 @@ public class NetworkMonitor {
             }
         }
 
-        // Şüpheli port kontrolü
+        // Suspicious port check
         if (SUSPICIOUS_PORTS.contains(destPort)) {
             logEvent(destIp, destPort, "TCP", true,
                 "Suspicious port: " + destPort + " (" + packageName + ")", 0);
@@ -315,20 +315,20 @@ public class NetworkMonitor {
     }
 
     /**
-     * Domain'i xor filter + pattern listesine karşı kontrol et.
-     * @return true: şüpheli/zararlı domain
+     * Check domain against xor filter + pattern list.
+     * @return true: suspicious/malicious domain
      */
     public boolean isSuspiciousDomain(String domain) {
         if (domain == null || domain.isEmpty()) return false;
         String lower = domain.toLowerCase();
 
-        // İlk olarak hardcoded pattern'leri kontrol et (hızlı)
+        // First check hardcoded patterns (fast)
         for (String pattern : SUSPICIOUS_DOMAIN_PATTERNS) {
             if (lower.contains(pattern)) return true;
         }
 
-        // Native xor filter domain/URL kontrolü — domain'i http:// formuna çevirip
-        // (URL xor filtreleri http:// string'lerinden üretildi) tüm kategorilere bak.
+        // Native xor filter domain/URL check — convert domain to http:// form
+        // (URL xor filters were generated from http:// strings) check all categories.
         try {
             if (UrlThreatScanner.get(context).scanUrl("http://" + lower) != null) {
                 return true;
@@ -340,14 +340,14 @@ public class NetworkMonitor {
     }
 
     /**
-     * DNS leak testi
+     * DNS leak test
      */
     private void checkDnsLeak() {
         executor.execute(() -> {
             try {
                 InetAddress addr = InetAddress.getByName("dnsleaktest.com");
                 Log.d(TAG, "DNS: " + addr.getHostAddress());
-                // Eğer DNS sunucusu şüpheliyse uyar
+                // Alert if DNS server is suspicious
             } catch (Exception e) {
                 Log.e(TAG, "DNS leak test error", e);
             }
@@ -355,11 +355,11 @@ public class NetworkMonitor {
     }
 
     /**
-     * Threat Intelligence feed kontrolü
+     * Threat Intelligence feed check
      */
     private void checkThreatIntelligence() {
-        // TODO: HydraDragon cloud threat feed'den güncelleme al
-        // Şimdilik local xor filter + blacklist kullanıyor
+        // TODO: Get updates from HydraDragon cloud threat feed
+        // For now using local xor filter + blacklist
     }
 
     private void logEvent(String destIp, int port, String protocol,
@@ -367,7 +367,7 @@ public class NetworkMonitor {
         NetworkEvent event = new NetworkEvent("local", destIp, port, protocol, blocked, reason, pid);
         eventLog.add(event);
 
-        // Max 1000 kayıt tut
+        // Keep max 1000 records
         while (eventLog.size() > 1000) eventLog.remove(0);
 
         if (blocked && networkCallback != null) {

@@ -144,14 +144,14 @@ public class CodeAnalyzer {
         com.hydradragon.antivirus.model.ThreatResult.ThreatType finalType = com.hydradragon.antivirus.model.ThreatResult.ThreatType.CLEAN;
         if (totalRisk >= 30) finalType = com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE;
         
-        // AIResult'tan gelen türü kullan, ama genel bir risk varsa MALWARE'e düşür.
+        // Use the type from AIResult, but downgrade to MALWARE if there's general risk.
         try {
-            // detectedType tanımlıysa
+            // if detectedType is defined
             if (totalRisk >= 30) finalType = com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE;
-            // ama metod dışına scope olmaması için catch'te değişken yok, bu yüzden doğrudan atıyoruz
+            // but there's no variable in catch to avoid scoping outside the method, therefore we assign directly
         } catch(Exception ignored) {}
 
-        // Güvenli dönüş:
+        // Safe return:
         return new AnalysisResult(totalRisk, findings, finalType);
     }
 
