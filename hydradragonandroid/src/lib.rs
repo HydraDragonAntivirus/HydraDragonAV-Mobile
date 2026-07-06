@@ -985,17 +985,6 @@ fn run_scan(
     // `androguard` module so its rules (permission/url/package_name/...) work.
     // None when no AndroidManifest.xml is reachable (not an APK).
     let androguard_json = build_androguard_json(&buffers);
-    // Per-module metadata fed to YARA-X: the `androguard` static report and the
-    // `hydradragon` live-network report (passed in from Java's network monitor).
-    let mut module_meta: Vec<(&str, &[u8])> = Vec::new();
-    if let Some(j) = androguard_json.as_deref() {
-        module_meta.push(("androguard", j.as_bytes()));
-    }
-    if let Some(h) = hydradragon {
-        if !h.is_empty() {
-            module_meta.push(("hydradragon", h));
-        }
-    }
 
     // Per-buffer "already vouched for by Java's whitelist_packages.db" flag:
     // true only when the buffer's OWN package name AND md5 exactly match a row
@@ -1036,6 +1025,22 @@ fn run_scan(
         })
         .collect();
     let dex_ms = t_dex.elapsed().as_millis();
+
+    // Fold this scan's DEX findings (any severity) into Java's live-network
+    // JSON, so `hydradragon` module metadata carries both.
+    let hydradragon_meta = merge_dex_findings(hydradragon, &dex_scans);
+
+    // Per-module metadata fed to YARA-X: the `androguard` static report and the
+    // `hydradragon` live-network + dex-findings report.
+    let mut module_meta: Vec<(&str, &[u8])> = Vec::new();
+    if let Some(j) = androguard_json.as_deref() {
+        module_meta.push(("androguard", j.as_bytes()));
+    }
+    if let Some(h) = hydradragon_meta.as_deref() {
+        if !h.is_empty() {
+            module_meta.push(("hydradragon", h));
+        }
+    }
 
     // Emulate every native library (.so/ELF) buffer once, to reveal strings
     // (e.g. a C2 URL) a decode routine only produces at runtime — see
@@ -1224,9 +1229,9 @@ fn run_scan(
     // DEX static-analysis: only High/Critical findings count as malicious.
     for (i, b) in buffers.iter().enumerate() {
         if let Some(ds) = &dex_scans[i] {
-            for (sev, msg) in &ds.findings {
-                if dex_scan::is_severe(*sev) {
-                    detections.push((format!("DEX/{sev:?}: {msg}"), b.apk_lineage.clone()));
+            for f in &ds.findings {
+                if dex_scan::is_severe(f.severity) {
+                    detections.push((format!("DEX/{:?}: {}", f.severity, f.message), b.apk_lineage.clone()));
                 }
             }
         }
@@ -1627,6 +1632,46 @@ fn axml_package(data: &[u8]) -> Option<String> {
         off = off.checked_add(csize)?;
     }
     None
+}
+
+// ── hydradragon report merger ───────────────────────────────────────────────
+// Folds this scan's DEX static-analysis findings (any severity) into Java's
+// live-network/HIPS JSON, under a `dex_findings` array, so `.yar` rules can
+// query them via `hydradragon.dex_finding(regex)` /
+// `hydradragon.dex_severe_finding_count()`.
+
+/// Returns `None` when there's neither a Java report nor any DEX finding.
+fn merge_dex_findings(
+    hydradragon: Option<&[u8]>,
+    dex_scans: &[Option<dex_scan::DexScan>],
+) -> Option<Vec<u8>> {
+    let findings: Vec<serde_json::Value> = dex_scans
+        .iter()
+        .flatten()
+        .flat_map(|ds| &ds.findings)
+        .map(|f| {
+            serde_json::json!({
+                "severity": format!("{:?}", f.severity),
+                "kind": f.kind.clone(),
+                "class_descriptor": f.class_descriptor.clone(),
+                "message": f.message.clone(),
+            })
+        })
+        .collect();
+
+    let mut root: serde_json::Value = hydradragon
+        .and_then(|h| serde_json::from_slice(h).ok())
+        .filter(serde_json::Value::is_object)
+        .unwrap_or_else(|| serde_json::json!({}));
+    if !findings.is_empty() {
+        root["dex_findings"] = serde_json::Value::Array(findings);
+    }
+
+    if root.as_object().map(|m| m.is_empty()).unwrap_or(true) {
+        None
+    } else {
+        serde_json::to_vec(&root).ok()
+    }
 }
 
 // ── androguard report producer ──────────────────────────────────────────────

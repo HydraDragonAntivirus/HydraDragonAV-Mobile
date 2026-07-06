@@ -150,6 +150,10 @@ public class SettingsFragment extends Fragment {
         addToggle(getString(R.string.debug_mode_warning_toggle), debugWarn, (btn, on) ->
             com.hydradragon.antivirus.engine.DebugModeWarning.setEnabled(requireContext(), on));
 
+        boolean rootWarn = com.hydradragon.antivirus.engine.RootWarning.isEnabled(requireContext());
+        addToggle(getString(R.string.root_warning_toggle), rootWarn, (btn, on) ->
+            com.hydradragon.antivirus.engine.RootWarning.setEnabled(requireContext(), on));
+
         // Device Admin self-protection (SelfProtection/AdminReceiver) existed
         // in the codebase but was never actually wired up anywhere — this is
         // the first place the user can turn it on/off. Turning ON opens the

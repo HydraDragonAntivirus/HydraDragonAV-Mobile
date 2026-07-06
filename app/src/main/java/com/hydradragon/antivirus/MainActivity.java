@@ -82,17 +82,23 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // The app refuses to run on rooted devices (and so never scans/false-flags
-        // system files).
+        // The app warns on rooted devices but lets the user continue if they
+        // understand the risks — the antivirus does not support root-level
+        // features and ADB is not supported for production use.
         if (com.hydradragon.antivirus.engine.RootCheck.isRooted()) {
-            new AlertDialog.Builder(this)
-                .setTitle(R.string.root_blocked_title)
-                .setMessage(R.string.root_blocked_msg)
-                .setCancelable(false)
-                .setPositiveButton(R.string.root_blocked_exit, (d, w) -> finish())
-                .setOnDismissListener(d -> finish())
-                .show();
-            return;
+            if (com.hydradragon.antivirus.engine.RootWarning.isEnabled(this)) {
+                new AlertDialog.Builder(this)
+                    .setTitle(R.string.root_warning_title)
+                    .setMessage(R.string.root_warning_msg)
+                    .setCancelable(false)
+                    .setPositiveButton(R.string.root_warning_continue, null)
+                    .setNegativeButton(R.string.root_warning_exit, (d, w) -> finish())
+                    .setNeutralButton(R.string.root_warning_dont_ask, (d, w) ->
+                        com.hydradragon.antivirus.engine.RootWarning.setEnabled(this, false))
+                    .show();
+            }
+            // If the warning has been previously dismissed (isEnabled == false),
+            // or the user clicked "Continue" / "Don't ask again", proceed normally.
         }
 
         setContentView(R.layout.activity_main);

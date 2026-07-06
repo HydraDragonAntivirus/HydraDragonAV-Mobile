@@ -1,9 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
-    <string name="root_blocked_title">دستگاه روت‌شده</string>
-    <string name="root_blocked_msg">این برنامه نمی‌تواند روی دستگاه‌های روت‌شده اجرا شود.</string>
-    <string name="root_blocked_exit">خروج</string>
+    <string name="root_warning_title">⚠ ROOTED DEVICE</string>
+    <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
+    <string name="root_warning_continue">I UNDERSTAND, CONTINUE</string>
+    <string name="root_warning_exit">EXIT</string>
+    <string name="root_warning_dont_ask">DON\'T ASK AGAIN</string>
+    <string name="root_warning_toggle">Warn when device is rooted</string>
     <string name="integrity_blocked_title">APK تغییر یافته شناسایی شد</string>
     <string name="integrity_blocked_msg">امضای این نسخه با نسخه اصلی مطابقت ندارد — ممکن است کد تغییر یافته و مخرب باشد. این برنامه اجرا نخواهد شد.</string>
     <string name="integrity_blocked_exit">خروج</string>

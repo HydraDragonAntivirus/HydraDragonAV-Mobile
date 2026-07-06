@@ -9,8 +9,18 @@ const MAX_FINDINGS: usize = 64;
 pub struct DexScan {
     /// Decoded string pool: strings + method/class/field names, '\n'-joined.
     pub text: String,
-    /// (severity, "id: message") static-analysis findings.
-    pub findings: Vec<(Severity, String)>,
+    /// Static-analysis findings, any severity.
+    pub findings: Vec<DexFinding>,
+}
+
+/// One static-analysis finding, flattened from `dex_analysis::Finding` so it
+/// can be both checked with `is_severe` and serialized into the
+/// `hydradragon` YARA-X module metadata (see `lib.rs`).
+pub struct DexFinding {
+    pub severity: Severity,
+    pub kind: String,
+    pub class_descriptor: String,
+    pub message: String,
 }
 
 /// Parse a DEX buffer once: decode its string pool and run static analysis.
@@ -30,7 +40,12 @@ pub fn scan(bytes: &[u8]) -> Option<DexScan> {
             .findings
             .into_iter()
             .take(MAX_FINDINGS)
-            .map(|f| (f.severity, format!("{}: {}", f.id, f.message)))
+            .map(|f| DexFinding {
+                severity: f.severity,
+                kind: format!("{:?}", f.kind),
+                class_descriptor: f.location.class_descriptor,
+                message: format!("{}: {}", f.id, f.message),
+            })
             .collect();
         Some(DexScan { text, findings })
     }))
