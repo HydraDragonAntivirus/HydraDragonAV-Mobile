@@ -71,6 +71,8 @@
 • قوانین شبکه اعمال شده است
 • اطلاعات تهدید همگام‌سازی شده است</string>
     <string name="threat_detected">تهدید شناسایی شد!</string>
+    <string name="malware_found_title">⚠ بدافزار پیدا شد!</string>
+    <string name="btn_destroy_hint">برای حذف آن روی «حذف» ضربه بزنید</string>
     <string name="live_network_activity">فعالیت شبکه زنده</string>
     <string name="total_traffic">کل ترافیک</string>
     <string name="blocked">مسدود شده</string>

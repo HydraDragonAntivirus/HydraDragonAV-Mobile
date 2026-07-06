@@ -71,6 +71,8 @@
 • Đã áp dụng quy tắc mạng
 • Đã đồng bộ thông tin về mối đe dọa</string>
     <string name="threat_detected">PHÁT HIỆN MỐI ĐE DỌA!</string>
+    <string name="malware_found_title">⚠ PHÁT HIỆN PHẦN MỀM ĐỘC HẠI!</string>
+    <string name="btn_destroy_hint">nhấn Xóa để loại bỏ nó</string>
     <string name="live_network_activity">HOẠT ĐỘNG MẠNG TRỰC TIẾP</string>
     <string name="total_traffic">TỔNG LƯU LƯỢNG</string>
     <string name="blocked">ĐÃ CHẶN</string>

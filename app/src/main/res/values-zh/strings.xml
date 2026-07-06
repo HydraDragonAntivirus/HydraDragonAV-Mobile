@@ -71,6 +71,8 @@
 • 网络规则已应用
 • 威胁情报已同步</string>
     <string name="threat_detected">检测到威胁！</string>
+    <string name="malware_found_title">⚠ 发现恶意软件！</string>
+    <string name="btn_destroy_hint">点击"删除"以移除</string>
     <string name="live_network_activity">实时网络活动</string>
     <string name="total_traffic">总流量</string>
     <string name="blocked">已拦截</string>

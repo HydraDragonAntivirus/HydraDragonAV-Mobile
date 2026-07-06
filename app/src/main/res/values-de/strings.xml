@@ -71,6 +71,8 @@
 • Netzwerkregeln angewendet
 • Bedrohungsdaten synchronisiert</string>
     <string name="threat_detected">BEDROHUNG ERKANNT!</string>
+    <string name="malware_found_title">⚠ SCHADSOFTWARE GEFUNDEN!</string>
+    <string name="btn_destroy_hint">zum Entfernen auf „Löschen" tippen</string>
     <string name="live_network_activity">LIVE-NETZWERKAKTIVITÄT</string>
     <string name="total_traffic">GESAMTVERKEHR</string>
     <string name="blocked">BLOCKIERT</string>

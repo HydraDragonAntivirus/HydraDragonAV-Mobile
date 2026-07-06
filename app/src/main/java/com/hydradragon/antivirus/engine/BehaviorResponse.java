@@ -1,17 +1,29 @@
 package com.hydradragon.antivirus.engine;
 
 import android.app.ActivityManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.util.Log;
+
+import androidx.core.app.NotificationCompat;
+
+import com.hydradragon.antivirus.R;
+import com.hydradragon.antivirus.model.ThreatResult;
+import com.hydradragon.antivirus.service.UserActionReceiver;
+import com.hydradragon.antivirus.ui.MalwareFoundActivity;
 
 /**
  * Immediate-action response shared by EVERY behaviour-based detector in this
  * app (UI/notification spam, root exploit, dynamic risk score, ransomware
- * rename burst, file-trap hit) — waiting for the user to open HydraDragon and
- * find the threat on the next scan is too slow once a package has already
- * been flagged with real confidence; something may still be actively
+ * rename burst, file-trap hit) AND, via {@link #killAndPromptUninstall(Context,
+ * ThreatResult)}, by every regular scan (background or manual) the instant it
+ * finds something above {@link ThreatResult#isThreat()} — waiting for the user
+ * to open HydraDragon and tap the threat is too slow once something has
+ * already been flagged with real confidence; something may still be actively
  * happening right now.
  *
  * <p>Honest about what a regular (non-system, non-Device-Owner) app can
@@ -31,10 +43,17 @@ import android.util.Log;
  * If the flagged app IS currently in the foreground, neither of those stops
  * it mid-action — there's no way around that without root/Device Owner, which
  * this app deliberately doesn't require/use.
+ *
+ * <p>A detection isn't always an installed app, though — a standalone file
+ * (a bare .apk sitting on storage, or any other malicious file) has no
+ * process to kill and no package to uninstall. {@link
+ * #killAndPromptUninstall(Context, ThreatResult)} tells the two apart and
+ * routes the file case to {@link #promptDeleteFile} instead.
  */
 public final class BehaviorResponse {
 
     private static final String TAG = "HydraDragon-BehaviorResp";
+    private static final String CHANNEL_ID = "hydradragon_guard";
 
     private BehaviorResponse() {}
 
@@ -52,6 +71,103 @@ public final class BehaviorResponse {
             context.startActivity(del);
         } catch (Throwable t) {
             Log.w(TAG, "uninstall prompt failed for " + pkg, t);
+        }
+    }
+
+    /** Entry point for a regular scan result (quick/full/custom, background or
+     *  manual — anything past {@link ThreatResult#isThreat()}): kill + prompt
+     *  uninstall for an installed app, or ask to delete for a standalone file
+     *  that was never installed. Also throws up the full-screen "MALWARE
+     *  FOUND" page (same local-WebView pattern BlockActivity uses for a
+     *  malicious URL) on top of whatever the user is doing right now — the
+     *  notification alone is easy to miss/swipe away without reading, and per
+     *  the user this should be unmissable. Safe to call from a Service with
+     *  no UI: SYSTEM_ALERT_WINDOW is already declared as the documented
+     *  background-activity-start exemption (see AndroidManifest.xml). */
+    public static void killAndPromptUninstall(Context context, ThreatResult threat) {
+        if (threat == null) return;
+        String pkg = threat.getPackageName();
+        boolean installed = pkg != null && !pkg.isEmpty() && isPackageInstalled(context, pkg);
+        if (installed) {
+            killAndPromptUninstall(context, pkg);
+        } else {
+            promptDeleteFile(context, threat);
+        }
+        showMalwareFoundScreen(context, threat, !installed);
+    }
+
+    /** Full-screen "MALWARE FOUND" warning, launched over whatever app the
+     *  user currently has in the foreground — the kill+uninstall (or
+     *  delete-file prompt) has ALREADY fired by the time this shows; it's the
+     *  unmissable backdrop, not a confirmation gate of its own. */
+    private static void showMalwareFoundScreen(Context context, ThreatResult threat, boolean isFile) {
+        try {
+            Intent i = new Intent(context, MalwareFoundActivity.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            i.putExtra(MalwareFoundActivity.EXTRA_APP_NAME, threat.getAppName());
+            i.putExtra(MalwareFoundActivity.EXTRA_RISK_SCORE, threat.getRiskScore());
+            i.putExtra(MalwareFoundActivity.EXTRA_REASON,
+                    threat.getReasons().isEmpty() ? "-" : threat.getReasons().get(0));
+            i.putExtra(MalwareFoundActivity.EXTRA_IS_FILE, isFile);
+            context.startActivity(i);
+        } catch (Throwable t) {
+            Log.w(TAG, "showMalwareFoundScreen failed", t);
+        }
+    }
+
+    private static boolean isPackageInstalled(Context context, String pkg) {
+        try {
+            context.getPackageManager().getPackageInfo(pkg, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Not an installed app — nothing to kill or uninstall, just a file on
+     *  disk. Android has no "delete another app's file" API either, so this
+     *  can only ASK: a high-priority notification with a Destroy action,
+     *  wired through {@link UserActionReceiver} the same way a real-time
+     *  malicious-download hit already asks (see GuardService#scanDownloadedFile). */
+    private static void promptDeleteFile(Context context, ThreatResult threat) {
+        String path = threat.getApkPath() != null ? threat.getApkPath() : threat.getPackageName();
+        if (path == null || path.isEmpty()) return;
+        try {
+            NotificationManager nm = context.getSystemService(NotificationManager.class);
+            if (nm == null) return;
+            int notifId = (int) System.currentTimeMillis();
+
+            Intent removeIntent = new Intent(context, UserActionReceiver.class)
+                    .setAction(UserActionReceiver.ACTION_REMOVE_FILE)
+                    .putExtra(UserActionReceiver.EXTRA_ID, path)
+                    .putExtra(UserActionReceiver.EXTRA_NOTIF, notifId);
+            PendingIntent removePI = PendingIntent.getBroadcast(context, notifId, removeIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            Intent ignoreIntent = new Intent(context, UserActionReceiver.class)
+                    .setAction(UserActionReceiver.ACTION_IGNORE)
+                    .putExtra(UserActionReceiver.EXTRA_ID, path)
+                    .putExtra(UserActionReceiver.EXTRA_NOTIF, notifId);
+            PendingIntent ignorePI = PendingIntent.getBroadcast(context, notifId + 1, ignoreIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_threat)
+                    .setContentTitle(context.getString(R.string.malware_found_title))
+                    .setContentText(threat.getAppName() + " — " + context.getString(R.string.btn_destroy_hint))
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setCategory(NotificationCompat.CATEGORY_ALARM)
+                    .setAutoCancel(true)
+                    .setColor(0xFF0040)
+                    .addAction(0, context.getString(R.string.btn_destroy), removePI)
+                    .addAction(0, context.getString(R.string.btn_ignore), ignorePI)
+                    .build();
+            nm.notify(notifId, builder);
+        } catch (Throwable t) {
+            Log.w(TAG, "promptDeleteFile failed for " + path, t);
         }
     }
 }

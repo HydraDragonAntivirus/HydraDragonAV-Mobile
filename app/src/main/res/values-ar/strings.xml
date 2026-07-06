@@ -71,6 +71,8 @@
 • تم تطبيق قواعد الشبكة
 • تمت مزامنة معلومات التهديدات</string>
     <string name="threat_detected">تم اكتشاف تهديد!</string>
+    <string name="malware_found_title">⚠ تم اكتشاف برمجية خبيثة!</string>
+    <string name="btn_destroy_hint">اضغط على "احذفه" لإزالته</string>
     <string name="live_network_activity">نشاط الشبكة المباشر</string>
     <string name="total_traffic">إجمالي حركة البيانات</string>
     <string name="blocked">محظور</string>

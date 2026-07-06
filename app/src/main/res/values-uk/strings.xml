@@ -71,6 +71,8 @@
 • Мережеві правила застосовано
 • Дані про загрози синхронізовано</string>
     <string name="threat_detected">ВИЯВЛЕНО ЗАГРОЗУ!</string>
+    <string name="malware_found_title">⚠ ВИЯВЛЕНО ШКІДЛИВЕ ПЗ!</string>
+    <string name="btn_destroy_hint">торкніться «Видалити», щоб прибрати його</string>
     <string name="live_network_activity">МЕРЕЖЕВА АКТИВНІСТЬ У РЕАЛЬНОМУ ЧАСІ</string>
     <string name="total_traffic">ЗАГАЛЬНИЙ ТРАФІК</string>
     <string name="blocked">ЗАБЛОКОВАНО</string>

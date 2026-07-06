@@ -71,6 +71,8 @@
 • ネットワークルールを適用済み
 • 脅威インテリジェンスを同期済み</string>
     <string name="threat_detected">脅威を検出しました！</string>
+    <string name="malware_found_title">⚠ マルウェアを検出しました！</string>
+    <string name="btn_destroy_hint">削除するには「削除する」をタップしてください</string>
     <string name="live_network_activity">リアルタイムネットワークアクティビティ</string>
     <string name="total_traffic">総トラフィック</string>
     <string name="blocked">ブロック済み</string>

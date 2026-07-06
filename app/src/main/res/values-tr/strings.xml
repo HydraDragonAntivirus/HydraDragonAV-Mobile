@@ -83,6 +83,8 @@
 • Ağ kuralları uygulanıyor
 • Tehdit istihbaratı senkronize</string>
     <string name="threat_detected">TEHDİT TESPİT EDİLDİ!</string>
+    <string name="malware_found_title">⚠ ZARARLI YAZILIM BULUNDU!</string>
+    <string name="btn_destroy_hint">kaldırmak için YOK ET\'e dokunun</string>
     <string name="live_network_activity">CANLI AĞ AKTİVİTESİ</string>
     <string name="total_traffic">TOPLAM TRAFİK</string>
     <string name="blocked">ENGELLENDİ</string>

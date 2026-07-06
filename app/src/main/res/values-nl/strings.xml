@@ -71,6 +71,8 @@
 • Netwerkregels toegepast
 • Dreigingsinformatie gesynchroniseerd</string>
     <string name="threat_detected">DREIGING GEDETECTEERD!</string>
+    <string name="malware_found_title">⚠ MALWARE GEVONDEN!</string>
+    <string name="btn_destroy_hint">tik op Verwijderen om het te verwijderen</string>
     <string name="live_network_activity">LIVE NETWERKACTIVITEIT</string>
     <string name="total_traffic">TOTALE VERKEER</string>
     <string name="blocked">GEBLOKKEERD</string>

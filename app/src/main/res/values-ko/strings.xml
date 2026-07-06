@@ -71,6 +71,8 @@
 • 네트워크 규칙 적용됨
 • 위협 인텔리전스 동기화됨</string>
     <string name="threat_detected">위협 감지됨!</string>
+    <string name="malware_found_title">⚠ 악성코드 발견!</string>
+    <string name="btn_destroy_hint">제거하려면 삭제를 탭하세요</string>
     <string name="live_network_activity">실시간 네트워크 활동</string>
     <string name="total_traffic">총 트래픽</string>
     <string name="blocked">차단됨</string>

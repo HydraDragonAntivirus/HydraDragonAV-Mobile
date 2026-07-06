@@ -71,6 +71,8 @@
 • नेटवर्क नियम लागू
 • थ्रेट इंटेलिजेंस सिंक्ड</string>
     <string name="threat_detected">खतरा मिला!</string>
+    <string name="malware_found_title">⚠ मैलवेयर मिला!</string>
+    <string name="btn_destroy_hint">इसे हटाने के लिए हटाएँ पर टैप करें</string>
     <string name="live_network_activity">लाइव नेटवर्क गतिविधि</string>
     <string name="total_traffic">कुल ट्रैफ़िक</string>
     <string name="blocked">ब्लॉक किया गया</string>

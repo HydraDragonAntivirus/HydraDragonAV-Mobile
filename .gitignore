@@ -4,8 +4,6 @@ yara-x/valhalla-rules.yar
 __pycache__/
 allxfilters/MalwareDomains.optimized.csv
 downloads/
-# YARA-X compiled files
-yara-x/compiled/
 whitelist/
 # nist.gov RDS sql database
 sql/

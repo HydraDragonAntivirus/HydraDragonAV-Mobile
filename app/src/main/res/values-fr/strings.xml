@@ -71,6 +71,8 @@
 • Règles réseau appliquées
 • Renseignements sur les menaces synchronisés</string>
     <string name="threat_detected">MENACE DÉTECTÉE !</string>
+    <string name="malware_found_title">⚠ LOGICIEL MALVEILLANT TROUVÉ !</string>
+    <string name="btn_destroy_hint">appuyez sur Supprimer pour le retirer</string>
     <string name="live_network_activity">ACTIVITÉ RÉSEAU EN DIRECT</string>
     <string name="total_traffic">TRAFIC TOTAL</string>
     <string name="blocked">BLOQUÉ</string>

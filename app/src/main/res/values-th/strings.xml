@@ -71,6 +71,8 @@
 • ใช้กฎเครือข่ายแล้ว
 • ซิงค์ข้อมูลข่าวกรองภัยคุกคามแล้ว</string>
     <string name="threat_detected">ตรวจพบภัยคุกคาม!</string>
+    <string name="malware_found_title">⚠ พบมัลแวร์!</string>
+    <string name="btn_destroy_hint">แตะ ลบ เพื่อลบออก</string>
     <string name="live_network_activity">กิจกรรมเครือข่ายแบบสด</string>
     <string name="total_traffic">ทราฟฟิกทั้งหมด</string>
     <string name="blocked">ถูกบล็อก</string>

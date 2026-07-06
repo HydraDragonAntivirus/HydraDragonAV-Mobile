@@ -294,6 +294,18 @@ public class GuardService extends Service {
                     } catch (Throwable t) {
                         Log.e(TAG, "sendThreatNotification failed", t);
                     }
+                    // Same immediate kill-and-uninstall (or delete-prompt for a
+                    // standalone file) every behavioural guard already gets —
+                    // don't make the user open the app and tap the threat first;
+                    // fires for every scan, background or manual, the instant a
+                    // result crosses isThreat(), same threshold sendThreatNotification
+                    // above uses.
+                    try {
+                        com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
+                            GuardService.this, threat);
+                    } catch (Throwable t) {
+                        Log.e(TAG, "killAndPromptUninstall failed", t);
+                    }
                     if (callback != null) callback.onThreatDetected(threat);
                 }
                 ScanEngine.ScanCallback ui = uiScanCallback;
@@ -459,7 +471,7 @@ public class GuardService extends Service {
         if (nm == null) return;
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_threat)
-            .setContentTitle(getString(R.string.threat_detected))
+            .setContentTitle(getString(R.string.malware_found_title))
             .setContentText(threat.getAppName() + " - Risk: " + threat.getRiskScore() + "/100")
             .setStyle(new NotificationCompat.BigTextStyle()
                 .bigText(threat.getAppName() + "\n"

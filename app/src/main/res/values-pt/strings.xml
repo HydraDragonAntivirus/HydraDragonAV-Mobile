@@ -71,6 +71,8 @@
 • Regras de rede aplicadas
 • Inteligência de ameaças sincronizada</string>
     <string name="threat_detected">AMEAÇA DETECTADA!</string>
+    <string name="malware_found_title">⚠ MALWARE ENCONTRADO!</string>
+    <string name="btn_destroy_hint">toque em Destruir para removê-lo</string>
     <string name="live_network_activity">ATIVIDADE DE REDE AO VIVO</string>
     <string name="total_traffic">TRÁFEGO TOTAL</string>
     <string name="blocked">BLOQUEADO</string>

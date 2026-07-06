@@ -71,6 +71,8 @@
 • Aturan jaringan diterapkan
 • Intelijen ancaman tersinkronisasi</string>
     <string name="threat_detected">ANCAMAN TERDETEKSI!</string>
+    <string name="malware_found_title">⚠ MALWARE DITEMUKAN!</string>
+    <string name="btn_destroy_hint">ketuk Hapus untuk menghapusnya</string>
     <string name="live_network_activity">AKTIVITAS JARINGAN LANGSUNG</string>
     <string name="total_traffic">TOTAL LALU LINTAS</string>
     <string name="blocked">DIBLOKIR</string>

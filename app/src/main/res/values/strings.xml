@@ -81,6 +81,8 @@
 • Network rules applied
 • Threat intelligence synced</string>
     <string name="threat_detected">THREAT DETECTED!</string>
+    <string name="malware_found_title">⚠ MALWARE FOUND!</string>
+    <string name="btn_destroy_hint">tap Destroy to remove it</string>
     <string name="live_network_activity">LIVE NETWORK ACTIVITY</string>
     <string name="total_traffic">TOTAL TRAFFIC</string>
     <string name="blocked">BLOCKED</string>
@@ -343,4 +345,3 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="uninstall_failed_safe_mode_toast">After reboot into Safe Mode, open HydraDragon and run a full scan to remove the malware</string>
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-

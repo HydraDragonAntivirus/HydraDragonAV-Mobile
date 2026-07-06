@@ -71,6 +71,8 @@
 • Zastosowano reguły sieciowe
 • Zsynchronizowano dane o zagrożeniach</string>
     <string name="threat_detected">WYKRYTO ZAGROŻENIE!</string>
+    <string name="malware_found_title">⚠ ZNALEZIONO ZŁOŚLIWE OPROGRAMOWANIE!</string>
+    <string name="btn_destroy_hint">dotknij Usuń, aby je usunąć</string>
     <string name="live_network_activity">AKTYWNOŚĆ SIECI NA ŻYWO</string>
     <string name="total_traffic">CAŁKOWITY RUCH</string>
     <string name="blocked">ZABLOKOWANE</string>

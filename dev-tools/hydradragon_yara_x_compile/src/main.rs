@@ -35,7 +35,10 @@ fn main() {
         let dir = if pos_args.len() >= 3 {
             Path::new(pos_args[2]).to_path_buf()
         } else {
-            let default_out = src_dir.join("compiled");
+            let default_out = src_dir.parent().map_or_else(
+                || PathBuf::from("app/src/main/assets/scan"),
+                |p| p.join("app/src/main/assets/scan"),
+            );
             eprintln!("INFO: no output directory given, defaulting to {}", default_out.display());
             default_out
         };
