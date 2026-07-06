@@ -154,7 +154,7 @@ public final class BehaviorResponse {
             PendingIntent ignorePI = PendingIntent.getBroadcast(context, notifId + 1, ignoreIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+            android.app.Notification notification = new NotificationCompat.Builder(context, CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_threat)
                     .setContentTitle(context.getString(R.string.malware_found_title))
                     .setContentText(threat.getAppName() + " — " + context.getString(R.string.btn_destroy_hint))
@@ -165,7 +165,7 @@ public final class BehaviorResponse {
                     .addAction(0, context.getString(R.string.btn_destroy), removePI)
                     .addAction(0, context.getString(R.string.btn_ignore), ignorePI)
                     .build();
-            nm.notify(notifId, builder);
+            nm.notify(notifId, notification);
         } catch (Throwable t) {
             Log.w(TAG, "promptDeleteFile failed for " + path, t);
         }
