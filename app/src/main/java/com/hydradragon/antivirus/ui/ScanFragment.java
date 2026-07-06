@@ -583,10 +583,16 @@ public class ScanFragment extends Fragment {
         if (loading) {
             tvEngineWarning.setVisibility(View.VISIBLE);
             btnScan.setEnabled(false);
+            tvScanStatus.setText(getString(R.string.engine_loading_status));
+            tvScanStatus.setTextColor(0xFFFFAA00);
         } else {
             tvEngineWarning.setVisibility(View.GONE);
             if (!isScanning) {
                 btnScan.setEnabled(true);
+                if (!hasScanned) {
+                    tvScanStatus.setText(getString(R.string.scan_prompt));
+                    tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+                }
             }
         }
     }
@@ -616,8 +622,10 @@ public class ScanFragment extends Fragment {
                         btnScan.setEnabled(false);
                     } else if (!isScanning) {
                         btnScan.setEnabled(true);
-                        tvScanStatus.setText(getString(R.string.scan_prompt));
-                        tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+                        if (!hasScanned) {
+                            tvScanStatus.setText(getString(R.string.scan_prompt));
+                            tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+                        }
                     }
                 }
             }
@@ -820,10 +828,7 @@ private void scanCustomFile(android.net.Uri uri) {
                             tvScanStatus.setText(getString(R.string.threats_found_count, 1));
                             tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.threat_red));
                             tvThreatLabel.setVisibility(View.VISIBLE);
-
-                            tvThreats.setText("0");
-                            tvThreats.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.neon_green));
-                            tvThreatLabel.setVisibility(View.GONE);
+                        } else {
                             tvScanStatus.setText(getString(R.string.system_clean));
                             tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.neon_green));
                         }
