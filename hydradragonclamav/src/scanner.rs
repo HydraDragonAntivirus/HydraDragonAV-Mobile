@@ -53,7 +53,7 @@ impl Default for ScanOptions {
         Self {
             strict_targets: false,
             max_matches: 1,
-            max_subsignature_matches: 4096,
+            max_subsignature_matches: 256,
             scan_archives: true,
             scan_normalized: true,
             max_recursion: 8,
@@ -419,8 +419,14 @@ impl Engine {
         }
 
         // Normalized text/HTML views exist to catch text-like malware (scripts,
-        // HTML).
-        if options.scan_normalized && state.matches.len() < options.max_matches {
+        // HTML).  Skip known binary formats (DEX, ELF, ZIP, images, …) — they
+        // often contain enough printable ASCII (string tables, class names, …)
+        // to pass the `looks_like_ascii_text` heuristic but normalising them
+        // would waste CPU on data that is never meaningful text.
+        if options.scan_normalized
+            && state.matches.len() < options.max_matches
+            && !is_known_binary_format(data)
+        {
             self.scan_normalized_views(data, object_path, container_type, options, state, timing);
         }
 
@@ -1310,6 +1316,69 @@ fn looks_like_html(data: &[u8]) -> bool {
 fn is_unsupported_archive(data: &[u8]) -> bool {
     data.len() >= 8 && data[..8] == [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00] // RAR v5
     || data.len() >= 7 && data[..7] == [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00] // RAR v1.5
+}
+
+/// Returns `true` when `data` starts with the magic bytes of a known binary
+/// format that is **not** normal text / HTML.  These formats can contain enough
+/// printable ASCII (string tables, class names, section names, …) to pass the
+/// `looks_like_ascii_text` heuristic, but normalizing them would be pure waste.
+fn is_known_binary_format(data: &[u8]) -> bool {
+    if data.len() < 2 {
+        return false;
+    }
+    // ZIP local file header (APK, JAR, …)
+    if data.len() >= 4 && data[..4] == [0x50, 0x4b, 0x03, 0x04] {
+        return true;
+    }
+    // DEX (Dalvik EXecutable) — embedded string tables look like ASCII text.
+    if data.len() >= 4 && data[..4] == [b'd', b'e', b'x', b'\n'] {
+        return true;
+    }
+    // ELF (shared libraries / native executables)
+    if data.len() >= 4 && data[..4] == [0x7f, b'E', b'L', b'F'] {
+        return true;
+    }
+    // PDF — mostly printable bytes but is a structured binary document format.
+    if data.len() >= 4 && data[..4] == [0x25, b'P', b'D', b'F'] {
+        return true;
+    }
+    // PE (Windows executable, uncommon on Android but possible in file scans)
+    if data.len() >= 2 && data[..2] == [b'M', b'Z'] {
+        return true;
+    }
+    // Images — pixel data is not meaningful text.
+    if data.len() >= 4 && data[..4] == [0x89, b'P', b'N', b'G'] {
+        return true;
+    }
+    if data.len() >= 3 && data[..3] == [0xff, 0xd8, 0xff] {
+        return true;
+    }
+    if data.len() >= 3 && data[..3] == [b'G', b'I', b'F'] {
+        return true;
+    }
+    // RIFF container (AVI, WAV, WebP)
+    if data.len() >= 4 && data[..4] == [b'R', b'I', b'F', b'F'] {
+        return true;
+    }
+    // GZip, XZ, BZip2 — compressed; normalising random bytes is useless.
+    if data.len() >= 2 && data[..2] == [0x1f, 0x8b] {
+        return true;
+    }
+    if data.len() >= 6 && data[..6] == [0xfd, b'7', b'z', b'X', b'Z', 0x00] {
+        return true;
+    }
+    if data.len() >= 3 && data[..3] == [b'B', b'Z', b'h'] {
+        return true;
+    }
+    // 7z
+    if data.len() >= 6 && data[..6] == [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c] {
+        return true;
+    }
+    // LZMA stream
+    if data.len() >= 2 && data[..2] == [0x5d, 0x00] {
+        return true;
+    }
+    false
 }
 
 fn normalize_ascii_text(data: &[u8]) -> Vec<u8> {
