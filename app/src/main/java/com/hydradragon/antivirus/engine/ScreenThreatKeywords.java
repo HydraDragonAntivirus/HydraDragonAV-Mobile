@@ -409,12 +409,11 @@ public final class ScreenThreatKeywords {
     }
 
     /** True if AT LEAST {@code min} distinct phrases from the list match. Used for
-     *  SMS_PHISHING/FAKE_VIRUS_WARNING: most individual phrases in those lists also
-     *  show up in genuine account/shipping/security messages, so a single hit alone
-     *  is too weak a signal — requiring 2+ distinct lures together is what actually
-     *  distinguishes a scam message from an ordinary one. RANSOMWARE keeps single-hit
-     *  matching (containsAny) since its phrases ("pay bitcoin", "your files are
-     *  encrypted") are unambiguous on their own. */
+     *  SMS_PHISHING/FAKE_VIRUS_WARNING / RANSOMWARE: most individual phrases in
+     *  those lists also show up in genuine account/shipping/security messages or
+     *  browser content, so a single hit alone is too weak a signal — requiring 2+
+     *  distinct lures together is what actually distinguishes a scam from ordinary
+     *  text. */
     public static boolean containsAtLeast(String lowerText, String[] phrases, int min) {
         int count = 0;
         for (String p : phrases) {

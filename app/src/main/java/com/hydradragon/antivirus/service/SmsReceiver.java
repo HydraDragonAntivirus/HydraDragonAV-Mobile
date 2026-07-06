@@ -71,7 +71,7 @@ public class SmsReceiver extends BroadcastReceiver {
                 // phrases are unambiguous enough on their own for a single hit.
                 malicious = ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.SMS_PHISHING, 2)
                     || ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.FAKE_VIRUS_WARNING, 2)
-                    || ScreenThreatKeywords.containsAny(lower, ScreenThreatKeywords.RANSOMWARE);
+                    || ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.RANSOMWARE, 2);
             }
 
             if (!malicious) return;

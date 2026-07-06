@@ -227,8 +227,8 @@ public class DynamicAnalysisService extends AccessibilityService {
         if (text != null) {
             String lowerText = text.toString().toLowerCase();
             // RANSOMWARE MITIGATION (multi-language — see ScreenThreatKeywords)
-            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAny(
-                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.RANSOMWARE)) {
+            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAtLeast(
+                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.RANSOMWARE, 2)) {
                 Log.e(TAG, "RANSOMWARE TEXT DETECTED in " + fgPackage);
                 // Relatedness: a standalone app showing a full-screen "files
                 // encrypted" lock IS ransomware -> nuke. The same text inside a
