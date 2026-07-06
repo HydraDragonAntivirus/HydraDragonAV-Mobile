@@ -741,6 +741,25 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }).resolve::<LogErrorAndDefault>()
 }
 
+/// Lazy-load HIPS / dynamic YARA rules into the live engine if not already
+/// loaded. Called by both scan_hips and scan_text.
+fn load_dynamic_rules() {
+    if DYNAMIC_RULES_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
+    let Some(lock) = ENGINE.get() else { return };
+    let Ok(mut guard) = lock.write() else { return };
+    let Some(clamav) = &mut guard.clamav else { return };
+    let Some(base) = INIT_DIR.get() else { return };
+    for name in DYNAMIC_YRC_FILES {
+        let path = std::path::Path::new(base).join(name);
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            clamav.add_compiled_yara_file(&path)
+        }));
+    }
+    DYNAMIC_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
 fn scan_hips(hips_json: &str) -> String {
     if hips_json.is_empty() {
         return r#"{"malicious":false}"#.to_string();
@@ -749,26 +768,8 @@ fn scan_hips(hips_json: &str) -> String {
     if serde_json::from_str::<serde_json::Value>(hips_json).is_err() {
         return r#"{"error":"invalid JSON"}"#.to_string();
     }
-    // Lazily load DYNAMIC_YRC_FILES on first HIPS scan (write lock, brief).
-    if !DYNAMIC_RULES_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
-        if let Some(lock) = ENGINE.get() {
-            if let Ok(mut guard) = lock.write() {
-                if let Some(clamav) = &mut guard.clamav {
-                    if let Some(base) = INIT_DIR.get() {
-                        for name in DYNAMIC_YRC_FILES {
-                            let path = std::path::Path::new(base).join(name);
-                            let _ = std::panic::catch_unwind(
-                                std::panic::AssertUnwindSafe(|| {
-                                    clamav.add_compiled_yara_file(&path)
-                                }),
-                            );
-                        }
-                    }
-                }
-                DYNAMIC_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
-            }
-        }
-    }
+    // Lazily load DYNAMIC_YRC_FILES on first HIPS/screen-text scan.
+    load_dynamic_rules();
     let Some(guard) = ENGINE.get().and_then(|l| l.read().ok()) else {
         return r#"{"error":"not initialised"}"#.to_string();
     };
@@ -808,6 +809,7 @@ fn scan_text(text: &str) -> String {
     if text.is_empty() {
         return String::new();
     }
+    load_dynamic_rules();
     let Some(guard) = ENGINE.get().and_then(|l| l.read().ok()) else {
         return String::new();
     };

@@ -28,6 +28,9 @@ public final class BehaviorDetectionSettings {
     /** Temporary decoy "file trap" deployment for freshly-installed, unknown
      *  apps that just got All Files Access (FileCanaryGuard). */
     public static final String FILE_CANARY = "file_canary";
+    /** Malware kicking the user off its own uninstall/device-admin-deactivation
+     *  screen, repeatedly (RemovalResistanceGuard). */
+    public static final String REMOVAL_RESISTANCE = "removal_resistance";
 
     private BehaviorDetectionSettings() {}
 

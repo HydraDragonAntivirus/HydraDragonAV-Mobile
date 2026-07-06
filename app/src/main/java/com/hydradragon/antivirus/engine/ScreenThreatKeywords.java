@@ -86,6 +86,30 @@ public final class ScreenThreatKeywords {
         "เปิดใช้งานผู้ดูแลอุปกรณ์",
     };
 
+    /** Uninstall confirmation prompt (PackageInstaller dialog / Settings app-info "Uninstall"). */
+    public static final String[] UNINSTALL = {
+        "do you want to uninstall this app", "uninstall this app",
+        "bu uygulamayı kaldırmak istiyor musunuz", "uygulamayı kaldır",
+        "desinstalar esta aplicación", "quieres desinstalar esta app",
+        "app deinstallieren", "möchten sie diese app deinstallieren",
+        "voulez-vous désinstaller cette application", "désinstaller cette application",
+        "удалить это приложение", "вы хотите удалить это приложение",
+        "deseja desinstalar este app", "desinstalar este aplicativo",
+        "هل تريد إلغاء تثبيت هذا التطبيق", "إلغاء تثبيت التطبيق",
+        "disinstallare questa app", "vuoi disinstallare questa app",
+        "wil je deze app verwijderen", "app verwijderen",
+        "czy chcesz odinstalować tę aplikację", "odinstaluj aplikację",
+        "видалити цей додаток", "ви хочете видалити цей додаток",
+        "是否要卸载此应用", "卸载应用",
+        "このアプリをアンインストールしますか", "アプリをアンインストール",
+        "이 앱을 삭제하시겠습니까", "앱 삭제",
+        "क्या आप इस ऐप को अनइंस्टॉल करना चाहते हैं", "ऐप अनइंस्टॉल करें",
+        "copot pemasangan aplikasi ini", "ingin mencopot pemasangan aplikasi ini",
+        "bạn có muốn gỡ cài đặt ứng dụng này không", "gỡ cài đặt ứng dụng",
+        "آیا می‌خواهید این برنامه را حذف نصب کنید", "حذف نصب برنامه",
+        "ต้องการถอนการติดตั้งแอปนี้หรือไม่", "ถอนการติดตั้งแอป",
+    };
+
     /** SMS/smishing + generic phishing lures shown as on-screen text (SMS app, browser, WebView popups).
      *  Deliberately excludes plain OTP/one-time-password wording ("your OTP is...") — that's the
      *  exact wording of a LEGITIMATE 2FA text, not a scam indicator, and would have false-positived

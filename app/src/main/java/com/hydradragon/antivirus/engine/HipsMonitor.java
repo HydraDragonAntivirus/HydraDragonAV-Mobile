@@ -32,6 +32,7 @@ import java.util.Map;
  *   "canary_events": [{"package_name":"...","canary_triggered":true}],
  *   "network_events": [{"package_name":"...","connection_count":50,"unique_hosts":10,"dns_queries":100}],
  *   "strandhogg_events": [{"package_name":"...","activity_count":5,"is_suspicious":true}],
+ *   "removal_resistance_events": [{"package_name":"...","kick_count":3,"screen_kind":"uninstall","time_window_seconds":300,"is_malicious":true}],
  *   "system": {"is_rooted":false,"is_debug_mode":false,"is_self_protection_triggered":false,"package_name":""},
  *   "behavior_flags": [{"package_name":"...","flags":["UI_SPAM","RANSOMWARE"]}],
  *   "behavior_state": {"foreground_package":"...","observed_packages":["..."]}
@@ -100,6 +101,15 @@ public final class HipsMonitor {
         boolean suspicious;
     }
 
+    private static final class RemovalResistanceEvent {
+        String packageName;
+        int kickCount;
+        String screenKind;
+        long timeWindowMs;
+        boolean malicious;
+        long timestamp;
+    }
+
     private static final class BehaviorFlagEntry {
         String packageName;
         final List<String> flags = new ArrayList<>();
@@ -112,6 +122,7 @@ public final class HipsMonitor {
     private static final List<CanaryEvent> canaryEvents = new ArrayList<>();
     private static final List<NetworkEvent> networkEvents = new ArrayList<>();
     private static final List<StrandHoggEvent> strandhoggEvents = new ArrayList<>();
+    private static final List<RemovalResistanceEvent> removalResistanceEvents = new ArrayList<>();
     private static final Map<String, BehaviorFlagEntry> behaviorFlags = new HashMap<>();
 
     private static boolean isRooted = false;
@@ -191,6 +202,17 @@ public final class HipsMonitor {
         e.packageName = pkg; e.activityCount = activities; e.suspicious = suspicious;
         strandhoggEvents.add(e);
         if (strandhoggEvents.size() > MAX_EVENTS_PER_TYPE) strandhoggEvents.remove(0);
+        observePackage(pkg);
+    }
+
+    public static synchronized void reportRemovalResistance(String pkg, int kicks, String screenKind,
+                                                              long windowMs, boolean malicious) {
+        if (pkg == null) return;
+        RemovalResistanceEvent e = new RemovalResistanceEvent();
+        e.packageName = pkg; e.kickCount = kicks; e.screenKind = screenKind;
+        e.timeWindowMs = windowMs; e.malicious = malicious; e.timestamp = System.currentTimeMillis();
+        removalResistanceEvents.add(e);
+        if (removalResistanceEvents.size() > MAX_EVENTS_PER_TYPE) removalResistanceEvents.remove(0);
         observePackage(pkg);
     }
 
@@ -343,6 +365,20 @@ public final class HipsMonitor {
             }
             root.put("strandhogg_events", shArr);
             strandhoggEvents.clear();
+
+            // Removal-resistance events (device-admin/uninstall screen "kick")
+            JSONArray rrArr = new JSONArray();
+            for (RemovalResistanceEvent e : removalResistanceEvents) {
+                JSONObject o = new JSONObject();
+                o.put("package_name", e.packageName);
+                o.put("kick_count", e.kickCount);
+                o.put("screen_kind", e.screenKind != null ? e.screenKind : "");
+                o.put("time_window_seconds", e.timeWindowMs / 1000);
+                o.put("is_malicious", e.malicious);
+                rrArr.put(o);
+            }
+            root.put("removal_resistance_events", rrArr);
+            removalResistanceEvents.clear();
 
             // System state
             JSONObject sys = new JSONObject();

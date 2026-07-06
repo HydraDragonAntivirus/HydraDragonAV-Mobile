@@ -236,6 +236,21 @@ rule HIPS_Network_And_Flags
     hydradragon.network_connections(/./) >= 10 and hydradragon.behavior_flagged(/./) >= 1
 }
 
+// ── Screen Text Ransomware ───────────────────────────────────────────────────
+
+rule HIPS_Ransomware_Screen_Text
+{
+  meta:
+    description = "Detects ransomware ransom note strings on screen via OCR (2+ matches)"
+    severity = "critical"
+    category = "RANSOMWARE"
+    suggestion = "uninstall"
+    reference = "https://github.com/petermstewart/100DaysofYARA-2024/blob/main/petermstewart/HUNT_Ransomware_generic_strings.yar"
+    author = "Emirhan Uçan"
+  condition:
+    hydradragon.screen_text(/(?i)(Install TOR Browser|Download Tor|decrypt your files|your company is fully|recover your files|files were encrypted|files will be decrypted|Contact us|decrypt 1 file|has been encrypted|Contact information|pay the ransom|Decryption ID|are encrypted)/) >= 2
+}
+
 // ── Foreground Threats ───────────────────────────────────────────────────────
 
 rule HIPS_Foreground_Threat

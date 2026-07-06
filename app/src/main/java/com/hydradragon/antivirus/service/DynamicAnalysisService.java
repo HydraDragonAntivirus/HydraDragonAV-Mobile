@@ -163,6 +163,14 @@ public class DynamicAnalysisService extends AccessibilityService {
         if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
             eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
 
+            if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                // prevPkg (still the OLD fgPackage here) is the candidate
+                // "target" if this switch lands on a device-admin/uninstall
+                // screen — see RemovalResistanceGuard.
+                com.hydradragon.antivirus.engine.RemovalResistanceGuard.onWindowSwitch(
+                    this, pkg, fgPackage, isInstaller || isSettings);
+            }
+
             fgPackage = pkg;   // remember which app's content we're scanning
             sForegroundPackage = pkg;
             if (!trusted) {
@@ -170,10 +178,14 @@ public class DynamicAnalysisService extends AccessibilityService {
             }
 
             // Trusted system apps (Settings, SystemUI, ...) have no legitimate
-            // reason to be scanned for ransomware/phishing text. Also only on
-            // an actual window switch, not TYPE_WINDOW_CONTENT_CHANGED (fires
-            // continuously during scrolling/list updates).
-            if (!trusted && eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            // reason to be scanned for ransomware/phishing text — EXCEPT we
+            // still need to read the installer/settings screen itself to spot
+            // an uninstall/device-admin prompt (RemovalResistanceGuard), so
+            // those two aren't skipped here despite being trusted. Also only
+            // on an actual window switch, not TYPE_WINDOW_CONTENT_CHANGED
+            // (fires continuously during scrolling/list updates).
+            if ((!trusted || isInstaller || isSettings)
+                    && eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
                 AccessibilityNodeInfo rootNode = getRootInActiveWindow();
                 if (rootNode != null) {
                     // Every node.getChild()/getText() below is a Binder call
@@ -235,7 +247,13 @@ public class DynamicAnalysisService extends AccessibilityService {
 
             if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAny(
                     lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.DEVICE_ADMIN)) {
-                Log.d(TAG, "Device Admin activation screen visible.");
+                Log.d(TAG, "Device Admin activation/deactivation screen visible.");
+                com.hydradragon.antivirus.engine.RemovalResistanceGuard.confirmSensitiveScreenText("device_admin");
+            }
+
+            if (com.hydradragon.antivirus.engine.ScreenThreatKeywords.containsAny(
+                    lowerText, com.hydradragon.antivirus.engine.ScreenThreatKeywords.UNINSTALL)) {
+                com.hydradragon.antivirus.engine.RemovalResistanceGuard.confirmSensitiveScreenText("uninstall");
             }
 
             // SMS SCAM / PHISHING MITIGATION (multi-language). Screen-text based —
