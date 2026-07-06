@@ -294,17 +294,17 @@ public class GuardService extends Service {
                     } catch (Throwable t) {
                         Log.e(TAG, "sendThreatNotification failed", t);
                     }
-                    // Same immediate kill-and-uninstall (or delete-prompt for a
-                    // standalone file) every behavioural guard already gets —
-                    // don't make the user open the app and tap the threat first;
-                    // fires for every scan, background or manual, the instant a
-                    // result crosses isThreat(), same threshold sendThreatNotification
-                    // above uses.
-                    try {
-                        com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
-                            GuardService.this, threat);
-                    } catch (Throwable t) {
-                        Log.e(TAG, "killAndPromptUninstall failed", t);
+                    // Auto-kill + uninstall prompt + full-screen "MALWARE FOUND"
+                    // only for background/auto scans (no UI listener attached).
+                    // During a manual scan the user is already looking at the
+                    // threat list in ScanFragment — let them tap to decide.
+                    if (uiScanCallback == null) {
+                        try {
+                            com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
+                                GuardService.this, threat);
+                        } catch (Throwable t) {
+                            Log.e(TAG, "killAndPromptUninstall failed", t);
+                        }
                     }
                     if (callback != null) callback.onThreatDetected(threat);
                 }
