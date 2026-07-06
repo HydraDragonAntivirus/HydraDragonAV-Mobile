@@ -27,6 +27,7 @@ use jni::errors::LogErrorAndDefault;
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jstring, JNI_FALSE, JNI_TRUE};
 use jni::EnvUnowned;
+use std::fmt::Write;
 
 // Direct FFI into Android's liblog.so (always present in an app process,
 // unlike the desktop-only `HDA_PROF`/eprintln! profiling in
@@ -240,6 +241,7 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
                                 .iter()
                                 .map(|name| {
                                     let path = base.join(name);
+                                    let name_str = name.to_string();
                                     s2.spawn(move || {
                                         let t0 = std::time::Instant::now();
                                         let engine = std::panic::catch_unwind(
@@ -247,7 +249,7 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
                                                 || -> Option<hydradragonclamav::yara_scan::YaraEngine> {
                                                     let bytes = std::fs::read(&path).ok()?;
                                                     hydradragonclamav::yara_scan::YaraEngine::from_compiled(
-                                                        &bytes,
+                                                        &bytes, name_str,
                                                     )
                                                 },
                                             ),
@@ -1078,7 +1080,7 @@ fn run_scan(
 
     // Each detection carries the APK lineage of the buffer it fired on, so Java
     // can suppress it iff one of those ancestor-APK hashes is whitelisted.
-    let t_clamav = std::time::Instant::now();
+    let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     let yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
         Some(clamav) => {
             let opts = ScanOptions {
@@ -1097,22 +1099,26 @@ fn run_scan(
                     } else {
                         format!("{path}#extract[{i}]")
                     };
-                    for m in clamav.scan_bytes_named(&b.data, &name, opts, &module_meta) {
+                    let (matches, bt) = clamav.scan_bytes_named_with_breakdown(&b.data, &name, opts, &module_meta);
+                    for m in matches {
                         dets.push((m.name, b.apk_lineage.clone()));
                         if dets.len() >= opts.max_matches {
                             return dets;
                         }
                     }
+                    scan_timing.accumulate(bt);
                     // Also scan the DEX's decoded string pool (method/class names
                     // contiguous, no MUTF-8/length-prefix noise).
                     if let Some(ds) = &dex_scans[i] {
                         let dname = format!("{name}#dex");
-                        for m in clamav.scan_bytes_named(ds.text.as_bytes(), &dname, opts, &module_meta) {
+                        let (matches, bt) = clamav.scan_bytes_named_with_breakdown(ds.text.as_bytes(), &dname, opts, &module_meta);
+                        for m in matches {
                             dets.push((m.name, b.apk_lineage.clone()));
                             if dets.len() >= opts.max_matches {
                                 return dets;
                             }
                         }
+                        scan_timing.accumulate(bt);
                     }
                     // Also scan whatever new strings emulating this ELF buffer's
                     // native code revealed at runtime (see emulate.rs) — any
@@ -1121,12 +1127,14 @@ fn run_scan(
                     // statically, so it flows through the SAME rule database.
                     if let Some(decoded) = &emulated_strings[i] {
                         let ename = format!("{name}#emulated");
-                        for m in clamav.scan_bytes_named(decoded, &ename, opts, &module_meta) {
+                        let (matches, bt) = clamav.scan_bytes_named_with_breakdown(decoded, &ename, opts, &module_meta);
+                        for m in matches {
                             dets.push((m.name, b.apk_lineage.clone()));
                             if dets.len() >= opts.max_matches {
                                 return dets;
                             }
                         }
+                        scan_timing.accumulate(bt);
                         for url in extract_and_scan_urls(engine, decoded) {
                             dets.push((url, b.apk_lineage.clone()));
                             if dets.len() >= opts.max_matches {
@@ -1146,7 +1154,13 @@ fn run_scan(
         }
         None => Vec::new(),
     };
-    let clamav_ms = t_clamav.elapsed().as_millis();
+    let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
+    // Aggregate per-YARA-ruleset timing across all buffers.
+    let mut yara_agg: std::collections::HashMap<String, u128> = std::collections::HashMap::new();
+    for (name, ns) in &scan_timing.yara_per_engine {
+        *yara_agg.entry(name.clone()).or_insert(0) += ns;
+    }
+    let yara_total_ms = (yara_agg.values().sum::<u128>() / 1_000_000) as u128;
 
     // one-class ML model (independent of clamav's type gate), over the SAME
     // buffers — so an APK nested inside a zip (or any other extracted member)
@@ -1256,25 +1270,41 @@ fn run_scan(
     }
     let tlsh_ms = t_tlsh.elapsed().as_millis();
 
+    // Per-YARA-ruleset breakdown string.
+    let mut yara_breakdown = String::new();
+    let mut yara_sorted: Vec<_> = yara_agg.into_iter().collect();
+    yara_sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    for (name, ns) in &yara_sorted {
+        let ms = ns / 1_000_000;
+        if ms > 0 || *ns > 0 {
+            if !yara_breakdown.is_empty() { yara_breakdown.push(' '); }
+            let _ = std::write!(yara_breakdown, "{name}={ms}ms");
+        }
+    }
+
     // Per-stage breakdown for THIS file — filter logcat with
     // `adb logcat -s HydraDragon-RustTiming` to see which Rust-side stage is
     // actually the bottleneck (extraction, dex analysis, native-code
-    // emulation, clamav/YARA, ML model, or TLSH), not just "NativeScanner" as
+    // emulation, ClamAV, YARA, ML model, or TLSH), not just "NativeScanner" as
     // one lump sum the way the Java-side FILE_ENGINE_TIMING log already does.
     let stages = [
         ("extract", extract_ms),
         ("dex", dex_ms),
         ("emulate", emulate_ms),
-        ("clamav_yara", clamav_ms),
+        ("clamav", clamav_ms),
+        ("yara", yara_total_ms),
         ("ml", ml_ms),
         ("tlsh", tlsh_ms),
     ];
     let slowest = stages.iter().max_by_key(|(_, ms)| *ms);
-    let breakdown = stages
+    let mut breakdown = stages
         .iter()
         .map(|(name, ms)| format!("{name}={ms}ms"))
         .collect::<Vec<_>>()
         .join(" ");
+    if !yara_breakdown.is_empty() {
+        breakdown.push_str(&format!(" {{{yara_breakdown}}}"));
+    }
     if let Some((slowest_name, slowest_ms)) = slowest {
         android_log(&format!(
             "{path} :: {breakdown} :: slowest={slowest_name}({slowest_ms}ms)"

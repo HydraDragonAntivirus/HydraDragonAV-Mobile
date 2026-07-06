@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">دیگر نپرس</string>
     <string name="root_warning_toggle">هشدار وقتی دستگاه روت شده است</string>
     <string name="uninstall_failed_title">⚠ حذف نصب ناموفق</string>
-    <string name="uninstall_failed_msg">%1$s قابل حذف نیست — حذف نصب لغو یا ناموفق بود.\n\nبرای اجرای آنتی‌ویروس و حذف بدافزار از حالت امن استفاده کنید: دستگاه خود را راه‌اندازی مجدد کنید، دکمه کاهش صدا را در هنگام بوت نگه دارید، سپس یک اسکن کامل اجرا کنید.</string>
+    <string name="uninstall_failed_msg">%1$s همچنان در حال اجرا است — حذف نصب همچنان در حال انجام است یا ناموفق بود.\n\nبرای اجرای آنتی‌ویروس و حذف بدافزار از حالت امن استفاده کنید: دستگاه خود را راه‌اندازی مجدد کنید، دکمه کاهش صدا را در هنگام بوت نگه دارید، سپس یک اسکن کامل اجرا کنید.</string>
     <string name="uninstall_failed_safe_mode">باز کردن تنظیمات برای راه‌اندازی مجدد به حالت امن</string>
     <string name="uninstall_failed_safe_mode_toast">پس از راه‌اندازی مجدد به حالت امن، HydraDragon را باز کنید و برای حذف بدافزار یک اسکن کامل اجرا کنید</string>
     <string name="integrity_blocked_title">APK تغییر یافته شناسایی شد</string>
@@ -279,6 +279,8 @@
     <string name="dashboard_system_secure">سیستم ایمن است</string>
     <string name="dashboard_status_secure_desc">• پایش فعال است\n• قوانین شبکه اعمال شده است\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• پایش فعال است\n• قوانین شبکه اعمال شده است\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 اکسپلویت روت شناسایی شد</string>
     <string name="notif_root_exploit_text">دستگاه هنگام اجرا روت شد</string>
     <string name="dynamic_risk_title">⚠ رفتار مشکوک شناسایی شد</string>
@@ -332,5 +334,7 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

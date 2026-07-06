@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">NIET OPNIEUW VRAGEN</string>
     <string name="root_warning_toggle">Waarschuwen wanneer apparaat is geroot</string>
     <string name="uninstall_failed_title">⚠ Verwijderen mislukt</string>
-    <string name="uninstall_failed_msg">%1$s kon niet worden verwijderd — het verwijderen is geannuleerd of mislukt.\n\nGebruik de Veilige modus om de antivirus uit te voeren en malware te verwijderen: start uw apparaat opnieuw op, houd de volumenknop omlaag ingedrukt tijdens het opstarten en voer vervolgens een volledige scan uit.</string>
+    <string name="uninstall_failed_msg">%1$s wordt nog uitgevoerd — het verwijderen is nog bezig of mislukt.\n\nGebruik de Veilige modus om de antivirus uit te voeren en malware te verwijderen: start uw apparaat opnieuw op, houd de volumenknop omlaag ingedrukt tijdens het opstarten en voer vervolgens een volledige scan uit.</string>
     <string name="uninstall_failed_safe_mode">OPEN INSTELLINGEN OM OP TE STARTEN IN VEILIGE MODUS</string>
     <string name="uninstall_failed_safe_mode_toast">Na het opnieuw opstarten in de veilige modus, opent u HydraDragon en voert u een volledige scan uit om de malware te verwijderen</string>
     <string name="integrity_blocked_title">Gewijzigde APK gedetecteerd</string>
@@ -279,6 +279,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="dashboard_system_secure">Systeem beveiligd</string>
     <string name="dashboard_status_secure_desc">• Bewaking actief\n• Netwerkregels afgedwongen\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• Bewaking actief\n• Netwerkregels afgedwongen\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Root-exploit gedetecteerd</string>
     <string name="notif_root_exploit_text">Apparaat is geroot tijdens het uitvoeren</string>
     <string name="dynamic_risk_title">⚠ Verdacht Gedrag Gedetecteerd</string>
@@ -332,5 +334,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">БІЛЬШЕ НЕ ПИТАТИ</string>
     <string name="root_warning_toggle">Попереджати, коли пристрій рутовано</string>
     <string name="uninstall_failed_title">⚠ Видалення не вдалося</string>
-    <string name="uninstall_failed_msg">%1$s не вдалося видалити — видалення було скасовано або не вдалося.\n\nВикористовуйте безпечний режим для запуску антивіруса та видалення шкідливих програм: перезавантажте пристрій, утримуйте кнопку зменшення гучності під час завантаження, потім виконайте повне сканування.</string>
+    <string name="uninstall_failed_msg">%1$s все ще працює — видалення все ще триває або не вдалося.\n\nВикористовуйте безпечний режим для запуску антивіруса та видалення шкідливих програм: перезавантажте пристрій, утримуйте кнопку зменшення гучності під час завантаження, потім виконайте повне сканування.</string>
     <string name="uninstall_failed_safe_mode">ВІДКРИТИ НАЛАШТУВАННЯ ДЛЯ ПЕРЕЗАВАНТАЖЕННЯ В БЕЗПЕЧНИЙ РЕЖИМ</string>
     <string name="uninstall_failed_safe_mode_toast">Після перезавантаження в безпечний режим відкрийте HydraDragon і виконайте повне сканування для видалення шкідливого ПЗ</string>
     <string name="integrity_blocked_title">Виявлено змінений APK</string>
@@ -279,6 +279,8 @@
     <string name="dashboard_system_secure">Система захищена</string>
     <string name="dashboard_status_secure_desc">• Моніторинг активний\n• Мережеві правила застосовано\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• Моніторинг активний\n• Мережеві правила застосовано\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Виявлено root-експлойт</string>
     <string name="notif_root_exploit_text">Пристрій отримав root-доступ під час роботи</string>
     <string name="dynamic_risk_title">⚠ Виявлено підозрілу поведінку</string>
@@ -332,5 +334,7 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

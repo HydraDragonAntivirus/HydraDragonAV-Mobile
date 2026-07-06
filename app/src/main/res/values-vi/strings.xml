@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">ĐỪNG HỎI LẠI</string>
     <string name="root_warning_toggle">Cảnh báo khi thiết bị đã root</string>
     <string name="uninstall_failed_title">⚠ Gỡ cài đặt thất bại</string>
-    <string name="uninstall_failed_msg">%1$s không thể bị xóa — quá trình gỡ cài đặt đã bị hủy hoặc thất bại.\n\nSử dụng Chế độ An toàn để chạy phần mềm diệt virus và loại bỏ phần mềm độc hại: khởi động lại thiết bị của bạn, giữ phím giảm âm lượng trong khi khởi động, sau đó chạy quét toàn bộ.</string>
+    <string name="uninstall_failed_msg">%1$s vẫn đang chạy — quá trình gỡ cài đặt vẫn đang tiến hành hoặc thất bại.\n\nSử dụng Chế độ An toàn để chạy phần mềm diệt virus và loại bỏ phần mềm độc hại: khởi động lại thiết bị của bạn, giữ phím giảm âm lượng trong khi khởi động, sau đó chạy quét toàn bộ.</string>
     <string name="uninstall_failed_safe_mode">MỞ CÀI ĐẶT ĐỂ KHỞI ĐỘNG LẠI Ở CHẾ ĐỘ AN TOÀN</string>
     <string name="uninstall_failed_safe_mode_toast">Sau khi khởi động lại ở Chế độ An toàn, hãy mở HydraDragon và chạy quét toàn bộ để loại bỏ phần mềm độc hại</string>
     <string name="integrity_blocked_title">Phát hiện APK đã bị sửa đổi</string>
@@ -279,6 +279,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="dashboard_system_secure">Hệ thống An toàn</string>
     <string name="dashboard_status_secure_desc">• Giám sát đang hoạt động\n• Đã áp dụng quy tắc mạng\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• Giám sát đang hoạt động\n• Đã áp dụng quy tắc mạng\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Phát hiện Khai thác Root</string>
     <string name="notif_root_exploit_text">Thiết bị đã bị root trong khi đang chạy</string>
     <string name="dynamic_risk_title">⚠ Phát hiện Hành vi Đáng ngờ</string>
@@ -332,5 +334,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

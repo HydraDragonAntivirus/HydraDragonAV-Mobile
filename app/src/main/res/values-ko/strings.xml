@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">다시 묻지 않음</string>
     <string name="root_warning_toggle">장치가 루팅된 경우 경고</string>
     <string name="uninstall_failed_title">⚠ ⚠ 제거 실패</string>
-    <string name="uninstall_failed_msg">%1$s을(를) 제거할 수 없습니다 — 제거가 취소되거나 실패했습니다.\n\n안전 모드를 사용하여 바이러스 백신을 실행하고 악성코드를 제거하세요: 장치를 다시 시작하고 부팅 중 볼륨 작게 키를 길게 누른 다음 전체 검사를 실행하세요.</string>
+    <string name="uninstall_failed_msg">%1$s이(가) 계속 실행 중입니다 — 제거가 아직 진행 중이거나 실패했습니다.\n\n안전 모드를 사용하여 바이러스 백신을 실행하고 악성코드를 제거하세요: 장치를 다시 시작하고 부팅 중 볼륨 작게 키를 길게 누른 다음 전체 검사를 실행하세요.</string>
     <string name="uninstall_failed_safe_mode">설정을 열어 안전 모드로 재부팅</string>
     <string name="uninstall_failed_safe_mode_toast">안전 모드로 재부팅한 후 HydraDragon을 열고 전체 검사를 실행하여 악성코드를 제거하세요</string>
     <string name="integrity_blocked_title">수정된 APK가 감지되었습니다</string>
@@ -279,6 +279,8 @@
     <string name="dashboard_system_secure">시스템 안전</string>
     <string name="dashboard_status_secure_desc">• 모니터링 활성화됨\n• 네트워크 규칙 적용됨\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• 모니터링 활성화됨\n• 네트워크 규칙 적용됨\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 루트 익스플로잇 감지됨</string>
     <string name="notif_root_exploit_text">실행 중 기기가 루팅되었습니다</string>
     <string name="dynamic_risk_title">⚠ 의심스러운 동작 감지됨</string>
@@ -332,5 +334,7 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

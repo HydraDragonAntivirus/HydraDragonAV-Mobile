@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">NÃO PERGUNTAR NOVAMENTE</string>
     <string name="root_warning_toggle">Avisar quando o dispositivo estiver rooteado</string>
     <string name="uninstall_failed_title">⚠ Desinstalação falhou</string>
-    <string name="uninstall_failed_msg">%1$s não pôde ser removido — a desinstalação foi cancelada ou falhou.\n\nUse o Modo de Segurança para executar o antivírus e remover malware: reinicie o dispositivo, mantenha pressionada a tecla de volume para baixo durante a inicialização e execute uma varredura completa.</string>
+    <string name="uninstall_failed_msg">%1$s ainda está em execução — a desinstalação ainda está em andamento ou falhou.\n\nUse o Modo de Segurança para executar o antivírus e remover malware: reinicie o dispositivo, mantenha pressionada a tecla de volume para baixo durante a inicialização e execute uma varredura completa.</string>
     <string name="uninstall_failed_safe_mode">ABRIR CONFIGURAÇÕES PARA REINICIAR NO MODO DE SEGURANÇA</string>
     <string name="uninstall_failed_safe_mode_toast">Após reiniciar no Modo de Segurança, abra o HydraDragon e execute uma varredura completa para remover o malware</string>
     <string name="integrity_blocked_title">APK modificado detectado</string>
@@ -279,6 +279,8 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="dashboard_system_secure">Sistema Seguro</string>
     <string name="dashboard_status_secure_desc">• Monitoramento ativo\n• Regras de rede aplicadas\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• Monitoramento ativo\n• Regras de rede aplicadas\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Exploit de Root Detectado</string>
     <string name="notif_root_exploit_text">O dispositivo obteve root durante a execução</string>
     <string name="dynamic_risk_title">⚠ Comportamento Suspeito Detectado</string>
@@ -332,5 +334,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

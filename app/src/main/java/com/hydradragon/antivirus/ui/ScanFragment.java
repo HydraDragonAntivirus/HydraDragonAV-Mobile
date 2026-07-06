@@ -333,17 +333,28 @@ public class ScanFragment extends Fragment {
         tvThreats.setText(String.valueOf(foundThreats.size()));
         if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
 
-        // Check after a few seconds if the uninstall was cancelled or failed
         pendingUninstallPkg = pkg;
-        View root = getView();
-        if (root != null && requireContext().getSharedPreferences("hydra_prefs", 0)
-                .getBoolean("uninstall_warning_enabled", true)) {
-            root.postDelayed(() -> {
-                if (pendingUninstallPkg != null && isPackageInstalled(pendingUninstallPkg)) {
-                    showUninstallFailedDialog(threat);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // User returned to our app after the system uninstall dialog.
+        // Check what happened (only if preference is enabled).
+        if (pendingUninstallPkg != null
+                && requireContext().getSharedPreferences("hydra_prefs", 0)
+                    .getBoolean("uninstall_warning_enabled", true)) {
+            if (isPackageInstalled(pendingUninstallPkg)
+                    && isProcessRunning(pendingUninstallPkg)) {
+                for (ThreatResult t : foundThreats) {
+                    if (t.getPackageName() != null
+                            && t.getPackageName().equals(pendingUninstallPkg)) {
+                        showUninstallFailedDialog(t);
+                        break;
+                    }
                 }
-                pendingUninstallPkg = null;
-            }, 3000);
+            }
+            pendingUninstallPkg = null;
         }
     }
 
@@ -355,6 +366,19 @@ public class ScanFragment extends Fragment {
         } catch (android.content.pm.PackageManager.NameNotFoundException e) {
             return false;
         }
+    }
+
+    private boolean isProcessRunning(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return false;
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager)
+                requireContext().getSystemService(Context.ACTIVITY_SERVICE);
+            if (am == null) return false;
+            for (android.app.ActivityManager.RunningAppProcessInfo p : am.getRunningAppProcesses()) {
+                if (p != null && pkg.equals(p.processName)) return true;
+            }
+        } catch (Exception ignore) { }
+        return false;
     }
 
     private void showUninstallFailedDialog(ThreatResult threat) {

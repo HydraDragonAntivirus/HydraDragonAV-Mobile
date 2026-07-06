@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">NE PLUS DEMANDER</string>
     <string name="root_warning_toggle">Avertir quand l\'appareil est rooté</string>
     <string name="uninstall_failed_title">⚠ Désinstallation échouée</string>
-    <string name="uninstall_failed_msg">%1$s n\'a pas pu être supprimé — la désinstallation a été annulée ou a échoué.\n\nUtilisez le mode sans échec pour exécuter l\'antivirus et supprimer les logiciels malveillants : redémarrez votre appareil, maintenez la touche de volume bas enfoncée au démarrage, puis effectuez une analyse complète.</string>
+    <string name="uninstall_failed_msg">%1$s est toujours en cours d\'exécution — la désinstallation est toujours en cours ou a échoué.\n\nUtilisez le mode sans échec pour exécuter l\'antivirus et supprimer les logiciels malveillants : redémarrez votre appareil, maintenez la touche de volume bas enfoncée au démarrage, puis effectuez une analyse complète.</string>
     <string name="uninstall_failed_safe_mode">OUVRIR LES PARAMÈTRES POUR REDÉMARRER EN MODE SANS ÉCHEC</string>
     <string name="uninstall_failed_safe_mode_toast">Après le redémarrage en mode sans échec, ouvrez HydraDragon et effectuez une analyse complète pour supprimer le logiciel malveillant</string>
     <string name="integrity_blocked_title">APK modifiée détectée</string>
@@ -279,6 +279,8 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="dashboard_system_secure">Système Sécurisé</string>
     <string name="dashboard_status_secure_desc">• Surveillance active\n• Règles réseau appliquées\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• Surveillance active\n• Règles réseau appliquées\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Exploit Root Détecté</string>
     <string name="notif_root_exploit_text">L\'appareil a été rooté pendant son fonctionnement</string>
     <string name="dynamic_risk_title">⚠ Comportement Suspect Détecté</string>
@@ -332,5 +334,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

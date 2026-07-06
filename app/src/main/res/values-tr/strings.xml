@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">BİR DAHA SORMA</string>
     <string name="root_warning_toggle">Cihaz rootlu olduğunda uyar</string>
     <string name="uninstall_failed_title">⚠ Kaldırma Başarısız</string>
-    <string name="uninstall_failed_msg">%1$s kaldırılamadı — kaldırma işlemi iptal edildi veya başarısız oldu.\n\nKötücül yazılımı kaldırmak için Güvenli Mod\'u kullanın: cihazınızı yeniden başlatın, açılışta ses kısma tuşuna basılı tutun, ardından tam tarama yapın.</string>
+    <string name="uninstall_failed_msg">%1$s hâlâ çalışıyor — kaldırma işlemi devam ediyor veya başarısız oldu.\n\nKötücül yazılımı kaldırmak için Güvenli Mod\'u kullanın: cihazınızı yeniden başlatın, açılışta ses kısma tuşuna basılı tutun, ardından tam tarama yapın.</string>
     <string name="uninstall_failed_safe_mode">GÜVENLI MOD\'A YENIDEN BAŞLATMAK IÇIN AYARLARI AÇ</string>
     <string name="uninstall_failed_safe_mode_toast">Güvenli Mod\'a yeniden başlattıktan sonra HydraDragon\'u açın ve kötücül yazılımı kaldırmak için tam tarama yapın</string>
     <string name="integrity_blocked_title">Değiştirilmiş APK Tespit Edildi</string>
@@ -297,6 +297,8 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="dashboard_system_secure">Sistem Güvende</string>
     <string name="dashboard_status_secure_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Root Exploit Tespit Edildi</string>
     <string name="notif_root_exploit_text">Cihaz çalışırken root\'landı</string>
     <string name="dynamic_risk_title">⚠ Şüpheli Davranış Tespit Edildi</string>
@@ -335,4 +337,6 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 

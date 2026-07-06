@@ -240,10 +240,15 @@ public class DashboardFragment extends Fragment {
                     if (guardService.isEngineLoading()) {
                         tvEngineStatus.setText(getString(R.string.engine_loading_status));
                         tvEngineStatus.setTextColor(0xFFFFAA00);
+                        tvStatus.setText(getString(R.string.dashboard_engine_loading));
+                        tvStatus.setTextColor(0xFFFFAA00);
+                        tvStatusDesc.setText(getString(R.string.dashboard_status_loading_desc));
+                        if (hexagonView != null) hexagonView.setLoadingState();
                     } else {
                         tvEngineStatus.setText(getString(R.string.dashboard_system_secure));
                         tvEngineStatus.setTextColor(androidx.core.content.ContextCompat.getColor(
                             requireContext(), com.hydradragon.antivirus.R.color.neon_green));
+                        setSecureState();
                     }
                 }
                 uiHandler.postDelayed(this, 2000);

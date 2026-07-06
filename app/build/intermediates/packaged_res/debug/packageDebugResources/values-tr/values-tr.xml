@@ -63,8 +63,10 @@
     <string name="danger_download_desc">Bu uygulama yüksek ihtimalle virüstür, indirmeyin!</string>
     <string name="danger_download_title">⚠ DİKKAT: VİRÜS TESPİT EDİLDİ!</string>
     <string name="dark_light_mode">🌙 Karanlık  /  ☀ Aydınlık Mod</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
     <string name="dashboard_firewall_active">Güvenlik Duvarı Motoru AKTİF</string>
     <string name="dashboard_status_alert_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n%1$s</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="dashboard_status_secure_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n• %1$s</string>
     <string name="dashboard_system_secure">Sistem Güvende</string>
     <string name="debug_mode_warning_dont_ask">BİR DAHA SORMA</string>
@@ -187,6 +189,8 @@
     <string name="realtime_intelligence">GERÇEK ZAMANLI İSTİHBARAT</string>
     <string name="realtime_packet_flow">GERÇEK ZAMANLI PAKET AKIŞI</string>
     <string name="realtime_protection">Gerçek Zamanlı Koruma</string>
+    <string name="removal_resistance_msg">%1$s, kendi kaldırma/cihaz yöneticisi ekranından sizi tekrar tekrar atıyor — kötü amaçlı yazılım olarak işaretlendi, bir sonraki taramada bildirilecek.</string>
+    <string name="removal_resistance_title">🚫 Kaldırma Direnci Tespit Edildi</string>
     <string name="rescan">YENİDEN TARA</string>
     <string name="risk_critical">KRİTİK</string>
     <string name="risk_high">YÜKSEK RİSK (%1$d)</string>
@@ -306,7 +310,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="threat_suspicious_behavior">Şüpheli API davranışı tespit edildi</string>
     <string name="threats_found_count">⚠ %1$d zehirli dosya bulundu! Üzerine tıklayıp yokedin.</string>
     <string name="total_traffic">TOPLAM TRAFİK</string>
-    <string name="uninstall_failed_msg">%1$s kaldırılamadı — kaldırma işlemi iptal edildi veya başarısız oldu.\n\nKötücül yazılımı kaldırmak için Güvenli Mod\'u kullanın: cihazınızı yeniden başlatın, açılışta ses kısma tuşuna basılı tutun, ardından tam tarama yapın.</string>
+    <string name="uninstall_failed_msg">%1$s hâlâ çalışıyor — kaldırma işlemi devam ediyor veya başarısız oldu.\n\nKötücül yazılımı kaldırmak için Güvenli Mod\'u kullanın: cihazınızı yeniden başlatın, açılışta ses kısma tuşuna basılı tutun, ardından tam tarama yapın.</string>
     <string name="uninstall_failed_safe_mode">GÜVENLI MOD\'A YENIDEN BAŞLATMAK IÇIN AYARLARI AÇ</string>
     <string name="uninstall_failed_safe_mode_toast">Güvenli Mod\'a yeniden başlattıktan sonra HydraDragon\'u açın ve kötücül yazılımı kaldırmak için tam tarama yapın</string>
     <string name="uninstall_failed_title">⚠ Kaldırma Başarısız</string>

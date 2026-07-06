@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">दोबारा न पूछें</string>
     <string name="root_warning_toggle">डिवाइस रूट होने पर चेतावनी दें</string>
     <string name="uninstall_failed_title">⚠ ⚠ अनइंस्टॉल विफल</string>
-    <string name="uninstall_failed_msg">%1$s को हटाया नहीं जा सका — अनइंस्टॉल रद्द या विफल हुआ।\n\nएंटीवायरस चलाने और मैलवेयर हटाने के लिए सेफ मोड का उपयोग करें: अपने डिवाइस को पुनरारंभ करें, बूट के दौरान वॉल्यूम डाउन की दबाकर रखें, फिर पूर्ण स्कैन चलाएं।</string>
+    <string name="uninstall_failed_msg">%1$s अभी भी चल रहा है — अनइंस्टॉल अभी भी जारी है या विफल हुआ।\n\nएंटीवायरस चलाने और मैलवेयर हटाने के लिए सेफ मोड का उपयोग करें: अपने डिवाइस को पुनरारंभ करें, बूट के दौरान वॉल्यूम डाउन की दबाकर रखें, फिर पूर्ण स्कैन चलाएं।</string>
     <string name="uninstall_failed_safe_mode">सेफ मोड में रीबूट करने के लिए सेटिंग्स खोलें</string>
     <string name="uninstall_failed_safe_mode_toast">सेफ मोड में रीबूट करने के बाद, मैलवेयर हटाने के लिए HydraDragon खोलें और पूर्ण स्कैन चलाएं</string>
     <string name="integrity_blocked_title">संशोधित APK मिला</string>
@@ -278,6 +278,8 @@
     <string name="dashboard_system_secure">सिस्टम सुरक्षित है</string>
     <string name="dashboard_status_secure_desc">• निगरानी सक्रिय\n• नेटवर्क नियम लागू\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• निगरानी सक्रिय\n• नेटवर्क नियम लागू\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 रूट एक्सप्लॉइट का पता चला</string>
     <string name="notif_root_exploit_text">चलते समय डिवाइस रूट हो गया</string>
     <string name="dynamic_risk_title">⚠ संदिग्ध व्यवहार का पता चला</string>
@@ -331,4 +333,6 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 

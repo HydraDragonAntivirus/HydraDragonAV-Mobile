@@ -45,12 +45,13 @@ pub fn is_target_allowed(target: Option<u32>) -> bool {
 #[derive(Debug)]
 pub struct YaraEngine {
     id: u64,
+    pub name: String,
     rules: yara_x::Rules,
 }
 
 impl YaraEngine {
-    fn new(rules: yara_x::Rules) -> Self {
-        Self { id: NEXT_ENGINE_ID.fetch_add(1, Ordering::Relaxed), rules }
+    fn new(rules: yara_x::Rules, name: String) -> Self {
+        Self { id: NEXT_ENGINE_ID.fetch_add(1, Ordering::Relaxed), name, rules }
     }
 
     /// Compile a YARA source file and build the engine.
@@ -59,16 +60,15 @@ impl YaraEngine {
     /// (the caller should degrade gracefully rather than abort the scan).
     pub fn from_source_file(path: impl AsRef<Path>) -> Option<Self> {
         let src = std::fs::read_to_string(path.as_ref()).ok()?;
-        let mut compiler = yara_x::Compiler::new();
-        compiler.add_source(src.as_str()).ok()?;
-        Some(Self::new(compiler.build()))
+        let name = path.as_ref().file_name()?.to_string_lossy().to_string();
+        Self::from_source(&src, name)
     }
 
     /// Compile YARA source directly.
-    pub fn from_source(source: &str) -> Option<Self> {
+    pub fn from_source(source: &str, name: String) -> Option<Self> {
         let mut compiler = yara_x::Compiler::new();
         compiler.add_source(source).ok()?;
-        Some(Self::new(compiler.build()))
+        Some(Self::new(compiler.build(), name))
     }
 
     /// Load a pre-compiled `.yrc` ruleset (produced by `Rules::serialize`).
@@ -76,15 +76,16 @@ impl YaraEngine {
     /// Far faster than compiling source on-device — the Android app bundles
     /// compiled `.yrc` assets and deserialises them at startup instead of
     /// compiling thousands of rules every launch.
-    pub fn from_compiled(bytes: &[u8]) -> Option<Self> {
+    pub fn from_compiled(bytes: &[u8], name: String) -> Option<Self> {
         let rules = yara_x::Rules::deserialize(bytes).ok()?;
-        Some(Self::new(rules))
+        Some(Self::new(rules, name))
     }
 
     /// Load a pre-compiled `.yrc` file from disk.
     pub fn from_compiled_file(path: impl AsRef<Path>) -> Option<Self> {
         let bytes = std::fs::read(path.as_ref()).ok()?;
-        Self::from_compiled(&bytes)
+        let name = path.as_ref().file_name()?.to_string_lossy().to_string();
+        Self::from_compiled(&bytes, name)
     }
 
     /// Scan `data` with the compiled rules and return any matches.

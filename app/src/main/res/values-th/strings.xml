@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">อย่าถามอีก</string>
     <string name="root_warning_toggle">เตือนเมื่ออุปกรณ์ถูก root</string>
     <string name="uninstall_failed_title">⚠ การถอนการติดตั้งล้มเหลว</string>
-    <string name="uninstall_failed_msg">%1$s ไม่สามารถลบออกได้ — การถอนการติดตั้งถูกยกเลิกหรือล้มเหลว\n\nใช้เซฟโหมดเพื่อเรียกใช้โปรแกรมป้องกันไวรัสและลบมัลแวร์: รีสตาร์ทอุปกรณ์ กดปุ่มลดระดับเสียงค้างไว้ระหว่างบูต จากนั้นเรียกใช้การสแกนแบบเต็ม</string>
+    <string name="uninstall_failed_msg">%1$s ยังคงทำงานอยู่ — การถอนการติดตั้งยังคงดำเนินอยู่หรือล้มเหลว\n\nใช้เซฟโหมดเพื่อเรียกใช้โปรแกรมป้องกันไวรัสและลบมัลแวร์: รีสตาร์ทอุปกรณ์ กดปุ่มลดระดับเสียงค้างไว้ระหว่างบูต จากนั้นเรียกใช้การสแกนแบบเต็ม</string>
     <string name="uninstall_failed_safe_mode">เปิดการตั้งค่าเพื่อรีบูตไปยังเซฟโหมด</string>
     <string name="uninstall_failed_safe_mode_toast">หลังจากรีบูตไปยังเซฟโหมด ให้เปิด HydraDragon และเรียกใช้การสแกนแบบเต็มเพื่อลบมัลแวร์</string>
     <string name="integrity_blocked_title">ตรวจพบ APK ที่ถูกดัดแปลง</string>
@@ -279,6 +279,8 @@
     <string name="dashboard_system_secure">ระบบปลอดภัย</string>
     <string name="dashboard_status_secure_desc">• การตรวจสอบทำงานอยู่\n• ใช้กฎเครือข่ายแล้ว\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• การตรวจสอบทำงานอยู่\n• ใช้กฎเครือข่ายแล้ว\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 ตรวจพบการโจมตีแบบรูท</string>
     <string name="notif_root_exploit_text">อุปกรณ์ถูกรูทขณะกำลังทำงาน</string>
     <string name="dynamic_risk_title">⚠ ตรวจพบพฤติกรรมน่าสงสัย</string>
@@ -332,5 +334,7 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

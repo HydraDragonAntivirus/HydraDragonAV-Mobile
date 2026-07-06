@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">NICHT MEHR FRAGEN</string>
     <string name="root_warning_toggle">Bei gerootetem Gerät warnen</string>
     <string name="uninstall_failed_title">⚠ Deinstallation fehlgeschlagen</string>
-    <string name="uninstall_failed_msg">%1$s konnte nicht entfernt werden — die Deinstallation wurde abgebrochen oder ist fehlgeschlagen.\n\nVerwenden Sie den abgesicherten Modus, um das Antivirenprogramm auszuführen und Malware zu entfernen: Starten Sie Ihr Gerät neu, halten Sie beim Booten die Leiser-Taste gedrückt und führen Sie dann einen vollständigen Scan durch.</string>
+    <string name="uninstall_failed_msg">%1$s wird noch ausgeführt — die Deinstallation läuft noch oder ist fehlgeschlagen.\n\nVerwenden Sie den abgesicherten Modus, um das Antivirenprogramm auszuführen und Malware zu entfernen: Starten Sie Ihr Gerät neu, halten Sie beim Booten die Leiser-Taste gedrückt und führen Sie dann einen vollständigen Scan durch.</string>
     <string name="uninstall_failed_safe_mode">EINSTELLUNGEN ÖFFNEN, UM IN DEN ABGESICHERTEN MODUS NEU ZU STARTEN</string>
     <string name="uninstall_failed_safe_mode_toast">Öffnen Sie nach dem Neustart in den abgesicherten Modus HydraDragon und führen Sie einen vollständigen Scan durch, um die Malware zu entfernen</string>
     <string name="integrity_blocked_title">Geänderte APK erkannt</string>
@@ -279,6 +279,8 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="dashboard_system_secure">System Sicher</string>
     <string name="dashboard_status_secure_desc">• Überwachung aktiv\n• Netzwerkregeln durchgesetzt\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• Überwachung aktiv\n• Netzwerkregeln durchgesetzt\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Root-Exploit Erkannt</string>
     <string name="notif_root_exploit_text">Gerät wurde während der Ausführung gerootet</string>
     <string name="dynamic_risk_title">⚠ Verdächtiges Verhalten Erkannt</string>
@@ -332,5 +334,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

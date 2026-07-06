@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">لا تسأل مرة أخرى</string>
     <string name="root_warning_toggle">تحذير عند كون الجهاز ذو صلاحية روت</string>
     <string name="uninstall_failed_title">⚠ فشل إلغاء التثبيت</string>
-    <string name="uninstall_failed_msg">%1$s تعذرت إزالته — تم إلغاء إلغاء التثبيت أو فشل.\n\nاستخدم الوضع الآمن لتشغيل مضاد الفيروسات وإزالة البرامج الضارة: أعد تشغيل جهازك، اضغط مع الاستمرار على زر خفض الصوت أثناء التشغيل، ثم قم بإجراء فحص كامل.</string>
+    <string name="uninstall_failed_msg">%1$s لا يزال قيد التشغيل — إلغاء التثبيت لا يزال قيد التنفيذ أو فشل.\n\nاستخدم الوضع الآمن لتشغيل مضاد الفيروسات وإزالة البرامج الضارة: أعد تشغيل جهازك، اضغط مع الاستمرار على زر خفض الصوت أثناء التشغيل، ثم قم بإجراء فحص كامل.</string>
     <string name="uninstall_failed_safe_mode">فتح الإعدادات لإعادة التشغيل إلى الوضع الآمن</string>
     <string name="uninstall_failed_safe_mode_toast">بعد إعادة التشغيل إلى الوضع الآمن، افتح HydraDragon وقم بإجراء فحص كامل لإزالة البرامج الضارة</string>
     <string name="integrity_blocked_title">تم اكتشاف APK معدَّل</string>
@@ -279,6 +279,8 @@
     <string name="dashboard_system_secure">النظام آمن</string>
     <string name="dashboard_status_secure_desc">• المراقبة نشطة\n• قواعد الشبكة مفعّلة\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• المراقبة نشطة\n• قواعد الشبكة مفعّلة\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 تم اكتشاف استغلال Root</string>
     <string name="notif_root_exploit_text">أصبح الجهاز مروّتًا (Root) أثناء التشغيل</string>
     <string name="dynamic_risk_title">⚠ تم اكتشاف سلوك مشبوه</string>
@@ -332,5 +334,7 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

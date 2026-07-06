@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">不再询问</string>
     <string name="root_warning_toggle">设备已 root 时发出警告</string>
     <string name="uninstall_failed_title">⚠ ⚠ 卸载失败</string>
-    <string name="uninstall_failed_msg">%1$s 无法移除 — 卸载已取消或失败。\n\n使用安全模式运行杀毒软件以移除恶意软件：重启设备，在启动时按住音量减小键，然后执行完整扫描。</string>
+    <string name="uninstall_failed_msg">%1$s 仍在运行 — 卸载仍在进行或已失败。\n\n使用安全模式运行杀毒软件以移除恶意软件：重启设备，在启动时按住音量减小键，然后执行完整扫描。</string>
     <string name="uninstall_failed_safe_mode">打开设置以重启到安全模式</string>
     <string name="uninstall_failed_safe_mode_toast">重启到安全模式后，打开 HydraDragon 并执行完整扫描以移除恶意软件</string>
     <string name="integrity_blocked_title">检测到已修改的 APK</string>
@@ -279,6 +279,8 @@
     <string name="dashboard_system_secure">系统安全</string>
     <string name="dashboard_status_secure_desc">• 实时监控已启用\n• 网络规则已应用\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• 实时监控已启用\n• 网络规则已应用\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 检测到Root漏洞利用</string>
     <string name="notif_root_exploit_text">设备在运行期间已获取Root权限</string>
     <string name="dynamic_risk_title">⚠ 检测到可疑行为</string>
@@ -332,5 +334,7 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

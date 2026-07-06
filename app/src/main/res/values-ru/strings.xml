@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">БОЛЬШЕ НЕ СПРАШИВАТЬ</string>
     <string name="root_warning_toggle">Предупреждать, если устройство рутировано</string>
     <string name="uninstall_failed_title">⚠ Удаление не удалось</string>
-    <string name="uninstall_failed_msg">%1$s не удалось удалить — удаление было отменено или не удалось.\n\nИспользуйте безопасный режим для запуска антивируса и удаления вредоносных программ: перезагрузите устройство, удерживайте кнопку уменьшения громкости во время загрузки, затем выполните полное сканирование.</string>
+    <string name="uninstall_failed_msg">%1$s все еще работает — удаление все еще выполняется или не удалось.\n\nИспользуйте безопасный режим для запуска антивируса и удаления вредоносных программ: перезагрузите устройство, удерживайте кнопку уменьшения громкости во время загрузки, затем выполните полное сканирование.</string>
     <string name="uninstall_failed_safe_mode">ОТКРЫТЬ НАСТРОЙКИ ДЛЯ ПЕРЕЗАГРУЗКИ В БЕЗОПАСНЫЙ РЕЖИМ</string>
     <string name="uninstall_failed_safe_mode_toast">После перезагрузки в безопасный режим откройте HydraDragon и выполните полное сканирование для удаления вредоносного ПО</string>
     <string name="integrity_blocked_title">Обнаружен изменённый APK</string>
@@ -279,6 +279,8 @@
     <string name="dashboard_system_secure">Система Защищена</string>
     <string name="dashboard_status_secure_desc">• Мониторинг активен\n• Сетевые правила применены\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• Мониторинг активен\n• Сетевые правила применены\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Обнаружен Root-эксплойт</string>
     <string name="notif_root_exploit_text">Устройство получило root-права во время работы</string>
     <string name="dynamic_risk_title">⚠ Обнаружено подозрительное поведение</string>
@@ -332,5 +334,7 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

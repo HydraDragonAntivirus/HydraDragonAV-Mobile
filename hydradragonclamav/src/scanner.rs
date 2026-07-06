@@ -5,6 +5,21 @@ use std::io;
 use std::path::Path;
 use std::time::Instant;
 
+/// Per-scan timing breakdown: ClamAV and per-YARA-ruleset elapsed nanoseconds.
+#[derive(Clone, Debug, Default)]
+pub struct TimingBreakdown {
+    pub clamav_ns: u128,
+    pub yara_per_engine: Vec<(String, u128)>,
+}
+
+impl TimingBreakdown {
+    /// Merge another breakdown into this one (add ClamAV time, append YARA entries).
+    pub fn accumulate(&mut self, other: TimingBreakdown) {
+        self.clamav_ns = self.clamav_ns.saturating_add(other.clamav_ns);
+        self.yara_per_engine.extend(other.yara_per_engine);
+    }
+}
+
 #[derive(Debug)]
 pub struct Engine {
     pub database: Database,
@@ -305,9 +320,26 @@ impl Engine {
             matches: Vec::new(),
             objects_seen: 0,
         };
-        // Top-level object has no parent container.
-        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state);
+        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut None);
         state.matches
+    }
+
+    /// Same as `scan_bytes_named` but also returns a per-engine timing breakdown
+    /// (ClamAV + each YARA ruleset) in nanoseconds.
+    pub fn scan_bytes_named_with_breakdown(
+        &self,
+        data: &[u8],
+        object_path: &str,
+        options: ScanOptions,
+        module_meta: &[(&str, &[u8])],
+    ) -> (Vec<ScanMatch>, TimingBreakdown) {
+        let mut state = ScanState {
+            matches: Vec::new(),
+            objects_seen: 0,
+        };
+        let mut breakdown = TimingBreakdown::default();
+        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown));
+        (state.matches, breakdown)
     }
 
     fn scan_object(
@@ -319,6 +351,7 @@ impl Engine {
         options: ScanOptions,
         module_meta: &[(&str, &[u8])],
         state: &mut ScanState,
+        timing: &mut Option<&mut TimingBreakdown>,
     ) {
         if state.matches.len() >= options.max_matches
             || state.objects_seen >= options.max_child_objects
@@ -356,9 +389,15 @@ impl Engine {
             return;
         }
 
+        // Time ClamAV scan_context
+        let t_clamav = timing.as_ref().map(|_| Instant::now());
         self.scan_context(&ctx, options, &mut state.matches);
+        if let (Some(t), Some(bt)) = (t_clamav, timing.as_mut()) {
+            bt.clamav_ns = bt.clamav_ns.saturating_add(t.elapsed().as_nanos());
+        }
 
-        // YARA-x scan for Android-relevant file types — run every loaded ruleset.
+        // YARA-x scan for Android-relevant file types — run every loaded ruleset,
+        // timing each YARA ruleset individually.
         if !self.yara.is_empty()
             && crate::yara_scan::is_target_allowed(ctx.detected_target)
         {
@@ -366,11 +405,15 @@ impl Engine {
                 if state.matches.len() >= options.max_matches {
                     break;
                 }
+                let t_yara = timing.as_ref().map(|_| Instant::now());
                 for m in yara.scan(data, object_path, module_meta) {
                     if state.matches.len() >= options.max_matches {
                         break 'rulesets;
                     }
                     state.matches.push(m);
+                }
+                if let (Some(t), Some(bt)) = (t_yara, timing.as_mut()) {
+                    bt.yara_per_engine.push((yara.name.clone(), t.elapsed().as_nanos()));
                 }
             }
         }
@@ -378,7 +421,7 @@ impl Engine {
         // Normalized text/HTML views exist to catch text-like malware (scripts,
         // HTML).
         if options.scan_normalized && state.matches.len() < options.max_matches {
-            self.scan_normalized_views(data, object_path, container_type, options, state);
+            self.scan_normalized_views(data, object_path, container_type, options, state, timing);
         }
 
         // Phishing heuristic: harvest `<a href>` link pairs from HTML/email and
@@ -495,6 +538,7 @@ impl Engine {
         container_type: Option<&'static str>,
         options: ScanOptions,
         state: &mut ScanState,
+        timing: &mut Option<&mut TimingBreakdown>,
     ) {
         if looks_like_ascii_text(data) {
             let normalized = normalize_ascii_text(data);
@@ -506,6 +550,7 @@ impl Engine {
                 container_type,
                 options,
                 state,
+                timing,
             );
         }
 
@@ -519,6 +564,7 @@ impl Engine {
                 container_type,
                 options,
                 state,
+                timing,
             );
             self.scan_derived_view(
                 &html.no_tags,
@@ -528,6 +574,7 @@ impl Engine {
                 container_type,
                 options,
                 state,
+                timing,
             );
             if !html.scripts.is_empty() {
                 self.scan_derived_view(
@@ -538,6 +585,7 @@ impl Engine {
                     container_type,
                     options,
                     state,
+                    timing,
                 );
             }
         }
@@ -552,6 +600,7 @@ impl Engine {
         container_type: Option<&'static str>,
         options: ScanOptions,
         state: &mut ScanState,
+        timing: &mut Option<&mut TimingBreakdown>,
     ) {
         if data.is_empty() || state.matches.len() >= options.max_matches {
             return;
@@ -566,7 +615,11 @@ impl Engine {
             image_fuzzy_hash: Default::default(),
             presence: Default::default(),
         };
+        let t_clamav = timing.as_ref().map(|_| Instant::now());
         self.scan_context(&ctx, options, &mut state.matches);
+        if let (Some(t), Some(bt)) = (t_clamav, timing.as_mut()) {
+            bt.clamav_ns = bt.clamav_ns.saturating_add(t.elapsed().as_nanos());
+        }
     }
 
     fn scan_extended(

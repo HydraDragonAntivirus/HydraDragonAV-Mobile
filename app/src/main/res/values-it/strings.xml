@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">NON CHIEDERE PIÙ</string>
     <string name="root_warning_toggle">Avvisa quando il dispositivo è rooted</string>
     <string name="uninstall_failed_title">⚠ Disinstallazione fallita</string>
-    <string name="uninstall_failed_msg">%1$s non può essere rimosso — la disinstallazione è stata annullata o non è riuscita.\n\nUtilizza la Modalità provvisoria per eseguire l\'antivirus e rimuovere malware: riavvia il dispositivo, tieni premuto il tasto volume giù durante l\'avvio, quindi esegui una scansione completa.</string>
+    <string name="uninstall_failed_msg">%1$s è ancora in esecuzione — la disinstallazione è ancora in corso o non è riuscita.\n\nUtilizza la Modalità provvisoria per eseguire l\'antivirus e rimuovere malware: riavvia il dispositivo, tieni premuto il tasto volume giù durante l\'avvio, quindi esegui una scansione completa.</string>
     <string name="uninstall_failed_safe_mode">APRI IMPOSTAZIONI PER RIAVVIARE IN MODALITÀ PROVVISORIA</string>
     <string name="uninstall_failed_safe_mode_toast">Dopo il riavvio in modalità provvisoria, apri HydraDragon ed esegui una scansione completa per rimuovere il malware</string>
     <string name="integrity_blocked_title">Rilevato APK modificato</string>
@@ -279,6 +279,8 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="dashboard_system_secure">Sistema sicuro</string>
     <string name="dashboard_status_secure_desc">• Monitoraggio attivo\n• Regole di rete applicate\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• Monitoraggio attivo\n• Regole di rete applicate\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Exploit di root rilevato</string>
     <string name="notif_root_exploit_text">Il dispositivo è diventato rootato durante l\'esecuzione</string>
     <string name="dynamic_risk_title">⚠ Comportamento Sospetto Rilevato</string>
@@ -332,5 +334,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 

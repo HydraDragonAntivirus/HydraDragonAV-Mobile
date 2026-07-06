@@ -22,7 +22,10 @@ public class HexagonStatusView extends View {
     private Paint checkPaint;
     private Paint borderPaint;
 
-    private boolean isSecure = true;
+    private static final int STATE_SECURE  = 0;
+    private static final int STATE_LOADING = 1;
+    private static final int STATE_ALERT   = 2;
+    private int state = STATE_SECURE;
     private float pulseRadius = 0f;
     private float pulseAlpha = 1f;
     private ValueAnimator pulseAnimator;
@@ -62,12 +65,21 @@ public class HexagonStatusView extends View {
     }
 
     public void setSecureState(boolean secure) {
-        isSecure = secure;
+        state = secure ? STATE_SECURE : STATE_ALERT;
         int color = secure ? COLOR_SECURE : COLOR_ALERT;
         borderPaint.setColor(color);
         glowPaint.setColor(color);
         checkPaint.setColor(color);
         hexPaint.setColor(secure ? 0xFF0D2B1E : 0xFF2B0D0D);
+        invalidate();
+    }
+
+    public void setLoadingState() {
+        state = STATE_LOADING;
+        borderPaint.setColor(COLOR_WARN);
+        glowPaint.setColor(COLOR_WARN);
+        checkPaint.setColor(COLOR_WARN);
+        hexPaint.setColor(0xFF2B2B0D);
         invalidate();
     }
 
@@ -97,7 +109,12 @@ public class HexagonStatusView extends View {
             Paint pulsePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             pulsePaint.setStyle(Paint.Style.STROKE);
             pulsePaint.setStrokeWidth(3f);
-            int color = isSecure ? COLOR_SECURE : COLOR_ALERT;
+            int color;
+            switch (state) {
+                case STATE_LOADING: color = COLOR_WARN; break;
+                case STATE_ALERT:   color = COLOR_ALERT; break;
+                default:            color = COLOR_SECURE;
+            }
             pulsePaint.setColor(adjustAlpha(color, (int)(pulseAlpha * 80)));
             canvas.drawCircle(cx, cy, radius + pulseRadius * 40, pulsePaint);
         }
@@ -113,11 +130,17 @@ public class HexagonStatusView extends View {
         innerPaint.setAlpha(60);
         canvas.drawPath(innerHex, borderPaint);
 
-        // Check or X mark
-        if (isSecure) {
-            drawCheckmark(canvas, cx, cy, radius * 0.45f);
-        } else {
-            drawX(canvas, cx, cy, radius * 0.35f);
+        // Check, X, or nothing (loading)
+        switch (state) {
+            case STATE_SECURE:
+                drawCheckmark(canvas, cx, cy, radius * 0.45f);
+                break;
+            case STATE_ALERT:
+                drawX(canvas, cx, cy, radius * 0.35f);
+                break;
+            case STATE_LOADING:
+                // no mark during loading
+                break;
         }
 
         // Corner glints
@@ -150,7 +173,13 @@ public class HexagonStatusView extends View {
     private void drawCornerGlints(Canvas canvas, float cx, float cy, float radius) {
         Paint glintPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         glintPaint.setStyle(Paint.Style.FILL);
-        glintPaint.setColor(isSecure ? adjustAlpha(COLOR_SECURE, 180) : adjustAlpha(COLOR_ALERT, 180));
+        int glintColor;
+        switch (state) {
+            case STATE_LOADING: glintColor = adjustAlpha(COLOR_WARN, 180); break;
+            case STATE_ALERT:   glintColor = adjustAlpha(COLOR_ALERT, 180); break;
+            default:            glintColor = adjustAlpha(COLOR_SECURE, 180);
+        }
+        glintPaint.setColor(glintColor);
 
         for (int i = 0; i < 6; i++) {
             double angle = Math.PI / 180 * (60 * i - 30);

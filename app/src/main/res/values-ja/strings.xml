@@ -8,7 +8,7 @@
     <string name="root_warning_dont_ask">次回から表示しない</string>
     <string name="root_warning_toggle">端末がルート化されている場合に警告</string>
     <string name="uninstall_failed_title">⚠ ⚠ アンインストール失敗</string>
-    <string name="uninstall_failed_msg">%1$s を削除できませんでした — アンインストールがキャンセルされるか失敗しました。\n\nセーフモードを使用してアンチウイルスを実行し、マルウェアを削除してください：端末を再起動し、起動中に音量小キーを押し続け、完全スキャンを実行してください。</string>
+    <string name="uninstall_failed_msg">%1$s はまだ実行中です — アンインストールがまだ進行中か失敗しました。\n\nセーフモードを使用してアンチウイルスを実行し、マルウェアを削除してください：端末を再起動し、起動中に音量小キーを押し続け、完全スキャンを実行してください。</string>
     <string name="uninstall_failed_safe_mode">設定を開いてセーフモードで再起動</string>
     <string name="uninstall_failed_safe_mode_toast">セーフモードで再起動したら、HydraDragon を開いて完全スキャンを実行し、マルウェアを削除してください</string>
     <string name="integrity_blocked_title">改ざんされたAPKを検出</string>
@@ -279,6 +279,8 @@
     <string name="dashboard_system_secure">システムは安全です</string>
     <string name="dashboard_status_secure_desc">• 監視は有効です\n• ネットワークルールが適用されています\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• 監視は有効です\n• ネットワークルールが適用されています\n%1$s</string>
+    <string name="dashboard_engine_loading">Engine Loading</string>
+    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
     <string name="notif_root_exploit_title">🔓 Root化エクスプロイトを検出</string>
     <string name="notif_root_exploit_text">実行中にデバイスがRoot化されました</string>
     <string name="dynamic_risk_title">⚠ 不審な挙動を検出</string>
@@ -332,5 +334,7 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
+
+
 
 
