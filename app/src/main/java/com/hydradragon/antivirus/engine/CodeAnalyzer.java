@@ -28,7 +28,6 @@ public class CodeAnalyzer {
         "java.lang.reflect", "DexClassLoader", "PathClassLoader", "dalvik.system.DexFile"
     );
 
-    private static final int HIGH_RISK_SCORE = 35;
     private static final int CRITICAL_SCORE = 100;
 
     private final Context context;
@@ -101,10 +100,12 @@ public class CodeAnalyzer {
                     if (sig.equals("DexClassLoader") || sig.equals("dalvik.system.DexFile")) {
                         findings.add("🔴 CRITICAL: Dynamic Code Loading detected! (" + sig + ")");
                         totalRisk += CRITICAL_SCORE;
-                    } else {
-                        findings.add("🟡 Suspicious API: " + sig);
-                        totalRisk += HIGH_RISK_SCORE;
                     }
+                    // Everything else (Runtime.exec, reflection, sockets, su, ad SDKs,
+                    // ...) is just a "suspicious API" smell — too many legitimate apps
+                    // (plugin loaders, HTTP libraries, root-check code) use these too,
+                    // so it's logged for visibility but never added to totalRisk /
+                    // never contributes toward a MALWARE verdict on its own.
                 }
             }
 

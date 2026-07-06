@@ -85,7 +85,9 @@ pub fn scan(bytes: &[u8]) -> Option<DexScan> {
     .flatten()
 }
 
-/// High/Critical findings are treated as malicious detections; lower ones aren't.
+/// Only Critical findings are treated as malicious detections — High and
+/// below are too false-positive-prone (legitimate obfuscated/reflection-heavy
+/// SDKs routinely trip them) to count toward a verdict on their own.
 pub fn is_severe(sev: Severity) -> bool {
-    matches!(sev, Severity::High | Severity::Critical)
+    matches!(sev, Severity::Critical)
 }

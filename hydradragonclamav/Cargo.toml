@@ -13,7 +13,7 @@ license = "GPL-2.0-or-later"
 # protections isn't page-aligned" in wasmtime mmap), and Android restricts W^X
 # JIT anyway. Pulley bytecode is also architecture-independent, so one compiled
 # .yrc works across all ABIs.
-yara-x = { git = "https://github.com/HydraDragonAntivirus/yara-x", features = ["pulley"] }
+yara-x = { git = "https://github.com/HydraDragonAntivirus/yara-x", features = ["pulley", "hydradragon-module", "androguard-module", "dex-module"] }
 
 # PCRE subsignatures and .cdb/.ftm regex fields (linear-time, no catastrophic backtracking)
 regex = "1"
