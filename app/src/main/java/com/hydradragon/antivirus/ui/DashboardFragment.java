@@ -1,7 +1,6 @@
 // DOSYA: app/src/main/java/com/hydradragon/antivirus/ui/DashboardFragment.java
 package com.hydradragon.antivirus.ui;
 
-import android.animation.ValueAnimator;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -13,7 +12,6 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -60,14 +58,7 @@ public class DashboardFragment extends Fragment {
     private Runnable statsUpdater;
     private Runnable engineStatusPoller;
 
-    // Last value shown for each counter, so each 1s tick animates from the
-    // PREVIOUS value instead of always from 0 (that made the counters visibly
-    // flash back to zero every second). Fields reset to 0 naturally when this
-    // Fragment's view is recreated (i.e. only on switching back to this page),
-    // matching how the Network tab's counters behave.
-    private int lastTotalTraffic;
-    private int lastBlocked;
-    private int lastAllowed;
+
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -147,25 +138,19 @@ public class DashboardFragment extends Fragment {
         // Hexagon pulse animation
         if (hexagonView != null) hexagonView.startPulseAnimation();
 
-        // Counter animation
-        animateCounter(tvTotalTraffic, 0, 0);
-        animateCounter(tvBlocked, 0, 0);
-        animateCounter(tvAllowed, 0, 0);
-    }
-
-    private void animateCounter(TextView tv, int from, int to) {
-        ValueAnimator animator = ValueAnimator.ofInt(from, to);
-        animator.setDuration(1000);
-        animator.setInterpolator(new AccelerateDecelerateInterpolator());
-        animator.addUpdateListener(a -> tv.setText(String.valueOf(a.getAnimatedValue())));
-        animator.start();
+        tvTotalTraffic.setText("0");
+        tvBlocked.setText("0");
+        tvAllowed.setText("0");
     }
 
     private void startStatsUpdater() {
         statsUpdater = new Runnable() {
             @Override
             public void run() {
-                if (!serviceBound || guardService == null) return;
+                if (!serviceBound || guardService == null) {
+                    uiHandler.postDelayed(this, 1000);
+                    return;
+                }
                 NetworkMonitor nm = guardService.getNetworkMonitor();
                 if (nm == null) {
                     uiHandler.postDelayed(this, 1000);
@@ -176,14 +161,11 @@ public class DashboardFragment extends Fragment {
                 int allowed = nm.getAllowedCount();
                 int total = blocked + allowed;
 
-                animateCounter(tvTotalTraffic, lastTotalTraffic, total);
-                animateCounter(tvBlocked, lastBlocked, blocked);
-                animateCounter(tvAllowed, lastAllowed, allowed);
-                lastTotalTraffic = total;
-                lastBlocked = blocked;
-                lastAllowed = allowed;
+                tvTotalTraffic.setText(String.valueOf(total));
+                tvBlocked.setText(String.valueOf(blocked));
+                tvAllowed.setText(String.valueOf(allowed));
 
-                uiHandler.postDelayed(this, 1000);
+                uiHandler.postDelayed(this, 2000);
             }
         };
         uiHandler.post(statsUpdater);

@@ -212,11 +212,13 @@ public class NetworkMonitor {
 
         connectivityManager.registerNetworkCallback(networkRequest, cmCallback);
 
-        // Periodic statistics update (every 1 second)
+        // Periodic statistics update (every 5 seconds — 1s caused constant GC
+        // pressure with no scan running, allocating long[] + Bucket objects on
+        // every tick for the UI's stats counters)
         scheduler.scheduleAtFixedRate(() -> {
             updateTrafficStats();
             checkThreatIntelligence();
-        }, 0, 1, TimeUnit.SECONDS);
+        }, 0, 5, TimeUnit.SECONDS);
 
         // DNS leak test (every 5 minutes)
         scheduler.scheduleAtFixedRate(this::checkDnsLeak, 0, 5, TimeUnit.MINUTES);
@@ -233,57 +235,61 @@ public class NetworkMonitor {
 
     private void updateTrafficStats() {
         try {
-            long[] tot = deviceBytes();      // cumulative {rx, tx}
-            long rx = tot[0], tx = tot[1];
-            bytesReceived = rx;              // exposed via getBytesReceived() (total)
+            long rx = getTotalRxBytes();
+            long tx = getTotalTxBytes();
+            bytesReceived = rx;
             bytesSent = tx;
 
             long deltaRx = 0, deltaTx = 0;
             if (lastRx >= 0) {
-                deltaRx = Math.max(0, rx - lastRx);   // bytes since last tick (rate)
+                deltaRx = Math.max(0, rx - lastRx);
                 deltaTx = Math.max(0, tx - lastTx);
             }
             lastRx = rx;
             lastTx = tx;
 
-            if (networkCallback != null) {
-                networkCallback.onStatsUpdate(deltaRx, deltaTx, blockedConnections.get(), allowedConnections.get());
+            NetworkCallback cb = networkCallback;
+            if (cb != null) {
+                cb.onStatsUpdate(deltaRx, deltaTx, blockedConnections.get(), allowedConnections.get());
             }
         } catch (Exception e) {
             Log.e(TAG, "Traffic statistics error", e);
         }
     }
 
-    /**
-     * Cumulative device {rx, tx} in bytes. Prefers {@code TrafficStats}; when the
-     * device reports {@code UNSUPPORTED} (-1, common on Android 12+/some OEMs)
-     * falls back to {@code NetworkStatsManager} (needs Usage Access). Returns the
-     * last-known totals if both fail, so traffic never falsely reads 0.
-     */
-    private long[] deviceBytes() {
+    private long getTotalRxBytes() {
         long rx = android.net.TrafficStats.getTotalRxBytes();
-        long tx = android.net.TrafficStats.getTotalTxBytes();
-        if (rx != android.net.TrafficStats.UNSUPPORTED
-            && tx != android.net.TrafficStats.UNSUPPORTED
-            && rx >= 0 && tx >= 0) {
-            return new long[]{rx, tx};
-        }
+        if (rx != android.net.TrafficStats.UNSUPPORTED && rx >= 0) return rx;
         try {
             android.app.usage.NetworkStatsManager nsm =
                 (android.app.usage.NetworkStatsManager)
                     context.getSystemService(Context.NETWORK_STATS_SERVICE);
-            long now = System.currentTimeMillis();
-            long r = 0, t = 0;
-            int[] types = { ConnectivityManager.TYPE_WIFI, ConnectivityManager.TYPE_MOBILE };
-            for (int type : types) {
-                android.app.usage.NetworkStats.Bucket b =
-                    nsm.querySummaryForDevice(type, null, 0, now);
-                if (b != null) { r += b.getRxBytes(); t += b.getTxBytes(); }
-            }
-            return new long[]{r, t};
+            android.app.usage.NetworkStats.Bucket b =
+                nsm.querySummaryForDevice(ConnectivityManager.TYPE_WIFI, null, 0, System.currentTimeMillis());
+            long r = (b != null) ? b.getRxBytes() : 0;
+            b = nsm.querySummaryForDevice(ConnectivityManager.TYPE_MOBILE, null, 0, System.currentTimeMillis());
+            if (b != null) r += b.getRxBytes();
+            return r;
         } catch (Throwable ignore) {
-            // Usage Access not granted or query failed — keep last-known totals.
-            return new long[]{ Math.max(0, bytesReceived), Math.max(0, bytesSent) };
+            return Math.max(0, bytesReceived);
+        }
+    }
+
+    private long getTotalTxBytes() {
+        long tx = android.net.TrafficStats.getTotalTxBytes();
+        if (tx != android.net.TrafficStats.UNSUPPORTED && tx >= 0) return tx;
+        try {
+            android.app.usage.NetworkStatsManager nsm =
+                (android.app.usage.NetworkStatsManager)
+                    context.getSystemService(Context.NETWORK_STATS_SERVICE);
+            android.app.usage.NetworkStats.Bucket b =
+                nsm.querySummaryForDevice(ConnectivityManager.TYPE_WIFI, null, 0, System.currentTimeMillis());
+            long t = (b != null) ? b.getTxBytes() : 0;
+            b = nsm.querySummaryForDevice(ConnectivityManager.TYPE_MOBILE, null, 0, System.currentTimeMillis());
+            if (b != null) t += b.getTxBytes();
+            return t;
+        } catch (Throwable ignore) {
+            return Math.max(0, bytesSent);
         }
     }
 

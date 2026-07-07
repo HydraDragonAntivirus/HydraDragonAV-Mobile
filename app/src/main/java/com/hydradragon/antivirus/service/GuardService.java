@@ -434,7 +434,7 @@ public class GuardService extends Service {
         // "su"/"magisk" string matching, and catches exploits that never touch a
         // named su binary at all. Whichever app was in the foreground at the
         // moment of the transition is the prime suspect.
-        scheduler.scheduleAtFixedRate(this::checkRootTransition, 15, 20, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::checkRootTransition, 15, 60, TimeUnit.SECONDS);
     }
 
     private void checkRootTransition() {
