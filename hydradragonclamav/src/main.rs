@@ -8,9 +8,7 @@ use std::process::ExitCode;
 struct Cli {
     database: PathBuf,
     scan: Option<PathBuf>,
-    strict_targets: bool,
     scan_archives: bool,
-    scan_normalized: bool,
     max_recursion: usize,
     max_child_size: usize,
     show_unsupported: bool,
@@ -120,12 +118,8 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
     };
 
     let options = ScanOptions {
-        strict_targets: cli.strict_targets,
-
         scan_archives: cli.scan_archives,
-        scan_normalized: cli.scan_normalized,
         max_recursion: cli.max_recursion,
-
         max_child_size: cli.max_child_size,
         ..ScanOptions::default()
     };
@@ -162,9 +156,7 @@ fn parse_args() -> Result<Cli, String> {
     let mut cli = Cli {
         database: default_database_path(),
         scan: None,
-        strict_targets: false,
         scan_archives: true,
-        scan_normalized: true,
         max_recursion: 16,
         max_child_size: 650 * 1024 * 1024,
         show_unsupported: false,
@@ -193,9 +185,7 @@ fn parse_args() -> Result<Cli, String> {
                         .ok_or_else(|| "--scan requires a path".to_string())?,
                 );
             }
-            "--strict-targets" => cli.strict_targets = true,
             "--no-archives" => cli.scan_archives = false,
-            "--no-normalize" => cli.scan_normalized = false,
             "--max-recursion" => {
                 index += 1;
                 cli.max_recursion = parse_usize_arg(&args, index, "--max-recursion")?;
@@ -216,7 +206,7 @@ fn parse_args() -> Result<Cli, String> {
 
 fn print_help() {
     println!(
-        "hydradragonclamav\n\n  --database, -d <path>     ClamAV database directory\n  --scan, -s <path>         File or directory to scan\n  --strict-targets          Enforce simple target type checks on raw objects\n  --no-archives             Disable recursive archive scanning\n  --no-normalize            Disable HTML/text normalized views\n  --max-recursion <n>       Archive recursion depth, default 8\n  --max-child-size <size>   Child size limit, supports K/M/G suffixes\n  --list-unsupported        Print unsupported database records\n\nWithout --scan, the command loads the database and prints coverage stats."
+        "hydradragonclamav\n\n  --database, -d <path>     ClamAV database directory\n  --scan, -s <path>         File or directory to scan\n  --no-archives             Disable recursive archive scanning\n  --max-recursion <n>       Archive recursion depth, default 16\n  --max-child-size <size>   Child size limit, supports K/M/G suffixes\n  --list-unsupported        Print unsupported database records\n\nWithout --scan, the command loads the database and prints coverage stats."
     );
 }
 

@@ -780,10 +780,7 @@ fn scan_hips(hips_json: &str) -> String {
     };
     let meta_json = hips_json.as_bytes();
     let module_meta: Vec<(&str, &[u8])> = vec![("hydradragon", meta_json)];
-    let opts = ScanOptions {
-        strict_targets: false,
-        ..ScanOptions::default()
-    };
+    let opts = ScanOptions::default();
     let detections = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         clamav
             .scan_bytes_named(meta_json, "hips_behavior", opts, &module_meta)
@@ -821,10 +818,7 @@ fn scan_text(text: &str) -> String {
     let bytes = if text.len() > 8192 { &text.as_bytes()[..8192] } else { text.as_bytes() };
     let meta_json = format!(r#"{{"screen_text":"{}"}}"#, json_escape(text));
     let module_meta: Vec<(&str, &[u8])> = vec![("hydradragon", meta_json.as_bytes())];
-    let opts = ScanOptions {
-        strict_targets: false,
-        ..ScanOptions::default()
-    };
+    let opts = ScanOptions::default();
     let names = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         clamav
             .scan_bytes_named(bytes, "screen_text", opts, &module_meta)
@@ -1082,10 +1076,7 @@ fn run_scan(
     let yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
         Some(clamav) => {
             let max_dets = 64;
-            let opts = ScanOptions {
-                strict_targets: true,
-                ..ScanOptions::default()
-            };
+            let opts = ScanOptions::default();
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let mut dets: Vec<(String, Vec<String>)> = Vec::new();
                 for (i, b) in buffers.iter().enumerate() {

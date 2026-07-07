@@ -38,9 +38,7 @@ pub struct Engine {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ScanOptions {
-    pub strict_targets: bool,
     pub scan_archives: bool,
-    pub scan_normalized: bool,
     pub max_recursion: usize,
     pub max_child_size: usize,
 }
@@ -48,9 +46,7 @@ pub struct ScanOptions {
 impl Default for ScanOptions {
     fn default() -> Self {
         Self {
-            strict_targets: false,
             scan_archives: true,
-            scan_normalized: true,
             max_recursion: 16,
             max_child_size: 650 * 1024 * 1024,
         }
@@ -106,17 +102,11 @@ pub enum SignatureKind {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScanView {
     Raw,
-    NormalizedText,
-    HtmlNoComments,
-    HtmlNoTags,
-    HtmlScript,
 }
 
 pub(crate) struct ScanContext<'a> {
     pub data: &'a [u8],
-    /// Target forced by a normalized view (text=7, html=3).
-    pub target_hint: Option<u32>,
-    /// Target derived from `.ftm` file-type magic (used only in strict mode).
+    /// Target derived from `.ftm` file-type magic.
     pub detected_target: Option<u32>,
     pub object_path: &'a str,
     pub view: ScanView,
@@ -340,7 +330,7 @@ impl Engine {
             return;
         }
 
-        let detected_target = if options.strict_targets && !self.database.file_type_magic.is_empty()
+        let detected_target = if !self.database.file_type_magic.is_empty()
         {
             self.detect_clamav_type(data).and_then(clamav_type_to_target)
         } else {
@@ -349,7 +339,6 @@ impl Engine {
 
         let ctx = ScanContext {
             data,
-            target_hint: None,
             detected_target,
             object_path,
             view: ScanView::Raw,
@@ -389,16 +378,7 @@ impl Engine {
             }
         }
 
-        // Normalized text/HTML views exist to catch text-like malware (scripts,
-        // HTML).  Skip known binary formats (DEX, ELF, ZIP, images, …) — they
-        // often contain enough printable ASCII (string tables, class names, …)
-        // to pass the `looks_like_ascii_text` heuristic but normalising them
-        // would waste CPU on data that is never meaningful text.
-        if options.scan_normalized
-            && !is_known_binary_format(data)
-        {
-            self.scan_normalized_views(data, object_path, container_type, options, state, timing);
-        }
+
 
         // Phishing heuristic: harvest `<a href>` link pairs from HTML/email and
         // flag spoofed protected domains (.pdb/.gdb gated by .wdb allow list).
@@ -498,96 +478,6 @@ impl Engine {
         self.scan_logical(ctx, options, matches, &log_cands);
     }
 
-    fn scan_normalized_views(
-        &self,
-        data: &[u8],
-        object_path: &str,
-        container_type: Option<&'static str>,
-        options: ScanOptions,
-        state: &mut ScanState,
-        timing: &mut Option<&mut TimingBreakdown>,
-    ) {
-        if looks_like_ascii_text(data) {
-            let normalized = normalize_ascii_text(data);
-            self.scan_derived_view(
-                &normalized,
-                object_path,
-                7,
-                ScanView::NormalizedText,
-                container_type,
-                options,
-                state,
-                timing,
-            );
-        }
-
-        if looks_like_html(data) {
-            let html = normalize_html_views(data);
-            self.scan_derived_view(
-                &html.no_comments,
-                object_path,
-                3,
-                ScanView::HtmlNoComments,
-                container_type,
-                options,
-                state,
-                timing,
-            );
-            self.scan_derived_view(
-                &html.no_tags,
-                object_path,
-                3,
-                ScanView::HtmlNoTags,
-                container_type,
-                options,
-                state,
-                timing,
-            );
-            if !html.scripts.is_empty() {
-                self.scan_derived_view(
-                    &html.scripts,
-                    object_path,
-                    3,
-                    ScanView::HtmlScript,
-                    container_type,
-                    options,
-                    state,
-                    timing,
-                );
-            }
-        }
-    }
-
-    fn scan_derived_view(
-        &self,
-        data: &[u8],
-        object_path: &str,
-        target_hint: u32,
-        view: ScanView,
-        container_type: Option<&'static str>,
-        options: ScanOptions,
-        state: &mut ScanState,
-        timing: &mut Option<&mut TimingBreakdown>,
-    ) {
-        if data.is_empty() {
-            return;
-        }
-        let ctx = ScanContext {
-            data,
-            target_hint: Some(target_hint),
-            detected_target: None,
-            object_path,
-            view,
-            container_type,
-            image_fuzzy_hash: Default::default(),
-            presence: Default::default(),
-        };
-        let t_clamav = timing.as_ref().map(|_| Instant::now());
-        self.scan_context(&ctx, options, &mut state.matches);
-        if let (Some(t), Some(bt)) = (t_clamav, timing.as_mut()) {
-            bt.clamav_ns = bt.clamav_ns.saturating_add(t.elapsed().as_nanos());
-        }
-    }
 
     fn scan_extended(
         &self,
@@ -627,7 +517,7 @@ impl Engine {
         matches: &mut Vec<ScanMatch>,
     ) {
         let signature = &self.database.extended[si];
-        if !target_matches(signature.target, ctx, options.strict_targets) {
+        if !target_matches(signature.target, ctx) {
             return;
         }
         if matches!(
@@ -725,7 +615,7 @@ impl Engine {
         bufs: &mut LogicalScanBufs,
     ) {
         let signature = &self.database.logical[si];
-        if !target_matches(signature.target, ctx, options.strict_targets) {
+        if !target_matches(signature.target, ctx) {
             return;
         }
         // TDB gating (ClamAV's target description block). A signature only fires
@@ -1102,13 +992,9 @@ fn body_matches(
     count
 }
 
-fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>, strict: bool) -> bool {
+fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>) -> bool {
     let want = target.unwrap_or(0);
 
-    // A normalized view forces its target (text=7, html=3).
-    if let Some(hint) = ctx.target_hint {
-        return want == 0 || want == hint;
-    }
     // Target 0 = generic: applies to every file type.
     if want == 0 {
         return true;
@@ -1128,16 +1014,10 @@ fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>, strict: bool) -> b
     if let Some(detected) = detect_builtin_target(ctx) {
         return want == detected;
     }
-    // Indeterminate file type: strict mode still applies the positive checks it
-    // can; non-strict stays permissive.
-    if strict {
-        match want {
-            3 => looks_like_html(ctx.data),
-            7 => looks_like_ascii_text(ctx.data),
-            _ => true,
-        }
-    } else {
-        true
+    match want {
+        3 => looks_like_html(ctx.data),
+        7 => looks_like_ascii_text(ctx.data),
+        _ => true,
     }
 }
 
@@ -1235,205 +1115,6 @@ fn is_unsupported_archive(data: &[u8]) -> bool {
     || data.len() >= 7 && data[..7] == [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00] // RAR v1.5
 }
 
-/// Returns `true` when `data` starts with the magic bytes of a known binary
-/// format that is **not** normal text / HTML.  These formats can contain enough
-/// printable ASCII (string tables, class names, section names, …) to pass the
-/// `looks_like_ascii_text` heuristic, but normalizing them would be pure waste.
-fn is_known_binary_format(data: &[u8]) -> bool {
-    if data.len() < 2 {
-        return false;
-    }
-    // ZIP local file header (APK, JAR, …)
-    if data.len() >= 4 && data[..4] == [0x50, 0x4b, 0x03, 0x04] {
-        return true;
-    }
-    // DEX (Dalvik EXecutable) — embedded string tables look like ASCII text.
-    if data.len() >= 4 && data[..4] == [b'd', b'e', b'x', b'\n'] {
-        return true;
-    }
-    // ELF (shared libraries / native executables)
-    if data.len() >= 4 && data[..4] == [0x7f, b'E', b'L', b'F'] {
-        return true;
-    }
-    // PDF — mostly printable bytes but is a structured binary document format.
-    if data.len() >= 4 && data[..4] == [0x25, b'P', b'D', b'F'] {
-        return true;
-    }
-    // PE (Windows executable, uncommon on Android but possible in file scans)
-    if data.len() >= 2 && data[..2] == [b'M', b'Z'] {
-        return true;
-    }
-    // Images — pixel data is not meaningful text.
-    if data.len() >= 4 && data[..4] == [0x89, b'P', b'N', b'G'] {
-        return true;
-    }
-    if data.len() >= 3 && data[..3] == [0xff, 0xd8, 0xff] {
-        return true;
-    }
-    if data.len() >= 3 && data[..3] == [b'G', b'I', b'F'] {
-        return true;
-    }
-    // RIFF container (AVI, WAV, WebP)
-    if data.len() >= 4 && data[..4] == [b'R', b'I', b'F', b'F'] {
-        return true;
-    }
-    // GZip, XZ, BZip2 — compressed; normalising random bytes is useless.
-    if data.len() >= 2 && data[..2] == [0x1f, 0x8b] {
-        return true;
-    }
-    if data.len() >= 6 && data[..6] == [0xfd, b'7', b'z', b'X', b'Z', 0x00] {
-        return true;
-    }
-    if data.len() >= 3 && data[..3] == [b'B', b'Z', b'h'] {
-        return true;
-    }
-    // 7z
-    if data.len() >= 6 && data[..6] == [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c] {
-        return true;
-    }
-    // LZMA stream
-    if data.len() >= 2 && data[..2] == [0x5d, 0x00] {
-        return true;
-    }
-    false
-}
-
-fn normalize_ascii_text(data: &[u8]) -> Vec<u8> {
-    data.iter()
-        .filter_map(|byte| match *byte {
-            b'\t' | b'\n' | b'\r' | 0x00..=0x20 => None,
-            0x21..=0x7e => Some(byte.to_ascii_lowercase()),
-            _ => None,
-        })
-        .collect()
-}
-
-struct HtmlViews {
-    no_comments: Vec<u8>,
-    no_tags: Vec<u8>,
-    scripts: Vec<u8>,
-}
-
-fn normalize_html_views(data: &[u8]) -> HtmlViews {
-    let decoded = decode_html_numeric_entities(data);
-    let no_comments_raw = remove_html_comments(&decoded);
-    let scripts_raw = extract_script_bodies(&no_comments_raw);
-    HtmlViews {
-        no_comments: normalize_ascii_text(&no_comments_raw),
-        no_tags: normalize_ascii_text(&strip_html_tags(&no_comments_raw)),
-        scripts: normalize_ascii_text(&scripts_raw),
-    }
-}
-
-fn decode_html_numeric_entities(data: &[u8]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(data.len());
-    let mut index = 0;
-    while index < data.len() {
-        if data[index] == b'&' && data.get(index + 1) == Some(&b'#') {
-            let mut cursor = index + 2;
-            let radix = if matches!(data.get(cursor), Some(b'x' | b'X')) {
-                cursor += 1;
-                16
-            } else {
-                10
-            };
-            let start = cursor;
-            while cursor < data.len()
-                && ((radix == 16 && data[cursor].is_ascii_hexdigit())
-                    || (radix == 10 && data[cursor].is_ascii_digit()))
-            {
-                cursor += 1;
-            }
-            if cursor > start && data.get(cursor) == Some(&b';') {
-                if let Ok(raw) = std::str::from_utf8(&data[start..cursor]) {
-                    if let Ok(value) = u32::from_str_radix(raw, radix) {
-                        if let Some(ch) = char::from_u32(value) {
-                            let mut buf = [0u8; 4];
-                            out.extend_from_slice(ch.encode_utf8(&mut buf).as_bytes());
-                            index = cursor + 1;
-                            continue;
-                        }
-                    }
-                }
-            }
-        }
-        out.push(data[index]);
-        index += 1;
-    }
-    out
-}
-
-fn remove_html_comments(data: &[u8]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(data.len());
-    let mut index = 0;
-    while index < data.len() {
-        if data[index..].starts_with(b"<!--") {
-            if let Some(end) = find_bytes(&data[index + 4..], b"-->") {
-                index += 4 + end + 3;
-                continue;
-            }
-        }
-        out.push(data[index]);
-        index += 1;
-    }
-    out
-}
-
-fn strip_html_tags(data: &[u8]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(data.len());
-    let mut in_tag = false;
-    for byte in data {
-        match *byte {
-            b'<' => in_tag = true,
-            b'>' if in_tag => in_tag = false,
-            _ if !in_tag => out.push(*byte),
-            _ => {}
-        }
-    }
-    out
-}
-
-fn extract_script_bodies(data: &[u8]) -> Vec<u8> {
-    // Search case-insensitively without allocating a lowercased copy of the
-    // whole buffer: use an in-place case-insensitive window search instead.
-    fn find_ci(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-        if needle.is_empty() || needle.len() > haystack.len() {
-            return None;
-        }
-        haystack.windows(needle.len()).position(|w| {
-            w.iter()
-                .zip(needle)
-                .all(|(a, b)| a.to_ascii_lowercase() == *b)
-        })
-    }
-    let mut out = Vec::new();
-    let mut cursor = 0;
-    while let Some(start) = find_ci(&data[cursor..], b"<script") {
-        let tag_start = cursor + start;
-        let Some(tag_end_rel) = find_bytes(&data[tag_start..], b">") else {
-            break;
-        };
-        let body_start = tag_start + tag_end_rel + 1;
-        let Some(body_end_rel) = find_ci(&data[body_start..], b"</script") else {
-            break;
-        };
-        let body_end = body_start + body_end_rel;
-        out.extend_from_slice(&data[body_start..body_end]);
-        out.push(b'\n');
-        cursor = body_end + b"</script".len();
-    }
-    out
-}
-
-fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    if needle.is_empty() || needle.len() > haystack.len() {
-        return None;
-    }
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1502,61 +1183,6 @@ mod tests {
         // Atom absent → correctly skipped, no match.
         let miss = engine.scan_bytes(b"xxxyyyzzz", ScanOptions::default());
         assert!(miss.is_empty());
-    }
-
-    #[test]
-    fn scans_normalized_text_target() {
-        let source = SourceLocation {
-            path: std::sync::Arc::from(std::path::Path::new("test.ndb")),
-            line: 1,
-        };
-        let mut name_arena = String::new();
-        let database = Database {
-            extended: vec![ExtendedSignature {
-                name: crate::database::intern_name(&mut name_arena, "Test.Text"),
-                target: Some(7),
-                offset: OffsetSpec::any(),
-                patterns: compile_pattern_variants("68656c6c6f776f726c64", Modifiers::default())
-                    .unwrap()
-                    .into(),
-                source,
-            }],
-            name_arena,
-            ..Default::default()
-        };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled() };
-        let found = engine.scan_bytes(b"HeLLo   \r\nWorld", ScanOptions::default());
-        assert!(found
-            .iter()
-            .any(|hit| hit.name == "Test.Text" && hit.view == ScanView::NormalizedText));
-    }
-
-    #[test]
-    fn scans_html_without_tags() {
-        let source = SourceLocation {
-            path: std::sync::Arc::from(std::path::Path::new("test.ndb")),
-            line: 1,
-        };
-        let mut name_arena = String::new();
-        let database = Database {
-            extended: vec![ExtendedSignature {
-                name: crate::database::intern_name(&mut name_arena, "Test.Html"),
-                target: Some(3),
-                offset: OffsetSpec::any(),
-                patterns: compile_pattern_variants("7061796c6f6164", Modifiers::default()).unwrap().into(),
-                source,
-            }],
-            name_arena,
-            ..Default::default()
-        };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled() };
-        let found = engine.scan_bytes(
-            b"<html><body>Pay<!--x-->load</body></html>",
-            ScanOptions::default(),
-        );
-        assert!(found
-            .iter()
-            .any(|hit| hit.name == "Test.Html" && hit.view == ScanView::HtmlNoTags));
     }
 
     #[test]
@@ -1695,17 +1321,8 @@ mod tests {
             ..Default::default()
         };
         let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled() };
-        // "MZAB": .ftm types it MSEXE (target 1); the sig's target 3 -> filtered when strict.
-        let strict = ScanOptions {
-            strict_targets: true,
-            ..ScanOptions::default()
-        };
-        assert!(engine.scan_bytes(b"MZAB", strict).is_empty());
-        // Permissive mode ignores target typing -> matches.
-        assert!(engine
-            .scan_bytes(b"MZAB", ScanOptions::default())
-            .iter()
-            .any(|m| m.name == "Html.Sig"));
+        // "MZAB": .ftm types it MSEXE (target 1); the sig's target 3 -> filtered by target_matches.
+        assert!(engine.scan_bytes(b"MZAB", ScanOptions::default()).is_empty());
     }
 
     // --- Offset-threading equivalence: the built prefilter (threaded verify +

@@ -75,10 +75,7 @@ fn run() {
         if let Some(c) = &clamav {
             eprintln!("[{i}] clamav scanning {name}");
             let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                let opts = ScanOptions {
-                    strict_targets: true,
-                    ..Default::default()
-                };
+                let opts = ScanOptions::default();
                 c.scan_bytes_named(&bytes, &name, opts).len()
             }));
             if r.is_err() {
