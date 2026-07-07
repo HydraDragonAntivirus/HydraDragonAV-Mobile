@@ -82,11 +82,6 @@ fn android_log(msg: &str) {
     unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
 }
 
-/// Whether `HDA_PROF` profiling is on (checked once). Gates slow-candidate logs.
-fn prof_enabled() -> bool {
-    static P: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *P.get_or_init(|| std::env::var_os("HDA_PROF").is_some())
-}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SignatureKind {
@@ -443,37 +438,26 @@ impl Engine {
         matches: &mut Vec<ScanMatch>,
     ) {
         // One Aho-Corasick pass picks the candidate signatures for this buffer;
-        // both phases then evaluate only those instead of all ~500k.
-        if prof_enabled() {
-            use std::time::Instant;
-            let t0 = Instant::now();
-            let (ext_cands, log_cands) = self.prefilter.candidates(ctx.data);
-            let t1 = Instant::now();
-            let (ne, nl) = (ext_cands.len(), log_cands.len());
-            let (te, tl) = (ext_cands.threaded_count(), log_cands.threaded_count());
-            eprintln!(
-                "[PROF] {}KB view={:?} ext_cands={ne}(threaded {te}) log_cands={nl}(threaded {tl}) prefilter={}ms (scanning…)",
-                ctx.data.len() / 1024,
-                ctx.view,
-                (t1 - t0).as_millis(),
-            );
-            self.scan_extended(ctx, matches, &ext_cands);
-            let t2 = Instant::now();
-            self.scan_logical(ctx, matches, &log_cands);
-            let t3 = Instant::now();
-            eprintln!(
-                "[PROF] {}KB view={:?} ext_cands={ne} log_cands={nl} prefilter={}ms ext_scan={}ms log_scan={}ms",
-                ctx.data.len() / 1024,
-                ctx.view,
-                (t1 - t0).as_millis(),
-                (t2 - t1).as_millis(),
-                (t3 - t2).as_millis(),
-            );
-            return;
-        }
+        // both phases then evaluate only those instead of all ~500k. Always
+        // timed and logged to logcat (was previously gated behind HDA_PROF).
+        use std::time::Instant;
+        let t0 = Instant::now();
         let (ext_cands, log_cands) = self.prefilter.candidates(ctx.data);
+        let t1 = Instant::now();
+        let (ne, nl) = (ext_cands.len(), log_cands.len());
+        let (te, tl) = (ext_cands.threaded_count(), log_cands.threaded_count());
         self.scan_extended(ctx, matches, &ext_cands);
+        let t2 = Instant::now();
         self.scan_logical(ctx, matches, &log_cands);
+        let t3 = Instant::now();
+        android_log(&format!(
+            "scan_context :: {}KB view={:?} ext_cands={ne}(threaded {te}) log_cands={nl}(threaded {tl}) prefilter={}ms ext_scan={}ms log_scan={}ms",
+            ctx.data.len() / 1024,
+            ctx.view,
+            (t1 - t0).as_millis(),
+            (t2 - t1).as_millis(),
+            (t3 - t2).as_millis(),
+        ));
     }
 
 
@@ -527,7 +511,7 @@ impl Engine {
         if ranges.is_empty() {
             return;
         }
-        let prof = prof_enabled().then(std::time::Instant::now);
+        let t_ext = std::time::Instant::now();
         let mut count = 0usize;
         for pattern in &signature.patterns {
             let hits = match hints {
@@ -536,17 +520,15 @@ impl Engine {
             };
             count += hits.len();
         }
-        if let Some(t) = prof {
-            let ms = t.elapsed().as_millis();
-            if ms >= 20 {
-                eprintln!(
-                    "[SLOW-EXT] {ms}ms {} ({}:{}) hints={}",
-                    self.database.ext_name(signature),
-                    signature.source.path.display(),
-                    signature.source.line,
-                    hints.map_or(0, |h| h.len()),
-                );
-            }
+        let ms = t_ext.elapsed().as_millis();
+        if ms >= 20 {
+            android_log(&format!(
+                "[SLOW-EXT] {ms}ms {} ({}:{}) hints={}",
+                self.database.ext_name(signature),
+                signature.source.path.display(),
+                signature.source.line,
+                hints.map_or(0, |h| h.len()),
+            ));
         }
         if count > 0 {
             matches.push(ScanMatch {
@@ -581,13 +563,11 @@ impl Engine {
             crate::prefilter::Candidates::List(set) => {
                 for (sig, offsets) in set.iter() {
                     let hints = (!offsets.is_empty()).then_some(offsets);
-                    let t = prof_enabled().then(std::time::Instant::now);
+                    let t = std::time::Instant::now();
                     self.scan_one_logical(sig as usize, hints, ctx, matches, &mut bufs);
-                    if let Some(t) = t {
-                        let ms = t.elapsed().as_millis();
-                        if ms >= 50 {
-                            eprintln!("[SLOW-LOG] {ms}ms {}", self.database.logical[sig as usize].name);
-                        }
+                    let ms = t.elapsed().as_millis();
+                    if ms >= 50 {
+                        android_log(&format!("[SLOW-LOG] {ms}ms {}", self.database.logical[sig as usize].name));
                     }
                 }
             }
@@ -697,7 +677,7 @@ impl Engine {
                 let ranges = offset.scan_ranges(ctx.data.len());
                 if !ranges.is_empty() {
                     let gate_hints = if g.threadable { hints } else { None };
-                    let prof = prof_enabled().then(std::time::Instant::now);
+                    let t_gate = std::time::Instant::now();
                     let count = body_matches(
                         patterns,
                         ctx.data,
@@ -705,18 +685,16 @@ impl Engine {
                         usize::MAX,
                         gate_hints,
                     );
-                    if let Some(t) = prof {
-                        let ms = t.elapsed().as_millis();
-                        if ms >= 20 {
-                            eprintln!(
-                                "[SLOW-GATE] {ms}ms {} ({}:{}) hints={} threadable={}",
-                                signature.name,
-                                signature.source.path.display(),
-                                signature.source.line,
-                                gate_hints.map_or(0, |h| h.len()),
-                                g.threadable,
-                            );
-                        }
+                    let ms = t_gate.elapsed().as_millis();
+                    if ms >= 20 {
+                        android_log(&format!(
+                            "[SLOW-GATE] {ms}ms {} ({}:{}) hints={} threadable={}",
+                            signature.name,
+                            signature.source.path.display(),
+                            signature.source.line,
+                            gate_hints.map_or(0, |h| h.len()),
+                            g.threadable,
+                        ));
                     }
                     if count == 0 {
                         return; // gate absent → signature cannot match
