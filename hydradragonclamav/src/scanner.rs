@@ -357,7 +357,7 @@ impl Engine {
 
         // Time ClamAV scan_context
         let t_clamav = timing.as_ref().map(|_| Instant::now());
-        self.scan_context(&ctx, options, &mut state.matches);
+        self.scan_context(&ctx, &mut state.matches);
         if let (Some(t), Some(bt)) = (t_clamav, timing.as_mut()) {
             bt.clamav_ns = bt.clamav_ns.saturating_add(t.elapsed().as_nanos());
         }
@@ -386,7 +386,7 @@ impl Engine {
         if !self.database.phishing.protected.is_empty()
             && looks_like_html(data)
         {
-            self.scan_phishing(data, object_path, options, &mut state.matches);
+            self.scan_phishing(data, object_path, &mut state.matches);
         }
     }
 
@@ -396,7 +396,6 @@ impl Engine {
         &self,
         data: &[u8],
         object_path: &str,
-        options: ScanOptions,
         matches: &mut Vec<ScanMatch>,
     ) {
         for hit in self.database.phishing.scan_html(data) {
@@ -441,7 +440,6 @@ impl Engine {
     fn scan_context(
         &self,
         ctx: &ScanContext<'_>,
-        options: ScanOptions,
         matches: &mut Vec<ScanMatch>,
     ) {
         // One Aho-Corasick pass picks the candidate signatures for this buffer;
@@ -459,9 +457,9 @@ impl Engine {
                 ctx.view,
                 (t1 - t0).as_millis(),
             );
-            self.scan_extended(ctx, options, matches, &ext_cands);
+            self.scan_extended(ctx, matches, &ext_cands);
             let t2 = Instant::now();
-            self.scan_logical(ctx, options, matches, &log_cands);
+            self.scan_logical(ctx, matches, &log_cands);
             let t3 = Instant::now();
             eprintln!(
                 "[PROF] {}KB view={:?} ext_cands={ne} log_cands={nl} prefilter={}ms ext_scan={}ms log_scan={}ms",
@@ -474,15 +472,14 @@ impl Engine {
             return;
         }
         let (ext_cands, log_cands) = self.prefilter.candidates(ctx.data);
-        self.scan_extended(ctx, options, matches, &ext_cands);
-        self.scan_logical(ctx, options, matches, &log_cands);
+        self.scan_extended(ctx, matches, &ext_cands);
+        self.scan_logical(ctx, matches, &log_cands);
     }
 
 
     fn scan_extended(
         &self,
         ctx: &ScanContext<'_>,
-        options: ScanOptions,
         matches: &mut Vec<ScanMatch>,
         cands: &crate::prefilter::Candidates,
     ) {
@@ -493,13 +490,13 @@ impl Engine {
         match cands {
             crate::prefilter::Candidates::All => {
                 for si in 0..self.database.extended.len() {
-                    self.scan_one_extended(si, None, ctx, options, matches);
+                    self.scan_one_extended(si, None, ctx, matches);
                 }
             }
             crate::prefilter::Candidates::List(set) => {
                 for (sig, offsets) in set.iter() {
                     let hints = (!offsets.is_empty()).then_some(offsets);
-                    self.scan_one_extended(sig as usize, hints, ctx, options, matches);
+                    self.scan_one_extended(sig as usize, hints, ctx, matches);
                 }
             }
         }
@@ -513,7 +510,6 @@ impl Engine {
         si: usize,
         hints: Option<&[u32]>,
         ctx: &ScanContext<'_>,
-        options: ScanOptions,
         matches: &mut Vec<ScanMatch>,
     ) {
         let signature = &self.database.extended[si];
@@ -538,9 +534,7 @@ impl Engine {
                 Some(h) => pattern.find_all_at(ctx.data, &ranges, usize::MAX, h),
                 None => pattern.find_all(ctx.data, &ranges, usize::MAX),
             };
-            for hit in hits {
-                count += 1;
-            }
+            count += hits.len();
         }
         if let Some(t) = prof {
             let ms = t.elapsed().as_millis();
@@ -568,7 +562,6 @@ impl Engine {
     fn scan_logical(
         &self,
         ctx: &ScanContext<'_>,
-        options: ScanOptions,
         matches: &mut Vec<ScanMatch>,
         cands: &crate::prefilter::Candidates,
     ) {
@@ -582,14 +575,14 @@ impl Engine {
         match cands {
             crate::prefilter::Candidates::All => {
                 for si in 0..self.database.logical.len() {
-                    self.scan_one_logical(si, None, ctx, options, matches, &mut bufs);
+                    self.scan_one_logical(si, None, ctx, matches, &mut bufs);
                 }
             }
             crate::prefilter::Candidates::List(set) => {
                 for (sig, offsets) in set.iter() {
                     let hints = (!offsets.is_empty()).then_some(offsets);
                     let t = prof_enabled().then(std::time::Instant::now);
-                    self.scan_one_logical(sig as usize, hints, ctx, options, matches, &mut bufs);
+                    self.scan_one_logical(sig as usize, hints, ctx, matches, &mut bufs);
                     if let Some(t) = t {
                         let ms = t.elapsed().as_millis();
                         if ms >= 50 {
@@ -610,7 +603,6 @@ impl Engine {
         si: usize,
         hints: Option<&[u32]>,
         ctx: &ScanContext<'_>,
-        options: ScanOptions,
         matches: &mut Vec<ScanMatch>,
         bufs: &mut LogicalScanBufs,
     ) {
@@ -985,9 +977,7 @@ fn body_matches(
             Some(h) => pattern.find_all_at(data, ranges, remaining, h),
             None => pattern.find_all(data, ranges, remaining),
         };
-        for hit in hits {
-            count += 1;
-        }
+        count += hits.len();
     }
     count
 }
