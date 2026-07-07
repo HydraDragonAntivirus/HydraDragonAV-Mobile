@@ -46,7 +46,15 @@ fn transpose32(input: &[f32], output: &mut [f32]) {
 
 /// Compute the 64-bit image fuzzy hash of `buffer`, or `None` if it is not a
 /// decodable image. Byte order matches ClamAV's `fuzzy_img#` hash exactly.
+///
+/// Skips buffers larger than 1 MB — decoding a high-resolution image is too
+/// expensive for a 32×32 perceptual hash (phishing images in documents are
+/// always small), and our scanner hashes the raw file buffer rather than
+/// extracted embedded images, so this path only applies to standalone images.
 pub fn calculate_image(buffer: &[u8]) -> Option<[u8; 8]> {
+    if buffer.len() > 1024 * 1024 {
+        return None;
+    }
     // The `image` decoders can panic on malformed input — guard like ClamAV does.
     let loaded = std::panic::catch_unwind(|| image::load_from_memory(buffer));
     let og_image = match loaded {
