@@ -145,7 +145,13 @@ public class DnsVpnService extends VpnService {
         if (running) return START_NOT_STICKY;
         startForegroundShield();
         cidr = com.hydradragon.antivirus.engine.CidrBlacklist.get(this);
-        forwarders = Executors.newCachedThreadPool();
+        // Bounded, not cached: a cached pool spins up a brand-new OS thread for
+        // every single forwarded DNS query (see forward calls below) with no
+        // cap — a burst of lookups floods the device with runnable/blocked
+        // threads and contends with everything else on the box (native scans
+        // included). These tasks block on a socket read, not the CPU, so the
+        // pool can be wider than core count without oversubscribing compute.
+        forwarders = Executors.newFixedThreadPool(32);
         if (establish()) {
             running = true;
             worker = new Thread(this::loop, "dns-vpn");
