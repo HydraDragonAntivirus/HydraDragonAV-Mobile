@@ -139,7 +139,7 @@ public class HexagonStatusView extends View {
                 drawX(canvas, cx, cy, radius * 0.35f);
                 break;
             case STATE_LOADING:
-                // no mark during loading
+                drawExclamation(canvas, cx, cy, radius * 0.45f);
                 break;
         }
 
@@ -168,6 +168,13 @@ public class HexagonStatusView extends View {
     private void drawX(Canvas canvas, float cx, float cy, float size) {
         canvas.drawLine(cx - size, cy - size, cx + size, cy + size, checkPaint);
         canvas.drawLine(cx + size, cy - size, cx - size, cy + size, checkPaint);
+    }
+
+    private void drawExclamation(Canvas canvas, float cx, float cy, float size) {
+        canvas.drawLine(cx, cy - size, cx, cy + size * 0.25f, checkPaint);
+        Paint dotPaint = new Paint(checkPaint);
+        dotPaint.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(cx, cy + size * 0.75f, checkPaint.getStrokeWidth() / 2f, dotPaint);
     }
 
     private void drawCornerGlints(Canvas canvas, float cx, float cy, float radius) {

@@ -201,7 +201,10 @@ public class DashboardFragment extends Fragment {
             if (report.isArpSpoofing) {
                 setAlertState();
                 appendThreatFeed("🚨 " + report.statusMessage);
-            } else tvStatus.setTextColor(android.graphics.Color.parseColor("#FFD700"));
+            } else {
+                tvStatus.setTextColor(android.graphics.Color.parseColor("#FFD700"));
+                if (hexagonView != null) hexagonView.setLoadingState();
+            }
         } else {
             tvStatusDesc.setText(getString(R.string.dashboard_status_secure_desc, report.statusMessage));
         }

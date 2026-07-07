@@ -327,12 +327,10 @@ public class ScanFragment extends Fragment {
         intent.setData(Uri.parse("package:" + pkg));
         startActivity(intent);
 
-        // Hide it from the screen right away so it feels instantly removed
-        foundThreats.remove(threat);
-        threatAdapter.notifyDataSetChanged();
-        tvThreats.setText(String.valueOf(foundThreats.size()));
-        if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
-
+        // Stay on the list until onResume() confirms the package is actually
+        // gone — removing it here was optimistic and could hide a threat that
+        // was never really uninstalled (user cancelled the system dialog, or
+        // it silently failed).
         pendingUninstallPkg = pkg;
     }
 
@@ -340,20 +338,31 @@ public class ScanFragment extends Fragment {
     public void onResume() {
         super.onResume();
         // User returned to our app after the system uninstall dialog.
-        // Check what happened (only if preference is enabled).
-        if (pendingUninstallPkg != null
-                && requireContext().getSharedPreferences("hydra_prefs", 0)
-                    .getBoolean("uninstall_warning_enabled", true)) {
-            if (isPackageInstalled(pendingUninstallPkg)
-                    && isProcessRunning(pendingUninstallPkg)) {
+        // Only now do we know whether the uninstall actually went through.
+        if (pendingUninstallPkg != null) {
+            if (!isPackageInstalled(pendingUninstallPkg)) {
+                // Confirmed gone — safe to drop it from the list now.
                 for (ThreatResult t : foundThreats) {
-                    if (t.getPackageName() != null
-                            && t.getPackageName().equals(pendingUninstallPkg)) {
+                    if (pendingUninstallPkg.equals(t.getPackageName())) {
+                        foundThreats.remove(t);
+                        threatAdapter.notifyDataSetChanged();
+                        tvThreats.setText(String.valueOf(foundThreats.size()));
+                        if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
+                        break;
+                    }
+                }
+            } else if (isProcessRunning(pendingUninstallPkg)
+                    && requireContext().getSharedPreferences("hydra_prefs", 0)
+                        .getBoolean("uninstall_warning_enabled", true)) {
+                for (ThreatResult t : foundThreats) {
+                    if (pendingUninstallPkg.equals(t.getPackageName())) {
                         showUninstallFailedDialog(t);
                         break;
                     }
                 }
             }
+            // Still installed but no longer running (e.g. user cancelled the
+            // system dialog) — leave it in the list untouched, no dialog.
             pendingUninstallPkg = null;
         }
     }
