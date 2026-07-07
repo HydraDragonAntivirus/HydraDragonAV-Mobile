@@ -188,6 +188,7 @@ public class SettingsFragment extends Fragment {
         addCategoryToggle(R.string.detect_cat_permissions, com.hydradragon.antivirus.engine.DetectionCategories.PERMISSIONS);
         addCategoryToggle(R.string.detect_cat_eicar, com.hydradragon.antivirus.engine.DetectionCategories.EICAR);
         addCategoryToggle(R.string.detect_cat_url_strings, com.hydradragon.antivirus.engine.DetectionCategories.URL_STRINGS);
+        addCategoryToggle(R.string.detect_cat_rootkit, com.hydradragon.antivirus.engine.DetectionCategories.ROOTKIT);
         boolean nativeEmuOn = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
             requireContext(), com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION);
         addToggle(getString(R.string.detect_cat_native_emulation), nativeEmuOn, (btn, checked) -> {

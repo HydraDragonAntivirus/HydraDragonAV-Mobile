@@ -714,7 +714,13 @@ impl Engine {
         // Whether the expression can be trusted to short-circuit on an
         // already-decided outcome (see `is_definitely_matched`/`can_still_match`):
         // unsound through a `Compare` node, since those aren't monotone in the counts.
-        let monotone = !signature.expression.has_nonmonotone_compare();
+        // Also unsound whenever a bytecode program is attached: `run_bytecode` below
+        // hands the VM the FULL `counts` array (ClamAV's `lsigcnt`), which a program
+        // can inspect for any subsig regardless of which branch satisfied the boolean
+        // expression — breaking early would feed it stale zeros for un-evaluated
+        // subsigs that actually matched.
+        let monotone =
+            !signature.expression.has_nonmonotone_compare() && signature.bytecode.is_none();
 
         // Phase 1: body subsignatures (the gate, if any, is already done).
         for (i, subsig) in subsigs.iter().enumerate() {

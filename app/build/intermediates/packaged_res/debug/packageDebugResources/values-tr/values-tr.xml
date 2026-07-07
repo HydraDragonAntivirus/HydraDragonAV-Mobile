@@ -48,6 +48,7 @@
     <string name="btn_cancel">İptal</string>
     <string name="btn_close">Kapat</string>
     <string name="btn_destroy">EVET, YOK ET</string>
+    <string name="btn_destroy_hint">kaldırmak için YOK ET\'e dokunun</string>
     <string name="btn_exit_app">Uygulamadan Çık</string>
     <string name="btn_full_scan">🔍 TAM TARA</string>
     <string name="btn_grant_now">Şimdi İzin Ver</string>
@@ -140,6 +141,7 @@
     <string name="lock_wait_min">Lütfen %1$s dakika bekleyin</string>
     <string name="lock_wait_sec">Lütfen %1$s saniye bekleyin</string>
     <string name="lock_wrong">Yanlış Şifre!</string>
+    <string name="malware_found_title">⚠ ZARARLI YAZILIM BULUNDU!</string>
     <string name="malware_has_admin_msg">%1$s kendini Cihaz Yöneticisi yapmış, bu da doğrudan kaldırılmasını engelliyor — zararlı yazılımların kaldırılmaya direnmek için sık kullandığı bir yöntem. Açılan ekranda önce onu devre dışı bırak (%1$s uygulamasını bulup Devre Dışı Bırak\'a dokun), ardından kaldırma ekranı otomatik açılacak.</string>
     <string name="malware_has_admin_open_settings">CİHAZ YÖNETİCİSİ AYARLARINI AÇ</string>
     <string name="malware_has_admin_title">Bu Uygulama Cihaz Yöneticisi Hakkına Sahip</string>

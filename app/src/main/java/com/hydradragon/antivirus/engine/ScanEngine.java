@@ -1,9 +1,11 @@
 package com.hydradragon.antivirus.engine;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.pm.Signature;
 import android.util.Log;
 
@@ -30,6 +32,43 @@ public class ScanEngine {
     // Dangerous-permission detection moved to the native (Rust) engine — it counts
     // them from the manifest bytes (covers in-memory/inner APKs). Java only applies
     // the 5/6 decision on the count the native scan returns.
+
+    // Permissions that, alone, are common in legitimate apps, but combined with
+    // "this app has no launcher icon" are the classic stealth-rootkit pattern:
+    // install silently, hide from the app drawer, then persist/escalate via one
+    // of these. Device-admin/accessibility grant near-total device control;
+    // SYSTEM_ALERT_WINDOW enables overlay attacks; boot-completed + one of the
+    // others gives silent persistence across reboots with no visible icon ever
+    // needed to relaunch it.
+    private static final List<String> ROOTKIT_SUSPICIOUS_PERMS = Arrays.asList(
+        "android.permission.BIND_DEVICE_ADMIN",
+        "android.permission.BIND_ACCESSIBILITY_SERVICE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.QUERY_ALL_PACKAGES",
+        "android.permission.WRITE_SECURE_SETTINGS",
+        "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE",
+        "android.permission.PACKAGE_USAGE_STATS"
+    );
+
+    /** True iff the package declares no currently-enabled launcher (home-screen
+     *  icon) activity — i.e. it can't be opened from the app drawer at all. A
+     *  freshly-installed app with zero launcher entry points is unusual: most
+     *  legitimate "headless" apps (widgets, wear companions, some system
+     *  services) are already filtered out upstream by the isSystem/whitelist
+     *  checks in analyzeApp, so by the time this runs a hit here is meaningful. */
+    private boolean hasNoLauncherIcon(PackageManager pm, String packageName) {
+        try {
+            Intent launchIntent = new Intent(Intent.ACTION_MAIN);
+            launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            launchIntent.setPackage(packageName);
+            List<ResolveInfo> launchables = pm.queryIntentActivities(launchIntent, 0);
+            return launchables.isEmpty();
+        } catch (Exception e) {
+            return false; // can't determine — don't guess
+        }
+    }
 
     private static final List<String> TRUSTED_COMPANIES = Arrays.asList(
         "google", "meta", "facebook", "instagram", "whatsapp", "microsoft",
@@ -971,6 +1010,25 @@ public class ScanEngine {
             // APKs too). The 5/6 DECISION is applied below in Java where `v` is in
             // scope, so Java still owns the verdict + whitelist.
         } catch (Exception e) { }
+
+        // Stealth-rootkit pattern: hidden from the launcher AND requests at
+        // least one high-privilege/persistence permission. Neither signal
+        // alone is proof (plenty of clean apps hide their icon OR use
+        // accessibility/overlay/boot-completed — just not both together).
+        if (!isWhitelisted && !isApkFile && app.packageName != null
+                && DetectionCategories.isEnabled(context, DetectionCategories.ROOTKIT)
+                && hasNoLauncherIcon(pm, app.packageName)) {
+            List<String> matchedRootkitPerms = new ArrayList<>();
+            for (String suspicious : ROOTKIT_SUSPICIOUS_PERMS) {
+                if (requestedPermissions.contains(suspicious)) matchedRootkitPerms.add(suspicious);
+            }
+            if (!matchedRootkitPerms.isEmpty()) {
+                riskScore = Math.max(riskScore, 80);
+                builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                reasons.add("🕵️ Rootkit-like behavior: hidden from launcher + suspicious permissions ("
+                    + String.join(", ", matchedRootkitPerms) + ")");
+            }
+        }
 
         if (!isWhitelisted) {
             try {
