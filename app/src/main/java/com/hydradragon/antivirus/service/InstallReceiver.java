@@ -31,7 +31,7 @@ public class InstallReceiver extends BroadcastReceiver {
             // (possibly changed) APK is scanned fresh, not served from cache.
             ScanEngine.invalidateCache(packageName);
 
-            new Thread(() -> {
+            ScanEngine.runOrchestrated(() -> {
                 try {
                     PackageManager pm = context.getPackageManager();
 
@@ -97,7 +97,7 @@ public class InstallReceiver extends BroadcastReceiver {
                 } catch (Exception e) {
                     Log.e(TAG, "On-Install Error", e);
                 }
-            }).start();
+            });
         }
     }
 }

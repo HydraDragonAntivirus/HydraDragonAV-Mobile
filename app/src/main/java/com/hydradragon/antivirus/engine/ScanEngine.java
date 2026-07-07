@@ -91,12 +91,47 @@ public class ScanEngine {
     private final Context context;
     private final AIEngine aiEngine;
     private final CodeAnalyzer codeAnalyzer;
-    private final ExecutorService scanExecutor;
+    // Process-wide, bounded to the device's core count. GuardService and
+    // InstallReceiver each hold their own ScanEngine instance (InstallReceiver
+    // creates a brand new one per install broadcast), so a per-instance pool —
+    // especially the old unbounded cachedThreadPool below — let concurrent
+    // scan triggers pile up many more native (JNI/Rust) threads than the
+    // device has cores. Each native ClamAV/YARA call is CPU-bound, so beyond
+    // the core count, extra threads don't add throughput, they only add
+    // scheduling contention: a signature's own body-match work might sum to a
+    // few hundred ms, while the call's wall-clock balloons to many seconds
+    // because the OS keeps preempting it for other scan threads. Sharing one
+    // bounded pool across every ScanEngine instance caps how many native calls
+    // run at once, regardless of how many scan triggers fired concurrently.
+    private static final int NATIVE_PARALLELISM =
+        Math.max(2, Runtime.getRuntime().availableProcessors());
+    private static final ExecutorService scanExecutor =
+        Executors.newFixedThreadPool(NATIVE_PARALLELISM);
     // Dedicated pool for wrapping blocking native (JNI/Rust) calls so cancelScan()
     // can take effect almost immediately instead of Stop waiting out however
     // long the CURRENT file's native scan takes (large files can take seconds;
     // the native side has no interruption point). See runNativeInterruptible.
-    private final ExecutorService nativeCallExecutor = Executors.newCachedThreadPool();
+    private static final ExecutorService nativeCallExecutor =
+        Executors.newFixedThreadPool(NATIVE_PARALLELISM);
+    // Small bounded pool for the lightweight orchestration wrappers that used
+    // to be raw `new Thread(...).start()` calls in GuardService (per-download
+    // scan) and InstallReceiver (per-install scan) — those threads don't do
+    // CPU-bound work themselves (they mostly poll/sleep waiting on the actual
+    // native call, which already goes through nativeCallExecutor above), but
+    // spawning a brand new unmanaged OS thread per download/install burst
+    // still adds scheduling overhead with no cap. Deliberately separate from
+    // scanExecutor/nativeCallExecutor so orchestration wrappers can never
+    // starve out a slot that real native scan work needs.
+    private static final ExecutorService orchestrationExecutor =
+        Executors.newFixedThreadPool(4);
+
+    /** Submit a lightweight orchestration task (e.g. the per-download or
+     *  per-install scan wrapper) to a small shared bounded pool instead of
+     *  spawning a raw unmanaged thread. */
+    public static void runOrchestrated(Runnable task) {
+        orchestrationExecutor.execute(task);
+    }
+
     // Static so invalidation from receivers reaches the live GuardService cache.
     private static final java.util.concurrent.ConcurrentHashMap<String, ThreatResult> photonCache = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -213,7 +248,14 @@ public class ScanEngine {
     public boolean generateRuleForApp(String apkPath, String packageName) {
         if (apkPath == null || !NativeScanner.isReady()) return false;
         try {
-            NativeScanner.Verdict v = NativeScanner.scan(apkPath, packageName, null, true);
+            // Routed through the same bounded nativeCallExecutor as every other
+            // native call (rather than calling NativeScanner.scan directly on
+            // the caller's thread) so this one-off, user-triggered scan still
+            // counts against — and waits its turn behind — the shared native
+            // call budget instead of running as an extra, uncapped thread.
+            NativeScanner.Verdict v = nativeCallExecutor
+                .submit(() -> NativeScanner.scan(apkPath, packageName, null, true))
+                .get();
             if (v == null || v.generatedRule == null || v.generatedRule.isEmpty()) return false;
             saveGeneratedRule(v);
             return true;
@@ -233,7 +275,6 @@ public class ScanEngine {
         this.context = context;
         this.aiEngine = aiEngine;
         this.codeAnalyzer = new CodeAnalyzer(context);
-        this.scanExecutor = Executors.newFixedThreadPool(4);
         loadPackageWhitelist();
         // Load YARA-X rulesets + ML model into the native engine (non-fatal).
         try { NativeScanner.init(context); } catch (Throwable t) { /* degrade gracefully */ }

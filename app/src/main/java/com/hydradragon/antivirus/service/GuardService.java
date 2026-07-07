@@ -116,7 +116,7 @@ public class GuardService extends Service {
      *  auto-deleted — the user is asked via a Remove/Ignore notification, same
      *  as every other detection path in this app. */
     private void scanDownloadedFile(java.io.File file) {
-        new Thread(() -> {
+        com.hydradragon.antivirus.engine.ScanEngine.runOrchestrated(() -> {
             ThreatResult threat = null;
             try {
                 threat = scanEngine.scanSingleFile(file);
@@ -165,7 +165,7 @@ public class GuardService extends Service {
                        .addAction(0, getString(R.string.btn_ignore), ignorePI);
             }
             nm.notify(notifId, builder.build());
-        }).start();
+        });
     }
 
 

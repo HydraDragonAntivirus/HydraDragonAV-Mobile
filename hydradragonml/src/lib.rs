@@ -9,6 +9,10 @@
 //!   * MinHash Jaccard to some known sample >= `jaccard_threshold`, or
 //!   * Isolation Forest anomaly score <= `anomaly_threshold`.
 //!
+//! However, when best_jaccard is zero (no MinHash similarity to any known
+//! malware sample), the anomaly-only signal produces false positives on benign
+//! apps. In that case both signals must fire to flag.
+//!
 //! Because the deployment whitelists known-good apps upstream, thresholds are
 //! tuned for recall, not precision.
 
@@ -24,6 +28,10 @@ use minhash::LshIndex;
 
 /// Default: flag as a variant when >= this fraction of MinHash slots match.
 pub const DEFAULT_JACCARD_THRESHOLD: f32 = 0.55;
+/// When best_jaccard is below this floor, require both minhash AND iforest
+/// signals to fire. Prevents anomaly-only false positives on apps with zero
+/// MinHash similarity to known malware.
+pub const JACCARD_FLOOR_FOR_DUAL_SIGNAL: f32 = 0.01;
 /// Default Isolation Forest training params.
 pub const DEFAULT_N_TREES: usize = 150;
 pub const DEFAULT_SAMPLE_SIZE: usize = 256;
@@ -151,8 +159,17 @@ impl Model {
         let by_minhash = best_jaccard >= self.jaccard_threshold;
         let by_iforest = anomaly_score <= self.anomaly_threshold;
 
+        // When Jaccard is effectively zero (no MinHash similarity to any
+        // known sample), the anomaly-only signal alone is too FP-prone on
+        // benign apps. Require both signals to fire in that case.
+        let malicious = if best_jaccard >= JACCARD_FLOOR_FOR_DUAL_SIGNAL {
+            by_minhash || by_iforest
+        } else {
+            by_minhash && by_iforest
+        };
+
         ScanResult {
-            malicious: by_minhash || by_iforest,
+            malicious,
             best_jaccard,
             nearest,
             anomaly_score,
