@@ -515,6 +515,41 @@ impl LogicalExpr {
         })
     }
 
+    /// Under-approximate whether the expression is *already* guaranteed true, given
+    /// the subsignatures evaluated so far. Unevaluated subsigs are treated as
+    /// *absent* (worst case), the mirror image of `can_still_match`'s best-case
+    /// assumption. `Compare` nodes are never treated as decided (same reasoning as
+    /// `feasible_at`: non-monotone in the counts). Sound only when
+    /// `has_nonmonotone_compare()` is false. Used to short-circuit phase-1 body
+    /// scanning: once an OR-branch has already made the expression true, stop
+    /// scanning the remaining subsignatures — they can no longer change the result.
+    pub fn is_definitely_matched(&self, counts: &[usize], evaluated: &[bool]) -> bool {
+        if self.nodes.is_empty() {
+            return false;
+        }
+        self.decided_at(self.nodes.len() - 1, counts, evaluated)
+    }
+
+    fn decided_at(&self, idx: usize, counts: &[usize], evaluated: &[bool]) -> bool {
+        match self.nodes[idx] {
+            ExprNode::Subsig(index) => {
+                let i = index as usize;
+                evaluated.get(i).copied().unwrap_or(false)
+                    && counts.get(i).copied().unwrap_or(0) > 0
+            }
+            ExprNode::And(a, b) => {
+                self.decided_at(a as usize, counts, evaluated)
+                    && self.decided_at(b as usize, counts, evaluated)
+            }
+            ExprNode::Or(a, b) => {
+                self.decided_at(a as usize, counts, evaluated)
+                    || self.decided_at(b as usize, counts, evaluated)
+            }
+            // Non-monotone in the counts — never claim "already true" through it.
+            ExprNode::Compare { .. } => false,
+        }
+    }
+
     fn feasible_at(&self, idx: usize, counts: &[usize], evaluated: &[bool]) -> bool {
         match self.nodes[idx] {
             ExprNode::Subsig(index) => {

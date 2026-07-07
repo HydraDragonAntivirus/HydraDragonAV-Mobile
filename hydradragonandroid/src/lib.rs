@@ -1044,7 +1044,7 @@ fn run_scan(
     // per-buffer cost (500ms/200k instructions), and gated by the Settings
     // toggle so it can be turned off entirely if it's ever too slow.
     let t_emulate = std::time::Instant::now();
-    let emulated_strings: Vec<Option<Vec<u8>>> = if NATIVE_EMULATION_ENABLED
+    let emulated: Vec<emulate::EmulationResult> = if NATIVE_EMULATION_ENABLED
         .load(std::sync::atomic::Ordering::Relaxed)
     {
         buffers
@@ -1052,22 +1052,27 @@ fn run_scan(
             .enumerate()
             .map(|(i, b)| {
                 if skip_heavy[i] || !b.data.starts_with(b"\x7fELF") {
-                    return None;
+                    return emulate::EmulationResult::default();
                 }
-                let strings = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    emulate::emulate_and_extract_strings(&b.data)
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    emulate::emulate(&b.data)
                 }))
-                .unwrap_or_default();
-                if strings.is_empty() {
-                    None
-                } else {
-                    Some(strings.join("\n").into_bytes())
-                }
+                .unwrap_or_default()
             })
             .collect()
     } else {
-        buffers.iter().map(|_| None).collect()
+        buffers.iter().map(|_| emulate::EmulationResult::default()).collect()
     };
+    let emulated_strings: Vec<Option<Vec<u8>>> = emulated
+        .iter()
+        .map(|r| {
+            if r.strings.is_empty() {
+                None
+            } else {
+                Some(r.strings.join("\n").into_bytes())
+            }
+        })
+        .collect();
     let emulate_ms = t_emulate.elapsed().as_millis();
 
     // Each detection carries the APK lineage of the buffer it fired on, so Java
@@ -1129,6 +1134,20 @@ fn run_scan(
                             if dets.len() >= max_dets {
                                 return dets;
                             }
+                        }
+                    }
+                    // Behavioral signal from emulation: an attempted call into a
+                    // tracked suspicious API (network/exec/anti-debug/etc.) is a
+                    // pseudo-detection in its own right, same pattern as the URL
+                    // extraction above.
+                    let mut seen_apis = std::collections::HashSet::new();
+                    for call in &emulated[i].api_calls {
+                        if !seen_apis.insert(call.name.clone()) {
+                            continue;
+                        }
+                        dets.push((format!("Behavior.Native: {}", call.name), b.apk_lineage.clone()));
+                        if dets.len() >= max_dets {
+                            return dets;
                         }
                     }
                 }

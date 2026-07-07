@@ -707,6 +707,11 @@ impl Engine {
             }
         }
 
+        // Whether the expression can be trusted to short-circuit on an
+        // already-decided outcome (see `is_definitely_matched`/`can_still_match`):
+        // unsound through a `Compare` node, since those aren't monotone in the counts.
+        let monotone = !signature.expression.has_nonmonotone_compare();
+
         // Phase 1: body subsignatures (the gate, if any, is already done).
         for (i, subsig) in subsigs.iter().enumerate() {
             if Some(i) == gating_done {
@@ -734,6 +739,9 @@ impl Engine {
                         evaluated[i] = true; // counts[i] stays 0
                         if !signature.expression.can_still_match(counts, evaluated) {
                             return;
+                        }
+                        if monotone && signature.expression.is_definitely_matched(counts, evaluated) {
+                            break;
                         }
                         continue;
                     }
@@ -775,6 +783,12 @@ impl Engine {
                 // unsatisfiable (a missing AND term), skip every remaining subsig.
                 if !signature.expression.can_still_match(counts, evaluated) {
                     return;
+                }
+                // Success short-circuit: an OR-branch is already fully satisfied, so
+                // the remaining subsigs (e.g. an expensive wildcard-heavy body in a
+                // sibling branch) can no longer change the outcome — stop scanning.
+                if monotone && signature.expression.is_definitely_matched(counts, evaluated) {
+                    break;
                 }
             }
         }

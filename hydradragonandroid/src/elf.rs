@@ -216,3 +216,175 @@ pub fn find_dynsym(data: &[u8], want: &str) -> Option<u64> {
     }
     None
 }
+
+/// An imported (undefined) dynamic symbol along with the GOT/data address a
+/// relocation says should hold its resolved address — i.e. "this library
+/// calls `<name>` through the value stored at `got_addr`".
+#[derive(Clone, Debug)]
+pub struct Import {
+    pub name: String,
+    pub got_addr: u64,
+}
+
+/// Resolve every `R_*_JUMP_SLOT`/`R_*_GLOB_DAT`/`R_*_ABS` relocation against
+/// an undefined `.dynsym` entry, from `.rela.dyn`/`.rela.plt` (or the 32-bit
+/// `.rel.dyn`/`.rel.plt` variants). This is a standard SysV relocation walk —
+/// Android's packed `.android.rela` (APS2, LEB128-encoded) format is a
+/// distinct encoding and is intentionally NOT handled here.
+pub fn find_imports(data: &[u8]) -> Vec<Import> {
+    let mut out = Vec::new();
+    if data.len() < 20 || &data[0..4] != b"\x7fELF" || data[5] != 1 {
+        return out;
+    }
+    let is_64 = data[4] == 2;
+
+    let (shoff, shentsize, shnum, shstrndx) = match (|| -> Option<(u64, u64, u64, u64)> {
+        if is_64 {
+            Some((
+                read_u64(data, 40, true)?,
+                read_u16(data, 58, true)? as u64,
+                read_u16(data, 60, true)? as u64,
+                read_u16(data, 62, true)? as u64,
+            ))
+        } else {
+            Some((
+                read_u32(data, 32, true)? as u64,
+                read_u16(data, 46, true)? as u64,
+                read_u16(data, 48, true)? as u64,
+                read_u16(data, 50, true)? as u64,
+            ))
+        }
+    })() {
+        Some(v) => v,
+        None => return out,
+    };
+
+    let sh = |idx: u64| -> Option<(u32, u32, u64, u64, u32, u64)> {
+        let base = (shoff + idx * shentsize) as usize;
+        if base + shentsize as usize > data.len() {
+            return None;
+        }
+        if is_64 {
+            Some((
+                read_u32(data, base, true)?,       // sh_name
+                read_u32(data, base + 4, true)?,    // sh_type
+                read_u64(data, base + 24, true)?,   // sh_offset
+                read_u64(data, base + 32, true)?,   // sh_size
+                read_u32(data, base + 40, true)?,   // sh_link
+                read_u64(data, base + 56, true)?,   // sh_entsize
+            ))
+        } else {
+            Some((
+                read_u32(data, base, true)?,
+                read_u32(data, base + 4, true)?,
+                read_u32(data, base + 16, true)? as u64,
+                read_u32(data, base + 20, true)? as u64,
+                read_u32(data, base + 24, true)?,
+                read_u32(data, base + 36, true)? as u64,
+            ))
+        }
+    };
+
+    let shstr = match sh(shstrndx) {
+        Some(v) => v,
+        None => return out,
+    };
+    let name_at = |strtab_off: u64, strtab_size: u64, name_off: u32| -> Option<String> {
+        let start = (strtab_off + name_off as u64) as usize;
+        if start >= data.len() || (strtab_off + strtab_size) as usize > data.len() {
+            return None;
+        }
+        let end = data[start..].iter().position(|&b| b == 0)? + start;
+        Some(String::from_utf8_lossy(&data[start..end]).to_string())
+    };
+
+    // Locate .dynsym (+ its paired .dynstr via sh_link) and every relocation
+    // section (SHT_REL = 9, SHT_RELA = 4).
+    const SHT_REL: u32 = 9;
+    const SHT_RELA: u32 = 4;
+    let mut dynsym: Option<(u64, u64, u64, u32)> = None; // offset,size,entsize,link
+    let mut reloc_sections: Vec<(u32, u64, u64, u64)> = Vec::new(); // type,offset,size,entsize
+    for i in 0..shnum.min(4096) {
+        let (name_off, sh_type, offset, size, link, entsize) = match sh(i) {
+            Some(v) => v,
+            None => break,
+        };
+        let name = name_at(shstr.2, shstr.3, name_off).unwrap_or_default();
+        if name == ".dynsym" && entsize > 0 {
+            dynsym = Some((offset, size, entsize, link));
+        } else if (sh_type == SHT_REL || sh_type == SHT_RELA) && entsize > 0 {
+            reloc_sections.push((sh_type, offset, size, entsize));
+        }
+    }
+    let (sym_off, sym_size, sym_entsize, strtab_link) = match dynsym {
+        Some(v) => v,
+        None => return out,
+    };
+    let (_, _, strtab_off, strtab_size, _, _) = match sh(strtab_link as u64) {
+        Some(v) => v,
+        None => return out,
+    };
+    let sym_count = sym_size / sym_entsize;
+
+    // Resolve a dynsym index -> import name, but only for UNDEFINED entries
+    // (st_value == 0) — i.e. symbols this library imports rather than exports.
+    let undefined_name = |sym_idx: u64| -> Option<String> {
+        if sym_idx >= sym_count {
+            return None;
+        }
+        let base = (sym_off + sym_idx * sym_entsize) as usize;
+        if base + sym_entsize as usize > data.len() {
+            return None;
+        }
+        let (st_name, st_value) = if is_64 {
+            (read_u32(data, base, true)?, read_u64(data, base + 8, true)?)
+        } else {
+            (read_u32(data, base, true)?, read_u32(data, base + 4, true)? as u64)
+        };
+        if st_value != 0 {
+            return None; // exported/defined, not an import
+        }
+        name_at(strtab_off, strtab_size, st_name)
+    };
+
+    for (sh_type, offset, size, entsize) in reloc_sections {
+        let count = size / entsize;
+        for i in 0..count.min(1_000_000) {
+            let base = (offset + i * entsize) as usize;
+            if base + entsize as usize > data.len() {
+                break;
+            }
+            let (r_offset, r_info) = if is_64 {
+                let off = match read_u64(data, base, true) {
+                    Some(v) => v,
+                    None => break,
+                };
+                let info = match read_u64(data, base + 8, true) {
+                    Some(v) => v,
+                    None => break,
+                };
+                (off, info)
+            } else {
+                let off = match read_u32(data, base, true) {
+                    Some(v) => v as u64,
+                    None => break,
+                };
+                let info = match read_u32(data, base + 4, true) {
+                    Some(v) => v as u64,
+                    None => break,
+                };
+                (off, info)
+            };
+            let sym_idx = if is_64 { r_info >> 32 } else { r_info >> 8 };
+            if sym_idx == 0 {
+                continue;
+            }
+            if let Some(name) = undefined_name(sym_idx) {
+                let _ = sh_type; // REL vs RELA only affects addend layout, irrelevant here
+                out.push(Import { name, got_addr: r_offset });
+            }
+        }
+    }
+
+    out
+}
