@@ -557,14 +557,14 @@ impl Engine {
         match cands {
             crate::prefilter::Candidates::All => {
                 for si in 0..self.database.logical.len() {
-                    self.scan_one_logical(si, None, ctx, matches, &mut bufs);
+                    self.scan_one_logical(si, None, None, ctx, matches, &mut bufs);
                 }
             }
             crate::prefilter::Candidates::List(set) => {
                 for (sig, offsets) in set.iter() {
                     let hints = (!offsets.is_empty()).then_some(offsets);
                     let t = std::time::Instant::now();
-                    self.scan_one_logical(sig as usize, hints, ctx, matches, &mut bufs);
+                    self.scan_one_logical(sig as usize, hints, Some(set), ctx, matches, &mut bufs);
                     let ms = t.elapsed().as_millis();
                     if ms >= 50 {
                         android_log(&format!("[SLOW-LOG] {ms}ms {}", self.database.logical[sig as usize].name));
@@ -577,11 +577,15 @@ impl Engine {
     /// Evaluate a single logical signature. `hints`, when `Some`, are the buffer
     /// offsets of the gating subsignature's atom — threaded into that subsig's
     /// verification when the gate is `threadable` (i.e. the prefilter indexed
-    /// exactly that subsig, so the offsets correspond to it).
+    /// exactly that subsig, so the offsets correspond to it). `cand_set`, when
+    /// `Some`, is the full candidate set `hints` was drawn from — used to look up
+    /// a body subsig's OWN atom occurrences (`subsig_hints`) for OR-indexed
+    /// signatures, narrower than the whole-signature union in `hints`.
     fn scan_one_logical(
         &self,
         si: usize,
         hints: Option<&[u32]>,
+        cand_set: Option<&crate::prefilter::CandidateSet>,
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
         bufs: &mut LogicalScanBufs,
@@ -751,17 +755,25 @@ impl Engine {
                     continue;
                 }
                 // For OR-indexed sigs, restrict this subsig's scan to windows around
-                // the prefilter's union offsets (a match must start within
-                // `max_match_len` of one of its atoms). A SIMD scan of those small
-                // windows beats threading each subsig against the FULL union hint set
-                // (most of which belong to other subsigs and just fail to verify).
-                // `None` max length (open gap) can't be bounded → keep the full scan.
+                // its OWN atom occurrences when the prefilter tagged them separately
+                // (`subsig_hints`) — far narrower than the whole signature's union
+                // when a sibling subsig's atom is much more common than this one's.
+                // Falls back to the union `hints` when no per-subsig split exists
+                // (e.g. more than `MAX_TAGGED_SUBSIG` subsigs, or this subsig's
+                // offsets overflowed the per-signature atom cap).
+                // A SIMD scan of those small windows beats threading each subsig
+                // against the FULL union hint set (most of which belong to other
+                // subsigs and just fail to verify). `None` max length (open gap)
+                // can't be bounded → keep the full scan.
                 let restricted;
                 let ranges: &[(usize, usize)] = if all_indexed {
                     match subsig_max_match_len(patterns) {
                         Some(ml) => {
+                            let subsig_hints = cand_set
+                                .and_then(|s| s.subsig_hints(si as u32, i as u32));
+                            let use_hints = subsig_hints.unwrap_or_else(|| hints.unwrap());
                             restricted =
-                                restrict_ranges(&base_ranges, hints.unwrap(), ml, ctx.data.len());
+                                restrict_ranges(&base_ranges, use_hints, ml, ctx.data.len());
                             &restricted
                         }
                         None => &base_ranges,
@@ -1101,7 +1113,8 @@ fn is_unsupported_archive(data: &[u8]) -> bool {
 mod tests {
     use super::*;
     use crate::database::{
-        ContainerSignature, ExtendedSignature, FileTypeMagic, NumSpec, OffsetSpec, SourceLocation,
+        ContainerSignature, ContainerType, ExtendedSignature, FileTypeMagic, NumSpec, OffsetSpec,
+        SourceLocation,
     };
     use crate::logical::parse_logical_signature;
     use crate::pattern::{compile_pattern_variants, Modifiers};
@@ -1124,7 +1137,7 @@ mod tests {
             name_arena,
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled() };
+        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
         let found = engine.scan_bytes(b"xxABCyy", ScanOptions::default());
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].name, "Test.Signature");
@@ -1155,7 +1168,7 @@ mod tests {
             ..Default::default()
         };
         let prefilter = crate::prefilter::AtomPrefilter::build(&database);
-        let engine = Engine { database, prefilter };
+        let engine = Engine { database, prefilter, yara: Vec::new() };
 
         // Atom present → detected.
         let hit = engine.scan_bytes(b"xxABCyy", ScanOptions::default());
@@ -1185,7 +1198,7 @@ mod tests {
             name_arena,
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled() };
+        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
         let found = engine.scan_bytes(&stored_zip("child.bin", b"MALWARE"), ScanOptions::default());
         assert!(found.iter().any(|hit| {
             hit.name == "Test.Zip.Child"
@@ -1209,7 +1222,7 @@ mod tests {
             logical: vec![sig],
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled() };
+        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
         // Body "AA" present and regex "world" present -> match.
         let found = engine.scan_bytes(b"AA hello world", ScanOptions::default());
         assert!(found.iter().any(|m| m.name == "Test.Pcre"));
@@ -1233,7 +1246,7 @@ mod tests {
             logical: vec![sig],
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled() };
+        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
         // "SIZE" then 2 LE bytes = 5 (>0) -> match.
         let found = engine.scan_bytes(b"SIZE\x05\x00tail", ScanOptions::default());
         assert!(found.iter().any(|m| m.name == "Test.Bc"));
@@ -1262,7 +1275,7 @@ mod tests {
             container: vec![container],
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled() };
+        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
         // Member "MALWARE" is 7 bytes at position 1 inside a zip.
         let found =
             engine.scan_bytes(&stored_zip("child.bin", b"MALWARE"), ScanOptions::default());
@@ -1302,7 +1315,7 @@ mod tests {
             name_arena,
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled() };
+        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
         // "MZAB": .ftm types it MSEXE (target 1); the sig's target 3 -> filtered by target_matches.
         assert!(engine.scan_bytes(b"MZAB", ScanOptions::default()).is_empty());
     }
@@ -1328,6 +1341,7 @@ mod tests {
         let engine_full = Engine {
             database: build_db(),
             prefilter: crate::prefilter::AtomPrefilter::disabled(),
+            yara: Vec::new(),
         };
         let full = match_keys(&engine_full.scan_bytes(data, opts));
         // Threaded: real prefilter → candidate offsets + aligned gating cutoff.
@@ -1336,6 +1350,7 @@ mod tests {
         let engine_thr = Engine {
             database: db,
             prefilter,
+            yara: Vec::new(),
         };
         let threaded = match_keys(&engine_thr.scan_bytes(data, opts));
         assert_eq!(
@@ -1483,6 +1498,7 @@ mod tests {
             Engine {
                 database,
                 prefilter,
+                yara: Vec::new(),
             },
             warnings,
         )

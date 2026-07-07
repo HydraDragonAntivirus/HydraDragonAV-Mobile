@@ -42,8 +42,14 @@ const MAX_OFFSETS_PER_SIG: usize = 256;
 /// Safe because scanned buffers are < 2 GiB, so a real offset never reaches it.
 const OFFSET_OVERFLOW: u32 = u32::MAX;
 
-/// A signature reference packed into a u64: top bit = logical, low bits = index.
+/// A signature reference packed into a u64: top bit = logical, next 8 bits (for
+/// logical refs only) = an optional subsignature tag, low 55 bits = sig index.
 const LOG_FLAG: u64 = 1 << 63;
+const SUBSIG_SHIFT: u32 = 55;
+const SUBSIG_MASK: u64 = 0xFF << SUBSIG_SHIFT;
+const SIG_INDEX_MASK: u64 = !(LOG_FLAG | SUBSIG_MASK);
+/// Largest subsig index that fits the 8-bit tag (0 is reserved for "untagged").
+const MAX_TAGGED_SUBSIG: usize = 254;
 
 #[inline]
 fn ext_ref(i: usize) -> u64 {
@@ -52,6 +58,33 @@ fn ext_ref(i: usize) -> u64 {
 #[inline]
 fn log_ref(i: usize) -> u64 {
     i as u64 | LOG_FLAG
+}
+/// Like `log_ref`, but additionally tags the reference with the originating
+/// subsignature index — used only for OR-indexed logical signatures, where a
+/// single sig id's atoms come from several different subsigs. Falls back to an
+/// untagged `log_ref` when `sub` doesn't fit the 8-bit tag (vanishingly rare;
+/// the signature just loses the per-subsig hint split, not correctness).
+#[inline]
+fn log_ref_sub(i: usize, sub: usize) -> u64 {
+    if sub >= MAX_TAGGED_SUBSIG {
+        return log_ref(i);
+    }
+    log_ref(i) | (((sub + 1) as u64) << SUBSIG_SHIFT)
+}
+/// Sig index a reference (of either kind) points to, ignoring any subsig tag.
+#[inline]
+fn ref_sig_index(r: u64) -> u32 {
+    (r & SIG_INDEX_MASK) as u32
+}
+/// The tagged subsig index carried by a logical reference, if any.
+#[inline]
+fn ref_subsig(r: u64) -> Option<u32> {
+    let t = (r & SUBSIG_MASK) >> SUBSIG_SHIFT;
+    if t == 0 {
+        None
+    } else {
+        Some((t - 1) as u32)
+    }
 }
 /// The atom indexed for a literal: its first `MAX_ATOM` bytes.
 #[inline]
@@ -85,6 +118,17 @@ pub struct CandidateSet {
     sigs: Vec<u32>,
     off_starts: Vec<u32>,
     offsets: Vec<u32>,
+    /// Per-`(sig, subsig)` hint offsets for OR-indexed logical signatures, sorted
+    /// by key for binary search. Lets an individual subsignature's scan thread
+    /// only ITS OWN atom occurrences instead of the whole signature's union —
+    /// narrower windows when sibling subsigs' atoms are far more common than this
+    /// one's. Empty (and looked up as absent) for extended signatures and for any
+    /// subsig whose atom wasn't tagged (see `log_ref_sub`); callers must fall back
+    /// to the signature-level union in that case, never treating absence as "no
+    /// occurrences".
+    sub_keys: Vec<(u32, u32)>,
+    sub_off_starts: Vec<u32>,
+    sub_offsets: Vec<u32>,
 }
 
 impl CandidateSet {
@@ -93,7 +137,20 @@ impl CandidateSet {
             sigs: Vec::new(),
             off_starts: vec![0],
             offsets: Vec::new(),
+            sub_keys: Vec::new(),
+            sub_off_starts: vec![0],
+            sub_offsets: Vec::new(),
         }
+    }
+
+    /// This subsignature's own atom occurrences, if the prefilter tagged them
+    /// separately from the rest of the signature's OR-indexed atoms.
+    pub fn subsig_hints(&self, sig: u32, subsig: u32) -> Option<&[u32]> {
+        let key = (sig, subsig);
+        let idx = self.sub_keys.binary_search(&key).ok()?;
+        let s = self.sub_off_starts[idx] as usize;
+        let e = self.sub_off_starts[idx + 1] as usize;
+        Some(&self.sub_offsets[s..e])
     }
 
     pub fn is_empty(&self) -> bool {
@@ -418,8 +475,11 @@ impl AtomPrefilter {
             // (checked above), so if no indexed atom occurs it provably can't match.
             // No single gate offset applies (the hit may be any branch), so these
             // carry the cutoff-only `best_gate` if any, never a threadable gate.
-            let or_atoms: Option<Vec<Atom>> = if best_index.is_none() {
-                let mut acc: Vec<Atom> = Vec::new();
+            // `(subsig_index, atom)` pairs — the subsig index lets each atom be
+            // tagged so `restrict_ranges` can later thread a subsig's OWN hint
+            // positions instead of the whole signature's union (see `log_ref_sub`).
+            let or_atoms: Option<Vec<(usize, Atom)>> = if best_index.is_none() {
+                let mut acc: Vec<(usize, Atom)> = Vec::new();
                 let mut all = true;
                 for i in 0..n {
                     let Subsignature::Body { offset, patterns } = &sig.subsignatures[i] else {
@@ -434,7 +494,7 @@ impl AtomPrefilter {
                     }
                     for p in patterns {
                         match pattern_atom(p) {
-                            Some(a) => acc.push(a),
+                            Some(a) => acc.push((i, a)),
                             None => {
                                 all = false;
                                 break;
@@ -467,12 +527,13 @@ impl AtomPrefilter {
                     log_all_indexed.push(false);
                 }
                 (None, Some(atoms)) => {
-                    for a in atoms {
+                    for (sub, a) in atoms {
                         match a {
-                            Atom::Exact(a) => entries.push((short_atom(&a).into(), log_ref(si))),
-                            Atom::Nocase(a) => {
-                                entries_nocase.push((short_atom(&a).into(), log_ref(si)))
+                            Atom::Exact(a) => {
+                                entries.push((short_atom(&a).into(), log_ref_sub(si, sub)))
                             }
+                            Atom::Nocase(a) => entries_nocase
+                                .push((short_atom(&a).into(), log_ref_sub(si, sub))),
                         }
                     }
                     // Indexed as an OR candidate set — NOT always-scanned.
@@ -533,6 +594,7 @@ impl AtomPrefilter {
 
         let mut ext_hits: Vec<(u32, u32)> = Vec::new();
         let mut log_hits: Vec<(u32, u32)> = Vec::new();
+        let mut log_sub_hits: Vec<((u32, u32), u32)> = Vec::new();
 
         if let Some(ac) = self.ac.as_ref() {
             collect_hits(
@@ -543,6 +605,7 @@ impl AtomPrefilter {
                 &self.sig_refs,
                 &mut ext_hits,
                 &mut log_hits,
+                &mut log_sub_hits,
             );
         }
 
@@ -567,12 +630,13 @@ impl AtomPrefilter {
                     &self.sig_refs_nocase,
                     &mut ext_hits,
                     &mut log_hits,
+                    &mut log_sub_hits,
                 );
             }
         }
 
-        let ext = build_candidate_set(ext_hits, &self.ext_always);
-        let log = build_candidate_set(log_hits, &self.log_always);
+        let ext = build_candidate_set(ext_hits, &self.ext_always, Vec::new());
+        let log = build_candidate_set(log_hits, &self.log_always, log_sub_hits);
         (Candidates::List(ext), Candidates::List(log))
     }
 }
@@ -593,6 +657,7 @@ fn collect_hits(
     sig_refs: &[u64],
     ext_hits: &mut Vec<(u32, u32)>,
     log_hits: &mut Vec<(u32, u32)>,
+    log_sub_hits: &mut Vec<((u32, u32), u32)>,
 ) {
     let mut counts = vec![0u32; num_atoms];
     for m in ac.find_overlapping_iter(haystack) {
@@ -607,7 +672,10 @@ fn collect_hits(
                 let end = atom_starts[id + 1] as usize;
                 for &r in &sig_refs[start..end] {
                     if r & LOG_FLAG != 0 {
-                        log_hits.push(((r & !LOG_FLAG) as u32, OFFSET_OVERFLOW));
+                        log_hits.push((ref_sig_index(r), OFFSET_OVERFLOW));
+                        if let Some(sub) = ref_subsig(r) {
+                            log_sub_hits.push(((ref_sig_index(r), sub), OFFSET_OVERFLOW));
+                        }
                     } else {
                         ext_hits.push((r as u32, OFFSET_OVERFLOW));
                     }
@@ -621,7 +689,10 @@ fn collect_hits(
         let end = atom_starts[id + 1] as usize;
         for &r in &sig_refs[start..end] {
             if r & LOG_FLAG != 0 {
-                log_hits.push(((r & !LOG_FLAG) as u32, off));
+                log_hits.push((ref_sig_index(r), off));
+                if let Some(sub) = ref_subsig(r) {
+                    log_sub_hits.push(((ref_sig_index(r), sub), off));
+                }
             } else {
                 ext_hits.push((r as u32, off));
             }
@@ -634,12 +705,49 @@ fn collect_hits(
 /// A signature whose atom overflowed, or that accumulated more than
 /// `MAX_OFFSETS_PER_SIG` offsets, also gets an empty span (full scan) to bound
 /// memory. Signatures stay sorted and de-duplicated.
-fn build_candidate_set(mut hits: Vec<(u32, u32)>, always: &[u32]) -> CandidateSet {
+fn build_candidate_set(
+    mut hits: Vec<(u32, u32)>,
+    always: &[u32],
+    mut sub_hits: Vec<((u32, u32), u32)>,
+) -> CandidateSet {
     if hits.is_empty() && always.is_empty() {
         return CandidateSet::empty();
     }
     hits.sort_unstable();
     hits.dedup();
+
+    // Group `sub_hits` by `(sig, subsig)` into the same CSR shape as the
+    // signature-level offsets. A key whose offsets overflowed (or exceeded the
+    // per-subsig cap) is dropped entirely — its absence means "no split data",
+    // and callers fall back to the signature-level union, never to "no hits".
+    sub_hits.sort_unstable();
+    sub_hits.dedup();
+    let mut sub_keys: Vec<(u32, u32)> = Vec::new();
+    let mut sub_off_starts: Vec<u32> = vec![0];
+    let mut sub_offsets: Vec<u32> = Vec::new();
+    let mut i = 0usize;
+    while i < sub_hits.len() {
+        let key = sub_hits[i].0;
+        let base = sub_offsets.len();
+        let mut overflowed = false;
+        let mut j = i;
+        while j < sub_hits.len() && sub_hits[j].0 == key {
+            let off = sub_hits[j].1;
+            if off == OFFSET_OVERFLOW {
+                overflowed = true;
+            } else {
+                sub_offsets.push(off);
+            }
+            j += 1;
+        }
+        if overflowed || sub_offsets.len() - base > MAX_OFFSETS_PER_SIG {
+            sub_offsets.truncate(base);
+        } else {
+            sub_keys.push(key);
+            sub_off_starts.push(sub_offsets.len() as u32);
+        }
+        i = j;
+    }
 
     let mut always_sorted = always.to_vec();
     always_sorted.sort_unstable();
@@ -693,6 +801,9 @@ fn build_candidate_set(mut hits: Vec<(u32, u32)>, always: &[u32]) -> CandidateSe
         sigs,
         off_starts,
         offsets,
+        sub_keys,
+        sub_off_starts,
+        sub_offsets,
     }
 }
 
