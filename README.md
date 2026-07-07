@@ -1,5 +1,5 @@
 # 🐉 HydraDragonAV Mobile
-**Military-Grade Advanced Android Cybersecurity & Threat Protection**
+**Advanced Android Antivirus with Threat Protection**
 
 ![HydraDragonAndroid](assets/HydraDragonAndroid.png)
 
