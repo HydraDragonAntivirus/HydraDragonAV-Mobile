@@ -28,7 +28,7 @@ pub const DEFAULT_JACCARD_THRESHOLD: f32 = 0.55;
 pub const DEFAULT_N_TREES: usize = 150;
 pub const DEFAULT_SAMPLE_SIZE: usize = 256;
 /// Anomaly threshold is learned as this percentile of training scores.
-pub const DEFAULT_ANOMALY_PERCENTILE: f64 = 0.85;
+pub const DEFAULT_ANOMALY_PERCENTILE: f64 = 0.25;
 
 #[derive(Serialize, Deserialize)]
 pub struct Model {
