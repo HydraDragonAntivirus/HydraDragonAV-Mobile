@@ -832,21 +832,22 @@ impl Engine {
                 let t_sub = std::time::Instant::now();
                 let restricted;
                 let mut was_restricted = false;
-                let ranges: &[(usize, usize)] = if all_indexed {
-                    match subsig_max_match_len(patterns) {
-                        Some(ml) => {
-                            let subsig_hints = cand_set
-                                .and_then(|s| s.subsig_hints(si as u32, i as u32));
-                            let use_hints = subsig_hints.unwrap_or_else(|| hints.unwrap());
-                            restricted =
-                                restrict_ranges(&base_ranges, use_hints, ml, ctx.data.len());
-                            was_restricted = true;
-                            &restricted
-                        }
-                        None => &base_ranges,
+                // Prefer this subsig's OWN tagged atom occurrences (populated for
+                // both OR-indexed and gated signatures — see `AtomPrefilter::build`)
+                // over the whole-signature union `hints`, and over `all_indexed`,
+                // which only gates the union fallback: a gated signature has no
+                // union hints for its non-gate subsigs, but may still have per-subsig
+                // hints for some of them individually.
+                let use_hints = cand_set
+                    .and_then(|s| s.subsig_hints(si as u32, i as u32))
+                    .or_else(|| if all_indexed { hints } else { None });
+                let ranges: &[(usize, usize)] = match (use_hints, subsig_max_match_len(patterns)) {
+                    (Some(h), Some(ml)) if !h.is_empty() => {
+                        restricted = restrict_ranges(&base_ranges, h, ml, ctx.data.len());
+                        was_restricted = true;
+                        &restricted
                     }
-                } else {
-                    &base_ranges
+                    _ => &base_ranges,
                 };
                 let count = body_matches(
                     patterns,

@@ -525,6 +525,50 @@ impl AtomPrefilter {
                         threadable: true,
                     }));
                     log_all_indexed.push(false);
+
+                    // The gate only indexes ONE required subsig. Every OTHER body
+                    // subsig whose variants all have a usable atom is tagged too
+                    // (per-subsig, via `log_ref_sub`) so `scan_one_logical` can
+                    // restrict its scan to windows around those atoms instead of
+                    // rescanning the whole buffer once the gate passes — this is
+                    // what previously forced a full unrestricted `body_matches` on
+                    // every non-gate subsig of a gated signature. Purely additive:
+                    // it only feeds `subsig_hints`, never signature candidacy
+                    // (still decided by the gate atom above).
+                    for (sub, subsig) in sig.subsignatures.iter().enumerate() {
+                        if sub == idx {
+                            continue;
+                        }
+                        let Subsignature::Body { patterns, .. } = subsig else {
+                            continue;
+                        };
+                        if patterns.is_empty() {
+                            continue;
+                        }
+                        let mut sub_atoms: Vec<Atom> = Vec::with_capacity(patterns.len());
+                        let mut all = true;
+                        for p in patterns {
+                            match pattern_atom(p) {
+                                Some(a) => sub_atoms.push(a),
+                                None => {
+                                    all = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if !all {
+                            continue;
+                        }
+                        for a in sub_atoms {
+                            match a {
+                                Atom::Exact(a) => {
+                                    entries.push((short_atom(&a).into(), log_ref_sub(si, sub)))
+                                }
+                                Atom::Nocase(a) => entries_nocase
+                                    .push((short_atom(&a).into(), log_ref_sub(si, sub))),
+                            }
+                        }
+                    }
                 }
                 (None, Some(atoms)) => {
                     for (sub, a) in atoms {
