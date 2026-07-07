@@ -2046,7 +2046,7 @@ fn build_androguard_json(buffers: &[Buf]) -> Option<String> {
 
     Some(format!(
         concat!(
-            "{{\"package_name\":{},\"app_name\":{},\"main_activity\":null,",
+            "{{\"package_name\":{},\"app_name\":{},\"main_activity\":{},",
             "\"activities\":[{}],\"services\":[{}],\"receivers\":[{}],",
             "\"permissions\":[{}],\"new_permissions\":[{}],\"urls\":[{}],",
             "\"min_sdk_version\":{},\"max_sdk_version\":{},\"target_sdk_version\":{},",
@@ -2054,6 +2054,7 @@ fn build_androguard_json(buffers: &[Buf]) -> Option<String> {
         ),
         opt_str(&manifest.package),
         opt_str(&manifest.app_name),
+        opt_str(&manifest.main_activity),
         arr(&manifest.activities),
         arr(&manifest.services),
         arr(&manifest.receivers),
