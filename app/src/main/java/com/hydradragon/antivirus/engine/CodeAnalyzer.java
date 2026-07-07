@@ -66,12 +66,10 @@ public class CodeAnalyzer {
 
             byte[] buffer = new byte[204800];
             int totalDexSize = 0;
-            int dexCount = 0;
 
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
                 if (entry.getName().startsWith("classes") && entry.getName().endsWith(".dex")) {
-                    dexCount++;
                     totalDexSize += Math.min((int) entry.getSize(), 204800);
                 }
             }
@@ -89,10 +87,7 @@ public class CodeAnalyzer {
             }
             zipFile.close();
 
-            if (dexCount > 2) {
-                findings.add("⚠ Multiple DEX (" + dexCount + " count) - Code obfuscation suspected!");
-                totalRisk += 20;
-            }
+
 
             String content = bytecodeContent.toString();
             for (String sig : MALICIOUS_SIGNATURES) {
@@ -110,7 +105,6 @@ public class CodeAnalyzer {
             }
 
             Map<String, Boolean> features = new HashMap<>();
-            features.put("has_obfuscation", dexCount > 2);
             features.put("has_dynamic_loading", content.contains("DexClassLoader") || content.contains("dalvik.system.DexFile"));
             features.put("has_crypto", content.contains(".enc") || content.contains(".crypt"));
             features.put("targets_files", content.contains("renameTo") || content.contains("Environment.getExternalStorageDirectory"));

@@ -9,7 +9,6 @@ public class AIEngine {
 
     private static final Map<String, Double> WEIGHTS = new HashMap<>();
     static {
-        WEIGHTS.put("has_obfuscation", 2.5);
         WEIGHTS.put("has_dynamic_loading", 4.0);
         WEIGHTS.put("has_crypto", 3.0);
         WEIGHTS.put("targets_files", 2.5);
@@ -69,9 +68,7 @@ public class AIEngine {
             type = com.hydradragon.antivirus.model.ThreatResult.ThreatType.TROJAN;
         }
 
-        if (aiScore > 75) {
-            return new AIResult(aiScore, "AI Detection: Advanced Suspicious Behavior", true, type);
-        } else if (aiScore > 50 && activeFeatures >= 3) {
+        if (aiScore > 50 && activeFeatures >= 3) {
             return new AIResult(aiScore / 2, "AI WARNING: Suspicious Behavior Combination Detected.", true, type);
         }
         
