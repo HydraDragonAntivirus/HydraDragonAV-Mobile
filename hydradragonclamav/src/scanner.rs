@@ -350,11 +350,20 @@ impl Engine {
             return;
         }
 
-        // Time ClamAV scan_context
-        let t_clamav = timing.as_ref().map(|_| Instant::now());
-        self.scan_context(&ctx, &mut state.matches);
-        if let (Some(t), Some(bt)) = (t_clamav, timing.as_mut()) {
-            bt.clamav_ns = bt.clamav_ns.saturating_add(t.elapsed().as_nanos());
+        // Only run the ClamAV engine (prefilter + extended + logical) on files
+        // positively identified as a supported type. Every other case — a
+        // confidently-typed desktop-only format (PE, OLE2, Mail, Mach-O, SWF,
+        // Java, ...) or a type we simply fail to classify — is skipped outright,
+        // instead of paying for the whole-buffer atom prefilter and then having
+        // `target_matches` reject each candidate signature one by one.
+        let confident_target = detected_target.or_else(|| detect_builtin_target(&ctx));
+        if clamav_target_allowed(confident_target) {
+            // Time ClamAV scan_context
+            let t_clamav = timing.as_ref().map(|_| Instant::now());
+            self.scan_context(&ctx, &mut state.matches);
+            if let (Some(t), Some(bt)) = (t_clamav, timing.as_mut()) {
+                bt.clamav_ns = bt.clamav_ns.saturating_add(t.elapsed().as_nanos());
+            }
         }
 
         // YARA-x scan for Android-relevant file types — run every loaded ruleset,
@@ -992,6 +1001,17 @@ fn body_matches(
     count
 }
 
+/// ClamAV target codes worth running the ClamAV engine on at all: HTML(3),
+/// Graphics(5), ELF(6), ASCII text(7), PDF(10), DEX(16), ZIP/APK(17). Anything
+/// else — a confidently-typed desktop-only format or a type we can't classify
+/// — never runs on Android, so `scan_object` skips the whole engine for it
+/// rather than relying on `target_matches` to reject each candidate.
+const CLAMAV_ALLOWED_TARGETS: [u32; 7] = [3, 5, 6, 7, 10, 16, 17];
+
+fn clamav_target_allowed(target: Option<u32>) -> bool {
+    matches!(target, Some(t) if CLAMAV_ALLOWED_TARGETS.contains(&t))
+}
+
 fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>) -> bool {
     let want = target.unwrap_or(0);
 
@@ -1029,14 +1049,8 @@ fn detect_builtin_target(ctx: &ScanContext<'_>) -> Option<u32> {
     if d.starts_with(b"\x7fELF") {
         return Some(6); // CL_TYPE_ELF
     }
-    if d.starts_with(&[0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]) {
-        return Some(2); // CL_TYPE_OLE2
-    }
     if d.starts_with(b"%PDF") {
         return Some(10); // CL_TYPE_PDF
-    }
-    if d.starts_with(b"FWS") || d.starts_with(b"CWS") || d.starts_with(b"ZWS") {
-        return Some(11); // CL_TYPE_SWF
     }
     if d.starts_with(b"GIF8")
         || d.starts_with(&[0x89, b'P', b'N', b'G'])
