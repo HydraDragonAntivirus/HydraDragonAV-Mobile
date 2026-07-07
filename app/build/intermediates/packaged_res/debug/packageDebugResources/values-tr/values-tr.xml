@@ -81,6 +81,7 @@
     <string name="detect_cat_native_emulation">Yerel kod emülasyonu (gizli/çözülmüş dizeleri ortaya çıkarır)</string>
     <string name="detect_cat_permissions">Tehlikeli izinler</string>
     <string name="detect_cat_pua">Potansiyel İstenmeyen Uygulamalar (PUA)</string>
+    <string name="detect_cat_rootkit">Rootkit benzeri davranış (gizli uygulama + şüpheli izinler)</string>
     <string name="detect_cat_signatures">İmza tabanlı (YARA/ClamAV)</string>
     <string name="detect_cat_url_strings">Dosyalarda kötü amaçlı/kimlik avı URL dizeleri</string>
     <string name="detection_categories_header">Tespit Kategorileri</string>
@@ -174,6 +175,9 @@
     <string name="notification_permission_required">Bildirim izni gereklidir!</string>
     <string name="obscured_touch_warning">Dokunma yok sayıldı — ekranın üzerinde bir şey var</string>
     <string name="outgoing">▲ GİDEN</string>
+    <string name="periodic_scan_off_toast">Periyodik arka plan taramaları KAPALI — gerçek zamanlı koruma (İndirilenler izleyici, kurulumda tarama) çalışmaya devam ediyor</string>
+    <string name="periodic_scan_on_toast">Periyodik arka plan taramaları AÇIK</string>
+    <string name="periodic_scan_toggle">Periyodik Arka Plan Taraması</string>
     <string name="play_protect_off_msg">Play Protect, Google\'ın sunucu taraflı tehdit veritabanını kullanarak uygulamaları yükleme anında tarar — HydraDragon\'un yerine değil, onunla birlikte çalışır. Tekrar açmanızı öneririz.</string>
     <string name="play_protect_off_title">Google Play Protect Kapalı</string>
     <string name="play_protect_open_failed">Play Protect ayarları açılamadı</string>

@@ -192,6 +192,9 @@
     <string name="notification_permission_required">Notification permission is required!</string>
     <string name="obscured_touch_warning">Tap ignored — something is overlaying the screen</string>
     <string name="outgoing">▲ OUTGOING</string>
+    <string name="periodic_scan_off_toast">Periodic background scans OFF — real-time protection (Downloads watcher, on-install scan) keeps running</string>
+    <string name="periodic_scan_on_toast">Periodic background scans ON</string>
+    <string name="periodic_scan_toggle">Periodic Background Scan</string>
     <string name="play_protect_off_msg">Play Protect scans apps at install time using Google\'s server-side threat database — it works alongside HydraDragon, not instead of it. We recommend turning it back on.</string>
     <string name="play_protect_off_title">Google Play Protect is Off</string>
     <string name="play_protect_open_failed">Could not open Play Protect settings</string>

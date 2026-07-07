@@ -2,6 +2,12 @@ package com.hydradragon.antivirus.service;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -22,5 +28,29 @@ public class ThreatLogger {
     public static String getLogs(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         return prefs.getString("logs", context.getString(com.hydradragon.antivirus.R.string.no_threat_logs));
+    }
+
+    public static void exportLogs(Context context, Uri uri) {
+        String logs = getLogs(context);
+        try (OutputStream out = context.getContentResolver().openOutputStream(uri)) {
+            if (out != null) {
+                out.write(logs.getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception ignored) {}
+    }
+
+    public static void importLogs(Context context, Uri uri) {
+        StringBuilder sb = new StringBuilder();
+        try (InputStream in = context.getContentResolver().openInputStream(uri);
+             BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
+        } catch (Exception ignored) {}
+        if (sb.length() > 0) {
+            SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            prefs.edit().putString("logs", sb.toString()).apply();
+        }
     }
 }
