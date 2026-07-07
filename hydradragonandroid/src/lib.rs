@@ -1804,9 +1804,19 @@ struct Manifest {
     activities: Vec<String>,
     services: Vec<String>,
     receivers: Vec<String>,
+    /// The activity with an enabled MAIN/LAUNCHER intent-filter, if any —
+    /// `None` means the app declares no way to be opened from the home
+    /// screen/app drawer (feeds `androguard.rootkit_behavior()` in yara-x).
+    main_activity: Option<String>,
     min_sdk: Option<i64>,
     max_sdk: Option<i64>,
     target_sdk: Option<i64>,
+}
+
+/// Read a boolean-typed AXML attribute (TYPE_INT_BOOLEAN: data u32 at a+16,
+/// 0 = false, nonzero = true).
+fn axml_attr_bool(data: &[u8], a: usize) -> Option<bool> {
+    Some(rd_u32(data, a + 16)? != 0)
 }
 
 fn parse_manifest(data: &[u8]) -> Option<Manifest> {
@@ -1824,10 +1834,22 @@ fn parse_manifest(data: &[u8]) -> Option<Manifest> {
         activities: Vec::new(),
         services: Vec::new(),
         receivers: Vec::new(),
+        main_activity: None,
         min_sdk: None,
         max_sdk: None,
         target_sdk: None,
     };
+
+    // Small nesting-aware state for locating a MAIN/LAUNCHER activity: which
+    // activity element we're currently inside (and whether it's explicitly
+    // disabled — `android:enabled="false"` while keeping the intent-filter
+    // in the manifest is a known icon-hiding trick), and whether the
+    // intent-filter we're currently inside has seen MAIN and LAUNCHER.
+    let mut activity_stack: Vec<(String, bool)> = Vec::new(); // (name, enabled)
+    let mut in_intent_filter = false;
+    let mut has_action_main = false;
+    let mut has_category_launcher = false;
+
     while off + 8 <= data.len() && guard < 200_000 {
         guard += 1;
         let ctype = rd_u16(data, off)?;
@@ -1870,9 +1892,67 @@ fn parse_manifest(data: &[u8]) -> Option<Manifest> {
                         m.app_name = axml_attr_string(data, &strings, a);
                     }
                 }
-                "activity" | "activity-alias" => push_component(data, &strings, off, &mut m.activities),
+                "activity" | "activity-alias" => {
+                    push_component(data, &strings, off, &mut m.activities);
+                    let name = axml_find_attr(data, &strings, off, "name")
+                        .and_then(|a| axml_attr_string(data, &strings, a))
+                        .unwrap_or_default();
+                    // Defaults to enabled unless explicitly set to false.
+                    let enabled = axml_find_attr(data, &strings, off, "enabled")
+                        .and_then(|a| axml_attr_bool(data, a))
+                        .unwrap_or(true);
+                    if activity_stack.len() < 64 {
+                        activity_stack.push((name, enabled));
+                    }
+                }
                 "service" => push_component(data, &strings, off, &mut m.services),
                 "receiver" => push_component(data, &strings, off, &mut m.receivers),
+                "intent-filter" => {
+                    in_intent_filter = true;
+                    has_action_main = false;
+                    has_category_launcher = false;
+                }
+                "action" if in_intent_filter => {
+                    if let Some(a) = axml_find_attr(data, &strings, off, "name") {
+                        if axml_attr_string(data, &strings, a).as_deref()
+                            == Some("android.intent.action.MAIN")
+                        {
+                            has_action_main = true;
+                        }
+                    }
+                }
+                "category" if in_intent_filter => {
+                    if let Some(a) = axml_find_attr(data, &strings, off, "name") {
+                        if axml_attr_string(data, &strings, a).as_deref()
+                            == Some("android.intent.category.LAUNCHER")
+                        {
+                            has_category_launcher = true;
+                        }
+                    }
+                }
+                _ => {}
+            }
+        } else if ctype == 0x0103 {
+            // RES_XML_END_ELEMENT: element name at the same off+20 offset.
+            let name_idx = rd_u32(data, off + 20)? as usize;
+            let ename = strings.get(name_idx).map(|s| s.as_str()).unwrap_or("");
+            match ename {
+                "intent-filter" => {
+                    if m.main_activity.is_none()
+                        && has_action_main
+                        && has_category_launcher
+                    {
+                        if let Some((name, enabled)) = activity_stack.last() {
+                            if *enabled && !name.is_empty() {
+                                m.main_activity = Some(name.clone());
+                            }
+                        }
+                    }
+                    in_intent_filter = false;
+                }
+                "activity" | "activity-alias" => {
+                    activity_stack.pop();
+                }
                 _ => {}
             }
         }
