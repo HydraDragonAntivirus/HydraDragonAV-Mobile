@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">Автоматично запускати захист при завантаженні</string>
     <string name="boot_auto_start_on_toast">Захист автоматично запуститься наступного разу, коли ваш пристрій завантажиться</string>
     <string name="boot_auto_start_off_toast">Автозапуск при завантаженні ВИМКНЕНО — щоб запустити захист, вам потрібно буде відкрити застосунок</string>
+    <string name="periodic_scan_toggle">Періодичне фонове сканування</string>
+    <string name="periodic_scan_on_toast">Періодичне фонове сканування УВІМКНЕНО</string>
+    <string name="periodic_scan_off_toast">Періодичне фонове сканування ВИМКНЕНО — захист у реальному часі (монітор завантажень, сканування під час встановлення) продовжує працювати</string>
     <string name="scan_interval_btn">Налаштувати інтервал сканування</string>
     <string name="scan_interval_quick_label">Швидке сканування кожні (хвилин):</string>
     <string name="scan_interval_full_label">Повне сканування кожні (хвилин):</string>

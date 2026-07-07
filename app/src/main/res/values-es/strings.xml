@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">Iniciar la protección automáticamente al arrancar</string>
     <string name="boot_auto_start_on_toast">La protección se iniciará automáticamente la próxima vez que arranque tu dispositivo</string>
     <string name="boot_auto_start_off_toast">Inicio automático al arrancar DESACTIVADO — deberás abrir la app para iniciar la protección</string>
+    <string name="periodic_scan_toggle">Análisis periódico en segundo plano</string>
+    <string name="periodic_scan_on_toast">Análisis periódicos en segundo plano ACTIVADOS</string>
+    <string name="periodic_scan_off_toast">Análisis periódicos en segundo plano DESACTIVADOS — la protección en tiempo real (monitor de descargas, análisis al instalar) sigue funcionando</string>
     <string name="scan_interval_btn">Configurar intervalo de análisis</string>
     <string name="scan_interval_quick_label">Análisis rápido cada (minutos):</string>
     <string name="scan_interval_full_label">Análisis completo cada (minutos):</string>

@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">بدء الحماية تلقائياً عند التشغيل</string>
     <string name="boot_auto_start_on_toast">ستبدأ الحماية تلقائياً في المرة القادمة التي يبدأ فيها تشغيل جهازك</string>
     <string name="boot_auto_start_off_toast">تم إيقاف البدء التلقائي عند التشغيل — ستحتاج لفتح التطبيق لبدء الحماية</string>
+    <string name="periodic_scan_toggle">الفحص الدوري في الخلفية</string>
+    <string name="periodic_scan_on_toast">تم تفعيل الفحص الدوري في الخلفية</string>
+    <string name="periodic_scan_off_toast">تم إيقاف الفحص الدوري في الخلفية — الحماية الفورية (مراقبة التنزيلات، فحص التثبيت) تستمر بالعمل</string>
     <string name="scan_interval_btn">تهيئة فترة الفحص</string>
     <string name="scan_interval_quick_label">الفحص السريع كل (بالدقائق):</string>
     <string name="scan_interval_full_label">الفحص الكامل كل (بالدقائق):</string>

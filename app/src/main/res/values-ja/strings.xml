@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">起動時に保護を自動的に開始する</string>
     <string name="boot_auto_start_on_toast">次回デバイスが起動したとき、保護が自動的に開始されます</string>
     <string name="boot_auto_start_off_toast">起動時の自動開始OFF — 保護を開始するにはアプリを開く必要があります</string>
+    <string name="periodic_scan_toggle">定期バックグラウンドスキャン</string>
+    <string name="periodic_scan_on_toast">定期バックグラウンドスキャンをオンにしました</string>
+    <string name="periodic_scan_off_toast">定期バックグラウンドスキャンをオフにしました — リアルタイム保護（ダウンロード監視、インストール時スキャン）は引き続き動作します</string>
     <string name="scan_interval_btn">スキャン間隔の設定</string>
     <string name="scan_interval_quick_label">クイックスキャンの間隔（分）：</string>
     <string name="scan_interval_full_label">フルスキャンの間隔（分）：</string>

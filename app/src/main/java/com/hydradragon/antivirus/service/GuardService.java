@@ -238,7 +238,14 @@ public class GuardService extends Service {
         // Service.startForeground() before raising an ANR — this used to be
         // masked because the native .so failed to load, making init a no-op.
         try {
-            startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.guard_protecting_status), true));
+            // Not "System protected" yet — MainActivity starts this service
+            // before it even shows the mandatory/optional permission dialogs
+            // (all files access, notifications, accessibility, ...), and
+            // initializeEngines() below hasn't loaded the native scan engine
+            // either. Claiming the device is protected while both are still
+            // pending is misleading; this switches to the real status once
+            // initializeEngines() actually finishes, below.
+            startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.engine_loading_status), true));
         } catch (Throwable t) {
             Log.e(TAG, "startForeground failed", t);
         }
@@ -246,6 +253,7 @@ public class GuardService extends Service {
             initializeEngines();
             engineLoading = false;
             Log.i(TAG, "engineLoading=false (engines ready)");
+            updateNotification(getString(R.string.guard_protecting_status), true);
             startPeriodicScans();
             startDownloadMonitor();
             startFullStorageMonitor();
@@ -380,30 +388,40 @@ public class GuardService extends Service {
     private void startPeriodicScans() {
         scheduler = Executors.newScheduledThreadPool(2);
 
-        // Intervals are user-configurable from Settings (see ScanSchedule) —
-        // defaults match what used to be hardcoded (30 / 180 min). The initial
-        // delay is capped at the interval itself so a shorter user-set
-        // interval isn't stuck waiting out the old fixed delay first.
-        int quickMin = com.hydradragon.antivirus.engine.ScanSchedule.getQuickScanIntervalMinutes(this);
-        int fullMin = com.hydradragon.antivirus.engine.ScanSchedule.getFullScanIntervalMinutes(this);
-        int quickDelay = Math.min(5, quickMin);
-        int fullDelay = Math.min(45, fullMin);
+        // The Quick/Full timer-driven re-scans are independently toggleable
+        // from Settings (see ScanSchedule#isPeriodicScanEnabled) — turning
+        // this off does NOT disable real-time protection (Downloads watcher,
+        // on-install scan, network/behavior monitors below all still run);
+        // it only stops the periodic background re-scan of already-installed
+        // apps and storage.
+        if (com.hydradragon.antivirus.engine.ScanSchedule.isPeriodicScanEnabled(this)) {
+            // Intervals are user-configurable from Settings (see ScanSchedule) —
+            // defaults match what used to be hardcoded (30 / 180 min). The initial
+            // delay is capped at the interval itself so a shorter user-set
+            // interval isn't stuck waiting out the old fixed delay first.
+            int quickMin = com.hydradragon.antivirus.engine.ScanSchedule.getQuickScanIntervalMinutes(this);
+            int fullMin = com.hydradragon.antivirus.engine.ScanSchedule.getFullScanIntervalMinutes(this);
+            int quickDelay = Math.min(5, quickMin);
+            int fullDelay = Math.min(45, fullMin);
 
-        scheduler.scheduleAtFixedRate(() -> {
-            Log.d(TAG, "Periodic scan started");
-            scanEngine.scanAllApps(false); // default: QUICK SCAN
-        }, quickDelay, quickMin, TimeUnit.MINUTES);
+            scheduler.scheduleAtFixedRate(() -> {
+                Log.d(TAG, "Periodic scan started");
+                scanEngine.scanAllApps(false); // default: QUICK SCAN
+            }, quickDelay, quickMin, TimeUnit.MINUTES);
 
-        // A file copied straight onto external/SD storage from a computer (USB/
-        // MTP) outside the Downloads folder is invisible to the Downloads
-        // FileObserver AND to the frequent Quick Scan above (Downloads + installed
-        // apps only) — it would otherwise sit undetected until the user manually
-        // taps Full Scan. Periodic Full Scan (all storage roots + SD card) closes
-        // that gap without needing always-on real-time watchers on every folder.
-        scheduler.scheduleAtFixedRate(() -> {
-            Log.d(TAG, "Periodic FULL scan started (external storage coverage)");
-            scanEngine.scanAllApps(true);
-        }, fullDelay, fullMin, TimeUnit.MINUTES);
+            // A file copied straight onto external/SD storage from a computer (USB/
+            // MTP) outside the Downloads folder is invisible to the Downloads
+            // FileObserver AND to the frequent Quick Scan above (Downloads + installed
+            // apps only) — it would otherwise sit undetected until the user manually
+            // taps Full Scan. Periodic Full Scan (all storage roots + SD card) closes
+            // that gap without needing always-on real-time watchers on every folder.
+            scheduler.scheduleAtFixedRate(() -> {
+                Log.d(TAG, "Periodic FULL scan started (external storage coverage)");
+                scanEngine.scanAllApps(true);
+            }, fullDelay, fullMin, TimeUnit.MINUTES);
+        } else {
+            Log.i(TAG, "Periodic scans disabled by user setting");
+        }
 
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();
@@ -578,7 +596,9 @@ public class GuardService extends Service {
         // during early init), the service would otherwise run as a background
         // service with a 200s ANR timeout instead of the 20s foreground one.
         if (intent != null) try {
-            startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.guard_protecting_status), true));
+            String status = engineLoading ? getString(R.string.engine_loading_status)
+                                           : getString(R.string.guard_protecting_status);
+            startForeground(NOTIFICATION_ID, buildNotification(status, true));
         } catch (Throwable t) {
             Log.e(TAG, "onStartCommand startForeground failed", t);
         }

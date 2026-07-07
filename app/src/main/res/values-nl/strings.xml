@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">Bescherming automatisch starten bij opstarten</string>
     <string name="boot_auto_start_on_toast">De bescherming start automatisch de volgende keer dat je apparaat opstart</string>
     <string name="boot_auto_start_off_toast">Automatisch starten bij opstarten UIT — je moet de app openen om de bescherming te starten</string>
+    <string name="periodic_scan_toggle">Periodieke achtergrondscan</string>
+    <string name="periodic_scan_on_toast">Periodieke achtergrondscans AAN</string>
+    <string name="periodic_scan_off_toast">Periodieke achtergrondscans UIT — realtime bescherming (downloadmonitor, scan bij installatie) blijft actief</string>
     <string name="scan_interval_btn">Scaninterval configureren</string>
     <string name="scan_interval_quick_label">Snelle scan elke (minuten):</string>
     <string name="scan_interval_full_label">Volledige scan elke (minuten):</string>

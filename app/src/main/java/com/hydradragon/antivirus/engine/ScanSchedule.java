@@ -9,6 +9,7 @@ public final class ScanSchedule {
     private static final String PREFS = "hydra_prefs";
     private static final String KEY_QUICK = "scan_interval_quick_min";
     private static final String KEY_FULL = "scan_interval_full_min";
+    private static final String KEY_ENABLED = "periodic_scan_enabled";
 
     public static final int DEFAULT_QUICK_MIN = 30;
     public static final int DEFAULT_FULL_MIN = 180;
@@ -17,6 +18,18 @@ public final class ScanSchedule {
     public static final int MIN_INTERVAL_MIN = 5;
 
     private ScanSchedule() {}
+
+    /** Whether GuardService should schedule the periodic Quick/Full scans at
+     *  all (see GuardService#startPeriodicScans). On by default; real-time
+     *  protection (Downloads watcher, on-install scan) keeps running either
+     *  way — this only turns off the background timer-driven re-scans. */
+    public static boolean isPeriodicScanEnabled(Context c) {
+        return c.getSharedPreferences(PREFS, 0).getBoolean(KEY_ENABLED, true);
+    }
+
+    public static void setPeriodicScanEnabled(Context c, boolean enabled) {
+        c.getSharedPreferences(PREFS, 0).edit().putBoolean(KEY_ENABLED, enabled).apply();
+    }
 
     public static int getQuickScanIntervalMinutes(Context c) {
         return c.getSharedPreferences(PREFS, 0).getInt(KEY_QUICK, DEFAULT_QUICK_MIN);

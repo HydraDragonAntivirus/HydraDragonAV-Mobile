@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">Avvia automaticamente la protezione all\'avvio</string>
     <string name="boot_auto_start_on_toast">La protezione si avvierà automaticamente al prossimo avvio del dispositivo</string>
     <string name="boot_auto_start_off_toast">Avvio automatico DISATTIVATO — dovrai aprire l\'app per avviare la protezione</string>
+    <string name="periodic_scan_toggle">Scansione periodica in background</string>
+    <string name="periodic_scan_on_toast">Scansioni periodiche in background ATTIVE</string>
+    <string name="periodic_scan_off_toast">Scansioni periodiche in background DISATTIVATE — la protezione in tempo reale (monitor dei download, scansione all\'installazione) continua a funzionare</string>
     <string name="scan_interval_btn">Configura intervallo di scansione</string>
     <string name="scan_interval_quick_label">Scansione rapida ogni (minuti):</string>
     <string name="scan_interval_full_label">Scansione completa ogni (minuti):</string>

@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">شروع خودکار محافظت هنگام روشن شدن</string>
     <string name="boot_auto_start_on_toast">دفعه بعد که دستگاه شما روشن شود، محافظت به‌طور خودکار شروع می‌شود</string>
     <string name="boot_auto_start_off_toast">شروع خودکار هنگام روشن شدن خاموش شد — برای شروع محافظت باید برنامه را باز کنید</string>
+    <string name="periodic_scan_toggle">اسکن دوره‌ای در پس‌زمینه</string>
+    <string name="periodic_scan_on_toast">اسکن دوره‌ای پس‌زمینه روشن شد</string>
+    <string name="periodic_scan_off_toast">اسکن دوره‌ای پس‌زمینه خاموش شد — محافظت بلادرنگ (پایش دانلودها، اسکن هنگام نصب) همچنان فعال است</string>
     <string name="scan_interval_btn">پیکربندی بازه اسکن</string>
     <string name="scan_interval_quick_label">اسکن سریع هر (دقیقه):</string>
     <string name="scan_interval_full_label">اسکن کامل هر (دقیقه):</string>

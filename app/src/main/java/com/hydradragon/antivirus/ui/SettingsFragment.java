@@ -174,6 +174,20 @@ public class SettingsFragment extends Fragment {
             }
         });
 
+        boolean periodicScanOn = com.hydradragon.antivirus.engine.ScanSchedule.isPeriodicScanEnabled(requireContext());
+        addToggle(getString(R.string.periodic_scan_toggle), periodicScanOn, (btn, on) -> {
+            com.hydradragon.antivirus.engine.ScanSchedule.setPeriodicScanEnabled(requireContext(), on);
+            // Only startPeriodicScans() reads this, at GuardService startup —
+            // restart it so the change takes effect right away, same as the
+            // interval dialog below.
+            Intent svc = new Intent(requireContext(), com.hydradragon.antivirus.service.GuardService.class);
+            requireContext().stopService(svc);
+            ContextCompat.startForegroundService(requireContext(), svc);
+            Toast.makeText(getContext(), on
+                ? getString(R.string.periodic_scan_on_toast)
+                : getString(R.string.periodic_scan_off_toast), Toast.LENGTH_SHORT).show();
+        });
+
         addBtn("⏱ " + getString(R.string.scan_interval_btn), color(R.color.bg_secondary),
             v -> showScanIntervalDialog());
 

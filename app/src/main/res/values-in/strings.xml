@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">Mulai perlindungan otomatis saat boot</string>
     <string name="boot_auto_start_on_toast">Perlindungan akan dimulai secara otomatis saat perangkat Anda berikutnya kali boot</string>
     <string name="boot_auto_start_off_toast">Mulai otomatis saat boot NONAKTIF — Anda perlu membuka aplikasi untuk memulai perlindungan</string>
+    <string name="periodic_scan_toggle">Pemindaian Latar Belakang Berkala</string>
+    <string name="periodic_scan_on_toast">Pemindaian latar belakang berkala AKTIF</string>
+    <string name="periodic_scan_off_toast">Pemindaian latar belakang berkala NONAKTIF — perlindungan real-time (pemantau Unduhan, pemindaian saat instal) tetap berjalan</string>
     <string name="scan_interval_btn">Konfigurasi Interval Pemindaian</string>
     <string name="scan_interval_quick_label">Pemindaian cepat setiap (menit):</string>
     <string name="scan_interval_full_label">Pemindaian lengkap setiap (menit):</string>

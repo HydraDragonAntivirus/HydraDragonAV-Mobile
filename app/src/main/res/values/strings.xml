@@ -23,6 +23,9 @@
     <string name="boot_auto_start_toggle">Start protection automatically on boot</string>
     <string name="boot_auto_start_on_toast">Protection will start automatically the next time your device boots</string>
     <string name="boot_auto_start_off_toast">Auto-start on boot OFF — you\'ll need to open the app to start protection</string>
+    <string name="periodic_scan_toggle">Periodic Background Scan</string>
+    <string name="periodic_scan_on_toast">Periodic background scans ON</string>
+    <string name="periodic_scan_off_toast">Periodic background scans OFF — real-time protection (Downloads watcher, on-install scan) keeps running</string>
     <string name="scan_interval_btn">Configure Scan Interval</string>
     <string name="scan_interval_quick_label">Quick scan every (minutes):</string>
     <string name="scan_interval_full_label">Full scan every (minutes):</string>

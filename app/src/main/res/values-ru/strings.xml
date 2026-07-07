@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">Автоматически запускать защиту при загрузке</string>
     <string name="boot_auto_start_on_toast">Защита будет запускаться автоматически при следующей загрузке устройства</string>
     <string name="boot_auto_start_off_toast">Автозапуск при загрузке ВЫКЛЮЧЕН — для запуска защиты нужно открыть приложение</string>
+    <string name="periodic_scan_toggle">Периодическое фоновое сканирование</string>
+    <string name="periodic_scan_on_toast">Периодическое фоновое сканирование ВКЛ</string>
+    <string name="periodic_scan_off_toast">Периодическое фоновое сканирование ВЫКЛ — защита в реальном времени (монитор загрузок, сканирование при установке) продолжает работать</string>
     <string name="scan_interval_btn">Настроить интервал сканирования</string>
     <string name="scan_interval_quick_label">Быстрое сканирование каждые (минут):</string>
     <string name="scan_interval_full_label">Полное сканирование каждые (минут):</string>

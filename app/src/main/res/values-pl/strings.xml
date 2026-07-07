@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">Automatycznie uruchamiaj ochronę przy starcie</string>
     <string name="boot_auto_start_on_toast">Ochrona uruchomi się automatycznie przy następnym uruchomieniu urządzenia</string>
     <string name="boot_auto_start_off_toast">Automatyczne uruchamianie przy starcie WYŁĄCZONE — musisz otworzyć aplikację, aby uruchomić ochronę</string>
+    <string name="periodic_scan_toggle">Okresowe skanowanie w tle</string>
+    <string name="periodic_scan_on_toast">Okresowe skanowanie w tle WŁĄCZONE</string>
+    <string name="periodic_scan_off_toast">Okresowe skanowanie w tle WYŁĄCZONE — ochrona w czasie rzeczywistym (monitor pobierania, skanowanie przy instalacji) nadal działa</string>
     <string name="scan_interval_btn">Skonfiguruj interwał skanowania</string>
     <string name="scan_interval_quick_label">Szybkie skanowanie co (minuty):</string>
     <string name="scan_interval_full_label">Pełne skanowanie co (minuty):</string>

@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">เริ่มการป้องกันอัตโนมัติเมื่อเปิดเครื่อง</string>
     <string name="boot_auto_start_on_toast">การป้องกันจะเริ่มโดยอัตโนมัติในครั้งถัดไปที่อุปกรณ์ของคุณเปิดเครื่อง</string>
     <string name="boot_auto_start_off_toast">การเริ่มอัตโนมัติเมื่อเปิดเครื่องปิดอยู่ — คุณต้องเปิดแอปเพื่อเริ่มการป้องกัน</string>
+    <string name="periodic_scan_toggle">การสแกนพื้นหลังตามระยะเวลา</string>
+    <string name="periodic_scan_on_toast">เปิดการสแกนพื้นหลังตามระยะเวลาแล้ว</string>
+    <string name="periodic_scan_off_toast">ปิดการสแกนพื้นหลังตามระยะเวลาแล้ว — การป้องกันแบบเรียลไทม์ (ตรวจสอบการดาวน์โหลด, สแกนตอนติดตั้ง) ยังคงทำงานอยู่</string>
     <string name="scan_interval_btn">กำหนดค่าช่วงเวลาสแกน</string>
     <string name="scan_interval_quick_label">สแกนด่วนทุก (นาที):</string>
     <string name="scan_interval_full_label">สแกนแบบเต็มทุก (นาที):</string>

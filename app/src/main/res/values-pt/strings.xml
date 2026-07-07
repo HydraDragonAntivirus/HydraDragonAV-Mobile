@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">Iniciar a proteção automaticamente ao ligar</string>
     <string name="boot_auto_start_on_toast">A proteção será iniciada automaticamente na próxima vez que o dispositivo ligar</string>
     <string name="boot_auto_start_off_toast">Início automático ao ligar DESATIVADO — você precisará abrir o aplicativo para iniciar a proteção</string>
+    <string name="periodic_scan_toggle">Verificação periódica em segundo plano</string>
+    <string name="periodic_scan_on_toast">Verificações periódicas em segundo plano ATIVADAS</string>
+    <string name="periodic_scan_off_toast">Verificações periódicas em segundo plano DESATIVADAS — a proteção em tempo real (monitor de downloads, verificação na instalação) continua funcionando</string>
     <string name="scan_interval_btn">Configurar intervalo de verificação</string>
     <string name="scan_interval_quick_label">Verificação rápida a cada (minutos):</string>
     <string name="scan_interval_full_label">Verificação completa a cada (minutos):</string>

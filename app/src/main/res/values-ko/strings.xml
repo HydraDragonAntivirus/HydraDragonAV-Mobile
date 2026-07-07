@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">부팅 시 보호 자동 시작</string>
     <string name="boot_auto_start_on_toast">다음 기기 부팅 시 보호가 자동으로 시작됩니다</string>
     <string name="boot_auto_start_off_toast">부팅 시 자동 시작 꺼짐 — 보호를 시작하려면 앱을 열어야 합니다</string>
+    <string name="periodic_scan_toggle">주기적 백그라운드 스캔</string>
+    <string name="periodic_scan_on_toast">주기적 백그라운드 스캔 켜짐</string>
+    <string name="periodic_scan_off_toast">주기적 백그라운드 스캔 꺼짐 — 실시간 보호(다운로드 감시, 설치 시 스캔)는 계속 작동합니다</string>
     <string name="scan_interval_btn">스캔 주기 설정</string>
     <string name="scan_interval_quick_label">빠른 검사 주기(분):</string>
     <string name="scan_interval_full_label">전체 검사 주기(분):</string>

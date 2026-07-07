@@ -27,6 +27,9 @@
     <string name="boot_auto_start_toggle">बूट होने पर सुरक्षा स्वतः शुरू करें</string>
     <string name="boot_auto_start_on_toast">अगली बार जब आपका डिवाइस बूट होगा तो सुरक्षा स्वतः शुरू हो जाएगी</string>
     <string name="boot_auto_start_off_toast">बूट पर ऑटो-स्टार्ट बंद — सुरक्षा शुरू करने के लिए आपको ऐप खोलना होगा</string>
+    <string name="periodic_scan_toggle">आवधिक बैकग्राउंड स्कैन</string>
+    <string name="periodic_scan_on_toast">आवधिक बैकग्राउंड स्कैन चालू</string>
+    <string name="periodic_scan_off_toast">आवधिक बैकग्राउंड स्कैन बंद — रीयल-टाइम सुरक्षा (डाउनलोड मॉनिटर, इंस्टॉल पर स्कैन) चलती रहेगी</string>
     <string name="scan_interval_btn">स्कैन अंतराल कॉन्फ़िगर करें</string>
     <string name="scan_interval_quick_label">क्विक स्कैन हर (मिनट):</string>
     <string name="scan_interval_full_label">फुल स्कैन हर (मिनट):</string>
