@@ -1445,6 +1445,7 @@ fn generate_yara_rule(
         let threshold = strings.len().min(6).max(1);
         clauses.push(format!("{} of them", threshold));
     }
+    clauses.push("androguard.rootkit_behavior() == 1".to_string());
     if clauses.is_empty() {
         clauses.push("false".to_string());
     }

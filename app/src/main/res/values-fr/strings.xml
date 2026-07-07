@@ -158,6 +158,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="detect_cat_eicar">Fichiers de test EICAR</string>
     <string name="detect_cat_url_strings">Chaînes d\'URL malveillantes/de phishing dans les fichiers</string>
     <string name="detect_cat_native_emulation">Émulation de code natif (révèle les chaînes cachées/décodées)</string>
+    <string name="detect_cat_rootkit">Comportement de type rootkit (application cachée + autorisations suspectes)</string>
     <string name="behavior_detection_header">Détection Comportementale</string>
     <string name="behavior_ui_spam">Détection de spam d\'interface/notifications</string>
     <string name="behavior_root_exploit">Détection d\'exploit root</string>

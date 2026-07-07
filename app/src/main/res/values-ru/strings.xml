@@ -158,6 +158,7 @@
     <string name="detect_cat_eicar">Тестовые файлы EICAR</string>
     <string name="detect_cat_url_strings">Вредоносные/фишинговые URL-строки в файлах</string>
     <string name="detect_cat_native_emulation">Эмуляция машинного кода (выявляет скрытые/декодированные строки)</string>
+    <string name="detect_cat_rootkit">Поведение, похожее на руткит (скрытое приложение + подозрительные разрешения)</string>
     <string name="behavior_detection_header">Обнаружение поведения</string>
     <string name="behavior_ui_spam">Обнаружение спама интерфейса/уведомлений</string>
     <string name="behavior_root_exploit">Обнаружение root-эксплойтов</string>

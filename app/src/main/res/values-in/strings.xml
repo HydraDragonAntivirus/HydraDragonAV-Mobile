@@ -158,6 +158,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="detect_cat_eicar">File uji EICAR</string>
     <string name="detect_cat_url_strings">String URL berbahaya/phishing dalam file</string>
     <string name="detect_cat_native_emulation">Emulasi kode native (mengungkap string tersembunyi/terdekode)</string>
+    <string name="detect_cat_rootkit">Perilaku seperti rootkit (aplikasi tersembunyi + izin mencurigakan)</string>
     <string name="behavior_detection_header">Deteksi Perilaku</string>
     <string name="behavior_ui_spam">Deteksi spam UI/notifikasi</string>
     <string name="behavior_root_exploit">Deteksi eksploitasi root</string>

@@ -2449,3 +2449,23 @@ rule VikingBotnet
 	condition:
 		($a and $c) or ($b and $d) 
 }
+
+// ── rootkit behavior detection ──────────────────────────────────────────────
+//
+// Leverages the androguard.rootkit_behavior() function, which returns 1 when
+// an APK declares no MAIN/LAUNCHER activity (hidden from the app drawer) AND
+// requests at least one high-privilege / persistence permission (device admin,
+// accessibility service, overlay, boot-completed, etc.).  Alone each signal is
+// common in legitimate apps; together they are the classic "install silently,
+// hide the icon, persist" rootkit pattern.
+
+rule hidden_icon_rootkit : android rootkit
+{
+	meta:
+		author = "HydraDragonAV"
+		description = "App has no launcher icon and requests suspicious permissions — stealth-rootkit pattern"
+		reference = "androguard.rootkit_behavior()"
+
+	condition:
+		androguard.rootkit_behavior() == 1
+}

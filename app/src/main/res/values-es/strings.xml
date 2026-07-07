@@ -158,6 +158,7 @@ Puntuación de riesgo: %2$d/100
     <string name="detect_cat_eicar">Archivos de prueba EICAR</string>
     <string name="detect_cat_url_strings">Cadenas de URL maliciosas/de phishing en archivos</string>
     <string name="detect_cat_native_emulation">Emulación de código nativo (revela cadenas ocultas/decodificadas)</string>
+    <string name="detect_cat_rootkit">Comportamiento de rootkit (app oculta + permisos sospechosos)</string>
     <string name="behavior_detection_header">Detección de Comportamiento</string>
     <string name="behavior_ui_spam">Detección de spam de interfaz/notificaciones</string>
     <string name="behavior_root_exploit">Detección de exploits de root</string>

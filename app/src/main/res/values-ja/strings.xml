@@ -158,6 +158,7 @@
     <string name="detect_cat_eicar">EICARテストファイル</string>
     <string name="detect_cat_url_strings">ファイル内の悪意のある/フィッシングURL文字列</string>
     <string name="detect_cat_native_emulation">ネイティブコードエミュレーション（隠された/復号された文字列を検出）</string>
+    <string name="detect_cat_rootkit">ルートキット的な動作（隠れたアプリ + 不審な権限）</string>
     <string name="behavior_detection_header">動作検出</string>
     <string name="behavior_ui_spam">UI/通知スパム検出</string>
     <string name="behavior_root_exploit">Root化エクスプロイト検出</string>
