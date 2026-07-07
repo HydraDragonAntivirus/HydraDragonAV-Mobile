@@ -25,20 +25,18 @@ thread_local! {
 
 /// Android-relevant ClamAV target types that get YARA scanning.
 ///
-/// Includes HTML (3), Graphics (5), ELF (6), ASCII text (7), PDF (10).
-/// Excludes PE (1), OLE2 (2), Mail (4), Mach-O (9), SWF (11), Java (12) and
-/// other desktop-only formats. Email formats are unsupported on Android.
-/// Unknown types (None) are scanned by default since they could be APK/ZIP
-/// archives or other Android-relevant containers.
-const ALLOWED_TARGETS: [u32; 5] = [3, 5, 6, 7, 10];
+/// Includes HTML (3), Graphics (5), ELF (6), ASCII text (7), PDF (10),
+/// DEX (16), ZIP/APK (17). Excludes PE (1), OLE2 (2), Mail (4), Mach-O (9),
+/// SWF (11), Java (12) and other desktop-only formats never relevant on
+/// Android. A file with no confident type match is skipped too — only
+/// positively-identified supported types get scanned, same policy as the
+/// ClamAV engine gate (`scanner::CLAMAV_ALLOWED_TARGETS`).
+const ALLOWED_TARGETS: [u32; 7] = [3, 5, 6, 7, 10, 16, 17];
 
 /// Returns `true` if files matching the given ClamAV target should be
 /// scanned with YARA rules.
 pub fn is_target_allowed(target: Option<u32>) -> bool {
-    match target {
-        None => true,
-        Some(t) => ALLOWED_TARGETS.contains(&t),
-    }
+    matches!(target, Some(t) if ALLOWED_TARGETS.contains(&t))
 }
 
 /// A compiled YARA ruleset ready for scanning.

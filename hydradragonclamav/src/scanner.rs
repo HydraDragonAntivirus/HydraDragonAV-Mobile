@@ -369,7 +369,7 @@ impl Engine {
         // YARA-x scan for Android-relevant file types — run every loaded ruleset,
         // timing each YARA ruleset individually.
         if !self.yara.is_empty()
-            && crate::yara_scan::is_target_allowed(ctx.detected_target)
+            && crate::yara_scan::is_target_allowed(confident_target)
         {
             for yara in &self.yara {
                 let t_yara = timing.as_ref().map(|_| Instant::now());
