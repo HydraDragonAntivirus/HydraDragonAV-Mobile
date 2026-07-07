@@ -1044,6 +1044,12 @@ fn detect_builtin_target(ctx: &ScanContext<'_>) -> Option<u32> {
     {
         return Some(5); // CL_TYPE_GRAPHICS
     }
+    if d.len() >= 4 && d[..4] == [0x64, 0x65, 0x78, 0x0a] {
+        return Some(16); // CL_TYPE_DEX
+    }
+    if d.len() >= 4 && d[..2] == [0x50, 0x4b] && d[2] == 0x03 && d[3] == 0x04 {
+        return Some(17); // CL_TYPE_ZIP_APK
+    }
     None
 }
 
@@ -1056,6 +1062,8 @@ fn clamav_type_to_target(clamav_type: &str) -> Option<u32> {
         "CL_TYPE_TEXT_ASCII" => 7,
         "CL_TYPE_PDF" => 10,
         "CL_TYPE_SWF" => 11,
+        "CL_TYPE_ZIP" | "CL_TYPE_APK" => 17,
+        "CL_TYPE_DEX" => 16,
         _ => return None,
     })
 }
