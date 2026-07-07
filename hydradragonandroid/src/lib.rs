@@ -782,7 +782,6 @@ fn scan_hips(hips_json: &str) -> String {
     let module_meta: Vec<(&str, &[u8])> = vec![("hydradragon", meta_json)];
     let opts = ScanOptions {
         strict_targets: false,
-        max_matches: 32,
         ..ScanOptions::default()
     };
     let detections = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -824,7 +823,6 @@ fn scan_text(text: &str) -> String {
     let module_meta: Vec<(&str, &[u8])> = vec![("hydradragon", meta_json.as_bytes())];
     let opts = ScanOptions {
         strict_targets: false,
-        max_matches: 16,
         ..ScanOptions::default()
     };
     let names = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -1083,9 +1081,9 @@ fn run_scan(
     let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     let yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
         Some(clamav) => {
+            let max_dets = 64;
             let opts = ScanOptions {
                 strict_targets: true,
-                max_matches: 64,
                 ..ScanOptions::default()
             };
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -1102,7 +1100,7 @@ fn run_scan(
                     let (matches, bt) = clamav.scan_bytes_named_with_breakdown(&b.data, &name, opts, &module_meta);
                     for m in matches {
                         dets.push((m.name, b.apk_lineage.clone()));
-                        if dets.len() >= opts.max_matches {
+                        if dets.len() >= max_dets {
                             return dets;
                         }
                     }
@@ -1114,7 +1112,7 @@ fn run_scan(
                         let (matches, bt) = clamav.scan_bytes_named_with_breakdown(ds.text.as_bytes(), &dname, opts, &module_meta);
                         for m in matches {
                             dets.push((m.name, b.apk_lineage.clone()));
-                            if dets.len() >= opts.max_matches {
+                            if dets.len() >= max_dets {
                                 return dets;
                             }
                         }
@@ -1130,14 +1128,14 @@ fn run_scan(
                         let (matches, bt) = clamav.scan_bytes_named_with_breakdown(decoded, &ename, opts, &module_meta);
                         for m in matches {
                             dets.push((m.name, b.apk_lineage.clone()));
-                            if dets.len() >= opts.max_matches {
+                            if dets.len() >= max_dets {
                                 return dets;
                             }
                         }
                         scan_timing.accumulate(bt);
                         for url in extract_and_scan_urls(engine, decoded) {
                             dets.push((url, b.apk_lineage.clone()));
-                            if dets.len() >= opts.max_matches {
+                            if dets.len() >= max_dets {
                                 return dets;
                             }
                         }
@@ -2050,20 +2048,17 @@ struct Buf {
 
 /// `top_md5` is Java's already-computed MD5 of the whole scanned file, reused for
 /// the top-level (depth 0) buffer so the largest buffer isn't hashed twice.
+/// Zip-bomb guard: stops extraction when total decompressed bytes exceed ~2 GB
+/// or when the number of extracted buffers exceeds 4096.
 fn collect_buffers(data: &[u8], top_md5: Option<&str>) -> Vec<Buf> {
-    const MAX_BUFFERS: usize = 4096;
-    const MAX_DEPTH: usize = 8;
-    const MAX_SIZE: usize = 650 * 1024 * 1024;
-
     let mut out: Vec<Buf> = Vec::new();
+    let mut total_bytes: u64 = 0;
     let mut stack: Vec<(Vec<u8>, usize, Vec<String>)> = vec![(data.to_vec(), 0, Vec::new())];
     while let Some((buf, depth, parent_lineage)) = stack.pop() {
-        if out.len() >= MAX_BUFFERS {
+        if out.len() >= 4096 || total_bytes >= 2_000_000_000 {
             break;
         }
-        if buf.len() > MAX_SIZE {
-            continue;
-        }
+        total_bytes += buf.len() as u64;
         let mut lineage = parent_lineage;
         // A zip/APK contributes its own hash to its (and its children's) lineage.
         if hydradragonextractor::detect_format(&buf) == Some("zip") {
@@ -2073,7 +2068,7 @@ fn collect_buffers(data: &[u8], top_md5: Option<&str>) -> Vec<Buf> {
             };
             lineage.push(h);
         }
-        if depth < MAX_DEPTH && hydradragonextractor::detect_format(&buf).is_some() {
+        if depth < 16 && hydradragonextractor::detect_format(&buf).is_some() {
             if let Ok(children) = hydradragonextractor::extract_archive_from_bytes(&buf) {
                 for child in children {
                     stack.push((child, depth + 1, lineage.clone()));

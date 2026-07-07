@@ -77,7 +77,6 @@ fn run() {
             let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let opts = ScanOptions {
                     strict_targets: true,
-                    max_matches: 64,
                     ..Default::default()
                 };
                 c.scan_bytes_named(&bytes, &name, opts).len()

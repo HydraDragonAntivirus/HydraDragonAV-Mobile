@@ -39,11 +39,9 @@ pub struct Engine {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ScanOptions {
     pub strict_targets: bool,
-    pub max_matches: usize,
     pub scan_archives: bool,
     pub scan_normalized: bool,
     pub max_recursion: usize,
-    pub max_child_objects: usize,
     pub max_child_size: usize,
 }
 
@@ -51,11 +49,9 @@ impl Default for ScanOptions {
     fn default() -> Self {
         Self {
             strict_targets: false,
-            max_matches: 1,
             scan_archives: true,
             scan_normalized: true,
-            max_recursion: 8,
-            max_child_objects: 4096,
+            max_recursion: 16,
             max_child_size: 650 * 1024 * 1024,
         }
     }
@@ -175,7 +171,6 @@ fn looks_like_image(d: &[u8]) -> bool {
 
 struct ScanState {
     matches: Vec<ScanMatch>,
-    objects_seen: usize,
 }
 
 /// Reusable per-call buffers for `scan_one_logical` — the outer `scan_logical`
@@ -308,7 +303,6 @@ impl Engine {
     ) -> Vec<ScanMatch> {
         let mut state = ScanState {
             matches: Vec::new(),
-            objects_seen: 0,
         };
         self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut None);
         state.matches
@@ -325,7 +319,6 @@ impl Engine {
     ) -> (Vec<ScanMatch>, TimingBreakdown) {
         let mut state = ScanState {
             matches: Vec::new(),
-            objects_seen: 0,
         };
         let mut breakdown = TimingBreakdown::default();
         self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown));
@@ -343,12 +336,6 @@ impl Engine {
         state: &mut ScanState,
         timing: &mut Option<&mut TimingBreakdown>,
     ) {
-        if state.matches.len() >= options.max_matches
-            || state.objects_seen >= options.max_child_objects
-        {
-            return;
-        }
-        state.objects_seen += 1;
         if data.len() > options.max_child_size {
             return;
         }
@@ -391,15 +378,9 @@ impl Engine {
         if !self.yara.is_empty()
             && crate::yara_scan::is_target_allowed(ctx.detected_target)
         {
-            'rulesets: for yara in &self.yara {
-                if state.matches.len() >= options.max_matches {
-                    break;
-                }
+            for yara in &self.yara {
                 let t_yara = timing.as_ref().map(|_| Instant::now());
                 for m in yara.scan(data, object_path, module_meta) {
-                    if state.matches.len() >= options.max_matches {
-                        break 'rulesets;
-                    }
                     state.matches.push(m);
                 }
                 if let (Some(t), Some(bt)) = (t_yara, timing.as_mut()) {
@@ -414,7 +395,6 @@ impl Engine {
         // to pass the `looks_like_ascii_text` heuristic but normalising them
         // would waste CPU on data that is never meaningful text.
         if options.scan_normalized
-            && state.matches.len() < options.max_matches
             && !is_known_binary_format(data)
         {
             self.scan_normalized_views(data, object_path, container_type, options, state, timing);
@@ -424,7 +404,6 @@ impl Engine {
         // flag spoofed protected domains (.pdb/.gdb gated by .wdb allow list).
         // Only meaningful for HTML, and only when a protected-domain DB is loaded.
         if !self.database.phishing.protected.is_empty()
-            && state.matches.len() < options.max_matches
             && looks_like_html(data)
         {
             self.scan_phishing(data, object_path, options, &mut state.matches);
@@ -441,9 +420,6 @@ impl Engine {
         matches: &mut Vec<ScanMatch>,
     ) {
         for hit in self.database.phishing.scan_html(data) {
-            if matches.len() >= options.max_matches {
-                return;
-            }
             matches.push(ScanMatch {
                 name: hit.name.to_string(),
                 kind: SignatureKind::Phishing,
@@ -505,9 +481,7 @@ impl Engine {
             );
             self.scan_extended(ctx, options, matches, &ext_cands);
             let t2 = Instant::now();
-            if matches.len() < options.max_matches {
-                self.scan_logical(ctx, options, matches, &log_cands);
-            }
+            self.scan_logical(ctx, options, matches, &log_cands);
             let t3 = Instant::now();
             eprintln!(
                 "[PROF] {}KB view={:?} ext_cands={ne} log_cands={nl} prefilter={}ms ext_scan={}ms log_scan={}ms",
@@ -521,9 +495,7 @@ impl Engine {
         }
         let (ext_cands, log_cands) = self.prefilter.candidates(ctx.data);
         self.scan_extended(ctx, options, matches, &ext_cands);
-        if matches.len() < options.max_matches {
-            self.scan_logical(ctx, options, matches, &log_cands);
-        }
+        self.scan_logical(ctx, options, matches, &log_cands);
     }
 
     fn scan_normalized_views(
@@ -597,7 +569,7 @@ impl Engine {
         state: &mut ScanState,
         timing: &mut Option<&mut TimingBreakdown>,
     ) {
-        if data.is_empty() || state.matches.len() >= options.max_matches {
+        if data.is_empty() {
             return;
         }
         let ctx = ScanContext {
@@ -631,17 +603,11 @@ impl Engine {
         match cands {
             crate::prefilter::Candidates::All => {
                 for si in 0..self.database.extended.len() {
-                    if matches.len() >= options.max_matches {
-                        return;
-                    }
                     self.scan_one_extended(si, None, ctx, options, matches);
                 }
             }
             crate::prefilter::Candidates::List(set) => {
                 for (sig, offsets) in set.iter() {
-                    if matches.len() >= options.max_matches {
-                        return;
-                    }
                     let hints = (!offsets.is_empty()).then_some(offsets);
                     self.scan_one_extended(sig as usize, hints, ctx, options, matches);
                 }
@@ -726,17 +692,11 @@ impl Engine {
         match cands {
             crate::prefilter::Candidates::All => {
                 for si in 0..self.database.logical.len() {
-                    if matches.len() >= options.max_matches {
-                        return;
-                    }
                     self.scan_one_logical(si, None, ctx, options, matches, &mut bufs);
                 }
             }
             crate::prefilter::Candidates::List(set) => {
                 for (sig, offsets) in set.iter() {
-                    if matches.len() >= options.max_matches {
-                        return;
-                    }
                     let hints = (!offsets.is_empty()).then_some(offsets);
                     let t = prof_enabled().then(std::time::Instant::now);
                     self.scan_one_logical(sig as usize, hints, ctx, options, matches, &mut bufs);
@@ -1764,10 +1724,7 @@ mod tests {
     }
 
     fn assert_threading_equiv(build_db: impl Fn() -> Database, data: &[u8]) -> Vec<String> {
-        let opts = ScanOptions {
-            max_matches: 4096,
-            ..ScanOptions::default()
-        };
+        let opts = ScanOptions::default();
         // Ground truth: prefilter disabled → Candidates::All → full scan, no gating.
         let engine_full = Engine {
             database: build_db(),
