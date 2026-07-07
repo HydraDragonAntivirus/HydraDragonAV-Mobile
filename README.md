@@ -20,6 +20,18 @@ HydraDragonAV Mobile is a multi-layered Android Antivirus and Security suite com
 > Android 10+. On older versions the rest of the suite still runs, but per-app
 > connection attribution is unavailable.
 
+> **🤖 Android-only detection scope.** This is a minimalist, Android-focused
+> fork of the original [HydraDragonAntivirus](https://github.com/HydraDragonAntivirus/HydraDragonAntivirus) —
+> it only detects Android malware. The native scan engine only runs its
+> ClamAV/YARA-X signature matching on files it can confidently identify as an
+> Android-relevant type (APK/ZIP, DEX, ELF, HTML, ASCII text, PDF, images);
+> desktop-only formats (Windows PE, OLE2/Office, Mail, Mach-O, Java) and files
+> of an indeterminate type are skipped entirely, rather than scanned with a
+> signature database that was never meant for them. For more details, see the
+> [wiki](https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile/wiki)
+> ([ClamAV Integration](https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile/wiki/ClamAV-Integration),
+> [Known Limitations](https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile/wiki/Known-Limitations)).
+
 ## 🚀 Key Features
 
 - **⚡ Photon Technology:** Ultra-fast, multi-threaded scanning engine utilizing `ConcurrentHashMap` caching to instantly re-verify previously scanned safe applications with zero CPU overhead.
@@ -65,8 +77,6 @@ Tools like [Shizuku](https://github.com/thedjchi/Shizuku) grant an app ADB-shell
 In short: a security product that asks the user to first grant it debug-shell reach is solving its threat model backwards. The app's actual privilege escalation surface is intentionally kept to what Android's public APIs (`AccessibilityService`, `VpnService`, `PackageManager`) allow — nothing that requires ADB, root, or a privileged companion app.
 
 *Designed with 💻 by @elnureisayeva1-cloud (creator) & @Siradankullanici (backend development)*
-
-About original HydraDragonAntivirus: This only detects Android malwares and minimalist version of original HydraDragonAntivirus.
 
 **Note: the maximum file size the engine will scan is user-configurable from Settings (10–2048 MB, default 500 MB) — files above the limit are skipped entirely rather than partially scanned.**
 

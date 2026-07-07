@@ -165,6 +165,23 @@ struct LogicalScanBufs {
     counts: Vec<usize>,
     last_offsets: Vec<Option<usize>>,
     evaluated: Vec<bool>,
+    /// Per-subsig timing/shape breakdown collected during the last
+    /// `scan_one_logical` call, for the `[SIG-DETAIL]` log — cleared and
+    /// refilled every call, only formatted into a log line when the caller
+    /// decides the signature was slow enough to be worth the detail.
+    detail: Vec<SubsigDetail>,
+}
+
+/// One phase-1 subsig's contribution to a slow logical-signature scan.
+struct SubsigDetail {
+    subsig: usize,
+    /// "gate", "presence-skip" (absent via the 3-gram filter, no scan run),
+    /// "restricted" (window-restricted via prefilter hints), or "full" (whole
+    /// buffer scanned, no hints available).
+    kind: &'static str,
+    elapsed_us: u128,
+    count: usize,
+    ranges: usize,
 }
 
 impl Engine {
@@ -562,6 +579,7 @@ impl Engine {
             counts: Vec::new(),
             last_offsets: Vec::new(),
             evaluated: Vec::new(),
+            detail: Vec::new(),
         };
         match cands {
             crate::prefilter::Candidates::All => {
@@ -577,6 +595,22 @@ impl Engine {
                     let ms = t.elapsed().as_millis();
                     if ms >= 50 {
                         android_log(&format!("[SLOW-LOG] {ms}ms {}", self.database.logical[sig as usize].name));
+                    }
+                    // Only worth the string-building cost once a signature is
+                    // already known to be slow — this is the log that answers
+                    // "which subsig, and why" instead of just "this sig was slow".
+                    if ms >= 20 && !bufs.detail.is_empty() {
+                        let mut line = format!(
+                            "[SIG-DETAIL] {ms}ms {} subsigs=",
+                            self.database.logical[sig as usize].name
+                        );
+                        for d in &bufs.detail {
+                            line.push_str(&format!(
+                                "[{}:{}:{}us,cnt={},ranges={}]",
+                                d.subsig, d.kind, d.elapsed_us, d.count, d.ranges
+                            ));
+                        }
+                        android_log(&line);
                     }
                 }
             }
@@ -656,6 +690,7 @@ impl Engine {
         bufs.last_offsets.resize(n, None);
         bufs.evaluated.clear();
         bufs.evaluated.resize(n, false);
+        bufs.detail.clear();
         let counts = &mut bufs.counts;
         let last_offsets = &mut bufs.last_offsets;
         let evaluated = &mut bufs.evaluated;
@@ -709,6 +744,13 @@ impl Engine {
                             g.threadable,
                         ));
                     }
+                    bufs.detail.push(SubsigDetail {
+                        subsig: gi,
+                        kind: "gate",
+                        elapsed_us: t_gate.elapsed().as_micros(),
+                        count,
+                        ranges: ranges.len(),
+                    });
                     if count == 0 {
                         return; // gate absent → signature cannot match
                     }
@@ -756,6 +798,13 @@ impl Engine {
                 if let Some(pf) = ctx.presence() {
                     if !patterns.iter().any(|p| p.atom_maybe_present(pf)) {
                         evaluated[i] = true; // counts[i] stays 0
+                        bufs.detail.push(SubsigDetail {
+                            subsig: i,
+                            kind: "presence-skip",
+                            elapsed_us: 0,
+                            count: 0,
+                            ranges: 0,
+                        });
                         if !signature.expression.can_still_match(counts, evaluated) {
                             return;
                         }
@@ -780,7 +829,9 @@ impl Engine {
                 // against the FULL union hint set (most of which belong to other
                 // subsigs and just fail to verify). `None` max length (open gap)
                 // can't be bounded → keep the full scan.
+                let t_sub = std::time::Instant::now();
                 let restricted;
+                let mut was_restricted = false;
                 let ranges: &[(usize, usize)] = if all_indexed {
                     match subsig_max_match_len(patterns) {
                         Some(ml) => {
@@ -789,6 +840,7 @@ impl Engine {
                             let use_hints = subsig_hints.unwrap_or_else(|| hints.unwrap());
                             restricted =
                                 restrict_ranges(&base_ranges, use_hints, ml, ctx.data.len());
+                            was_restricted = true;
                             &restricted
                         }
                         None => &base_ranges,
@@ -803,6 +855,13 @@ impl Engine {
                     usize::MAX,
                     None,
                 );
+                bufs.detail.push(SubsigDetail {
+                    subsig: i,
+                    kind: if was_restricted { "restricted" } else { "full" },
+                    elapsed_us: t_sub.elapsed().as_micros(),
+                    count,
+                    ranges: ranges.len(),
+                });
                 counts[i] = count;
                 last_offsets[i] = None;
                 evaluated[i] = true;
