@@ -127,6 +127,10 @@
     <string name="settings_title">⚙ सेटिंग्स</string>
     <string name="sys_language">सिस्टम भाषा</string>
     <string name="appearance">दिखावट</string>
+    <string name="theme_mode_label">🎨 Theme Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_light">☀ Light</string>
     <string name="dark_light_mode">🌙 डार्क  /  ☀ लाइट मोड</string>
     <string name="system">सिस्टम</string>
     <string name="bloatware_cleaner">🧹 ब्लोटवेयर क्लीनर</string>

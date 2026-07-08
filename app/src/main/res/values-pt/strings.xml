@@ -127,6 +127,10 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="settings_title">⚙ Configurações</string>
     <string name="sys_language">Idioma do Sistema</string>
     <string name="appearance">APARÊNCIA</string>
+    <string name="theme_mode_label">🎨 Theme Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_light">☀ Light</string>
     <string name="dark_light_mode">🌙 Modo Escuro  /  ☀ Modo Claro</string>
     <string name="system">SISTEMA</string>
     <string name="bloatware_cleaner">🧹 Limpador de Bloatware</string>

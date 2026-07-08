@@ -38,7 +38,7 @@ public class SettingsFragment extends Fragment {
     private LinearLayout container;
     private final List<CleanupEngine.BloatwareApp> foundBloatware = new ArrayList<>();
     private static final String PREFS = "hydra_prefs";
-    private static final String KEY_DARK = "dark_mode";
+    private static final String KEY_THEME = "theme_mode";
     private static final String KEY_SHIELD = "web_shield_enabled";
     private static final String KEY_SCREEN_OCR = "screen_ocr_enabled";
     private static final int REQ_VPN = 1201;
@@ -108,19 +108,20 @@ public class SettingsFragment extends Fragment {
         addBtn("🌍 " + getString(R.string.language_settings), color(R.color.bg_secondary), v -> selectLanguage());
 
         addHeader(getString(R.string.appearance));
-        boolean dark = prefs().getBoolean(KEY_DARK, true);
-        addToggle(getString(R.string.dark_light_mode), dark, (btn, on) -> {
-            prefs().edit().putBoolean(KEY_DARK, on).apply();
-            // Smooth fade transition between themes — set the animation
-            // BEFORE AppCompat triggers the Activity recreation.
-            if (getActivity() != null) {
-                getActivity().overridePendingTransition(
-                    R.anim.theme_fade_in, R.anim.theme_fade_out);
-            }
-            AppCompatDelegate.setDefaultNightMode(on
-                ? AppCompatDelegate.MODE_NIGHT_YES
-                : AppCompatDelegate.MODE_NIGHT_NO);
-        });
+        String currentTheme = prefs().getString(KEY_THEME, null);
+        if (currentTheme == null) {
+            // Migrate from old boolean preference
+            boolean dark = prefs().getBoolean("dark_mode", true);
+            currentTheme = dark ? "dark" : "light";
+            prefs().edit().putString(KEY_THEME, currentTheme).apply();
+        }
+        String themeLabel;
+        switch (currentTheme) {
+            case "system": themeLabel = getString(R.string.theme_system); break;
+            case "light":  themeLabel = getString(R.string.theme_light);  break;
+            default:       themeLabel = getString(R.string.theme_dark);   break;
+        }
+        addThemeSelector(themeLabel, v -> showThemeModeDialog());
 
         addHeader(getString(R.string.protection_header));
         boolean prot = com.hydradragon.antivirus.engine.ProtectionState.isEnabled(requireContext());
@@ -575,6 +576,57 @@ public class SettingsFragment extends Fragment {
             real.onCheckedChanged(btn, checked);
         };
     }
+    private void addThemeSelector(String currentLabel, View.OnClickListener cl) {
+        LinearLayout r = row();
+        TextView l = new TextView(getContext()); l.setText(getString(R.string.theme_mode_label));
+        l.setTextColor(color(R.color.text_primary)); l.setTypeface(Typeface.MONOSPACE);
+        l.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        r.addView(l);
+        TextView v = new TextView(getContext()); v.setText(currentLabel);
+        v.setTextColor(color(R.color.neon_green)); v.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        v.setPadding(16, 0, 0, 0);
+        r.addView(v);
+        r.setOnClickListener(cl);
+        r.setClickable(true);
+        r.setFocusable(true);
+        r.setFilterTouchesWhenObscured(true);
+        container.addView(r);
+    }
+
+    private void showThemeModeDialog() {
+        String[] modes = {
+            getString(R.string.theme_system),
+            getString(R.string.theme_dark),
+            getString(R.string.theme_light)
+        };
+        String[] values = {"system", "dark", "light"};
+        String current = prefs().getString(KEY_THEME, "dark");
+        int checked = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(current)) { checked = i; break; }
+        }
+        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.theme_mode_label))
+            .setSingleChoiceItems(modes, checked, (dialog, which) -> {
+                String chosen = values[which];
+                prefs().edit().putString(KEY_THEME, chosen).apply();
+                dialog.dismiss();
+                int mode;
+                switch (chosen) {
+                    case "light":  mode = AppCompatDelegate.MODE_NIGHT_NO;  break;
+                    case "system": mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM; break;
+                    default:       mode = AppCompatDelegate.MODE_NIGHT_YES; break;
+                }
+                if (getActivity() != null) {
+                    getActivity().overridePendingTransition(
+                        R.anim.theme_fade_in, R.anim.theme_fade_out);
+                }
+                AppCompatDelegate.setDefaultNightMode(mode);
+            })
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
+    }
+
     private void addBtn(String label, int bgColor, View.OnClickListener cl) {
         TextView b = new TextView(getContext()); b.setText(label);
         // Was hardcoded pure black regardless of theme — invisible on a dark

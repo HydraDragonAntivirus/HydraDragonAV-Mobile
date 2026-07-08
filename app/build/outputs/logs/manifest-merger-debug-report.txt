@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:2:1-163:12
-INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:2:1-163:12
-INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:2:1-163:12
-INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:2:1-163:12
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:2:1-170:12
+INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:2:1-170:12
+INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:2:1-170:12
+INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:2:1-170:12
 MERGED from [androidx.databinding:viewbinding:9.2.1] C:\Users\semae\.gradle\caches\9.6.1\transforms\11c825565b3a62c573f2b272ac049df9\transformed\viewbinding-9.2.1\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.biometric:biometric:1.1.0] C:\Users\semae\.gradle\caches\9.6.1\transforms\493d1d6f2de90b99177b1f6855bc928c\transformed\biometric-1.1.0\AndroidManifest.xml:17:1-29:12
 MERGED from [androidx.navigation:navigation-runtime-android:2.9.8] C:\Users\semae\.gradle\caches\9.6.1\transforms\adffac718dd599b96fffc3fc616043c3\transformed\navigation-runtime-release\AndroidManifest.xml:17:1-22:12
@@ -178,8 +178,8 @@ ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\
 	android:name
 		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:40:22-91
 application
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:41:5-162:19
-INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:41:5-162:19
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:41:5-169:19
+INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:41:5-169:19
 MERGED from [com.google.android.material:material:1.12.0] C:\Users\semae\.gradle\caches\9.6.1\transforms\c5fef533afc3055e739dad34258ed129\transformed\material-1.12.0\AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.12.0] C:\Users\semae\.gradle\caches\9.6.1\transforms\c5fef533afc3055e739dad34258ed129\transformed\material-1.12.0\AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.2.1] C:\Users\semae\.gradle\caches\9.6.1\transforms\6d9838fca4d09104139340c90cbbbf78\transformed\constraintlayout-2.2.1\AndroidManifest.xml:7:5-20
@@ -250,178 +250,190 @@ ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\
 		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:53:13-42
 	android:name
 		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:50:13-45
+activity#com.hydradragon.antivirus.ui.MalwareFoundActivity
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:56:9-61:55
+	android:excludeFromRecents
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:59:13-46
+	android:exported
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:58:13-37
+	android:theme
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:61:13-53
+	android:taskAffinity
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:60:13-49
+	android:name
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:57:13-52
 activity#com.hydradragon.antivirus.MainActivity
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:56:9-64:20
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:63:9-71:20
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:58:13-36
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:65:13-36
 	android:configChanges
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:59:13-43
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:66:13-43
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:57:13-41
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:64:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:60:13-63:29
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:67:13-70:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:61:17-68
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:68:17-68
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:61:25-66
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:68:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:62:17-76
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:69:17-76
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:62:27-74
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:69:27-74
 service#com.hydradragon.antivirus.service.GuardService
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:66:9-73:19
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:73:9-80:19
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:68:13-37
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:75:13-37
 	android:foregroundServiceType
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:69:13-55
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:76:13-55
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:67:13-49
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:74:13-49
 property#android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:70:13-72:139
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:77:13-79:139
 	android:value
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:72:17-136
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:79:17-136
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:71:17-76
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:78:17-76
 service#com.hydradragon.antivirus.service.DnsVpnService
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:75:9-86:19
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:82:9-93:19
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:77:13-37
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:84:13-37
 	android:permission
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:78:13-69
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:85:13-69
 	android:foregroundServiceType
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:79:13-55
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:86:13-55
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:76:13-50
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:83:13-50
 intent-filter#action:name:android.net.VpnService
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:80:13-82:29
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:87:13-89:29
 action#android.net.VpnService
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:81:17-65
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:88:17-65
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:81:25-62
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:88:25-62
 service#com.hydradragon.antivirus.service.DynamicAnalysisService
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:88:9-98:19
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:95:9-105:19
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:90:13-36
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:97:13-36
 	android:permission
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:91:13-79
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:98:13-79
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:89:13-59
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:96:13-59
 intent-filter#action:name:android.accessibilityservice.AccessibilityService
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:92:13-94:29
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:99:13-101:29
 action#android.accessibilityservice.AccessibilityService
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:93:17-92
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:100:17-92
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:93:25-89
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:100:25-89
 meta-data#android.accessibilityservice
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:95:13-97:72
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:102:13-104:72
 	android:resource
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:97:17-69
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:104:17-69
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:96:17-60
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:103:17-60
 service#com.hydradragon.antivirus.service.ScreenCaptureService
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:100:9-103:62
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:107:9-110:62
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:102:13-37
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:109:13-37
 	android:foregroundServiceType
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:103:13-60
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:110:13-60
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:101:13-57
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:108:13-57
 receiver#com.hydradragon.antivirus.service.InstallReceiver
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:105:9-113:20
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:112:9-120:20
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:107:13-36
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:114:13-36
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:106:13-52
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:113:13-52
 intent-filter#action:name:android.intent.action.PACKAGE_ADDED+action:name:android.intent.action.PACKAGE_REPLACED+data:scheme:package
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:108:13-112:29
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:115:13-119:29
 action#android.intent.action.PACKAGE_ADDED
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:109:17-77
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:116:17-77
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:109:25-75
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:116:25-75
 action#android.intent.action.PACKAGE_REPLACED
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:110:17-80
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:117:17-80
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:110:25-78
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:117:25-78
 data
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:111:17-49
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:118:17-49
 	android:scheme
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:111:23-47
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:118:23-47
 receiver#com.hydradragon.antivirus.service.UninstallReceiver
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:115:9-122:20
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:122:9-129:20
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:117:13-36
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:124:13-36
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:116:13-54
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:123:13-54
 intent-filter#action:name:android.intent.action.PACKAGE_REMOVED+data:scheme:package
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:118:13-121:29
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:125:13-128:29
 action#android.intent.action.PACKAGE_REMOVED
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:119:17-79
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:126:17-79
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:119:25-77
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:126:25-77
 receiver#com.hydradragon.antivirus.service.AdminReceiver
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:124:9-134:20
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:131:9-141:20
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:127:13-36
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:134:13-36
 	android:permission
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:126:13-70
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:133:13-70
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:125:13-50
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:132:13-50
 meta-data#android.app.device_admin
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:128:13-130:56
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:135:13-137:56
 	android:resource
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:130:17-53
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:137:17-53
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:129:17-56
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:136:17-56
 intent-filter#action:name:android.app.action.DEVICE_ADMIN_ENABLED
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:131:13-133:29
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:138:13-140:29
 action#android.app.action.DEVICE_ADMIN_ENABLED
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:132:17-82
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:139:17-82
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:132:25-79
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:139:25-79
 receiver#com.hydradragon.antivirus.service.UserActionReceiver
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:136:9-143:20
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:143:9-150:20
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:138:13-37
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:145:13-37
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:137:13-55
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:144:13-55
 intent-filter#action:name:com.hydradragon.antivirus.DISMISS_REDIRECT+action:name:com.hydradragon.antivirus.IGNORE_THREAT
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:139:13-142:29
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:146:13-149:29
 action#com.hydradragon.antivirus.IGNORE_THREAT
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:140:17-82
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:147:17-82
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:140:25-79
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:147:25-79
 action#com.hydradragon.antivirus.DISMISS_REDIRECT
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:141:17-85
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:148:17-85
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:141:25-82
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:148:25-82
 receiver#com.hydradragon.antivirus.BootReceiver
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:145:9-151:20
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:152:9-158:20
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:147:13-36
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:154:13-36
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:146:13-41
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:153:13-41
 intent-filter#action:name:android.intent.action.BOOT_COMPLETED
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:148:13-150:29
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:155:13-157:29
 action#android.intent.action.BOOT_COMPLETED
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:149:17-78
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:156:17-78
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:149:25-76
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:156:25-76
 receiver#com.hydradragon.antivirus.service.SmsReceiver
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:153:9-160:20
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:160:9-167:20
 	android:exported
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:155:13-36
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:162:13-36
 	android:permission
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:156:13-66
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:163:13-66
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:154:13-48
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:161:13-48
 intent-filter#action:name:android.provider.Telephony.SMS_RECEIVED
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:157:13-159:29
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:164:13-166:29
 	android:priority
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:157:28-50
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:164:28-50
 action#android.provider.Telephony.SMS_RECEIVED
-ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:158:17-81
+ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:165:17-81
 	android:name
-		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:158:25-79
+		ADDED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml:165:25-79
 uses-sdk
 INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\app\src\main\AndroidManifest.xml

@@ -77,6 +77,12 @@
             android:taskAffinity=".block"
             android:theme="@style/Theme.HydraDragon" />
         <activity
+            android:name="com.hydradragon.antivirus.ui.MalwareFoundActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=".malwarefound"
+            android:theme="@style/Theme.HydraDragon" />
+        <activity
             android:name="com.hydradragon.antivirus.MainActivity"
             android:configChanges="uiMode"
             android:exported="true" >

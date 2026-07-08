@@ -127,6 +127,10 @@
     <string name="settings_title">⚙ 설정</string>
     <string name="sys_language">시스템 언어</string>
     <string name="appearance">외관</string>
+    <string name="theme_mode_label">🎨 Theme Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_light">☀ Light</string>
     <string name="dark_light_mode">🌙 다크  /  ☀ 라이트 모드</string>
     <string name="system">시스템</string>
     <string name="bloatware_cleaner">🧹 블로트웨어 클리너</string>

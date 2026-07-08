@@ -293,6 +293,10 @@
     <string name="system_safe_status">● SİSTEM GÜVENLİ</string>
     <string name="system_waiting">[Sistem bekleniyor...]</string>
     <string name="task_hijack_detected">Güvenlik kontrolü başarısız — bu ekranın üzerine başka bir uygulama yerleştirilmiş görünüyor, korumanız için kapatılıyor</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_light">☀ Light</string>
+    <string name="theme_mode_label">🎨 Theme Mode</string>
+    <string name="theme_system">System Default</string>
     <string name="threat">TEHDİT</string>
     <string name="threat_adware">ADWARE TESPİTİ: Aşırı Reklam İçeriyor!</string>
     <string name="threat_banking_trojan">BANKACILIK TRUVA ATI TESPİTİ: Finansal Bindirme!</string>

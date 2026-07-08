@@ -127,6 +127,10 @@ Puntuación de riesgo: %2$d/100
     <string name="settings_title">⚙ Ajustes</string>
     <string name="sys_language">Idioma del Sistema</string>
     <string name="appearance">APARIENCIA</string>
+    <string name="theme_mode_label">🎨 Theme Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_light">☀ Light</string>
     <string name="dark_light_mode">🌙 Modo Oscuro  /  ☀ Modo Claro</string>
     <string name="system">SISTEMA</string>
     <string name="bloatware_cleaner">🧹 Limpiador de Bloatware</string>

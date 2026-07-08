@@ -127,6 +127,10 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="settings_title">⚙ Impostazioni</string>
     <string name="sys_language">Lingua di sistema</string>
     <string name="appearance">ASPETTO</string>
+    <string name="theme_mode_label">🎨 Theme Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_light">☀ Light</string>
     <string name="dark_light_mode">🌙 Scuro  /  ☀ Chiaro</string>
     <string name="system">SISTEMA</string>
     <string name="bloatware_cleaner">🧹 Pulitore Bloatware</string>

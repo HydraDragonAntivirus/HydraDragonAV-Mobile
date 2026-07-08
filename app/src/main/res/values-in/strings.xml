@@ -127,6 +127,10 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="settings_title">⚙ Pengaturan</string>
     <string name="sys_language">Bahasa Sistem</string>
     <string name="appearance">TAMPILAN</string>
+    <string name="theme_mode_label">🎨 Theme Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_light">☀ Light</string>
     <string name="dark_light_mode">🌙 Gelap  /  ☀ Mode Terang</string>
     <string name="system">SISTEM</string>
     <string name="bloatware_cleaner">🧹 Pembersih Bloatware</string>

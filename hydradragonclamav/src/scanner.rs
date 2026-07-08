@@ -114,21 +114,9 @@ pub(crate) struct ScanContext<'a> {
     /// only when a `fuzzy_img#` subsignature is actually evaluated. `None` inside
     /// the cell means "computed, not a decodable image".
     pub image_fuzzy_hash: std::cell::OnceCell<Option<[u8; 8]>>,
-    /// Per-buffer 3-gram presence filter, built lazily on first use, for skipping
-    /// the whole-buffer scan of non-gate body subsignatures whose literal is
-    /// provably absent. `None` inside the cell means the buffer was too small to be
-    /// worth a filter.
-    pub presence: std::cell::OnceCell<Option<crate::presence::PresenceFilter>>,
 }
 
 impl ScanContext<'_> {
-    /// Lazily build (and cache) this buffer's 3-gram presence filter.
-    pub(crate) fn presence(&self) -> Option<&crate::presence::PresenceFilter> {
-        self.presence
-            .get_or_init(|| crate::presence::PresenceFilter::build(self.data))
-            .as_ref()
-    }
-
     /// Lazily compute (and cache) this file's image fuzzy hash, mirroring
     /// ClamAV's per-fmap `fuzzy_hash_calculate_image`. Guarded by an image-magic
     /// check so non-image files never pay the decode cost.
@@ -175,8 +163,7 @@ struct LogicalScanBufs {
 /// One phase-1 subsig's contribution to a slow logical-signature scan.
 struct SubsigDetail {
     subsig: usize,
-    /// "gate", "presence-skip" (absent via the 3-gram filter, no scan run),
-    /// "restricted" (window-restricted via prefilter hints), or "full" (whole
+    /// "gate", "restricted" (window-restricted via prefilter hints), or "full" (whole
     /// buffer scanned, no hints available).
     kind: &'static str,
     elapsed_us: u128,
@@ -356,7 +343,6 @@ impl Engine {
             view: ScanView::Raw,
             container_type,
             image_fuzzy_hash: Default::default(),
-            presence: Default::default(),
         };
 
         // Skip raw scan for archives we cannot extract — scanning compressed
@@ -794,30 +780,6 @@ impl Engine {
                     OffsetAnchor::Unsupported(_) | OffsetAnchor::MacroGroup(_)
                 ) {
                     continue;
-                }
-                // Presence pre-check: a body subsig matches only if one of its
-                // pattern variants' literal occurs. If the per-buffer 3-gram filter
-                // proves every variant's atom absent, this subsig is absent (count
-                // 0) — skip its whole-buffer scan. Sound: the filter never reports a
-                // present literal as absent.
-                if let Some(pf) = ctx.presence() {
-                    if !patterns.iter().any(|p| p.atom_maybe_present(pf)) {
-                        evaluated[i] = true; // counts[i] stays 0
-                        bufs.detail.push(SubsigDetail {
-                            subsig: i,
-                            kind: "presence-skip",
-                            elapsed_us: 0,
-                            count: 0,
-                            ranges: 0,
-                        });
-                        if !signature.expression.can_still_match(counts, evaluated) {
-                            return;
-                        }
-                        if monotone && signature.expression.is_definitely_matched(counts, evaluated) {
-                            break;
-                        }
-                        continue;
-                    }
                 }
                 let base_ranges = offset.scan_ranges(ctx.data.len());
                 if base_ranges.is_empty() {
@@ -1634,34 +1596,6 @@ mod tests {
             },
             warnings,
         )
-    }
-
-    #[test]
-    fn presence_filter_does_not_drop_matches_on_large_buffers() {
-        // The 3-gram presence filter only activates on buffers >= 64 KiB. Build a
-        // large buffer and confirm a real match (keyword far from the start, plus a
-        // wildcard-prefixed atom) still fires with the filter active.
-        let (engine, w) = engine_with_logical(
-            "Test.Big;Target:0;0|1;??706f7765727368656c6c;636572747574696c",
-        );
-        assert!(w.is_empty());
-        // 80 KiB of a single byte (so most 3-grams are absent) with the keyword
-        // embedded late → presence filter must still report it present.
-        let mut buf = vec![0x41u8; 80 * 1024];
-        buf.extend_from_slice(b"Zpowershell padding");
-        assert!(
-            engine.scan_bytes(&buf, ScanOptions::default())
-                .iter().any(|m| m.name == "Test.Big"),
-            "presence filter dropped a real match on a large buffer"
-        );
-        // certutil present instead, at a different late offset.
-        let mut buf2 = vec![0x00u8; 70 * 1024];
-        buf2.extend_from_slice(b"xx certutil xx");
-        assert!(engine.scan_bytes(&buf2, ScanOptions::default())
-            .iter().any(|m| m.name == "Test.Big"));
-        // Neither present in a large buffer → no match (and the filter skips the scan).
-        let buf3 = vec![0x7Fu8; 80 * 1024];
-        assert!(engine.scan_bytes(&buf3, ScanOptions::default()).is_empty());
     }
 
     #[test]

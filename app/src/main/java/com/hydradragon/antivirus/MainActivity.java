@@ -52,8 +52,18 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         SharedPreferences prefs = getSharedPreferences("hydra_prefs", MODE_PRIVATE);
-        boolean dark = prefs.getBoolean("dark_mode", true);
-        AppCompatDelegate.setDefaultNightMode(dark ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+        String theme = prefs.getString("theme_mode", null);
+        if (theme == null) {
+            // Migrate from old boolean preference
+            boolean dark = prefs.getBoolean("dark_mode", true);
+            theme = dark ? "dark" : "light";
+            prefs.edit().putString("theme_mode", theme).apply();
+        }
+        switch (theme) {
+            case "light":  AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);  break;
+            case "system": AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM); break;
+            default:       AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES); break;
+        }
 
         // FLAG_SECURE (screenshot/screen-recording + Recents-thumbnail block)
         // must be set before super.onCreate()/setContentView() — scan results,

@@ -127,6 +127,10 @@
     <string name="settings_title">⚙ 设置</string>
     <string name="sys_language">系统语言</string>
     <string name="appearance">外观</string>
+    <string name="theme_mode_label">🎨 Theme Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_light">☀ Light</string>
     <string name="dark_light_mode">🌙 深色  /  ☀ 浅色模式</string>
     <string name="system">系统</string>
     <string name="bloatware_cleaner">🧹 垃圾软件清理</string>
