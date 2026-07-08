@@ -87,6 +87,13 @@
 • Tehdit istihbaratı senkronize</string>
     <string name="threat_detected">TEHDİT TESPİT EDİLDİ!</string>
     <string name="malware_found_title">⚠ ZARARLI YAZILIM BULUNDU!</string>
+    <string name="malware_found_heading">ZARARLI YAZILIM BULUNDU</string>
+    <string name="malware_found_risk_score">Risk Skoru: %d/100</string>
+    <string name="malware_found_status_installed">Bu uygulamanın arka plan işlemi durduruldu ve sistem kaldırma istemi açıldı.</string>
+    <string name="malware_found_status_file">Bu dosyayı silmek için bir istem gönderildi — bildirimlerinizi kontrol edin.</string>
+    <string name="btn_uninstall">KALDIR</string>
+    <string name="btn_delete_file">DOSYAYI SIL</string>
+    <string name="btn_dismiss">KAPAT</string>
     <string name="btn_destroy_hint">kaldırmak için YOK ET\'e dokunun</string>
     <string name="live_network_activity">CANLI AĞ AKTİVİTESİ</string>
     <string name="total_traffic">TOPLAM TRAFİK</string>
@@ -347,6 +354,3 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-

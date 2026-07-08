@@ -38,4 +38,3 @@
     <string name="uninstall_failed_safe_mode_toast">After reboot into Safe Mode, open HydraDragon and run a full scan to remove the malware</string>
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-

@@ -76,6 +76,13 @@
     <string name="threat_detected">ตรวจพบภัยคุกคาม!</string>
     <string name="malware_found_title">⚠ พบมัลแวร์!</string>
     <string name="btn_destroy_hint">แตะ ลบ เพื่อลบออก</string>
+    <string name="malware_found_heading">พบมัลแวร์</string>
+    <string name="malware_found_risk_score">คะแนนความเสี่ยง: %d/100</string>
+    <string name="malware_found_status_installed">กระบวนการพื้นหลังของแอพนี้ถูกหยุดและพร้อมท์ถอนการติดตั้งระบบได้ถูกเปิดขึ้น</string>
+    <string name="malware_found_status_file">พร้อมท์ให้ลบไฟล์นี้ถูกส่งไปแล้ว — ตรวจสอบการแจ้งเตือนของคุณ</string>
+    <string name="btn_uninstall">ถอนการติดตั้ง</string>
+    <string name="btn_delete_file">ลบไฟล์</string>
+    <string name="btn_dismiss">ปิด</string>
     <string name="live_network_activity">กิจกรรมเครือข่ายแบบสด</string>
     <string name="total_traffic">ทราฟฟิกทั้งหมด</string>
     <string name="blocked">ถูกบล็อก</string>
@@ -344,7 +351,3 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

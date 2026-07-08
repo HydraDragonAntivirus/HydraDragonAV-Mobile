@@ -76,6 +76,13 @@
     <string name="threat_detected">تم اكتشاف تهديد!</string>
     <string name="malware_found_title">⚠ تم اكتشاف برمجية خبيثة!</string>
     <string name="btn_destroy_hint">اضغط على "احذفه" لإزالته</string>
+    <string name="malware_found_heading">تم اكتشاف برمجية خبيثة</string>
+    <string name="malware_found_risk_score">درجة المخاطرة: %d/100</string>
+    <string name="malware_found_status_installed">تم إيقاف عملية الخلفية لهذا التطبيق وتم فتح مطالبة إلغاء التثبيت من النظام.</string>
+    <string name="malware_found_status_file">تم إرسال مطالبة بحذف هذا الملف — تحقق من إشعاراتك.</string>
+    <string name="btn_uninstall">إلغاء التثبيت</string>
+    <string name="btn_delete_file">حذف الملف</string>
+    <string name="btn_dismiss">إغلاق</string>
     <string name="live_network_activity">نشاط الشبكة المباشر</string>
     <string name="total_traffic">إجمالي حركة البيانات</string>
     <string name="blocked">محظور</string>
@@ -344,7 +351,3 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

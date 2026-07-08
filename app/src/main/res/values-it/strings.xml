@@ -76,6 +76,13 @@
     <string name="threat_detected">MINACCIA RILEVATA!</string>
     <string name="malware_found_title">⚠ MALWARE TROVATO!</string>
     <string name="btn_destroy_hint">tocca Elimina per rimuoverlo</string>
+    <string name="malware_found_heading">MALWARE TROVATO</string>
+    <string name="malware_found_risk_score">Punteggio di rischio: %d/100</string>
+    <string name="malware_found_status_installed">Il processo in background di questa app è stato interrotto e il prompt di disinstallazione del sistema è stato aperto.</string>
+    <string name="malware_found_status_file">È stato inviato un prompt per eliminare questo file — controlla le notifiche.</string>
+    <string name="btn_uninstall">DISINSTALLA</string>
+    <string name="btn_delete_file">ELIMINA FILE</string>
+    <string name="btn_dismiss">CHIUDI</string>
     <string name="live_network_activity">ATTIVITÀ DI RETE IN DIRETTA</string>
     <string name="total_traffic">TRAFFICO TOTALE</string>
     <string name="blocked">BLOCCATO</string>
@@ -344,7 +351,3 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

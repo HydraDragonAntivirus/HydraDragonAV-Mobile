@@ -76,6 +76,13 @@
     <string name="threat_detected">تهدید شناسایی شد!</string>
     <string name="malware_found_title">⚠ بدافزار پیدا شد!</string>
     <string name="btn_destroy_hint">برای حذف آن روی «حذف» ضربه بزنید</string>
+    <string name="malware_found_heading">بدافزار پیدا شد</string>
+    <string name="malware_found_risk_score">امتیاز ریسک: %d/100</string>
+    <string name="malware_found_status_installed">فرایند پس‌زمینه این برنامه متوقف شد و اعلان حذف نصب سیستم باز شد.</string>
+    <string name="malware_found_status_file">اعلان حذف این فایل ارسال شد — اعلان‌های خود را بررسی کنید.</string>
+    <string name="btn_uninstall">حذف نصب</string>
+    <string name="btn_delete_file">حذف فایل</string>
+    <string name="btn_dismiss">رد کردن</string>
     <string name="live_network_activity">فعالیت شبکه زنده</string>
     <string name="total_traffic">کل ترافیک</string>
     <string name="blocked">مسدود شده</string>
@@ -344,7 +351,3 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

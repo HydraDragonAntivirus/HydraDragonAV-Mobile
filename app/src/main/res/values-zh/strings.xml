@@ -76,6 +76,13 @@
     <string name="threat_detected">检测到威胁！</string>
     <string name="malware_found_title">⚠ 发现恶意软件！</string>
     <string name="btn_destroy_hint">点击"删除"以移除</string>
+    <string name="malware_found_heading">发现恶意软件</string>
+    <string name="malware_found_risk_score">风险评分: %d/100</string>
+    <string name="malware_found_status_installed">此应用的后台进程已被终止，系统卸载提示已打开。</string>
+    <string name="malware_found_status_file">已发送删除此文件的提示 — 请检查您的通知。</string>
+    <string name="btn_uninstall">卸载</string>
+    <string name="btn_delete_file">删除文件</string>
+    <string name="btn_dismiss">关闭</string>
     <string name="live_network_activity">实时网络活动</string>
     <string name="total_traffic">总流量</string>
     <string name="blocked">已拦截</string>
@@ -344,7 +351,3 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

@@ -76,6 +76,13 @@
     <string name="threat_detected">BEDROHUNG ERKANNT!</string>
     <string name="malware_found_title">⚠ SCHADSOFTWARE GEFUNDEN!</string>
     <string name="btn_destroy_hint">zum Entfernen auf „Löschen" tippen</string>
+    <string name="malware_found_heading">SCHADSOFTWARE GEFUNDEN</string>
+    <string name="malware_found_risk_score">Risikobewertung: %d/100</string>
+    <string name="malware_found_status_installed">Der Hintergrundprozess dieser App wurde beendet und die System-Deinstallationsaufforderung wurde geöffnet.</string>
+    <string name="malware_found_status_file">Eine Aufforderung zum Löschen dieser Datei wurde gesendet — überprüfen Sie Ihre Benachrichtigungen.</string>
+    <string name="btn_uninstall">DEINSTALLIEREN</string>
+    <string name="btn_delete_file">DATEI LÖSCHEN</string>
+    <string name="btn_dismiss">SCHLIEßEN</string>
     <string name="live_network_activity">LIVE-NETZWERKAKTIVITÄT</string>
     <string name="total_traffic">GESAMTVERKEHR</string>
     <string name="blocked">BLOCKIERT</string>
@@ -344,7 +351,3 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

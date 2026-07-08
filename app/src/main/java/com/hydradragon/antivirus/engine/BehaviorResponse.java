@@ -110,6 +110,8 @@ public final class BehaviorResponse {
             i.putExtra(MalwareFoundActivity.EXTRA_REASON,
                     threat.getReasons().isEmpty() ? "-" : threat.getReasons().get(0));
             i.putExtra(MalwareFoundActivity.EXTRA_IS_FILE, isFile);
+            i.putExtra(MalwareFoundActivity.EXTRA_PACKAGE_NAME, threat.getPackageName());
+            i.putExtra(MalwareFoundActivity.EXTRA_APK_PATH, threat.getApkPath());
             context.startActivity(i);
         } catch (Throwable t) {
             Log.w(TAG, "showMalwareFoundScreen failed", t);

@@ -76,6 +76,13 @@
     <string name="threat_detected">खतरा मिला!</string>
     <string name="malware_found_title">⚠ मैलवेयर मिला!</string>
     <string name="btn_destroy_hint">इसे हटाने के लिए हटाएँ पर टैप करें</string>
+    <string name="malware_found_heading">मैलवेयर मिला</string>
+    <string name="malware_found_risk_score">जोखिम स्कोर: %d/100</string>
+    <string name="malware_found_status_installed">इस ऐप की पृष्ठभूमि प्रक्रिया को रोक दिया गया है और सिस्टम अनइंस्टॉल प्रॉम्प्ट खोल दिया गया है।</string>
+    <string name="malware_found_status_file">इस फ़ाइल को हटाने का एक प्रॉम्प्ट भेजा गया है — अपनी सूचनाएं जांचें।</string>
+    <string name="btn_uninstall">अनइंस्टॉल करें</string>
+    <string name="btn_delete_file">फ़ाइल हटाएं</string>
+    <string name="btn_dismiss">खारिज करें</string>
     <string name="live_network_activity">लाइव नेटवर्क गतिविधि</string>
     <string name="total_traffic">कुल ट्रैफ़िक</string>
     <string name="blocked">ब्लॉक किया गया</string>
@@ -343,6 +350,3 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-

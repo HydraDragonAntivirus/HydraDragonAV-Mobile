@@ -76,6 +76,13 @@
     <string name="threat_detected">WYKRYTO ZAGROŻENIE!</string>
     <string name="malware_found_title">⚠ ZNALEZIONO ZŁOŚLIWE OPROGRAMOWANIE!</string>
     <string name="btn_destroy_hint">dotknij Usuń, aby je usunąć</string>
+    <string name="malware_found_heading">ZNALEZIONO ZŁOŚLIWE OPROGRAMOWANIE</string>
+    <string name="malware_found_risk_score">Ocena ryzyka: %d/100</string>
+    <string name="malware_found_status_installed">Proces w tle tej aplikacji został zatrzymany, a monit o odinstalowanie systemu został otwarty.</string>
+    <string name="malware_found_status_file">Wysłano monit o usunięcie tego pliku — sprawdź powiadomienia.</string>
+    <string name="btn_uninstall">ODINSTALUJ</string>
+    <string name="btn_delete_file">USUŃ PLIK</string>
+    <string name="btn_dismiss">ODRZUĆ</string>
     <string name="live_network_activity">AKTYWNOŚĆ SIECI NA ŻYWO</string>
     <string name="total_traffic">CAŁKOWITY RUCH</string>
     <string name="blocked">ZABLOKOWANE</string>
@@ -344,7 +351,3 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

@@ -85,6 +85,13 @@
 • Threat intelligence synced</string>
     <string name="threat_detected">THREAT DETECTED!</string>
     <string name="malware_found_title">⚠ MALWARE FOUND!</string>
+    <string name="malware_found_heading">MALWARE FOUND</string>
+    <string name="malware_found_risk_score">Risk Score: %d/100</string>
+    <string name="malware_found_status_installed">This app\'s background process was killed and the system uninstall prompt has been opened.</string>
+    <string name="malware_found_status_file">A prompt to delete this file has been sent — check your notifications.</string>
+    <string name="btn_uninstall">UNINSTALL</string>
+    <string name="btn_delete_file">DELETE FILE</string>
+    <string name="btn_dismiss">DISMISS</string>
     <string name="btn_destroy_hint">tap Destroy to remove it</string>
     <string name="live_network_activity">LIVE NETWORK ACTIVITY</string>
     <string name="total_traffic">TOTAL TRAFFIC</string>

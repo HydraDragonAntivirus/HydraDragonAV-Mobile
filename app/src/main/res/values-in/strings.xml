@@ -76,6 +76,13 @@
     <string name="threat_detected">ANCAMAN TERDETEKSI!</string>
     <string name="malware_found_title">⚠ MALWARE DITEMUKAN!</string>
     <string name="btn_destroy_hint">ketuk Hapus untuk menghapusnya</string>
+    <string name="malware_found_heading">MALWARE DITEMUKAN</string>
+    <string name="malware_found_risk_score">Skor Risiko: %d/100</string>
+    <string name="malware_found_status_installed">Proses latar belakang aplikasi ini dihentikan dan prompt uninstall sistem telah dibuka.</string>
+    <string name="malware_found_status_file">Prompt untuk menghapus file ini telah dikirim — periksa notifikasi Anda.</string>
+    <string name="btn_uninstall">HAPUS INSTAL</string>
+    <string name="btn_delete_file">HAPUS FILE</string>
+    <string name="btn_dismiss">TUTUP</string>
     <string name="live_network_activity">AKTIVITAS JARINGAN LANGSUNG</string>
     <string name="total_traffic">TOTAL LALU LINTAS</string>
     <string name="blocked">DIBLOKIR</string>
@@ -344,7 +351,3 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

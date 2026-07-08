@@ -76,6 +76,13 @@
     <string name="threat_detected">위협 감지됨!</string>
     <string name="malware_found_title">⚠ 악성코드 발견!</string>
     <string name="btn_destroy_hint">제거하려면 삭제를 탭하세요</string>
+    <string name="malware_found_heading">악성코드 발견</string>
+    <string name="malware_found_risk_score">위험 점수: %d/100</string>
+    <string name="malware_found_status_installed">이 앱의 백그라운드 프로세스가 중지되었으며 시스템 제거 프롬프트가 열렸습니다.</string>
+    <string name="malware_found_status_file">이 파일을 삭제하라는 메시지가 전송되었습니다 — 알림을 확인하세요.</string>
+    <string name="btn_uninstall">제거</string>
+    <string name="btn_delete_file">파일 삭제</string>
+    <string name="btn_dismiss">닫기</string>
     <string name="live_network_activity">실시간 네트워크 활동</string>
     <string name="total_traffic">총 트래픽</string>
     <string name="blocked">차단됨</string>
@@ -344,7 +351,3 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

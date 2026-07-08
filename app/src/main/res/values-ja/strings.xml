@@ -76,6 +76,13 @@
     <string name="threat_detected">脅威を検出しました！</string>
     <string name="malware_found_title">⚠ マルウェアを検出しました！</string>
     <string name="btn_destroy_hint">削除するには「削除する」をタップしてください</string>
+    <string name="malware_found_heading">マルウェアを検出しました</string>
+    <string name="malware_found_risk_score">リスクスコア: %d/100</string>
+    <string name="malware_found_status_installed">このアプリのバックグラウンドプロセスを停止し、システムのアンインストールプロンプトを開きました。</string>
+    <string name="malware_found_status_file">このファイルを削除するプロンプトが送信されました — 通知を確認してください。</string>
+    <string name="btn_uninstall">アンインストール</string>
+    <string name="btn_delete_file">ファイルを削除</string>
+    <string name="btn_dismiss">閉じる</string>
     <string name="live_network_activity">リアルタイムネットワークアクティビティ</string>
     <string name="total_traffic">総トラフィック</string>
     <string name="blocked">ブロック済み</string>
@@ -344,7 +351,3 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

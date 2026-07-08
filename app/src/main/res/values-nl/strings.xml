@@ -76,6 +76,13 @@
     <string name="threat_detected">DREIGING GEDETECTEERD!</string>
     <string name="malware_found_title">⚠ MALWARE GEVONDEN!</string>
     <string name="btn_destroy_hint">tik op Verwijderen om het te verwijderen</string>
+    <string name="malware_found_heading">MALWARE GEVONDEN</string>
+    <string name="malware_found_risk_score">Risicoscore: %d/100</string>
+    <string name="malware_found_status_installed">Het achtergrondproces van deze app is beëindigd en de systeemverwijderingsprompt is geopend.</string>
+    <string name="malware_found_status_file">Er is een prompt verzonden om dit bestand te verwijderen — controleer uw meldingen.</string>
+    <string name="btn_uninstall">VERWIJDEREN</string>
+    <string name="btn_delete_file">BESTAND VERWIJDEREN</string>
+    <string name="btn_dismiss">SLUITEN</string>
     <string name="live_network_activity">LIVE NETWERKACTIVITEIT</string>
     <string name="total_traffic">TOTALE VERKEER</string>
     <string name="blocked">GEBLOKKEERD</string>
@@ -344,7 +351,3 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

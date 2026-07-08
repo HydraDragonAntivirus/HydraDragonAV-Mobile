@@ -76,6 +76,13 @@
     <string name="threat_detected">PHÁT HIỆN MỐI ĐE DỌA!</string>
     <string name="malware_found_title">⚠ PHÁT HIỆN PHẦN MỀM ĐỘC HẠI!</string>
     <string name="btn_destroy_hint">nhấn Xóa để loại bỏ nó</string>
+    <string name="malware_found_heading">PHÁT HIỆN PHẦN MỀM ĐỘC HẠI</string>
+    <string name="malware_found_risk_score">Điểm rủi ro: %d/100</string>
+    <string name="malware_found_status_installed">Tiến trình nền của ứng dụng này đã bị dừng và lời nhắc gỡ cài đặt hệ thống đã được mở.</string>
+    <string name="malware_found_status_file">Lời nhắc xóa tệp này đã được gửi — hãy kiểm tra thông báo của bạn.</string>
+    <string name="btn_uninstall">GỠ CÀI ĐẶT</string>
+    <string name="btn_delete_file">XÓA TỆP</string>
+    <string name="btn_dismiss">BỎ QUA</string>
     <string name="live_network_activity">HOẠT ĐỘNG MẠNG TRỰC TIẾP</string>
     <string name="total_traffic">TỔNG LƯU LƯỢNG</string>
     <string name="blocked">ĐÃ CHẶN</string>
@@ -344,7 +351,3 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

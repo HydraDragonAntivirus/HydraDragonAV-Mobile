@@ -76,6 +76,13 @@
     <string name="threat_detected">¡AMENAZA DETECTADA!</string>
     <string name="malware_found_title">⚠ ¡MALWARE ENCONTRADO!</string>
     <string name="btn_destroy_hint">toca Eliminar para quitarlo</string>
+    <string name="malware_found_heading">MALWARE ENCONTRADO</string>
+    <string name="malware_found_risk_score">Puntuación de riesgo: %d/100</string>
+    <string name="malware_found_status_installed">El proceso en segundo plano de esta aplicación se ha detenido y se ha abierto el mensaje de desinstalación del sistema.</string>
+    <string name="malware_found_status_file">Se ha enviado un mensaje para eliminar este archivo — revise sus notificaciones.</string>
+    <string name="btn_uninstall">DESINSTALAR</string>
+    <string name="btn_delete_file">ELIMINAR ARCHIVO</string>
+    <string name="btn_dismiss">CERRAR</string>
     <string name="live_network_activity">ACTIVIDAD DE RED EN VIVO</string>
     <string name="total_traffic">TRÁFICO TOTAL</string>
     <string name="blocked">BLOQUEADO</string>
@@ -344,7 +351,3 @@ Puntuación de riesgo: %2$d/100
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-

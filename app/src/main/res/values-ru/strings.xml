@@ -76,6 +76,13 @@
     <string name="threat_detected">ОБНАРУЖЕНА УГРОЗА!</string>
     <string name="malware_found_title">⚠ ОБНАРУЖЕНО ВРЕДОНОСНОЕ ПО!</string>
     <string name="btn_destroy_hint">нажмите «Удалить», чтобы удалить его</string>
+    <string name="malware_found_heading">ОБНАРУЖЕНО ВРЕДОНОСНОЕ ПО</string>
+    <string name="malware_found_risk_score">Оценка риска: %d/100</string>
+    <string name="malware_found_status_installed">Фоновый процесс этого приложения был остановлен, и было открыто приглашение системы к удалению.</string>
+    <string name="malware_found_status_file">Было отправлено приглашение удалить этот файл — проверьте уведомления.</string>
+    <string name="btn_uninstall">УДАЛИТЬ</string>
+    <string name="btn_delete_file">УДАЛИТЬ ФАЙЛ</string>
+    <string name="btn_dismiss">ЗАКРЫТЬ</string>
     <string name="live_network_activity">СЕТЕВАЯ АКТИВНОСТЬ В РЕАЛЬНОМ ВРЕМЕНИ</string>
     <string name="total_traffic">ОБЩИЙ ТРАФИК</string>
     <string name="blocked">ЗАБЛОКИРОВАНО</string>
@@ -344,7 +351,3 @@
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
 </resources>
-
-
-
-
