@@ -959,126 +959,150 @@ fn run_scan(
     // cause is pinpointed, not just swallowed.
     let mut err: Option<String> = None;
     let t_extract = std::time::Instant::now();
-    let buffers = collect_buffers(bytes, file_md5);
+    let max_dets = 64;
+    let mut early_dets: Vec<(String, Vec<String>)> = Vec::new();
+    let buffers = collect_buffers(
+        bytes, file_md5,
+        engine.clamav.as_ref(),
+        path, &mut early_dets, max_dets,
+    );
     let extract_ms = t_extract.elapsed().as_millis();
-    // Dangerous-permission count from the (in-memory) manifest bytes, so an APK
-    // reached only by extraction still gets permission-based detection. Java
-    // applies the suspicious(5)/malware(6) threshold.
-    let perm_count = max_dangerous_perms(&buffers);
-    // Package name(s) of any APK reachable in the buffers (parsed from the
-    // in-memory AndroidManifest.xml). Java matches these against its package
-    // whitelist so a whitelisted app packed inside a zip is not a false positive.
-    let packages = collect_packages(&buffers);
-    // MD5 of each APK/zip buffer, for the hash-keyed whitelist.
-    let hashes = collect_apk_hashes(&buffers, file_md5);
+    let early_hit = !early_dets.is_empty();
+
     // MD5 of the whole top-level file (its "main hash") — Java builds a
     // VirusTotal lookup link from this (VT accepts md5). Reuses Java's md5.
     let file_hash = match file_md5 {
         Some(md5) => md5.to_string(),
         None => md5_hex(bytes),
     };
-    // androguard JSON report (manifest + URL sweep), fed to the YARA-X
-    // `androguard` module so its rules (permission/url/package_name/...) work.
-    // None when no AndroidManifest.xml is reachable (not an APK).
-    let androguard_json = build_androguard_json(&buffers);
 
-    // Per-buffer "already vouched for by Java's whitelist_packages.db" flag:
-    // true only when the buffer's OWN package name AND md5 exactly match a row
-    // (see WHITELIST_PACKAGES_DB) — never propagated to children/siblings, so a
-    // non-whitelisted file/APK sitting next to a whitelisted one in the same
-    // archive is still fully scanned below.
-    let skip_heavy: Vec<bool> = buffers
-        .iter()
-        .map(|b| {
-            if engine.package_whitelist.is_empty() {
-                return false;
-            }
-            let Some(pkg) = axml_package(&b.data) else {
-                return false;
-            };
-            if pkg.is_empty() {
-                return false;
-            }
-            match engine.package_whitelist.get(&pkg) {
-                Some(known_md5) => known_md5.eq_ignore_ascii_case(&md5_hex(&b.data)),
-                None => false,
-            }
-        })
-        .collect();
+    // When the top-level buffer already triggered a detection, skip expensive
+    // per-buffer preprocessing (DEX analysis, native emulation, permissions,
+    // androguard JSON, whitelist checks) — ClamAV already found the threat.
+    let perm_count;
+    let packages;
+    let hashes;
+    let androguard_json;
+    let skip_heavy: Vec<bool>;
+    let dex_scans: Vec<Option<dex_scan::DexScan>>;
+    let dex_ms;
+    let hydradragon_meta;
+    let mut module_meta: Vec<(&str, &[u8])>;
+    let emulated: Vec<emulate::EmulationResult>;
+    let emulated_strings: Vec<Option<Vec<u8>>>;
+    let emulate_ms;
+    if early_hit {
+        perm_count = 0;
+        packages = Vec::new();
+        hashes = Vec::new();
+        androguard_json = None::<String>;
+        let _ = &androguard_json;
+        skip_heavy = vec![false; buffers.len()];
+        dex_scans = (0..buffers.len()).map(|_| None).collect();
+        dex_ms = 0;
+        hydradragon_meta = None::<Vec<u8>>;
+        let _ = &hydradragon_meta;
+        module_meta = Vec::new();
+        emulated = vec![emulate::EmulationResult::default(); buffers.len()];
+        emulated_strings = vec![None; buffers.len()];
+        emulate_ms = 0;
+    } else {
+        // Dangerous-permission count from the (in-memory) manifest bytes.
+        perm_count = max_dangerous_perms(&buffers);
+        // Package name(s) from AndroidManifest.xml.
+        packages = collect_packages(&buffers);
+        // MD5 of each APK/zip buffer for the hash-keyed whitelist.
+        hashes = collect_apk_hashes(&buffers, file_md5);
+        // androguard JSON report (manifest + URL sweep).
+        androguard_json = build_androguard_json(&buffers);
 
-    // Decode + statically analyse every DEX buffer once (strings + method/class
-    // names), reused below for both the clamav/YARA text pass and findings.
-    let t_dex = std::time::Instant::now();
-    let dex_scans: Vec<Option<dex_scan::DexScan>> = buffers
-        .iter()
-        .enumerate()
-        .map(|(i, b)| {
-            if !skip_heavy[i] && b.data.starts_with(b"dex\n") {
-                dex_scan::scan(&b.data)
-            } else {
-                None
-            }
-        })
-        .collect();
-    let dex_ms = t_dex.elapsed().as_millis();
+        // Per-buffer whitelist check.
+        skip_heavy = buffers
+            .iter()
+            .map(|b| {
+                if engine.package_whitelist.is_empty() {
+                    return false;
+                }
+                let Some(pkg) = axml_package(&b.data) else {
+                    return false;
+                };
+                if pkg.is_empty() {
+                    return false;
+                }
+                match engine.package_whitelist.get(&pkg) {
+                    Some(known_md5) => known_md5.eq_ignore_ascii_case(&md5_hex(&b.data)),
+                    None => false,
+                }
+            })
+            .collect();
 
-    // Fold this scan's DEX findings (any severity) into Java's live-network
-    // JSON, so `hydradragon` module metadata carries both.
-    let hydradragon_meta = merge_dex_findings(hydradragon, &dex_scans);
-
-    // Per-module metadata fed to YARA-X: the `androguard` static report and the
-    // `hydradragon` live-network + dex-findings report.
-    let mut module_meta: Vec<(&str, &[u8])> = Vec::new();
-    if let Some(j) = androguard_json.as_deref() {
-        module_meta.push(("androguard", j.as_bytes()));
-    }
-    if let Some(h) = hydradragon_meta.as_deref() {
-        if !h.is_empty() {
-            module_meta.push(("hydradragon", h));
-        }
-    }
-
-    // Emulate every native library (.so/ELF) buffer once, to reveal strings
-    // (e.g. a C2 URL) a decode routine only produces at runtime — see
-    // emulate.rs's module doc for the full rationale/safety scope. Bounded
-    // per-buffer cost (500ms/200k instructions), and gated by the Settings
-    // toggle so it can be turned off entirely if it's ever too slow.
-    let t_emulate = std::time::Instant::now();
-    let emulated: Vec<emulate::EmulationResult> = if NATIVE_EMULATION_ENABLED
-        .load(std::sync::atomic::Ordering::Relaxed)
-    {
-        buffers
+        // DEX static analysis.
+        let t_dex = std::time::Instant::now();
+        dex_scans = buffers
             .iter()
             .enumerate()
             .map(|(i, b)| {
-                if skip_heavy[i] || !b.data.starts_with(b"\x7fELF") {
-                    return emulate::EmulationResult::default();
+                if !skip_heavy[i] && b.data.starts_with(b"dex\n") {
+                    dex_scan::scan(&b.data)
+                } else {
+                    None
                 }
-                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    emulate::emulate(&b.data)
-                }))
-                .unwrap_or_default()
             })
-            .collect()
-    } else {
-        buffers.iter().map(|_| emulate::EmulationResult::default()).collect()
-    };
-    let emulated_strings: Vec<Option<Vec<u8>>> = emulated
-        .iter()
-        .map(|r| {
-            if r.strings.is_empty() {
-                None
-            } else {
-                Some(r.strings.join("\n").into_bytes())
+            .collect();
+        dex_ms = t_dex.elapsed().as_millis();
+
+        // Merge DEX findings into hydradragon meta.
+        hydradragon_meta = merge_dex_findings(hydradragon, &dex_scans);
+
+        // Build module metadata.
+        module_meta = Vec::new();
+        if let Some(j) = androguard_json.as_deref() {
+            module_meta.push(("androguard", j.as_bytes()));
+        }
+        if let Some(h) = hydradragon_meta.as_deref() {
+            if !h.is_empty() {
+                module_meta.push(("hydradragon", h));
             }
-        })
-        .collect();
-    let emulate_ms = t_emulate.elapsed().as_millis();
+        }
+
+        // Native code emulation.
+        let t_emulate = std::time::Instant::now();
+        emulated = if NATIVE_EMULATION_ENABLED
+            .load(std::sync::atomic::Ordering::Relaxed)
+        {
+            buffers
+                .iter()
+                .enumerate()
+                .map(|(i, b)| {
+                    if skip_heavy[i] || !b.data.starts_with(b"\x7fELF") {
+                        return emulate::EmulationResult::default();
+                    }
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        emulate::emulate(&b.data)
+                    }))
+                    .unwrap_or_default()
+                })
+                .collect()
+        } else {
+            buffers.iter().map(|_| emulate::EmulationResult::default()).collect()
+        };
+        emulated_strings = emulated
+            .iter()
+            .map(|r| {
+                if r.strings.is_empty() {
+                    None
+                } else {
+                    Some(r.strings.join("\n").into_bytes())
+                }
+            })
+            .collect();
+        emulate_ms = t_emulate.elapsed().as_millis();
+    }
 
     // Each detection carries the APK lineage of the buffer it fired on, so Java
     // can suppress it iff one of those ancestor-APK hashes is whitelisted.
     let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
-    let yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
+    let mut yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
         Some(clamav) => {
             let max_dets = 64;
             let opts = ScanOptions::default();
@@ -1243,9 +1267,12 @@ fn run_scan(
         .collect::<Vec<_>>()
         .join(",");
 
-    // Unified detection list: clamav/YARA hits plus one "ML" detection per
-    // ml-flagged APK buffer, each tagged with its suppressible APK lineage.
-    let mut detections: Vec<(String, Vec<String>)> = yara_dets;
+    // Unified detection list: early top-level hits first, then full ClamAV/YARA
+    // results, then one "ML" detection per ml-flagged APK buffer. Each tagged
+    // with its suppressible APK lineage. Duplicates (early hit + full ClamAV
+    // re-scan) are harmless — Java deduplicates on the client side.
+    let mut detections: Vec<(String, Vec<String>)> = early_dets;
+    detections.append(&mut yara_dets);
     for lin in ml_lineages {
         detections.push(("ML".to_string(), lin));
     }
@@ -1264,19 +1291,24 @@ fn run_scan(
     // TLSH fuzzy-similarity to known malware: compare each apk/elf/dex buffer's
     // TLSH against the MalwareBazaar database; a small distance => a likely
     // variant. Tagged with the buffer's APK lineage so a whitelisted APK is
-    // still suppressed.
-    let t_tlsh = std::time::Instant::now();
-    for (i, b) in buffers.iter().enumerate() {
-        if skip_heavy[i] {
-            continue;
-        }
-        if tlsh_relevant(&b.data) {
-            if let Some(dist) = tlsh_nearest(engine, &b.data) {
-                detections.push((format!("TLSH.Malware/dist={}", dist), b.apk_lineage.clone()));
+    // still suppressed. Skip when the top-level buffer already triggered a
+    // detection — we already have a conclusive verdict.
+    let tlsh_ms = if early_hit {
+        0
+    } else {
+        let t_tlsh = std::time::Instant::now();
+        for (i, b) in buffers.iter().enumerate() {
+            if skip_heavy[i] {
+                continue;
+            }
+            if tlsh_relevant(&b.data) {
+                if let Some(dist) = tlsh_nearest(engine, &b.data) {
+                    detections.push((format!("TLSH.Malware/dist={}", dist), b.apk_lineage.clone()));
+                }
             }
         }
-    }
-    let tlsh_ms = t_tlsh.elapsed().as_millis();
+        t_tlsh.elapsed().as_millis()
+    };
 
     // Per-YARA-ruleset breakdown string.
     let mut yara_breakdown = String::new();
@@ -2142,35 +2174,107 @@ struct Buf {
 /// the top-level (depth 0) buffer so the largest buffer isn't hashed twice.
 /// Zip-bomb guard: stops extraction when total decompressed bytes exceed ~2 GB
 /// or when the number of extracted buffers exceeds 4096.
-fn collect_buffers(data: &[u8], top_md5: Option<&str>) -> Vec<Buf> {
+/// When `engine` is `Some`, a background thread scans each buffer with ClamAV
+/// concurrently with extraction — so the top-level APK (e.g. 162 MB, Medusa
+/// match) is scanned while its children are being decompressed, instead of
+/// waiting for all extraction to complete first. Scan results accumulate in
+/// `early_dets` as they arrive, regardless of whether a match was found.
+fn collect_buffers(
+    data: &[u8],
+    top_md5: Option<&str>,
+    engine: Option<&ClamavEngine>,
+    path: &str,
+    early_dets: &mut Vec<(String, Vec<String>)>,
+    max_dets: usize,
+) -> Vec<Buf> {
+    use std::sync::mpsc;
     let mut out: Vec<Buf> = Vec::new();
     let mut total_bytes: u64 = 0;
     let mut stack: Vec<(Vec<u8>, usize, Vec<String>)> = vec![(data.to_vec(), 0, Vec::new())];
-    while let Some((buf, depth, parent_lineage)) = stack.pop() {
-        if out.len() >= 4096 || total_bytes >= 2_000_000_000 {
-            break;
-        }
-        total_bytes += buf.len() as u64;
-        let mut lineage = parent_lineage;
-        // A zip/APK contributes its own hash to its (and its children's) lineage.
-        if hydradragonextractor::detect_format(&buf) == Some("zip") {
-            let h = match top_md5 {
-                Some(md5) if depth == 0 => md5.to_string(),
-                _ => md5_hex(&buf),
-            };
-            lineage.push(h);
-        }
-        if depth < 16 && hydradragonextractor::detect_format(&buf).is_some() {
-            if let Ok(children) = hydradragonextractor::extract_archive_from_bytes(&buf) {
-                for child in children {
-                    stack.push((child, depth + 1, lineage.clone()));
+
+    let (buf_tx, buf_rx) = mpsc::channel::<(Vec<u8>, Vec<String>, usize)>();
+    let (det_tx, det_rx) = mpsc::channel::<(String, Vec<String>)>();
+
+    // Background scanner thread — runs concurrently with extraction below.
+    // Receives cloned buffer data + lineage + index, scans with ClamAV, and
+    // pushes any detection through `det_tx` back to the main thread.
+    let det_tx_for_scan = det_tx.clone();
+    std::thread::scope(|s| {
+        s.spawn(|| {
+            let opts = ScanOptions::default();
+            if let Some(clamav) = engine {
+                for (buf_data, lineage, idx) in buf_rx {
+                    let name = if idx == 0 {
+                        path.to_string()
+                    } else {
+                        format!("{}#extract[{}]", path, idx)
+                    };
+                    let (matches, _) = clamav
+                        .scan_bytes_named_with_breakdown(&buf_data, &name, opts, &[]);
+                    for m in matches {
+                        if det_tx_for_scan.send((m.name, lineage.clone())).is_err() {
+                            return;
+                        }
+                    }
+                }
+            } else {
+                for _ in buf_rx {}
+            }
+        });
+
+        // Main thread: extract archive entries and send each buffer to the
+        // scanner thread. Extraction is NOT paused for scanning — they overlap.
+        while let Some((buf, depth, parent_lineage)) = stack.pop() {
+            if out.len() >= 4096 || total_bytes >= 2_000_000_000 {
+                break;
+            }
+            total_bytes += buf.len() as u64;
+            let mut lineage = parent_lineage;
+            // Detect format ONCE per buffer (both for lineage and extraction).
+            let fmt = hydradragonextractor::detect_format(&buf);
+            if fmt == Some("zip") {
+                // Reuse the caller's top-level MD5 when available — the 162 MB
+                // APK is the only depth-0 zip we ever process, so this avoids
+                // a second full-buffer hash for every APK scan. Nested zips
+                // are small enough that their MD5 cost is negligible.
+                let h = match top_md5 {
+                    Some(md5) if depth == 0 => md5.to_string(),
+                    _ => md5_hex(&buf),
+                };
+                lineage.push(h);
+            }
+
+            // Clone the buffer for the scanner thread (it needs its own copy
+            // to scan concurrently while we extract children).
+            let idx = out.len();
+            let _ = buf_tx.send((buf.clone(), lineage.clone(), idx));
+
+            // Extract children (ZIP/tar/gz/… entries) — happens in parallel
+            // with the scanner thread scanning buf.
+            if depth < 16 && fmt.is_some() {
+                if let Ok(children) = hydradragonextractor::extract_archive_from_bytes(&buf) {
+                    for child in children {
+                        stack.push((child, depth + 1, lineage.clone()));
+                    }
                 }
             }
+            out.push(Buf {
+                data: buf,
+                apk_lineage: lineage,
+            });
         }
-        out.push(Buf {
-            data: buf,
-            apk_lineage: lineage,
-        });
+        // Drop our sender so the scanner thread's recv loop terminates.
+        drop(buf_tx);
+    });
+    // Drop the original detection sender so the drain loop below terminates.
+    drop(det_tx);
+
+    // Drain any detections the scanner produced.
+    for det in det_rx {
+        early_dets.push(det);
+        if early_dets.len() >= max_dets {
+            break;
+        }
     }
     out
 }

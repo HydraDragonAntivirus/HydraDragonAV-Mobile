@@ -118,7 +118,7 @@
 
 Risk Skoru: %2$d/100
 
-Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
+Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="btn_destroy">EVET, YOK ET</string>
     <string name="btn_ignore">YOKSAY</string>
     <string name="threat_destroyed">Zehirli Dosya İmha Edildi!</string>
@@ -235,7 +235,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="level_medium">ORTA RİSK</string>
     <string name="level_low">DÜŞÜK RİSK</string>
     <string name="level_clean">TEMİZ</string>
-    <string name="threats_found_count">⚠ %1$d zehirli dosya bulundu! Üzerine tıklayıp yokedin.</string>
+    <string name="threats_found_count">⚠ %1$d kötü amaçlı dosya bulundu! Üzerine tıklayıp yokedin.</string>
     <string name="threat_obfuscation">⚠ KOD GİZLEME: Dinamik Yükleme Tespit Edildi!</string>
     <string name="threat_ransomware">FİDYE YAZILIMI TESPİTİ: Dosya Şifreleme!</string>
     <string name="threat_spyware">CASUS YAZILIM / RAT TESPİTİ: Arka Plan İzlemesi!</string>
