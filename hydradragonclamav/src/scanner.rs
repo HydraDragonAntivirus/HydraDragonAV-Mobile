@@ -904,6 +904,20 @@ impl Engine {
 
         // Phase 2: PCRE and byte-compare subsignatures, whose triggers
         // reference the phase-1 body results.
+        //
+        // On very large buffers (> 10 MB) the regex engine (especially the
+        // PikeVM fallback for non-DFA‑friendly patterns) can become
+        // pathologically slow — scanning 162 MB of binary APK data for
+        // text‑oriented ransomware patterns achieves nothing while costing
+        // 100+ ms per PCRE.  We cap the searchable region to the first
+        // `PCRE_MAX_SCAN_BYTES` bytes of the buffer; content beyond that
+        // is almost certainly not a text‑mode indicator.
+        const PCRE_MAX_SCAN_BYTES: usize = 10_000_000;
+        let pcre_needle = if ctx.data.len() > PCRE_MAX_SCAN_BYTES {
+            &ctx.data[..PCRE_MAX_SCAN_BYTES]
+        } else {
+            ctx.data
+        };
         for (i, subsig) in subsigs.iter().enumerate() {
             match subsig {
                 Subsignature::Pcre(pcre) => {
@@ -912,9 +926,9 @@ impl Engine {
                         // never fire, so they stay uncompiled and cost no RAM).
                         if let Some(re) = pcre.regex.get() {
                             counts[i] = if pcre.global {
-                                re.find_iter(ctx.data).count()
+                                re.find_iter(pcre_needle).count()
                             } else {
-                                usize::from(pcre.regex.is_match(ctx.data))
+                                usize::from(pcre.regex.is_match(pcre_needle))
                             };
                         }
                     }

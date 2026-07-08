@@ -44,9 +44,42 @@ fn transpose32(input: &[f32], output: &mut [f32]) {
     }
 }
 
+/// Quick check: is `buffer` plausibly an image the `image` crate can decode?
+/// Returns `true` for the handful of formats we actually care about, `false` for
+/// everything else (DEX, ELF, XML, …). Avoids handing a 162 MB binary blob to
+/// `image::load_from_memory`, which would spend hundreds of ms determining
+/// that the magic bytes don't match any format.
+fn plausible_image_magic(buffer: &[u8]) -> bool {
+    const MAGIC_LEN: usize = 8;
+    if buffer.len() < MAGIC_LEN {
+        return false;
+    }
+    let m = &buffer[..MAGIC_LEN];
+    // PNG, JPEG, GIF, BMP, WebP, TIFF, ICO, PNM (PBM/PGM/PPM), AVIF
+    m.starts_with(b"\x89PNG\r\n\x1a\n")
+        || m.starts_with(b"\xff\xd8\xff")
+        || m.starts_with(b"GIF8")
+        || m.starts_with(b"BM")
+        || m.starts_with(b"RIFF")
+        || m.starts_with(b"II*\x00")
+        || m.starts_with(b"MM\x00*")
+        || m.starts_with(b"\x00\x00\x00\x0c")  // ICO
+        || m.starts_with(b"P")
+        || m.starts_with(b"ftyp")
+        || m.starts_with(b"\x00\x00\x00\x1c")  // AVIF-ish
+}
+
 /// Compute the 64-bit image fuzzy hash of `buffer`, or `None` if it is not a
 /// decodable image. Byte order matches ClamAV's `fuzzy_img#` hash exactly.
 pub fn calculate_image(buffer: &[u8]) -> Option<[u8; 8]> {
+    // Fast-path reject non-image data before handing it to the `image` crate,
+    // which can be slow to reject large buffers that happen not to be images.
+    if !plausible_image_magic(buffer) {
+        return None;
+    }
+    if buffer.len() > 50_000_000 {
+        return None; // real images are rarely > 50 MB; skip to avoid OOM/timeout
+    }
     // The `image` decoders can panic on malformed input — guard like ClamAV does.
     let loaded = std::panic::catch_unwind(|| image::load_from_memory(buffer));
     let og_image = match loaded {
