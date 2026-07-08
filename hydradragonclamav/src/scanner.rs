@@ -695,6 +695,8 @@ impl Engine {
         let last_offsets = &mut bufs.last_offsets;
         let evaluated = &mut bufs.evaluated;
 
+        let t_debug = std::time::Instant::now();
+
         // Early cutoff: evaluate the gating subsig first; if the gate is absent
         // the expression can't match, so skip every other subsig of this
         // signature (the big win on logical-heavy databases / large files, where
@@ -772,6 +774,9 @@ impl Engine {
         // subsigs that actually matched.
         let monotone =
             !signature.expression.has_nonmonotone_compare() && signature.bytecode.is_none();
+
+        let t_after_gate = std::time::Instant::now();
+        let debug_gate_us = t_after_gate.duration_since(t_debug).as_micros();
 
         // Phase 1: body subsignatures (the gate, if any, is already done).
         for (i, subsig) in subsigs.iter().enumerate() {
@@ -880,6 +885,9 @@ impl Engine {
             }
         }
 
+        let t_after_p1 = std::time::Instant::now();
+        let debug_p1_us = t_after_p1.duration_since(t_after_gate).as_micros();
+
         // Image fuzzy-hash subsignatures: match when the file's perceptual image
         // hash equals the subsig hash exactly (ClamAV's `fuzzy_hash_check`, which
         // supports only hamming distance 0). The hash is computed once per file.
@@ -890,6 +898,9 @@ impl Engine {
                 }
             }
         }
+
+        let t_after_fuzzy = std::time::Instant::now();
+        let debug_fuzzy_us = t_after_fuzzy.duration_since(t_after_p1).as_micros();
 
         // Phase 2: PCRE and byte-compare subsignatures, whose triggers
         // reference the phase-1 body results.
@@ -928,7 +939,26 @@ impl Engine {
             }
         }
 
-        if signature.expression.eval(counts).matched {
+        let t_after_p2 = std::time::Instant::now();
+        let debug_p2_us = t_after_p2.duration_since(t_after_fuzzy).as_micros();
+
+        let eval_matched = signature.expression.eval(counts).matched;
+        let debug_eval_us = std::time::Instant::now().duration_since(t_after_p2).as_micros();
+
+        let debug_total_us = std::time::Instant::now().duration_since(t_debug).as_micros();
+        android_log(&format!(
+            "[SCAN-DEBUG] {} gate={}us p1_body={}us fuzzy={}us p2_pcre_bc={}us eval={}us total={}us subsig_sum={}us",
+            signature.name,
+            debug_gate_us,
+            debug_p1_us,
+            debug_fuzzy_us,
+            debug_p2_us,
+            debug_eval_us,
+            debug_total_us,
+            bufs.detail.iter().map(|d| d.elapsed_us).sum::<u128>(),
+        ));
+
+        if eval_matched {
             // HandlerType (ClamAV lsig_eval): a matching signature does NOT alert.
             // Instead ClamAV re-types the file and rescans as `handlertype`. We
             // faithfully suppress the alert; the re-typed rescan would only surface
