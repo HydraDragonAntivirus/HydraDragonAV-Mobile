@@ -78,7 +78,7 @@
     <string name="btn_destroy_hint">appuyez sur Supprimer pour le retirer</string>
     <string name="malware_found_heading">LOGICIEL MALVEILLANT TROUVÉ</string>
     <string name="malware_found_risk_score">Score de risque: %d/100</string>
-    <string name="malware_found_status_installed">Le processus en arrière-plan de cette application a été arrêté et l'invite de désinstallation du système a été ouverte.</string>
+    <string name="malware_found_status_installed">Le processus en arrière-plan de cette application a été arrêté et l\'invite de désinstallation du système a été ouverte.</string>
     <string name="malware_found_status_file">Une invite pour supprimer ce fichier a été envoyée — vérifiez vos notifications.</string>
     <string name="btn_uninstall">DÉSINSTALLER</string>
     <string name="btn_delete_file">SUPPRIMER LE FICHIER</string>
