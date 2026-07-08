@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -130,8 +131,12 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNav = findViewById(R.id.bottom_navigation);
 
+        overridePendingTransition(R.anim.theme_fade_in, 0);
+
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
+            getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                .putInt("last_nav_item", id).apply();
             if (id == R.id.nav_dashboard) {
                 showFragment(new DashboardFragment());
                 return true;
@@ -228,6 +233,12 @@ public class MainActivity extends AppCompatActivity {
     private void stopSecurityWatchers() {
         if (strandHoggGuard != null) strandHoggGuard.stopWatching();
         if (windowGuard != null) windowGuard.stopWatching();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        overridePendingTransition(R.anim.theme_fade_in, R.anim.theme_fade_out);
     }
 
     /** See StrandHoggGuard's javadoc — something other than HydraDragon itself
@@ -439,7 +450,16 @@ public class MainActivity extends AppCompatActivity {
     private void startAppUI() {
         findViewById(R.id.content_frame).setVisibility(View.VISIBLE);
         bottomNav.setVisibility(View.VISIBLE);
-        showFragment(new DashboardFragment());
+        int lastNav = getSharedPreferences("hydra_prefs", MODE_PRIVATE)
+            .getInt("last_nav_item", R.id.nav_dashboard);
+        bottomNav.setSelectedItemId(lastNav);
+        Fragment f;
+        if (lastNav == R.id.nav_scan) f = new ScanFragment();
+        else if (lastNav == R.id.nav_network) f = new NetworkFragment();
+        else if (lastNav == R.id.nav_threats) f = new ThreatLogFragment();
+        else if (lastNav == R.id.nav_settings) f = new SettingsFragment();
+        else f = new DashboardFragment();
+        showFragment(f);
     }
 
     @Override

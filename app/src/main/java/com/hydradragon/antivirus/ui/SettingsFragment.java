@@ -111,13 +111,12 @@ public class SettingsFragment extends Fragment {
         boolean dark = prefs().getBoolean(KEY_DARK, true);
         addToggle(getString(R.string.dark_light_mode), dark, (btn, on) -> {
             prefs().edit().putBoolean(KEY_DARK, on).apply();
-            // AppCompatDelegate.setDefaultNightMode() already triggers its OWN
-            // Activity.recreate() when the mode actually changes. Also calling
-            // recreate() manually right after used to race it — the manual
-            // recreate could fire before the night-mode config change had
-            // fully applied, so the UI looked "half themed" until the user
-            // navigated to another screen (which recreated views fresh with
-            // the now-settled config). Let AppCompat handle it alone.
+            // Smooth fade transition between themes — set the animation
+            // BEFORE AppCompat triggers the Activity recreation.
+            if (getActivity() != null) {
+                getActivity().overridePendingTransition(
+                    R.anim.theme_fade_in, R.anim.theme_fade_out);
+            }
             AppCompatDelegate.setDefaultNightMode(on
                 ? AppCompatDelegate.MODE_NIGHT_YES
                 : AppCompatDelegate.MODE_NIGHT_NO);
