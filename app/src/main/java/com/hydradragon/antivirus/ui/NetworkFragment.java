@@ -109,22 +109,7 @@ public class NetworkFragment extends Fragment {
             }
 
             @Override
-            public void onStatsUpdate(long bytesIn, long bytesOut, int blocked, int allowed) {
-                if(isAdded() && getActivity() != null) getActivity().runOnUiThread(() -> {
-                    // Show the cumulative TOTAL (bytesIn/bytesOut here are the
-                    // per-tick rate, used only for the live chart).
-                    long totalIn = 0, totalOut = 0;
-                    if (serviceBound && guardService != null && guardService.getNetworkMonitor() != null) {
-                        totalIn = guardService.getNetworkMonitor().getBytesReceived();
-                        totalOut = guardService.getNetworkMonitor().getBytesSent();
-                    }
-                    tvBytesIn.setText(formatBytes(totalIn));
-                    tvBytesOut.setText(formatBytes(totalOut));
-                    tvBlockedCount.setText(String.valueOf(blocked));
-                    tvAllowedCount.setText(String.valueOf(allowed));
-                    if (liveChart != null) liveChart.addDataPoint(bytesIn + bytesOut);
-                });
-            }
+            public void onStatsUpdate(long bytesIn, long bytesOut, int blocked, int allowed) {}
 
             @Override
             public void onNetworkChange(boolean isConnected, String networkType) {
@@ -141,13 +126,21 @@ public class NetworkFragment extends Fragment {
             @Override
             public void run() {
                 if (!serviceBound || guardService == null || guardService.getNetworkMonitor() == null) return;
+                NetworkMonitor nm = guardService.getNetworkMonitor();
                 // Update current event list
-                List<NetworkMonitor.NetworkEvent> currentEvents =
-                    guardService.getNetworkMonitor().getEventLog();
+                List<NetworkMonitor.NetworkEvent> currentEvents = nm.getEventLog();
                 if (events.isEmpty() && !currentEvents.isEmpty()) {
                     events.addAll(currentEvents.subList(0, Math.min(50, currentEvents.size())));
                     eventAdapter.notifyDataSetChanged();
                 }
+                // Poll stats directly (no background timer driving onStatsUpdate)
+                long totalIn = nm.getBytesReceived();
+                long totalOut = nm.getBytesSent();
+                tvBytesIn.setText(formatBytes(totalIn));
+                tvBytesOut.setText(formatBytes(totalOut));
+                tvBlockedCount.setText(String.valueOf(nm.getBlockedCount()));
+                tvAllowedCount.setText(String.valueOf(nm.getAllowedCount()));
+                if (liveChart != null) liveChart.addDataPoint(0);
                 handler.postDelayed(this, 2000);
             }
         };

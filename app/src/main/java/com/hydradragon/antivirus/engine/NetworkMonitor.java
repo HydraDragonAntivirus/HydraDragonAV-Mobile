@@ -92,6 +92,8 @@ public class NetworkMonitor {
 
     private long bytesReceived = 0;
     private long bytesSent = 0;
+    private long statsLastFetchMs = 0;
+    private static final long STATS_CACHE_TTL_MS = 5_000;
     // Static (process-wide): the ACTUAL blocking/allowing of DNS queries happens
     // in DnsVpnService — a separate Service instance from whichever NetworkMonitor
     // the UI is bound to (via GuardService). Both run in the same app process (no
@@ -212,85 +214,44 @@ public class NetworkMonitor {
 
         connectivityManager.registerNetworkCallback(networkRequest, cmCallback);
 
-        // Periodic statistics update (every 5 seconds — 1s caused constant GC
-        // pressure with no scan running, allocating long[] + Bucket objects on
-        // every tick for the UI's stats counters)
-        scheduler.scheduleAtFixedRate(() -> {
-            updateTrafficStats();
-            checkThreatIntelligence();
-        }, 0, 5, TimeUnit.SECONDS);
-
-        // DNS leak test (every 5 minutes)
+        // DNS leak test (every 5 minutes — ONLY background periodic task that
+        // remains; stats are pulled on-demand by the UI's own timers so there
+        // is ZERO periodic allocation when no screen is visible)
         scheduler.scheduleAtFixedRate(this::checkDnsLeak, 0, 5, TimeUnit.MINUTES);
 
         Log.i(TAG, "✓ Network monitoring started");
     }
 
     /**
-     * Update real-time traffic statistics
+     * Lazily refresh cached TrafficStats values. Called on-demand from
+     * getBytesReceived/getBytesSent; never runs from a background timer.
      */
-    // Previous cumulative sample for computing the per-tick rate. -1 = no sample
-    // yet, so the first tick doesn't emit a huge bogus spike.
-    private long lastRx = -1, lastTx = -1;
-
-    private void updateTrafficStats() {
-        try {
-            long rx = getTotalRxBytes();
-            long tx = getTotalTxBytes();
+    private void refreshStats() {
+        long now = System.currentTimeMillis();
+        if (now - statsLastFetchMs < STATS_CACHE_TTL_MS) return;
+        statsLastFetchMs = now;
+        long rx = android.net.TrafficStats.getTotalRxBytes();
+        long tx = android.net.TrafficStats.getTotalTxBytes();
+        if (rx != android.net.TrafficStats.UNSUPPORTED && rx >= 0
+            && tx != android.net.TrafficStats.UNSUPPORTED && tx >= 0) {
             bytesReceived = rx;
             bytesSent = tx;
-
-            long deltaRx = 0, deltaTx = 0;
-            if (lastRx >= 0) {
-                deltaRx = Math.max(0, rx - lastRx);
-                deltaTx = Math.max(0, tx - lastTx);
-            }
-            lastRx = rx;
-            lastTx = tx;
-
-            NetworkCallback cb = networkCallback;
-            if (cb != null) {
-                cb.onStatsUpdate(deltaRx, deltaTx, blockedConnections.get(), allowedConnections.get());
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Traffic statistics error", e);
+            return;
         }
-    }
-
-    private long getTotalRxBytes() {
-        long rx = android.net.TrafficStats.getTotalRxBytes();
-        if (rx != android.net.TrafficStats.UNSUPPORTED && rx >= 0) return rx;
         try {
             android.app.usage.NetworkStatsManager nsm =
                 (android.app.usage.NetworkStatsManager)
                     context.getSystemService(Context.NETWORK_STATS_SERVICE);
+            long now2 = System.currentTimeMillis();
             android.app.usage.NetworkStats.Bucket b =
-                nsm.querySummaryForDevice(ConnectivityManager.TYPE_WIFI, null, 0, System.currentTimeMillis());
+                nsm.querySummaryForDevice(ConnectivityManager.TYPE_WIFI, null, 0, now2);
             long r = (b != null) ? b.getRxBytes() : 0;
-            b = nsm.querySummaryForDevice(ConnectivityManager.TYPE_MOBILE, null, 0, System.currentTimeMillis());
-            if (b != null) r += b.getRxBytes();
-            return r;
-        } catch (Throwable ignore) {
-            return Math.max(0, bytesReceived);
-        }
-    }
-
-    private long getTotalTxBytes() {
-        long tx = android.net.TrafficStats.getTotalTxBytes();
-        if (tx != android.net.TrafficStats.UNSUPPORTED && tx >= 0) return tx;
-        try {
-            android.app.usage.NetworkStatsManager nsm =
-                (android.app.usage.NetworkStatsManager)
-                    context.getSystemService(Context.NETWORK_STATS_SERVICE);
-            android.app.usage.NetworkStats.Bucket b =
-                nsm.querySummaryForDevice(ConnectivityManager.TYPE_WIFI, null, 0, System.currentTimeMillis());
             long t = (b != null) ? b.getTxBytes() : 0;
-            b = nsm.querySummaryForDevice(ConnectivityManager.TYPE_MOBILE, null, 0, System.currentTimeMillis());
-            if (b != null) t += b.getTxBytes();
-            return t;
-        } catch (Throwable ignore) {
-            return Math.max(0, bytesSent);
-        }
+            b = nsm.querySummaryForDevice(ConnectivityManager.TYPE_MOBILE, null, 0, now2);
+            if (b != null) { r += b.getRxBytes(); t += b.getTxBytes(); }
+            bytesReceived = r;
+            bytesSent = t;
+        } catch (Throwable ignored) {}
     }
 
     /**
@@ -360,14 +321,6 @@ public class NetworkMonitor {
         });
     }
 
-    /**
-     * Threat Intelligence feed check
-     */
-    private void checkThreatIntelligence() {
-        // TODO: Get updates from HydraDragon cloud threat feed
-        // For now using local xor filter + blacklist
-    }
-
     private void logEvent(String destIp, int port, String protocol,
                           boolean blocked, String reason, int pid) {
         NetworkEvent event = new NetworkEvent("local", destIp, port, protocol, blocked, reason, pid);
@@ -393,8 +346,12 @@ public class NetworkMonitor {
     }
 
     public List<NetworkEvent> getEventLog() { return new ArrayList<>(eventLog); }
-    public long getBytesReceived() { return bytesReceived; }
-    public long getBytesSent() { return bytesSent; }
+
+    /** Fetch received bytes, lazily refreshed from TrafficStats (cached 5s). */
+    public long getBytesReceived() { refreshStats(); return bytesReceived; }
+
+    /** Fetch sent bytes, lazily refreshed from TrafficStats (cached 5s). */
+    public long getBytesSent() { refreshStats(); return bytesSent; }
     public int getBlockedCount() { return blockedConnections.get(); }
     public int getAllowedCount() { return allowedConnections.get(); }
 
