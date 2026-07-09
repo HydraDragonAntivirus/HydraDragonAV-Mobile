@@ -91,20 +91,18 @@ public class ScanEngine {
     private final Context context;
     private final AIEngine aiEngine;
     private final CodeAnalyzer codeAnalyzer;
-    // Process-wide, bounded to the device's core count. GuardService and
+    // Process-wide, bounded below the device's core count. GuardService and
     // InstallReceiver each hold their own ScanEngine instance (InstallReceiver
     // creates a brand new one per install broadcast), so a per-instance pool —
     // especially the old unbounded cachedThreadPool below — let concurrent
     // scan triggers pile up many more native (JNI/Rust) threads than the
-    // device has cores. Each native ClamAV/YARA call is CPU-bound, so beyond
-    // the core count, extra threads don't add throughput, they only add
-    // scheduling contention: a signature's own body-match work might sum to a
-    // few hundred ms, while the call's wall-clock balloons to many seconds
-    // because the OS keeps preempting it for other scan threads. Sharing one
-    // bounded pool across every ScanEngine instance caps how many native calls
-    // run at once, regardless of how many scan triggers fired concurrently.
+    // useful CPU budget. Each native ClamAV/YARA call is CPU-bound and may spawn
+    // its own helper thread, so running one or two scans at a time is usually
+    // faster on phones than saturating every core and forcing heavy preemption.
+    // Sharing one bounded pool across every ScanEngine instance caps how many
+    // native calls run at once, regardless of how many scan triggers fired.
     private static final int NATIVE_PARALLELISM =
-        Math.max(2, Runtime.getRuntime().availableProcessors());
+        Math.max(1, Math.min(2, Runtime.getRuntime().availableProcessors() / 2));
     private static final ExecutorService scanExecutor =
         Executors.newFixedThreadPool(NATIVE_PARALLELISM);
     // Dedicated pool for wrapping blocking native (JNI/Rust) calls so cancelScan()

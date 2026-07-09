@@ -62,6 +62,7 @@ pub struct ScanMatch {
     pub view: ScanView,
 }
 
+#[cfg(target_os = "android")]
 #[link(name = "log")]
 unsafe extern "C" {
     fn __android_log_write(
@@ -70,7 +71,10 @@ unsafe extern "C" {
         text: *const std::os::raw::c_char,
     );
 }
+#[cfg(target_os = "android")]
 const ANDROID_LOG_INFO: std::os::raw::c_int = 4;
+
+#[cfg(target_os = "android")]
 fn android_log(msg: &str) {
     use std::ffi::CString;
     let (Ok(tag), Ok(text)) = (
@@ -82,6 +86,8 @@ fn android_log(msg: &str) {
     unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
 }
 
+#[cfg(not(target_os = "android"))]
+fn android_log(_msg: &str) {}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SignatureKind {
@@ -937,17 +943,19 @@ impl Engine {
         let debug_eval_us = std::time::Instant::now().duration_since(t_after_p2).as_micros();
 
         let debug_total_us = std::time::Instant::now().duration_since(t_debug).as_micros();
-        android_log(&format!(
-            "[SCAN-DEBUG] {} gate={}us p1_body={}us fuzzy={}us p2_pcre_bc={}us eval={}us total={}us subsig_sum={}us",
-            signature.name,
-            debug_gate_us,
-            debug_p1_us,
-            debug_fuzzy_us,
-            debug_p2_us,
-            debug_eval_us,
-            debug_total_us,
-            bufs.detail.iter().map(|d| d.elapsed_us).sum::<u128>(),
-        ));
+        if debug_total_us >= 20_000 {
+            android_log(&format!(
+                "[SCAN-DEBUG] {} gate={}us p1_body={}us fuzzy={}us p2_pcre_bc={}us eval={}us total={}us subsig_sum={}us",
+                signature.name,
+                debug_gate_us,
+                debug_p1_us,
+                debug_fuzzy_us,
+                debug_p2_us,
+                debug_eval_us,
+                debug_total_us,
+                bufs.detail.iter().map(|d| d.elapsed_us).sum::<u128>(),
+            ));
+        }
 
         if eval_matched {
             // HandlerType (ClamAV lsig_eval): a matching signature does NOT alert.

@@ -1161,8 +1161,13 @@ fn run_scan(
     // Each detection carries the APK lineage of the buffer it fired on, so Java
     // can suppress it iff one of those ancestor-APK hashes is whitelisted.
     let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
-    let mut yara_dets: Vec<(String, Vec<String>)> = match &engine.clamav {
-        Some(clamav) => {
+    let mut yara_dets: Vec<(String, Vec<String>)> = if early_hit {
+        // The extraction-time ClamAV pass already found a detection. Treat that as
+        // a fast path and avoid rescanning the same buffers here.
+        Vec::new()
+    } else {
+        match &engine.clamav {
+            Some(clamav) => {
             let max_dets = 64;
             let opts = ScanOptions::default();
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -1242,8 +1247,9 @@ fn run_scan(
                     Vec::new()
                 }
             }
+            }
+            None => Vec::new(),
         }
-        None => Vec::new(),
     };
     let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
     // Aggregate per-YARA-ruleset timing across all buffers.
