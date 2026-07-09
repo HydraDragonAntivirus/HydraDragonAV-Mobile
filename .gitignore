@@ -10,7 +10,6 @@ sql/
 malwarebazaarfull/
 all_md5.txt
 xf_build/
-whitelist.xf
 allips/IPv4Malware.optimized.csv
 
 third_party/unicorn/
