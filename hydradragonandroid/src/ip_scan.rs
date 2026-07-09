@@ -1,8 +1,6 @@
 //! Native malicious-IP lookup: exact membership of a resolved IP against the
 //! per-category xor blocklists (allips non-CIDR entries). No CIDR/subnet match.
 
-use std::path::Path;
-
 use hydradragonxorfilter::XorFilter;
 
 struct CatFilter {
@@ -24,13 +22,15 @@ const CATS: &[(&str, &str)] = &[
 ];
 
 impl IpScanner {
-    /// Load every category `.xf` from `dir`. None if none loaded.
-    pub fn load(dir: &Path) -> Option<IpScanner> {
+    /// Load from a pre-read HashMap of filename → bytes (AAssetManager path).
+    pub fn from_bytes_map(files: &std::collections::HashMap<String, Vec<u8>>) -> Option<IpScanner> {
         let mut filters = Vec::new();
         for &(stem, category) in CATS {
-            let path = dir.join(format!("{stem}.xf"));
-            if let Some(filter) = crate::load_xor_filter(&path) {
-                filters.push(CatFilter { category, filter });
+            let xf_name = format!("{stem}.xf");
+            if let Some(bytes) = files.get(&xf_name) {
+                if let Some(filter) = XorFilter::from_bytes(bytes) {
+                    filters.push(CatFilter { category, filter });
+                }
             }
         }
         if filters.is_empty() {

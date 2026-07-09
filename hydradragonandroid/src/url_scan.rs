@@ -12,7 +12,6 @@
 //! (`public_suffixes.txt`), identical to the Java `getMainDomain`.
 
 use std::collections::HashSet;
-use std::path::Path;
 
 /// One category filter: its label, whether it's a URL filter (full URL) vs a
 /// domain filter (registrable domain), and the Binary-Fuse xor filter.
@@ -40,25 +39,28 @@ const CATS: &[(&str, &str, bool)] = &[
 ];
 
 impl UrlScanner {
-    /// Load every category `.xf` plus `public_suffixes.txt` from `dir`.
-    /// Returns None if no filter loaded (URL scanning then disabled).
-    pub fn load(dir: &Path) -> Option<UrlScanner> {
+    /// Load from a pre-read HashMap of filename → bytes (AAssetManager path).
+    pub fn load_from_assets(files: &std::collections::HashMap<String, Vec<u8>>) -> Option<UrlScanner> {
         let mut filters = Vec::new();
         for &(stem, category, is_url) in CATS {
-            let path = dir.join(format!("{stem}.xf"));
-            if let Some(filter) = crate::load_xor_filter(&path) {
-                filters.push(CatFilter { category, is_url, filter });
+            let xf_name = format!("{stem}.xf");
+            if let Some(bytes) = files.get(&xf_name) {
+                if let Some(filter) = hydradragonxorfilter::XorFilter::from_bytes(bytes) {
+                    filters.push(CatFilter { category, is_url, filter });
+                }
             }
         }
         if filters.is_empty() {
             return None;
         }
         let mut suffixes = HashSet::new();
-        if let Ok(text) = std::fs::read_to_string(dir.join("public_suffixes.txt")) {
-            for line in text.lines() {
-                let l = line.trim().to_lowercase();
-                if !l.is_empty() && !l.starts_with("//") {
-                    suffixes.insert(l);
+        if let Some(bytes) = files.get("public_suffixes.txt") {
+            if let Ok(text) = std::str::from_utf8(bytes) {
+                for line in text.lines() {
+                    let l = line.trim().to_lowercase();
+                    if !l.is_empty() && !l.starts_with("//") {
+                        suffixes.insert(l);
+                    }
                 }
             }
         }

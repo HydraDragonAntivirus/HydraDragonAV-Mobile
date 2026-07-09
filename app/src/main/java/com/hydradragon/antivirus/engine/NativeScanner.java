@@ -7,11 +7,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,10 +28,11 @@ public final class NativeScanner {
     private static final String TAG = "NativeScanner";
 
     /**
-     * Assets sub-folder holding the full scan bundle (copied flat to internal
-     * storage so native code can read it): compiled {@code .yrc} YARA-X rulesets,
-     * the ML model, the clamav signature DBs (.ndb/.ldb/.ldu/.db), the file-type
-     * magics (.ftm) needed for the supported-type gate, and the bytecode (.cbc).
+     * Assets sub-folder holding the full scan bundle, read directly from the
+     * APK by Rust's AAssetManager — no disk copy needed: compiled {@code .yrc}
+     * YARA-X rulesets, the ML model, the clamav signature DBs
+     * (.ndb/.ldb/.ldu/.db), the file-type magics (.ftm) needed for the
+     * supported-type gate, and the bytecode (.cbc).
      */
     private static final String ASSET_DIR = "scan";
 
@@ -61,7 +57,7 @@ public final class NativeScanner {
     private NativeScanner() {
     }
 
-    private static native boolean nativeInit(String dir, boolean loadAutoRules);
+    private static native boolean nativeInit(String assetDir, boolean loadAutoRules, android.content.res.AssetManager assetManager, String filesDir);
 
     /** True when the async background init has finished populating the native
      *  engine. Replaces the old Java-side {@code ready} flag so the Java layer
@@ -239,11 +235,12 @@ public final class NativeScanner {
     }
 
     /**
-     * Copy bundled assets into internal storage (only if missing or stale) and
-     * start the native engine initialisation ASYNCHRONOUSLY. Returns immediately
-     * after copying assets; the expensive engine loading runs on a background
-     * Rust thread. Use {@link #isReady()} to check whether the native engine
-     * has finished loading. Safe to call multiple times.
+     * Start the native engine initialisation ASYNCHRONOUSLY with NO asset
+     * copy — Rust's AAssetManager reads every scan file directly from the
+     * APK (no 330+ MB disk write at launch). The expensive engine loading
+     * runs on a background Rust thread. Use {@link #isReady()} to check
+     * whether the native engine has finished loading. Safe to call multiple
+     * times.
      *
      * @return true when the native engine is already ready; false if init is
      *         still in progress or the library is unavailable.
@@ -255,37 +252,19 @@ public final class NativeScanner {
         if (!LIB_LOADED) {
             return false;
         }
-        File dir = new File(context.getFilesDir(), "hydra-scan");
-        if (!dir.exists() && !dir.mkdirs()) {
-            Log.e(TAG, "cannot create model dir " + dir);
-            return false;
+        // NO asset copy to disk — Rust reads every file directly from the
+        // APK assets via AAssetManager. The 70-second init still happens on
+        // a background thread but the 330+ MB disk write at launch is gone.
+        // The filesDir is still needed for generated_rules/ (auto-learned rules).
+        // Best-effort: if mkdirs fails, native init still runs (just no generated
+        // rules will be loaded until the next launch after mkdirs succeeds).
+        java.io.File dir = new java.io.File(context.getFilesDir(), "hydra-scan");
+        if (!dir.exists()) {
+            dir.mkdirs();
         }
-        try {
-            String[] names = context.getAssets().list(ASSET_DIR);
-            if (names == null || names.length == 0) {
-                Log.e(TAG, "no assets under " + ASSET_DIR);
-                return false;
-            }
-            for (String name : names) {
-                File out = new File(dir, name);
-                if (!out.exists() || out.length() == 0) {
-                    copyAsset(context, ASSET_DIR + "/" + name, out);
-                }
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "asset copy failed", e);
-            return false;
-        }
-        // Auto Rule Generator OFF (DetectionCategories.AUTO_RULES / Settings)
-        // now also stops the native side from loading past self-learned
-        // "generated_rules/*.yar" files at all — previously OFF only stopped
-        // NEW ones from being written; old ones on disk kept matching
-        // regardless of the setting.
         boolean loadAutoRules = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
             context, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
-        // nativeInit returns immediately (JNI_FALSE) and spawns a background
-        // thread; the engine becomes ready asynchronously.
-        nativeInit(dir.getAbsolutePath(), loadAutoRules);
+        nativeInit(ASSET_DIR, loadAutoRules, context.getAssets(), dir.getAbsolutePath());
         if (isReady()) {
             setEmulationEnabled(com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
                 context, com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION));
@@ -476,14 +455,4 @@ public final class NativeScanner {
         return LIB_LOADED && nativeIsReady();
     }
 
-    private static void copyAsset(Context context, String name, File out) throws IOException {
-        try (InputStream in = context.getAssets().open(name);
-             OutputStream os = new FileOutputStream(out)) {
-            byte[] buf = new byte[64 * 1024];
-            int n;
-            while ((n = in.read(buf)) != -1) {
-                os.write(buf, 0, n);
-            }
-        }
-    }
 }

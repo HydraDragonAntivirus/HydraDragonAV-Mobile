@@ -177,6 +177,7 @@ impl Engine {
         self.prefilter.mem_report()
     }
 
+    /// Load from a filesystem directory (original path-based loading).
     pub fn from_database_dir(path: impl AsRef<Path>) -> io::Result<(Self, crate::LoadReport)> {
         let path = path.as_ref();
         let t0 = Instant::now();
@@ -184,18 +185,37 @@ impl Engine {
         let load_ms = t0.elapsed().as_millis();
         android_log(&format!("from_database_dir :: load_dir={load_ms}ms files={} ext={} logical={} container={}",
             report.files_seen, database.extended.len(), database.logical.len(), database.container.len()));
-        // Load bytecode containers, then decode + interpreter-prepare each program
-        // and register its trigger as a logical signature linked to the program
-        // (ClamAV's bytecode-lsig wiring). Must happen BEFORE the prefilter is
-        // built so the triggers are indexed as candidates.
-        // The raw Bytecode structs (with source strings) are DROPPED after decoding
-        // — their source text is not needed at scan time, saving 50-200 MB.
-        let t_bc = Instant::now();
         let bc = crate::bytecode::BytecodeSet::load_from_dir(path);
+        Ok(Self::finish_engine_init(&mut database, &mut report, bc, t0))
+    }
+
+    /// Load from a pre-read map of filename → file contents (AAssetManager path).
+    /// The caller reads every asset file into `HashMap<filename, Vec<u8>>` and
+    /// passes it here — no filesystem I/O needed at init time.
+    pub fn from_bytes_map(
+        files: &std::collections::HashMap<String, Vec<u8>>,
+    ) -> (Self, crate::LoadReport) {
+        let t0 = Instant::now();
+        let (mut database, mut report) = Database::from_bytes_map(files);
+        let load_ms = t0.elapsed().as_millis();
+        android_log(&format!("from_bytes_map :: load_dir={load_ms}ms files={} ext={} logical={} container={}",
+            report.files_seen, database.extended.len(), database.logical.len(), database.container.len()));
+        let bc = crate::bytecode::BytecodeSet::from_bytes_map(files);
+        let (engine, report) = Self::finish_engine_init(&mut database, &mut report, bc, t0);
+        (engine, report)
+    }
+
+    /// Shared bytecode + prefilter init used by both `from_database_dir` and
+    /// `from_bytes_map`.
+    fn finish_engine_init(
+        database: &mut Database,
+        report: &mut crate::LoadReport,
+        bc: crate::bytecode::BytecodeSet,
+        t0: std::time::Instant,
+    ) -> (Self, crate::LoadReport) {
+        let t_bc = Instant::now();
         report.bytecodes_loaded = bc.report.loaded;
         for prog in bc.bytecodes {
-            // decode_bytecode borrows prog.source, then we move prog.trigger
-            // out. prog is dropped at the end of scope.
             let decoded = match crate::bytecode_vm::decode_bytecode(&prog.source) {
                 Ok(Some(mut decoded)) => {
                     if decoded.prepare_interpreter().is_err() {
@@ -223,19 +243,14 @@ impl Engine {
         }
         let bc_ms = t_bc.elapsed().as_millis();
         android_log(&format!("from_database_dir :: bytecode={bc_ms}ms loaded={}", report.bytecodes_loaded));
-        // Atom prefilter (daachorse): one selective required atom per signature,
-        // built via a compact CSR mapping. One pass per buffer picks the few
-        // candidate signatures instead of scanning all ~500k — fast scans and
-        // far fewer page faults.
-        // Build the Aho-Corasick automata in memory from the loaded rules (no
-        // on-disk `.bin` cache); the load high-water-mark is trimmed afterwards.
         let t_pf = Instant::now();
-        let prefilter = crate::prefilter::AtomPrefilter::build(&database);
+        let prefilter = crate::prefilter::AtomPrefilter::build(database);
         let pf_ms = t_pf.elapsed().as_millis();
         android_log(&format!("from_database_dir :: prefilter_build={pf_ms}ms"));
         let total_ms = t0.elapsed().as_millis();
         android_log(&format!("from_database_dir :: TOTAL={total_ms}ms"));
-        Ok((Self { database, prefilter, yara: Vec::new() }, report))
+        let database = std::mem::take(database);
+        (Self { database, prefilter, yara: Vec::new() }, std::mem::take(report))
     }
 
     /// Replace all YARA rulesets with a single one compiled from source.

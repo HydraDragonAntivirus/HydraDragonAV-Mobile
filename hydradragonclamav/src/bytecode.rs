@@ -53,7 +53,6 @@ impl BytecodeSet {
     /// Load loose `*.cbc` files found directly in `dir`.
     pub fn load_from_dir(dir: &Path) -> Self {
         let mut set = BytecodeSet::default();
-
         if let Ok(rd) = fs::read_dir(dir) {
             for entry in rd.flatten() {
                 let p = entry.path();
@@ -71,7 +70,27 @@ impl BytecodeSet {
                 }
             }
         }
+        set
+    }
 
+    /// Load bytecode from a pre-read map of filename → file contents.
+    /// Only `*.cbc` files are processed; everything else is ignored.
+    pub fn from_bytes_map(files: &std::collections::HashMap<String, Vec<u8>>) -> Self {
+        let mut set = BytecodeSet::default();
+        for (name, bytes) in files {
+            if !name.ends_with(".cbc") {
+                continue;
+            }
+            set.report.files_seen += 1;
+            let text = String::from_utf8_lossy(bytes);
+            match parse_cbc(&text) {
+                Some(bc) => {
+                    set.bytecodes.push(bc);
+                    set.report.loaded += 1;
+                }
+                None => set.report.skipped += 1,
+            }
+        }
         set
     }
 }

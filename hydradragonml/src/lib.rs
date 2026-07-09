@@ -126,8 +126,14 @@ impl Model {
 
     pub fn load_bin(path: &std::path::Path) -> std::io::Result<Model> {
         let bytes = std::fs::read(path)?;
+        Self::load_bytes(&bytes)
+    }
+
+    /// Load a bincode-serialized model from an already-read byte slice.
+    /// No filesystem I/O needed — useful when bytes come from Android assets.
+    pub fn load_bytes(bytes: &[u8]) -> std::io::Result<Model> {
         let (mut model, _): (Model, usize) =
-            bincode_next::serde::decode_from_slice(&bytes, bincode_next::config::standard())
+            bincode_next::serde::decode_from_slice(bytes, bincode_next::config::standard())
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         model.ensure_index();
         Ok(model)

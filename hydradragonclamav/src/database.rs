@@ -238,21 +238,36 @@ impl Database {
     pub fn load_dir(path: impl AsRef<Path>) -> io::Result<(Self, LoadReport)> {
         let mut database = Database::default();
         let mut report = LoadReport::default();
-        // First pass: collect signature names to ignore from .ign/.ign2 files
-        // (ClamAV engine->ignored), so the second pass can skip them. Must
-        // precede signature loading regardless of directory order.
         let ignored = collect_ignored(path.as_ref(), &mut report)?;
         visit_database_dir(path.as_ref(), &mut |file| {
             load_file(file, &mut database, &mut report, &ignored)
         })?;
-        // Drop the over-allocated capacity the push-loops left behind (a `Vec`
-        // grows geometrically, so the last doubling can waste up to ~2x). On
-        // half a million signatures that slack is real resident memory.
         database.extended.shrink_to_fit();
         database.logical.shrink_to_fit();
         database.container.shrink_to_fit();
         database.file_type_magic.shrink_to_fit();
         Ok((database, report))
+    }
+
+    /// Load the database from a pre-read map of filename → file contents.
+    /// The map keys are plain filenames (e.g. `"daily.ldb"`), and every file
+    /// is read into memory at once so no filesystem I/O is needed — the caller
+    /// (e.g. a Rust-side `AAssetManager` reader) provides all asset bytes.
+    /// This is the asset path equivalent of `load_dir`.
+    pub fn from_bytes_map(
+        files: &std::collections::HashMap<String, Vec<u8>>,
+    ) -> (Self, LoadReport) {
+        let mut database = Database::default();
+        let mut report = LoadReport::default();
+        let ignored = collect_ignored_from_map(files, &mut report);
+        for (name, bytes) in files {
+            load_file_from_bytes(name, bytes, &mut database, &mut report, &ignored);
+        }
+        database.extended.shrink_to_fit();
+        database.logical.shrink_to_fit();
+        database.container.shrink_to_fit();
+        database.file_type_magic.shrink_to_fit();
+        (database, report)
     }
 }
 
@@ -1152,4 +1167,169 @@ fn shifted_range(offset: usize, data_len: usize, max_shift: Option<usize>) -> Ve
     }
     let end = offset.saturating_add(max_shift.unwrap_or(0)).min(data_len);
     vec![(offset, end)]
+}
+
+fn collect_ignored_from_map(
+    files: &std::collections::HashMap<String, Vec<u8>>,
+    report: &mut LoadReport,
+) -> HashSet<Box<str>> {
+    let mut ignored = HashSet::new();
+    for (name, bytes) in files {
+        let ext = name.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
+        if ext != "ign" && ext != "ign2" {
+            continue;
+        }
+        let text = String::from_utf8_lossy(bytes);
+        for line in text.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            if let Some(name) = ignored_signame(line) {
+                ignored.insert(Box::from(name));
+                report.ign_entries += 1;
+            }
+        }
+    }
+    ignored
+}
+
+fn load_file_from_bytes(
+    name: &str,
+    bytes: &[u8],
+    database: &mut Database,
+    report: &mut LoadReport,
+    ignored: &HashSet<Box<str>>,
+) {
+    report.files_seen += 1;
+    let ext = name.rsplit('.').next().map(|e| e.to_ascii_lowercase()).unwrap_or_default();
+    *report.by_extension.entry(ext.clone()).or_insert(0) += 1;
+
+    let kind = classify_extension(&ext);
+    match kind {
+        ExtKind::BodyNdb | ExtKind::BodyOldDb | ExtKind::Logical | ExtKind::Container
+        | ExtKind::FileMagic | ExtKind::Phishing => {}
+        ExtKind::Hash => { report.hash_files_skipped += 1; return; }
+        ExtKind::Icon => { report.icon_files += 1; return; }
+        ExtKind::CertCrb => { report.cert_files += 1; return; }
+        ExtKind::Ignore => return,
+        ExtKind::Config => { report.config_files += 1; return; }
+        ExtKind::Metadata => { report.metadata_files += 1; return; }
+        ExtKind::CertCat | ExtKind::Ioc | ExtKind::ContainerDb
+        | ExtKind::Deprecated | ExtKind::Unknown => {
+            match kind {
+                ExtKind::CertCat => report.cert_files += 1,
+                ExtKind::Ioc => report.ioc_files += 1,
+                ExtKind::ContainerDb => report.container_db_files += 1,
+                ExtKind::Deprecated => report.deprecated_files += 1,
+                ExtKind::Unknown => report.unknown_files += 1,
+                _ => unreachable!(),
+            }
+            report.unsupported_files += 1;
+            push_unsupported(
+                database,
+                report,
+                SourceLocation { path: Arc::from(std::path::Path::new(name)), line: 0 },
+                kind.disposition(&ext),
+            );
+            return;
+        }
+    }
+
+    if kind == ExtKind::Phishing {
+        report.phishing_files += 1;
+    }
+
+    let src_path: Arc<Path> = Arc::from(std::path::Path::new(name));
+    let mut raw = Vec::new();
+    let mut line_number = 0usize;
+    let mut start = 0usize;
+    while start < bytes.len() {
+        let mut end = start;
+        while end < bytes.len() && bytes[end] != b'\n' {
+            end += 1;
+        }
+        let line_end = if end < bytes.len() { end + 1 } else { bytes.len() };
+        raw.clear();
+        raw.extend_from_slice(&bytes[start..line_end]);
+        start = line_end;
+        line_number += 1;
+        let decoded = String::from_utf8_lossy(&raw);
+        let line = decoded.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        report.lines_seen += 1;
+        let source = SourceLocation { path: src_path.clone(), line: line_number };
+        match kind {
+            ExtKind::BodyNdb => match parse_extended_signature(line, source.clone(), &mut database.name_arena) {
+                Ok(Some(signature)) if ignored.contains(database.ext_name(&signature)) => {
+                    report.ignored_skipped += 1;
+                }
+                Ok(Some(signature)) => {
+                    database.extended.push(signature);
+                    report.extended_loaded += 1;
+                }
+                Ok(None) => {}
+                Err(message) => push_error(report, source, message),
+            },
+            ExtKind::BodyOldDb => match parse_db_signature(line, source.clone(), &mut database.name_arena) {
+                Ok(Some(signature)) if ignored.contains(database.ext_name(&signature)) => {
+                    report.ignored_skipped += 1;
+                }
+                Ok(Some(signature)) => {
+                    database.extended.push(signature);
+                    report.db_loaded += 1;
+                }
+                Ok(None) => {}
+                Err(message) => push_error(report, source, message),
+            },
+            ExtKind::Logical => match parse_logical_signature(line, source.clone()) {
+                Ok((signature, _)) if ignored.contains(&*signature.name) => {
+                    report.ignored_skipped += 1;
+                }
+                Ok((signature, warnings)) => {
+                    for warning in warnings {
+                        push_unsupported(database, report, source.clone(), warning);
+                    }
+                    database.logical.push(signature);
+                    report.logical_loaded += 1;
+                }
+                Err(message) if message.starts_with("unrecognised TDB attribute") => {
+                    report.tdb_attr_skipped += 1;
+                }
+                Err(message) => push_error(report, source, message),
+            },
+            ExtKind::Container => match parse_container_signature(line, source.clone()) {
+                Ok(signature) if ignored.contains(&*signature.name) => {
+                    report.ignored_skipped += 1;
+                }
+                Ok(signature) => {
+                    database.container.push(signature);
+                    report.container_loaded += 1;
+                }
+                Err(message) => push_error(report, source, message),
+            },
+            ExtKind::FileMagic => match parse_ftm(line, source.clone()) {
+                Ok(signature) => {
+                    database.file_type_magic.push(signature);
+                    report.ftm_loaded += 1;
+                }
+                Err(message) => push_error(report, source, message),
+            },
+            ExtKind::Phishing => {
+                let result = if ext == "wdb" {
+                    database.phishing.allow.add_line(line)
+                } else {
+                    database.phishing.protected.add_line(line, source.clone())
+                };
+                match result {
+                    Ok(true) => report.phishing_loaded += 1,
+                    Ok(false) => {}
+                    Err(message) => push_error(report, source, message),
+                }
+            }
+            _ => unreachable!("non-per-line ExtKind reached the parse loop"),
+        }
+    }
 }

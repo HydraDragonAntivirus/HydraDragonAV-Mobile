@@ -17,6 +17,7 @@ use hydradragonclamav::{Engine as ClamavEngine, ScanOptions};
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 
+mod asset_reader;
 mod dex_scan;
 mod elf;
 mod emulate;
@@ -24,7 +25,7 @@ mod ip_scan;
 mod url_scan;
 
 use jni::errors::LogErrorAndDefault;
-use jni::objects::{JClass, JString};
+use jni::objects::{JClass, JObject, JString};
 use jni::sys::{jboolean, jstring, JNI_FALSE, JNI_TRUE};
 use jni::EnvUnowned;
 use std::fmt::Write;
@@ -147,6 +148,12 @@ static INIT_DIR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 static INIT_STARTED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
+/// Every bundled asset file read at init time, kept for lazy loading of
+/// DYNAMIC_YRC_FILES (HIPS rules) that are read on first scan_hips call
+/// rather than at init — no filesystem access needed.
+static ASSET_FILES: OnceLock<std::collections::HashMap<String, Vec<u8>>> =
+    OnceLock::new();
+
 /// Last panic's "message @ file:line", captured by our hook so we can report
 /// WHY a scan panicked (root cause) instead of just swallowing it.
 static LAST_PANIC: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
@@ -201,42 +208,21 @@ fn set_status(s: String) {
     }
 }
 
-fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
-    let base = std::path::Path::new(dir);
+fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_auto_rules: bool) -> Engine {
     let t0 = std::time::Instant::now();
 
-    // Every stage below reads a different file/DB into its own independent
-    // corner of Engine — nothing here depends on anything else finishing
-    // first, so each runs on its own thread instead of one after another.
-    // Total init time now tracks the SLOWEST single stage instead of their
-    // sum (previously: clamav db -> yrc files -> model -> tlsh -> whitelist
-    // -> pkg_wl -> url -> ip, all strictly back to back).
-    // Bonus: each stage's `catch_unwind`/thread boundary already isolated
-    // its own panics from the others; now a panic in, say, tlsh loading
-    // can't also take whitelist/model/etc. down with it the way a panic
-    // partway through the old sequential chain would have.
-    // (last_panic() is a single global — if two stages panic in the same
-    // instant, the PANIC(...) message attached to one MAY actually belong
-    // to the other. Harmless for diagnosis: both stages still correctly
-    // fall back to None/empty either way.)
     let (clamav_out, model_out, tlsh_out, whitelist_out, pkg_out, url_out, ip_out) =
         std::thread::scope(|s| {
             let clamav_handle = s.spawn(move || {
-                // ClamAV engine from the bundled DB, then add the compiled .yrc
-                // rulesets (compiled only — never .yar source on-device).
                 let t_db = std::time::Instant::now();
                 let mut report = String::new();
                 let clamav = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    ClamavEngine::from_database_dir(base)
+                    hydradragonclamav::Engine::from_bytes_map(files)
                 })) {
-                    Ok(Ok((mut eng, _report))) => {
+                    Ok((mut eng, _c_report)) => {
                         let db_ms = t_db.elapsed().as_millis();
-                        android_log(&format!("init :: from_database_dir={db_ms}ms"));
+                        android_log(&format!("init :: from_bytes_map={db_ms}ms"));
                         report.push_str(&format!("clamav=ok({db_ms}ms)"));
-                        // Load every .yrc file in parallel — each thread reads the
-                        // file and parses the compiled rules from its bytes, then
-                        // this thread pushes the ready YaraEngine objects onto the
-                        // engine list.
                         let yrc_results: Vec<(
                             String,
                             u128,
@@ -245,22 +231,21 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
                             YRC_FILES
                                 .iter()
                                 .map(|name| {
-                                    let path = base.join(name);
                                     let name_str = name.to_string();
+                                    let bytes = files.get(*name).cloned();
                                     s2.spawn(move || {
                                         let t0 = std::time::Instant::now();
-                                        let engine = std::panic::catch_unwind(
-                                            std::panic::AssertUnwindSafe(
-                                                || -> Option<hydradragonclamav::yara_scan::YaraEngine> {
-                                                    let bytes = std::fs::read(&path).ok()?;
-                                                    hydradragonclamav::yara_scan::YaraEngine::from_compiled(
-                                                        &bytes, name_str,
-                                                    )
-                                                },
-                                            ),
-                                        )
-                                        .ok()
-                                        .flatten();
+                                        let engine = bytes.and_then(|b| {
+                                            std::panic::catch_unwind(
+                                                std::panic::AssertUnwindSafe(
+                                                    || -> Option<hydradragonclamav::yara_scan::YaraEngine> {
+                                                        hydradragonclamav::yara_scan::YaraEngine::from_compiled(&b, name_str)
+                                                    },
+                                                ),
+                                            )
+                                            .ok()
+                                            .flatten()
+                                        });
                                         (name.to_string(), t0.elapsed().as_millis(), engine)
                                     })
                                 })
@@ -278,45 +263,34 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
                                 None => report.push_str(&format!(" yrc[{}]=ERR({yrc_ms}ms)", name)),
                             }
                         }
-                        // Self-learning: every rule this device has
-                        // ever auto-generated from a real detection (see generate_yara_rule /
-                        // ScanEngine.saveGeneratedRule, written to <dir>/generated_rules/) is
-                        // recompiled and added to the live engine alongside the bundled
-                        // rulesets — so a re-run or recompiled variant of a family this
-                        // device has ALREADY caught once is detected immediately on future
-                        // scans, without waiting for a signature-database update. Persists
-                        // across app restarts (loaded fresh every init); a fresh process
-                        // within the SAME session doesn't retroactively rescan past files.
-                        // load_auto_rules is the Java-side "Auto Rule Generator" Settings
-                        // toggle (DetectionCategories.AUTO_RULES / AutoRuleGeneration —
-                        // see NativeScanner.init). Turning it off used to only stop NEW
-                        // rules from being written; every rule already on disk from
-                        // before still got loaded and matched here regardless. Now OFF
-                        // means these files aren't even read, not just "generation
-                        // paused" — a real, user-controlled off switch.
-                        let learned_dir = base.join("generated_rules");
                         let mut learned = 0usize;
                         if load_auto_rules {
-                            if let Ok(entries) = std::fs::read_dir(&learned_dir) {
-                                for entry in entries.flatten() {
-                                    let path = entry.path();
-                                    if path.extension().and_then(|e| e.to_str()) != Some("yar") {
-                                        continue;
-                                    }
-                                    let t_learn = std::time::Instant::now();
-                                    let added =
-                                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                            eng.add_yara_source_file(&path)
-                                        }));
-                                    if matches!(added, Ok(Some(_))) {
-                                        learned += 1;
-                                    }
-                                    let learn_ms = t_learn.elapsed().as_millis();
-                                    if learn_ms > 50 {
-                                        android_log(&format!(
-                                            "init :: learned[{learned}] {} {learn_ms}ms",
-                                            path.display()
-                                        ));
+                            // Generated rules are on the filesystem, not in assets,
+                            // so we still read from the init dir path.
+                            if let Some(base_str) = INIT_DIR.get() {
+                                let base = std::path::Path::new(base_str);
+                                let learned_dir = base.join("generated_rules");
+                                if let Ok(entries) = std::fs::read_dir(&learned_dir) {
+                                    for entry in entries.flatten() {
+                                        let path = entry.path();
+                                        if path.extension().and_then(|e| e.to_str()) != Some("yar") {
+                                            continue;
+                                        }
+                                        let t_learn = std::time::Instant::now();
+                                        let added =
+                                            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                                eng.add_yara_source_file(&path)
+                                            }));
+                                        if matches!(added, Ok(Some(_))) {
+                                            learned += 1;
+                                        }
+                                        let learn_ms = t_learn.elapsed().as_millis();
+                                        if learn_ms > 50 {
+                                            android_log(&format!(
+                                                "init :: learned[{learned}] {} {learn_ms}ms",
+                                                path.display()
+                                            ));
+                                        }
                                     }
                                 }
                             }
@@ -324,12 +298,8 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
                         report.push_str(&format!(" learned={}", learned));
                         Some(eng)
                     }
-                    Ok(Err(e)) => {
-                        report.push_str(&format!("clamav=ERR({})", e));
-                        None
-                    }
-                    Err(_) => {
-                        report.push_str(&format!("clamav=PANIC({})", last_panic()));
+                    _ => {
+                        report.push_str("clamav=ERR");
                         None
                     }
                 };
@@ -339,21 +309,22 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
             let model_handle = s.spawn(move || {
                 let t_model = std::time::Instant::now();
                 let mut report = String::new();
-                let model = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    Model::load_bin(&base.join(MODEL_BIN))
-                })) {
-                    Ok(Ok(m)) => {
+                let model_bytes = files.get(MODEL_BIN);
+                let model = match model_bytes.and_then(|b| {
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Option<Model> {
+                        hydradragonml::Model::load_bytes(b).ok()
+                    }))
+                    .ok()
+                    .flatten()
+                }) {
+                    Some(m) => {
                         let model_ms = t_model.elapsed().as_millis();
                         android_log(&format!("init :: model={model_ms}ms"));
                         report.push_str(&format!(" model=ok({model_ms}ms)"));
                         Some(m)
                     }
-                    Ok(Err(e)) => {
-                        report.push_str(&format!(" model=ERR({})", e));
-                        None
-                    }
-                    Err(_) => {
-                        report.push_str(&format!(" model=PANIC({})", last_panic()));
+                    None => {
+                        report.push_str(" model=ERR");
                         None
                     }
                 };
@@ -362,7 +333,21 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
 
             let tlsh_handle = s.spawn(move || {
                 let t_tlsh = std::time::Instant::now();
-                let tlsh_db = load_tlsh_db(&base.join(TLSH_DB));
+                let tlsh_db = match files.get(TLSH_DB) {
+                    Some(bytes) => {
+                        let text = String::from_utf8_lossy(bytes);
+                        let mut out = Vec::new();
+                        for line in text.lines() {
+                            let line = line.trim();
+                            if line.is_empty() { continue; }
+                            if let Ok(d) = line.parse::<tlsh_rs::TlshDigest>() {
+                                out.push(d);
+                            }
+                        }
+                        out
+                    }
+                    None => Vec::new(),
+                };
                 let tlsh_ms = t_tlsh.elapsed().as_millis();
                 let report = format!(" tlsh={}({tlsh_ms}ms)", tlsh_db.len());
                 (tlsh_db, report)
@@ -370,14 +355,20 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
 
             let whitelist_handle = s.spawn(move || {
                 let t_wl = std::time::Instant::now();
-                let whitelist = load_whitelist(&base.join(WHITELIST_XF));
+                let whitelist = match files.get(WHITELIST_XF) {
+                    Some(bytes) => hydradragonxorfilter::XorFilter::from_bytes(bytes),
+                    None => None,
+                };
                 let wl_ms = t_wl.elapsed().as_millis();
                 (whitelist, format!(" whitelist={wl_ms}ms"))
             });
 
             let pkg_handle = s.spawn(move || {
                 let t_pkg = std::time::Instant::now();
-                let package_whitelist = load_package_whitelist(&base.join(WHITELIST_PACKAGES_DB));
+                let package_whitelist = match files.get(WHITELIST_PACKAGES_DB) {
+                    Some(bytes) => load_package_whitelist_from_bytes(bytes),
+                    None => std::collections::HashMap::new(),
+                };
                 let pkg_ms = t_pkg.elapsed().as_millis();
                 let report = format!(" pkg_wl={pkg_ms}ms({})", package_whitelist.len());
                 (package_whitelist, report)
@@ -385,18 +376,22 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
 
             let url_handle = s.spawn(move || {
                 let t_url = std::time::Instant::now();
-                let url_scanner = std::panic::catch_unwind(|| url_scan::UrlScanner::load(base))
-                    .ok()
-                    .flatten();
+                let url_scanner = std::panic::catch_unwind(|| {
+                    url_scan::UrlScanner::load_from_assets(files)
+                })
+                .ok()
+                .flatten();
                 let url_ms = t_url.elapsed().as_millis();
                 (url_scanner, format!(" url={url_ms}ms"))
             });
 
             let ip_handle = s.spawn(move || {
                 let t_ip = std::time::Instant::now();
-                let ip_scanner = std::panic::catch_unwind(|| ip_scan::IpScanner::load(base))
-                    .ok()
-                    .flatten();
+                let ip_scanner = std::panic::catch_unwind(|| {
+                    ip_scan::IpScanner::from_bytes_map(files)
+                })
+                .ok()
+                .flatten();
                 let ip_ms = t_ip.elapsed().as_millis();
                 (ip_scanner, format!(" ip={ip_ms}ms"))
             });
@@ -452,62 +447,39 @@ fn do_init(dir: &str, load_auto_rules: bool) -> Engine {
     }
 }
 
-/// Load `key -> md5` from whitelist_packages.db's `whitelist_package` table
-/// (read-only; same file Java reads). Empty map if absent/unreadable — the
-/// heavy scan then just runs on every buffer as before.
-fn load_package_whitelist(path: &std::path::Path) -> std::collections::HashMap<String, String> {
+/// Load `key -> md5` from pre-read whitelist_packages.db bytes.
+/// Writes to a temp file (rusqlite needs a path) then removes it immediately
+/// after reading into the HashMap. One 17 MB write per process lifetime.
+fn load_package_whitelist_from_bytes(bytes: &[u8]) -> std::collections::HashMap<String, String> {
     let mut out = std::collections::HashMap::new();
-    let Ok(conn) = rusqlite::Connection::open_with_flags(
-        path,
+    let tmp_dir = std::env::temp_dir();
+    let tmp_path = tmp_dir.join("hydra_wl_pkg.db");
+    if std::fs::write(&tmp_path, bytes).is_err() {
+        return out;
+    }
+    if let Ok(conn) = rusqlite::Connection::open_with_flags(
+        &tmp_path,
         rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    ) else {
-        return out;
-    };
-    let Ok(mut stmt) = conn.prepare("SELECT key, md5 FROM whitelist_package WHERE md5 IS NOT NULL")
-    else {
-        return out;
-    };
-    let rows = stmt.query_map([], |row| {
-        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-    });
-    if let Ok(rows) = rows {
-        for row in rows.flatten() {
-            out.insert(row.0, row.1.to_lowercase());
+    ) {
+        if let Ok(mut stmt) = conn.prepare(
+            "SELECT key, md5 FROM whitelist_package WHERE md5 IS NOT NULL",
+        ) {
+            if let Ok(rows) = stmt.query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            }) {
+                for row in rows.flatten() {
+                    out.insert(row.0, row.1.to_lowercase());
+                }
+            }
         }
     }
+    let _ = std::fs::remove_file(&tmp_path);
     out
 }
 
-/// Load a serialized Binary-Fuse (xor) filter from a `.xf` asset. The file is
-/// mmap'd to back the decode (pages come from the OS page cache); the returned
-/// filter owns its data. None if the file is absent or not a valid `.xf`.
-pub(crate) fn load_xor_filter(path: &std::path::Path) -> Option<XorFilter> {
-    XorFilter::load(path)
-}
-
-/// Load the NSRL whitelist xor filter. None if absent.
-fn load_whitelist(path: &std::path::Path) -> Option<XorFilter> {
-    load_xor_filter(path)
-}
-
-/// Load the malware TLSH digests (one `T1...` per line) into parsed digests.
-/// Unparsable lines are skipped. Returns empty if the file is absent.
-fn load_tlsh_db(path: &std::path::Path) -> Vec<tlsh_rs::TlshDigest> {
-    let text = match std::fs::read_to_string(path) {
-        Ok(t) => t,
-        Err(_) => return Vec::new(),
-    };
-    let mut out = Vec::new();
-    for line in text.lines() {
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-        if let Ok(d) = line.parse::<tlsh_rs::TlshDigest>() {
-            out.push(d);
-        }
-    }
-    out
+#[allow(dead_code)]
+fn do_init(_dir: &str, _load_auto_rules: bool) -> Engine {
+    panic!("do_init is dead code; use do_init_from_assets instead");
 }
 
 /// Whether `buf` is a file type we have TLSH malware digests for (apk/zip, ELF,
@@ -555,17 +527,23 @@ where
         .join()
 }
 
-/// `boolean nativeInit(String dir, boolean loadAutoRules)`
+/// `boolean nativeInit(String assetDir, boolean loadAutoRules, Object assetManager,
+///                      String filesDir)`
 ///
-/// Returns immediately after spawning a background thread that loads the
-/// engine (~70 s on a cold start). Use [`nativeIsReady`] to check whether
-/// the engine has finished loading.
+/// Returns immediately after spawning a thread that loads the engine (~70 s
+/// on a cold start). Reads every bundled asset file via AAssetManager; the
+/// `filesDir` parameter is the writable filesystem path for
+/// `generated_rules/*.yar` (auto-learned rules). No filesystem I/O for the
+/// bundled 330+ MB of scan data, no Java-side `copyAsset`.
+/// Use [`nativeIsReady`] to check whether the engine has finished loading.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeInit(
     mut env: EnvUnowned,
     _class: JClass,
-    dir: JString,
+    asset_dir: JString,
     load_auto_rules: jboolean,
+    asset_manager: JObject,
+    files_dir: JString,
 ) -> jboolean {
     env.with_env(|env| -> jni::errors::Result<_> {
         if ENGINE.get().is_some() {
@@ -578,20 +556,43 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         let load_auto_rules = load_auto_rules != JNI_FALSE;
         install_panic_hook();
 
-        let dir: String = match dir.try_to_string(env) {
+        let asset_dir: String = match asset_dir.try_to_string(env) {
+            Ok(s) => s,
+            Err(_) => return Ok(JNI_FALSE),
+        };
+        let files_dir: String = match files_dir.try_to_string(env) {
             Ok(s) => s,
             Err(_) => return Ok(JNI_FALSE),
         };
 
+        // Convert Java AssetManager → native AAssetManager* so the background
+        // thread can read files without holding a JNI env reference.
+        let mgr = asset_reader::from_java(
+            env.get_raw() as *mut std::ffi::c_void,
+            asset_manager.into_raw() as *mut std::ffi::c_void,
+        );
+        // *mut c_void is !Send; cast to usize for thread safety.
+        let mgr_addr = mgr as usize;
         INIT_STARTED.store(true, std::sync::atomic::Ordering::Release);
-        let init_dir = dir.clone();
 
         std::thread::Builder::new()
             .stack_size(64 * 1024 * 1024)
             .name("native-init".into())
             .spawn(move || {
+                let mgr = mgr_addr as *mut std::ffi::c_void;
+                // Read every bundled asset file into memory via AAssetManager
+                asset_reader::init(mgr);
+                let files = asset_reader::read_all_assets(&asset_dir);
+                if files.is_empty() {
+                    android_log("native-init FAILED — no assets read");
+                    return;
+                }
+                let _ = ASSET_FILES.set(files);
+                let asset_files = ASSET_FILES.get().unwrap();
+                // files_dir is the writable path for generated_rules/
+                let _ = INIT_DIR.set(files_dir);
                 let engine = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    do_init(&dir, load_auto_rules)
+                    do_init_from_assets(asset_files, load_auto_rules)
                 })) {
                     Ok(e) => e,
                     Err(_) => {
@@ -599,7 +600,6 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
                         return;
                     }
                 };
-                let _ = INIT_DIR.set(init_dir);
                 let ok = engine.clamav.is_some() || engine.model.is_some();
                 if ok {
                     let _ = ENGINE.set(std::sync::RwLock::new(engine));
@@ -796,11 +796,17 @@ fn load_dynamic_rules() {
     let Some(lock) = ENGINE.get() else { return };
     let Ok(mut guard) = lock.write() else { return };
     let Some(clamav) = &mut guard.clamav else { return };
-    let Some(base) = INIT_DIR.get() else { return };
+    let Some(asset_files) = ASSET_FILES.get() else { return };
     for name in DYNAMIC_YRC_FILES {
-        let path = std::path::Path::new(base).join(name);
+        let bytes = match asset_files.get(*name) {
+            Some(b) => b.clone(),
+            None => continue,
+        };
+        let name_str = name.to_string();
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            clamav.add_compiled_yara_file(&path)
+            if let Some(engine) = hydradragonclamav::yara_scan::YaraEngine::from_compiled(&bytes, name_str) {
+                clamav.add_compiled_yara(engine);
+            }
         }));
     }
     DYNAMIC_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
