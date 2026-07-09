@@ -291,7 +291,10 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        SharedPreferences notifPrefs = getSharedPreferences("hydra_prefs", MODE_PRIVATE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                && !notifPrefs.getBoolean("notifications_decided", false)) {
             permissionDialogShowing = true;
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
             return;
@@ -300,7 +303,8 @@ public class MainActivity extends AppCompatActivity {
         // SMS virus/scam detection (SmsReceiver) is opt-in from Settings, not
         // asked here at launch — see SettingsFragment's SMS scan toggle.
 
-        if (!isAccessibilityServiceEnabled()) {
+        SharedPreferences accessibilityPrefs = getSharedPreferences("hydra_prefs", MODE_PRIVATE);
+        if (!isAccessibilityServiceEnabled() && !accessibilityPrefs.getBoolean("accessibility_decided", false)) {
             showOptionalAccessibilityDialog();
             return;
         }
@@ -456,7 +460,9 @@ public class MainActivity extends AppCompatActivity {
             })
             .setNegativeButton(getString(R.string.skip), (dialog, which) -> {
                 permissionDialogShowing = false;
-                startAppUI();
+                getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("accessibility_decided", true).apply();
+                checkMandatoryPermissions();
             })
             .show();
     }
@@ -481,11 +487,13 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 101) {
             permissionDialogShowing = false;
+            getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                .putBoolean("notifications_decided", true).apply();
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                checkMandatoryPermissions(); 
+                checkMandatoryPermissions();
             } else {
                 Toast.makeText(this, getString(R.string.notification_permission_required), Toast.LENGTH_LONG).show();
-                finish();
+                checkMandatoryPermissions();
             }
         }
     }
