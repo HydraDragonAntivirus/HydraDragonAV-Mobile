@@ -142,6 +142,11 @@ static DYNAMIC_RULES_LOADED: std::sync::atomic::AtomicBool =
 /// reference through every read-lock acquisition.
 static INIT_DIR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
+/// Guards against duplicate calls to `nativeInit` while the first async
+/// background thread is still loading the engine (~70 s).
+static INIT_STARTED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 /// Last panic's "message @ file:line", captured by our hook so we can report
 /// WHY a scan panicked (root cause) instead of just swallowing it.
 static LAST_PANIC: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
@@ -551,6 +556,10 @@ where
 }
 
 /// `boolean nativeInit(String dir, boolean loadAutoRules)`
+///
+/// Returns immediately after spawning a background thread that loads the
+/// engine (~70 s on a cold start). Use [`nativeIsReady`] to check whether
+/// the engine has finished loading.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeInit(
     mut env: EnvUnowned,
@@ -559,26 +568,61 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     load_auto_rules: jboolean,
 ) -> jboolean {
     env.with_env(|env| -> jni::errors::Result<_> {
+        if ENGINE.get().is_some() {
+            return Ok(JNI_TRUE);
+        }
+        if INIT_STARTED.load(std::sync::atomic::Ordering::Acquire) {
+            return Ok(JNI_FALSE);
+        }
+
+        let load_auto_rules = load_auto_rules != JNI_FALSE;
+        install_panic_hook();
+
         let dir: String = match dir.try_to_string(env) {
             Ok(s) => s,
             Err(_) => return Ok(JNI_FALSE),
         };
-        let load_auto_rules = load_auto_rules != JNI_FALSE;
-        install_panic_hook();
+
+        INIT_STARTED.store(true, std::sync::atomic::Ordering::Release);
         let init_dir = dir.clone();
-        let engine = match on_big_stack(move || do_init(&dir, load_auto_rules)) {
-            Ok(e) => e,
-            Err(_) => return Ok(JNI_FALSE),
-        };
-        let _ = INIT_DIR.set(init_dir);
-        let ok = engine.clamav.is_some() || engine.model.is_some();
-        let _ = ENGINE.set(std::sync::RwLock::new(engine));
-        if ok && ENGINE.get().is_some() {
-            Ok(JNI_TRUE)
-        } else {
-            Ok(JNI_FALSE)
-        }
+
+        std::thread::Builder::new()
+            .stack_size(64 * 1024 * 1024)
+            .name("native-init".into())
+            .spawn(move || {
+                let engine = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    do_init(&dir, load_auto_rules)
+                })) {
+                    Ok(e) => e,
+                    Err(_) => {
+                        android_log(&format!("native-init PANIC: {}", last_panic()));
+                        return;
+                    }
+                };
+                let _ = INIT_DIR.set(init_dir);
+                let ok = engine.clamav.is_some() || engine.model.is_some();
+                if ok {
+                    let _ = ENGINE.set(std::sync::RwLock::new(engine));
+                    android_log("native-init completed");
+                } else {
+                    android_log("native-init FAILED — no clamav or model");
+                }
+            })
+            .expect("spawn native-init thread");
+
+        Ok(JNI_FALSE)
     }).resolve::<LogErrorAndDefault>()
+}
+
+/// `boolean nativeIsReady()` — true when the async background init has
+/// finished populating the `ENGINE` global. Replaces the Java-side `ready`
+/// flag so the Java layer is always in sync with the actual Rust engine state.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeIsReady(
+    _env: EnvUnowned,
+    _class: JClass,
+) -> jboolean {
+    if ENGINE.get().is_some() { JNI_TRUE } else { JNI_FALSE }
 }
 
 /// `void nativeSetEmulationEnabled(boolean enabled)` — Settings toggle for the

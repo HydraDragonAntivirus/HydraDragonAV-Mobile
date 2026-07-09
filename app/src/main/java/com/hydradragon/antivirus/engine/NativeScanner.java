@@ -40,7 +40,6 @@ public final class NativeScanner {
      */
     private static final String ASSET_DIR = "scan";
 
-    private static volatile boolean ready = false;
     /** Whether libhydradragonandroid.so loaded. If false, all calls no-op safely. */
     private static final boolean LIB_LOADED;
 
@@ -63,6 +62,11 @@ public final class NativeScanner {
     }
 
     private static native boolean nativeInit(String dir, boolean loadAutoRules);
+
+    /** True when the async background init has finished populating the native
+     *  engine. Replaces the old Java-side {@code ready} flag so the Java layer
+     *  is always in sync with the actual Rust engine state. */
+    private static native boolean nativeIsReady();
 
     private static native boolean nativeLearnRule(String yarPath);
 
@@ -87,7 +91,7 @@ public final class NativeScanner {
      *  false just means this session doesn't get the instant benefit; the rule is
      *  still on disk and will load normally next launch. */
     public static boolean learnRule(String yarPath) {
-        if (!LIB_LOADED || !ready || yarPath == null || yarPath.isEmpty()) return false;
+        if (!isReady() || yarPath == null || yarPath.isEmpty()) return false;
         try { return nativeLearnRule(yarPath); } catch (Throwable t) { return false; }
     }
 
@@ -104,7 +108,7 @@ public final class NativeScanner {
      *  / not a URL. Membership is the native xor filter URL/domain scanner — no
      *  xor filter is held in the Java heap. */
     public static String scanUrl(String url) {
-        if (!LIB_LOADED || !ready || url == null || url.isEmpty()) return null;
+        if (!isReady() || url == null || url.isEmpty()) return null;
         try {
             String c = nativeScanUrl(url);
             return (c == null || c.isEmpty()) ? null : c;
@@ -133,7 +137,7 @@ public final class NativeScanner {
      *  HIPS rules. Returns the verdict including matched rules and suggestion. */
     public static HipsResult scanHips() {
         HipsResult r = new HipsResult();
-        if (!LIB_LOADED || !ready) return r;
+        if (!isReady()) return r;
         try {
             String json = HipsMonitor.buildReportJson();
             if (json == null || json.isEmpty()) return r;
@@ -196,7 +200,7 @@ public final class NativeScanner {
     /** Malicious category (e.g. "MALWARE_IP") for a resolved IP, or null if clean.
      *  Exact match against the native per-category xor filters (no CIDR/subnet). */
     public static String scanIp(String ip) {
-        if (!LIB_LOADED || !ready || ip == null || ip.isEmpty()) return null;
+        if (!isReady() || ip == null || ip.isEmpty()) return null;
         try {
             String c = nativeScanIp(ip);
             return (c == null || c.isEmpty()) ? null : c;
@@ -207,7 +211,7 @@ public final class NativeScanner {
      *  xor filter — never loaded into the Java heap). False if the native
      *  lib/whitelist isn't available. */
     public static boolean isHashWhitelisted(String md5) {
-        if (!LIB_LOADED || !ready || md5 == null || md5.isEmpty()) return false;
+        if (!isReady() || md5 == null || md5.isEmpty()) return false;
         try { return nativeIsHashWhitelisted(md5); } catch (Throwable t) { return false; }
     }
 
@@ -218,7 +222,7 @@ public final class NativeScanner {
      *  APK bytes. Returns matched rule/signature names, empty if clean/unready. */
     public static List<String> scanText(String text) {
         List<String> out = new ArrayList<>();
-        if (!ready || text == null || text.isEmpty()) return out;
+        if (!isReady() || text == null || text.isEmpty()) return out;
         try {
             String joined = nativeScanText(text);
             if (joined != null && !joined.isEmpty()) {
@@ -236,16 +240,20 @@ public final class NativeScanner {
 
     /**
      * Copy bundled assets into internal storage (only if missing or stale) and
-     * initialise the native engine. Safe to call multiple times.
+     * start the native engine initialisation ASYNCHRONOUSLY. Returns immediately
+     * after copying assets; the expensive engine loading runs on a background
+     * Rust thread. Use {@link #isReady()} to check whether the native engine
+     * has finished loading. Safe to call multiple times.
      *
-     * @return true if at least one ruleset or the ML model loaded.
+     * @return true when the native engine is already ready; false if init is
+     *         still in progress or the library is unavailable.
      */
     public static synchronized boolean init(Context context) {
-        if (ready) {
+        if (isReady()) {
             return true;
         }
         if (!LIB_LOADED) {
-            return false;   // native lib unavailable — stay disabled
+            return false;
         }
         File dir = new File(context.getFilesDir(), "hydra-scan");
         if (!dir.exists() && !dir.mkdirs()) {
@@ -275,13 +283,15 @@ public final class NativeScanner {
         // regardless of the setting.
         boolean loadAutoRules = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
             context, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
-        ready = nativeInit(dir.getAbsolutePath(), loadAutoRules);
-        if (ready) {
+        // nativeInit returns immediately (JNI_FALSE) and spawns a background
+        // thread; the engine becomes ready asynchronously.
+        nativeInit(dir.getAbsolutePath(), loadAutoRules);
+        if (isReady()) {
             setEmulationEnabled(com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
                 context, com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION));
         }
-        Log.i(TAG, "native init " + (ready ? "ok" : "FAILED") + " | " + status());
-        return ready;
+        Log.i(TAG, "native init " + (isReady() ? "ok" : "background") + " | " + status());
+        return isReady();
     }
 
     /**
@@ -311,7 +321,7 @@ public final class NativeScanner {
      *  for a malicious one) — Zero Trust Mode never treats "nothing matched"
      *  as "nothing to record". */
     public static String scanApk(String apkPath, String packageName, String fileMd5, boolean zeroTrust) {
-        if (!ready) {
+        if (!isReady()) {
             return "{\"error\":\"not initialised\"}";
         }
         return nativeScanApk(apkPath, NetworkObservations.buildReportJson(packageName),
@@ -384,7 +394,7 @@ public final class NativeScanner {
      *  {@code zeroTrust} to {@link #scanApk(String, String, String, boolean)}. */
     public static Verdict scan(String apkPath, String packageName, String fileMd5, boolean zeroTrust) {
         Verdict v = new Verdict();
-        if (!ready) {
+        if (!isReady()) {
             v.error = "not initialised";
             return v;
         }
@@ -463,7 +473,7 @@ public final class NativeScanner {
     }
 
     public static boolean isReady() {
-        return ready;
+        return LIB_LOADED && nativeIsReady();
     }
 
     private static void copyAsset(Context context, String name, File out) throws IOException {
