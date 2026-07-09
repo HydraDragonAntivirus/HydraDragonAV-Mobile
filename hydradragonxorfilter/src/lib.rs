@@ -18,7 +18,7 @@
 use std::fs::File;
 use std::path::Path;
 
-use xorf::{BinaryFuse16, BinaryFuse32, BinaryFuse8, Filter};
+use jdb_xorf::{Bf16, Bf32, Bf8, Filter as JdbFilter};
 
 /// File-format tags (first byte of every `.xf` file) identifying which
 /// `BinaryFuseN` width follows. The width is chosen at build time from the
@@ -53,18 +53,18 @@ pub fn key(s: &str) -> u64 {
 
 /// A loaded Binary-Fuse filter of one of the three supported widths.
 pub enum XorFilter {
-    Bf8(BinaryFuse8),
-    Bf16(BinaryFuse16),
-    Bf32(BinaryFuse32),
+    Bf8(Bf8),
+    Bf16(Bf16),
+    Bf32(Bf32),
 }
 
 impl XorFilter {
     /// Membership test for a precomputed key.
     pub fn contains_key(&self, key: u64) -> bool {
         match self {
-            XorFilter::Bf8(f) => f.contains(&key),
-            XorFilter::Bf16(f) => f.contains(&key),
-            XorFilter::Bf32(f) => f.contains(&key),
+            XorFilter::Bf8(f) => f.has(&key),
+            XorFilter::Bf16(f) => f.has(&key),
+            XorFilter::Bf32(f) => f.has(&key),
         }
     }
 
@@ -77,17 +77,10 @@ impl XorFilter {
     /// malformed body.
     pub fn from_bytes(bytes: &[u8]) -> Option<XorFilter> {
         let (&tag, rest) = bytes.split_first()?;
-        let cfg = bincode::config::standard();
         match tag {
-            TAG_BF8 => bincode::serde::decode_from_slice::<BinaryFuse8, _>(rest, cfg)
-                .ok()
-                .map(|(f, _)| XorFilter::Bf8(f)),
-            TAG_BF16 => bincode::serde::decode_from_slice::<BinaryFuse16, _>(rest, cfg)
-                .ok()
-                .map(|(f, _)| XorFilter::Bf16(f)),
-            TAG_BF32 => bincode::serde::decode_from_slice::<BinaryFuse32, _>(rest, cfg)
-                .ok()
-                .map(|(f, _)| XorFilter::Bf32(f)),
+            TAG_BF8 => bitcode::decode::<Bf8>(rest).ok().map(XorFilter::Bf8),
+            TAG_BF16 => bitcode::decode::<Bf16>(rest).ok().map(XorFilter::Bf16),
+            TAG_BF32 => bitcode::decode::<Bf32>(rest).ok().map(XorFilter::Bf32),
             _ => None,
         }
     }
@@ -120,17 +113,23 @@ impl XorFilter {
 pub fn build_from_keys(mut keys: Vec<u64>, fpp: f64) -> Result<Vec<u8>, String> {
     keys.sort_unstable();
     keys.dedup();
-    let cfg = bincode::config::standard();
-    let (tag, body) = if fpp <= BF16_FPP {
-        let f = BinaryFuse32::try_from(keys.as_slice()).map_err(|e| e.to_string())?;
-        (TAG_BF32, bincode::serde::encode_to_vec(&f, cfg).map_err(|e| e.to_string())?)
-    } else if fpp <= BF8_FPP {
-        let f = BinaryFuse16::try_from(keys.as_slice()).map_err(|e| e.to_string())?;
-        (TAG_BF16, bincode::serde::encode_to_vec(&f, cfg).map_err(|e| e.to_string())?)
-    } else {
-        let f = BinaryFuse8::try_from(keys.as_slice()).map_err(|e| e.to_string())?;
-        (TAG_BF8, bincode::serde::encode_to_vec(&f, cfg).map_err(|e| e.to_string())?)
-    };
+    if keys.is_empty() {
+        return Err("no keys to build a filter from".to_string());
+    }
+    // Bf8/Bf16/Bf32::from panics (rather than returning Result) in the
+    // extremely unlikely event construction doesn't converge even after
+    // dedup; catch that to preserve this function's Result contract.
+    let built = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        if fpp <= BF16_FPP {
+            (TAG_BF32, bitcode::encode(&Bf32::from(&keys)))
+        } else if fpp <= BF8_FPP {
+            (TAG_BF16, bitcode::encode(&Bf16::from(&keys)))
+        } else {
+            (TAG_BF8, bitcode::encode(&Bf8::from(&keys)))
+        }
+    }))
+    .map_err(|_| "binary fuse filter construction panicked".to_string())?;
+    let (tag, body) = built;
     let mut out = Vec::with_capacity(body.len() + 1);
     out.push(tag);
     out.extend_from_slice(&body);

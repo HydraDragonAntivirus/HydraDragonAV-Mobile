@@ -2,13 +2,12 @@
 # Build every website Binary-Fuse (xor) filter (.xf) the native URL/domain
 # scanner loads.
 #
-#   website (domain/url) filters -> fpp 1e-6   (these run on live DNS + APK URLs;
-#                                               a false positive blocks a site)
-#   whitelist (md5 hashes)       -> fpp 1e-6   (built SEPARATELY from all_md5.txt;
+#   website (domain/url) filters -> fpp 1e-4   (these run on live DNS + APK URLs)
+#   whitelist (md5 hashes)       -> fpp 1e-4   (built SEPARATELY from all_md5.txt;
 #                                               see the whitelist command at the end)
 #
-# The shared crate maps fpp to a binary-fuse width: 1e-6 -> BinaryFuse32,
-# 0.015 -> BinaryFuse16.
+# The shared crate maps fpp to a binary-fuse width: fpp <= 1.5e-5 -> BinaryFuse32,
+# fpp <= 3.9e-3 -> BinaryFuse16 (1e-4 lands here), else BinaryFuse8.
 #
 # Pipeline:
 #   1. gen_domain_xfilter.py    -> xf_build/<stem>.txt  (phishing, abuse, spam,
@@ -23,7 +22,7 @@ cd "$(dirname "$0")"
 WRITER=dev-tools/xorfilter_writer/target/release/xorfilter_writer
 SCAN=app/src/main/assets/scan
 STAGE=xf_build
-WEB_FPP=0.000001   # 1e-6 for website filters
+WEB_FPP=0.0001   # 1e-4 -> BinaryFuse16 for all filters
 
 [ -x "$WRITER" ] || { echo "building xorfilter_writer..."; (cd dev-tools/xorfilter_writer && cargo build --release); }
 mkdir -p "$SCAN"
@@ -60,7 +59,12 @@ for stem in ipmalware ipphishing ipbruteforce ipddos ipspam; do
     fi
 done
 
+echo "=== 4/4 building whitelist.xf from all_md5.txt (fpp $WEB_FPP) ==="
+if [ -s all_md5.txt ]; then
+    "$WRITER" all_md5.txt "$SCAN/whitelist.xf" "$WEB_FPP"
+else
+    echo "  [SKIP] whitelist: all_md5.txt missing/empty"
+fi
+
 echo
-echo "Done. Website .xf written to $SCAN/."
-echo "Whitelist (run once, ~minutes, 7GB input):"
-echo "  $WRITER all_md5.txt $SCAN/whitelist.xf $WEB_FPP"
+echo "Done. All .xf written to $SCAN/."
