@@ -1,1 +1,1 @@
-Copyright (C) 2026 Emirhan Ucan, Yusif Musayev
+Copyright (C) 2023, 2024, 2025, 2026 Emirhan Ucan and Yusif Musayev
