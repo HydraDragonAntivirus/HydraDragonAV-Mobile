@@ -15,6 +15,9 @@ public class BootReceiver extends BroadcastReceiver {
                 return;
             }
             Log.i("HydraDragon", "Device booted, starting GuardService silently...");
+            // Pre-warm the native engine now — the 70s init runs on a background
+            // thread before the user even opens the app.
+            com.hydradragon.antivirus.engine.NativeScanner.init(context);
             Intent serviceIntent = new Intent(context, GuardService.class);
             ContextCompat.startForegroundService(context, serviceIntent);
         }
