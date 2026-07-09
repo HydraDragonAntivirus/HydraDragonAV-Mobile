@@ -3,8 +3,7 @@
 # scanner loads.
 #
 #   website (domain/url) filters -> fpp 1e-4   (these run on live DNS + APK URLs)
-#   whitelist (md5 hashes)       -> fpp 1e-4   (built SEPARATELY from all_md5.txt;
-#                                               see the whitelist command at the end)
+#   whitelist (md5 hashes)       -> fpp 1e-4   (built from all_md5.txt in step 4/4)
 #
 # The shared crate maps fpp to a binary-fuse width: fpp <= 1.5e-5 -> BinaryFuse32,
 # fpp <= 3.9e-3 -> BinaryFuse16 (1e-4 lands here), else BinaryFuse8.

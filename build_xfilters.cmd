@@ -3,8 +3,7 @@ REM Build every website Binary-Fuse (xor) filter (.xf) the native URL/domain
 REM scanner loads. Windows cmd port of build_xfilters.sh.
 REM
 REM   website (domain/url) filters -> fpp 1e-4   (these run on live DNS + APK URLs)
-REM   whitelist (md5 hashes)       -> fpp 1e-4   (built SEPARATELY from all_md5.txt;
-REM                                               see the whitelist command at the end)
+REM   whitelist (md5 hashes)       -> fpp 1e-4   (built from all_md5.txt in step 4/4)
 REM
 REM Pipeline:
 REM   1. gen_domain_xfilter.py    -> xf_build\<stem>.txt  (phishing, abuse, spam,
