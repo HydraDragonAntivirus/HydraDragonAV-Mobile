@@ -77,6 +77,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         com.hydradragon.antivirus.engine.AppLifecycleTracker.register(getApplication());
+        // Fire the native engine init as early as possible: the ~70s ClamAV/YARA
+        // load runs in a background thread so it's ready before the first scan
+        // hits ScanEngine (which also calls init — it's idempotent).
+        com.hydradragon.antivirus.engine.NativeScanner.init(this);
         strandHoggGuard = new com.hydradragon.antivirus.security.StrandHoggGuard(this);
 
         // Refuse to run a repackaged/re-signed copy of this APK (see
