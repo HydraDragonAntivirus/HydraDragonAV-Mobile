@@ -23,13 +23,12 @@ impl TimingBreakdown {
 #[derive(Debug)]
 pub struct Engine {
     pub database: Database,
-    /// Atom prefilter: selects the few signatures worth fully evaluating per
-    /// buffer instead of scanning all of them linearly, and threads the atom
-    /// match offsets into verification. It also owns the per-logical-signature
-    /// gating info (see `AtomPrefilter::logical_gate`), kept there so the gating
-    /// subsignature is exactly the one whose atoms were indexed — that alignment
-    /// is what makes threading the gate's offsets correct.
-    prefilter: crate::prefilter::AtomPrefilter,
+    /// Binary-Fuse16 atom/counter/threshold filter database: every signature's
+    /// (and logical subsignature's) atoms are indexed into Bf16 set-membership
+    /// filters at load time. Scanning promotes a slot directly off its hit
+    /// counter reaching threshold — there is no byte-level re-verification of
+    /// the matched atom or its owning pattern (see `atomfilter.rs`).
+    atomfilter_db: crate::atomfilter::AtomFilterDb,
     /// YARA-x engines for scanning with compiled YARA rules (Android-relevant
     /// types only, see `yara_scan::is_target_allowed`). Multiple rulesets can be
     /// loaded (e.g. clean / valhalla / AndroidOS); all are run.

@@ -51,6 +51,20 @@ pub fn key(s: &str) -> u64 {
     h
 }
 
+/// Same FNV-1a fold as [`key`], but over raw bytes with no ASCII-lowercasing.
+/// For callers whose keys are case-sensitive by nature (e.g. binary signature
+/// atoms), unlike the hostnames/hashes [`key`] is for.
+pub fn key_bytes(b: &[u8]) -> u64 {
+    const OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+    const PRIME: u64 = 0x0000_0100_0000_01b3;
+    let mut h = OFFSET;
+    for &byte in b {
+        h ^= byte as u64;
+        h = h.wrapping_mul(PRIME);
+    }
+    h
+}
+
 /// A loaded Binary-Fuse filter of one of the three supported widths.
 pub enum XorFilter {
     Bf8(Bf8),
@@ -132,6 +146,26 @@ pub fn build_from_keys(mut keys: Vec<u64>, fpp: f64) -> Result<Vec<u8>, String> 
     let (tag, body) = built;
     let mut out = Vec::with_capacity(body.len() + 1);
     out.push(tag);
+    out.extend_from_slice(&body);
+    Ok(out)
+}
+
+/// Build a tagged `.xf`-format blob, forcing `BF16` regardless of key count or
+/// any fpp target. For callers that need a fixed, predictable width/size
+/// tradeoff (e.g. a promotion-counter scheme keyed on many small atoms) rather
+/// than the fpp-driven width auto-selection [`build_from_keys`] does.
+pub fn build_bf16_from_keys(mut keys: Vec<u64>) -> Result<Vec<u8>, String> {
+    keys.sort_unstable();
+    keys.dedup();
+    if keys.is_empty() {
+        return Err("no keys to build a filter from".to_string());
+    }
+    let body = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        bitcode::encode(&Bf16::from(&keys))
+    }))
+    .map_err(|_| "binary fuse filter construction panicked".to_string())?;
+    let mut out = Vec::with_capacity(body.len() + 1);
+    out.push(TAG_BF16);
     out.extend_from_slice(&body);
     Ok(out)
 }

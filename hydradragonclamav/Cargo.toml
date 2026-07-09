@@ -27,6 +27,10 @@ memchr = "2"
 # byte signature atoms — ClamAV-style shallow trie, cheap to build.
 daachorse = "3.0.2"
 
+# Binary-Fuse16 atom membership filters for the atom/counter/threshold
+# prefilter (same crate hydradragonxorfilter builds .xf blobs with).
+jdb_xorf = { version = "0.13", features = ["bitcode"] }
+
 # Image decoding for `fuzzy_img#` logical subsignatures (ClamAV's image fuzzy
 # hash). Same crates ClamAV's libclamav_rust uses, so the perceptual hash is
 # byte-identical. Only the common raster formats are enabled.
