@@ -576,7 +576,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         INIT_STARTED.store(true, std::sync::atomic::Ordering::Release);
 
         std::thread::Builder::new()
-            .stack_size(64 * 1024 * 1024)
+            .stack_size(8 * 1024 * 1024)
             .name("native-init".into())
             .spawn(move || {
                 let mgr = mgr_addr as *mut std::ffi::c_void;
