@@ -1,7 +1,7 @@
 # 🐉 HydraDragonAV Mobile
 **Advanced Android Antivirus With Threat Protection**
 
-![Discord Community Server](https://discord.gg/7XMCuj5mbP)
+## Discord Community Server: https://discord.gg/7XMCuj5mbP
 
 ![HydraDragonAndroid](assets/HydraDragonAndroid.png)
 
