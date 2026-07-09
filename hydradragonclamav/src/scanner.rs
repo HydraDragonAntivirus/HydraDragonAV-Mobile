@@ -714,7 +714,7 @@ impl Engine {
                 if !ranges.is_empty() {
                     let gate_hints = if g.threadable { hints } else { None };
                     let t_gate = std::time::Instant::now();
-                    let count = body_matches(
+                    let (count, last_off) = body_matches(
                         patterns,
                         ctx.data,
                         &ranges,
@@ -724,7 +724,7 @@ impl Engine {
                     let ms = t_gate.elapsed().as_millis();
                     if ms >= 20 {
                         android_log(&format!(
-                            "[SLOW-GATE] {ms}ms {} ({}:{}) hints={} threadable={}",
+                            "[SLOW-GATE] {ms}ms {} ({}):{} hints={} threadable={}",
                             signature.name,
                             signature.source.path.display(),
                             signature.source.line,
@@ -743,7 +743,7 @@ impl Engine {
                         return; // gate absent → signature cannot match
                     }
                     counts[gi] = count;
-                    last_offsets[gi] = None;
+                    last_offsets[gi] = last_off;
                     evaluated[gi] = true;
                     gating_done = Some(gi);
                 }
@@ -816,7 +816,7 @@ impl Engine {
                     }
                     _ => &base_ranges,
                 };
-                let count = body_matches(
+                let (count, last_off) = body_matches(
                     patterns,
                     ctx.data,
                     ranges,
@@ -831,7 +831,7 @@ impl Engine {
                     ranges: ranges.len(),
                 });
                 counts[i] = count;
-                last_offsets[i] = None;
+                last_offsets[i] = last_off;
                 evaluated[i] = true;
                 // Short-circuit: if this absent subsig already makes the signature
                 // unsatisfiable (a missing AND term), skip every remaining subsig.
@@ -1051,8 +1051,9 @@ fn body_matches(
     ranges: &[(usize, usize)],
     limit: usize,
     hints: Option<&[u32]>,
-) -> usize {
+) -> (usize, Option<usize>) {
     let mut count = 0usize;
+    let mut last_end: Option<usize> = None;
     for pattern in patterns {
         let remaining = limit.saturating_sub(count);
         if remaining == 0 {
@@ -1063,8 +1064,11 @@ fn body_matches(
             None => pattern.find_all(data, ranges, remaining),
         };
         count += hits.len();
+        if let Some(m) = hits.last() {
+            last_end = Some(m.end.max(last_end.unwrap_or(0)));
+        }
     }
-    count
+    (count, last_end)
 }
 
 /// ClamAV target codes worth running the ClamAV engine on at all: HTML(3),

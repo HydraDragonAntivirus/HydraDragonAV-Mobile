@@ -40,16 +40,19 @@ pub fn is_target_allowed(target: Option<u32>) -> bool {
 }
 
 /// A compiled YARA ruleset ready for scanning.
+/// `rules` is boxed so its address is stable even when the containing `Vec<YaraEngine>`
+/// is pushed to (which can reallocate and move elements). Thread-local `Scanner` caches
+/// hold `&'static Rules` references — a `Box` guarantees those references stay valid.
 #[derive(Debug)]
 pub struct YaraEngine {
     id: u64,
     pub name: String,
-    rules: yara_x::Rules,
+    rules: Box<yara_x::Rules>,
 }
 
 impl YaraEngine {
     fn new(rules: yara_x::Rules, name: String) -> Self {
-        Self { id: NEXT_ENGINE_ID.fetch_add(1, Ordering::Relaxed), name, rules }
+        Self { id: NEXT_ENGINE_ID.fetch_add(1, Ordering::Relaxed), name, rules: Box::new(rules) }
     }
 
     /// Compile a YARA source file and build the engine.
@@ -96,18 +99,16 @@ impl YaraEngine {
         SCANNER_CACHE.with(|cache| {
             let mut cache = cache.borrow_mut();
             let scanner = cache.entry(self.id).or_insert_with(|| {
-                // SAFETY: `self.rules` lives inside a `YaraEngine` that is
-                // itself only ever constructed once, up front, into the
-                // process-global `static ENGINE: OnceLock<RwLock<Engine>>`
-                // (see hydradragonandroid/src/lib.rs) — `ENGINE.set()` is
-                // called exactly once and there is no reload/replace path,
-                // so this `Rules` value is never dropped or moved for the
-                // remaining lifetime of the process. Extending the borrow to
-                // 'static here is therefore sound: every thread-local
-                // `Scanner` cached against it is genuinely outlived by the
-                // `Rules` it borrows from.
+                // SAFETY: `self.rules` is a `Box<yara_x::Rules>`, so its heap
+                // address is stable across `Vec::push` reallocations of the
+                // containing vector. The `YaraEngine` itself is stored in
+                // `static ENGINE: OnceLock<RwLock<Engine>>` (set exactly once
+                // and never replaced), so the `Box` is never dropped for the
+                // lifetime of the process. A `Scanner` that borrows the rules
+                // at this address with a `'static` lifetime is therefore sound.
+                let rules_ptr: *const yara_x::Rules = &*self.rules;
                 let rules_static: &'static yara_x::Rules =
-                    unsafe { std::mem::transmute::<&yara_x::Rules, &'static yara_x::Rules>(&self.rules) };
+                    unsafe { &*rules_ptr };
                 let mut scanner = yara_x::Scanner::new(rules_static);
                 scanner.fast_scan(true);
                 scanner

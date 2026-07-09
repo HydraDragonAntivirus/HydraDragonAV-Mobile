@@ -961,16 +961,25 @@ fn run_scan(
     let t_extract = std::time::Instant::now();
     let max_dets = 64;
     let mut early_dets: Vec<(String, Vec<String>)> = Vec::new();
+    // `module_meta` is not available yet (androguard JSON etc. is built below
+    // from the extracted buffers), so the early-detection scanner thread gets
+    // `&[]` at this point. This means YARA rules depending on androguard/
+    // hydradragon module data won't match in the early pass — they will be
+    // caught when `run_scan` re-scans with the real module_meta below. For
+    // rules that don't need module context (most ClamAV signatures), the early
+    // pass is fully effective and triggers the `early_hit` fast-path.
     let buffers = collect_buffers(
         bytes, file_md5,
         engine.clamav.as_ref(),
         path, &mut early_dets, max_dets,
+        &[],
     );
     let extract_ms = t_extract.elapsed().as_millis();
     let early_hit = !early_dets.is_empty();
 
     // MD5 of the whole top-level file (its "main hash") — Java builds a
     // VirusTotal lookup link from this (VT accepts md5). Reuses Java's md5.
+    // (Moved above the module_meta build since it's needed regardless.)
     let file_hash = match file_md5 {
         Some(md5) => md5.to_string(),
         None => md5_hex(bytes),
@@ -2179,6 +2188,10 @@ struct Buf {
 /// match) is scanned while its children are being decompressed, instead of
 /// waiting for all extraction to complete first. Scan results accumulate in
 /// `early_dets` as they arrive, regardless of whether a match was found.
+/// `module_meta` is passed through so YARA rules that depend on androguard/
+/// hydradragon module metadata detect correctly in the early pass (previously
+/// `&[]` was passed, causing YARA rules with module conditions to never match
+/// in the early-detection thread, then re-scanned in `run_scan`).
 fn collect_buffers(
     data: &[u8],
     top_md5: Option<&str>,
@@ -2186,6 +2199,7 @@ fn collect_buffers(
     path: &str,
     early_dets: &mut Vec<(String, Vec<String>)>,
     max_dets: usize,
+    module_meta: &[(&str, &[u8])],
 ) -> Vec<Buf> {
     use std::sync::mpsc;
     let mut out: Vec<Buf> = Vec::new();
@@ -2210,7 +2224,7 @@ fn collect_buffers(
                         format!("{}#extract[{}]", path, idx)
                     };
                     let (matches, _) = clamav
-                        .scan_bytes_named_with_breakdown(&buf_data, &name, opts, &[]);
+                        .scan_bytes_named_with_breakdown(&buf_data, &name, opts, module_meta);
                     for m in matches {
                         if det_tx_for_scan.send((m.name, lineage.clone())).is_err() {
                             return;
