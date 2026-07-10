@@ -578,6 +578,7 @@ public class ScanEngine {
             // outright. It'll get scanned under its real name once the
             // download finishes and the system renames it away from this.
             if (file.getName().startsWith(".pending-")) continue;
+            if (cancelRequested) return;
             if (file.isDirectory()) {
                 scanDirectoryForApks(file, pm, threats, fullScan, skipPackages);
             } else if (file.getName().toLowerCase().endsWith(".apk")) {
@@ -598,13 +599,13 @@ public class ScanEngine {
                         }
                     }
                 } catch (Exception e) { }
-                reportFileScanned(file);
+                if (!cancelRequested) reportFileScanned(file);
             } else if (fullScan) {
                 // Non-APK file in a full scan: route through the native engine
                 // (hydradragonextractor unpacking + clamav/YARA + ML). Permission
                 // analysis doesn't apply — it isn't an installable app.
                 scanGenericFile(file, threats);
-                reportFileScanned(file);
+                if (!cancelRequested) reportFileScanned(file);
             }
         }
     }
@@ -814,6 +815,7 @@ public class ScanEngine {
                 // Per-detection suppression (a hit inside a whitelisted APK is an
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
                 List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
+                if (cancelRequested) return;
                 if (live.isEmpty()) { reportFileScanned(new java.io.File(app.sourceDir)); continue; }
                 ThreatResult.Builder b = new ThreatResult.Builder(
                     app.packageName != null ? app.packageName : app.sourceDir);
@@ -849,6 +851,7 @@ public class ScanEngine {
                     if (AutoRuleGeneration.isEnabled(context)) saveGeneratedRule(v);
                 }
                 boolean anyEvidence = real || eicar || autoOnly || !reasons.isEmpty();
+                if (cancelRequested) return;
                 if (!anyEvidence) { reportFileScanned(new java.io.File(app.sourceDir)); continue; }
                 b.setThreatType(real
                     ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
@@ -870,7 +873,7 @@ public class ScanEngine {
                     if (app.packageName != null) seen.add(app.packageName);
                     if (callback != null) callback.onThreatFound(r);
                 }
-                reportFileScanned(new java.io.File(app.sourceDir));
+                if (!cancelRequested) reportFileScanned(new java.io.File(app.sourceDir));
             } catch (Throwable ignore) { }
         }
     }

@@ -64,8 +64,10 @@
     <string name="boot_auto_start_toggle">Start protection automatically on boot</string>
     <string name="btn_cancel">Cancel</string>
     <string name="btn_close">Close</string>
+    <string name="btn_delete_file">DELETE FILE</string>
     <string name="btn_destroy">YES, DESTROY</string>
     <string name="btn_destroy_hint">tap Destroy to remove it</string>
+    <string name="btn_dismiss">DISMISS</string>
     <string name="btn_exit_app">Exit App</string>
     <string name="btn_full_scan">🔍 FULL SCAN</string>
     <string name="btn_grant_now">Grant Now</string>
@@ -73,6 +75,7 @@
     <string name="btn_ignore_signature">IGNORE SIGNATURE</string>
     <string name="btn_quick_scan">🚀 QUICK SCAN</string>
     <string name="btn_skip">SKIP →</string>
+    <string name="btn_uninstall">UNINSTALL</string>
     <string name="btn_uninstall_disable">UNINSTALL / DISABLE</string>
     <string name="cert_signature">✍️ Signature: %1$s</string>
     <string name="cert_untrusted">UNTRUSTED CERTIFICATE (Test Key)</string>
@@ -159,6 +162,10 @@
     <string name="lock_wait_min">Please wait %1$s minutes</string>
     <string name="lock_wait_sec">Please wait %1$s seconds</string>
     <string name="lock_wrong">Wrong PIN!</string>
+    <string name="malware_found_heading">MALWARE FOUND</string>
+    <string name="malware_found_risk_score">Risk Score: %d/100</string>
+    <string name="malware_found_status_file">A prompt to delete this file has been sent — check your notifications.</string>
+    <string name="malware_found_status_installed">This app\'s background process was killed and the system uninstall prompt has been opened.</string>
     <string name="malware_found_title">⚠ MALWARE FOUND!</string>
     <string name="malware_has_admin_msg">%1$s has made itself a Device Administrator, which blocks uninstalling it directly — this is a common trick malware uses to resist removal. Deactivate it in the screen that opens (find %1$s and tap Deactivate), then the uninstall prompt will open automatically.</string>
     <string name="malware_has_admin_open_settings">OPEN DEVICE ADMIN SETTINGS</string>

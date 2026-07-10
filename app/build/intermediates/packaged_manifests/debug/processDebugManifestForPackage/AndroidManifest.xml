@@ -61,6 +61,7 @@
     <uses-permission android:name="com.hydradragon.antivirus.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 
     <application
+        android:name="com.hydradragon.antivirus.HydraDragonApp"
         android:allowBackup="true"
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:debuggable="true"
@@ -69,6 +70,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:testOnly="true"
         android:theme="@style/Theme.HydraDragon" >
         <activity
             android:name="com.hydradragon.antivirus.ui.BlockActivity"

@@ -47,8 +47,10 @@
     <string name="boot_auto_start_toggle">Cihaz açılışında korumayı otomatik başlat</string>
     <string name="btn_cancel">İptal</string>
     <string name="btn_close">Kapat</string>
+    <string name="btn_delete_file">DOSYAYI SIL</string>
     <string name="btn_destroy">EVET, YOK ET</string>
     <string name="btn_destroy_hint">kaldırmak için YOK ET\'e dokunun</string>
+    <string name="btn_dismiss">KAPAT</string>
     <string name="btn_exit_app">Uygulamadan Çık</string>
     <string name="btn_full_scan">🔍 TAM TARA</string>
     <string name="btn_grant_now">Şimdi İzin Ver</string>
@@ -56,6 +58,7 @@
     <string name="btn_ignore_signature">İMZAYI YOKSAY</string>
     <string name="btn_quick_scan">🚀 HIZLI TARA</string>
     <string name="btn_skip">ATLA →</string>
+    <string name="btn_uninstall">KALDIR</string>
     <string name="btn_uninstall_disable">KALDIR / DEVRE DIŞI</string>
     <string name="cert_signature">✍️ İmza: %1$s</string>
     <string name="cert_untrusted">GÜVENSİZ SERTİFİKA (Test Anahtarı)</string>
@@ -142,6 +145,10 @@
     <string name="lock_wait_min">Lütfen %1$s dakika bekleyin</string>
     <string name="lock_wait_sec">Lütfen %1$s saniye bekleyin</string>
     <string name="lock_wrong">Yanlış Şifre!</string>
+    <string name="malware_found_heading">ZARARLI YAZILIM BULUNDU</string>
+    <string name="malware_found_risk_score">Risk Skoru: %d/100</string>
+    <string name="malware_found_status_file">Bu dosyayı silmek için bir istem gönderildi — bildirimlerinizi kontrol edin.</string>
+    <string name="malware_found_status_installed">Bu uygulamanın arka plan işlemi durduruldu ve sistem kaldırma istemi açıldı.</string>
     <string name="malware_found_title">⚠ ZARARLI YAZILIM BULUNDU!</string>
     <string name="malware_has_admin_msg">%1$s kendini Cihaz Yöneticisi yapmış, bu da doğrudan kaldırılmasını engelliyor — zararlı yazılımların kaldırılmaya direnmek için sık kullandığı bir yöntem. Açılan ekranda önce onu devre dışı bırak (%1$s uygulamasını bulup Devre Dışı Bırak\'a dokun), ardından kaldırma ekranı otomatik açılacak.</string>
     <string name="malware_has_admin_open_settings">CİHAZ YÖNETİCİSİ AYARLARINI AÇ</string>
@@ -307,7 +314,7 @@
 
 Risk Skoru: %2$d/100
 
-Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
+Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="threat_found_dialog_title">⚠ Tehdit Tespit Edildi</string>
     <string name="threat_keylogger">KEYLOGGER TESPİTİ: Klavye Kaydı!</string>
     <string name="threat_log_empty">Henüz kaydedilmiş bir tehdit günlüğü yok.</string>
@@ -318,7 +325,7 @@ Bu zehirli dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="threat_screen_locker">EKRAN KİLİTLEYİCİ TESPİTİ: Kapatılamayan Pencere!</string>
     <string name="threat_spyware">CASUS YAZILIM / RAT TESPİTİ: Arka Plan İzlemesi!</string>
     <string name="threat_suspicious_behavior">Şüpheli API davranışı tespit edildi</string>
-    <string name="threats_found_count">⚠ %1$d zehirli dosya bulundu! Üzerine tıklayıp yokedin.</string>
+    <string name="threats_found_count">⚠ %1$d kötü amaçlı dosya bulundu! Üzerine tıklayıp yokedin.</string>
     <string name="total_traffic">TOPLAM TRAFİK</string>
     <string name="uninstall_failed_msg">%1$s hâlâ çalışıyor — kaldırma işlemi devam ediyor veya başarısız oldu.\n\nKötücül yazılımı kaldırmak için Güvenli Mod\'u kullanın: cihazınızı yeniden başlatın, açılışta ses kısma tuşuna basılı tutun, ardından tam tarama yapın.</string>
     <string name="uninstall_failed_safe_mode">GÜVENLI MOD\'A YENIDEN BAŞLATMAK IÇIN AYARLARI AÇ</string>
