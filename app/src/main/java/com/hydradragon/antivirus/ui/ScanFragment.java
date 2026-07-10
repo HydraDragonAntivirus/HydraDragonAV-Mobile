@@ -566,6 +566,7 @@ public class ScanFragment extends Fragment {
                         lastScanStatus = getString(R.string.scan_stopped);
                         tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFFFFAA00);
+                        tvCurrentApp.setText(lastScanStatus);
                     } else if (result.isClean()) {
                         lastScanStatus = getString(R.string.scan_clean_system);
                         tvScanStatus.setText(lastScanStatus);
