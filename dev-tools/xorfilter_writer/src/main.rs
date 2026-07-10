@@ -1,16 +1,11 @@
-//! Build a Binary-Fuse (xor) filter from a newline-delimited list and serialize
+//! Build a BinaryFuse16 (xor) filter from a newline-delimited list and serialize
 //! it to a tagged `.xf` file the native engine loads and queries.
 //!
-//! Replaces `qfilter_writer`: binary-fuse filters are smaller and faster to
-//! query than quotient filters. Construction needs every key in memory at once
-//! (binary fuse is not incremental), so we fold each line to a `u64` key, dedupe
-//! and build in one shot. The width (BF8/BF16/BF32) is chosen from `fpp` by the
-//! shared crate.
+//! Always uses BinaryFuse16 (~2.16 bytes/key). No fpp argument needed —
+//! BF16 is the project-wide standard for all filters (URL/domain, IP, MD5 hash).
 //!
 //! Usage:
-//!   xorfilter_writer <input.txt> <output.xf> <fpp>
-//!   # whitelist (hashes):   xorfilter_writer all_sha256.txt whitelist.xf  0.0001
-//!   # website (domain/url): xorfilter_writer malicious.txt  malicious.xf  0.000001
+//!   xorfilter_writer <input.txt> <output.xf>
 //!   xorfilter_writer --check <file.xf> <item>      # round-trip membership check
 //!   xorfilter_writer --fp    <file.xf> <count> <hex|dom>   # empirical FP rate
 
@@ -79,15 +74,14 @@ fn main() {
         return;
     }
 
-    if args.len() != 4 {
-        eprintln!("usage: xorfilter_writer <input.txt> <output.xf> <fpp>");
+    if args.len() != 3 {
+        eprintln!("usage: xorfilter_writer <input.txt> <output.xf>");
         eprintln!("       xorfilter_writer --fp    <file.xf> <count> <hex|dom>");
         eprintln!("       xorfilter_writer --check <file.xf> <item>");
         std::process::exit(2);
     }
     let input = &args[1];
     let output = &args[2];
-    let fpp: f64 = args[3].parse().expect("fpp must be a float, e.g. 0.0001");
 
     // Fold every non-empty line to a u64 key. Binary fuse needs all keys at once,
     // so we hold them in a Vec (8 B each); the shared builder dedupes (distinct
@@ -109,9 +103,9 @@ fn main() {
             }
         }
     }
-    eprintln!("items (lines): {}, fpp: {fpp}", keys.len());
+    eprintln!("items (lines): {}, filter: BinaryFuse16", keys.len());
 
-    let bytes = match build_from_keys(keys, fpp) {
+    let bytes = match build_from_keys(keys) {
         Ok(b) => b,
         Err(e) => {
             eprintln!("FATAL: filter construction failed: {e}");

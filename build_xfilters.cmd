@@ -2,8 +2,8 @@
 REM Build every website Binary-Fuse (xor) filter (.xf) the native URL/domain
 REM scanner loads. Windows cmd port of build_xfilters.sh.
 REM
-REM   website (domain/url) filters -> fpp 1e-4   (these run on live DNS + APK URLs)
-REM   whitelist (md5 hashes)       -> fpp 1e-4   (built from all_md5.txt in step 4/4)
+REM ALL filters use BinaryFuse16 (~2.16 bytes/key): best size/accuracy tradeoff
+REM for URL/domain/IP blocklists and the MD5 whitelist (all_md5.txt -> step 4/4).
 REM
 REM Pipeline:
 REM   1. gen_domain_xfilter.py    -> xf_build\<stem>.txt  (phishing, abuse, spam,
@@ -19,7 +19,6 @@ cd /d "%~dp0"
 set WRITER=dev-tools\xorfilter_writer\target\release\xorfilter_writer.exe
 set SCAN=app\src\main\assets\scan
 set STAGE=xf_build
-set WEB_FPP=0.0001
 
 if not exist "%WRITER%" (
     echo building xorfilter_writer...
@@ -36,13 +35,13 @@ python gen_domain_xfilter.py || exit /b 1
 echo === 2/3 whitelist-filtering URL lists ===
 python build_url_xfilters.py || exit /b 1
 
-echo === 3/3 building website .xf (fpp %WEB_FPP%) ===
+echo === 3/3 building website .xf (BinaryFuse16) ===
 REM Stems MUST match the CATS table in hydradragonandroid\src\url_scan.rs.
 for %%S in (malwareurl phishingurl phishing malicious malicious_mail abuse spam mining) do (
     set "SRC=%STAGE%\%%S.txt"
     if exist "!SRC!" (
         for %%F in ("!SRC!") do if %%~zF gtr 0 (
-            "%WRITER%" "!SRC!" "%SCAN%\%%S.xf" %WEB_FPP%
+            "%WRITER%" "!SRC!" "%SCAN%\%%S.xf"
         ) else (
             echo   [SKIP] %%S: !SRC! empty
         )
@@ -59,10 +58,10 @@ call :buildip ipbruteforce IPv4BruteForce
 call :buildip ipddos IPv4DDoS
 call :buildip ipphishing IPv4PhishingActive
 
-echo === 4/4 building whitelist.xf from all_md5.txt (fpp %WEB_FPP%) ===
+echo === 4/4 building whitelist.xf from all_md5.txt (BinaryFuse16) ===
 if exist "all_md5.txt" (
     for %%F in ("all_md5.txt") do if %%~zF gtr 0 (
-        "%WRITER%" all_md5.txt "%SCAN%\whitelist.xf" %WEB_FPP%
+        "%WRITER%" all_md5.txt "%SCAN%\whitelist.xf"
     ) else (
         echo   [SKIP] whitelist: all_md5.txt empty
     )
@@ -81,7 +80,7 @@ if exist "%CSV%" (
     for %%F in ("%CSV%") do if %%~zF gtr 0 (
         set "OUT=%STAGE%\%STEM%.txt"
         python extract_ip_csv.py "%CSV%" "!OUT!" || exit /b 1
-        "%WRITER%" "!OUT!" "%SCAN%\%STEM%.xf" %WEB_FPP%
+        "%WRITER%" "!OUT!" "%SCAN%\%STEM%.xf"
     ) else (
         echo   [SKIP] %STEM%: %CSV% empty
     )

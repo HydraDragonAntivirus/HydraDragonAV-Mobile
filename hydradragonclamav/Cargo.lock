@@ -988,7 +988,6 @@ dependencies = [
 name = "hydradragonclamav"
 version = "0.1.0"
 dependencies = [
- "daachorse",
  "image",
  "jdb_xorf",
  "memchr",

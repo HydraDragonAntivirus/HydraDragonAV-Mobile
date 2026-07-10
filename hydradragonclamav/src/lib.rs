@@ -10,7 +10,6 @@ pub mod fuzzy;
 pub mod logical;
 pub mod pattern;
 pub mod phishing;
-pub mod prefilter;
 pub mod scanner;
 pub mod yara_scan;
 

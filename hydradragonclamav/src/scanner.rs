@@ -1,4 +1,4 @@
-use crate::database::{Database, OffsetAnchor, OffsetSpec, SourceLocation};
+use crate::database::{Database, OffsetAnchor, SourceLocation};
 use crate::logical::Subsignature;
 use std::fs;
 use std::io;
@@ -177,9 +177,15 @@ struct SubsigDetail {
 }
 
 impl Engine {
-    /// Prefilter heap breakdown, for `--mem-stats` profiling.
+    /// AtomFilterDb heap breakdown, for `--mem-stats` profiling.
     pub fn prefilter_mem_report(&self) -> String {
-        self.prefilter.mem_report()
+        let db = &self.atomfilter_db;
+        format!(
+            "slots={} ext_slots={} log_sigs={}",
+            db.slots.len(),
+            db.ext_slot.len(),
+            db.log_subsig_slots.len(),
+        )
     }
 
     /// Load from a filesystem directory (original path-based loading).
@@ -249,13 +255,13 @@ impl Engine {
         let bc_ms = t_bc.elapsed().as_millis();
         android_log(&format!("from_database_dir :: bytecode={bc_ms}ms loaded={}", report.bytecodes_loaded));
         let t_pf = Instant::now();
-        let prefilter = crate::prefilter::AtomPrefilter::build(database);
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(database);
         let pf_ms = t_pf.elapsed().as_millis();
-        android_log(&format!("from_database_dir :: prefilter_build={pf_ms}ms"));
+        android_log(&format!("from_database_dir :: atomfilter_build={pf_ms}ms slots={}", atomfilter_db.slots.len()));
         let total_ms = t0.elapsed().as_millis();
         android_log(&format!("from_database_dir :: TOTAL={total_ms}ms"));
         let database = std::mem::take(database);
-        (Self { database, prefilter, yara: Vec::new() }, std::mem::take(report))
+        (Self { database, atomfilter_db, yara: Vec::new() }, std::mem::take(report))
     }
 
     /// Replace all YARA rulesets with a single one compiled from source.
@@ -415,6 +421,117 @@ impl Engine {
         {
             self.scan_phishing(data, object_path, &mut state.matches);
         }
+
+        // ZIP archive: extract each member and recurse into it, also evaluating
+        // CDB container-metadata signatures against its size and position.
+        if options.scan_archives && is_zip(data) {
+            self.scan_zip(data, object_path, options, module_meta, state, timing);
+        }
+    }
+
+    /// Parse a stored-format ZIP and scan each member as a child object.
+    fn scan_zip(
+        &self,
+        data: &[u8],
+        parent_path: &str,
+        options: ScanOptions,
+        module_meta: &[(&str, &[u8])],
+        state: &mut ScanState,
+        timing: &mut Option<&mut TimingBreakdown>,
+    ) {
+        use crate::database::ContainerType;
+        let archive_size = data.len() as u64;
+        let mut pos = 0usize;
+        let mut member_index = 0usize;
+
+        while pos + 30 <= data.len() {
+            // Local file header signature
+            if &data[pos..pos + 4] != b"PK\x03\x04" {
+                break;
+            }
+            let compression = u16::from_le_bytes([data[pos + 8], data[pos + 9]]);
+            let compressed_size = u32::from_le_bytes([
+                data[pos + 18], data[pos + 19], data[pos + 20], data[pos + 21],
+            ]) as usize;
+            let uncompressed_size = u32::from_le_bytes([
+                data[pos + 22], data[pos + 23], data[pos + 24], data[pos + 25],
+            ]) as usize;
+            let fname_len = u16::from_le_bytes([data[pos + 26], data[pos + 27]]) as usize;
+            let extra_len = u16::from_le_bytes([data[pos + 28], data[pos + 29]]) as usize;
+
+            let data_start = pos + 30 + fname_len + extra_len;
+            if data_start > data.len() {
+                break;
+            }
+            let data_end = data_start + compressed_size;
+            if data_end > data.len() {
+                break;
+            }
+
+            // Only extract stored (uncompressed) members for inline content scanning.
+            if compression == 0 {
+                let member_data = &data[data_start..data_end];
+                let child_path = format!("{}#archive[{}]", parent_path, member_index);
+
+                // Evaluate CDB container-metadata signatures against this member.
+                for sig in &self.database.container {
+                    // Skip sigs constrained on filename or encrypted flag
+                    if sig.has_filename || sig.encrypted.is_some() {
+                        continue;
+                    }
+                    // Container type must match
+                    let type_ok = match &sig.container_type {
+                        ContainerType::Any => true,
+                        ContainerType::Format("zip") => true,
+                        ContainerType::Format(_) => false,
+                        ContainerType::Unsupported => false,
+                    };
+                    if !type_ok {
+                        continue;
+                    }
+                    if !sig.container_size.matches(archive_size) {
+                        continue;
+                    }
+                    // compressed size_in_container — we know it for stored entries
+                    if !sig.size_in_container.matches(compressed_size as u64) {
+                        continue;
+                    }
+                    if !sig.size_real.matches(uncompressed_size as u64) {
+                        continue;
+                    }
+                    if !sig.file_pos.matches((member_index + 1) as u64) {
+                        continue;
+                    }
+                    state.matches.push(ScanMatch {
+                        name: sig.name.to_string(),
+                        kind: SignatureKind::Container,
+                        source: sig.source.clone(),
+                        object_path: child_path.clone(),
+                        view: ScanView::Raw,
+                    });
+                }
+
+                // Recursively scan member content
+                self.scan_object(
+                    member_data,
+                    &child_path,
+                    Some("CL_TYPE_ZIP"),
+                    0,
+                    options,
+                    module_meta,
+                    state,
+                    timing,
+                );
+            }
+
+            pos = data_end;
+            member_index += 1;
+
+            // Bail if we hit the central directory signature
+            if pos + 4 <= data.len() && &data[pos..pos + 4] == b"PK\x01\x02" {
+                break;
+            }
+        }
     }
 
     /// Run the phishing heuristic over an HTML/email object's link pairs,
@@ -469,21 +586,19 @@ impl Engine {
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
     ) {
-        // One Aho-Corasick pass picks the candidate signatures for this buffer;
-        // both phases then evaluate only those instead of all ~500k. Always
-        // timed and logged to logcat (was previously gated behind HDA_PROF).
+        // One rolling-hash sweep builds per-slot hit counts for this buffer;
+        // both phases then promote slots that reached their threshold.
         use std::time::Instant;
         let t0 = Instant::now();
-        let (ext_cands, log_cands) = self.prefilter.candidates(ctx.data);
+        let scanner = crate::atomscan::AtomFilterScanner::new(&self.atomfilter_db);
+        let slot_counts = scanner.scan(ctx.data);
         let t1 = Instant::now();
-        let (ne, nl) = (ext_cands.len(), log_cands.len());
-        let (te, tl) = (ext_cands.threaded_count(), log_cands.threaded_count());
-        self.scan_extended(ctx, matches, &ext_cands);
+        self.scan_extended(ctx, matches, &slot_counts);
         let t2 = Instant::now();
-        self.scan_logical(ctx, matches, &log_cands);
+        self.scan_logical(ctx, matches, &slot_counts);
         let t3 = Instant::now();
         android_log(&format!(
-            "scan_context :: {}KB view={:?} ext_cands={ne}(threaded {te}) log_cands={nl}(threaded {tl}) prefilter={}ms ext_scan={}ms log_scan={}ms",
+            "scan_context :: {}KB view={:?} atomscan={}ms ext_scan={}ms log_scan={}ms",
             ctx.data.len() / 1024,
             ctx.view,
             (t1 - t0).as_millis(),
@@ -497,34 +612,21 @@ impl Engine {
         &self,
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
-        cands: &crate::prefilter::Candidates,
+        slot_counts: &crate::atomscan::SlotCounts,
     ) {
-        // Static dispatch (two concrete loops) instead of a `Box<dyn Iterator>`:
-        // the candidate list carries per-signature atom offsets to thread into
-        // verification. An empty offset slice (or the `All` arm) means "no
-        // threading — full scan".
-        match cands {
-            crate::prefilter::Candidates::All => {
-                for si in 0..self.database.extended.len() {
-                    self.scan_one_extended(si, None, ctx, matches);
-                }
-            }
-            crate::prefilter::Candidates::List(set) => {
-                for (sig, offsets) in set.iter() {
-                    let hints = (!offsets.is_empty()).then_some(offsets);
-                    self.scan_one_extended(sig as usize, hints, ctx, matches);
-                }
+        // Iterate all extended signatures; each has a slot assignment that
+        // already reflects whether its atoms appeared in this buffer.
+        for (si, ext_slot) in self.atomfilter_db.ext_slot.iter().enumerate() {
+            if crate::atomscan::ext_matched(*ext_slot, &self.atomfilter_db.slots, slot_counts) {
+                self.scan_one_extended(si, ctx, matches);
             }
         }
     }
 
-    /// Evaluate a single extended signature. `hints`, when `Some`, are the buffer
-    /// offsets where this signature's atom occurred — verification is restricted
-    /// to those positions (`find_all_at`); `None` means a full window scan.
+    /// Evaluate a single extended signature whose atom slot reached threshold.
     fn scan_one_extended(
         &self,
         si: usize,
-        hints: Option<&[u32]>,
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
     ) {
@@ -546,20 +648,15 @@ impl Engine {
         let t_ext = std::time::Instant::now();
         let mut count = 0usize;
         for pattern in &signature.patterns {
-            let hits = match hints {
-                Some(h) => pattern.find_all_at(ctx.data, &ranges, usize::MAX, h),
-                None => pattern.find_all(ctx.data, &ranges, usize::MAX),
-            };
-            count += hits.len();
+            count += pattern.find_all(ctx.data, &ranges, usize::MAX).len();
         }
         let ms = t_ext.elapsed().as_millis();
         if ms >= 20 {
             android_log(&format!(
-                "[SLOW-EXT] {ms}ms {} ({}:{}) hints={}",
+                "[SLOW-EXT] {ms}ms {} ({}:{})",
                 self.database.ext_name(signature),
                 signature.source.path.display(),
                 signature.source.line,
-                hints.map_or(0, |h| h.len()),
             ));
         }
         if count > 0 {
@@ -577,64 +674,42 @@ impl Engine {
         &self,
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
-        cands: &crate::prefilter::Candidates,
+        slot_counts: &crate::atomscan::SlotCounts,
     ) {
-        // Static dispatch (mirrors scan_extended): thread the gating subsig's
-        // atom offsets into its verification when available.
         let mut bufs = LogicalScanBufs {
             counts: Vec::new(),
             last_offsets: Vec::new(),
             evaluated: Vec::new(),
             detail: Vec::new(),
         };
-        match cands {
-            crate::prefilter::Candidates::All => {
-                for si in 0..self.database.logical.len() {
-                    self.scan_one_logical(si, None, None, ctx, matches, &mut bufs);
-                }
+        for si in 0..self.database.logical.len() {
+            let t = std::time::Instant::now();
+            self.scan_one_logical(si, slot_counts, ctx, matches, &mut bufs);
+            let ms = t.elapsed().as_millis();
+            if ms >= 50 {
+                android_log(&format!("[SLOW-LOG] {ms}ms {}", self.database.logical[si].name));
             }
-            crate::prefilter::Candidates::List(set) => {
-                for (sig, offsets) in set.iter() {
-                    let hints = (!offsets.is_empty()).then_some(offsets);
-                    let t = std::time::Instant::now();
-                    self.scan_one_logical(sig as usize, hints, Some(set), ctx, matches, &mut bufs);
-                    let ms = t.elapsed().as_millis();
-                    if ms >= 50 {
-                        android_log(&format!("[SLOW-LOG] {ms}ms {}", self.database.logical[sig as usize].name));
-                    }
-                    // Only worth the string-building cost once a signature is
-                    // already known to be slow — this is the log that answers
-                    // "which subsig, and why" instead of just "this sig was slow".
-                    if ms >= 20 && !bufs.detail.is_empty() {
-                        let mut line = format!(
-                            "[SIG-DETAIL] {ms}ms {} subsigs=",
-                            self.database.logical[sig as usize].name
-                        );
-                        for d in &bufs.detail {
-                            line.push_str(&format!(
-                                "[{}:{}:{}us,cnt={},ranges={}]",
-                                d.subsig, d.kind, d.elapsed_us, d.count, d.ranges
-                            ));
-                        }
-                        android_log(&line);
-                    }
+            if ms >= 20 && !bufs.detail.is_empty() {
+                let mut line = format!(
+                    "[SIG-DETAIL] {ms}ms {} subsigs=",
+                    self.database.logical[si].name
+                );
+                for d in &bufs.detail {
+                    line.push_str(&format!(
+                        "[{}:{}:{}us,cnt={},ranges={}]",
+                        d.subsig, d.kind, d.elapsed_us, d.count, d.ranges
+                    ));
                 }
+                android_log(&line);
             }
         }
     }
 
-    /// Evaluate a single logical signature. `hints`, when `Some`, are the buffer
-    /// offsets of the gating subsignature's atom — threaded into that subsig's
-    /// verification when the gate is `threadable` (i.e. the prefilter indexed
-    /// exactly that subsig, so the offsets correspond to it). `cand_set`, when
-    /// `Some`, is the full candidate set `hints` was drawn from — used to look up
-    /// a body subsig's OWN atom occurrences (`subsig_hints`) for OR-indexed
-    /// signatures, narrower than the whole-signature union in `hints`.
+    /// Evaluate a single logical signature using the pre-computed slot counts.
     fn scan_one_logical(
         &self,
         si: usize,
-        hints: Option<&[u32]>,
-        cand_set: Option<&crate::prefilter::CandidateSet>,
+        slot_counts: &crate::atomscan::SlotCounts,
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
         bufs: &mut LogicalScanBufs,
@@ -690,85 +765,47 @@ impl Engine {
         }
         let subsigs = &signature.subsignatures;
         let n = subsigs.len();
+
+        // Populate initial counts from slot assignments: Body subsigs already
+        // have their hit count from the atomscan sweep; External subsigs (Pcre,
+        // ByteCompare, Fuzzy) start at 0 and are filled in below.
+        let sub_slots = if si < self.atomfilter_db.log_subsig_slots.len() {
+            Some(&self.atomfilter_db.log_subsig_slots[si])
+        } else {
+            None
+        };
+        let initial: Vec<usize> = if let Some(slots) = sub_slots {
+            crate::atomscan::logical_initial_counts(slots, &self.atomfilter_db.slots, slot_counts)
+        } else {
+            vec![0; n]
+        };
+
         bufs.counts.clear();
-        bufs.counts.resize(n, 0);
+        bufs.counts.extend_from_slice(&initial);
         bufs.last_offsets.clear();
         bufs.last_offsets.resize(n, None);
+        // Populate last_offsets from slot assignments for ByteCompare anchoring.
+        if let Some(slots) = sub_slots {
+            for (i, slot) in slots.iter().enumerate() {
+                if let crate::atomfilter::SubsigSlot::Atom(id) = *slot {
+                    bufs.last_offsets[i] = slot_counts.last_offset(id);
+                }
+            }
+        }
         bufs.evaluated.clear();
         bufs.evaluated.resize(n, false);
+        // Mark Body subsigs as evaluated (their slot counts are already set).
+        for (i, subsig) in subsigs.iter().enumerate() {
+            if matches!(subsig, Subsignature::Body { .. }) {
+                bufs.evaluated[i] = true;
+            }
+        }
         bufs.detail.clear();
         let counts = &mut bufs.counts;
         let last_offsets = &mut bufs.last_offsets;
         let evaluated = &mut bufs.evaluated;
 
         let t_debug = std::time::Instant::now();
-
-        // Early cutoff: evaluate the gating subsig first; if the gate is absent
-        // the expression can't match, so skip every other subsig of this
-        // signature (the big win on logical-heavy databases / large files, where
-        // most candidates are prefilter false positives). The gate comes from the
-        // prefilter, which guarantees it is exactly the subsig whose atoms were
-        // indexed — so when `threadable` the candidate's offsets verify it with
-        // no whole-buffer rescan.
-        // OR-indexed signatures (no single required subsig) carry the UNION of all
-        // their subsignatures' atom offsets as `hints`. Because a subsig match must
-        // contain one of its atoms — whose every occurrence is in that union (it is
-        // empty, never partial, on overflow) — each subsig need only be scanned in
-        // small windows around those offsets, not over the whole buffer. This is
-        // the logical-scan analogue of the threaded extended path; without it these
-        // signatures (e.g. 30+ `TwinWave.EvilDoc.*` doc sigs with ~31 keyword
-        // subsigs each) rescan the entire buffer once per subsignature.
-        let all_indexed =
-            self.prefilter.logical_all_indexed(si) && hints.is_some_and(|h| !h.is_empty());
-
-        let gate = self.prefilter.logical_gate(si);
-        let mut gating_done: Option<usize> = None;
-        // When every subsig is restricted to the union windows below, the separate
-        // non-threadable gate cutoff (a full buffer rescan) is redundant.
-        if let Some(g) = gate.filter(|_| !all_indexed) {
-            let gi = g.subsig as usize;
-            if let Some(Subsignature::Body { offset, patterns }) = subsigs.get(gi) {
-                let default_offset = OffsetSpec::any();
-                let offset = offset.as_deref().unwrap_or(&default_offset);
-                let ranges = offset.scan_ranges(ctx.data.len());
-                if !ranges.is_empty() {
-                    let gate_hints = if g.threadable { hints } else { None };
-                    let t_gate = std::time::Instant::now();
-                    let (count, last_off) = body_matches(
-                        patterns,
-                        ctx.data,
-                        &ranges,
-                        usize::MAX,
-                        gate_hints,
-                    );
-                    let ms = t_gate.elapsed().as_millis();
-                    if ms >= 20 {
-                        android_log(&format!(
-                            "[SLOW-GATE] {ms}ms {} ({}):{} hints={} threadable={}",
-                            signature.name,
-                            signature.source.path.display(),
-                            signature.source.line,
-                            gate_hints.map_or(0, |h| h.len()),
-                            g.threadable,
-                        ));
-                    }
-                    bufs.detail.push(SubsigDetail {
-                        subsig: gi,
-                        kind: "gate",
-                        elapsed_us: t_gate.elapsed().as_micros(),
-                        count,
-                        ranges: ranges.len(),
-                    });
-                    if count == 0 {
-                        return; // gate absent → signature cannot match
-                    }
-                    counts[gi] = count;
-                    last_offsets[gi] = last_off;
-                    evaluated[gi] = true;
-                    gating_done = Some(gi);
-                }
-            }
-        }
 
         // Whether the expression can be trusted to short-circuit on an
         // already-decided outcome (see `is_definitely_matched`/`can_still_match`):
@@ -778,97 +815,18 @@ impl Engine {
         // can inspect for any subsig regardless of which branch satisfied the boolean
         // expression — breaking early would feed it stale zeros for un-evaluated
         // subsigs that actually matched.
-        let monotone =
-            !signature.expression.has_nonmonotone_compare() && signature.bytecode.is_none();
+        let debug_gate_us = 0u128;
 
-        let t_after_gate = std::time::Instant::now();
-        let debug_gate_us = t_after_gate.duration_since(t_debug).as_micros();
-
-        // Phase 1: body subsignatures (the gate, if any, is already done).
-        for (i, subsig) in subsigs.iter().enumerate() {
-            if Some(i) == gating_done {
-                continue; // already evaluated above as the gate
-            }
-            if let Subsignature::Body {
-                offset, patterns, ..
-            } = subsig
-            {
-                let any = OffsetSpec::any();
-                let offset = offset.as_deref().unwrap_or(&any);
-                if matches!(
-                    offset.anchor,
-                    OffsetAnchor::Unsupported(_) | OffsetAnchor::MacroGroup(_)
-                ) {
-                    continue;
-                }
-                let base_ranges = offset.scan_ranges(ctx.data.len());
-                if base_ranges.is_empty() {
-                    continue;
-                }
-                // For OR-indexed sigs, restrict this subsig's scan to windows around
-                // its OWN atom occurrences when the prefilter tagged them separately
-                // (`subsig_hints`) — far narrower than the whole signature's union
-                // when a sibling subsig's atom is much more common than this one's.
-                // Falls back to the union `hints` when no per-subsig split exists
-                // (e.g. more than `MAX_TAGGED_SUBSIG` subsigs, or this subsig's
-                // offsets overflowed the per-signature atom cap).
-                // A SIMD scan of those small windows beats threading each subsig
-                // against the FULL union hint set (most of which belong to other
-                // subsigs and just fail to verify). `None` max length (open gap)
-                // can't be bounded → keep the full scan.
-                let t_sub = std::time::Instant::now();
-                let restricted;
-                let mut was_restricted = false;
-                // Prefer this subsig's OWN tagged atom occurrences (populated for
-                // both OR-indexed and gated signatures — see `AtomPrefilter::build`)
-                // over the whole-signature union `hints`, and over `all_indexed`,
-                // which only gates the union fallback: a gated signature has no
-                // union hints for its non-gate subsigs, but may still have per-subsig
-                // hints for some of them individually.
-                let use_hints = cand_set
-                    .and_then(|s| s.subsig_hints(si as u32, i as u32))
-                    .or_else(|| if all_indexed { hints } else { None });
-                let ranges: &[(usize, usize)] = match (use_hints, subsig_max_match_len(patterns)) {
-                    (Some(h), Some(ml)) if !h.is_empty() => {
-                        restricted = restrict_ranges(&base_ranges, h, ml, ctx.data.len());
-                        was_restricted = true;
-                        &restricted
-                    }
-                    _ => &base_ranges,
-                };
-                let (count, last_off) = body_matches(
-                    patterns,
-                    ctx.data,
-                    ranges,
-                    usize::MAX,
-                    None,
-                );
-                bufs.detail.push(SubsigDetail {
-                    subsig: i,
-                    kind: if was_restricted { "restricted" } else { "full" },
-                    elapsed_us: t_sub.elapsed().as_micros(),
-                    count,
-                    ranges: ranges.len(),
-                });
-                counts[i] = count;
-                last_offsets[i] = last_off;
-                evaluated[i] = true;
-                // Short-circuit: if this absent subsig already makes the signature
-                // unsatisfiable (a missing AND term), skip every remaining subsig.
-                if !signature.expression.can_still_match(counts, evaluated) {
-                    return;
-                }
-                // Success short-circuit: an OR-branch is already fully satisfied, so
-                // the remaining subsigs (e.g. an expensive wildcard-heavy body in a
-                // sibling branch) can no longer change the outcome — stop scanning.
-                if monotone && signature.expression.is_definitely_matched(counts, evaluated) {
-                    break;
-                }
-            }
+        // Body subsigs are already populated from the atom-scan; nothing more
+        // to do for Phase 1 — the counts[] array already reflects them.
+        // Short-circuit if the expression is still unsatisfiable.
+        if !signature.expression.can_still_match(counts, evaluated) {
+            return;
         }
 
-        let t_after_p1 = std::time::Instant::now();
-        let debug_p1_us = t_after_p1.duration_since(t_after_gate).as_micros();
+        let debug_p1_us = 0u128;
+
+        let t_start_fuzzy = std::time::Instant::now();
 
         // Image fuzzy-hash subsignatures: match when the file's perceptual image
         // hash equals the subsig hash exactly (ClamAV's `fuzzy_hash_check`, which
@@ -882,7 +840,7 @@ impl Engine {
         }
 
         let t_after_fuzzy = std::time::Instant::now();
-        let debug_fuzzy_us = t_after_fuzzy.duration_since(t_after_p1).as_micros();
+        let debug_fuzzy_us = t_after_fuzzy.duration_since(t_start_fuzzy).as_micros();
 
         // Phase 2: PCRE and byte-compare subsignatures, whose triggers
         // reference the phase-1 body results.
@@ -1009,90 +967,6 @@ impl Engine {
     }
 }
 
-/// The largest match length across a subsignature's pattern variants, or `None`
-/// if any variant is unbounded (open gap) — in which case its scan can't be
-/// window-restricted.
-fn subsig_max_match_len(patterns: &[crate::pattern::Pattern]) -> Option<usize> {
-    let mut m = 0usize;
-    for p in patterns {
-        m = m.max(p.max_match_len()?);
-    }
-    Some(m)
-}
-
-/// Restrict `base` ranges to windows `[h - max_len, h + max_len + 1)` around each
-/// hint `h`, merged and intersected with `base`. A match containing an atom at `h`
-/// starts in `[h - max_len, h]`, so scanning these windows (rather than the whole
-/// buffer) finds every match while skipping the regions no atom touched. The
-/// generous end keeps `h` itself a valid start position for `find_all`'s
-/// `max_pos = end - min_len` bound.
-fn restrict_ranges(
-    base: &[(usize, usize)],
-    hints: &[u32],
-    max_len: usize,
-    data_len: usize,
-) -> Vec<(usize, usize)> {
-    if hints.is_empty() {
-        return Vec::new();
-    }
-    let mut wins: Vec<(usize, usize)> = hints
-        .iter()
-        .map(|&h| {
-            let h = h as usize;
-            (h.saturating_sub(max_len), (h + max_len + 1).min(data_len))
-        })
-        .collect();
-    wins.sort_unstable();
-    let mut merged: Vec<(usize, usize)> = Vec::with_capacity(wins.len());
-    for (s, e) in wins {
-        match merged.last_mut() {
-            Some(last) if s <= last.1 => {
-                if e > last.1 {
-                    last.1 = e;
-                }
-            }
-            _ => merged.push((s, e)),
-        }
-    }
-    let mut out = Vec::new();
-    for &(bs, be) in base {
-        for &(ms, me) in &merged {
-            let s = bs.max(ms);
-            let e = be.min(me);
-            if s < e {
-                out.push((s, e));
-            }
-        }
-    }
-    out
-}
-
-fn body_matches(
-    patterns: &[crate::pattern::Pattern],
-    data: &[u8],
-    ranges: &[(usize, usize)],
-    limit: usize,
-    hints: Option<&[u32]>,
-) -> (usize, Option<usize>) {
-    let mut count = 0usize;
-    let mut last_end: Option<usize> = None;
-    for pattern in patterns {
-        let remaining = limit.saturating_sub(count);
-        if remaining == 0 {
-            break;
-        }
-        let hits = match hints {
-            Some(h) => pattern.find_all_at(data, ranges, remaining, h),
-            None => pattern.find_all(data, ranges, remaining),
-        };
-        count += hits.len();
-        if let Some(m) = hits.last() {
-            last_end = Some(m.end.max(last_end.unwrap_or(0)));
-        }
-    }
-    (count, last_end)
-}
-
 /// ClamAV target codes worth running the ClamAV engine on at all: HTML(3),
 /// Graphics(5), ELF(6), ASCII text(7), PDF(10), DEX(16), ZIP/APK(17). Anything
 /// else — a confidently-typed desktop-only format or a type we can't classify
@@ -1101,7 +975,7 @@ fn body_matches(
 const CLAMAV_ALLOWED_TARGETS: [u32; 7] = [3, 5, 6, 7, 10, 16, 17];
 
 fn clamav_target_allowed(target: Option<u32>) -> bool {
-    matches!(target, Some(t) if CLAMAV_ALLOWED_TARGETS.contains(&t))
+    target.map_or(true, |t| CLAMAV_ALLOWED_TARGETS.contains(&t))
 }
 
 fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>) -> bool {
@@ -1229,6 +1103,12 @@ fn is_unsupported_archive(data: &[u8]) -> bool {
     || data.len() >= 7 && data[..7] == [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00] // RAR v1.5
 }
 
+/// Returns true when `data` starts with a ZIP local-file-header signature.
+fn is_zip(data: &[u8]) -> bool {
+    data.len() >= 4 && &data[..4] == b"PK\x03\x04"
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1257,7 +1137,8 @@ mod tests {
             name_arena,
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
         let found = engine.scan_bytes(b"xxABCyy", ScanOptions::default());
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].name, "Test.Signature");
@@ -1287,8 +1168,8 @@ mod tests {
             name_arena,
             ..Default::default()
         };
-        let prefilter = crate::prefilter::AtomPrefilter::build(&database);
-        let engine = Engine { database, prefilter, yara: Vec::new() };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
 
         // Atom present → detected.
         let hit = engine.scan_bytes(b"xxABCyy", ScanOptions::default());
@@ -1318,7 +1199,8 @@ mod tests {
             name_arena,
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
         let found = engine.scan_bytes(&stored_zip("child.bin", b"MALWARE"), ScanOptions::default());
         assert!(found.iter().any(|hit| {
             hit.name == "Test.Zip.Child"
@@ -1342,7 +1224,8 @@ mod tests {
             logical: vec![sig],
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
         // Body "AA" present and regex "world" present -> match.
         let found = engine.scan_bytes(b"AA hello world", ScanOptions::default());
         assert!(found.iter().any(|m| m.name == "Test.Pcre"));
@@ -1366,7 +1249,8 @@ mod tests {
             logical: vec![sig],
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
         // "SIZE" then 2 LE bytes = 5 (>0) -> match.
         let found = engine.scan_bytes(b"SIZE\x05\x00tail", ScanOptions::default());
         assert!(found.iter().any(|m| m.name == "Test.Bc"));
@@ -1395,7 +1279,8 @@ mod tests {
             container: vec![container],
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
         // Member "MALWARE" is 7 bytes at position 1 inside a zip.
         let found =
             engine.scan_bytes(&stored_zip("child.bin", b"MALWARE"), ScanOptions::default());
@@ -1435,7 +1320,8 @@ mod tests {
             name_arena,
             ..Default::default()
         };
-        let engine = Engine { database, prefilter: crate::prefilter::AtomPrefilter::disabled(), yara: Vec::new() };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
         // "MZAB": .ftm types it MSEXE (target 1); the sig's target 3 -> filtered by target_matches.
         assert!(engine.scan_bytes(b"MZAB", ScanOptions::default()).is_empty());
     }
@@ -1455,30 +1341,121 @@ mod tests {
         v
     }
 
+    fn scan_bytes_naive(db: &Database, data: &[u8]) -> Vec<String> {
+        use crate::database::OffsetSpec;
+        let mut matches = Vec::new();
+        let ctx = ScanContext {
+            data,
+            detected_target: None,
+            view: ScanView::Raw,
+            object_path: "root",
+            container_type: None,
+            image_fuzzy_hash: std::cell::OnceCell::new(),
+        };
+        // Naive extended scan
+        for (_si, sig) in db.extended.iter().enumerate() {
+            let ranges = sig.offset.scan_ranges(data.len());
+            if ranges.is_empty() { continue; }
+            let mut matched = false;
+            for pattern in &sig.patterns {
+                if !pattern.find_all(data, &ranges, 1).is_empty() {
+                    matched = true;
+                    break;
+                }
+            }
+            if matched {
+                matches.push(db.ext_name(sig).to_string());
+            }
+        }
+        // Naive logical scan
+        for sig in &db.logical {
+            let n = sig.subsignatures.len();
+            let mut counts = vec![0; n];
+            let mut last_offsets = vec![None; n];
+            // Evaluate body subsignatures
+            for (i, sub) in sig.subsignatures.iter().enumerate() {
+                if let Subsignature::Body { offset, patterns } = sub {
+                    let any = OffsetSpec::any();
+                    let offset = offset.as_deref().unwrap_or(&any);
+                    let ranges = offset.scan_ranges(data.len());
+                    if !ranges.is_empty() {
+                        let mut count = 0;
+                        let mut last_end = None;
+                        for pattern in patterns {
+                            let hits = pattern.find_all(data, &ranges, usize::MAX);
+                            count += hits.len();
+                            if let Some(m) = hits.last() {
+                                last_end = Some(m.end.max(last_end.unwrap_or(0)));
+                            }
+                        }
+                        counts[i] = count;
+                        last_offsets[i] = last_end;
+                    }
+                }
+            }
+            // Fuzzy subsignatures
+            for (i, sub) in sig.subsignatures.iter().enumerate() {
+                if let Subsignature::Fuzzy(hash) = sub {
+                    if ctx.image_fuzzy_hash() == Some(*hash) {
+                        counts[i] = 1;
+                    }
+                }
+            }
+            // PCRE and ByteCompare
+            for (i, sub) in sig.subsignatures.iter().enumerate() {
+                match sub {
+                    Subsignature::Pcre(pcre) => {
+                        if pcre.trigger.eval(&counts).matched {
+                            if let Some(re) = pcre.regex.get() {
+                                counts[i] = if pcre.global {
+                                    re.find_iter(data).count()
+                                } else {
+                                    usize::from(re.is_match(data))
+                                };
+                            }
+                        }
+                    }
+                    Subsignature::ByteCompare(spec) => {
+                        let trigger_hit = counts.get(spec.trigger_subsig).copied().unwrap_or(0) > 0;
+                        if trigger_hit {
+                            let base = last_offsets.get(spec.trigger_subsig).copied().flatten().unwrap_or(0);
+                            if spec.evaluate(data, base) {
+                                counts[i] = 1;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            if sig.expression.eval(&counts).matched {
+                matches.push(sig.name.to_string());
+            }
+        }
+        let mut v: Vec<String> = matches.into_iter().map(|name| format!("{}@root", name)).collect();
+        v.sort();
+        v.dedup();
+        v
+    }
+
     fn assert_threading_equiv(build_db: impl Fn() -> Database, data: &[u8]) -> Vec<String> {
         let opts = ScanOptions::default();
-        // Ground truth: prefilter disabled → Candidates::All → full scan, no gating.
-        let engine_full = Engine {
-            database: build_db(),
-            prefilter: crate::prefilter::AtomPrefilter::disabled(),
-            yara: Vec::new(),
-        };
-        let full = match_keys(&engine_full.scan_bytes(data, opts));
-        // Threaded: real prefilter → candidate offsets + aligned gating cutoff.
         let db = build_db();
-        let prefilter = crate::prefilter::AtomPrefilter::build(&db);
-        let engine_thr = Engine {
+        // Naive scan (ground truth)
+        let naive = scan_bytes_naive(&db, data);
+        // AtomFilterDb scan
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&db);
+        let engine = Engine {
             database: db,
-            prefilter,
+            atomfilter_db,
             yara: Vec::new(),
         };
-        let threaded = match_keys(&engine_thr.scan_bytes(data, opts));
+        let filter_matches = match_keys(&engine.scan_bytes(data, opts));
         assert_eq!(
-            full, threaded,
-            "offset-threading changed the match set on {:?}",
+            naive, filter_matches,
+            "AtomFilterDb scan differed from naive scan on {:?}",
             String::from_utf8_lossy(data)
         );
-        threaded
+        filter_matches
     }
 
     fn diverse_database() -> Database {
@@ -1613,11 +1590,11 @@ mod tests {
             logical: vec![sig],
             ..Default::default()
         };
-        let prefilter = crate::prefilter::AtomPrefilter::build(&database);
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
         (
             Engine {
                 database,
-                prefilter,
+                atomfilter_db,
                 yara: Vec::new(),
             },
             warnings,

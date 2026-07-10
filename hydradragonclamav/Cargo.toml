@@ -22,11 +22,6 @@ regex = "1"
 
 # SIMD substring search for the per-pattern literal pre-check (pure Rust).
 memchr = "2"
-
-# Compact double-array Aho-Corasick (same matcher yara-x uses) over short 2-3
-# byte signature atoms — ClamAV-style shallow trie, cheap to build.
-daachorse = "3.0.2"
-
 # Binary-Fuse16 atom membership filters for the atom/counter/threshold
 # prefilter (same crate hydradragonxorfilter builds .xf blobs with).
 jdb_xorf = { version = "0.13", features = ["bitcode"] }
