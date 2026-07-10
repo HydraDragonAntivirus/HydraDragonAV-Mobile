@@ -730,6 +730,10 @@ public class ScanEngine {
             Log.i(TAG, "FILE_ENGINE_TIMING " + file.getName()
                 + " NativeScanner=" + nativeMs + "ms slowest=NativeScanner");
             if (v == null) return;
+            if (v.isError()) {
+                Log.w(TAG, "NATIVE-ERROR " + file.getAbsolutePath() + " " + v.error);
+                return;
+            }
             saveGeneratedRule(v);
             // Per-detection whitelist suppression: a hit INSIDE a known-good
             // (whitelisted) APK is a false positive, but a non-APK virus sitting
@@ -1207,7 +1211,7 @@ public class ScanEngine {
                     // runNativeInterruptible) — NativeScanner.scan() itself
                     // never returns null. Skip the native-verdict processing
                     // below entirely rather than NPE on it.
-                    if (v != null) {
+                    if (v != null && !v.isError()) {
                     fileMd5Vt = v.md5;
                     nativePackages.addAll(v.packages);
                     nativeHashes.addAll(v.hashes);
