@@ -61,6 +61,8 @@ pub struct ScanMatch {
     pub view: ScanView,
 }
 
+// Only compiled in debug builds — release uses the macro's empty branch.
+#[cfg(debug_assertions)]
 #[cfg(target_os = "android")]
 #[link(name = "log")]
 unsafe extern "C" {
@@ -70,23 +72,28 @@ unsafe extern "C" {
         text: *const std::os::raw::c_char,
     );
 }
+#[cfg(debug_assertions)]
 #[cfg(target_os = "android")]
 const ANDROID_LOG_INFO: std::os::raw::c_int = 4;
 
-#[cfg(target_os = "android")]
+#[cfg(debug_assertions)]
 fn android_log(msg: &str) {
-    use std::ffi::CString;
-    let (Ok(tag), Ok(text)) = (
-        CString::new("HydraDragon-RustTiming"),
-        CString::new(msg),
-    ) else {
-        return;
-    };
-    unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
+    #[cfg(target_os = "android")]
+    {
+        use std::ffi::CString;
+        let (Ok(tag), Ok(text)) = (
+            CString::new("HydraDragon-RustTiming"),
+            CString::new(msg),
+        ) else {
+            return;
+        };
+        unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = msg;
+    }
 }
-
-#[cfg(not(target_os = "android"))]
-fn android_log(_msg: &str) {}
 
 /// Wraps timing/diagnostic logcat lines so they only exist in debug builds.
 /// In release the format!() call is never evaluated — zero cost.
@@ -98,7 +105,11 @@ macro_rules! rust_timing_log {
 }
 #[cfg(not(debug_assertions))]
 macro_rules! rust_timing_log {
-    ($($arg:tt)*) => {};
+    ($($arg:tt)*) => {
+        // Uncalled closure captures all referenced variables, suppressing
+        // unused-variable warnings without executing format!() at runtime.
+        let _ = || { format!($($arg)*) };
+    };
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

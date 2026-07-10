@@ -81,7 +81,11 @@ macro_rules! rust_timing_log {
 }
 #[cfg(not(debug_assertions))]
 macro_rules! rust_timing_log {
-    ($($arg:tt)*) => {};
+    ($($arg:tt)*) => {
+        // Uncalled closure captures all referenced variables, suppressing
+        // unused-variable warnings without executing format!() at runtime.
+        let _ = || { format!($($arg)*) };
+    };
 }
 
 /// Asset file names expected inside the init directory (static scanner).
