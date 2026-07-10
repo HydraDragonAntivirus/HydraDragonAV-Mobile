@@ -165,6 +165,16 @@ static ASSET_FILES: OnceLock<std::collections::HashMap<String, Vec<u8>>> =
 /// WHY a scan panicked (root cause) instead of just swallowing it.
 static LAST_PANIC: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
 
+/// Serializes whole-file scan pipelines (`run_scan`). `collect_buffers` and
+/// `rescan_buffers_parallel` each spin up their own small worker pool so
+/// extraction and scanning overlap WITHIN one file — that parallelism only
+/// pays off when it isn't competing with an identical pool from a second
+/// file scanned at the same time by another concurrent `nativeScanApk` JNI
+/// call. Holding this for the whole of `run_scan` keeps the parallel work
+/// confined to one file at a time; a second call simply waits its turn
+/// instead of thrashing the same handful of cores alongside the first.
+static SCAN_SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 fn install_panic_hook() {
     use std::sync::Once;
     static ONCE: Once = Once::new();
@@ -1039,6 +1049,168 @@ fn extract_and_scan_urls(engine: &Engine, decoded: &[u8]) -> Vec<String> {
     out
 }
 
+/// Re-scans every extracted buffer with the FULL `module_meta` (androguard +
+/// hydradragon metadata) that wasn't available yet when `collect_buffers`
+/// ran its own concurrent ClamAV pass during extraction — see the doc
+/// comment on `collect_buffers`. Module-gated YARA rules only fire here.
+///
+/// This used to be a single-threaded `for` loop in `run_scan`, one buffer at
+/// a time. On an APK that unpacks into hundreds/thousands of buffers that
+/// was the actual "stuck" symptom: logcat would already show
+/// `collect_buffers :: extracted N buffers` (and the scanner thread's own
+/// "scanned N buffers total" line) — i.e. ClamAV's early pass was long done —
+/// and then the scan would sit there for a long time doing the exact same
+/// per-buffer ClamAV+YARA work over again, serially, on a single core, with
+/// no visible progress in between. Splitting the same work across a small
+/// worker pool (bounded by available_parallelism, capped at 4 so a modest
+/// phone doesn't get oversubscribed) removes that dead-looking stretch.
+///
+/// Each worker claims buffer indices off a shared atomic counter (simple
+/// work-stealing — buffers vary wildly in size, so static chunking would
+/// leave some workers idle while one worker chews a huge nested APK).
+/// Results and timing are accumulated per-worker and merged once at the end
+/// so there's no lock contention on the hot path, only at merge time.
+#[allow(clippy::too_many_arguments)]
+fn rescan_buffers_parallel(
+    clamav: &ClamavEngine,
+    engine: &Engine,
+    buffers: &[Buf],
+    skip_heavy: &[bool],
+    dex_scans: &[Option<dex_scan::DexScan>],
+    emulated: &[emulate::EmulationResult],
+    emulated_strings: &[Option<Vec<u8>>],
+    module_meta: &[(&str, &[u8])],
+    path: &str,
+    opts: ScanOptions,
+    max_dets: usize,
+    scan_timing: &mut hydradragonclamav::scanner::TimingBreakdown,
+) -> Vec<(String, Vec<String>)> {
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering as AtomOrdering};
+    use std::sync::Mutex;
+
+    let next_idx = AtomicUsize::new(0);
+    let dets_full = AtomicBool::new(false);
+    let results: Mutex<Vec<(String, Vec<String>)>> = Mutex::new(Vec::new());
+    let timing: Mutex<hydradragonclamav::scanner::TimingBreakdown> = Mutex::new(Default::default());
+
+    // Small, capped pool — this runs INSIDE the SCAN_SERIAL lock (one file at
+    // a time), so it's safe to actually use the device's cores here without
+    // worrying about a second file's pool competing for them.
+    let workers = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1)
+        .clamp(1, 4);
+
+    std::thread::scope(|s| {
+        for _ in 0..workers {
+            s.spawn(|| {
+                // Panic-isolated per worker: one adversarial buffer tripping a
+                // panic loses only that worker's remaining share of the work,
+                // not every other worker's already-collected detections.
+                let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let mut local_dets: Vec<(String, Vec<String>)> = Vec::new();
+                    let mut local_timing = hydradragonclamav::scanner::TimingBreakdown::default();
+                    loop {
+                        if dets_full.load(AtomOrdering::Relaxed) {
+                            break;
+                        }
+                        let i = next_idx.fetch_add(1, AtomOrdering::Relaxed);
+                        if i >= buffers.len() {
+                            break;
+                        }
+                        if skip_heavy[i] {
+                            continue;
+                        }
+                        let b = &buffers[i];
+                        if skip_by_size(&b.data) {
+                            continue;
+                        }
+                        let name = if i == 0 {
+                            path.to_string()
+                        } else {
+                            format!("{path}#extract[{i}]")
+                        };
+                        let (matches, bt) = clamav
+                            .scan_bytes_named_with_breakdown(&b.data, &name, opts, module_meta);
+                        for m in matches {
+                            local_dets.push((m.name, b.apk_lineage.clone()));
+                        }
+                        local_timing.accumulate(bt);
+
+                        // Also scan the DEX's decoded string pool (method/class
+                        // names contiguous, no MUTF-8/length-prefix noise).
+                        if let Some(ds) = &dex_scans[i] {
+                            let dname = format!("{name}#dex");
+                            let (matches, bt) = clamav.scan_bytes_named_with_breakdown(
+                                ds.text.as_bytes(),
+                                &dname,
+                                opts,
+                                module_meta,
+                            );
+                            for m in matches {
+                                local_dets.push((m.name, b.apk_lineage.clone()));
+                            }
+                            local_timing.accumulate(bt);
+                        }
+
+                        // Also scan whatever new strings emulating this ELF
+                        // buffer's native code revealed at runtime.
+                        if let Some(decoded) = &emulated_strings[i] {
+                            let ename = format!("{name}#emulated");
+                            let (matches, bt) = clamav
+                                .scan_bytes_named_with_breakdown(decoded, &ename, opts, module_meta);
+                            for m in matches {
+                                local_dets.push((m.name, b.apk_lineage.clone()));
+                            }
+                            local_timing.accumulate(bt);
+                            for url in extract_and_scan_urls(engine, decoded) {
+                                local_dets.push((url, b.apk_lineage.clone()));
+                            }
+                        }
+
+                        // Behavioral signal from emulation.
+                        let mut seen_apis = std::collections::HashSet::new();
+                        for call in &emulated[i].api_calls {
+                            if !seen_apis.insert(call.name.clone()) {
+                                continue;
+                            }
+                            local_dets.push((
+                                format!("Behavior.Native: {}", call.name),
+                                b.apk_lineage.clone(),
+                            ));
+                        }
+
+                        if local_dets.len() >= max_dets {
+                            dets_full.store(true, AtomOrdering::Relaxed);
+                            break;
+                        }
+                    }
+                    (local_dets, local_timing)
+                }));
+                if let Ok((local_dets, local_timing)) = outcome {
+                    if let Ok(mut r) = results.lock() {
+                        r.extend(local_dets);
+                    }
+                    if let Ok(mut t) = timing.lock() {
+                        t.accumulate(local_timing);
+                    }
+                }
+                // A panicking worker just contributes nothing further — its
+                // in-flight buffer's detections are lost, everyone else's stand.
+            });
+        }
+    });
+
+    if let Ok(t) = timing.into_inner() {
+        scan_timing.accumulate(t);
+    }
+    let mut dets = results.into_inner().unwrap_or_default();
+    if dets.len() > max_dets {
+        dets.truncate(max_dets);
+    }
+    dets
+}
+
 fn run_scan(
     engine: &Engine,
     bytes: &[u8],
@@ -1047,6 +1219,15 @@ fn run_scan(
     file_md5: Option<&str>,
     zero_trust: bool,
 ) -> String {
+    // Only one file's scan pipeline runs at a time: collect_buffers() and
+    // rescan_buffers_parallel() below both use their own worker threads
+    // internally, and that internal parallelism is what we want — not two
+    // files' worth of threads racing each other on the same cores. If a
+    // previous scan panicked while holding this (unlikely — the heavy work
+    // below is itself panic-guarded), recover the poisoned lock rather than
+    // wedging every future scan behind it forever.
+    let _scan_serial_guard = SCAN_SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+
     // Extract ONCE here in the bridge: `buffers` holds the top-level file plus
     // every buffer reachable by recursively unpacking archives (APK = zip, plus
     // gz/tar/xz/lzma/7z/rar). BOTH engines then scan every buffer, so a malicious
@@ -1242,88 +1423,22 @@ fn run_scan(
     } else {
         match &engine.clamav {
             Some(clamav) => {
-            let max_dets = 64;
-            let opts = ScanOptions::default();
-            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                let mut dets: Vec<(String, Vec<String>)> = Vec::new();
-                for (i, b) in buffers.iter().enumerate() {
-                    if skip_heavy[i] {
-                        continue;
-                    }
-                    if skip_by_size(&b.data) {
-                        continue;
-                    }
-                    let name = if i == 0 {
-                        path.to_string()
-                    } else {
-                        format!("{path}#extract[{i}]")
-                    };
-                    let (matches, bt) = clamav.scan_bytes_named_with_breakdown(&b.data, &name, opts, &module_meta);
-                    for m in matches {
-                        dets.push((m.name, b.apk_lineage.clone()));
-                        if dets.len() >= max_dets {
-                            return dets;
-                        }
-                    }
-                    scan_timing.accumulate(bt);
-                    // Also scan the DEX's decoded string pool (method/class names
-                    // contiguous, no MUTF-8/length-prefix noise).
-                    if let Some(ds) = &dex_scans[i] {
-                        let dname = format!("{name}#dex");
-                        let (matches, bt) = clamav.scan_bytes_named_with_breakdown(ds.text.as_bytes(), &dname, opts, &module_meta);
-                        for m in matches {
-                            dets.push((m.name, b.apk_lineage.clone()));
-                            if dets.len() >= max_dets {
-                                return dets;
-                            }
-                        }
-                        scan_timing.accumulate(bt);
-                    }
-                    // Also scan whatever new strings emulating this ELF buffer's
-                    // native code revealed at runtime (see emulate.rs) — any
-                    // existing signature/YARA rule that matches a decoded C2
-                    // URL/string here is exactly as valid a hit as one found
-                    // statically, so it flows through the SAME rule database.
-                    if let Some(decoded) = &emulated_strings[i] {
-                        let ename = format!("{name}#emulated");
-                        let (matches, bt) = clamav.scan_bytes_named_with_breakdown(decoded, &ename, opts, &module_meta);
-                        for m in matches {
-                            dets.push((m.name, b.apk_lineage.clone()));
-                            if dets.len() >= max_dets {
-                                return dets;
-                            }
-                        }
-                        scan_timing.accumulate(bt);
-                        for url in extract_and_scan_urls(engine, decoded) {
-                            dets.push((url, b.apk_lineage.clone()));
-                            if dets.len() >= max_dets {
-                                return dets;
-                            }
-                        }
-                    }
-                    // Behavioral signal from emulation: an attempted call into a
-                    // tracked suspicious API (network/exec/anti-debug/etc.) is a
-                    // pseudo-detection in its own right, same pattern as the URL
-                    // extraction above.
-                    let mut seen_apis = std::collections::HashSet::new();
-                    for call in &emulated[i].api_calls {
-                        if !seen_apis.insert(call.name.clone()) {
-                            continue;
-                        }
-                        dets.push((format!("Behavior.Native: {}", call.name), b.apk_lineage.clone()));
-                        if dets.len() >= max_dets {
-                            return dets;
-                        }
-                    }
-                }
-                dets
-            })) {
-                Ok(v) => v,
-                Err(_) => {
-                    err = Some(format!("clamav: {}", last_panic()));
-                    Vec::new()
-                }
-            }
+                let max_dets = 64;
+                let opts = ScanOptions::default();
+                rescan_buffers_parallel(
+                    clamav,
+                    engine,
+                    &buffers,
+                    &skip_heavy,
+                    &dex_scans,
+                    &emulated,
+                    &emulated_strings,
+                    &module_meta,
+                    path,
+                    opts,
+                    max_dets,
+                    &mut scan_timing,
+                )
             }
             None => Vec::new(),
         }
@@ -2322,11 +2437,17 @@ struct Buf {
 /// the top-level (depth 0) buffer so the largest buffer isn't hashed twice.
 /// Zip-bomb guard: stops extraction when total decompressed bytes exceed ~2 GB
 /// or when the number of extracted buffers exceeds 4096.
-/// When `engine` is `Some`, a background thread scans each buffer with ClamAV
-/// concurrently with extraction — so the top-level APK (e.g. 162 MB, Medusa
-/// match) is scanned while its children are being decompressed, instead of
-/// waiting for all extraction to complete first. Scan results accumulate in
-/// `early_dets` as they arrive, regardless of whether a match was found.
+///
+/// Extraction and scanning are no longer split across a dedicated "main
+/// thread extracts, one background thread scans" pipeline — every worker in
+/// a small pool does BOTH for whatever buffer it pulls next: extract it,
+/// scan it with ClamAV, push any children back onto the shared work stack,
+/// repeat. That means scanning genuinely overlaps extraction on however many
+/// cores are available (not just two threads handing off through a channel),
+/// and a worker that pulls the top-level 162 MB APK scans it while OTHER
+/// workers are already extracting/scanning its children concurrently.
+/// Scan results accumulate in `early_dets` as they arrive, regardless of
+/// whether a match was found.
 /// `module_meta` is passed through so YARA rules that depend on androguard/
 /// hydradragon module metadata detect correctly in the early pass (previously
 /// `&[]` was passed, causing YARA rules with module conditions to never match
@@ -2340,118 +2461,186 @@ fn collect_buffers(
     max_dets: usize,
     module_meta: &[(&str, &[u8])],
 ) -> Vec<Buf> {
-    use std::sync::mpsc;
-    let mut out: Vec<Buf> = Vec::new();
-    let mut total_bytes: u64 = 0;
-    let mut stack: Vec<(Vec<u8>, usize, Vec<String>)> = vec![(data.to_vec(), 0, Vec::new())];
+    use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering as AtomOrdering};
+    use std::sync::Mutex;
 
-    let (buf_tx, buf_rx) = mpsc::channel::<(Vec<u8>, Vec<String>, usize)>();
-    let (det_tx, det_rx) = mpsc::channel::<(String, Vec<String>)>();
+    /// One unit of pending work: a buffer that still needs extracting+scanning.
+    struct WorkItem {
+        buf: Vec<u8>,
+        depth: usize,
+        lineage: Vec<String>,
+    }
 
-    // Background scanner thread — runs concurrently with extraction below.
-    // Receives cloned buffer data + lineage + index, scans with ClamAV, and
-    // pushes any detection through `det_tx` back to the main thread.
-    let det_tx_for_scan = det_tx.clone();
+    let stack: Mutex<Vec<WorkItem>> = Mutex::new(vec![WorkItem {
+        buf: data.to_vec(),
+        depth: 0,
+        lineage: Vec::new(),
+    }]);
+    // Termination detection for the shared work stack: counts items that are
+    // either sitting in `stack` or actively being processed by some worker.
+    // Starts at 1 for the seed item. A worker increments it BEFORE pushing a
+    // popped item's children (so nobody can observe 0 while children are
+    // about to appear) and decrements it AFTER it's fully done with an item
+    // (extracted + scanned + pushed to `out`). Reaching 0 means the stack is
+    // empty AND no worker can produce more work — safe to stop.
+    let outstanding = AtomicUsize::new(1);
+    let out: Mutex<Vec<Buf>> = Mutex::new(Vec::new());
+    let dets: Mutex<Vec<(String, Vec<String>)>> = Mutex::new(Vec::new());
+    let total_bytes = AtomicU64::new(0);
+    // Count of buffers actually emitted to `out` — used for both the 4096 cap
+    // and as each buffer's naming index (`path#extract[idx]`), without
+    // needing to lock `out` just to read its length.
+    let emitted = AtomicUsize::new(0);
+    let dets_full = AtomicBool::new(false);
+    // Set once the buffer/byte cap is hit; every worker checks it and winds
+    // down rather than pulling more work, even if `outstanding` is nonzero.
+    let capped = AtomicBool::new(false);
+
+    let opts = ScanOptions::default();
+    // Small, capped pool — collect_buffers already runs inside run_scan's
+    // SCAN_SERIAL lock (one file at a time), so it's safe to actually spend
+    // the device's cores here without a second file's pool competing for them.
+    let workers = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1)
+        .clamp(1, 4);
+
     std::thread::scope(|s| {
-        s.spawn(|| {
-            let opts = ScanOptions::default();
-            if let Some(clamav) = engine {
-                let mut scan_count = 0;
-                for (buf_data, lineage, idx) in buf_rx {
-                    scan_count += 1;
-                    let name = if idx == 0 {
-                        path.to_string()
-                    } else {
-                        format!("{}#extract[{}]", path, idx)
+        for _ in 0..workers {
+            s.spawn(|| {
+                loop {
+                    if capped.load(AtomOrdering::Relaxed) {
+                        break;
+                    }
+                    let item = {
+                        let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
+                        g.pop()
                     };
-                    let (matches, _) = clamav
-                        .scan_bytes_named_with_breakdown(&buf_data, &name, opts, module_meta);
-                    for m in matches {
-                        if det_tx_for_scan.send((m.name, lineage.clone())).is_err() {
-                            return;
+                    let item = match item {
+                        Some(it) => it,
+                        None => {
+                            // Nothing to pop right now. If `outstanding` is 0,
+                            // no worker is mid-extraction either, so nobody can
+                            // ever push more work — done. Otherwise some other
+                            // worker may still add children any moment; back
+                            // off briefly and check again.
+                            if outstanding.load(AtomOrdering::Acquire) == 0 {
+                                break;
+                            }
+                            std::thread::yield_now();
+                            continue;
+                        }
+                    };
+
+                    if item.buf.len() <= 12 {
+                        outstanding.fetch_sub(1, AtomOrdering::AcqRel);
+                        continue;
+                    }
+
+                    let idx = emitted.fetch_add(1, AtomOrdering::Relaxed);
+                    let prior_total = total_bytes.fetch_add(item.buf.len() as u64, AtomOrdering::Relaxed);
+                    if idx >= 4096 || prior_total >= 2_000_000_000 {
+                        capped.store(true, AtomOrdering::Relaxed);
+                        outstanding.fetch_sub(1, AtomOrdering::AcqRel);
+                        break;
+                    }
+
+                    let mut lineage = item.lineage;
+                    // Detect format ONCE per buffer (both for lineage and extraction).
+                    let fmt = hydradragonextractor::detect_format(&item.buf);
+                    if fmt == Some("zip") {
+                        // Reuse the caller's top-level MD5 when available — the
+                        // 162 MB APK is the only depth-0 zip we ever process, so
+                        // this avoids a second full-buffer hash for every APK
+                        // scan. Nested zips are small enough that their MD5
+                        // cost is negligible.
+                        let h = match top_md5 {
+                            Some(md5) if item.depth == 0 => md5.to_string(),
+                            _ => md5_hex(&item.buf),
+                        };
+                        lineage.push(h);
+                    }
+
+                    // Scan right here, on this same worker — no hand-off to a
+                    // separate scanner thread. Other workers are concurrently
+                    // doing the same for other buffers, so extraction and
+                    // scanning genuinely run at the same time across the pool.
+                    if let Some(clamav) = engine {
+                        if !dets_full.load(AtomOrdering::Relaxed) && !skip_by_size(&item.buf) {
+                            let name = if idx == 0 {
+                                path.to_string()
+                            } else {
+                                format!("{}#extract[{}]", path, idx)
+                            };
+                            let (matches, _) = clamav.scan_bytes_named_with_breakdown(
+                                &item.buf, &name, opts, module_meta,
+                            );
+                            if !matches.is_empty() {
+                                if let Ok(mut dg) = dets.lock() {
+                                    for m in matches {
+                                        dg.push((m.name, lineage.clone()));
+                                    }
+                                    if dg.len() >= max_dets {
+                                        dets_full.store(true, AtomOrdering::Relaxed);
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-                android_log(&format!(
-                    "scanner_thread :: scanned {} buffers total",
-                    scan_count
-                ));
-            } else {
-                for _ in buf_rx {}
-            }
-        });
 
-        // Main thread: extract archive entries and send each buffer to the
-        // scanner thread. Extraction is NOT paused for scanning — they overlap.
-        let mut extract_count = 0;
-        while let Some((buf, depth, parent_lineage)) = stack.pop() {
-            if out.len() >= 4096 || total_bytes >= 2_000_000_000 {
-                break;
-            }
-            if buf.len() <= 12 {
-                continue;
-            }
-            total_bytes += buf.len() as u64;
-            extract_count += 1;
-            let mut lineage = parent_lineage;
-            // Detect format ONCE per buffer (both for lineage and extraction).
-            let fmt = hydradragonextractor::detect_format(&buf);
-            if fmt == Some("zip") {
-                // Reuse the caller's top-level MD5 when available — the 162 MB
-                // APK is the only depth-0 zip we ever process, so this avoids
-                // a second full-buffer hash for every APK scan. Nested zips
-                // are small enough that their MD5 cost is negligible.
-                let h = match top_md5 {
-                    Some(md5) if depth == 0 => md5.to_string(),
-                    _ => md5_hex(&buf),
-                };
-                lineage.push(h);
-            }
-
-            // Clone the buffer for the scanner thread (it needs its own copy
-            // to scan concurrently while we extract children). Same shared gate
-            // as the scan loops above.
-            let idx = out.len();
-            if !skip_by_size(&buf) {
-                let _ = buf_tx.send((buf.clone(), lineage.clone(), idx));
-            }
-
-            // Extract children (ZIP/tar/gz/… entries) — happens in parallel
-            // with the scanner thread scanning buf.
-            if depth < 16 && fmt.is_some() {
-                match hydradragonextractor::extract_archive_from_bytes(&buf) {
-                    Ok(children) => {
-                        for child in children {
-                            stack.push((child, depth + 1, lineage.clone()));
+                    // Extract children (ZIP/tar/gz/… entries) — pushed back
+                    // onto the shared stack for this or any other worker to
+                    // pick up next.
+                    if item.depth < 16 && fmt.is_some() {
+                        match hydradragonextractor::extract_archive_from_bytes(&item.buf) {
+                            Ok(children) => {
+                                if !children.is_empty() {
+                                    // Publish BEFORE pushing, so no other
+                                    // worker can observe `outstanding == 0`
+                                    // while these children are about to land.
+                                    outstanding.fetch_add(children.len(), AtomOrdering::AcqRel);
+                                    let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
+                                    for child in children {
+                                        g.push(WorkItem {
+                                            buf: child,
+                                            depth: item.depth + 1,
+                                            lineage: lineage.clone(),
+                                        });
+                                    }
+                                }
+                            }
+                            Err(e) if hydradragonextractor::is_bomb_error(&e) => {
+                                if let Ok(mut dg) = dets.lock() {
+                                    dg.push(("HDR.Bomb.Decompression".to_string(), lineage.clone()));
+                                }
+                            }
+                            Err(_) => {}
                         }
                     }
-                    Err(e) if hydradragonextractor::is_bomb_error(&e) => {
-                        let _ = det_tx.send(("HDR.Bomb.Decompression".to_string(), lineage.clone()));
+
+                    if let Ok(mut og) = out.lock() {
+                        og.push(Buf {
+                            data: item.buf,
+                            apk_lineage: lineage,
+                        });
                     }
-                    Err(_) => {}
+
+                    outstanding.fetch_sub(1, AtomOrdering::AcqRel);
                 }
-            }
-            out.push(Buf {
-                data: buf,
-                apk_lineage: lineage,
             });
         }
-        // Drop our sender so the scanner thread's recv loop terminates.
-        drop(buf_tx);
-        
-        // Log extraction stats
-        android_log(&format!(
-            "collect_buffers :: extracted {} buffers, scanned {} (>12 bytes), total {} MB",
-            out.len(),
-            extract_count,
-            total_bytes / 1_000_000
-        ));
     });
-    // Drop the original detection sender so the drain loop below terminates.
-    drop(det_tx);
 
-    // Drain any detections the scanner produced.
-    for det in det_rx {
+    let out = out.into_inner().unwrap_or_default();
+    android_log(&format!(
+        "collect_buffers :: extracted {} buffers ({} workers), total {} MB",
+        out.len(),
+        workers,
+        total_bytes.load(AtomOrdering::Relaxed) / 1_000_000
+    ));
+
+    let dets = dets.into_inner().unwrap_or_default();
+    for det in dets {
         early_dets.push(det);
         if early_dets.len() >= max_dets {
             break;
