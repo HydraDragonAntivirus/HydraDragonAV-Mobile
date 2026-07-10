@@ -721,6 +721,8 @@ public class ScanEngine {
                 Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + file.getAbsolutePath());
                 return;
             }
+            if (callback != null)
+                callback.onProgress(0, 1, file.getName());
             String path = file.getAbsolutePath();
             long nativeT0 = android.os.SystemClock.elapsedRealtime();
             NativeScanner.Verdict v = runNativeInterruptible(() ->
@@ -856,12 +858,24 @@ public class ScanEngine {
 
     /** 2) Deep native (clamav/YARA/ML) scan of every installed app's APK — runs
      *  even on name-whitelisted apps, since a signature/hash match is stronger
-     *  than a trusted package name. Hash/package whitelist still suppresses FPs. */
+     *  than a trusted package name. Hash/package whitelist still suppresses FPs.
+     *  Reports progress so the user sees which APK is being deep-scanned. */
     private void deepNativeScanInstalledApks(List<ApplicationInfo> apps, PackageManager pm,
                                              List<ThreatResult> threats) {
         if (!NativeScanner.isReady()) return;
         java.util.HashSet<String> seen = new java.util.HashSet<>();
         for (ThreatResult t : threats) if (t.getPackageName() != null) seen.add(t.getPackageName());
+        // Count eligible apps first so progress is meaningful.
+        int eligible = 0;
+        for (ApplicationInfo a : apps) {
+            if (a.sourceDir == null) continue;
+            if ((a.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0) continue;
+            if (a.packageName != null && (a.packageName.equals(context.getPackageName())
+                    || seen.contains(a.packageName)
+                    || photonCache.containsKey(a.packageName))) continue;
+            eligible++;
+        }
+        int scanned = 0;
         for (ApplicationInfo app : apps) {
             if (cancelRequested) return;
             
@@ -885,6 +899,9 @@ public class ScanEngine {
                     Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + app.packageName);
                     continue;
                 }
+                scanned++;
+                if (callback != null)
+                    callback.onProgress(scanned, eligible, app.packageName + " [deep]");
                 long nativeT0 = android.os.SystemClock.elapsedRealtime();
                 NativeScanner.Verdict v = runNativeInterruptible(() ->
                     NativeScanner.scan(app.sourceDir, app.packageName, null, ZeroTrustMode.isEnabled(context)));

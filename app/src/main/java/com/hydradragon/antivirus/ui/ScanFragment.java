@@ -642,6 +642,9 @@ public class ScanFragment extends Fragment {
         }
     }
 
+    // Tracks whether we attached to an already-running background scan.
+    private boolean attachedToBackground = false;
+
     // Single poller that checks engine loading, background scan, and idle state
     // — merged into ONE loop so two separate timers don't fight over
     // tvScanStatus and cause flickering between "Engine loading…",
@@ -662,10 +665,23 @@ public class ScanFragment extends Fragment {
                     if (guardService.getScanEngine() != null
                             && guardService.getScanEngine().isScanRunning()
                             && !isScanning) {
+                        // Background scan in progress — attach callback to show
+                        // live progress (current file, scanned count, bar).
+                        if (!attachedToBackground) {
+                            attachedToBackground = true;
+                            isScanning = true;
+                            hasScanned = true;
+                            btnScan.setText(getString(R.string.scan_stop));
+                            btnScan.setEnabled(true);
+                            btnPauseResume.setVisibility(View.VISIBLE);
+                            btnPauseResume.setText("⏸");
+                            startScannerAnimation();
+                            attachScanCallback();
+                        }
                         tvScanStatus.setText(getString(R.string.background_scan_running));
                         tvScanStatus.setTextColor(0xFF00D9FF);
-                        btnScan.setEnabled(false);
                     } else if (!isScanning) {
+                        attachedToBackground = false;
                         btnScan.setEnabled(true);
                         if (!hasScanned) {
                             tvScanStatus.setText(getString(R.string.scan_prompt));
@@ -689,6 +705,7 @@ public class ScanFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
+        attachedToBackground = false;
         statusPoller.removeCallbacks(statusPollCheck);
         if (serviceBound) {
             // GuardService keeps scanning/notifying/logging on its own even
