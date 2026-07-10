@@ -2376,6 +2376,9 @@ fn collect_buffers(
             if out.len() >= 4096 || total_bytes >= 2_000_000_000 {
                 break;
             }
+            if buf.len() <= 12 {
+                continue;
+            }
             total_bytes += buf.len() as u64;
             extract_count += 1;
             let mut lineage = parent_lineage;
