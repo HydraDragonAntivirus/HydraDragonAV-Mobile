@@ -421,116 +421,15 @@ impl Engine {
             self.scan_phishing(data, object_path, &mut state.matches);
         }
 
-        // ZIP archive: extract each member and recurse into it, also evaluating
-        // CDB container-metadata signatures against its size and position.
-        if options.scan_archives && is_zip(data) {
-            self.scan_zip(data, object_path, options, module_meta, state, timing);
-        }
-    }
-
-    /// Parse a stored-format ZIP and scan each member as a child object.
-    fn scan_zip(
-        &self,
-        data: &[u8],
-        parent_path: &str,
-        options: ScanOptions,
-        module_meta: &[(&str, &[u8])],
-        state: &mut ScanState,
-        timing: &mut Option<&mut TimingBreakdown>,
-    ) {
-        use crate::database::ContainerType;
-        let archive_size = data.len() as u64;
-        let mut pos = 0usize;
-        let mut member_index = 0usize;
-
-        while pos + 30 <= data.len() {
-            // Local file header signature
-            if &data[pos..pos + 4] != b"PK\x03\x04" {
-                break;
-            }
-            let compression = u16::from_le_bytes([data[pos + 8], data[pos + 9]]);
-            let compressed_size = u32::from_le_bytes([
-                data[pos + 18], data[pos + 19], data[pos + 20], data[pos + 21],
-            ]) as usize;
-            let uncompressed_size = u32::from_le_bytes([
-                data[pos + 22], data[pos + 23], data[pos + 24], data[pos + 25],
-            ]) as usize;
-            let fname_len = u16::from_le_bytes([data[pos + 26], data[pos + 27]]) as usize;
-            let extra_len = u16::from_le_bytes([data[pos + 28], data[pos + 29]]) as usize;
-
-            let data_start = pos + 30 + fname_len + extra_len;
-            if data_start > data.len() {
-                break;
-            }
-            let data_end = data_start + compressed_size;
-            if data_end > data.len() {
-                break;
-            }
-
-            // Only extract stored (uncompressed) members for inline content scanning.
-            if compression == 0 {
-                let member_data = &data[data_start..data_end];
-                let child_path = format!("{}#archive[{}]", parent_path, member_index);
-
-                // Evaluate CDB container-metadata signatures against this member.
-                for sig in &self.database.container {
-                    // Skip sigs constrained on filename or encrypted flag
-                    if sig.has_filename || sig.encrypted.is_some() {
-                        continue;
-                    }
-                    // Container type must match
-                    let type_ok = match &sig.container_type {
-                        ContainerType::Any => true,
-                        ContainerType::Format("zip") => true,
-                        ContainerType::Format(_) => false,
-                        ContainerType::Unsupported => false,
-                    };
-                    if !type_ok {
-                        continue;
-                    }
-                    if !sig.container_size.matches(archive_size) {
-                        continue;
-                    }
-                    // compressed size_in_container — we know it for stored entries
-                    if !sig.size_in_container.matches(compressed_size as u64) {
-                        continue;
-                    }
-                    if !sig.size_real.matches(uncompressed_size as u64) {
-                        continue;
-                    }
-                    if !sig.file_pos.matches((member_index + 1) as u64) {
-                        continue;
-                    }
-                    state.matches.push(ScanMatch {
-                        name: sig.name.to_string(),
-                        kind: SignatureKind::Container,
-                        source: sig.source.clone(),
-                        object_path: child_path.clone(),
-                        view: ScanView::Raw,
-                    });
-                }
-
-                // Recursively scan member content
-                self.scan_object(
-                    member_data,
-                    &child_path,
-                    Some("CL_TYPE_ZIP"),
-                    0,
-                    options,
-                    module_meta,
-                    state,
-                    timing,
-                );
-            }
-
-            pos = data_end;
-            member_index += 1;
-
-            // Bail if we hit the central directory signature
-            if pos + 4 <= data.len() && &data[pos..pos + 4] == b"PK\x01\x02" {
-                break;
-            }
-        }
+        // NOTE: ZIP member extraction is deliberately NOT done here anymore.
+        // The caller (hydradragonandroid's collect_buffers) already walks every
+        // archive recursively via hydradragonextractor and hands each extracted
+        // file to scan_bytes_named as its own whole buffer/context. Re-splitting
+        // a zip-shaped buffer into its members again in here duplicated that
+        // work — every nested zip got extracted AND scanned twice, member by
+        // member, producing a flood of near-empty scan_context calls for tiny
+        // entries instead of one scan per whole buffer. Each buffer is now
+        // scanned as a single whole context, exactly once.
     }
 
     /// Run the phishing heuristic over an HTML/email object's link pairs,
@@ -1129,11 +1028,6 @@ fn looks_like_html(data: &[u8]) -> bool {
 fn is_unsupported_archive(data: &[u8]) -> bool {
     data.len() >= 8 && data[..8] == [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00] // RAR v5
     || data.len() >= 7 && data[..7] == [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00] // RAR v1.5
-}
-
-/// Returns true when `data` starts with a ZIP local-file-header signature.
-fn is_zip(data: &[u8]) -> bool {
-    data.len() >= 4 && &data[..4] == b"PK\x03\x04"
 }
 
 
