@@ -579,6 +579,18 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
             .stack_size(8 * 1024 * 1024)
             .name("native-init".into())
             .spawn(move || {
+                // This spawn() happens on the app's main thread (Application.onCreate),
+                // so by default the new thread inherits its scheduler priority too —
+                // fine for the JNI call itself, but this closure then burns ~8s of CPU
+                // decompressing/parsing ClamAV+YARA+ML+TLSH data, starving the UI
+                // thread of cycles at cold start (observed as Choreographer "Skipped
+                // N frames"/HWUI "Davey" and even an ANR in logcat). Nice value 10 ==
+                // Android's ANDROID_PRIORITY_BACKGROUND, the same value ScanEngine.java
+                // gives its background scan pools via THREAD_PRIORITY_BACKGROUND.
+                #[cfg(target_os = "android")]
+                unsafe {
+                    libc::setpriority(libc::PRIO_PROCESS, libc::gettid() as libc::id_t, 10);
+                }
                 let mgr = mgr_addr as *mut std::ffi::c_void;
                 // Read every bundled asset file into memory via AAssetManager
                 asset_reader::init(mgr);

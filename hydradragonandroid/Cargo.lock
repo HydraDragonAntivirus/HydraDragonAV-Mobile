@@ -1218,6 +1218,7 @@ dependencies = [
  "hydradragonml",
  "hydradragonxorfilter",
  "jni",
+ "libc",
  "md-5 0.11.0",
  "rusqlite",
  "serde_json",
