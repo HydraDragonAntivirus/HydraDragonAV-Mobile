@@ -379,14 +379,13 @@ impl Engine {
             return;
         }
 
-        // Only run the ClamAV engine (prefilter + extended + logical) on files
-        // positively identified as a supported type. Every other case — a
-        // confidently-typed desktop-only format (PE, OLE2, Mail, Mach-O, SWF,
-        // Java, ...) or a type we simply fail to classify — is skipped outright,
-        // instead of paying for the whole-buffer atom prefilter and then having
-        // `target_matches` reject each candidate signature one by one.
+        // Run the ClamAV engine (prefilter + extended + logical) on files
+        // whose type is either unknown or positively identified as a supported
+        // type.  Known-but-unsupported targets (PE, OLE2, Mail, Mach-O, SWF,
+        // Java, …) are skipped outright — this avoids paying for the whole-buffer
+        // atom prefilter only to have `target_matches` reject every candidate.
         let confident_target = detected_target.or_else(|| detect_builtin_target(&ctx));
-        if clamav_target_allowed(confident_target) {
+        if confident_target.is_none() || clamav_target_allowed(confident_target) {
             // Time ClamAV scan_context
             let t_clamav = timing.as_ref().map(|_| Instant::now());
             self.scan_context(&ctx, &mut state.matches);
