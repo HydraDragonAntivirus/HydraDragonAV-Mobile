@@ -790,8 +790,12 @@ private void scanCustomFile(android.net.Uri uri) {
 
         new Thread(() -> {
             try {
-                // Copy the picked file into a temp cache file and feed it to ScanEngine
-                java.io.File tempFile = new java.io.File(getContext().getCacheDir(), "custom_scan.apk");
+                // Copy the picked file to a temp file preserving its original name
+                // so ScanEngine.scanSingleFile can route it correctly (APK → analyzeApp,
+                // other → native engine).
+                String originalName = uri.getLastPathSegment();
+                if (originalName == null || originalName.isEmpty()) originalName = "custom_scan_file";
+                java.io.File tempFile = new java.io.File(getContext().getCacheDir(), originalName);
                 java.io.InputStream is = getContext().getContentResolver().openInputStream(uri);
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
                 byte[] buffer = new byte[8192];
@@ -799,27 +803,12 @@ private void scanCustomFile(android.net.Uri uri) {
                 while ((read = is.read(buffer)) != -1) fos.write(buffer, 0, read);
                 fos.flush(); fos.close(); is.close();
 
-                android.content.pm.PackageManager pm = getContext().getPackageManager();
-                android.content.pm.PackageInfo pkgInfo = pm.getPackageArchiveInfo(tempFile.getAbsolutePath(), android.content.pm.PackageManager.GET_PERMISSIONS | android.content.pm.PackageManager.GET_SIGNATURES);
-                
                 final com.hydradragon.antivirus.model.ThreatResult result;
-                if (pkgInfo != null) {
-                    pkgInfo.applicationInfo.sourceDir = tempFile.getAbsolutePath();
-                    pkgInfo.applicationInfo.publicSourceDir = tempFile.getAbsolutePath();
-                    result = guardService.getScanEngine().analyzeSingleApp(pkgInfo.applicationInfo, pm, true);
+                com.hydradragon.antivirus.engine.ScanEngine engine = guardService.getScanEngine();
+                if (engine != null) {
+                    result = engine.scanSingleFile(tempFile);
                 } else {
-                    // Manual risk check for dangerous non-APK extensions (.exe, .sh)
-                    com.hydradragon.antivirus.model.ThreatResult.Builder tb = new com.hydradragon.antivirus.model.ThreatResult.Builder(uri.getLastPathSegment());
-                    tb.setAppName(uri.getLastPathSegment() + " (Custom File)");
-                    tb.setApkPath(tempFile.getAbsolutePath());
-                    String name = uri.getLastPathSegment().toLowerCase();
-                    if (name.endsWith(".exe") || name.endsWith(".bat") || name.endsWith(".sh") || name.endsWith(".apk")) {
-                        tb.setRiskScore(85);
-                        tb.setReasons(java.util.Arrays.asList(getString(R.string.suspicious_apk_file), "Unknown Source"));
-                    } else {
-                        tb.setRiskScore(0);
-                    }
-                    result = tb.build();
+                    result = null;
                 }
 
                 if (getActivity() != null) {

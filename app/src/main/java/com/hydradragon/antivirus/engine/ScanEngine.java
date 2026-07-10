@@ -619,19 +619,26 @@ public class ScanEngine {
      */
     public ThreatResult scanSingleFile(java.io.File file) {
         if (file == null || !file.exists()) return null;
-        PackageManager pm = context.getPackageManager();
-        if (file.getName().toLowerCase(java.util.Locale.US).endsWith(".apk")) {
-            try {
-                PackageInfo pkgInfo = pm.getPackageArchiveInfo(file.getAbsolutePath(),
-                    PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
-                if (pkgInfo != null) {
-                    pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
-                    pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
-                    ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
-                    if (result != null && result.isThreat()) return result;
+        // If the file looks like an APK (named .apk AND starts with PK zip magic),
+        // try the PackageManager analysis path. Otherwise skip straight to the
+        // native engine to avoid noisy framework errors on non-APK content.
+        String name = file.getName().toLowerCase(java.util.Locale.US);
+        if (name.endsWith(".apk")) {
+            try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(file, "r")) {
+                byte[] magic = new byte[4];
+                if (raf.read(magic) == 4 && magic[0] == 0x50 && magic[1] == 0x4b
+                        && magic[2] == 0x03 && magic[3] == 0x04) {
+                    PackageManager pm = context.getPackageManager();
+                    PackageInfo pkgInfo = pm.getPackageArchiveInfo(file.getAbsolutePath(),
+                        PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
+                    if (pkgInfo != null) {
+                        pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
+                        pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
+                        ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
+                        if (result != null && result.isThreat()) return result;
+                    }
                 }
-            } catch (Exception e) { /* unreadable/corrupt APK — treat as no verdict */ }
-            return null;
+            } catch (Exception e) { /* not a valid APK — fall through to native engine */ }
         }
         List<ThreatResult> out = new ArrayList<>();
         scanGenericFile(file, out);

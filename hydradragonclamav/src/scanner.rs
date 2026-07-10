@@ -585,6 +585,8 @@ impl Engine {
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
     ) {
+        if ctx.data.is_empty() { return; }
+
         // One rolling-hash sweep builds per-slot hit counts for this buffer;
         // both phases then promote slots that reached their threshold.
         use std::time::Instant;
