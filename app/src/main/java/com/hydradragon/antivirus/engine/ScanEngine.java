@@ -485,6 +485,7 @@ public class ScanEngine {
         filesScannedCount.set(0);
         scanExecutor.execute(() -> {
           try {
+            long scanStartMs = android.os.SystemClock.elapsedRealtime();
             PackageManager pm = context.getPackageManager();
             List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
             List<ThreatResult> threats = new ArrayList<>();
@@ -544,9 +545,10 @@ public class ScanEngine {
             } catch (Exception e) { }
 
             logEngineTimings();
+            long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
             int scannedTotal = total + filesScannedCount.get() + threats.size();
             if (callback != null)
-                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats));
+                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, elapsedMs));
           } finally {
               scanRunning.set(false);
           }
@@ -574,13 +576,15 @@ public class ScanEngine {
         appsScannedBase = 0;
         scanExecutor.execute(() -> {
           try {
+            long scanStartMs = android.os.SystemClock.elapsedRealtime();
             PackageManager pm = context.getPackageManager();
             List<ThreatResult> threats = new ArrayList<>();
             scanDirectoryForApks(dir, pm, threats, true);
             logEngineTimings();
+            long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
             int scannedTotal = filesScannedCount.get() + threats.size();
             if (callback != null)
-                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats));
+                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, elapsedMs));
           } finally {
               scanRunning.set(false);
           }

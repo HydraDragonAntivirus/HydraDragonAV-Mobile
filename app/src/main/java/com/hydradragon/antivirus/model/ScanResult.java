@@ -9,16 +9,17 @@ public class ScanResult {
     private final List<ThreatResult> threats;
     private final long scanDurationMs;
 
-    public ScanResult(int totalScanned, int threatsFound, List<ThreatResult> threats) {
+    public ScanResult(int totalScanned, int threatsFound, List<ThreatResult> threats, long scanDurationMs) {
         this.totalScanned = totalScanned;
         this.threatsFound = threatsFound;
         this.threats = threats;
-        this.scanDurationMs = 0;
+        this.scanDurationMs = scanDurationMs;
     }
 
     public int getTotalScanned() { return totalScanned; }
     public int getThreatsFound() { return threatsFound; }
     public List<ThreatResult> getThreats() { return threats; }
+    public long getScanDurationMs() { return scanDurationMs; }
     public boolean isClean() { return threatsFound == 0; }
 }
 

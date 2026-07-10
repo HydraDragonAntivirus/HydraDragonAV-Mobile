@@ -77,7 +77,20 @@ public class ScanFragment extends Fragment {
             // correct text (engine loading / background scan / scan prompt)
             // right when the service connects, not 2s later on the next poll.
             statusPollCheck.run();
-            if (isScanning && pendingCustomScanUri == null && pendingCustomScanDir == null) attachScanCallback();
+            if (isScanning && pendingCustomScanUri == null && pendingCustomScanDir == null) {
+                attachScanCallback();
+                // Sync pause button with engine state — view is recreated
+                // fresh after rotation, static fields don't cover pause.
+                if (guardService != null && guardService.getScanEngine() != null) {
+                    btnPauseResume.setVisibility(View.VISIBLE);
+                    if (guardService.getScanEngine().isPaused()) {
+                        btnPauseResume.setText("▶");
+                        tvCurrentApp.setText(getString(R.string.scan_paused));
+                    } else {
+                        btnPauseResume.setText("⏸");
+                    }
+                }
+            }
 
             // A file or folder was picked while the engine was still asleep —
             // scan it now that the service is awake.
@@ -562,18 +575,21 @@ public class ScanFragment extends Fragment {
                     btnScan.setText(getString(R.string.rescan));
                     btnScan.setEnabled(true);
                     btnPauseResume.setVisibility(View.GONE);
+                    long secs = result.getScanDurationMs() / 1000;
+                    long millis = result.getScanDurationMs() % 1000;
+                    String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
                     if (wasCancelled) {
-                        lastScanStatus = getString(R.string.scan_stopped);
+                        lastScanStatus = getString(R.string.scan_stopped) + " (" + duration + ")";
                         tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFFFFAA00);
                         tvCurrentApp.setText(lastScanStatus);
                     } else if (result.isClean()) {
-                        lastScanStatus = getString(R.string.scan_clean_system);
+                        lastScanStatus = getString(R.string.scan_clean_system) + " (" + duration + ")";
                         tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFF00FF88);
                         tvThreatLabel.setVisibility(View.GONE);
                     } else {
-                        lastScanStatus = getString(R.string.threats_found_count, foundThreats.size());
+                        lastScanStatus = getString(R.string.threats_found_count, foundThreats.size()) + " (" + duration + ")";
                         tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFFFF0040);
                         if (foundThreats.size() > 0) tvThreatLabel.setVisibility(View.VISIBLE);
