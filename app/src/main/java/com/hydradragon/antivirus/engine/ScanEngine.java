@@ -629,6 +629,13 @@ public class ScanEngine {
      * Synchronous — call it off the caller's main/observer thread.
      */
     public ThreatResult scanSingleFile(java.io.File file) {
+        // scanAllApps/scanCustomFolder reset this at their own start, but this
+        // entry point (manual single-file scan) didn't — so a Stop pressed on
+        // a PREVIOUS scan left cancelRequested permanently true on this shared
+        // ScanEngine instance, and every manual scan after that silently
+        // returned null at the first runNativeInterruptible check below,
+        // looking exactly like "can't be scanned".
+        cancelRequested = false;
         if (file == null || !file.exists()) return null;
         // If the file looks like an APK (named .apk AND starts with PK zip magic),
         // try the PackageManager analysis path. Otherwise skip straight to the

@@ -780,8 +780,14 @@ private void scanCustomFile(android.net.Uri uri) {
         foundThreats.clear();
         threatAdapter.notifyDataSetChanged();
 
-        btnScan.setText(getString(R.string.scanning));
-        btnScan.setEnabled(false);
+        // Keep the button enabled (unlike other transient states here) so its
+        // onClickListener's `else stopScan()` branch (line ~221) can actually
+        // fire — disabling it during a manual single-file scan meant Stop was
+        // never clickable for this flow, even though stopScan()/cancelScan()
+        // already works fine here (scanSingleFile polls cancelRequested the
+        // same way scanAllApps/scanCustomFolder do).
+        btnScan.setText(getString(R.string.scan_stop));
+        btnScan.setEnabled(true);
         startScannerAnimation();
 
         lastScanStatus = getString(R.string.scan_scanning_btn);
