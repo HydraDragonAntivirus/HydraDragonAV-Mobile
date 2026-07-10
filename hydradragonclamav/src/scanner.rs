@@ -88,6 +88,19 @@ fn android_log(msg: &str) {
 #[cfg(not(target_os = "android"))]
 fn android_log(_msg: &str) {}
 
+/// Wraps timing/diagnostic logcat lines so they only exist in debug builds.
+/// In release the format!() call is never evaluated — zero cost.
+#[cfg(debug_assertions)]
+macro_rules! rust_timing_log {
+    ($($arg:tt)*) => {
+        android_log(&format!($($arg)*))
+    };
+}
+#[cfg(not(debug_assertions))]
+macro_rules! rust_timing_log {
+    ($($arg:tt)*) => {};
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SignatureKind {
     Extended,
@@ -194,8 +207,8 @@ impl Engine {
         let t0 = Instant::now();
         let (mut database, mut report) = Database::load_dir(path)?;
         let load_ms = t0.elapsed().as_millis();
-        android_log(&format!("from_database_dir :: load_dir={load_ms}ms files={} ext={} logical={} container={}",
-            report.files_seen, database.extended.len(), database.logical.len(), database.container.len()));
+        rust_timing_log!("from_database_dir :: load_dir={load_ms}ms files={} ext={} logical={} container={}",
+            report.files_seen, database.extended.len(), database.logical.len(), database.container.len());
         let bc = crate::bytecode::BytecodeSet::load_from_dir(path);
         Ok(Self::finish_engine_init(&mut database, &mut report, bc, t0))
     }
@@ -209,8 +222,8 @@ impl Engine {
         let t0 = Instant::now();
         let (mut database, mut report) = Database::from_bytes_map(files);
         let load_ms = t0.elapsed().as_millis();
-        android_log(&format!("from_bytes_map :: load_dir={load_ms}ms files={} ext={} logical={} container={}",
-            report.files_seen, database.extended.len(), database.logical.len(), database.container.len()));
+        rust_timing_log!("from_bytes_map :: load_dir={load_ms}ms files={} ext={} logical={} container={}",
+            report.files_seen, database.extended.len(), database.logical.len(), database.container.len());
         let bc = crate::bytecode::BytecodeSet::from_bytes_map(files);
         let (engine, report) = Self::finish_engine_init(&mut database, &mut report, bc, t0);
         (engine, report)
@@ -253,13 +266,13 @@ impl Engine {
             }
         }
         let bc_ms = t_bc.elapsed().as_millis();
-        android_log(&format!("from_database_dir :: bytecode={bc_ms}ms loaded={}", report.bytecodes_loaded));
+        rust_timing_log!("from_database_dir :: bytecode={bc_ms}ms loaded={}", report.bytecodes_loaded);
         let t_pf = Instant::now();
         let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(database);
         let pf_ms = t_pf.elapsed().as_millis();
-        android_log(&format!("from_database_dir :: atomfilter_build={pf_ms}ms slots={}", atomfilter_db.slots.len()));
+        rust_timing_log!("from_database_dir :: atomfilter_build={pf_ms}ms slots={}", atomfilter_db.slots.len());
         let total_ms = t0.elapsed().as_millis();
-        android_log(&format!("from_database_dir :: TOTAL={total_ms}ms"));
+        rust_timing_log!("from_database_dir :: TOTAL={total_ms}ms");
         let database = std::mem::take(database);
         (Self { database, atomfilter_db, yara: Vec::new() }, std::mem::take(report))
     }
@@ -497,14 +510,14 @@ impl Engine {
         let t2 = Instant::now();
         self.scan_logical(ctx, matches, &slot_counts);
         let t3 = Instant::now();
-        android_log(&format!(
+        rust_timing_log!(
             "scan_context :: {}KB view={:?} atomscan={}ms ext_scan={}ms log_scan={}ms",
             ctx.data.len() / 1024,
             ctx.view,
             (t1 - t0).as_millis(),
             (t2 - t1).as_millis(),
             (t3 - t2).as_millis(),
-        ));
+        );
     }
 
 
@@ -552,12 +565,12 @@ impl Engine {
         }
         let ms = t_ext.elapsed().as_millis();
         if ms >= 20 {
-            android_log(&format!(
+            rust_timing_log!(
                 "[SLOW-EXT] {ms}ms {} ({}:{})",
                 self.database.ext_name(signature),
                 signature.source.path.display(),
                 signature.source.line,
-            ));
+            );
         }
         if count > 0 {
             matches.push(ScanMatch {
@@ -612,7 +625,7 @@ impl Engine {
             self.scan_one_logical(si, slot_counts, ctx, matches, &mut bufs);
             let ms = t.elapsed().as_millis();
             if ms >= 50 {
-                android_log(&format!("[SLOW-LOG] {ms}ms {}", self.database.logical[si].name));
+                rust_timing_log!("[SLOW-LOG] {ms}ms {}", self.database.logical[si].name);
             }
             if ms >= 20 && !bufs.detail.is_empty() {
                 let mut line = format!(
@@ -625,7 +638,7 @@ impl Engine {
                         d.subsig, d.kind, d.elapsed_us, d.count, d.ranges
                     ));
                 }
-                android_log(&line);
+                rust_timing_log!("{}", line);
             }
         }
     }
@@ -828,7 +841,7 @@ impl Engine {
 
         let debug_total_us = std::time::Instant::now().duration_since(t_debug).as_micros();
         if debug_total_us >= 20_000 {
-            android_log(&format!(
+            rust_timing_log!(
                 "[SCAN-DEBUG] {} gate={}us p1_body={}us fuzzy={}us p2_pcre_bc={}us eval={}us total={}us subsig_sum={}us",
                 signature.name,
                 debug_gate_us,
@@ -838,7 +851,7 @@ impl Engine {
                 debug_eval_us,
                 debug_total_us,
                 bufs.detail.iter().map(|d| d.elapsed_us).sum::<u128>(),
-            ));
+            );
         }
 
         if eval_matched {

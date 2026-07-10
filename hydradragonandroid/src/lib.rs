@@ -356,7 +356,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 }) {
                     Some(m) => {
                         let model_ms = t_model.elapsed().as_millis();
-                        android_log(&format!("init :: model={model_ms}ms"));
+                        rust_timing_log!("init :: model={model_ms}ms");
                         report.push_str(&format!(" model=ok({model_ms}ms)"));
                         Some(m)
                     }
@@ -471,7 +471,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
     );
 
     let total_ms = t0.elapsed().as_millis();
-    android_log(&format!("init :: TOTAL={total_ms}ms | {report}"));
+    rust_timing_log!("init :: TOTAL={total_ms}ms | {report}");
     set_status(report);
     Engine {
         clamav,
@@ -1629,9 +1629,9 @@ fn run_scan(
         breakdown.push_str(&format!(" {{{yara_breakdown}}}"));
     }
     if let Some((slowest_name, slowest_ms)) = slowest {
-        android_log(&format!(
+        rust_timing_log!(
             "{path} :: {breakdown} :: slowest={slowest_name}({slowest_ms}ms)"
-        ));
+        );
     }
 
     let malicious = !detections.is_empty();
@@ -2652,12 +2652,12 @@ fn collect_buffers(
     });
 
     let out = out.into_inner().unwrap_or_default();
-    android_log(&format!(
+    rust_timing_log!(
         "collect_buffers :: extracted {} buffers ({} workers), total {} MB",
         out.len(),
         workers,
         total_bytes.load(AtomOrdering::Relaxed) / 1_000_000
-    ));
+    );
 
     let dets = dets.into_inner().unwrap_or_default();
     for det in dets {
