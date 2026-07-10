@@ -11,7 +11,7 @@
 /// Odd 64-bit multiplier for the rolling polynomial hash (mod 2^64 via
 /// wrapping arithmetic). Reuses the FNV-1a prime — already known-good as an
 /// odd, well-distributed multiplier.
-const ROLL_BASE: u64 = 0x0000_0100_0000_01b3;
+pub(crate) const ROLL_BASE: u64 = 0x0000_0100_0000_01b3;
 
 /// Canonical atom-key window lengths, spanning prefilter.rs's
 /// `MIN_DEPTH..=MAX_ATOM` (2..=16) range with no gaps. An atom's bucket is the
@@ -39,7 +39,7 @@ pub fn hash_window(data: &[u8]) -> u64 {
 
 /// `ROLL_BASE^(len - 1) mod 2^64` — the coefficient of the byte about to
 /// leave a length-`len` rolling window.
-fn leading_coeff(len: usize) -> u64 {
+pub(crate) fn leading_coeff(len: usize) -> u64 {
     ROLL_BASE.wrapping_pow((len - 1) as u32)
 }
 
