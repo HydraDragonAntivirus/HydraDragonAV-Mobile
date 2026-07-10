@@ -1124,11 +1124,23 @@ fn run_scan(
             }
         }
 
-        // Native code emulation.
+        // Native code emulation. Unicorn-based emulation is by far the heaviest
+        // pass in this pipeline, and a single APK can legitimately contain
+        // dozens of ELF buffers: multi-ABI native libs (arm64-v8a/armeabi-v7a/
+        // x86/x86_64 builds of the SAME code, only one of which ever executes
+        // on this device) plus nested/repackaged APKs that duplicate identical
+        // .so files. Emulating every one of those separately buys no extra
+        // detection coverage — identical bytes behave identically under
+        // emulation — so buffers are deduped by content hash first, and the
+        // per-scan emulation count is capped so one native-lib-heavy APK (e.g.
+        // a game engine bundling 4 ABIs) can't blow the scan time budget.
+        const MAX_EMULATED_BUFFERS: usize = 8;
         let t_emulate = std::time::Instant::now();
         emulated = if NATIVE_EMULATION_ENABLED
             .load(std::sync::atomic::Ordering::Relaxed)
         {
+            let mut seen_hashes: std::collections::HashSet<String> = std::collections::HashSet::new();
+            let mut emulated_count = 0usize;
             buffers
                 .iter()
                 .enumerate()
@@ -1136,6 +1148,16 @@ fn run_scan(
                     if skip_heavy[i] || !b.data.starts_with(b"\x7fELF") {
                         return emulate::EmulationResult::default();
                     }
+                    if emulated_count >= MAX_EMULATED_BUFFERS {
+                        return emulate::EmulationResult::default();
+                    }
+                    // Dedupe identical native libs (same code across ABIs or
+                    // duplicated inside nested archives) before paying for
+                    // emulation.
+                    if !seen_hashes.insert(md5_hex(&b.data)) {
+                        return emulate::EmulationResult::default();
+                    }
+                    emulated_count += 1;
                     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                         emulate::emulate(&b.data)
                     }))
