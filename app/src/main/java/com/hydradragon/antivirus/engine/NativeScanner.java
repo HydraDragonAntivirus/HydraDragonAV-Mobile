@@ -68,6 +68,8 @@ public final class NativeScanner {
 
     private static native void nativeSetEmulationEnabled(boolean enabled);
 
+    private static native void nativeSetMaxScanSizeMb(int maxMb);
+
     /** Settings toggle for the Unicorn-based native-code emulation pass (runs
      *  every embedded .so's JNI_OnLoad/entry point in a bounded, syscall-free
      *  sandbox to reveal strings — e.g. a C2 URL — a decode routine only
@@ -77,6 +79,15 @@ public final class NativeScanner {
     public static void setEmulationEnabled(boolean enabled) {
         if (!LIB_LOADED) return;
         try { nativeSetEmulationEnabled(enabled); } catch (Throwable ignore) { }
+    }
+
+    /** Push the user's {@link MaxScanFileSize} preference into the native
+     *  engine so extracted archive entries larger than this ceiling are
+     *  excluded from ClamAV/YARA/ML scanning. Applied immediately; no
+     *  reinit needed. */
+    public static void setMaxScanSizeMb(int maxMb) {
+        if (!LIB_LOADED) return;
+        try { nativeSetMaxScanSizeMb(maxMb); } catch (Throwable ignore) { }
     }
 
     /** Hot-load a single freshly auto-generated {@code .yar} rule (already written
@@ -268,6 +279,7 @@ public final class NativeScanner {
         if (isReady()) {
             setEmulationEnabled(com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
                 context, com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION));
+            setMaxScanSizeMb(com.hydradragon.antivirus.engine.MaxScanFileSize.getMaxMb(context));
         }
         Log.i(TAG, "native init " + (isReady() ? "ok" : "background") + " | " + status());
         return isReady();

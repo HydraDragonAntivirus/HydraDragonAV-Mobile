@@ -11,6 +11,7 @@
 //!   2. valhalla-rules_filtered_verified.yrc
 //!   3. the one-class MinHash/LSH + Isolation Forest model (apk_model.json)
 
+use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
 
 use hydradragonclamav::{Engine as ClamavEngine, ScanOptions};
@@ -132,6 +133,12 @@ static ENGINE: OnceLock<std::sync::RwLock<Engine>> = OnceLock::new();
 /// at any time (see nativeSetEmulationEnabled), independent of engine init.
 static NATIVE_EMULATION_ENABLED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(true);
+
+/// User-configurable ceiling from {@link MaxScanFileSize} — extracted archive
+/// entries larger than this (in MB) are excluded from all scan passes (ClamAV,
+/// YARA, ML model). Default 650 MB. Set via nativeSetMaxScanSizeMb JNI call.
+static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
+    std::sync::atomic::AtomicU32::new(650);
 
 /// Whether the DYNAMIC_YRC_FILES have been loaded into the live engine (lazy,
 /// first nativeScanHips call). Avoids re-loading them on every HIPS scan tick.
@@ -646,7 +653,21 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass,
     enabled: jboolean,
 ) {
-    NATIVE_EMULATION_ENABLED.store(enabled != JNI_FALSE, std::sync::atomic::Ordering::Relaxed);
+    NATIVE_EMULATION_ENABLED.store(enabled != JNI_FALSE, Ordering::Relaxed);
+}
+
+/// `void nativeSetMaxScanSizeMb(int maxMb)` — push the
+/// user's {@link MaxScanFileSize} ceiling into the native engine so extracted
+/// entries larger than this are excluded from the scan passes. Applied
+/// immediately; no reinit needed.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetMaxScanSizeMb(
+    _env: EnvUnowned,
+    _class: JClass,
+    max_mb: jint,
+) {
+    let mb = max_mb.max(1) as u32;
+    MAX_SCAN_SIZE_MB.store(mb, Ordering::Relaxed);
 }
 
 /// `boolean nativeLearnRule(String yarPath)` — hot-load ONE freshly
@@ -1210,6 +1231,9 @@ fn run_scan(
                     if skip_heavy[i] {
                         continue;
                     }
+                    if b.data.len() <= 12 || b.data.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024 {
+                        continue;
+                    }
                     let name = if i == 0 {
                         path.to_string()
                     } else {
@@ -1320,6 +1344,9 @@ fn run_scan(
                     if skip_heavy[i] {
                         continue;
                     }
+                    if b.data.len() <= 12 || b.data.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024 {
+                        continue;
+                    }
                     // The model is trained on whole APKs (= zip). Running it on
                     // raw extracted members (classes.dex, resources, .so, images)
                     // produces false positives, so only score APK/zip buffers
@@ -1396,10 +1423,13 @@ fn run_scan(
         0
     } else {
         let t_tlsh = std::time::Instant::now();
-        for (i, b) in buffers.iter().enumerate() {
-            if skip_heavy[i] {
-                continue;
-            }
+                for (i, b) in buffers.iter().enumerate() {
+                    if skip_heavy[i] {
+                        continue;
+                    }
+                    if b.data.len() <= 12 || b.data.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024 {
+                        continue;
+                    }
             if tlsh_relevant(&b.data) {
                 if let Some(dist) = tlsh_nearest(engine, &b.data) {
                     detections.push((format!("TLSH.Malware/dist={}", dist), b.apk_lineage.clone()));
@@ -2336,6 +2366,9 @@ fn collect_buffers(
         // scanner thread. Extraction is NOT paused for scanning — they overlap.
         let mut extract_count = 0;
         while let Some((buf, depth, parent_lineage)) = stack.pop() {
+            if buf.len() <= 12 {
+                continue;
+            }
             if out.len() >= 4096 || total_bytes >= 2_000_000_000 {
                 break;
             }
@@ -2361,7 +2394,7 @@ fn collect_buffers(
             // bytes or fewer are skipped — too small to realistically carry
             // executable/malicious payload content worth the scan overhead.
             let idx = out.len();
-            if buf.len() > 12 {
+            if buf.len() > 12 && buf.len() <= (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024 {
                 let _ = buf_tx.send((buf.clone(), lineage.clone(), idx));
             }
 
