@@ -27,7 +27,7 @@ mod url_scan;
 
 use jni::errors::LogErrorAndDefault;
 use jni::objects::{JClass, JObject, JString};
-use jni::sys::{jboolean, jstring, JNI_FALSE, JNI_TRUE};
+use jni::sys::{jboolean, jint, jstring, JNI_FALSE, JNI_TRUE};
 use jni::EnvUnowned;
 use std::fmt::Write;
 
@@ -487,6 +487,13 @@ fn load_package_whitelist_from_bytes(bytes: &[u8]) -> std::collections::HashMap<
 #[allow(dead_code)]
 fn do_init(_dir: &str, _load_auto_rules: bool) -> Engine {
     panic!("do_init is dead code; use do_init_from_assets instead");
+}
+
+/// Whether `buf` should be skipped by every scan pass: too small (<=12 bytes,
+/// can't carry a payload) or over the user's {@link MaxScanFileSize} ceiling.
+/// Single shared gate so this rule lives in exactly one place.
+fn skip_by_size(buf: &[u8]) -> bool {
+    buf.len() <= 12 || buf.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024
 }
 
 /// Whether `buf` is a file type we have TLSH malware digests for (apk/zip, ELF,
@@ -1231,7 +1238,7 @@ fn run_scan(
                     if skip_heavy[i] {
                         continue;
                     }
-                    if b.data.len() <= 12 || b.data.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024 {
+                    if skip_by_size(&b.data) {
                         continue;
                     }
                     let name = if i == 0 {
@@ -1344,7 +1351,7 @@ fn run_scan(
                     if skip_heavy[i] {
                         continue;
                     }
-                    if b.data.len() <= 12 || b.data.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024 {
+                    if skip_by_size(&b.data) {
                         continue;
                     }
                     // The model is trained on whole APKs (= zip). Running it on
@@ -1427,7 +1434,7 @@ fn run_scan(
                     if skip_heavy[i] {
                         continue;
                     }
-                    if b.data.len() <= 12 || b.data.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024 {
+                    if skip_by_size(&b.data) {
                         continue;
                     }
             if tlsh_relevant(&b.data) {
@@ -2366,9 +2373,6 @@ fn collect_buffers(
         // scanner thread. Extraction is NOT paused for scanning — they overlap.
         let mut extract_count = 0;
         while let Some((buf, depth, parent_lineage)) = stack.pop() {
-            if buf.len() <= 12 {
-                continue;
-            }
             if out.len() >= 4096 || total_bytes >= 2_000_000_000 {
                 break;
             }
@@ -2390,11 +2394,10 @@ fn collect_buffers(
             }
 
             // Clone the buffer for the scanner thread (it needs its own copy
-            // to scan concurrently while we extract children). Buffers of 12
-            // bytes or fewer are skipped — too small to realistically carry
-            // executable/malicious payload content worth the scan overhead.
+            // to scan concurrently while we extract children). Same shared gate
+            // as the scan loops above.
             let idx = out.len();
-            if buf.len() > 12 && buf.len() <= (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024 {
+            if !skip_by_size(&buf) {
                 let _ = buf_tx.send((buf.clone(), lineage.clone(), idx));
             }
 
