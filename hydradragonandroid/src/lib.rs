@@ -530,6 +530,20 @@ fn skip_by_size(buf: &[u8]) -> bool {
     buf.len() <= 12 || buf.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024
 }
 
+/// Skip buffers whose magic bytes identify them as pure image media (PNG, JPEG,
+/// GIF, WebP, BMP) or XML. These make up the vast bulk of APK resource files
+/// and carry near-zero malware risk in practice. Everything else — HTML, JS,
+/// text, unknown binary — still goes through the engine.
+fn skip_by_magic(buf: &[u8]) -> bool {
+    if buf.len() < 4 { return false; }
+    if buf.starts_with(b"<?xml") { return true; }
+    match &buf[..4] {
+        b"\x89PNG" | b"\xff\xd8\xff" | b"GIF8" => true,
+        b"RIFF" if buf.len() >= 12 && &buf[8..12] == b"WEBP" => true,
+        _ => buf.len() >= 2 && &buf[..2] == b"BM",
+    }
+}
+
 /// Whether `buf` is a file type we have TLSH malware digests for (apk/zip, ELF,
 /// or DEX) — so we only fuzzy-compare relevant buffers, not every PNG/XML.
 fn tlsh_relevant(buf: &[u8]) -> bool {
@@ -1149,6 +1163,11 @@ fn rescan_buffers_parallel(
                         if skip_by_size(&b.data) {
                             continue;
                         }
+                        // Skip pure image media (PNG/JPEG/GIF/WebP/BMP) — they
+                        // make up the bulk of APK resources and carry near-zero
+                        // risk. Everything else (XML, HTML, JS, text, unknown
+                        // binary) still goes through the engine.
+                        if skip_by_magic(&b.data) { continue; }
                         let name = if i == 0 {
                             path.to_string()
                         } else {
@@ -2455,6 +2474,9 @@ fn collect_packages(buffers: &[Buf]) -> Vec<String> {
 struct Buf {
     data: Vec<u8>,
     apk_lineage: Vec<String>,
+    /// Detected container/archive format (zip, tar, gz, ...), or `None` for
+    /// unknown types (raw DEX, ELF, images, XML, etc.).
+    file_type: Option<&'static str>,
 }
 
 /// `top_md5` is Java's already-computed MD5 of the whole scanned file, reused for
@@ -2590,7 +2612,9 @@ fn collect_buffers(
                     // doing the same for other buffers, so extraction and
                     // scanning genuinely run at the same time across the pool.
                     if let Some(clamav) = engine {
-                        if !dets_full.load(AtomOrdering::Relaxed) && !skip_by_size(&item.buf) {
+                        if !dets_full.load(AtomOrdering::Relaxed) && !skip_by_size(&item.buf)
+                            && !skip_by_magic(&item.buf)
+                        {
                             let name = if idx == 0 {
                                 path.to_string()
                             } else {
@@ -2646,6 +2670,7 @@ fn collect_buffers(
                         og.push(Buf {
                             data: item.buf,
                             apk_lineage: lineage,
+                            file_type: fmt,
                         });
                     }
 
