@@ -272,6 +272,11 @@ fn bzip2_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
 /// stateless after construction, limited to [`entry_by_name`] + [`extract`]).
 /// For a 1000‑entry APK this cuts wall‑clock extraction by ~4× on a 4‑core
 /// device, making the bottleneck I/O rather than decompression.
+/// Hard cap on entries extracted from a single archive in one call — without
+/// this, a zip/tar/7z/rar bomb with an enormous entry count would be fully
+/// decompressed into memory before the caller's outer buffer cap ever runs.
+pub(crate) const MAX_ARCHIVE_ENTRIES: usize = 4096;
+
 fn zip_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
     let zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
     let names: Vec<String> = zip
@@ -279,6 +284,7 @@ fn zip_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
         .iter()
         .filter(|e| !e.name.ends_with('/'))
         .map(|e| e.name.clone())
+        .take(MAX_ARCHIVE_ENTRIES)
         .collect();
     if names.is_empty() {
         return Ok(Vec::new());
@@ -364,6 +370,7 @@ fn tar_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
         .iter()
         .filter(|e| !e.name.ends_with('/'))
         .map(|e| e.name.clone())
+        .take(MAX_ARCHIVE_ENTRIES)
         .collect();
     for name in names {
         let content = tar.extract_by_name(&name).map_err(map_err)?;
@@ -417,7 +424,7 @@ fn tar_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 fn sz_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
     let mut sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
     let entries = sz.entries();
-    let count = entries.len();
+    let count = entries.len().min(MAX_ARCHIVE_ENTRIES);
     let mut out = Vec::new();
     for i in 0..count {
         if entries[i].name.ends_with('/') {

@@ -62,6 +62,9 @@ pub fn extract_from_bytes(data: &[u8]) -> Result<Vec<Vec<u8>>> {
     };
 
     loop {
+        if out.len() >= crate::MAX_ARCHIVE_ENTRIES {
+            break;
+        }
         let header = match archive.read_header() {
             Ok(Some(h)) => h,
             Ok(None) => break,
