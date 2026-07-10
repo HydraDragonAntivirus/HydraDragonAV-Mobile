@@ -226,6 +226,13 @@ public class ScanEngine {
      *  This is what lets Stop take effect in ~150ms instead of however long
      *  the file being scanned right now takes. */
     private NativeScanner.Verdict runNativeInterruptible(java.util.concurrent.Callable<NativeScanner.Verdict> call) {
+        // Don't submit at all if we're already cancelled: nativeCallExecutor only
+        // has 1-2 threads (NATIVE_PARALLELISM), and an "abandoned" call keeps
+        // running to completion occupying a slot for however long that file
+        // takes (seconds on a big APK). Submitting one anyway after cancel just
+        // queues real work behind a result nobody will use, delaying every file
+        // after it — this is what made scans look stuck/slow to resume.
+        if (cancelRequested) return null;
         java.util.concurrent.Future<NativeScanner.Verdict> future = nativeCallExecutor.submit(call);
         while (true) {
             if (cancelRequested) return null;

@@ -2349,9 +2349,13 @@ fn collect_buffers(
             }
 
             // Clone the buffer for the scanner thread (it needs its own copy
-            // to scan concurrently while we extract children).
+            // to scan concurrently while we extract children). Buffers of 12
+            // bytes or fewer are skipped — too small to realistically carry
+            // executable/malicious payload content worth the scan overhead.
             let idx = out.len();
-            let _ = buf_tx.send((buf.clone(), lineage.clone(), idx));
+            if buf.len() > 12 {
+                let _ = buf_tx.send((buf.clone(), lineage.clone(), idx));
+            }
 
             // Extract children (ZIP/tar/gz/… entries) — happens in parallel
             // with the scanner thread scanning buf.
