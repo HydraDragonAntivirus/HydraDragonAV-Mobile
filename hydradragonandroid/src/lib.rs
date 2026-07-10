@@ -64,6 +64,26 @@ fn android_log(msg: &str) {
     unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
 }
 
+/// Wraps every `HydraDragon-RustTiming` performance/diagnostic line (per-file
+/// init/load timings, `collect_buffers`'s extraction stats, etc.) so it only
+/// exists in debug builds. In release (`cfg(debug_assertions)` off) this
+/// compiles to nothing — the `format!()` call that builds the message is
+/// never evaluated, not just the logcat write skipped — so a production scan
+/// doesn't pay any cost for diagnostics nobody in the field will read.
+/// Genuine failure/panic reports (`native-init FAILED`, `PANIC`, ...) stay on
+/// plain `android_log` calls and keep logging in release, since those matter
+/// for diagnosing real crashes on real devices.
+#[cfg(debug_assertions)]
+macro_rules! rust_timing_log {
+    ($($arg:tt)*) => {
+        android_log(&format!($($arg)*))
+    };
+}
+#[cfg(not(debug_assertions))]
+macro_rules! rust_timing_log {
+    ($($arg:tt)*) => {};
+}
+
 /// Asset file names expected inside the init directory (static scanner).
 const YRC_FILES: &[&str] = &[
     "clean_rules_filtered_verified.yrc",
@@ -238,7 +258,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 })) {
                     Ok((mut eng, _c_report)) => {
                         let db_ms = t_db.elapsed().as_millis();
-                        android_log(&format!("init :: from_bytes_map={db_ms}ms"));
+                        rust_timing_log!("init :: from_bytes_map={db_ms}ms");
                         report.push_str(&format!("clamav=ok({db_ms}ms)"));
                         let yrc_results: Vec<(
                             String,
@@ -303,10 +323,10 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                                         }
                                         let learn_ms = t_learn.elapsed().as_millis();
                                         if learn_ms > 50 {
-                                            android_log(&format!(
+                                            rust_timing_log!(
                                                 "init :: learned[{learned}] {} {learn_ms}ms",
                                                 path.display()
-                                            ));
+                                            );
                                         }
                                     }
                                 }
