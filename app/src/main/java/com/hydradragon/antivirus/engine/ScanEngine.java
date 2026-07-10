@@ -103,14 +103,25 @@ public class ScanEngine {
     // native calls run at once, regardless of how many scan triggers fired.
     private static final int NATIVE_PARALLELISM =
         Math.max(1, Math.min(2, Runtime.getRuntime().availableProcessors() / 2));
+    // These pools run CPU-bound native (clamav/YARA/ML/TLSH) work at normal
+    // thread priority by default, which competes evenly with the UI thread's
+    // Choreographer/render thread for CPU time and causes dropped frames
+    // ("Skipped N frames"/"Davey!") during a scan on lower-core devices.
+    // THREAD_PRIORITY_BACKGROUND tells the OS scheduler to favor the
+    // renderer, at the cost of the scan itself taking a bit longer.
+    private static final java.util.concurrent.ThreadFactory backgroundPriorityFactory = r ->
+        new Thread(() -> {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
+            r.run();
+        });
     private static final ExecutorService scanExecutor =
-        Executors.newFixedThreadPool(NATIVE_PARALLELISM);
+        Executors.newFixedThreadPool(NATIVE_PARALLELISM, backgroundPriorityFactory);
     // Dedicated pool for wrapping blocking native (JNI/Rust) calls so cancelScan()
     // can take effect almost immediately instead of Stop waiting out however
     // long the CURRENT file's native scan takes (large files can take seconds;
     // the native side has no interruption point). See runNativeInterruptible.
     private static final ExecutorService nativeCallExecutor =
-        Executors.newFixedThreadPool(NATIVE_PARALLELISM);
+        Executors.newFixedThreadPool(NATIVE_PARALLELISM, backgroundPriorityFactory);
     // Small bounded pool for the lightweight orchestration wrappers that used
     // to be raw `new Thread(...).start()` calls in GuardService (per-download
     // scan) and InstallReceiver (per-install scan) — those threads don't do
