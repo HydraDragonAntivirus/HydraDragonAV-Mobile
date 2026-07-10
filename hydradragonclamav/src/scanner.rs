@@ -683,6 +683,31 @@ impl Engine {
             detail: Vec::new(),
         };
         for si in 0..self.database.logical.len() {
+            // Fast pre-check: if every subsig atom slot is below threshold
+            // and there are no External (Pcre/ByteCompare/Fuzzy) or AutoMatch
+            // subsigs, this signature can't match — skip it entirely.
+            if si < self.atomfilter_db.log_subsig_slots.len() {
+                let sub_slots = &self.atomfilter_db.log_subsig_slots[si];
+                let mut any_hope = false;
+                for subsig in sub_slots.iter() {
+                    match subsig {
+                        crate::atomfilter::SubsigSlot::AutoMatch
+                        | crate::atomfilter::SubsigSlot::External => {
+                            any_hope = true;
+                            break;
+                        }
+                        crate::atomfilter::SubsigSlot::Atom(id) => {
+                            if slot_counts.get(*id) >= self.atomfilter_db.slots[*id as usize].threshold {
+                                any_hope = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if !any_hope {
+                    continue;
+                }
+            }
             let t = std::time::Instant::now();
             self.scan_one_logical(si, slot_counts, ctx, matches, &mut bufs);
             let ms = t.elapsed().as_millis();
@@ -769,19 +794,21 @@ impl Engine {
         // Populate initial counts from slot assignments: Body subsigs already
         // have their hit count from the atomscan sweep; External subsigs (Pcre,
         // ByteCompare, Fuzzy) start at 0 and are filled in below.
+        bufs.counts.clear();
+        bufs.counts.resize(n, 0);
         let sub_slots = if si < self.atomfilter_db.log_subsig_slots.len() {
             Some(&self.atomfilter_db.log_subsig_slots[si])
         } else {
             None
         };
-        let initial: Vec<usize> = if let Some(slots) = sub_slots {
-            crate::atomscan::logical_initial_counts(slots, &self.atomfilter_db.slots, slot_counts)
-        } else {
-            vec![0; n]
-        };
-
-        bufs.counts.clear();
-        bufs.counts.extend_from_slice(&initial);
+        if let Some(slots) = sub_slots {
+            crate::atomscan::logical_initial_counts_into(
+                &mut bufs.counts,
+                slots,
+                &self.atomfilter_db.slots,
+                slot_counts,
+            );
+        }
         bufs.last_offsets.clear();
         bufs.last_offsets.resize(n, None);
         // Populate last_offsets from slot assignments for ByteCompare anchoring.
@@ -975,7 +1002,7 @@ impl Engine {
 const CLAMAV_ALLOWED_TARGETS: [u32; 7] = [3, 5, 6, 7, 10, 16, 17];
 
 fn clamav_target_allowed(target: Option<u32>) -> bool {
-    target.map_or(true, |t| CLAMAV_ALLOWED_TARGETS.contains(&t))
+    target.map_or(false, |t| CLAMAV_ALLOWED_TARGETS.contains(&t))
 }
 
 fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>) -> bool {

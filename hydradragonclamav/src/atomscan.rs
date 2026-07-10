@@ -104,16 +104,22 @@ pub fn ext_matched(ext_slot: ExtSlot, slots: &[SlotDef], counts: &SlotCounts) ->
     }
 }
 
-/// The initial `counts` array to feed `LogicalExpr::eval` for one logical
-/// signature's subsignatures: a `Body` subsig's slot counter (0 if under
-/// threshold), `1` for an unconditional `AutoMatch` subsig, and `0` for an
-/// `External` subsig (`Pcre`/`ByteCompare`/`Fuzzy`/`Unsupported`) — the
+/// Fill `out` with the initial counts to feed `LogicalExpr::eval` for one
+/// logical signature's subsignatures: a `Body` subsig's slot counter (0 if
+/// under threshold), `1` for an unconditional `AutoMatch` subsig, and `0` for
+/// an `External` subsig (`Pcre`/`ByteCompare`/`Fuzzy`/`Unsupported`) — the
 /// caller fills those in with an exact evaluation before the final
 /// `expression.eval`, exactly as `scanner.rs`'s existing phase-2 does today.
-pub fn logical_initial_counts(sub_slots: &[SubsigSlot], slots: &[SlotDef], counts: &SlotCounts) -> Vec<usize> {
-    sub_slots
-        .iter()
-        .map(|s| match *s {
+/// Returns the number of elements written (always `sub_slots.len()`).
+pub fn logical_initial_counts_into(
+    out: &mut [usize],
+    sub_slots: &[SubsigSlot],
+    slots: &[SlotDef],
+    counts: &SlotCounts,
+) -> usize {
+    let n = sub_slots.len().min(out.len());
+    for (i, s) in sub_slots[..n].iter().enumerate() {
+        out[i] = match *s {
             SubsigSlot::Atom(id) => {
                 let hits = counts.get(id);
                 if hits >= slots[id as usize].threshold {
@@ -124,8 +130,16 @@ pub fn logical_initial_counts(sub_slots: &[SubsigSlot], slots: &[SlotDef], count
             }
             SubsigSlot::AutoMatch => 1,
             SubsigSlot::External => 0,
-        })
-        .collect()
+        };
+    }
+    n
+}
+
+/// Convenience wrapper — allocates a new `Vec` from `sub_slots`.
+pub fn logical_initial_counts(sub_slots: &[SubsigSlot], slots: &[SlotDef], counts: &SlotCounts) -> Vec<usize> {
+    let mut out = vec![0; sub_slots.len()];
+    logical_initial_counts_into(&mut out, sub_slots, slots, counts);
+    out
 }
 
 /// Buffer offset to anchor a `ByteCompare` subsig's read at, given its
