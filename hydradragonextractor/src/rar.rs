@@ -43,6 +43,7 @@ pub fn extract_to_dir(path: &Path, output_dir: &Path) -> Result<Vec<PathBuf>> {
 
 /// Extract a RAR archive entirely in memory — reads each entry into `Vec<u8>`.
 pub fn extract_from_bytes(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+    let archive_len = data.len();
 
     // Write to a temp file since `unrar` needs a file path.
     let tmp_dir = std::env::temp_dir().join(format!("hdrartmp_{:x}", crate::rand_byte()));
@@ -99,6 +100,10 @@ pub fn extract_from_bytes(data: &[u8]) -> Result<Vec<Vec<u8>>> {
                 });
             }
         };
+        if crate::is_decompression_bomb(archive_len, data.len()) {
+            let _ = std::fs::remove_dir_all(&tmp_dir);
+            return Err(ExtractError::DecompressionBomb { format: "rar" });
+        }
         out.push(data);
         archive = rest;
     }

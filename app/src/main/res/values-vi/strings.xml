@@ -292,6 +292,10 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">Phát hiện bom giải nén — từ chối các tệp nén giải nén ra dung lượng không giới hạn</string>
+    <string name="detect_zip_bomb_on_toast">Phát hiện bom giải nén đã BẬT</string>
+    <string name="detect_zip_bomb_off_toast">Phát hiện bom giải nén đã TẮT</string>
+
     <string name="dashboard_firewall_active">Công cụ Tường lửa ĐANG HOẠT ĐỘNG</string>
     <string name="dashboard_system_secure">Hệ thống An toàn</string>
     <string name="dashboard_status_secure_desc">• Giám sát đang hoạt động\n• Đã áp dụng quy tắc mạng\n• %1$s</string>

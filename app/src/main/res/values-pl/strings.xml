@@ -292,6 +292,10 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">Wykrywaj bomby dekompresyjne — odrzucaj archiwa rozpakowujące się do nieograniczonego rozmiaru</string>
+    <string name="detect_zip_bomb_on_toast">Wykrywanie bomb dekompresyjnych WŁĄCZONE</string>
+    <string name="detect_zip_bomb_off_toast">Wykrywanie bomb dekompresyjnych WYŁĄCZONE</string>
+
     <string name="dashboard_firewall_active">Silnik zapory AKTYWNY</string>
     <string name="dashboard_system_secure">System bezpieczny</string>
     <string name="dashboard_status_secure_desc">• Monitorowanie aktywne\n• Reguły sieciowe egzekwowane\n• %1$s</string>

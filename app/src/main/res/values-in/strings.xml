@@ -292,6 +292,10 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">Deteksi Bom Dekompresi — tolak arsip yang meluas hingga ukuran tak terbatas</string>
+    <string name="detect_zip_bomb_on_toast">Deteksi Bom Dekompresi AKTIF</string>
+    <string name="detect_zip_bomb_off_toast">Deteksi Bom Dekompresi NONAKTIF</string>
+
     <string name="dashboard_firewall_active">Mesin Firewall AKTIF</string>
     <string name="dashboard_system_secure">Sistem Aman</string>
     <string name="dashboard_status_secure_desc">• Pemantauan aktif\n• Aturan jaringan diterapkan\n• %1$s</string>

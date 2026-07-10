@@ -292,6 +292,10 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">Détecter les bombes de décompression — rejeter les archives qui se décompressent vers une taille illimitée</string>
+    <string name="detect_zip_bomb_on_toast">Détection des bombes de décompression ACTIVÉE</string>
+    <string name="detect_zip_bomb_off_toast">Détection des bombes de décompression DÉSACTIVÉE</string>
+
     <string name="dashboard_firewall_active">Moteur de Pare-feu ACTIF</string>
     <string name="dashboard_system_secure">Système Sécurisé</string>
     <string name="dashboard_status_secure_desc">• Surveillance active\n• Règles réseau appliquées\n• %1$s</string>

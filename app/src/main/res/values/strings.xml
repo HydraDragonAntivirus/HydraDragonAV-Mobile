@@ -313,6 +313,10 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">Detect Decompression Bombs — reject archives that expand to an unbounded size</string>
+    <string name="detect_zip_bomb_on_toast">Decompression Bomb Detection ON</string>
+    <string name="detect_zip_bomb_off_toast">Decompression Bomb Detection OFF</string>
+
     <string name="dashboard_firewall_active">Firewall Engine ACTIVE</string>
     <string name="dashboard_system_secure">System Secure</string>
     <string name="dashboard_engine_loading">Engine Loading</string>

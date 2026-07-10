@@ -310,6 +310,10 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">Sıkıştırma Bombalarını Algıla — sınırsız boyuta genişleyen arşivleri reddet</string>
+    <string name="detect_zip_bomb_on_toast">Sıkıştırma Bombası Algılama AÇIK</string>
+    <string name="detect_zip_bomb_off_toast">Sıkıştırma Bombası Algılama KAPALI</string>
+
     <string name="dashboard_firewall_active">Güvenlik Duvarı Motoru AKTİF</string>
     <string name="dashboard_system_secure">Sistem Güvende</string>
     <string name="dashboard_status_secure_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n• %1$s</string>

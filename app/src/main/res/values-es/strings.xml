@@ -292,6 +292,10 @@ Puntuación de riesgo: %2$d/100
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">Detectar bombas de descompresión — rechazar archivos que se expanden a un tamaño ilimitado</string>
+    <string name="detect_zip_bomb_on_toast">Detección de bombas de descompresión ACTIVADA</string>
+    <string name="detect_zip_bomb_off_toast">Detección de bombas de descompresión DESACTIVADA</string>
+
     <string name="dashboard_firewall_active">Motor de Firewall ACTIVO</string>
     <string name="dashboard_system_secure">Sistema Seguro</string>
     <string name="dashboard_status_secure_desc">• Monitoreo activo\n• Reglas de red aplicadas\n• %1$s</string>

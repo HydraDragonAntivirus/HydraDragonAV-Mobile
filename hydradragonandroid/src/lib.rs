@@ -677,6 +677,18 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     MAX_SCAN_SIZE_MB.store(mb, Ordering::Relaxed);
 }
 
+/// `void nativeSetDetectZipBomb(boolean enabled)` — Settings toggle for
+/// decompression-bomb rejection during archive extraction (see
+/// hydradragonextractor's `is_decompression_bomb`). Applied immediately.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetDetectZipBomb(
+    _env: EnvUnowned,
+    _class: JClass,
+    enabled: jboolean,
+) {
+    hydradragonextractor::set_bomb_detection_enabled(enabled != JNI_FALSE);
+}
+
 /// `boolean nativeLearnRule(String yarPath)` — hot-load ONE freshly
 /// auto-generated `.yar` file (already written to disk by
 /// ScanEngine.saveGeneratedRule) into the LIVE engine via a brief write lock,
@@ -2407,10 +2419,16 @@ fn collect_buffers(
             // Extract children (ZIP/tar/gz/… entries) — happens in parallel
             // with the scanner thread scanning buf.
             if depth < 16 && fmt.is_some() {
-                if let Ok(children) = hydradragonextractor::extract_archive_from_bytes(&buf) {
-                    for child in children {
-                        stack.push((child, depth + 1, lineage.clone()));
+                match hydradragonextractor::extract_archive_from_bytes(&buf) {
+                    Ok(children) => {
+                        for child in children {
+                            stack.push((child, depth + 1, lineage.clone()));
+                        }
                     }
+                    Err(e) if hydradragonextractor::is_bomb_error(&e) => {
+                        let _ = det_tx.send(("HDR.Bomb.Decompression".to_string(), lineage.clone()));
+                    }
+                    Err(_) => {}
                 }
             }
             out.push(Buf {

@@ -264,6 +264,15 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.scan_cache_off_toast), Toast.LENGTH_SHORT).show();
         });
 
+        boolean detectZipBomb = prefs().getBoolean("detect_zip_bomb_enabled", true);
+        addToggle(getString(R.string.detect_zip_bomb_toggle), detectZipBomb, (btn, on) -> {
+            prefs().edit().putBoolean("detect_zip_bomb_enabled", on).apply();
+            com.hydradragon.antivirus.engine.NativeScanner.setDetectZipBomb(on);
+            Toast.makeText(getContext(), on
+                ? getString(R.string.detect_zip_bomb_on_toast)
+                : getString(R.string.detect_zip_bomb_off_toast), Toast.LENGTH_SHORT).show();
+        });
+
         boolean screenOcr = prefs().getBoolean(KEY_SCREEN_OCR, false);
         addToggle(getString(R.string.screen_ocr_toggle), screenOcr, (btn, on) -> {
             if (on) requestScreenCapture(btn);

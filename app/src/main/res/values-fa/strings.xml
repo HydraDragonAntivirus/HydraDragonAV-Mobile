@@ -292,6 +292,10 @@
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">شناسایی بمب فشرده‌سازی — رد آرشیوهایی که به اندازه‌ای نامحدود باز می‌شوند</string>
+    <string name="detect_zip_bomb_on_toast">شناسایی بمب فشرده‌سازی روشن شد</string>
+    <string name="detect_zip_bomb_off_toast">شناسایی بمب فشرده‌سازی خاموش شد</string>
+
     <string name="dashboard_firewall_active">موتور فایروال فعال است</string>
     <string name="dashboard_system_secure">سیستم ایمن است</string>
     <string name="dashboard_status_secure_desc">• پایش فعال است\n• قوانین شبکه اعمال شده است\n• %1$s</string>

@@ -30,6 +30,8 @@ pub enum ExtractError {
     Io(#[from] std::io::Error),
     #[error("extraction failed: {reason}")]
     OperationFailed { reason: String },
+    #[error("decompression bomb detected ({format})")]
+    DecompressionBomb { format: &'static str },
 }
 
 pub(crate) type Result<T> = std::result::Result<T, ExtractError>;
@@ -184,19 +186,75 @@ fn extract_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
 // Single-file compression: decompress, check for TAR
 // ---------------------------------------------------------------------------
 
+// Decompression-bomb guard: catches "small compressed input, absurd output"
+// regardless of which single-stream format it comes from. Two independent
+// triggers, either one is enough to reject:
+//   - absolute output size past MAX_DECOMPRESSED_SIZE (bounds memory/CPU no
+//     matter the ratio — catches bombs built from already-large input)
+//   - ratio of output:input past BOMB_RATIO, but only once output is also
+//     past a modest floor (MIN_RATIO_CHECK_SIZE) — a 10-byte input expanding
+//     to 1KB is a 100:1 ratio and completely normal, so ratio alone is not
+//     used to flag small buffers; this keeps zero-FP on legitimate highly
+//     compressible content (sparse files, repeated-byte images, logs).
+pub(crate) const MAX_DECOMPRESSED_SIZE: usize = 200_000_000;
+const BOMB_RATIO: usize = 1000;
+const MIN_RATIO_CHECK_SIZE: usize = 10_000_000;
+
+/// User-toggleable from settings — disabling removes all decompression-bomb
+/// caps above, at the cost of allowing unbounded extraction time/memory on a
+/// crafted archive.
+static DETECT_BOMBS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+pub fn set_bomb_detection_enabled(enabled: bool) {
+    DETECT_BOMBS.store(enabled, std::sync::atomic::Ordering::Relaxed);
+}
+
+pub(crate) fn is_decompression_bomb(compressed_len: usize, decompressed_len: usize) -> bool {
+    if !DETECT_BOMBS.load(std::sync::atomic::Ordering::Relaxed) {
+        return false;
+    }
+    if decompressed_len > MAX_DECOMPRESSED_SIZE {
+        return true;
+    }
+    if decompressed_len < MIN_RATIO_CHECK_SIZE {
+        return false;
+    }
+    let ratio = decompressed_len / compressed_len.max(1);
+    ratio > BOMB_RATIO
+}
+
+/// True if `e` is specifically a decompression-bomb rejection (as opposed to
+/// a corrupt/unsupported archive) — callers use this to surface a bomb as a
+/// detection rather than treating it as an ordinary extraction failure.
+pub fn is_bomb_error(e: &ExtractError) -> bool {
+    matches!(e, ExtractError::DecompressionBomb { .. })
+}
+
 fn decompress_gzip(data: &[u8]) -> Result<Vec<u8>> {
     let mut r = GzipReader::new(Cursor::new(data)).map_err(map_err)?;
-    r.decompress().map_err(map_err)
+    let out = r.decompress().map_err(map_err)?;
+    if is_decompression_bomb(data.len(), out.len()) {
+        return Err(ExtractError::DecompressionBomb { format: "gzip" });
+    }
+    Ok(out)
 }
 
 fn decompress_xz(data: &[u8]) -> Result<Vec<u8>> {
     let mut r = XzReader::new(Cursor::new(data)).map_err(map_err)?;
-    r.decompress().map_err(map_err)
+    let out = r.decompress().map_err(map_err)?;
+    if is_decompression_bomb(data.len(), out.len()) {
+        return Err(ExtractError::DecompressionBomb { format: "xz" });
+    }
+    Ok(out)
 }
 
 fn decompress_bzip2(data: &[u8]) -> Result<Vec<u8>> {
     let mut r = Bzip2Reader::new(Cursor::new(data)).map_err(map_err)?;
-    r.decompress().map_err(map_err)
+    let out = r.decompress().map_err(map_err)?;
+    if is_decompression_bomb(data.len(), out.len()) {
+        return Err(ExtractError::DecompressionBomb { format: "bzip2" });
+    }
+    Ok(out)
 }
 
 // ---------------------------------------------------------------------------
@@ -297,6 +355,8 @@ fn zip_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
     let chunk_size = (names.len() + n_threads - 1) / n_threads;
 
     let (tx, rx) = std::sync::mpsc::channel::<Vec<Vec<u8>>>();
+    let bomb_found = std::sync::atomic::AtomicBool::new(false);
+    let bomb_found_ref = &bomb_found;
     std::thread::scope(|s| {
         for chunk in names.chunks(chunk_size) {
             let chunk: Vec<String> = chunk.to_vec();
@@ -308,7 +368,11 @@ fn zip_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
                         if let Some(entry) = z.entry_by_name(name) {
                             let cloned = entry.clone();
                             if let Ok(content) = z.extract(&cloned).map_err(map_err) {
-                                local.push(content);
+                                if is_decompression_bomb(cloned.compressed_size as usize, content.len()) {
+                                    bomb_found_ref.store(true, std::sync::atomic::Ordering::Relaxed);
+                                } else {
+                                    local.push(content);
+                                }
                             }
                         }
                     }
@@ -318,6 +382,10 @@ fn zip_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
         }
         drop(tx);
     });
+
+    if bomb_found.load(std::sync::atomic::Ordering::Relaxed) {
+        return Err(ExtractError::DecompressionBomb { format: "zip" });
+    }
 
     let mut out = Vec::with_capacity(names.len());
     while let Ok(chunk) = rx.recv() {
@@ -431,6 +499,9 @@ fn sz_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
             continue;
         }
         let content = sz.extract(i).map_err(map_err)?;
+        if is_decompression_bomb(data.len(), content.len()) {
+            return Err(ExtractError::DecompressionBomb { format: "7z" });
+        }
         if !content.is_empty() {
             out.push(content);
         }

@@ -70,6 +70,8 @@ public final class NativeScanner {
 
     private static native void nativeSetMaxScanSizeMb(int maxMb);
 
+    private static native void nativeSetDetectZipBomb(boolean enabled);
+
     /** Settings toggle for the Unicorn-based native-code emulation pass (runs
      *  every embedded .so's JNI_OnLoad/entry point in a bounded, syscall-free
      *  sandbox to reveal strings — e.g. a C2 URL — a decode routine only
@@ -88,6 +90,16 @@ public final class NativeScanner {
     public static void setMaxScanSizeMb(int maxMb) {
         if (!LIB_LOADED) return;
         try { nativeSetMaxScanSizeMb(maxMb); } catch (Throwable ignore) { }
+    }
+
+    /** Settings toggle for decompression-bomb rejection during archive
+     *  extraction. When on (default), any single decompressed unit past
+     *  200 MB, or past a 1000:1 output:input ratio beyond a 10 MB floor, is
+     *  rejected and flagged as a detection instead of fully decompressed.
+     *  Applied immediately; no reinit needed. */
+    public static void setDetectZipBomb(boolean enabled) {
+        if (!LIB_LOADED) return;
+        try { nativeSetDetectZipBomb(enabled); } catch (Throwable ignore) { }
     }
 
     /** Hot-load a single freshly auto-generated {@code .yar} rule (already written
@@ -280,6 +292,8 @@ public final class NativeScanner {
             setEmulationEnabled(com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
                 context, com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION));
             setMaxScanSizeMb(com.hydradragon.antivirus.engine.MaxScanFileSize.getMaxMb(context));
+            setDetectZipBomb(context.getSharedPreferences("hydra_prefs", 0)
+                .getBoolean("detect_zip_bomb_enabled", true));
         }
         Log.i(TAG, "native init " + (isReady() ? "ok" : "background") + " | " + status());
         return isReady();

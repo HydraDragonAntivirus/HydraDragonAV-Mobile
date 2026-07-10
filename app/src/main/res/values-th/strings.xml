@@ -292,6 +292,10 @@
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">ตรวจจับระเบิดการคลายบีบอัด — ปฏิเสธไฟล์บีบอัดที่ขยายขนาดแบบไม่จำกัด</string>
+    <string name="detect_zip_bomb_on_toast">เปิดการตรวจจับระเบิดการคลายบีบอัดแล้ว</string>
+    <string name="detect_zip_bomb_off_toast">ปิดการตรวจจับระเบิดการคลายบีบอัดแล้ว</string>
+
     <string name="dashboard_firewall_active">เอนจิ้นไฟร์วอลล์ทำงานอยู่</string>
     <string name="dashboard_system_secure">ระบบปลอดภัย</string>
     <string name="dashboard_status_secure_desc">• การตรวจสอบทำงานอยู่\n• ใช้กฎเครือข่ายแล้ว\n• %1$s</string>

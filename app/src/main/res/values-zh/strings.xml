@@ -292,6 +292,10 @@
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
 
+    <string name="detect_zip_bomb_toggle">检测解压缩炸弹 — 拒绝解压后体积无限膨胀的压缩包</string>
+    <string name="detect_zip_bomb_on_toast">解压缩炸弹检测已开启</string>
+    <string name="detect_zip_bomb_off_toast">解压缩炸弹检测已关闭</string>
+
     <string name="dashboard_firewall_active">防火墙引擎运行中</string>
     <string name="dashboard_system_secure">系统安全</string>
     <string name="dashboard_status_secure_desc">• 实时监控已启用\n• 网络规则已应用\n• %1$s</string>
