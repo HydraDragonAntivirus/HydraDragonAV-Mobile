@@ -7,7 +7,9 @@ import android.content.SharedPreferences;
 import android.net.VpnService;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -44,6 +46,7 @@ public class SettingsFragment extends Fragment {
     private static final int REQ_VPN = 1201;
     private static final int REQ_SCREEN_CAPTURE = 1202;
     private static final int REQ_SMS = 1203;
+    private static final int REQ_NOTIFICATION = 1204;
 
     // Self-protection: only the real user should be able to change settings.
     // A transparent tapjacking overlay is caught by FLAG_WINDOW_IS_OBSCURED
@@ -286,6 +289,44 @@ public class SettingsFragment extends Fragment {
             else openAppSettingsToRevokeSms();
         });
 
+        // Silent Mode — when ON, no notification permission is requested
+        // and the app runs without any notification popups.
+        boolean silentMode = prefs().getBoolean("silent_mode", false);
+        addToggle(getString(R.string.silent_mode_toggle), silentMode, (btn, on) -> {
+            prefs().edit().putBoolean("silent_mode", on).apply();
+            if (!on && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    && ContextCompat.checkSelfPermission(requireContext(),
+                        android.Manifest.permission.POST_NOTIFICATIONS)
+                        != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATION);
+            }
+        });
+
+        // All Files Access — required to scan installed APKs on Android 11+.
+        // Only MANAGE_EXTERNAL_STORAGE is MANDATORY — all other permissions
+        // are optional (notifications, accessibility, etc.).
+        boolean allFilesGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.R
+            || Environment.isExternalStorageManager();
+        addToggle(getString(R.string.all_files_access_title), allFilesGranted, (btn, on) -> {
+            if (on && !allFilesGranted) {
+                try {
+                    startActivity(new Intent(
+                        android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                        Uri.parse("package:" + requireContext().getPackageName())));
+                } catch (Throwable ignore) { }
+                buildUI();
+            } else {
+                Toast.makeText(getContext(), "Open App Info > Permissions to revoke",
+                    Toast.LENGTH_LONG).show();
+                try {
+                    startActivity(new Intent(
+                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + requireContext().getPackageName())));
+                } catch (Throwable ignore) { }
+                buildUI();
+            }
+        });
+
         // Off by default: one FileObserver thread per storage root, plus files
         // dropped outside Downloads are also already caught (just not instantly)
         // by GuardService's periodic Full Scan. See GuardService.KEY_REALTIME_STORAGE_WATCH.
@@ -506,7 +547,15 @@ public class SettingsFragment extends Fragment {
                 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED;
             Toast.makeText(getContext(), granted ? getString(R.string.sms_scanning_enabled) : getString(R.string.sms_permission_denied),
                 granted ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
-            buildUI(); // reflect the actual granted state, whichever way it went
+            buildUI();
+        } else if (requestCode == REQ_NOTIFICATION) {
+            boolean granted = grantResults.length > 0
+                && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            if (!granted) {
+                Toast.makeText(getContext(), "Notification permission denied — enable Silent Mode or grant from Settings",
+                    Toast.LENGTH_LONG).show();
+            }
+            buildUI();
         }
     }
 

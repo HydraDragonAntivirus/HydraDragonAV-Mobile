@@ -291,13 +291,16 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // POST_NOTIFICATIONS is optional (not blocking) — user can enable via
+        // Settings > Notifications or turn on Silent Mode to skip entirely.
         SharedPreferences notifPrefs = getSharedPreferences("hydra_prefs", MODE_PRIVATE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 && ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-                && !notifPrefs.getBoolean("notifications_decided", false)) {
-            permissionDialogShowing = true;
+                && !notifPrefs.getBoolean("notifications_decided", false)
+                && !notifPrefs.getBoolean("silent_mode", false)) {
+            notifPrefs.edit().putBoolean("notifications_decided", true).apply();
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
-            return;
+            // Don't return — non-blocking, continue the startup flow
         }
 
         // SMS virus/scam detection (SmsReceiver) is opt-in from Settings, not
