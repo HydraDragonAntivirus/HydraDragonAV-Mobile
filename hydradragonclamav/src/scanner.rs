@@ -1768,6 +1768,38 @@ mod tests {
         assert!(engine.scan_bytes(b"xxAByy", ScanOptions::default()).is_empty());
     }
 
+    #[test]
+    fn scans_eicar_test_signature() {
+        let source = SourceLocation {
+            path: std::sync::Arc::from(std::path::Path::new("test.ndb")),
+            line: 1,
+        };
+        let mut name_arena = String::new();
+        let hex = "58354f2150254041505b345c505a58353428505e2937434329377d2445494341522d5354414e444152442d414e544956495255532d544553542d46494c452124482b482a";
+        let database = Database {
+            extended: vec![ExtendedSignature {
+                name: crate::database::intern_name(&mut name_arena, "Test.Eicar"),
+                target: Some(0),
+                offset: OffsetSpec::any(),
+                patterns: compile_pattern_variants(hex, Modifiers::default()).unwrap().into(),
+                source,
+            }],
+            name_arena,
+            ..Default::default()
+        };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
+
+        let eicar = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
+        let hit = engine.scan_bytes(eicar, ScanOptions::default());
+        assert_eq!(hit.len(), 1, "EICAR test signature should detect the EICAR string");
+        assert_eq!(hit[0].name, "Test.Eicar");
+
+        // Should not match on a benign string
+        let miss = engine.scan_bytes(b"hello world this is not malware", ScanOptions::default());
+        assert!(miss.is_empty(), "EICAR signature must not fire on benign content");
+    }
+
     fn stored_zip(name: &str, data: &[u8]) -> Vec<u8> {
         let name_bytes = name.as_bytes();
         let mut out = Vec::new();
