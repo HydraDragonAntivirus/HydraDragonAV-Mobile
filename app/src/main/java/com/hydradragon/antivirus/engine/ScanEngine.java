@@ -200,6 +200,10 @@ public class ScanEngine {
     /** Set by {@link #cancelScan()} to abort an in-flight scan at the next loop
      *  boundary. Volatile so the UI thread's request is seen by the scan thread. */
     private volatile boolean cancelRequested = false;
+    
+    /** Request the running scan to pause. Unlike cancel, pause preserves progress
+     *  and allows resuming from where it left off. */
+    private volatile boolean pauseRequested = false;
 
     /** Request the running scan to stop as soon as possible. Native calls
      *  in flight are ABANDONED (see runNativeInterruptible), not killed —
@@ -209,10 +213,24 @@ public class ScanEngine {
      *  when cancelRequested is true, so the next scan re-evaluates it fresh. */
     public void cancelScan() {
         cancelRequested = true;
+        pauseRequested = false; // Cancel overrides pause
+    }
+
+    /** Pause the running scan. Can be resumed with {@link #resumeScan()}. */
+    public void pauseScan() {
+        pauseRequested = true;
+    }
+
+    /** Resume a paused scan. */
+    public void resumeScan() {
+        pauseRequested = false;
     }
 
     /** Whether a stop was requested for the current/last scan. */
     public boolean isCancelled() { return cancelRequested; }
+    
+    /** Whether the scan is currently paused. */
+    public boolean isPaused() { return pauseRequested; }
 
     /** Runs a blocking native (JNI/Rust) call on a background thread and polls
      *  for {@link #cancelRequested} every 150ms instead of blocking until it
@@ -462,6 +480,7 @@ public class ScanEngine {
             return false;
         }
         cancelRequested = false;
+        pauseRequested = false;
         engineTimingMs.clear();
         filesScannedCount.set(0);
         scanExecutor.execute(() -> {
@@ -474,6 +493,13 @@ public class ScanEngine {
 
             for (int i = 0; i < total; i++) {
                 if (cancelRequested) break;
+                
+                // Pause handling: wait while paused, wake up every 100ms to check
+                while (pauseRequested && !cancelRequested) {
+                    try { Thread.sleep(100); } catch (InterruptedException e) { break; }
+                }
+                if (cancelRequested) break;
+                
                 ApplicationInfo app = apps.get(i);
                 try {
                     if (callback != null) callback.onProgress(i + 1, total, app.packageName);
@@ -542,6 +568,7 @@ public class ScanEngine {
             return false;
         }
         cancelRequested = false;
+        pauseRequested = false;
         engineTimingMs.clear();
         filesScannedCount.set(0);
         appsScannedBase = 0;
@@ -591,6 +618,13 @@ public class ScanEngine {
         if (files == null) return;
         for (java.io.File file : files) {
             if (cancelRequested) return;
+            
+            // Pause handling
+            while (pauseRequested && !cancelRequested) {
+                try { Thread.sleep(100); } catch (InterruptedException e) { break; }
+            }
+            if (cancelRequested) return;
+            
             // Still mid-download (MediaStore's ".pending-<id>-realname" temp
             // file) — guaranteed incomplete, parsing it as a zip/APK fails
             // outright. It'll get scanned under its real name once the
@@ -822,6 +856,13 @@ public class ScanEngine {
         for (ThreatResult t : threats) if (t.getPackageName() != null) seen.add(t.getPackageName());
         for (ApplicationInfo app : apps) {
             if (cancelRequested) return;
+            
+            // Pause handling
+            while (pauseRequested && !cancelRequested) {
+                try { Thread.sleep(100); } catch (InterruptedException e) { break; }
+            }
+            if (cancelRequested) return;
+            
             try {
                 if (app.sourceDir == null) continue;
                 // Never deep-flag system files.

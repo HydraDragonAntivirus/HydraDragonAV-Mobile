@@ -115,6 +115,8 @@
     <string name="scan_stop">⛔ STOP</string>
     <string name="scan_stopping">Stopping…</string>
     <string name="scan_stopped">⏹ Scan stopped</string>
+    <string name="scan_paused">⏸ Scan paused</string>
+    <string name="scan_resuming">Resuming…</string>
     <string name="scanned">SCANNED</string>
     <string name="threat">THREAT</string>
     <string name="found_threats">⚠ MALICIOUS FILES DETECTED</string>

@@ -2307,7 +2307,9 @@ fn collect_buffers(
         s.spawn(|| {
             let opts = ScanOptions::default();
             if let Some(clamav) = engine {
+                let mut scan_count = 0;
                 for (buf_data, lineage, idx) in buf_rx {
+                    scan_count += 1;
                     let name = if idx == 0 {
                         path.to_string()
                     } else {
@@ -2321,6 +2323,10 @@ fn collect_buffers(
                         }
                     }
                 }
+                android_log(&format!(
+                    "scanner_thread :: scanned {} buffers total",
+                    scan_count
+                ));
             } else {
                 for _ in buf_rx {}
             }
@@ -2328,11 +2334,13 @@ fn collect_buffers(
 
         // Main thread: extract archive entries and send each buffer to the
         // scanner thread. Extraction is NOT paused for scanning — they overlap.
+        let mut extract_count = 0;
         while let Some((buf, depth, parent_lineage)) = stack.pop() {
             if out.len() >= 4096 || total_bytes >= 2_000_000_000 {
                 break;
             }
             total_bytes += buf.len() as u64;
+            extract_count += 1;
             let mut lineage = parent_lineage;
             // Detect format ONCE per buffer (both for lineage and extraction).
             let fmt = hydradragonextractor::detect_format(&buf);
@@ -2373,6 +2381,14 @@ fn collect_buffers(
         }
         // Drop our sender so the scanner thread's recv loop terminates.
         drop(buf_tx);
+        
+        // Log extraction stats
+        android_log(&format!(
+            "collect_buffers :: extracted {} buffers, scanned {} (>12 bytes), total {} MB",
+            out.len(),
+            extract_count,
+            total_bytes / 1_000_000
+        ));
     });
     // Drop the original detection sender so the drain loop below terminates.
     drop(det_tx);

@@ -40,6 +40,7 @@ import java.util.List;
 public class ScanFragment extends Fragment {
 
     private Button btnScan;
+    private Button btnPauseResume;
     private ProgressBar progressBar;
     private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats, tvThreatLabel, tvEngineWarning;
     private ImageView ivScannerIcon;
@@ -105,6 +106,7 @@ public class ScanFragment extends Fragment {
         if (lastScanStatus == null) lastScanStatus = getString(R.string.scan_system);
 
         btnScan = view.findViewById(R.id.btn_start_scan);
+        btnPauseResume = view.findViewById(R.id.btn_pause_resume);
         progressBar = view.findViewById(R.id.scan_progress);
         tvProgress = view.findViewById(R.id.tv_progress_text);
         tvCurrentApp = view.findViewById(R.id.tv_current_app);
@@ -219,6 +221,20 @@ public class ScanFragment extends Fragment {
         btnScan.setOnClickListener(v -> {
             if (!isScanning) showScanTypeDialog();
             else stopScan();
+        });
+
+        btnPauseResume.setOnClickListener(v -> {
+            if (!serviceBound || guardService == null || guardService.getScanEngine() == null) return;
+            com.hydradragon.antivirus.engine.ScanEngine engine = guardService.getScanEngine();
+            if (engine.isPaused()) {
+                engine.resumeScan();
+                btnPauseResume.setText("⏸");
+                tvCurrentApp.setText(getString(R.string.scan_resuming));
+            } else {
+                engine.pauseScan();
+                btnPauseResume.setText("▶");
+                tvCurrentApp.setText(getString(R.string.scan_paused));
+            }
         });
     }
 
@@ -449,6 +465,8 @@ public class ScanFragment extends Fragment {
 
         btnScan.setText(getString(R.string.scan_stop));
         btnScan.setEnabled(true);
+        btnPauseResume.setVisibility(View.VISIBLE);
+        btnPauseResume.setText("⏸");
         startScannerAnimation();
 
         // Clear the PREVIOUS scan's final status ("System clean" / "N threats
@@ -543,6 +561,7 @@ public class ScanFragment extends Fragment {
                     stopScannerAnimation();
                     btnScan.setText(getString(R.string.rescan));
                     btnScan.setEnabled(true);
+                    btnPauseResume.setVisibility(View.GONE);
                     if (wasCancelled) {
                         lastScanStatus = getString(R.string.scan_stopped);
                         tvScanStatus.setText(lastScanStatus);

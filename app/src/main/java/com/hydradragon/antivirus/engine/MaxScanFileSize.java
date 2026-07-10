@@ -11,7 +11,7 @@ public final class MaxScanFileSize {
     private static final String PREFS = "hydra_prefs";
     private static final String KEY_MAX_MB = "max_scan_file_size_mb";
 
-    public static final int DEFAULT_MB = 500;
+    public static final int DEFAULT_MB = 650;
     /** Below this, legitimate APKs/media routinely get skipped entirely —
      *  refuse a tighter cap than this regardless of user input. */
     public static final int MIN_MB = 10;
