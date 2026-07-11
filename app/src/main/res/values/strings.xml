@@ -367,6 +367,6 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="uninstall_failed_safe_mode">OPEN SETTINGS TO REBOOT TO SAFE MODE</string>
     <string name="uninstall_failed_safe_mode_toast">After reboot into Safe Mode, open HydraDragon and run a full scan to remove the malware</string>
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
-    <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn&apos;s ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
+    <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in the ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
 
 </resources>

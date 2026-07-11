@@ -134,7 +134,7 @@ pub fn host_arch() -> &'static str {
 /// `nativeIsEmulationAvailable()` and shows `R.string.unicorn_unsupported`
 /// from `strings.xml` (available in 20 languages).
 pub fn unsupported_reason() -> &'static str {
-    "Unicorn JIT backend hang detected — emulation disabled for this session"
+    "ARM64 JIT backend hang detected — Unicorn emulation disabled for this session"
 }
 
 const PAGE: u64 = 0x1000;

@@ -359,6 +359,6 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="risk_score_format">Risk: %1$d/100</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
-    <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn&apos;s ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
+    <string name="unicorn_unsupported">Yerel kod öykünmesi (Unicorn) bu cihazda kullanılamıyor. Gerçek telefon donanımında Unicorn ARM64 JIT arka ucundaki bilinen bir hatadan kaynaklanır. Tarama bu adım olmadan normal şekilde devam eder.</string>
 
 </resources>
