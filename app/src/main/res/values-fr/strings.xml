@@ -288,7 +288,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="sms_open_permissions_toast">Ouvrez Autorisations &gt; SMS pour désactiver ceci</string>
     <string name="sms_scanning_enabled">Analyse des SMS activée</string>
     <string name="sms_permission_denied">Autorisation SMS refusée</string>
-    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
+    <string name="silent_mode_toggle">Mode silencieux (Aucune notification)</string>
     <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>

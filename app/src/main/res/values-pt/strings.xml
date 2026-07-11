@@ -288,7 +288,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="sms_open_permissions_toast">Abra Permissões &gt; SMS para desativar isso</string>
     <string name="sms_scanning_enabled">Verificação de SMS ativada</string>
     <string name="sms_permission_denied">Permissão de SMS negada</string>
-    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
+    <string name="silent_mode_toggle">Modo silencioso (Sem notificações)</string>
     <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>

@@ -277,7 +277,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="all_files_access_msg">HydraDragon, kötü amaçlı yazılımları taramak için tam dosya erişimine ihtiyaç duyar.</string>
     <string name="accessibility_optional_title">Erişilebilirlik Servisi (İsteğe Bağlı)</string>
     <string name="accessibility_optional_msg">HydraDragon Dinamik Davranış Analizi, uygulamaları aktif olarak izlemek ve fidye yazılımını gerçek zamanlı durdurmak için Erişilebilirlik Servisine ihtiyaç duyar.\n\nAncak bazı cihazlar bunu kısıtlar. Cihazınız izin vermiyorsa bunu atlayabilirsiniz, ancak Gelişmiş Dinamik Koruma devre dışı bırakılacaktır.</string>
-    <string name="notification_permission_required">Bildirim izni gereklidir!</string>
+    <string name="notification_permission_required">Bildirim izni verilmesi önerilir!</string>
     <string name="play_protect_open_failed">Play Protect ayarları açılamadı</string>
     <string name="premium_features_header">PREMIUM ÖZELLİKLER</string>
     <string name="zero_trust_header">Sıfır Güven (deneysel)</string>
@@ -306,7 +306,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="sms_open_permissions_toast">Bunu kapatmak için İzinler &gt; SMS bölümünü açın</string>
     <string name="sms_scanning_enabled">SMS taraması etkinleştirildi</string>
     <string name="sms_permission_denied">SMS izni reddedildi</string>
-    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
+    <string name="silent_mode_toggle">Sessiz Mod (Bildirim Yok)</string>
     <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>

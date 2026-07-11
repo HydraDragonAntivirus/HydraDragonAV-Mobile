@@ -287,7 +287,7 @@
     <string name="sms_open_permissions_toast">इसे बंद करने के लिए अनुमतियां &gt; SMS खोलें</string>
     <string name="sms_scanning_enabled">SMS स्कैनिंग सक्षम है</string>
     <string name="sms_permission_denied">SMS अनुमति अस्वीकृत</string>
-    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
+    <string name="silent_mode_toggle">मूक मोड (कोई सूचना नहीं)</string>
     <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>

@@ -288,7 +288,7 @@
     <string name="sms_open_permissions_toast">打开 权限 &gt; 短信 以关闭此功能</string>
     <string name="sms_scanning_enabled">短信扫描已启用</string>
     <string name="sms_permission_denied">短信权限被拒绝</string>
-    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
+    <string name="silent_mode_toggle">静音模式（无通知）</string>
     <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
