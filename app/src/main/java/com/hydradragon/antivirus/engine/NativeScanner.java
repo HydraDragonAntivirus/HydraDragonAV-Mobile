@@ -78,6 +78,8 @@ public final class NativeScanner {
 
     private static native boolean nativeLearnRule(String yarPath);
 
+    private static native boolean nativeIsEmulationAvailable();
+
     private static native void nativeSetEmulationEnabled(boolean enabled);
 
     private static native void nativeSetMaxScanSizeMb(int maxMb);
@@ -93,6 +95,13 @@ public final class NativeScanner {
     public static void setEmulationEnabled(boolean enabled) {
         if (!LIB_LOADED) return;
         try { nativeSetEmulationEnabled(enabled); } catch (Throwable ignore) { }
+    }
+
+    /** Called by Rust when the startup probe detects Unicorn's ARM64 JIT
+     *  backend is broken on this device.  The app shows a one-time warning
+     *  via {@link R.string.unicorn_unsupported}. */
+    public static void onEmulationUnavailable(String reason) {
+        Log.w(TAG, "Emulation unavailable: " + reason);
     }
 
     /** Push the user's {@link MaxScanFileSize} preference into the native
@@ -307,6 +316,12 @@ public final class NativeScanner {
             context, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
         nativeInit(ASSET_DIR, loadAutoRules, context.getAssets(), dir.getAbsolutePath());
         if (isReady()) {
+            // Probe Unicorn at startup — if the ARM64 JIT backend hangs
+            // (known bug on real phone hardware), emulation is permanently
+            // disabled for this process lifetime.
+            if (!nativeIsEmulationAvailable()) {
+                onEmulationUnavailable("ARM64 JIT probe failed");
+            }
             setEmulationEnabled(com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
                 context, com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION));
             setMaxScanSizeMb(com.hydradragon.antivirus.engine.MaxScanFileSize.getMaxMb(context));

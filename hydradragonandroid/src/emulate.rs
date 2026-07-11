@@ -21,12 +21,121 @@
 //!   * Any Unicorn error (unmapped read/write, invalid instruction, decoding
 //!     a corrupt/adversarial ELF) is treated as "stop here", never a panic —
 //!     wrapped in `catch_unwind` at the call site in `lib.rs`.
+//!
+//! Watchdog mechanism for the known Unicorn ARM64-host JIT hang bug:
+//! On real ARM64 devices (Vivo etc.) Unicorn's `emu_start` can hang
+//! indefinitely due to a bug in its TCG (JIT) backend, even though Unicorn's
+//! own TIMEOUT_US is set. To work around this, the emulation thread shares a
+//! raw uc_engine handle via an atomic before calling `emu_start`. If the
+//! caller's `HARD_DEADLINE` expires, it calls `uc_emu_stop()` directly
+//! through C FFI (which is explicitly documented as thread-safe in Unicorn's
+//! API) to unblock the emulation thread, so the `EmulationSlot` is released
+//! promptly instead of leaking forever.
 
 use crate::elf::{self, EM_AARCH64, EM_ARM, EM_386, EM_X86_64};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::atomic::{AtomicI8, AtomicUsize, Ordering};
+use std::sync::Arc;
 use unicorn_engine::unicorn_const::{Arch, Mode, Prot};
 use unicorn_engine::{RegisterARM, RegisterARM64, RegisterX86, Unicorn};
+
+// Direct FFI call to `uc_emu_stop` — Unicorn's C API guarantees this is
+// thread-safe and can be called from any thread to stop an ongoing
+// `emu_start` on another thread. We cannot use the Rust wrapper
+// `Unicorn::emu_stop()` here because it takes `&mut self` and the emulation
+// thread holds the mutable reference inside `emu_start`.
+unsafe extern "C" {
+    fn uc_emu_stop(engine: *mut std::ffi::c_void) -> std::ffi::c_int;
+}
+
+// ── Startup probe: detect ARM64-host JIT hang once ──────────────────────
+//
+// Unicorn's ARM64-host TCG backend has a known bug that causes emu_start to
+// hang indefinitely on real ARM64 devices (Vivo etc.).  We probe once at
+// startup: run a trivial one-instruction snippet with a tight timeout.  If
+// the probe itself hangs (detected via channel timeout), emulation is
+// permanently disabled for this process lifetime.
+
+/// Tri-state: 0 = untested, 1 = available, -1 = unavailable.
+static EMULATION_PROBE: AtomicI8 = AtomicI8::new(0);
+
+/// Runs a quick Unicorn smoke test for ARM64 (the most commonly broken host
+/// backend).  Called once from lib.rs at startup.  Safe to call multiple
+/// times — only the first call actually probes; subsequent calls return the
+/// cached result.
+pub fn probe_emulation() -> bool {
+    match EMULATION_PROBE.load(Ordering::Acquire) {
+        1 => return true,
+        -1 => return false,
+        _ => {}
+    }
+    let (tx, rx) = std::sync::mpsc::channel::<bool>();
+    std::thread::spawn(move || {
+        // Minimal ARM64 test: one NOP (0xD503201F).
+        let code = &[0x1f, 0x20, 0x03, 0xd5];
+        let mut uc = match Unicorn::new(Arch::ARM64, Mode::LITTLE_ENDIAN) {
+            Ok(u) => u,
+            Err(_) => {
+                let _ = tx.send(false);
+                return;
+            }
+        };
+        let base: u64 = 0x1000;
+        if uc.mem_map(base, 0x1000, Prot::ALL).is_err()
+            || uc.mem_write(base, code).is_err()
+            || uc.emu_start(base, base + 4, 5_000, 1).is_err()
+        {
+            let _ = tx.send(false);
+            return;
+        }
+        let _ = tx.send(true);
+    });
+    let ok = rx.recv_timeout(std::time::Duration::from_millis(300)).unwrap_or(false);
+    EMULATION_PROBE.store(if ok { 1 } else { -1 }, Ordering::Release);
+    // Don't consume the slot — not needed for the probe.
+    ok
+}
+
+/// Returns `true` if the startup probe succeeded (Unicorn emulation is
+/// usable on this device).
+pub fn emulation_available() -> bool {
+    let v = EMULATION_PROBE.load(Ordering::Acquire);
+    if v == 0 {
+        // Not yet probed — assume yes (the scan path has a per-call
+        // HARD_DEADLINE safety net anyway).  The caller should still call
+        // `probe_emulation()` at startup for the fast-path skip to work.
+        true
+    } else {
+        v > 0
+    }
+}
+
+// ── Host architecture hint ──────────────────────────────────────────────
+
+/// Returns a human-readable host-CPU description (used in the unsupported-
+/// environment message below).
+pub fn host_arch() -> &'static str {
+    #[cfg(target_arch = "aarch64")]
+    { "ARM64 (AArch64)" }
+    #[cfg(target_arch = "arm")]
+    { "ARMv7 (32-bit)" }
+    #[cfg(target_arch = "x86_64")]
+    { "x86_64" }
+    #[cfg(target_arch = "x86")]
+    { "x86 (32-bit)" }
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "x86")))]
+    { "unknown" }
+}
+
+// ── Unsupported-environment reason ──────────────────────────────────────
+
+/// Short English diagnostic string for logcat.  The Java side reads
+/// `nativeIsEmulationAvailable()` and shows `R.string.unicorn_unsupported`
+/// from `strings.xml` (available in 20 languages).
+pub fn unsupported_reason() -> &'static str {
+    "Unicorn JIT backend hang detected — emulation disabled for this session"
+}
 
 const PAGE: u64 = 0x1000;
 const MAX_INSN: usize = 200_000;
@@ -135,21 +244,11 @@ fn align_up(x: u64, a: u64) -> u64 {
     align_down(x + a - 1, a)
 }
 
-/// Absolute hard ceiling on how long `emulate()` can block its CALLER,
-/// enforced INDEPENDENTLY of Unicorn's own `TIMEOUT_US` parameter. Unicorn's
-/// internal timeout has been unreliable in the wild on some real ARM64
-/// hardware (as opposed to running under an x86 emulator/simulator) — if it
-/// doesn't fire on a given device, `emu_start` can run far longer than
-/// TIMEOUT_US, or effectively never return. This deadline doesn't depend on
-/// Unicorn cooperating at all: the actual emulation runs on its own thread,
-/// and the caller only ever waits up to HARD_DEADLINE for a result over a
-/// channel. If nothing arrives in time, the caller gets an empty result
-/// immediately and the scan moves on — the background thread is abandoned
-/// (same "abandon, don't kill" pattern Java's
-/// ScanEngine.runNativeInterruptible already uses, for the identical
-/// reason), and it releases its EMULATION_SLOTS slot itself whenever it
-/// eventually finishes, however long that takes.
-const HARD_DEADLINE: std::time::Duration = std::time::Duration::from_millis(1_000);
+/// How long `emulate()` waits for the emulation thread before
+/// force-stopping it via `uc_emu_stop()`. Set just above `TIMEOUT_US`
+/// (500ms) to absorb thread startup overhead without adding unnecessary
+/// delay when Unicorn's own timeout is broken on ARM64 hosts.
+const HARD_DEADLINE: std::time::Duration = std::time::Duration::from_millis(600);
 
 /// Emulate `so_bytes` (a native library extracted from an APK), returning
 /// both runtime-decoded strings and traced calls into suspicious APIs — see
@@ -159,6 +258,13 @@ const HARD_DEADLINE: std::time::Duration = std::time::Duration::from_millis(1_00
 /// dedicated thread it does not wait on indefinitely (see `HARD_DEADLINE`).
 pub fn emulate(so_bytes: &[u8]) -> EmulationResult {
     let result = EmulationResult::default();
+
+    // Fast-path skip if the startup probe detected an unsupported host
+    // (Unicorn ARM64 JIT hang on real phone hardware).
+    if !emulation_available() {
+        return result;
+    }
+
     let info = match elf::parse_elf(so_bytes) {
         Some(i) => i,
         None => return result,
@@ -185,20 +291,25 @@ pub fn emulate(so_bytes: &[u8]) -> EmulationResult {
 
     let owned = so_bytes.to_vec();
     let (tx, rx) = std::sync::mpsc::channel();
+    let stop_handle = Arc::new(AtomicUsize::new(0));
+    let stop_clone = Arc::clone(&stop_handle);
     std::thread::spawn(move || {
-        // Held for as long as THIS thread actually runs — released when it
-        // finishes, even if the caller already gave up on `rx` below.
         let _slot = slot;
-        let r = emulate_body(&owned);
-        let _ = tx.send(r); // caller may already be gone past HARD_DEADLINE — fine
+        let r = emulate_body(&owned, &stop_clone);
+        let _ = tx.send(r);
     });
 
     match rx.recv_timeout(HARD_DEADLINE) {
         Ok(r) => r,
-        // Either genuinely timed out, or the worker thread panicked and
-        // dropped `tx` without sending — both cases mean "give up, don't
-        // block the scan any longer than our own deadline allows".
-        Err(_) => EmulationResult::default(),
+        Err(_) => {
+            // Force-stop the hung emulation so the worker thread unblocks
+            // and releases its EMULATION_SLOTS slot immediately.
+            let handle = stop_handle.load(Ordering::Acquire);
+            if handle != 0 {
+                unsafe { uc_emu_stop(handle as *mut std::ffi::c_void); }
+            }
+            EmulationResult::default()
+        },
     }
 }
 
@@ -220,7 +331,7 @@ pub fn emulate(so_bytes: &[u8]) -> EmulationResult {
 /// `ret` would) so emulation resumes as if the call had returned — this is
 /// still pure CPU emulation: the stub never executes real code, no syscall or
 /// libc function ever actually runs, only bookkeeping in the hook callback.
-fn emulate_body(so_bytes: &[u8]) -> EmulationResult {
+fn emulate_body(so_bytes: &[u8], stop_handle: &AtomicUsize) -> EmulationResult {
     let mut result = EmulationResult::default();
     let info = match elf::parse_elf(so_bytes) {
         Some(i) => i,
@@ -363,7 +474,15 @@ fn emulate_body(so_bytes: &[u8]) -> EmulationResult {
 
     // Run — errors (unmapped access, invalid instruction, timeout) are all
     // just "stop here"; whatever got decoded before that point still counts.
+    //
+    // Arm the stop handle BEFORE emu_start so the watchdog (in `emulate()`)
+    // can force-unblock us via uc_emu_stop() if we hang past HARD_DEADLINE.
+    // Clear it immediately after emu_start returns — the watchdog either
+    // already fired (and we're responding to the forced stop) or didn't need
+    // to (emu_start returned normally within the deadline).
+    stop_handle.store(uc.get_handle() as usize, Ordering::Release);
     let _ = uc.emu_start(entry, 0, TIMEOUT_US, MAX_INSN);
+    stop_handle.store(0, Ordering::Release);
 
     // Harvest every mapped region's live memory and extract new strings.
     let mut found = Vec::new();

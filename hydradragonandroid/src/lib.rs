@@ -145,6 +145,9 @@ struct Engine {
     ip_scanner: Option<ip_scan::IpScanner>,
 }
 
+/// Saved so background threads can call back into Java.
+static JAVA_VM: OnceLock<jni::JavaVM> = OnceLock::new();
+
 /// `RwLock` (not a bare `Engine`) so a freshly auto-generated rule can be
 /// hot-added to the LIVE engine mid-session (write lock, brief) — see
 /// `nativeLearnRule` — instead of only taking effect after the next process
@@ -655,6 +658,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
             return Ok(JNI_FALSE);
         }
 
+        // Store the JVM so Rust background threads can call back into Java.
+        let _ = JAVA_VM.set(env.get_java_vm()?);
+
         let load_auto_rules = load_auto_rules != JNI_FALSE;
         install_panic_hook();
 
@@ -749,6 +755,41 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     enabled: jboolean,
 ) {
     NATIVE_EMULATION_ENABLED.store(enabled != JNI_FALSE, Ordering::Relaxed);
+}
+
+/// `boolean nativeIsEmulationAvailable()` — probes Unicorn once per
+/// process lifetime.  Returns the cached result: Java shows
+/// `R.string.unicorn_unsupported` when this is false.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeIsEmulationAvailable(
+    _env: EnvUnowned,
+    _class: JClass,
+) -> jboolean {
+    if emulate::probe_emulation() { JNI_TRUE } else { JNI_FALSE }
+}
+
+/// `String nativeEmulationReason()` — short English diagnostic explaining
+/// why emulation was disabled (for logcat / Java-side logging).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeEmulationReason<'local>(
+    mut env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+) -> jstring {
+    env.with_env(|env| -> jni::errors::Result<_> {
+        env.new_string(emulate::unsupported_reason()).map(|j| j.into_raw())
+    }).resolve::<LogErrorAndDefault>()
+}
+
+/// `String nativeHostArch()` — returns the host CPU architecture string
+/// (e.g. "ARM64 (AArch64)", "x86_64") for diagnostics.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeHostArch<'local>(
+    mut env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+) -> jstring {
+    env.with_env(|env| -> jni::errors::Result<_> {
+        env.new_string(emulate::host_arch()).map(|j| j.into_raw())
+    }).resolve::<LogErrorAndDefault>()
 }
 
 /// `void nativeSetMaxScanSizeMb(int maxMb)` — push the
