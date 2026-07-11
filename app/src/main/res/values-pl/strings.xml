@@ -356,6 +356,4 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="malware_has_admin_open_settings">OTWÓRZ USTAWIENIA ADMINISTRATORA URZĄDZENIA</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
-    <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in the ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
-
 </resources>
