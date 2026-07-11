@@ -58,11 +58,6 @@ strip = false
 debug = true
 debug-assertions = true
 overflow-checks = true
-# release's opt-level "z" (size-optimized) is what makes yara-x/p384's
-# codegen crawl without LTO to offset it. opt-level 2 + parallel codegen
-# units keeps this profile fast to build, matching [profile.repro].
-opt-level = 2
-codegen-units = 16
 
 # Fast-iteration profile for the host `repro` example: no LTO, parallel codegen,
 # opt-level 2 (near-release runtime speed). The Android .so still uses the LTO'd
