@@ -39,6 +39,18 @@ public final class NativeScanner {
     /** Whether libhydradragonandroid.so loaded. If false, all calls no-op safely. */
     private static final boolean LIB_LOADED;
 
+    /** Guards against firing nativeInit() more than once. isReady() alone isn't
+     *  enough: nativeInit() spawns its background Rust thread and returns almost
+     *  immediately, staying false for the ~70s the real load takes — so every
+     *  call site that races in during that window (HydraDragonApp.onCreate,
+     *  MainActivity.onCreate, BootReceiver, GuardService's ScanEngine, and a
+     *  fresh ScanEngine per InstallReceiver package-added/replaced event) used
+     *  to see isReady()==false and each kick off its own redundant native-init
+     *  thread — observed as 6 concurrent native-init threads starving the main
+     *  thread into an ANR. */
+    private static final java.util.concurrent.atomic.AtomicBoolean INIT_STARTED =
+        new java.util.concurrent.atomic.AtomicBoolean(false);
+
     static {
         boolean loaded;
         try {
@@ -273,6 +285,12 @@ public final class NativeScanner {
             return true;
         }
         if (!LIB_LOADED) {
+            return false;
+        }
+        if (!INIT_STARTED.compareAndSet(false, true)) {
+            // Another caller already kicked off nativeInit(); it's still
+            // loading in the background. Don't start a second (third, ...)
+            // redundant native-init thread — just report not-ready-yet.
             return false;
         }
         // NO asset copy to disk — Rust reads every file directly from the
