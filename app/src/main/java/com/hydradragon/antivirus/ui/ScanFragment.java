@@ -503,7 +503,7 @@ public class ScanFragment extends Fragment {
             isScanning = false;
             stopScannerAnimation();
             btnScan.setText(getString(R.string.rescan));
-            btnPauseResume.setVisibility(View.GONE);
+            btnPauseResume.setVisibility(View.INVISIBLE);
             Toast.makeText(getContext(), getString(R.string.scan_already_running), Toast.LENGTH_SHORT).show();
             return;
         }
@@ -579,7 +579,7 @@ public class ScanFragment extends Fragment {
                     stopScannerAnimation();
                     btnScan.setText(getString(R.string.rescan));
                     btnScan.setEnabled(true);
-                    btnPauseResume.setVisibility(View.GONE);
+                    btnPauseResume.setVisibility(View.INVISIBLE);
                     long secs = result.getScanDurationMs() / 1000;
                     long millis = result.getScanDurationMs() % 1000;
                     String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
@@ -830,7 +830,7 @@ public class ScanFragment extends Fragment {
             isScanning = false;
             stopScannerAnimation();
             btnScan.setText(getString(R.string.rescan));
-            btnPauseResume.setVisibility(View.GONE);
+            btnPauseResume.setVisibility(View.INVISIBLE);
             Toast.makeText(getContext(), getString(R.string.scan_already_running), Toast.LENGTH_SHORT).show();
         }
     }

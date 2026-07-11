@@ -184,7 +184,7 @@
             android:textColor="@color/bg_primary"
             android:fontFamily="monospace"
             android:backgroundTint="@color/neon_cyan"
-            android:visibility="gone"/>
+            android:visibility="invisible"/>
     </LinearLayout>
 
     <!-- Engine loading warning (yellow) -->
