@@ -747,6 +747,7 @@ public class ScanEngine {
             if (!malicious && v.permissions < 6) return;
 
             ThreatResult.Builder b = new ThreatResult.Builder(path);
+            b.setStandaloneFile(true);
             List<String> reasons = new java.util.ArrayList<>();
             int riskScore = 0;
             boolean mlMalicious = false;
@@ -1038,6 +1039,7 @@ public class ScanEngine {
         }
 
         ThreatResult.Builder builder = new ThreatResult.Builder(app.packageName);
+        builder.setStandaloneFile(isApkFile);
 
         // Never flag ourselves — exact match against our release + debug package
         // (debug build's packageName has a ".debug" suffix; a scanned own-APK

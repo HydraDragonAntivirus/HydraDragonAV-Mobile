@@ -175,9 +175,12 @@ public class ScanFragment extends Fragment {
                 .setMessage(getString(R.string.threat_found_dialog_msg, threat.getAppName(), threat.getRiskScore()))
                 .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> {
                     String path = threat.getApkPath();
-                    
-                    // CASE 1: a standalone .apk file sitting on SD/storage
-                    if (path != null && path.contains("/storage/")) {
+
+                    // CASE 1: a standalone file (loose APK or generic file) not
+                    // actually installed as an app — delete it directly instead
+                    // of firing ACTION_UNINSTALL, which would silently do
+                    // nothing for a non-package path.
+                    if (threat.isStandaloneFile() && path != null) {
                         File file = new File(path);
                         if (file.exists() && file.delete()) {
                             Toast.makeText(getContext(), getString(R.string.threat_destroyed), Toast.LENGTH_LONG).show();

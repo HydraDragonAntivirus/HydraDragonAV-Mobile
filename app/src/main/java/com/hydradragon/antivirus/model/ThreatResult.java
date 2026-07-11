@@ -34,6 +34,7 @@ public class ThreatResult {
     private final List<String> reasons;
     private final List<String> dangerousPermissions;
     private final long timestamp;
+    private final boolean standaloneFile;
 
     private ThreatResult(Builder builder) {
         this.packageName = builder.packageName;
@@ -44,6 +45,7 @@ public class ThreatResult {
         this.reasons = builder.reasons;
         this.dangerousPermissions = builder.dangerousPermissions;
         this.timestamp = System.currentTimeMillis();
+        this.standaloneFile = builder.standaloneFile;
     }
 
     public boolean isThreat() { return riskScore >= 30; }
@@ -79,6 +81,10 @@ public class ThreatResult {
     public List<String> getReasons() { return reasons; }
     public List<String> getDangerousPermissions() { return dangerousPermissions; }
     public long getTimestamp() { return timestamp; }
+    /** True when this threat is a loose file on disk (a not-yet-installed APK,
+     *  or any other file scanGenericFile flagged) rather than an app actually
+     *  installed on the device — decides "Delete file" vs "Uninstall app". */
+    public boolean isStandaloneFile() { return standaloneFile; }
 
     @Override
     public boolean equals(Object o) {
@@ -101,6 +107,7 @@ public class ThreatResult {
         private ThreatType threatType = ThreatType.CLEAN;
         private List<String> reasons = new ArrayList<>();
         private List<String> dangerousPermissions = new ArrayList<>();
+        private boolean standaloneFile = false;
 
         public Builder(String packageName) { this.packageName = packageName; }
         public Builder setAppName(String n) { appName = n; return this; }
@@ -109,6 +116,7 @@ public class ThreatResult {
         public Builder setThreatType(ThreatType t) { threatType = t; return this; }
         public Builder setReasons(List<String> r) { reasons = r; return this; }
         public Builder setDangerousPermissions(List<String> p) { dangerousPermissions = p; return this; }
+        public Builder setStandaloneFile(boolean b) { standaloneFile = b; return this; }
         public ThreatResult build() { return new ThreatResult(this); }
     }
 }
