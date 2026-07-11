@@ -603,9 +603,14 @@ public class ScanFragment extends Fragment {
 
             @Override
             public void onError(String error) {
+                // Same fix as onScanComplete just above: clear the static flag
+                // even if the fragment is gone, or a background/engine error
+                // firing while this screen isn't visible leaves isScanning
+                // stuck true forever — every future scan attempt then silently
+                // refuses to start.
+                isScanning = false;
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() -> {
-                    isScanning = false;
                     stopScannerAnimation();
                     btnScan.setText(getString(R.string.rescan));
                     btnScan.setEnabled(true);
@@ -881,9 +886,16 @@ private void scanCustomFile(android.net.Uri uri) {
                 fos.flush(); fos.close(); is.close();
             } catch (Exception e) {
                 Log.e("ScanFragment", "scanCustomFile: failed copying uri=" + uri, e);
+                // isScanning is a static flag shared across fragment instances —
+                // it MUST clear regardless of whether this Fragment is still
+                // attached, or every future scan attempt silently refuses to
+                // start (looks like the scan feature is permanently "stuck").
+                // Previously this lived inside the getActivity()-guarded block
+                // below, so a detach at exactly this moment (rotation, backing
+                // out, switching tabs) left it true forever.
+                isScanning = false;
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        isScanning = false;
                         stopScannerAnimation();
                         btnScan.setText(getString(R.string.rescan));
                         btnScan.setEnabled(true);
@@ -903,9 +915,12 @@ private void scanCustomFile(android.net.Uri uri) {
                     result = null;
                 }
 
+                // Same reasoning as the copy-failure catch above: clear the
+                // static flag first, unconditionally, THEN update views only
+                // if the fragment is still around to show them.
+                isScanning = false;
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        isScanning = false;
                         stopScannerAnimation();
                         btnScan.setText(getString(R.string.rescan));
                         btnScan.setEnabled(true);
@@ -926,9 +941,9 @@ private void scanCustomFile(android.net.Uri uri) {
                 }
             } catch (Exception e) {
                 Log.e("ScanFragment", "scanCustomFile: scanSingleFile failed for uri=" + uri, e);
+                isScanning = false;
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        isScanning = false;
                         stopScannerAnimation();
                         btnScan.setText(getString(R.string.rescan));
                         btnScan.setEnabled(true);
