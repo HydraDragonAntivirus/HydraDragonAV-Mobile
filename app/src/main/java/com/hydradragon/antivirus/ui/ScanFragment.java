@@ -8,6 +8,7 @@ import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -856,6 +857,14 @@ private void scanCustomFile(android.net.Uri uri) {
                 if (originalName == null || originalName.isEmpty()) originalName = "custom_scan_file";
                 java.io.File tempFile = new java.io.File(getContext().getCacheDir(), originalName);
                 java.io.InputStream is = getContext().getContentResolver().openInputStream(uri);
+                if (is == null) {
+                    // openInputStream() legitimately CAN return null (revoked URI
+                    // permission, provider gone, etc.) — without this check the
+                    // very next line throws a bare NullPointerException that got
+                    // swallowed by the catch below with no indication this was
+                    // the actual cause.
+                    throw new java.io.IOException("openInputStream returned null for " + uri);
+                }
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
                 byte[] buffer = new byte[8192];
                 int read;
@@ -892,6 +901,13 @@ private void scanCustomFile(android.net.Uri uri) {
                     });
                 }
             } catch(Exception e) {
+                // Previously this exception was discarded entirely — no Log
+                // call anywhere in this file — so "error_reading_file" gave no
+                // way to tell whether the URI copy failed or ScanEngine.scanSingleFile
+                // (the native/JNI path) threw. Log the real type+message+stack
+                // so the next occurrence is actually diagnosable from logcat
+                // (filter: adb logcat -s ScanFragment).
+                Log.e("ScanFragment", "scanCustomFile failed for uri=" + uri, e);
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         isScanning = false;
