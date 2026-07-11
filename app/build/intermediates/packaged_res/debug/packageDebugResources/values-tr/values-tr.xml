@@ -280,6 +280,7 @@
     <string name="show_taps_warning_title">\"Dokunmaları Göster\" Açık</string>
     <string name="signature_ignored_toast">Artık %1$d imza her uygulamada/dosyada yoksayılacak</string>
     <string name="signature_prefix">İmza</string>
+    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
     <string name="skip">Atla</string>
     <string name="sms_open_permissions_toast">Bunu kapatmak için İzinler > SMS bölümünü açın</string>
     <string name="sms_permission_denied">SMS izni reddedildi</string>
@@ -303,10 +304,10 @@
     <string name="system_safe_status">● SİSTEM GÜVENLİ</string>
     <string name="system_waiting">[Sistem bekleniyor...]</string>
     <string name="task_hijack_detected">Güvenlik kontrolü başarısız — bu ekranın üzerine başka bir uygulama yerleştirilmiş görünüyor, korumanız için kapatılıyor</string>
-    <string name="theme_dark">🌙 Dark</string>
-    <string name="theme_light">☀ Light</string>
-    <string name="theme_mode_label">🎨 Theme Mode</string>
-    <string name="theme_system">System Default</string>
+    <string name="theme_dark">🌙 Karanlık</string>
+    <string name="theme_light">☀ Aydınlık</string>
+    <string name="theme_mode_label">🎨 Tema Modu</string>
+    <string name="theme_system">Sistem Varsayılanı</string>
     <string name="threat">TEHDİT</string>
     <string name="threat_adware">ADWARE TESPİTİ: Aşırı Reklam İçeriyor!</string>
     <string name="threat_banking_trojan">BANKACILIK TRUVA ATI TESPİTİ: Finansal Bindirme!</string>

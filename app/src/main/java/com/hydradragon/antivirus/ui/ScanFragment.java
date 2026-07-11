@@ -895,21 +895,19 @@ private void scanCustomFile(android.net.Uri uri) {
                     }
                 });
             }
-        }} catch(Exception e) {
-    // Only prints the stack trace if you are running a debug build.
-    // When you compile the release version, this code is skipped.
-    if (com.hydradragon.antivirus.BuildConfig.DEBUG) {
-        android.util.Log.e("ScanFragment", "Error reading file for custom scan", e);
+        } catch(Exception e) {
+            if (com.hydradragon.antivirus.BuildConfig.DEBUG) {
+                android.util.Log.e("ScanFragment", "Error reading file for custom scan", e);
+            }
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    isScanning = false;
+                    stopScannerAnimation();
+                    btnScan.setText(getString(R.string.rescan));
+                    btnScan.setEnabled(true);
+                    tvScanStatus.setText(getString(R.string.error_reading_file));
+                });
+            }
+        }
+    }).start();
     }
-    
-    if (getActivity() != null) {
-        getActivity().runOnUiThread(() -> {
-            isScanning = false;
-            stopScannerAnimation();
-            btnScan.setText(getString(R.string.rescan));
-            btnScan.setEnabled(true);
-            tvScanStatus.setText(getString(R.string.error_reading_file));
-        });
-    }
-}
-}
