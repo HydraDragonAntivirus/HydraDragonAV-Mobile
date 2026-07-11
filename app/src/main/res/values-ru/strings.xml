@@ -288,6 +288,7 @@
     <string name="sms_open_permissions_toast">Откройте Разрешения &gt; SMS, чтобы отключить это</string>
     <string name="sms_scanning_enabled">Сканирование SMS включено</string>
     <string name="sms_permission_denied">Разрешение на SMS отклонено</string>
+    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
     <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>

@@ -288,6 +288,7 @@
     <string name="sms_open_permissions_toast">Відкрийте Дозволи &gt; SMS, щоб вимкнути це</string>
     <string name="sms_scanning_enabled">Сканування SMS увімкнено</string>
     <string name="sms_permission_denied">Дозвіл на SMS відхилено</string>
+    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
     <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>

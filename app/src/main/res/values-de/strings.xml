@@ -288,6 +288,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="sms_open_permissions_toast">Öffnen Sie Berechtigungen &gt; SMS, um dies zu deaktivieren</string>
     <string name="sms_scanning_enabled">SMS-Scan aktiviert</string>
     <string name="sms_permission_denied">SMS-Berechtigung verweigert</string>
+    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
     <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>

@@ -288,6 +288,7 @@
     <string name="sms_open_permissions_toast">이 기능을 끄려면 권한 &gt; SMS를 여세요</string>
     <string name="sms_scanning_enabled">SMS 스캔이 활성화되었습니다</string>
     <string name="sms_permission_denied">SMS 권한이 거부되었습니다</string>
+    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
     <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
     <string name="scan_cache_on_toast">Scan Cache ON</string>
     <string name="scan_cache_off_toast">Scan Cache OFF</string>
