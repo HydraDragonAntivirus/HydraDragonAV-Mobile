@@ -35,6 +35,55 @@ const STACK_BASE: u64 = 0x7000_0000;
 const STACK_SIZE: u64 = 4 * PAGE;
 const MIN_STRING_LEN: usize = 6;
 
+// How many `emulate()` calls may actually be running Unicorn AT THE SAME
+// TIME, process-wide — this is the real fix for the ANR we root-caused:
+// logcat showed 6 concurrent "native-init" threads each independently
+// running this emulation loop, together pegging every core (Unicorn's
+// memory-map/page-table bookkeeping is kernel-heavy, not just user-CPU,
+// which is exactly what the ANR's CPU breakdown showed). A single 500ms/
+// 200k-instruction cap on ONE call is meaningless if N files' worth of
+// calls run truly in parallel — the cap needs to live at the point where
+// the expensive work actually happens, not as a generic lock somewhere
+// upstream that also serializes unrelated cheap work.
+//
+// 2 slots (not 1) so a single slow emulation can't fully idle every other
+// core on a multi-core device, but low enough that this can never again be
+// the thing that saturates every core simultaneously.
+const MAX_CONCURRENT_EMULATIONS: usize = 2;
+
+static EMULATION_SLOTS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// RAII guard: holds one of the `MAX_CONCURRENT_EMULATIONS` slots until
+/// dropped (i.e. for the duration of one `emulate()` call, including on
+/// early return or panic-unwind through `catch_unwind` at the call site).
+struct EmulationSlot;
+impl Drop for EmulationSlot {
+    fn drop(&mut self) {
+        EMULATION_SLOTS.fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
+    }
+}
+
+/// Try to claim one of the concurrent-emulation slots. Non-blocking — no
+/// wait at all, not even a short one: waiting here would add latency to
+/// EVERY file's scan under load, not just the ones that actually need
+/// emulation. If both slots are busy right now, skip emulation for this
+/// buffer immediately (returns `None`) rather than costing anything.
+fn try_acquire_emulation_slot() -> Option<EmulationSlot> {
+    use std::sync::atomic::Ordering;
+    let cur = EMULATION_SLOTS.load(Ordering::Acquire);
+    if cur >= MAX_CONCURRENT_EMULATIONS {
+        return None;
+    }
+    if EMULATION_SLOTS
+        .compare_exchange(cur, cur + 1, Ordering::AcqRel, Ordering::Acquire)
+        .is_ok()
+    {
+        Some(EmulationSlot)
+    } else {
+        None // lost the race to another thread — just skip, don't retry/wait
+    }
+}
+
 // Fake import stubs live in their own tiny mapped page, far from any real
 // segment/stack address, so a hit on one of these addresses unambiguously
 // means "code just tried to call this imported function".
@@ -86,18 +135,81 @@ fn align_up(x: u64, a: u64) -> u64 {
     align_down(x + a - 1, a)
 }
 
-/// Emulate `so_bytes` (a native library extracted from an APK) and return
-/// every printable ASCII string (>= MIN_STRING_LEN) that appears in the
-/// emulated memory afterwards but was NOT already present as a substring of
-/// the original file — i.e. genuinely produced at runtime, not just a static
-/// string the emulation happened to touch. Returns an empty Vec for anything
-/// that isn't a supported/parseable ELF, or if nothing new appeared.
+/// Absolute hard ceiling on how long `emulate()` can block its CALLER,
+/// enforced INDEPENDENTLY of Unicorn's own `TIMEOUT_US` parameter. Unicorn's
+/// internal timeout has been unreliable in the wild on some real ARM64
+/// hardware (as opposed to running under an x86 emulator/simulator) — if it
+/// doesn't fire on a given device, `emu_start` can run far longer than
+/// TIMEOUT_US, or effectively never return. This deadline doesn't depend on
+/// Unicorn cooperating at all: the actual emulation runs on its own thread,
+/// and the caller only ever waits up to HARD_DEADLINE for a result over a
+/// channel. If nothing arrives in time, the caller gets an empty result
+/// immediately and the scan moves on — the background thread is abandoned
+/// (same "abandon, don't kill" pattern Java's
+/// ScanEngine.runNativeInterruptible already uses, for the identical
+/// reason), and it releases its EMULATION_SLOTS slot itself whenever it
+/// eventually finishes, however long that takes.
+const HARD_DEADLINE: std::time::Duration = std::time::Duration::from_millis(1_000);
+
 /// Emulate `so_bytes` (a native library extracted from an APK), returning
-/// both runtime-decoded strings and traced calls into suspicious APIs.
+/// both runtime-decoded strings and traced calls into suspicious APIs — see
+/// the module doc comment for the full picture. This function itself never
+/// runs Unicorn directly: it does the cheap validity checks, claims a
+/// concurrency slot, and hands the actual work to `emulate_body` on a
+/// dedicated thread it does not wait on indefinitely (see `HARD_DEADLINE`).
+pub fn emulate(so_bytes: &[u8]) -> EmulationResult {
+    let result = EmulationResult::default();
+    let info = match elf::parse_elf(so_bytes) {
+        Some(i) => i,
+        None => return result,
+    };
+    if info.segments.is_empty() {
+        return result;
+    }
+    if !matches!(info.machine, EM_ARM | EM_AARCH64 | EM_386 | EM_X86_64) {
+        return result; // unsupported/unknown machine — skip, not an error
+    }
+    let entry = elf::find_dynsym(so_bytes, "JNI_OnLoad").unwrap_or(info.entry);
+    if entry == 0 {
+        return result;
+    }
+
+    // Claim a concurrency slot BEFORE spawning anything — this is the fix
+    // for N files simultaneously running this loop and pegging every core.
+    // No wait: if both slots are busy right now, skip emulation for this
+    // buffer immediately rather than adding latency to every file's scan.
+    let slot = match try_acquire_emulation_slot() {
+        Some(slot) => slot,
+        None => return result,
+    };
+
+    let owned = so_bytes.to_vec();
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        // Held for as long as THIS thread actually runs — released when it
+        // finishes, even if the caller already gave up on `rx` below.
+        let _slot = slot;
+        let r = emulate_body(&owned);
+        let _ = tx.send(r); // caller may already be gone past HARD_DEADLINE — fine
+    });
+
+    match rx.recv_timeout(HARD_DEADLINE) {
+        Ok(r) => r,
+        // Either genuinely timed out, or the worker thread panicked and
+        // dropped `tx` without sending — both cases mean "give up, don't
+        // block the scan any longer than our own deadline allows".
+        Err(_) => EmulationResult::default(),
+    }
+}
+
+/// The actual Unicorn setup/run/harvest. Always runs on its own dedicated
+/// thread now (spawned from `emulate()`), so it's fine for this to take
+/// however long it takes on a given device — the caller already stopped
+/// waiting on it past `HARD_DEADLINE` regardless of what happens in here.
 ///
-/// Additionally traces
-/// attempted calls into a curated set of suspicious imported APIs (network,
-/// filesystem, exec, dynamic loading, anti-debug, device fingerprinting).
+/// Additionally traces attempted calls into a curated set of suspicious
+/// imported APIs (network, filesystem, exec, dynamic loading, anti-debug,
+/// device fingerprinting).
 ///
 /// Tracing works by patching every resolved import's GOT slot to point at a
 /// small unique "stub" address (in a dedicated page the real code never
@@ -108,7 +220,7 @@ fn align_up(x: u64, a: u64) -> u64 {
 /// `ret` would) so emulation resumes as if the call had returned — this is
 /// still pure CPU emulation: the stub never executes real code, no syscall or
 /// libc function ever actually runs, only bookkeeping in the hook callback.
-pub fn emulate(so_bytes: &[u8]) -> EmulationResult {
+fn emulate_body(so_bytes: &[u8]) -> EmulationResult {
     let mut result = EmulationResult::default();
     let info = match elf::parse_elf(so_bytes) {
         Some(i) => i,

@@ -73,27 +73,20 @@ fn android_log(msg: &str) {
 /// Genuine failure/panic reports (`native-init FAILED`, `PANIC`, ...) stay on
 /// plain `android_log` calls and keep logging in release, since those matter
 /// for diagnosing real crashes on real devices.
-//
-// TEMPORARILY commented out to chase a bug without a full debug build's
-// slowdown: this macro currently always logs (the #[cfg(not(debug_assertions))]
-// no-op branch below is disabled), even in a plain `-Configuration release`
-// build. Uncomment the #[cfg(not(debug_assertions))] block and delete the
-// unconditional one once done, to restore release builds compiling this to
-// nothing.
-// #[cfg(debug_assertions)]
+#[cfg(debug_assertions)]
 macro_rules! rust_timing_log {
     ($($arg:tt)*) => {
         android_log(&format!($($arg)*))
     };
 }
-// #[cfg(not(debug_assertions))]
-// macro_rules! rust_timing_log {
-//     ($($arg:tt)*) => {
-//         // Uncalled closure captures all referenced variables, suppressing
-//         // unused-variable warnings without executing format!() at runtime.
-//         let _ = || { format!($($arg)*) };
-//     };
-// }
+#[cfg(not(debug_assertions))]
+macro_rules! rust_timing_log {
+    ($($arg:tt)*) => {
+        // Uncalled closure captures all referenced variables, suppressing
+        // unused-variable warnings without executing format!() at runtime.
+        let _ = || { format!($($arg)*) };
+    };
+}
 
 /// Asset file names expected inside the init directory (static scanner).
 const YRC_FILES: &[&str] = &[
@@ -196,15 +189,55 @@ static ASSET_FILES: OnceLock<std::collections::HashMap<String, Vec<u8>>> =
 /// WHY a scan panicked (root cause) instead of just swallowing it.
 static LAST_PANIC: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
 
-/// Serializes whole-file scan pipelines (`run_scan`). `collect_buffers` and
-/// `rescan_buffers_parallel` each spin up their own small worker pool so
-/// extraction and scanning overlap WITHIN one file — that parallelism only
-/// pays off when it isn't competing with an identical pool from a second
-/// file scanned at the same time by another concurrent `nativeScanApk` JNI
-/// call. Holding this for the whole of `run_scan` keeps the parallel work
-/// confined to one file at a time; a second call simply waits its turn
-/// instead of thrashing the same handful of cores alongside the first.
+/// Serializes whole-file scan pipelines (`run_scan`) — but only up to
+/// `SCAN_SERIAL_MAX_WAIT`. `collect_buffers`/`rescan_buffers_parallel`/
+/// `emulate` each spin up their own worker pool, so ideally only one file's
+/// pipeline runs at a time to avoid two files' pools thrashing the same
+/// cores together (this is what caused 6 concurrent "native-init" threads
+/// all running Unicorn emulation simultaneously — an ANR).
+///
+/// BUT: Java's cancellation (`ScanEngine.runNativeInterruptible`) ABANDONS a
+/// slow/stuck native call rather than killing it — the call keeps running
+/// here regardless of what Java thinks happened. An unconditional blocking
+/// `Mutex` combined with that is dangerous: one pathological or abandoned
+/// file can hold this lock indefinitely and freeze EVERY OTHER scan in the
+/// whole app behind it. Observed in the field: one file held this for
+/// ~17 minutes, during which an unrelated full-scan's file sat queued the
+/// entire time, timed out to the user as "stuck", and by the time it finally
+/// got the lock, cancellation had already fired — see the NativeScanner
+/// timings on `msf:*` (1,042,804ms) and the queued `revancedmanager` result
+/// finishing 44ms later with verdict=NULL(cancelled/error).
+///
+/// So this is now bounded: wait up to SCAN_SERIAL_MAX_WAIT, then proceed
+/// WITHOUT the lock if it's still held. That caps the worst case at "a few
+/// seconds of extra core contention" instead of "however long the slowest
+/// file in the app takes, unbounded."
 static SCAN_SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+const SCAN_SERIAL_MAX_WAIT: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// See `SCAN_SERIAL`'s doc comment. Returns `Some(guard)` if the lock was
+/// acquired within the wait budget, `None` if we gave up and the caller
+/// should proceed without it (better than freezing the whole app).
+fn acquire_scan_serial_bounded() -> Option<std::sync::MutexGuard<'static, ()>> {
+    let start = std::time::Instant::now();
+    loop {
+        match SCAN_SERIAL.try_lock() {
+            Ok(g) => return Some(g),
+            Err(std::sync::TryLockError::Poisoned(p)) => return Some(p.into_inner()),
+            Err(std::sync::TryLockError::WouldBlock) => {
+                if start.elapsed() >= SCAN_SERIAL_MAX_WAIT {
+                    rust_timing_log!(
+                        "run_scan :: SCAN_SERIAL busy for {}ms — proceeding without it \
+                         (another file's scan is taking unusually long)",
+                        start.elapsed().as_millis()
+                    );
+                    return None;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+        }
+    }
+}
 
 fn install_panic_hook() {
     use std::sync::Once;
@@ -1263,14 +1296,11 @@ fn run_scan(
     file_md5: Option<&str>,
     zero_trust: bool,
 ) -> String {
-    // Only one file's scan pipeline runs at a time: collect_buffers() and
-    // rescan_buffers_parallel() below both use their own worker threads
-    // internally, and that internal parallelism is what we want — not two
-    // files' worth of threads racing each other on the same cores. If a
-    // previous scan panicked while holding this (unlikely — the heavy work
-    // below is itself panic-guarded), recover the poisoned lock rather than
-    // wedging every future scan behind it forever.
-    let _scan_serial_guard = SCAN_SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+    // Only one file's scan pipeline runs at a time, UP TO SCAN_SERIAL_MAX_WAIT
+    // — see SCAN_SERIAL's doc comment for why this can't be an unconditional
+    // block. If we give up waiting, we proceed anyway rather than freezing
+    // every other scan in the app behind this one.
+    let _scan_serial_guard = acquire_scan_serial_bounded();
 
     // Extract ONCE here in the bridge: `buffers` holds the top-level file plus
     // every buffer reachable by recursively unpacking archives (APK = zip, plus
