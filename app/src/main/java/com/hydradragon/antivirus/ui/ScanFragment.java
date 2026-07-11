@@ -503,6 +503,7 @@ public class ScanFragment extends Fragment {
             isScanning = false;
             stopScannerAnimation();
             btnScan.setText(getString(R.string.rescan));
+            btnPauseResume.setVisibility(View.GONE);
             Toast.makeText(getContext(), getString(R.string.scan_already_running), Toast.LENGTH_SHORT).show();
             return;
         }
@@ -813,6 +814,8 @@ public class ScanFragment extends Fragment {
 
         btnScan.setText(getString(R.string.scan_stop));
         btnScan.setEnabled(true);
+        btnPauseResume.setVisibility(View.VISIBLE);
+        btnPauseResume.setText("⏸");
         startScannerAnimation();
 
         lastScanStatus = getString(R.string.scan_scanning_btn);
@@ -827,6 +830,7 @@ public class ScanFragment extends Fragment {
             isScanning = false;
             stopScannerAnimation();
             btnScan.setText(getString(R.string.rescan));
+            btnPauseResume.setVisibility(View.GONE);
             Toast.makeText(getContext(), getString(R.string.scan_already_running), Toast.LENGTH_SHORT).show();
         }
     }
