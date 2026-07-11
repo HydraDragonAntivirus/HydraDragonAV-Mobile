@@ -80,6 +80,19 @@ public class ThreatResult {
     public List<String> getDangerousPermissions() { return dangerousPermissions; }
     public long getTimestamp() { return timestamp; }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ThreatResult)) return false;
+        ThreatResult other = (ThreatResult) o;
+        return packageName != null ? packageName.equals(other.packageName) : other.packageName == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return packageName != null ? packageName.hashCode() : 0;
+    }
+
     public static class Builder {
         private final String packageName;
         private String appName;

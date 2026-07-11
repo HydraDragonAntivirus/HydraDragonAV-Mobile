@@ -505,7 +505,7 @@ public class ScanEngine {
                 try {
                     if (callback != null) callback.onProgress(i + 1, total, app.packageName);
                     ThreatResult result = analyzeApp(app, pm, false);
-                    if (result != null && result.isThreat()) {
+                    if (result != null && result.isThreat() && !threats.contains(result)) {
                         threats.add(result);
                         if (callback != null) callback.onThreatFound(result);
                     }
@@ -649,7 +649,7 @@ public class ScanEngine {
                         pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
                         pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
                         ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
-                        if (result != null && result.isThreat()) {
+                        if (result != null && result.isThreat() && !threats.contains(result)) {
                             threats.add(result);
                             if (callback != null) callback.onThreatFound(result);
                         }
@@ -820,7 +820,7 @@ public class ScanEngine {
             b.setAppName(file.getName() + " (FILE)");
             b.setApkPath(path);
             ThreatResult r = b.build();
-            if (r.isThreat()) {
+            if (r.isThreat() && !threats.contains(r)) {
                 threats.add(r);
                 if (callback != null) callback.onThreatFound(r);
             }
@@ -966,7 +966,7 @@ public class ScanEngine {
                 b.setAppName((label != null ? label.toString() : app.packageName) + " (DEEP)");
                 b.setApkPath(app.sourceDir);
                 ThreatResult r = b.build();
-                if (r.isThreat()) {
+                if (r.isThreat() && !threats.contains(r)) {
                     threats.add(r);
                     if (app.packageName != null) seen.add(app.packageName);
                     if (callback != null) callback.onThreatFound(r);
@@ -998,7 +998,7 @@ public class ScanEngine {
                 try {
                     ApplicationInfo ai = pm.getApplicationInfo(pkg, 0);
                     ThreatResult r = analyzeApp(ai, pm, false);
-                    if (r != null && r.isThreat()) {
+                    if (r != null && r.isThreat() && !threats.contains(r)) {
                         threats.add(r);
                         if (callback != null) callback.onThreatFound(r);
                     }
