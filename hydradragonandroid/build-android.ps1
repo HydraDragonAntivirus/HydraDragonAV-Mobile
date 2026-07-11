@@ -1,6 +1,12 @@
 param(
     [string]$Abi = "arm64-v8a,armeabi-v7a,x86_64,x86",
     [string]$NdkHome = "",
+    # "release"       -> optimized, stripped, LTO (shipped build)
+    # "debug"         -> plain `cargo ndk build`, full debug_assertions, unoptimized
+    # "release-debug" -> release speed but debug_assertions/overflow-checks on,
+    #                    symbols kept (see [profile.release-debug] in Cargo.toml) —
+    #                    for reproducing device bugs without a debug build's slowdown
+    [ValidateSet("release", "debug", "release-debug")]
     [string]$Configuration = "release"
 )
 
@@ -68,10 +74,14 @@ foreach ($a in $abiList) {
     $abi = $a.Trim()
     $triple = $targetMap[$abi]
 
-    $cfg = if ($Configuration -eq "release") { "--release" } else { "" }
-    Write-Host "Building hydradragonandroid for $abi ($triple)..."
+    $buildArgs = switch ($Configuration) {
+        "release" { @("--release") }
+        "debug"   { @() }
+        default   { @("--profile", $Configuration) }  # e.g. release-debug
+    }
+    Write-Host "Building hydradragonandroid for $abi ($triple) [$Configuration]..."
     Push-Location $PSScriptRoot
-    cargo ndk -t $triple build $cfg
+    cargo ndk -t $triple build @buildArgs
     if ($LASTEXITCODE -ne 0) { throw "cargo ndk failed for $abi" }
     Pop-Location
 }

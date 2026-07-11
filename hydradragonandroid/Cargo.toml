@@ -46,6 +46,19 @@ opt-level = "z"
 lto = true
 strip = true
 
+# Release-speed .so but with debug_assertions/overflow-checks on and symbols
+# kept (no strip, no LTO) — for reproducing a device bug (e.g. the FUSE read
+# stall) without the multi-minute cold-start slowdown of a true debug build,
+# while still catching integer-overflow/assert bugs a stripped release build
+# would silently miss. Build with: build-android.cmd -Configuration release-debug
+[profile.release-debug]
+inherits = "release"
+lto = false
+strip = false
+debug = true
+debug-assertions = true
+overflow-checks = true
+
 # Fast-iteration profile for the host `repro` example: no LTO, parallel codegen,
 # opt-level 2 (near-release runtime speed). The Android .so still uses the LTO'd
 # release profile above.
