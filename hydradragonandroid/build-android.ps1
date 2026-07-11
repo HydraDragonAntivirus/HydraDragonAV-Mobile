@@ -7,8 +7,42 @@ param(
     #                    symbols kept (see [profile.release-debug] in Cargo.toml) —
     #                    for reproducing device bugs without a debug build's slowdown
     [ValidateSet("release", "debug", "release-debug")]
-    [string]$Configuration = "release"
+    [string]$Configuration = "release",
+    [Alias("h", "?")]
+    [switch]$Help
 )
+
+if ($Help) {
+    Write-Host @"
+build-android.ps1 - Build libhydradragonandroid.so per ABI and copy into app/src/main/jniLibs
+
+USAGE:
+  build-android.cmd [-Abi <list>] [-NdkHome <path>] [-Configuration <release|debug|release-debug>]
+  build-android.ps1 [-Abi <list>] [-NdkHome <path>] [-Configuration <release|debug|release-debug>]
+
+PARAMETERS:
+  -Abi <list>            Comma-separated ABIs to build. Default:
+                          arm64-v8a,armeabi-v7a,x86_64,x86
+  -NdkHome <path>        Path to the Android NDK. Auto-detected from
+                          %LOCALAPPDATA%\Android\Sdk\ndk if not given.
+  -Configuration <mode>  release        Optimized, stripped, LTO (shipped build).
+                          debug          Plain `cargo ndk build`: full debug_assertions,
+                                         unoptimized. Slowest, most reproducible.
+                          release-debug  Release speed but debug_assertions/
+                                         overflow-checks on, symbols kept (see
+                                         [profile.release-debug] in Cargo.toml) -
+                                         for reproducing device bugs without a
+                                         debug build's slowdown.
+                          Default: release
+  -Help, -h, -?          Show this help and exit.
+
+EXAMPLES:
+  build-android.cmd
+  build-android.cmd -Configuration debug
+  build-android.cmd -Abi arm64-v8a -Configuration release-debug
+"@
+    exit 0
+}
 
 $ErrorActionPreference = "Stop"
 
