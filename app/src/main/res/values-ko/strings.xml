@@ -356,4 +356,6 @@
     <string name="malware_has_admin_open_settings">기기 관리자 설정 열기</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">ARM64 JIT 백엔드의 알려진 버그로 인해 이 기기에서 에뮬레이션(Unicorn)을 사용할 수 없습니다. 이 패스 없이 스캔이 정상적으로 계속됩니다.</string>
+
 </resources>

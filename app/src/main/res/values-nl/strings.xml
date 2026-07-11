@@ -356,4 +356,6 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="malware_has_admin_open_settings">APPARAATBEHEERDERINSTELLINGEN OPENEN</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">Emulatie (Unicorn) is niet beschikbaar op dit apparaat vanwege een bekende bug in de ARM64 JIT-backend. Scannen gaat normaal verder zonder deze pass.</string>
+
 </resources>

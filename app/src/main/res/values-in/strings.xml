@@ -356,4 +356,6 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="malware_has_admin_open_settings">BUKA PENGATURAN ADMIN PERANGKAT</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">Emulasi (Unicorn) tidak tersedia di perangkat ini karena bug backend ARM64 JIT yang diketahui. Pemindaian berjalan normal tanpa proses ini.</string>
+
 </resources>

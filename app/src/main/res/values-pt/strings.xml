@@ -356,4 +356,6 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="malware_has_admin_open_settings">ABRIR CONFIGURAÇÕES DE ADMINISTRADOR DO DISPOSITIVO</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">A emulação (Unicorn) não está disponível neste dispositivo devido a um bug conhecido no backend ARM64 JIT. A verificação continua normalmente sem esta passagem.</string>
+
 </resources>

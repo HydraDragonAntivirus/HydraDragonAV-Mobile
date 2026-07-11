@@ -356,4 +356,6 @@
     <string name="malware_has_admin_open_settings">デバイス管理者の設定を開く</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">エミュレーション（Unicorn）は、ARM64 JITバックエンドの既知のバグにより、このデバイスでは利用できません。スキャンはこのパスなしで通常通り続行されます。</string>
+
 </resources>

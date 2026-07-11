@@ -356,4 +356,6 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="malware_has_admin_open_settings">OUVRIR LES PARAMÈTRES D\'ADMINISTRATEUR DE L\'APPAREIL</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">L'émulation (Unicorn) n'est pas disponible sur cet appareil en raison d'un bogue connu du backend ARM64 JIT. L'analyse continue normalement sans cette passe.</string>
+
 </resources>

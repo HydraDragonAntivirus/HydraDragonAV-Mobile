@@ -356,4 +356,6 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="malware_has_admin_open_settings">MỞ CÀI ĐẶT QUẢN TRỊ THIẾT BỊ</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">Trình giả lập (Unicorn) không khả dụng trên thiết bị này do lỗi đã biết trong backend ARM64 JIT. Quá trình quét tiếp tục bình thường mà không có bước này.</string>
+
 </resources>

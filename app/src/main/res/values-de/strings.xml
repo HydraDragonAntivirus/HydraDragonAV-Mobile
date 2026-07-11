@@ -356,4 +356,6 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="malware_has_admin_open_settings">GERÄTEADMINISTRATOR-EINSTELLUNGEN ÖFFNEN</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">Emulation (Unicorn) ist auf diesem Gerät aufgrund eines bekannten ARM64-JIT-Backend-Fehlers nicht verfügbar. Der Scan läuft ohne diesen Durchlauf normal weiter.</string>
+
 </resources>

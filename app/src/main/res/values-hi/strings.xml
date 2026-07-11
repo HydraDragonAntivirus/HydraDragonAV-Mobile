@@ -355,4 +355,6 @@
     <string name="malware_has_admin_open_settings">डिवाइस एडमिन सेटिंग्स खोलें</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">ARM64 JIT बैकएंड में ज्ञात बग के कारण इस डिवाइस पर एमुलेशन (Unicorn) उपलब्ध नहीं है। स्कैनिंग इस पास के बिना सामान्य रूप से जारी रहती है।</string>
+
 </resources>

@@ -356,4 +356,6 @@
     <string name="malware_has_admin_open_settings">打开设备管理员设置</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">由于ARM64 JIT后端的已知错误，本设备上无法使用仿真（Unicorn）。扫描将继续正常进行，无需此过程。</string>
+
 </resources>

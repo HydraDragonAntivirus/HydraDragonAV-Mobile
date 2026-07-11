@@ -356,4 +356,6 @@
     <string name="malware_has_admin_open_settings">ОТКРЫТЬ НАСТРОЙКИ АДМИНИСТРАТОРА УСТРОЙСТВА</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">Эмуляция (Unicorn) недоступна на этом устройстве из-за известной ошибки в ARM64 JIT бэкенде. Сканирование продолжается нормально без этого прохода.</string>
+
 </resources>

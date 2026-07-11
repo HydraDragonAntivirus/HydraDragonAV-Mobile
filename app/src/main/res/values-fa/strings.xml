@@ -356,4 +356,6 @@
     <string name="malware_has_admin_open_settings">باز کردن تنظیمات مدیر دستگاه</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">شبیه‌سازی (Unicorn) به دلیل یک باگ شناخته شده در بک‌اند ARM64 JIT در این دستگاه در دسترس نیست. اسکن بدون این مرحله به طور عادی ادامه می‌یابد.</string>
+
 </resources>

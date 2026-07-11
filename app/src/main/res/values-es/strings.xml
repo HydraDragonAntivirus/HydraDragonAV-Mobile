@@ -356,4 +356,6 @@ Puntuación de riesgo: %2$d/100
     <string name="malware_has_admin_open_settings">ABRIR AJUSTES DE ADMINISTRADOR DEL DISPOSITIVO</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">La emulación (Unicorn) no está disponible en este dispositivo debido a un error conocido del backend ARM64 JIT. El escaneo continúa normalmente sin esta pasada.</string>
+
 </resources>

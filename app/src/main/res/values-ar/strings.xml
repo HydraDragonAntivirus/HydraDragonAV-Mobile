@@ -356,4 +356,6 @@
     <string name="malware_has_admin_open_settings">افتح إعدادات مسؤول الجهاز</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">المحاكاة (Unicorn) غير متوفرة على هذا الجهاز بسبب خطأ معروف في المحرك الخلفي ARM64 JIT. يستمر المسح بشكل طبيعي بدون هذه المرحلة.</string>
+
 </resources>

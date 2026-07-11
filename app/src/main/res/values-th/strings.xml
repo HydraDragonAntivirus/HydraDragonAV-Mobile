@@ -356,4 +356,6 @@
     <string name="malware_has_admin_open_settings">เปิดการตั้งค่าผู้ดูแลอุปกรณ์</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="unicorn_unsupported">การจำลอง (Unicorn) ไม่พร้อมใช้งานบนอุปกรณ์นี้เนื่องจากข้อบกพร่องที่ทราบในแบ็กเอนด์ ARM64 JIT การสแกนจะดำเนินการตามปกติโดยไม่ผ่านขั้นตอนนี้</string>
+
 </resources>
