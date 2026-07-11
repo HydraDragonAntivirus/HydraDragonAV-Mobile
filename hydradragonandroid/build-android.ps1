@@ -3,14 +3,27 @@ param(
     [string]$NdkHome = "",
     # "release"       -> optimized, stripped, LTO (shipped build)
     # "debug"         -> plain `cargo ndk build`, full debug_assertions, unoptimized
-    # "release-debug" -> release speed but debug_assertions/overflow-checks on,
-    #                    symbols kept (see [profile.release-debug] in Cargo.toml) —
-    #                    for reproducing device bugs without a debug build's slowdown
+    # "release-debug" -> same as release (still builds/outputs under target/<triple>/release,
+    #                    opt-level/lto/strip untouched) but auto-sets the
+    #                    CARGO_PROFILE_RELEASE_* env overrides below so
+    #                    debug_assertions/overflow-checks/debug-info are on —
+    #                    for reproducing a device bug (e.g. the FUSE read stall)
+    #                    without a true debug build's multi-minute slowdown.
+    # Falls back to $env:HYDRADRAGON_BUILD_CONFIGURATION when -Configuration
+    # isn't passed, so you can `setx HYDRADRAGON_BUILD_CONFIGURATION debug`
+    # once and just run build-android.cmd with no args from then on.
     [ValidateSet("release", "debug", "release-debug")]
-    [string]$Configuration = "release",
+    [string]$Configuration = $(if ($env:HYDRADRAGON_BUILD_CONFIGURATION) { $env:HYDRADRAGON_BUILD_CONFIGURATION } else { "release" }),
     [Alias("h", "?")]
     [switch]$Help
 )
+
+# "release-debug" auto-enables the same debug_assertions/overflow-checks/
+# debug-info override as manually setting $env:HYDRADRAGON_RELEASE_DEBUG_ASSERTIONS
+# used to — no env var needed anymore, just pass -Configuration release-debug.
+# The manual env var still works too (e.g. combined with HYDRADRAGON_BUILD_CONFIGURATION).
+$ReleaseDebugAssertions = $Configuration -eq "release-debug" -or [bool]$env:HYDRADRAGON_RELEASE_DEBUG_ASSERTIONS
+if ($Configuration -eq "release-debug") { $Configuration = "release" }
 
 if ($Help) {
     Write-Host @"
@@ -26,19 +39,28 @@ PARAMETERS:
   -NdkHome <path>        Path to the Android NDK. Auto-detected from
                           %LOCALAPPDATA%\Android\Sdk\ndk if not given.
   -Configuration <mode>  release        Optimized, stripped, LTO (shipped build).
-                          debug          Plain `cargo ndk build`: full debug_assertions,
-                                         unoptimized. Slowest, most reproducible.
-                          release-debug  Release speed but debug_assertions/
-                                         overflow-checks on, symbols kept (see
-                                         [profile.release-debug] in Cargo.toml) -
-                                         for reproducing device bugs without a
-                                         debug build's slowdown.
-                          Default: release
+                          debug          Plain `cargo ndk build`: full
+                                         debug_assertions, unoptimized.
+                          release-debug  Release speed/output dir, but with
+                                         debug_assertions/overflow-checks/debug-info
+                                         turned back on (via CARGO_PROFILE_RELEASE_*
+                                         env overrides) — for reproducing a device
+                                         bug without a full debug build's slowdown.
+                          Default: release, or `$env:HYDRADRAGON_BUILD_CONFIGURATION`
+                          if that environment variable is set.
   -Help, -h, -?          Show this help and exit.
+
+ENVIRONMENT:
+  HYDRADRAGON_BUILD_CONFIGURATION        Default for -Configuration.
+  HYDRADRAGON_RELEASE_DEBUG_ASSERTIONS   Manual equivalent of -Configuration
+                                          release-debug: if set (non-empty) AND
+                                          building release, turns debug_assertions/
+                                          overflow-checks/debug-info back on.
 
 EXAMPLES:
   build-android.cmd
   build-android.cmd -Configuration debug
+  build-android.cmd -Configuration release-debug
   build-android.cmd -Abi arm64-v8a -Configuration release-debug
 "@
     exit 0
@@ -104,15 +126,19 @@ if (-not (Get-Command "cargo-ndk" -ErrorAction SilentlyContinue)) {
 # C-source build or pkg-config bypass needed.
 $env:PKG_CONFIG_ALLOW_CROSS = "1"
 
+if ($ReleaseDebugAssertions -and $Configuration -eq "release") {
+    Write-Host "HYDRADRAGON_RELEASE_DEBUG_ASSERTIONS set: release build with debug_assertions/overflow-checks/debug-info on"
+    $env:CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS = "true"
+    $env:CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS = "true"
+    $env:CARGO_PROFILE_RELEASE_DEBUG = "true"
+}
+
 foreach ($a in $abiList) {
     $abi = $a.Trim()
     $triple = $targetMap[$abi]
 
-    $buildArgs = switch ($Configuration) {
-        "release" { @("--release") }
-        "debug"   { @() }
-        default   { @("--profile", $Configuration) }  # e.g. release-debug
-    }
+    $buildArgs = @()
+    if ($Configuration -eq "release") { $buildArgs = @("--release") }
     Write-Host "Building hydradragonandroid for $abi ($triple) [$Configuration]..."
     Push-Location $PSScriptRoot
     cargo ndk -t $triple build @buildArgs
