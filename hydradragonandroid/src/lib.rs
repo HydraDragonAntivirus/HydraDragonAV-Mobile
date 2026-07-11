@@ -999,25 +999,6 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }).resolve::<LogErrorAndDefault>()
 }
 
-/// Read the entire file in 64 KiB chunks — some OEM FUSE layers (Vivo, Oppo)
-/// stall or fail on a monolithic read() of a large APK but complete fine when
-/// the same bytes arrive through sequential smaller reads.
-fn read_file_chunked(path: &str) -> std::io::Result<Vec<u8>> {
-    use std::io::Read;
-    let mut file = std::fs::File::open(path)?;
-    let meta = file.metadata()?;
-    let len = meta.len() as usize;
-    let mut buf = Vec::with_capacity(len);
-    let mut chunk = [0u8; 65536];
-    loop {
-        let n = file.read(&mut chunk)?;
-        if n == 0 { break; }
-        buf.extend_from_slice(&chunk[..n]);
-        if buf.len() >= len { break; }
-    }
-    Ok(buf)
-}
-
 fn scan_apk(
     env: &mut jni::Env,
     path: JString,
@@ -1045,10 +1026,8 @@ fn scan_apk(
         return r#"{"error":"not initialised"}"#.to_string();
     };
 
-    // Read file in chunks inside on_big_stack — some OEM FUSE layers (Vivo,
-    // Oppo) time out on a single huge read() but handle sequential chunks.
     let scanned = on_big_stack(move || {
-        let bytes = match read_file_chunked(&path) {
+        let bytes = match std::fs::read(&path) {
             Ok(b) => b,
             Err(e) => return format!(r#"{{"error":"{}"}}"#, json_escape(&e.to_string())),
         };
