@@ -37,53 +37,69 @@ public class SmsReceiver extends BroadcastReceiver {
         if (!Telephony.Sms.Intents.SMS_RECEIVED_ACTION.equals(intent.getAction())) return;
         if (!com.hydradragon.antivirus.engine.ProtectionState.isEnabled(context)) return;
 
-        try {
-            SmsMessage[] messages = Telephony.Sms.Intents.getMessagesFromIntent(intent);
-            if (messages == null || messages.length == 0) return;
+        // getMessagesFromIntent() only touches the Intent's extras, so it must
+        // stay on this (main) thread — but scanner.scanUrl() below is a native/
+        // JNI call that can block on the same engine lock a full scan holds,
+        // which would freeze the main thread (and risk an ANR) for every
+        // incoming SMS. goAsync() + a background thread keeps the receiver
+        // alive long enough to finish the native work off the main thread.
+        SmsMessage[] messages = Telephony.Sms.Intents.getMessagesFromIntent(intent);
+        if (messages == null || messages.length == 0) return;
 
-            StringBuilder body = new StringBuilder();
-            String sender = null;
-            for (SmsMessage m : messages) {
-                if (m == null) continue;
-                if (sender == null) sender = m.getOriginatingAddress();
-                CharSequence part = m.getMessageBody();
-                if (part != null) body.append(part);
-            }
-            if (body.length() == 0) return;
-            String text = body.toString();
-            String from = sender != null ? sender : "unknown";
-
-            boolean malicious = false;
-
-            // Malicious link inside the SMS (native URL threat scanner).
-            UrlThreatScanner scanner = UrlThreatScanner.get(context);
-            for (String url : UrlThreatScanner.extractUrls(text)) {
-                if (scanner.scanUrl(url) != null) { malicious = true; break; }
-            }
-
-            // Scam/phishing/fake-antivirus/ransomware wording, same multi-language
-            // lists used for on-screen text (smishing lures, tech-support scams,
-            // ransom notes sent/linked via SMS).
-            if (!malicious) {
-                String lower = text.toLowerCase(Locale.ROOT);
-                // SMS_PHISHING/FAKE_VIRUS_WARNING require 2+ distinct lures (most
-                // individual phrases also appear in genuine texts); RANSOMWARE
-                // phrases are unambiguous enough on their own for a single hit.
-                malicious = ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.SMS_PHISHING, 2)
-                    || ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.FAKE_VIRUS_WARNING, 2)
-                    || ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.RANSOMWARE, 2);
-            }
-
-            if (!malicious) return;
-
-            String id = "smsvirus:" + from;
-            if (UserDecisions.isThreatAllowed(context, id)) return;
-
-            Log.w(TAG, "MALICIOUS SMS from " + from);
-            sendAlert(context, from, id);
-        } catch (Throwable t) {
-            Log.w(TAG, "SMS scan failed", t);
+        StringBuilder body = new StringBuilder();
+        String sender = null;
+        for (SmsMessage m : messages) {
+            if (m == null) continue;
+            if (sender == null) sender = m.getOriginatingAddress();
+            CharSequence part = m.getMessageBody();
+            if (part != null) body.append(part);
         }
+        if (body.length() == 0) return;
+        String text = body.toString();
+        String from = sender != null ? sender : "unknown";
+
+        Context appContext = context.getApplicationContext();
+        PendingResult pendingResult = goAsync();
+        new Thread(() -> {
+            try {
+                scanSmsBody(appContext, text, from);
+            } catch (Throwable t) {
+                Log.w(TAG, "SMS scan failed", t);
+            } finally {
+                pendingResult.finish();
+            }
+        }, "SmsThreatScan").start();
+    }
+
+    private void scanSmsBody(Context context, String text, String from) {
+        boolean malicious = false;
+
+        // Malicious link inside the SMS (native URL threat scanner).
+        UrlThreatScanner scanner = UrlThreatScanner.get(context);
+        for (String url : UrlThreatScanner.extractUrls(text)) {
+            if (scanner.scanUrl(url) != null) { malicious = true; break; }
+        }
+
+        // Scam/phishing/fake-antivirus/ransomware wording, same multi-language
+        // lists used for on-screen text (smishing lures, tech-support scams,
+        // ransom notes sent/linked via SMS).
+        if (!malicious) {
+            String lower = text.toLowerCase(Locale.ROOT);
+            // SMS_PHISHING/FAKE_VIRUS_WARNING require 2+ distinct lures (most
+            // individual phrases also appear in genuine texts); RANSOMWARE
+            // phrases are unambiguous enough on their own for a single hit.
+            malicious = ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.SMS_PHISHING, 2)
+                || ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.FAKE_VIRUS_WARNING, 2)
+                || ScreenThreatKeywords.containsAtLeast(lower, ScreenThreatKeywords.RANSOMWARE, 2);
+        }
+
+        if (!malicious) return;
+
+        String id = "smsvirus:" + from;
+        if (UserDecisions.isThreatAllowed(context, id)) return;
+
+        Log.w(TAG, "MALICIOUS SMS from " + from);
+        sendAlert(context, from, id);
     }
 
     private void sendAlert(Context context, String from, String id) {
