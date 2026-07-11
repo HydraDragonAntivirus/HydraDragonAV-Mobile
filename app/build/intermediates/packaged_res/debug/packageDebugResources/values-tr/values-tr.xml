@@ -107,6 +107,7 @@
     <string name="engine_status_format">Motor: %1$s</string>
     <string name="engine_version">Engine Sürümü</string>
     <string name="error_reading_file">Dosya okuma hatası</string>
+    <string name="error_scanning_file">Dosya tarama hatası</string>
     <string name="fake_virus_warning_msg">%1$s içinde ekranda sahte antivirüs / teknik destek dolandırıcılığı ifadesi tespit edildi — bu gerçek bir tarama sonucu değil, dolandırıcılık web sayfasıdır.</string>
     <string name="fake_virus_warning_title">Sahte virüs uyarısı tespit edildi</string>
     <string name="file_delete_failed">Dosya silinemedi! (İzinleri kontrol edin)</string>
@@ -182,7 +183,7 @@
     <string name="notif_suspicious_network_title">🛡 Şüpheli Ağ Bağlantısı Engellendi</string>
     <string name="notif_suspicious_process_title">⚠ Şüpheli Process Tespit Edildi</string>
     <string name="notif_threat_detected_text">%1$s tespit edildi: %2$s — kaldırmak için dokunun</string>
-    <string name="notification_permission_required">Bildirim izni gereklidir!</string>
+    <string name="notification_permission_required">Bildirim izni verilmesi önerilir!</string>
     <string name="obscured_touch_warning">Dokunma yok sayıldı — ekranın üzerinde bir şey var</string>
     <string name="outgoing">▲ GİDEN</string>
     <string name="periodic_scan_off_toast">Periyodik arka plan taramaları KAPALI — gerçek zamanlı koruma (İndirilenler izleyici, kurulumda tarama) çalışmaya devam ediyor</string>
@@ -280,7 +281,7 @@
     <string name="show_taps_warning_title">\"Dokunmaları Göster\" Açık</string>
     <string name="signature_ignored_toast">Artık %1$d imza her uygulamada/dosyada yoksayılacak</string>
     <string name="signature_prefix">İmza</string>
-    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
+    <string name="silent_mode_toggle">Sessiz Mod (Bildirim Yok)</string>
     <string name="skip">Atla</string>
     <string name="sms_open_permissions_toast">Bunu kapatmak için İzinler > SMS bölümünü açın</string>
     <string name="sms_permission_denied">SMS izni reddedildi</string>

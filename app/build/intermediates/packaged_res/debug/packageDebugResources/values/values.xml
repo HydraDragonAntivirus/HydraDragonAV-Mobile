@@ -124,6 +124,7 @@
     <string name="engine_status_format">Engine: %1$s</string>
     <string name="engine_version">Engine Version</string>
     <string name="error_reading_file">Error reading file</string>
+    <string name="error_scanning_file">Error scanning file</string>
     <string name="fake_virus_warning_msg">Fake antivirus / tech-support scam wording detected on screen in %1$s — this is a scam web page, not a real scan result.</string>
     <string name="fake_virus_warning_title">Fake virus warning detected</string>
     <string name="file_delete_failed">Failed to delete file! (Check permissions)</string>
