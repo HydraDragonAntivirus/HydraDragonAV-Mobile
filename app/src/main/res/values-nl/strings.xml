@@ -356,6 +356,6 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="malware_has_admin_open_settings">APPARAATBEHEERDERINSTELLINGEN OPENEN</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
-        <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn's ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
+        <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn&apos;s ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
 
 </resources>

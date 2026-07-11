@@ -42,6 +42,6 @@
     <string name="theme_system">System Default</string>
     <string name="theme_dark">🌙 Dark</string>
     <string name="theme_light">☀ Light</string>
-        <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn's ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
+        <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn&apos;s ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
 
 </resources>
