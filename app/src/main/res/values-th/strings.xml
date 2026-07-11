@@ -134,10 +134,10 @@
     <string name="settings_title">⚙ การตั้งค่า</string>
     <string name="sys_language">ภาษาของระบบ</string>
     <string name="appearance">ลักษณะที่ปรากฏ</string>
-    <string name="theme_mode_label">🎨 Theme Mode</string>
-    <string name="theme_system">System Default</string>
-    <string name="theme_dark">🌙 Dark</string>
-    <string name="theme_light">☀ Light</string>
+    <string name="theme_mode_label">🎨 โหมดธีม</string>
+    <string name="theme_system">ค่าเริ่มต้น</string>
+    <string name="theme_dark">🌙 มืด</string>
+    <string name="theme_light">☀ สว่าง</string>
     <string name="dark_light_mode">🌙 โหมดมืด  /  ☀ โหมดสว่าง</string>
     <string name="system">ระบบ</string>
     <string name="bloatware_cleaner">🧹 ตัวล้างบลอทแวร์</string>

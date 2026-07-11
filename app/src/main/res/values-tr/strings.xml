@@ -146,10 +146,10 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="settings_title">⚙ Ayarlar</string>
     <string name="sys_language">Sistem Dili</string>
     <string name="appearance">GÖRÜNÜM</string>
-    <string name="theme_mode_label">🎨 Theme Mode</string>
-    <string name="theme_system">System Default</string>
-    <string name="theme_dark">🌙 Dark</string>
-    <string name="theme_light">☀ Light</string>
+    <string name="theme_mode_label">🎨 Tema Modu</string>
+    <string name="theme_system">Sistem Varsayılanı</string>
+    <string name="theme_dark">🌙 Karanlık</string>
+    <string name="theme_light">☀ Aydınlık</string>
     <string name="dark_light_mode">🌙 Karanlık  /  ☀ Aydınlık Mod</string>
     <string name="system">SİSTEM</string>
     <string name="bloatware_cleaner">🧹 Bloatware Temizleyici</string>

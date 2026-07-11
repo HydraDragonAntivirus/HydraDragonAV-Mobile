@@ -675,11 +675,10 @@ public class SettingsFragment extends Fragment {
                     case "system": mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM; break;
                     default:       mode = AppCompatDelegate.MODE_NIGHT_YES; break;
                 }
-                if (getActivity() != null) {
-                    getActivity().overridePendingTransition(
-                        R.anim.theme_fade_in, R.anim.theme_fade_out);
-                }
                 AppCompatDelegate.setDefaultNightMode(mode);
+                if (getActivity() != null) {
+                    getActivity().recreate();
+                }
             })
             .setNegativeButton(getString(R.string.btn_cancel), null)
             .show();

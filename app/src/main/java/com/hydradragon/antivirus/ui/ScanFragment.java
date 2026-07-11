@@ -823,86 +823,93 @@ public class ScanFragment extends Fragment {
     }
 
 private void scanCustomFile(android.net.Uri uri) {
-        if (!serviceBound || guardService == null) return;
-        if (guardService.isEngineLoading()) {
-            Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        isScanning = true;
-        hasScanned = true;
-        foundThreats.clear();
-        threatAdapter.notifyDataSetChanged();
-
-        // Keep the button enabled (unlike other transient states here) so its
-        // onClickListener's `else stopScan()` branch (line ~221) can actually
-        // fire — disabling it during a manual single-file scan meant Stop was
-        // never clickable for this flow, even though stopScan()/cancelScan()
-        // already works fine here (scanSingleFile polls cancelRequested the
-        // same way scanAllApps/scanCustomFolder do).
-        btnScan.setText(getString(R.string.scan_stop));
-        btnScan.setEnabled(true);
-        startScannerAnimation();
-
-        lastScanStatus = getString(R.string.scan_scanning_btn);
-        tvScanStatus.setText(lastScanStatus);
-        tvScanStatus.setTextColor(0xFF00D9FF);
-
-        new Thread(() -> {
-            try {
-                // Copy the picked file to a temp file preserving its original name
-                // so ScanEngine.scanSingleFile can route it correctly (APK → analyzeApp,
-                // other → native engine).
-                String originalName = uri.getLastPathSegment();
-                if (originalName == null || originalName.isEmpty()) originalName = "custom_scan_file";
-                java.io.File tempFile = new java.io.File(getContext().getCacheDir(), originalName);
-                java.io.InputStream is = getContext().getContentResolver().openInputStream(uri);
-                java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = is.read(buffer)) != -1) fos.write(buffer, 0, read);
-                fos.flush(); fos.close(); is.close();
-
-                final com.hydradragon.antivirus.model.ThreatResult result;
-                com.hydradragon.antivirus.engine.ScanEngine engine = guardService.getScanEngine();
-                if (engine != null) {
-                    result = engine.scanSingleFile(tempFile);
-                } else {
-                    result = null;
-                }
-
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        isScanning = false;
-                        stopScannerAnimation();
-                        btnScan.setText(getString(R.string.rescan));
-                        btnScan.setEnabled(true);
-                        
-                        if (result != null && result.isThreat()) {
-                            foundThreats.add(result);
-                            threatAdapter.notifyItemInserted(0);
-                            tvThreats.setText("1");
-                            tvThreats.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.threat_red));
-                            tvScanStatus.setText(getString(R.string.threats_found_count, 1));
-                            tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.threat_red));
-                            tvThreatLabel.setVisibility(View.VISIBLE);
-                        } else {
-                            tvScanStatus.setText(getString(R.string.system_clean));
-                            tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.neon_green));
-                        }
-                    });
-                }
-            } catch(Exception e) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        isScanning = false;
-                        stopScannerAnimation();
-                        btnScan.setText(getString(R.string.rescan));
-                        btnScan.setEnabled(true);
-                        tvScanStatus.setText(getString(R.string.error_reading_file));
-                    });
-                }
-            }
-        }).start();
+    if (!serviceBound || guardService == null) return;
+    if (guardService.isEngineLoading()) {
+        Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
+        return;
     }
+    
+    // 1. Grab a safe, immutable reference to the Context BEFORE entering the thread
+    final Context safeContext = getContext();
+    if (safeContext == null) return;
 
+    isScanning = true;
+    hasScanned = true;
+    foundThreats.clear();
+    threatAdapter.notifyDataSetChanged();
+
+    btnScan.setText(getString(R.string.scan_stop));
+    btnScan.setEnabled(true);
+    startScannerAnimation();
+
+    lastScanStatus = getString(R.string.scan_scanning_btn);
+    tvScanStatus.setText(lastScanStatus);
+    tvScanStatus.setTextColor(0xFF00D9FF);
+
+    new Thread(() -> {
+        try {
+            // 2. Use a completely safe fallback name to avoid path/string manipulation errors
+            String tempName = "custom_scan_" + System.currentTimeMillis() + ".apk";
+            
+            // 3. Reference safeContext instead of getContext()
+            java.io.File tempFile = new java.io.File(safeContext.getCacheDir(), tempName);
+            java.io.InputStream is = safeContext.getContentResolver().openInputStream(uri);
+            
+            if (is == null) throw new java.io.IOException("Unable to open input stream");
+            
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = is.read(buffer)) != -1) fos.write(buffer, 0, read);
+            fos.flush(); fos.close(); is.close();
+
+            final com.hydradragon.antivirus.model.ThreatResult result;
+            com.hydradragon.antivirus.engine.ScanEngine engine = guardService.getScanEngine();
+            if (engine != null) {
+                result = engine.scanSingleFile(tempFile);
+            } else {
+                result = null;
+            }
+
+            // Clean up the temp file after scanning to save space
+            if (tempFile.exists()) tempFile.delete();
+
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    isScanning = false;
+                    stopScannerAnimation();
+                    btnScan.setText(getString(R.string.rescan));
+                    btnScan.setEnabled(true);
+                    
+                    if (result != null && result.isThreat()) {
+                        foundThreats.add(result);
+                        threatAdapter.notifyItemInserted(0);
+                        tvThreats.setText("1");
+                        tvThreats.setTextColor(androidx.core.content.ContextCompat.getColor(safeContext, R.color.threat_red));
+                        tvScanStatus.setText(getString(R.string.threats_found_count, 1));
+                        tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(safeContext, R.color.threat_red));
+                        tvThreatLabel.setVisibility(View.VISIBLE);
+                    } else {
+                        tvScanStatus.setText(getString(R.string.system_clean));
+                        tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(safeContext, R.color.neon_green));
+                    }
+                });
+            }
+        }} catch(Exception e) {
+    // Only prints the stack trace if you are running a debug build.
+    // When you compile the release version, this code is skipped.
+    if (com.hydradragon.antivirus.BuildConfig.DEBUG) {
+        android.util.Log.e("ScanFragment", "Error reading file for custom scan", e);
+    }
+    
+    if (getActivity() != null) {
+        getActivity().runOnUiThread(() -> {
+            isScanning = false;
+            stopScannerAnimation();
+            btnScan.setText(getString(R.string.rescan));
+            btnScan.setEnabled(true);
+            tvScanStatus.setText(getString(R.string.error_reading_file));
+        });
+    }
+}
 }

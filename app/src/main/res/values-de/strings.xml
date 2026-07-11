@@ -134,10 +134,10 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="settings_title">⚙ Einstellungen</string>
     <string name="sys_language">Systemsprache</string>
     <string name="appearance">DARSTELLUNG</string>
-    <string name="theme_mode_label">🎨 Theme Mode</string>
-    <string name="theme_system">System Default</string>
-    <string name="theme_dark">🌙 Dark</string>
-    <string name="theme_light">☀ Light</string>
+    <string name="theme_mode_label">🎨 Design-Modus</string>
+    <string name="theme_system">Systemstandard</string>
+    <string name="theme_dark">🌙 Dunkel</string>
+    <string name="theme_light">☀ Hell</string>
     <string name="dark_light_mode">🌙 Dunkler  /  ☀ Heller Modus</string>
     <string name="system">SYSTEM</string>
     <string name="bloatware_cleaner">🧹 Bloatware-Reiniger</string>

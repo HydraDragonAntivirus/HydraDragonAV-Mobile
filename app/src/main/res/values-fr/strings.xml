@@ -134,10 +134,10 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="settings_title">⚙ Paramètres</string>
     <string name="sys_language">Langue du Système</string>
     <string name="appearance">APPARENCE</string>
-    <string name="theme_mode_label">🎨 Theme Mode</string>
-    <string name="theme_system">System Default</string>
-    <string name="theme_dark">🌙 Dark</string>
-    <string name="theme_light">☀ Light</string>
+    <string name="theme_mode_label">🎨 Mode Thème</string>
+    <string name="theme_system">Par défaut</string>
+    <string name="theme_dark">🌙 Sombre</string>
+    <string name="theme_light">☀ Clair</string>
     <string name="dark_light_mode">🌙 Mode Sombre  /  ☀ Mode Clair</string>
     <string name="system">SYSTÈME</string>
     <string name="bloatware_cleaner">🧹 Nettoyeur de Bloatware</string>

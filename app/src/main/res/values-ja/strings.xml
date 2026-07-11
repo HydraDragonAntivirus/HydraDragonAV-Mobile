@@ -134,10 +134,10 @@
     <string name="settings_title">⚙ 設定</string>
     <string name="sys_language">システム言語</string>
     <string name="appearance">外観</string>
-    <string name="theme_mode_label">🎨 Theme Mode</string>
-    <string name="theme_system">System Default</string>
-    <string name="theme_dark">🌙 Dark</string>
-    <string name="theme_light">☀ Light</string>
+    <string name="theme_mode_label">🎨 テーマモード</string>
+    <string name="theme_system">システム既定</string>
+    <string name="theme_dark">🌙 ダーク</string>
+    <string name="theme_light">☀ ライト</string>
     <string name="dark_light_mode">🌙 ダーク  /  ☀ ライトモード</string>
     <string name="system">システム</string>
     <string name="bloatware_cleaner">🧹 不要アプリクリーナー</string>

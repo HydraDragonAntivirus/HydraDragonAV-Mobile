@@ -134,10 +134,10 @@
     <string name="settings_title">⚙ Настройки</string>
     <string name="sys_language">Язык системы</string>
     <string name="appearance">ВНЕШНИЙ ВИД</string>
-    <string name="theme_mode_label">🎨 Theme Mode</string>
-    <string name="theme_system">System Default</string>
-    <string name="theme_dark">🌙 Dark</string>
-    <string name="theme_light">☀ Light</string>
+    <string name="theme_mode_label">🎨 Тема</string>
+    <string name="theme_system">По умолчанию</string>
+    <string name="theme_dark">🌙 Тёмная</string>
+    <string name="theme_light">☀ Светлая</string>
     <string name="dark_light_mode">🌙 Тёмный  /  ☀ Светлый режим</string>
     <string name="system">СИСТЕМА</string>
     <string name="bloatware_cleaner">🧹 Очистка от лишних программ</string>

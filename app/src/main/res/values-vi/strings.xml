@@ -134,10 +134,10 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="settings_title">⚙ Cài đặt</string>
     <string name="sys_language">Ngôn ngữ Hệ thống</string>
     <string name="appearance">GIAO DIỆN</string>
-    <string name="theme_mode_label">🎨 Theme Mode</string>
-    <string name="theme_system">System Default</string>
-    <string name="theme_dark">🌙 Dark</string>
-    <string name="theme_light">☀ Light</string>
+    <string name="theme_mode_label">🎨 Chủ đề</string>
+    <string name="theme_system">Mặc định</string>
+    <string name="theme_dark">🌙 Tối</string>
+    <string name="theme_light">☀ Sáng</string>
     <string name="dark_light_mode">🌙 Chế độ Tối  /  ☀ Chế độ Sáng</string>
     <string name="system">HỆ THỐNG</string>
     <string name="bloatware_cleaner">🧹 Dọn dẹp Bloatware</string>

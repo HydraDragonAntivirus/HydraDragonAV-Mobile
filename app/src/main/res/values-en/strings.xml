@@ -38,4 +38,8 @@
     <string name="uninstall_failed_safe_mode_toast">After reboot into Safe Mode, open HydraDragon and run a full scan to remove the malware</string>
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
     <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
+    <string name="theme_mode_label">🎨 Theme Mode</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_light">☀ Light</string>
 </resources>
