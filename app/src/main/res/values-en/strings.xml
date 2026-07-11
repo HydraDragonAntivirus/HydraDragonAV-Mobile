@@ -1,4 +1,4 @@
-﻿<resources>
+<resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ROOTED DEVICE</string>
     <string name="root_warning_msg">This device has ROOT access.\n\nHydraDragon Antivirus does NOT support root-level features. USB debugging (ADB) is also not supported for production use.\n\n⚠️ STRONGLY RECOMMENDED: Remove root access and disable USB debugging before using this app. Running on a rooted device with ADB enabled severely compromises your security.\n\nIf you believe malware has rooted your device without your knowledge, you may continue with LIMITED protection.</string>
@@ -42,6 +42,6 @@
     <string name="theme_system">System Default</string>
     <string name="theme_dark">🌙 Dark</string>
     <string name="theme_light">☀ Light</string>
-        <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn&apos;s ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
+    <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn&apos;s ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
 
 </resources>

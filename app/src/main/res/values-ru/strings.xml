@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ РУТИРОВАННОЕ УСТРОЙСТВО</string>
@@ -356,6 +356,6 @@
     <string name="malware_has_admin_open_settings">ОТКРЫТЬ НАСТРОЙКИ АДМИНИСТРАТОРА УСТРОЙСТВА</string>
 
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
-        <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn&apos;s ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
+    <string name="unicorn_unsupported">Native-code emulation (Unicorn) is unavailable on this device. This is caused by a known bug in Unicorn&apos;s ARM64 JIT backend on real phone hardware. Scanning continues normally without this pass.</string>
 
 </resources>
