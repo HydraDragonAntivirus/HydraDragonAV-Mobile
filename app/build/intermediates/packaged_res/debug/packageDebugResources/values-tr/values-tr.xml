@@ -87,6 +87,9 @@
     <string name="detect_cat_rootkit">Rootkit benzeri davranış (gizli uygulama + şüpheli izinler)</string>
     <string name="detect_cat_signatures">İmza tabanlı (YARA/ClamAV)</string>
     <string name="detect_cat_url_strings">Dosyalarda kötü amaçlı/kimlik avı URL dizeleri</string>
+    <string name="detect_zip_bomb_off_toast">Sıkıştırma Bombası Algılama KAPALI</string>
+    <string name="detect_zip_bomb_on_toast">Sıkıştırma Bombası Algılama AÇIK</string>
+    <string name="detect_zip_bomb_toggle">Sıkıştırma Bombalarını Algıla — sınırsız boyuta genişleyen arşivleri reddet</string>
     <string name="detection_categories_header">Tespit Kategorileri</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="disabled_success">✅ Devre dışı bırakıldı!</string>

@@ -155,18 +155,37 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Scan Button -->
-    <Button
-        android:id="@+id/btn_start_scan"
+    <!-- Scan Buttons -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:text="@string/scan_system"
-        android:textColor="@color/bg_primary"
-        android:fontFamily="monospace"
-        android:textStyle="bold"
-        android:letterSpacing="0.15"
-        android:backgroundTint="@color/neon_green"
-        android:layout_marginBottom="12dp"/>
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <Button
+            android:id="@+id/btn_start_scan"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:text="@string/scan_system"
+            android:textColor="@color/bg_primary"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:letterSpacing="0.15"
+            android:backgroundTint="@color/neon_green"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btn_pause_resume"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:text="⏸"
+            android:textSize="20sp"
+            android:textColor="@color/bg_primary"
+            android:fontFamily="monospace"
+            android:backgroundTint="@color/neon_cyan"
+            android:visibility="gone"/>
+    </LinearLayout>
 
     <!-- Engine loading warning (yellow) -->
     <TextView

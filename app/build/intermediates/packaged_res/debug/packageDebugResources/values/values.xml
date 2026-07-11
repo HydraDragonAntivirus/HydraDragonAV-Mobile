@@ -104,6 +104,9 @@
     <string name="detect_cat_rootkit">Rootkit-like behavior (hidden app + suspicious permissions)</string>
     <string name="detect_cat_signatures">Signature-based (YARA/ClamAV)</string>
     <string name="detect_cat_url_strings">Malicious/phishing URL strings in files</string>
+    <string name="detect_zip_bomb_off_toast">Decompression Bomb Detection OFF</string>
+    <string name="detect_zip_bomb_on_toast">Decompression Bomb Detection ON</string>
+    <string name="detect_zip_bomb_toggle">Detect Decompression Bombs — reject archives that expand to an unbounded size</string>
     <string name="detection_categories_header">Detection Categories</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="disabled_success">✅ Disabled!</string>
@@ -254,9 +257,11 @@
     <string name="scan_interval_hint">Minimum %1$d minutes — a shorter interval isn\'t allowed (battery/CPU impact)</string>
     <string name="scan_interval_quick_label">Quick scan every (minutes):</string>
     <string name="scan_interval_saved">Scan interval saved</string>
+    <string name="scan_paused">⏸ Scan paused</string>
     <string name="scan_progress_status">Scanning: %1$s</string>
     <string name="scan_prompt">Press SCAN button to start scanning</string>
     <string name="scan_rescan_btn">RESCAN</string>
+    <string name="scan_resuming">Resuming…</string>
     <string name="scan_scanning_btn">SCANNING...</string>
     <string name="scan_stop">⛔ STOP</string>
     <string name="scan_stopped">⏹ Scan stopped</string>
@@ -294,6 +299,7 @@
     <string name="show_taps_warning_title">\"Show Taps\" Is Enabled</string>
     <string name="signature_ignored_toast">%1$d signature(s) will now be ignored on every app/file</string>
     <string name="signature_prefix">Signature</string>
+    <string name="silent_mode_toggle">Silent Mode (No Notifications)</string>
     <string name="skip">Skip</string>
     <string name="sms_open_permissions_toast">Open Permissions > SMS to turn this off</string>
     <string name="sms_permission_denied">SMS permission denied</string>
