@@ -334,6 +334,7 @@
     <string name="notif_action_remove">حذف</string>
     <string name="engine_status_format">موتور: %1$s</string>
     <string name="error_reading_file">خطا در خواندن فایل</string>
+    <string name="error_scanning_file">خطا در اسکن فایل</string>
     <string name="marked_safe_format">ایمن علامت‌گذاری شد: %1$s</string>
     <string name="net_event_blocked">مسدود شده</string>
     <string name="net_event_allowed">مجاز</string>

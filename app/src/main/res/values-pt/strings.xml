@@ -334,6 +334,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="notif_action_remove">Remover</string>
     <string name="engine_status_format">Motor: %1$s</string>
     <string name="error_reading_file">Erro ao ler o arquivo</string>
+    <string name="error_scanning_file">Erro ao verificar o arquivo</string>
     <string name="marked_safe_format">Marcado como seguro: %1$s</string>
     <string name="net_event_blocked">BLOQUEADO</string>
     <string name="net_event_allowed">PERMITIDO</string>

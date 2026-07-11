@@ -352,6 +352,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="notif_action_remove">Kaldır</string>
     <string name="engine_status_format">Motor: %1$s</string>
     <string name="error_reading_file">Dosya okuma hatası</string>
+    <string name="error_scanning_file">Dosya tarama hatası</string>
     <string name="marked_safe_format">Güvenli olarak işaretlendi: %1$s</string>
     <string name="net_event_blocked">ENGELLENDİ</string>
     <string name="net_event_allowed">İZİN VERİLDİ</string>

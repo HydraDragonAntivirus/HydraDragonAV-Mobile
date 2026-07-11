@@ -334,6 +334,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="notif_action_remove">Usuń</string>
     <string name="engine_status_format">Silnik: %1$s</string>
     <string name="error_reading_file">Błąd odczytu pliku</string>
+    <string name="error_scanning_file">Błąd skanowania pliku</string>
     <string name="marked_safe_format">Oznaczono jako bezpieczne: %1$s</string>
     <string name="net_event_blocked">ZABLOKOWANO</string>
     <string name="net_event_allowed">DOZWOLONO</string>

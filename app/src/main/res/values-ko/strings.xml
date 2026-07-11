@@ -334,6 +334,7 @@
     <string name="notif_action_remove">제거</string>
     <string name="engine_status_format">엔진: %1$s</string>
     <string name="error_reading_file">파일을 읽는 중 오류가 발생했습니다</string>
+    <string name="error_scanning_file">파일을 검사하는 중 오류가 발생했습니다</string>
     <string name="marked_safe_format">안전으로 표시됨: %1$s</string>
     <string name="net_event_blocked">차단됨</string>
     <string name="net_event_allowed">허용됨</string>

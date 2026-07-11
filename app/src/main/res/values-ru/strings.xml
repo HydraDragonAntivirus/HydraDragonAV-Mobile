@@ -334,6 +334,7 @@
     <string name="notif_action_remove">Удалить</string>
     <string name="engine_status_format">Движок: %1$s</string>
     <string name="error_reading_file">Ошибка чтения файла</string>
+    <string name="error_scanning_file">Ошибка сканирования файла</string>
     <string name="marked_safe_format">Отмечено как безопасное: %1$s</string>
     <string name="net_event_blocked">ЗАБЛОКИРОВАНО</string>
     <string name="net_event_allowed">РАЗРЕШЕНО</string>

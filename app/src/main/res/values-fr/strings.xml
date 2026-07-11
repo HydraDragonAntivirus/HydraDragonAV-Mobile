@@ -334,6 +334,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="notif_action_remove">Supprimer</string>
     <string name="engine_status_format">Moteur : %1$s</string>
     <string name="error_reading_file">Erreur de lecture du fichier</string>
+    <string name="error_scanning_file">Erreur d'analyse du fichier</string>
     <string name="marked_safe_format">Marqué comme sûr : %1$s</string>
     <string name="net_event_blocked">BLOQUÉ</string>
     <string name="net_event_allowed">AUTORISÉ</string>

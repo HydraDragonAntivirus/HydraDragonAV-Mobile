@@ -334,6 +334,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="notif_action_remove">Verwijderen</string>
     <string name="engine_status_format">Engine: %1$s</string>
     <string name="error_reading_file">Fout bij het lezen van bestand</string>
+    <string name="error_scanning_file">Fout bij het scannen van bestand</string>
     <string name="marked_safe_format">Gemarkeerd als veilig: %1$s</string>
     <string name="net_event_blocked">GEBLOKKEERD</string>
     <string name="net_event_allowed">TOEGESTAAN</string>

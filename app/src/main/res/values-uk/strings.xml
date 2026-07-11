@@ -334,6 +334,7 @@
     <string name="notif_action_remove">Видалити</string>
     <string name="engine_status_format">Двигун: %1$s</string>
     <string name="error_reading_file">Помилка читання файлу</string>
+    <string name="error_scanning_file">Помилка сканування файлу</string>
     <string name="marked_safe_format">Позначено як безпечне: %1$s</string>
     <string name="net_event_blocked">ЗАБЛОКОВАНО</string>
     <string name="net_event_allowed">ДОЗВОЛЕНО</string>

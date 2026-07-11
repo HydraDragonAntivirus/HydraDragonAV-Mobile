@@ -334,6 +334,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="notif_action_remove">Xóa</string>
     <string name="engine_status_format">Công cụ: %1$s</string>
     <string name="error_reading_file">Lỗi khi đọc tệp</string>
+    <string name="error_scanning_file">Lỗi khi quét tệp</string>
     <string name="marked_safe_format">Đã đánh dấu an toàn: %1$s</string>
     <string name="net_event_blocked">ĐÃ CHẶN</string>
     <string name="net_event_allowed">ĐÃ CHO PHÉP</string>

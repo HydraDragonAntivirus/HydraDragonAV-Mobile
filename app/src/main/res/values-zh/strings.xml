@@ -334,6 +334,7 @@
     <string name="notif_action_remove">删除</string>
     <string name="engine_status_format">引擎：%1$s</string>
     <string name="error_reading_file">读取文件时出错</string>
+    <string name="error_scanning_file">扫描文件时出错</string>
     <string name="marked_safe_format">已标记为安全：%1$s</string>
     <string name="net_event_blocked">已拦截</string>
     <string name="net_event_allowed">已允许</string>

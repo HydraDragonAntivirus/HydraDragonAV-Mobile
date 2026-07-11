@@ -334,6 +334,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="notif_action_remove">Rimuovi</string>
     <string name="engine_status_format">Motore: %1$s</string>
     <string name="error_reading_file">Errore durante la lettura del file</string>
+    <string name="error_scanning_file">Errore durante la scansione del file</string>
     <string name="marked_safe_format">Contrassegnato come sicuro: %1$s</string>
     <string name="net_event_blocked">BLOCCATO</string>
     <string name="net_event_allowed">CONSENTITO</string>

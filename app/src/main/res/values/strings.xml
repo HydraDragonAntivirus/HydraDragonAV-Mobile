@@ -357,6 +357,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="notif_action_remove">Remove</string>
     <string name="engine_status_format">Engine: %1$s</string>
     <string name="error_reading_file">Error reading file</string>
+    <string name="error_scanning_file">Error scanning file</string>
     <string name="marked_safe_format">Marked safe: %1$s</string>
     <string name="net_event_blocked">BLOCKED</string>
     <string name="net_event_allowed">ALLOWED</string>

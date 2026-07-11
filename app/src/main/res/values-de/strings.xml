@@ -334,6 +334,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="notif_action_remove">Entfernen</string>
     <string name="engine_status_format">Engine: %1$s</string>
     <string name="error_reading_file">Fehler beim Lesen der Datei</string>
+    <string name="error_scanning_file">Fehler beim Scannen der Datei</string>
     <string name="marked_safe_format">Als sicher markiert: %1$s</string>
     <string name="net_event_blocked">BLOCKIERT</string>
     <string name="net_event_allowed">ZUGELASSEN</string>

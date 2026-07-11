@@ -852,13 +852,19 @@ private void scanCustomFile(android.net.Uri uri) {
         tvScanStatus.setTextColor(0xFF00D9FF);
 
         new Thread(() -> {
+            // Two separate try blocks so the status text can tell apart a
+            // failure copying the picked URI's bytes (real "file read error")
+            // from a failure inside ScanEngine.scanSingleFile/the native+JNI
+            // path — previously both fell into one catch and both showed
+            // "error_reading_file", hiding which side actually broke.
+            java.io.File tempFile;
             try {
                 // Copy the picked file to a temp file preserving its original name
                 // so ScanEngine.scanSingleFile can route it correctly (APK → analyzeApp,
                 // other → native engine).
                 String originalName = uri.getLastPathSegment();
                 if (originalName == null || originalName.isEmpty()) originalName = "custom_scan_file";
-                java.io.File tempFile = new java.io.File(getContext().getCacheDir(), originalName);
+                tempFile = new java.io.File(getContext().getCacheDir(), originalName);
                 java.io.InputStream is = getContext().getContentResolver().openInputStream(uri);
                 if (is == null) {
                     // openInputStream() legitimately CAN return null (revoked URI
@@ -873,11 +879,26 @@ private void scanCustomFile(android.net.Uri uri) {
                 int read;
                 while ((read = is.read(buffer)) != -1) fos.write(buffer, 0, read);
                 fos.flush(); fos.close(); is.close();
+            } catch (Exception e) {
+                Log.e("ScanFragment", "scanCustomFile: failed copying uri=" + uri, e);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        isScanning = false;
+                        stopScannerAnimation();
+                        btnScan.setText(getString(R.string.rescan));
+                        btnScan.setEnabled(true);
+                        tvScanStatus.setText(getString(R.string.error_reading_file));
+                    });
+                }
+                return;
+            }
 
+            try {
+                final java.io.File scanFile = tempFile;
                 final com.hydradragon.antivirus.model.ThreatResult result;
                 com.hydradragon.antivirus.engine.ScanEngine engine = guardService.getScanEngine();
                 if (engine != null) {
-                    result = engine.scanSingleFile(tempFile);
+                    result = engine.scanSingleFile(scanFile);
                 } else {
                     result = null;
                 }
@@ -888,7 +909,7 @@ private void scanCustomFile(android.net.Uri uri) {
                         stopScannerAnimation();
                         btnScan.setText(getString(R.string.rescan));
                         btnScan.setEnabled(true);
-                        
+
                         if (result != null && result.isThreat()) {
                             foundThreats.add(result);
                             threatAdapter.notifyItemInserted(0);
@@ -903,21 +924,15 @@ private void scanCustomFile(android.net.Uri uri) {
                         }
                     });
                 }
-            } catch(Exception e) {
-                // Previously this exception was discarded entirely — no Log
-                // call anywhere in this file — so "error_reading_file" gave no
-                // way to tell whether the URI copy failed or ScanEngine.scanSingleFile
-                // (the native/JNI path) threw. Log the real type+message+stack
-                // so the next occurrence is actually diagnosable from logcat
-                // (filter: adb logcat -s ScanFragment).
-                Log.e("ScanFragment", "scanCustomFile failed for uri=" + uri, e);
+            } catch (Exception e) {
+                Log.e("ScanFragment", "scanCustomFile: scanSingleFile failed for uri=" + uri, e);
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         isScanning = false;
                         stopScannerAnimation();
                         btnScan.setText(getString(R.string.rescan));
                         btnScan.setEnabled(true);
-                        tvScanStatus.setText(getString(R.string.error_reading_file));
+                        tvScanStatus.setText(getString(R.string.error_scanning_file));
                     });
                 }
             }

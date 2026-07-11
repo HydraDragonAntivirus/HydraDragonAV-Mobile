@@ -333,6 +333,7 @@
     <string name="notif_action_remove">हटाएं</string>
     <string name="engine_status_format">इंजन: %1$s</string>
     <string name="error_reading_file">फ़ाइल पढ़ने में त्रुटि</string>
+    <string name="error_scanning_file">फ़ाइल स्कैन करने में त्रुटि</string>
     <string name="marked_safe_format">सुरक्षित चिह्नित किया गया: %1$s</string>
     <string name="net_event_blocked">ब्लॉक किया गया</string>
     <string name="net_event_allowed">अनुमति दी गई</string>

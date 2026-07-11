@@ -334,6 +334,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="notif_action_remove">Hapus</string>
     <string name="engine_status_format">Mesin: %1$s</string>
     <string name="error_reading_file">Kesalahan membaca file</string>
+    <string name="error_scanning_file">Kesalahan memindai file</string>
     <string name="marked_safe_format">Ditandai aman: %1$s</string>
     <string name="net_event_blocked">DIBLOKIR</string>
     <string name="net_event_allowed">DIIZINKAN</string>

@@ -334,6 +334,7 @@
     <string name="notif_action_remove">إزالة</string>
     <string name="engine_status_format">المحرك: %1$s</string>
     <string name="error_reading_file">خطأ في قراءة الملف</string>
+    <string name="error_scanning_file">خطأ في فحص الملف</string>
     <string name="marked_safe_format">تم وضع علامة آمن: %1$s</string>
     <string name="net_event_blocked">محظور</string>
     <string name="net_event_allowed">مسموح</string>

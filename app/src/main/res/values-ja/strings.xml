@@ -334,6 +334,7 @@
     <string name="notif_action_remove">削除</string>
     <string name="engine_status_format">エンジン: %1$s</string>
     <string name="error_reading_file">ファイルの読み取りエラー</string>
+    <string name="error_scanning_file">ファイルのスキャンエラー</string>
     <string name="marked_safe_format">安全としてマーク済み: %1$s</string>
     <string name="net_event_blocked">ブロック済み</string>
     <string name="net_event_allowed">許可済み</string>

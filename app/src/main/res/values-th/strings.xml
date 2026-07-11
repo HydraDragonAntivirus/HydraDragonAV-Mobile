@@ -334,6 +334,7 @@
     <string name="notif_action_remove">ลบ</string>
     <string name="engine_status_format">เอนจิ้น: %1$s</string>
     <string name="error_reading_file">เกิดข้อผิดพลาดในการอ่านไฟล์</string>
+    <string name="error_scanning_file">เกิดข้อผิดพลาดในการสแกนไฟล์</string>
     <string name="marked_safe_format">ทำเครื่องหมายว่าปลอดภัยแล้ว: %1$s</string>
     <string name="net_event_blocked">ถูกบล็อก</string>
     <string name="net_event_allowed">ได้รับอนุญาต</string>

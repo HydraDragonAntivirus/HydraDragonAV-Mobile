@@ -334,6 +334,7 @@ Puntuación de riesgo: %2$d/100
     <string name="notif_action_remove">Eliminar</string>
     <string name="engine_status_format">Motor: %1$s</string>
     <string name="error_reading_file">Error al leer el archivo</string>
+    <string name="error_scanning_file">Error al escanear el archivo</string>
     <string name="marked_safe_format">Marcado como seguro: %1$s</string>
     <string name="net_event_blocked">BLOQUEADO</string>
     <string name="net_event_allowed">PERMITIDO</string>
