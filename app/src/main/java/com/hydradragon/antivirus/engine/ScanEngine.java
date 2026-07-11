@@ -734,6 +734,21 @@ public class ScanEngine {
         return out.isEmpty() ? null : out.get(0);
     }
 
+    /** True if {@code file} IS our own running APK on disk (its installed
+     *  sourceDir/publicSourceDir) — e.g. a full-scan directory walk reaching
+     *  into /data/app, or a raw-file scan path that never went through
+     *  analyzeApp()'s package-name exclusion. equals() against the real
+     *  installed path, not a name/prefix guess. */
+    private boolean isOwnAppFile(java.io.File file) {
+        try {
+            String path = file.getAbsolutePath();
+            android.content.pm.ApplicationInfo self = context.getApplicationInfo();
+            return path.equals(self.sourceDir) || path.equals(self.publicSourceDir);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /**
      * Scan an arbitrary (non-APK) file with the native engine during a full
      * scan. The native side unpacks archives (zip/gz/tar/xz/lzma/7z/rar — so a
@@ -743,6 +758,7 @@ public class ScanEngine {
     private boolean scanGenericFile(java.io.File file, List<ThreatResult> threats) {
         try {
             if (!NativeScanner.isReady()) return true;
+            if (isOwnAppFile(file)) return true;
             if (!MaxScanFileSize.isWithinLimit(context, file)) {
                 Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + file.getAbsolutePath());
                 return true;
