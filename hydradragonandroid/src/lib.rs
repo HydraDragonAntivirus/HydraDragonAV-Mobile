@@ -73,20 +73,27 @@ fn android_log(msg: &str) {
 /// Genuine failure/panic reports (`native-init FAILED`, `PANIC`, ...) stay on
 /// plain `android_log` calls and keep logging in release, since those matter
 /// for diagnosing real crashes on real devices.
-#[cfg(debug_assertions)]
+//
+// TEMPORARILY commented out to chase a bug without a full debug build's
+// slowdown: this macro currently always logs (the #[cfg(not(debug_assertions))]
+// no-op branch below is disabled), even in a plain `-Configuration release`
+// build. Uncomment the #[cfg(not(debug_assertions))] block and delete the
+// unconditional one once done, to restore release builds compiling this to
+// nothing.
+// #[cfg(debug_assertions)]
 macro_rules! rust_timing_log {
     ($($arg:tt)*) => {
         android_log(&format!($($arg)*))
     };
 }
-#[cfg(not(debug_assertions))]
-macro_rules! rust_timing_log {
-    ($($arg:tt)*) => {
-        // Uncalled closure captures all referenced variables, suppressing
-        // unused-variable warnings without executing format!() at runtime.
-        let _ = || { format!($($arg)*) };
-    };
-}
+// #[cfg(not(debug_assertions))]
+// macro_rules! rust_timing_log {
+//     ($($arg:tt)*) => {
+//         // Uncalled closure captures all referenced variables, suppressing
+//         // unused-variable warnings without executing format!() at runtime.
+//         let _ = || { format!($($arg)*) };
+//     };
+// }
 
 /// Asset file names expected inside the init directory (static scanner).
 const YRC_FILES: &[&str] = &[
