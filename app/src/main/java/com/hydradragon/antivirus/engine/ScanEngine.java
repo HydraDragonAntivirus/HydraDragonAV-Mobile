@@ -654,7 +654,13 @@ public class ScanEngine {
                             if (callback != null) callback.onThreatFound(result);
                         }
                     }
-                } catch (Exception e) { }
+                } catch (Throwable e) {
+                    // See scanSingleFile's matching catch: getPackageArchiveInfo()
+                    // can throw ExceptionInInitializerError (an Error, not an
+                    // Exception) on some ROMs — must not let that escape and kill
+                    // the whole scan thread mid full-scan.
+                    Log.w(TAG, "scanDirectoryForApks: getPackageArchiveInfo failed for " + file.getAbsolutePath(), e);
+                }
                 if (!cancelRequested) reportFileScanned(file);
             } else if (fullScan) {
                 // Non-APK file in a full scan: route through the native engine
@@ -701,10 +707,30 @@ public class ScanEngine {
                         if (result != null && result.isThreat()) return result;
                     }
                 }
-            } catch (Exception e) { /* not a valid APK — fall through to native engine */ }
+            } catch (Throwable e) {
+                // getPackageArchiveInfo() isn't just Exception-safe on every ROM:
+                // on this Vivo build its internal PackageParser2 static init
+                // (ParsingPackageUtils.<clinit> -> AconfigFlags.<init>) throws
+                // ExceptionInInitializerError — an Error, not an Exception — when
+                // it can't open its aconfig flags file (ENOENT). catch(Exception)
+                // let that fall through uncaught, killing the whole scan thread
+                // and restarting the app process. Catch Throwable here instead so
+                // this ROM bug degrades to "fall through to native engine", not a
+                // crash.
+                Log.w(TAG, "scanSingleFile: getPackageArchiveInfo failed for " + file.getAbsolutePath(), e);
+            }
         }
         List<ThreatResult> out = new ArrayList<>();
-        scanGenericFile(file, out);
+        if (!scanGenericFile(file, out)) {
+            // Genuinely crashed before reaching a verdict — NOT the same as
+            // "scanned, found nothing". Throwing here (unchecked, no signature
+            // change needed) lets both existing callers' Throwable/Exception
+            // catches do the right thing: ScanFragment.scanCustomFile's second
+            // try block shows error_scanning_file instead of falsely reporting
+            // "System clean", and GuardService.scanDownloadedFile's
+            // catch (Throwable t) logs it the same as any other scan failure.
+            throw new RuntimeException("scanGenericFile failed for " + file.getAbsolutePath());
+        }
         return out.isEmpty() ? null : out.get(0);
     }
 
@@ -714,12 +740,12 @@ public class ScanEngine {
      * nested APK is reached too) and runs clamav signatures, YARA and the ML
      * model on every extracted buffer.
      */
-    private void scanGenericFile(java.io.File file, List<ThreatResult> threats) {
+    private boolean scanGenericFile(java.io.File file, List<ThreatResult> threats) {
         try {
-            if (!NativeScanner.isReady()) return;
+            if (!NativeScanner.isReady()) return true;
             if (!MaxScanFileSize.isWithinLimit(context, file)) {
                 Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + file.getAbsolutePath());
-                return;
+                return true;
             }
             if (callback != null)
                 callback.onProgress(0, 1, file.getName());
@@ -731,10 +757,13 @@ public class ScanEngine {
             addTiming("NativeScanner", nativeMs);
             Log.i(TAG, "FILE_ENGINE_TIMING " + file.getName()
                 + " NativeScanner=" + nativeMs + "ms slowest=NativeScanner");
-            if (v == null) return;
+            if (v == null) return true; // cancelled (or the native call itself
+                                         // failed — either way runNativeInterruptible
+                                         // already logged the real cause if it
+                                         // wasn't a plain cancellation).
             if (v.isError()) {
                 Log.w(TAG, "NATIVE-ERROR " + file.getAbsolutePath() + " " + v.error);
-                return;
+                return true;
             }
             saveGeneratedRule(v);
             // Per-detection whitelist suppression: a hit INSIDE a known-good
@@ -744,7 +773,7 @@ public class ScanEngine {
             List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
             boolean malicious = !live.isEmpty();
 
-            if (!malicious && v.permissions < 6) return;
+            if (!malicious && v.permissions < 6) return true;
 
             ThreatResult.Builder b = new ThreatResult.Builder(path);
             b.setStandaloneFile(true);
@@ -825,7 +854,19 @@ public class ScanEngine {
                 threats.add(r);
                 if (callback != null) callback.onThreatFound(r);
             }
-        } catch (Throwable t) { /* degrade gracefully */ }
+            return true;
+        } catch (Throwable t) {
+            // Previously: catch (Throwable t) { /* degrade gracefully */ } —
+            // swallowed EVERY failure (including a real native-engine crash)
+            // with zero trace, and the caller had no way to tell "scanned,
+            // found nothing" apart from "never actually scanned". That made
+            // scanSingleFile return null either way, which ScanFragment then
+            // showed as "System clean" — a file that crashed the scanner
+            // reported itself SAFE. Log it and tell the caller this one
+            // genuinely failed, instead of silently agreeing it was clean.
+            Log.e(TAG, "scanGenericFile: native scan crashed for " + file.getAbsolutePath(), t);
+            return false;
+        }
     }
 
     // ──────────────────────── FULL-SCAN EXTRA PASSES ────────────────────────
@@ -1151,7 +1192,13 @@ public class ScanEngine {
             // it counts them from the manifest bytes (works for in-memory/inner
             // APKs too). The 5/6 DECISION is applied below in Java where `v` is in
             // scope, so Java still owns the verdict + whitelist.
-        } catch (Exception e) { }
+        } catch (Throwable e) {
+            // See scanSingleFile's matching catch: getPackageArchiveInfo() (and
+            // on some ROMs getPackageInfo()) can throw ExceptionInInitializerError
+            // — an Error, not an Exception — which catch(Exception) let escape and
+            // kill the whole scan thread.
+            Log.w(TAG, "analyzeApp: package info lookup failed for " + app.packageName, e);
+        }
 
         // Stealth-rootkit pattern: hidden from the launcher AND requests at
         // least one high-privilege/persistence permission. Neither signal
