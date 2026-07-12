@@ -873,6 +873,12 @@ private void scanCustomFile(android.net.Uri uri) {
                 // other → native engine).
                 String originalName = uri.getLastPathSegment();
                 if (originalName == null || originalName.isEmpty()) originalName = "custom_scan_file";
+                // DocumentsProvider URIs (e.g. primary:Download/file.apk) may
+                // contain colons, slashes, or percent-encoded chars that are
+                // invalid in cache-dir file names — strip down to bare name.
+                int slash = originalName.lastIndexOf('/');
+                if (slash >= 0) originalName = originalName.substring(slash + 1);
+                originalName = originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
                 tempFile = new java.io.File(getContext().getCacheDir(), originalName);
                 java.io.InputStream is = getContext().getContentResolver().openInputStream(uri);
                 if (is == null) {
