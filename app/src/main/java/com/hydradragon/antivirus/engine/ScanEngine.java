@@ -243,6 +243,32 @@ public class ScanEngine {
      *  finishes on its own thread in the background with its result discarded.
      *  This is what lets Stop take effect in ~150ms instead of however long
      *  the file being scanned right now takes. */
+    /** Run a PackageManager blocking call on a background thread with a 5-second
+     *  timeout. Vivo ROMs hang forever in AconfigFlags static init under
+     *  getPackageArchiveInfo/getPackageInfo — this detects the hang, marks the
+     *  analyzer as permanently broken (apkPkgAnalyzerBroken), and returns null so
+     *  the caller degrades gracefully instead of blocking the scan thread. Once
+     *  the flag is set, subsequent calls return null immediately without
+     *  submitting work. */
+    private PackageInfo runPkgInfoInterruptible(java.util.concurrent.Callable<PackageInfo> call) {
+        if (apkPkgAnalyzerBroken) return null;
+        java.util.concurrent.Future<PackageInfo> future = orchestrationExecutor.submit(call);
+        try {
+            return future.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (java.util.concurrent.TimeoutException te) {
+            apkPkgAnalyzerBroken = true;
+            Log.w(TAG, "getPackageArchiveInfo/getPackageInfo timed out after 5s"
+                + " (Vivo AconfigFlags deadlock) — permanently disabled");
+            return null;
+        } catch (Throwable e) {
+            // Plain exception/error (Vivo throws ExceptionInInitializerError too).
+            // Mark broken so we don't retry next call.
+            apkPkgAnalyzerBroken = true;
+            Log.w(TAG, "getPackageArchiveInfo/getPackageInfo failed", e);
+            return null;
+        }
+    }
+
     private NativeScanner.Verdict runNativeInterruptible(java.util.concurrent.Callable<NativeScanner.Verdict> call) {
         // Don't submit at all if we're already cancelled: nativeCallExecutor only
         // has 1-2 threads (NATIVE_PARALLELISM), and an "abandoned" call keeps
@@ -638,28 +664,23 @@ public class ScanEngine {
             if (file.isDirectory()) {
                 scanDirectoryForApks(file, pm, threats, fullScan, skipPackages);
             } else if (file.getName().toLowerCase().endsWith(".apk")) {
-                try {
-                    PackageInfo pkgInfo = pm.getPackageArchiveInfo(file.getAbsolutePath(),
-                        PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
-                    if (pkgInfo != null) {
-                        String pkgName = pkgInfo.applicationInfo.packageName;
-                        if (skipPackages != null && pkgName != null && skipPackages.contains(pkgName)) {
-                            continue;
-                        }
-                        pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
-                        pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
-                        ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
-                        if (result != null && result.isThreat() && !threats.contains(result)) {
-                            threats.add(result);
-                            if (callback != null) callback.onThreatFound(result);
-                        }
+                // runPkgInfoInterruptible handles Vivo ROM hangs/timeouts internally
+                // and sets apkPkgAnalyzerBroken.
+                PackageInfo pkgInfo = runPkgInfoInterruptible(() ->
+                    pm.getPackageArchiveInfo(file.getAbsolutePath(),
+                        PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES));
+                if (pkgInfo != null) {
+                    String pkgName = pkgInfo.applicationInfo.packageName;
+                    if (skipPackages != null && pkgName != null && skipPackages.contains(pkgName)) {
+                        continue;
                     }
-                } catch (Throwable e) {
-                    // See scanSingleFile's matching catch: getPackageArchiveInfo()
-                    // can throw ExceptionInInitializerError (an Error, not an
-                    // Exception) on some ROMs — must not let that escape and kill
-                    // the whole scan thread mid full-scan.
-                    Log.w(TAG, "scanDirectoryForApks: getPackageArchiveInfo failed for " + file.getAbsolutePath(), e);
+                    pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
+                    pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
+                    ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
+                    if (result != null && result.isThreat() && !threats.contains(result)) {
+                        threats.add(result);
+                        if (callback != null) callback.onThreatFound(result);
+                    }
                 }
                 if (!cancelRequested) reportFileScanned(file);
             } else if (fullScan) {
@@ -705,18 +726,18 @@ public class ScanEngine {
                 byte[] magic = new byte[4];
                 if (raf.read(magic) == 4 && magic[0] == 0x50 && magic[1] == 0x4b
                         && magic[2] == 0x03 && magic[3] == 0x04) {
-                    PackageManager pm = context.getPackageManager();
-                    PackageInfo pkgInfo = pm.getPackageArchiveInfo(file.getAbsolutePath(),
-                        PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
+                    PackageInfo pkgInfo = runPkgInfoInterruptible(() ->
+                        context.getPackageManager().getPackageArchiveInfo(file.getAbsolutePath(),
+                            PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES));
                     if (pkgInfo != null) {
                         pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
                         pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
-                        ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
+                        ThreatResult result = analyzeApp(pkgInfo.applicationInfo, context.getPackageManager(), true);
                         if (result != null && result.isThreat()) return result;
                     }
                 }
             } catch (Throwable e) {
-                // getPackageArchiveInfo() isn't just Exception-safe on every ROM:
+                // Residual: RandomAccessFile I/O error (getPackageArchiveInfo is
                 // on this Vivo build its internal PackageParser2 static init
                 // (ParsingPackageUtils.<clinit> -> AconfigFlags.<init>) throws
                 // ExceptionInInitializerError — an Error, not an Exception — when
@@ -1179,15 +1200,20 @@ public class ScanEngine {
         int dangerousPermCount = -1;
         String mlSummary = null;
 
-        try {
-            PackageInfo pkgInfo = isApkFile
-                ? pm.getPackageArchiveInfo(app.sourceDir, PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES)
-                : pm.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
+        // runPkgInfoInterruptible handles Vivo ROM hangs/timeouts internally
+        // and sets apkPkgAnalyzerBroken.
+        PackageInfo pkgInfo = runPkgInfoInterruptible(() -> {
+            if (isApkFile)
+                return pm.getPackageArchiveInfo(app.sourceDir, PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
+            return pm.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
+        });
 
-            if (pkgInfo != null && pkgInfo.requestedPermissions != null) {
+        try {
+        if (pkgInfo != null) {
+            if (pkgInfo.requestedPermissions != null) {
                 requestedPermissions.addAll(Arrays.asList(pkgInfo.requestedPermissions));
             }
-            if (pkgInfo != null && pkgInfo.signatures != null && pkgInfo.signatures.length > 0) {
+            if (pkgInfo.signatures != null && pkgInfo.signatures.length > 0) {
                 Signature sig = pkgInfo.signatures[0];
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(sig.toByteArray()));
@@ -1247,8 +1273,14 @@ public class ScanEngine {
 
         if (!isWhitelisted) {
             try {
-                String apkPath = (isApkFile && app.sourceDir != null) ? app.sourceDir
-                    : pm.getPackageInfo(app.packageName, 0).applicationInfo.sourceDir;
+                String apkPath;
+                if (isApkFile && app.sourceDir != null) {
+                    apkPath = app.sourceDir;
+                } else {
+                    PackageInfo pi = runPkgInfoInterruptible(() ->
+                        pm.getPackageInfo(app.packageName, 0));
+                    apkPath = pi != null ? pi.applicationInfo.sourceDir : null;
+                }
                 // CodeAnalyzer is a cheap Java-side heuristic (raw substring search
                 // over DEX bytes — "DexClassLoader", "Runtime.exec", etc). Those
                 // strings show up in plenty of LEGITIMATE apps (plugin loaders,
