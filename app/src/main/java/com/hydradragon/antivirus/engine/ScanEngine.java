@@ -1244,6 +1244,7 @@ public class ScanEngine {
             // it counts them from the manifest bytes (works for in-memory/inner
             // APKs too). The 5/6 DECISION is applied below in Java where `v` is in
             // scope, so Java still owns the verdict + whitelist.
+        }
         } catch (Throwable e) {
             // See scanSingleFile's matching catch: getPackageArchiveInfo() (and
             // on some ROMs getPackageInfo()) can throw ExceptionInInitializerError
