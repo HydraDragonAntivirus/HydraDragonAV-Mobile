@@ -103,7 +103,7 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
                 // row itself WAS HydraDragon rather than "this app is gone".
                 holder.ivAppIcon.setImageResource(android.R.mipmap.sym_def_app_icon);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             holder.ivAppIcon.setImageResource(android.R.mipmap.sym_def_app_icon);
         }
 

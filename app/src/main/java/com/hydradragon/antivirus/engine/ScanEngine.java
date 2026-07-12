@@ -679,6 +679,14 @@ public class ScanEngine {
      * analyzeApp pipeline for an APK), or {@code null} if clean/unreadable.
      * Synchronous — call it off the caller's main/observer thread.
      */
+    /** Set once the system {@code AconfigFlags} / {@code PackageParser2} static
+     *  init fails on this device (e.g. missing /vendor/etc/aconfig_flags.pb on
+     *  Vivo ROMs). Once set, every future call to
+     *  {@code PackageManager.getPackageArchiveInfo} would throw
+     *  {@code NoClassDefFoundError} anyway, so skip the whole APK analysis path
+     *  and fall through directly to the native engine. */
+    private static boolean apkPkgAnalyzerBroken;
+
     public ThreatResult scanSingleFile(java.io.File file) {
         // scanAllApps/scanCustomFolder reset this at their own start, but this
         // entry point (manual single-file scan) didn't — so a Stop pressed on
@@ -692,7 +700,7 @@ public class ScanEngine {
         // try the PackageManager analysis path. Otherwise skip straight to the
         // native engine to avoid noisy framework errors on non-APK content.
         String name = file.getName().toLowerCase(java.util.Locale.US);
-        if (name.endsWith(".apk")) {
+        if (name.endsWith(".apk") && !apkPkgAnalyzerBroken) {
             try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(file, "r")) {
                 byte[] magic = new byte[4];
                 if (raf.read(magic) == 4 && magic[0] == 0x50 && magic[1] == 0x4b
@@ -716,7 +724,9 @@ public class ScanEngine {
                 // let that fall through uncaught, killing the whole scan thread
                 // and restarting the app process. Catch Throwable here instead so
                 // this ROM bug degrades to "fall through to native engine", not a
-                // crash.
+                // crash. Once it fails once, the class is permanently broken, so
+                // set the flag to skip getPackageArchiveInfo entirely next time.
+                apkPkgAnalyzerBroken = true;
                 Log.w(TAG, "scanSingleFile: getPackageArchiveInfo failed for " + file.getAbsolutePath(), e);
             }
         }
