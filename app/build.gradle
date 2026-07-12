@@ -111,8 +111,8 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-service:2.8.4'
     implementation 'androidx.lifecycle:lifecycle-runtime:2.8.4'
     implementation 'androidx.work:work-runtime:2.11.2'
-    implementation 'androidx.room:room-runtime:2.6.1'
-    annotationProcessor 'androidx.room:room-compiler:2.6.1'
+    implementation 'androidx.room:room-runtime:2.8.4'
+    annotationProcessor 'androidx.room:room-compiler:2.8.4'
     // TensorFlow Lite removed: AIEngine is a pure-Java heuristic and the real ML
     // is the Rust apk_model.bin — nothing referenced org.tensorflow. Dropping it
     // also removes the unaligned TFLite native libs that tripped the Android 15
