@@ -48,6 +48,10 @@
         android:theme="@style/Theme.HydraDragon"
         android:supportsRtl="true">
 
+        <meta-data
+            android:name="com.google.android.gms.clearcut_client.file_backing"
+            android:value="true" />
+
         <activity
             android:name=".ui.BlockActivity"
             android:exported="false"
