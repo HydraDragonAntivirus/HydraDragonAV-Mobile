@@ -167,6 +167,12 @@ static NATIVE_EMULATION_ENABLED: std::sync::atomic::AtomicBool =
 static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
     std::sync::atomic::AtomicU32::new(650);
 
+/// User-configurable toggle: when false, extracted image children (PNG/JPEG/GIF/
+/// WebP/BMP) are NOT skipped during ClamAV scanning — useful for deep/investigative
+/// scans where steganographic payloads matter. Default true (skip images for speed).
+static SKIP_IMAGE_MEDIA: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(true);
+
 /// Whether the DYNAMIC_YRC_FILES have been loaded into the live engine (lazy,
 /// first nativeScanHips call). Avoids re-loading them on every HIPS scan tick.
 static DYNAMIC_RULES_LOADED: std::sync::atomic::AtomicBool =
@@ -818,6 +824,18 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     hydradragonextractor::set_bomb_detection_enabled(enabled != JNI_FALSE);
 }
 
+/// `void nativeSetSkipImageMedia(boolean skip)` — Settings toggle for
+/// skipping image-media files (PNG/JPEG/GIF/WebP/BMP) inside APKs during
+/// ClamAV scanning. True = skip (faster, default); false = full scan.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetSkipImageMedia(
+    _env: EnvUnowned,
+    _class: JClass,
+    skip: jboolean,
+) {
+    SKIP_IMAGE_MEDIA.store(skip != JNI_FALSE, Ordering::Relaxed);
+}
+
 /// `boolean nativeLearnRule(String yarPath)` — hot-load ONE freshly
 /// auto-generated `.yar` file (already written to disk by
 /// ScanEngine.saveGeneratedRule) into the LIVE engine via a brief write lock,
@@ -1242,7 +1260,7 @@ fn rescan_buffers_parallel(
                         // extracted archive children (i > 0). The top-level file
                         // (i == 0) is always scanned — malware appends payloads
                         // to innocent-looking images, and we must catch that.
-                        if i > 0 && skip_by_magic(&b.data) { continue; }
+                        if i > 0 && SKIP_IMAGE_MEDIA.load(Ordering::Relaxed) && skip_by_magic(&b.data) { continue; }
                         let name = if i == 0 {
                             path.to_string()
                         } else {

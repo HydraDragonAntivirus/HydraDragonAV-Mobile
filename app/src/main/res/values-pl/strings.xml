@@ -359,5 +359,6 @@ Czy chcesz caÅ‚kowicie usunÄ…Ä‡ ten szkodliwy plik/aplikacjÄ™?</stri
     <string name="unicorn_unsupported">Emulacja (Unicorn) jest niedostÄ™pna na tym urzÄ…dzeniu z powodu znanego bÅ‚Ä™du w backendzie ARM64 JIT. Skanowanie przebiega normalnie bez tego przebiegu.</string>
 
     <string name="disable_secure_flag_toggle">Zezwól na nagrywanie ekranu</string>
+    <string name="skip_media_toggle">Pomiń pliki multimedialne w skanowaniu APK</string>
 </resources>
 

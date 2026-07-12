@@ -359,5 +359,6 @@
     <string name="unicorn_unsupported">ARM64 JIT ë°±ì—”ë“œì˜ ì•Œë ¤ì§„ ë²„ê·¸ë¡œ ì¸í•´ ì´ ê¸°ê¸°ì—ì„œ ì—ë®¬ë ˆì´ì…˜(Unicorn)ì„ ì‚¬ìš©í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. ì´ íŒ¨ìŠ¤ ì—†ì´ ìŠ¤ìº”ì´ ì •ìƒì ìœ¼ë¡œ ê³„ì†ë©ë‹ˆë‹¤.</string>
 
     <string name="disable_secure_flag_toggle">화면 녹화 허용</string>
+    <string name="skip_media_toggle">APK 검사에서 미디어 파일 건너뛰기</string>
 </resources>
 

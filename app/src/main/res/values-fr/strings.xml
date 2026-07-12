@@ -359,5 +359,6 @@ Voulez-vous supprimer complÃ¨tement ce fichier/application malveillant ?</stri
     <string name="unicorn_unsupported">L\'Ã©mulation (Unicorn) n\'est pas disponible sur cet appareil en raison d\'un bogue connu du backend ARM64 JIT. L\'analyse continue normalement sans cette passe.</string>
 
     <string name="disable_secure_flag_toggle">Autoriser l\'enregistrement d\'écran</string>
+    <string name="skip_media_toggle">Ignorer les fichiers média dans les analyses APK</string>
 </resources>
 

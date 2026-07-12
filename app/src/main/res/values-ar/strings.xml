@@ -359,5 +359,6 @@
     <string name="unicorn_unsupported">Ø§Ù„Ù…Ø­Ø§ÙƒØ§Ø© (Unicorn) ØºÙŠØ± Ù…ØªÙˆÙØ±Ø© Ø¹Ù„Ù‰ Ù‡Ø°Ø§ Ø§Ù„Ø¬Ù‡Ø§Ø² Ø¨Ø³Ø¨Ø¨ Ø®Ø·Ø£ Ù…Ø¹Ø±ÙˆÙ ÙÙŠ Ø§Ù„Ù…Ø­Ø±Ùƒ Ø§Ù„Ø®Ù„ÙÙŠ ARM64 JIT. ÙŠØ³ØªÙ…Ø± Ø§Ù„Ù…Ø³Ø­ Ø¨Ø´ÙƒÙ„ Ø·Ø¨ÙŠØ¹ÙŠ Ø¨Ø¯ÙˆÙ† Ù‡Ø°Ù‡ Ø§Ù„Ù…Ø±Ø­Ù„Ø©.</string>
 
     <string name="disable_secure_flag_toggle">السماح بتسجيل الشاشة</string>
+    <string name="skip_media_toggle">تخطي ملفات الوسائط في فحص APK</string>
 </resources>
 

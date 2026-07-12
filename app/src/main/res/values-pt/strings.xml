@@ -359,5 +359,6 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="unicorn_unsupported">A emulaÃ§Ã£o (Unicorn) nÃ£o estÃ¡ disponÃ­vel neste dispositivo devido a um bug conhecido no backend ARM64 JIT. A verificaÃ§Ã£o continua normalmente sem esta passagem.</string>
 
     <string name="disable_secure_flag_toggle">Permitir gravação de tela</string>
+    <string name="skip_media_toggle">Pular arquivos de mídia em verificações APK</string>
 </resources>
 

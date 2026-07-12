@@ -359,5 +359,6 @@ Báº¡n cÃ³ muá»‘n xÃ³a hoÃ n toÃ n tá»‡p/á»©ng dá»¥ng Ä
     <string name="unicorn_unsupported">TrÃ¬nh giáº£ láº­p (Unicorn) khÃ´ng kháº£ dá»¥ng trÃªn thiáº¿t bá»‹ nÃ y do lá»—i Ä‘Ã£ biáº¿t trong backend ARM64 JIT. QuÃ¡ trÃ¬nh quÃ©t tiáº¿p tá»¥c bÃ¬nh thÆ°á»ng mÃ  khÃ´ng cÃ³ bÆ°á»›c nÃ y.</string>
 
     <string name="disable_secure_flag_toggle">Cho phép ghi màn hình</string>
+    <string name="skip_media_toggle">Bỏ qua tệp phương tiện trong quét APK</string>
 </resources>
 

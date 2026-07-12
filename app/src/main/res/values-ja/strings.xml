@@ -359,5 +359,6 @@
     <string name="unicorn_unsupported">ã‚¨ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ï¼ˆUnicornï¼‰ã¯ã€ARM64 JITãƒãƒƒã‚¯ã‚¨ãƒ³ãƒ‰ã®æ—¢çŸ¥ã®ãƒã‚°ã«ã‚ˆã‚Šã€ã“ã®ãƒ‡ãƒã‚¤ã‚¹ã§ã¯åˆ©ç”¨ã§ãã¾ã›ã‚“ã€‚ã‚¹ã‚­ãƒ£ãƒ³ã¯ã“ã®ãƒ‘ã‚¹ãªã—ã§é€šå¸¸é€šã‚Šç¶šè¡Œã•ã‚Œã¾ã™ã€‚</string>
 
     <string name="disable_secure_flag_toggle">画面録画を許可</string>
+    <string name="skip_media_toggle">APKスキャンでメディアファイルをスキップ</string>
 </resources>
 

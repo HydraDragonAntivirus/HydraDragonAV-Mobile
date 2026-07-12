@@ -86,6 +86,8 @@ public final class NativeScanner {
 
     private static native void nativeSetDetectZipBomb(boolean enabled);
 
+    private static native void nativeSetSkipImageMedia(boolean skip);
+
     /** Settings toggle for the Unicorn-based native-code emulation pass (runs
      *  every embedded .so's JNI_OnLoad/entry point in a bounded, syscall-free
      *  sandbox to reveal strings — e.g. a C2 URL — a decode routine only
@@ -121,6 +123,14 @@ public final class NativeScanner {
     public static void setDetectZipBomb(boolean enabled) {
         if (!LIB_LOADED) return;
         try { nativeSetDetectZipBomb(enabled); } catch (Throwable ignore) { }
+    }
+
+    /** Settings toggle for skipping image-media files (PNG/JPEG/GIF/WebP/BMP)
+     *  inside APKs during ClamAV scanning. True = skip (faster, default);
+     *  false = full scan. Applied immediately; no reinit needed. */
+    public static void setSkipImageMedia(boolean skip) {
+        if (!LIB_LOADED) return;
+        try { nativeSetSkipImageMedia(skip); } catch (Throwable ignore) { }
     }
 
     /** Hot-load a single freshly auto-generated {@code .yar} rule (already written
@@ -327,6 +337,8 @@ public final class NativeScanner {
             setMaxScanSizeMb(com.hydradragon.antivirus.engine.MaxScanFileSize.getMaxMb(context));
             setDetectZipBomb(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("detect_zip_bomb_enabled", true));
+            setSkipImageMedia(context.getSharedPreferences("hydra_prefs", 0)
+                .getBoolean("skip_image_media_enabled", true));
         }
         Log.i(TAG, "native init " + (isReady() ? "ok" : "background") + " | " + status());
         return isReady();

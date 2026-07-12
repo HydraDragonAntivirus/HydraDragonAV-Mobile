@@ -359,5 +359,6 @@
     <string name="unicorn_unsupported">Ø´Ø¨ÛŒÙ‡â€ŒØ³Ø§Ø²ÛŒ (Unicorn) Ø¨Ù‡ Ø¯Ù„ÛŒÙ„ ÛŒÚ© Ø¨Ø§Ú¯ Ø´Ù†Ø§Ø®ØªÙ‡ Ø´Ø¯Ù‡ Ø¯Ø± Ø¨Ú©â€ŒØ§Ù†Ø¯ ARM64 JIT Ø¯Ø± Ø§ÛŒÙ† Ø¯Ø³ØªÚ¯Ø§Ù‡ Ø¯Ø± Ø¯Ø³ØªØ±Ø³ Ù†ÛŒØ³Øª. Ø§Ø³Ú©Ù† Ø¨Ø¯ÙˆÙ† Ø§ÛŒÙ† Ù…Ø±Ø­Ù„Ù‡ Ø¨Ù‡ Ø·ÙˆØ± Ø¹Ø§Ø¯ÛŒ Ø§Ø¯Ø§Ù…Ù‡ Ù…ÛŒâ€ŒÛŒØ§Ø¨Ø¯.</string>
 
     <string name="disable_secure_flag_toggle">اجازه ضبط صفحه</string>
+    <string name="skip_media_toggle">رد کردن فایل‌های رسانه‌ای در اسکن APK</string>
 </resources>
 

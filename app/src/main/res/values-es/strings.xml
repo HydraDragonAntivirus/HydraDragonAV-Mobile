@@ -359,5 +359,6 @@ PuntuaciÃ³n de riesgo: %2$d/100
     <string name="unicorn_unsupported">La emulaciÃ³n (Unicorn) no estÃ¡ disponible en este dispositivo debido a un error conocido del backend ARM64 JIT. El escaneo continÃºa normalmente sin esta pasada.</string>
 
     <string name="disable_secure_flag_toggle">Permitir grabación de pantalla</string>
+    <string name="skip_media_toggle">Omitir archivos multimedia en escaneos APK</string>
 </resources>
 

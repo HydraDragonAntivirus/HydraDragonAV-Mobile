@@ -359,5 +359,6 @@ MÃ¶chten Sie diese schÃ¤dliche Datei/App vollstÃ¤ndig entfernen?</string>
     <string name="unicorn_unsupported">Emulation (Unicorn) ist auf diesem GerÃ¤t aufgrund eines bekannten ARM64-JIT-Backend-Fehlers nicht verfÃ¼gbar. Der Scan lÃ¤uft ohne diesen Durchlauf normal weiter.</string>
 
     <string name="disable_secure_flag_toggle">Bildschirmaufnahme erlauben</string>
+    <string name="skip_media_toggle">Mediendateien in APK-Scans überspringen</string>
 </resources>
 

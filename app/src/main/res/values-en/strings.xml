@@ -42,4 +42,5 @@
     <string name="theme_system">System Default</string>
     <string name="theme_dark">🌙 Dark</string>
     <string name="theme_light">☀ Light</string>
+    <string name="skip_media_toggle">Skip media files in APK scans</string>
 </resources>

@@ -359,5 +359,6 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="unicorn_unsupported">L\'emulazione (Unicorn) non Ã¨ disponibile su questo dispositivo a causa di un bug noto del backend ARM64 JIT. La scansione continua normalmente senza questo passaggio.</string>
 
     <string name="disable_secure_flag_toggle">Consenti registrazione schermo</string>
+    <string name="skip_media_toggle">Salta i file multimediali nelle scansioni APK</string>
 </resources>
 

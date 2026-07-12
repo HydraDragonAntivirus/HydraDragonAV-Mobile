@@ -359,5 +359,6 @@
     <string name="unicorn_unsupported">ç”±äºARM64 JITåç«¯çš„å·²çŸ¥é”™è¯¯ï¼Œæœ¬è®¾å¤‡ä¸Šæ— æ³•ä½¿ç”¨ä»¿çœŸï¼ˆUnicornï¼‰ã€‚æ‰«æå°†ç»§ç»­æ­£å¸¸è¿›è¡Œï¼Œæ— éœ€æ­¤è¿‡ç¨‹ã€‚</string>
 
     <string name="disable_secure_flag_toggle">允许屏幕录制</string>
+    <string name="skip_media_toggle">在APK扫描中跳过媒体文件</string>
 </resources>
 

@@ -362,5 +362,6 @@ Bu kÃ¶tÃ¼ amaÃ§lÄ± dosyayÄ±/uygulamayÄ± tamamen kaldÄ±rmak istiyor
     <string name="unicorn_unsupported">Ã–ykÃ¼nme (Unicorn), ARM64 JIT arka ucundaki bilinen bir hata nedeniyle bu cihazda kullanÄ±lamÄ±yor. Tarama bu adÄ±m olmadan normal ÅŸekilde devam eder.</string>
 
     <string name="disable_secure_flag_toggle">Ekran kaydına izin ver</string>
+    <string name="skip_media_toggle">APK taramalarında medya dosyalarını atla</string>
 </resources>
 

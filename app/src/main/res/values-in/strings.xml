@@ -359,5 +359,6 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="unicorn_unsupported">Emulasi (Unicorn) tidak tersedia di perangkat ini karena bug backend ARM64 JIT yang diketahui. Pemindaian berjalan normal tanpa proses ini.</string>
 
     <string name="disable_secure_flag_toggle">Izinkan perekaman layar</string>
+    <string name="skip_media_toggle">Lewati file media dalam pemindaian APK</string>
 </resources>
 

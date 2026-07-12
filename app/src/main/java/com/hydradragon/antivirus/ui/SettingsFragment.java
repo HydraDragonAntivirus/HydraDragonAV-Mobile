@@ -276,6 +276,12 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.detect_zip_bomb_off_toast), Toast.LENGTH_SHORT).show();
         });
 
+        boolean skipMedia = prefs().getBoolean("skip_image_media_enabled", true);
+        addToggle(getString(R.string.skip_media_toggle), skipMedia, (btn, on) -> {
+            prefs().edit().putBoolean("skip_image_media_enabled", on).apply();
+            com.hydradragon.antivirus.engine.NativeScanner.setSkipImageMedia(on);
+        });
+
         boolean screenOcr = prefs().getBoolean(KEY_SCREEN_OCR, false);
         addToggle(getString(R.string.screen_ocr_toggle), screenOcr, (btn, on) -> {
             if (on) requestScreenCapture(btn);
