@@ -68,8 +68,12 @@ public class MainActivity extends AppCompatActivity {
         // FLAG_SECURE (screenshot/screen-recording + Recents-thumbnail block)
         // must be set before super.onCreate()/setContentView() — scan results,
         // threat details and network activity shown in this app are sensitive.
+        // Check the user's "Allow screen recording" toggle first — when ON,
+        // FLAG_SECURE is intentionally omitted regardless of SCREEN_SECURITY.
         windowGuard = new com.hydradragon.antivirus.security.SecureWindowGuard(this);
-        if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+        boolean disableSecure = getSharedPreferences("hydra_prefs", 0)
+            .getBoolean("disable_secure_flag", false);
+        if (!disableSecure && com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
                 com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY)) {
             windowGuard.applyFlagSecure();
         }

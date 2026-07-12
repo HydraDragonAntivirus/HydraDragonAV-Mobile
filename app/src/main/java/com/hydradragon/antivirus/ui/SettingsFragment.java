@@ -343,6 +343,22 @@ public class SettingsFragment extends Fragment {
             ContextCompat.startForegroundService(requireContext(), svc);
         });
 
+        // Allow screen recording — removes FLAG_SECURE so other apps
+        // (screen recorders, remote-support tools) can see this app's UI.
+        boolean allowRecording = prefs().getBoolean("disable_secure_flag", false);
+        addToggle(getString(R.string.disable_secure_flag_toggle), allowRecording, (btn, on) -> {
+            prefs().edit().putBoolean("disable_secure_flag", on).apply();
+            android.app.Activity a = getActivity();
+            if (a != null) {
+                if (on) {
+                    a.getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+                } else if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(a,
+                        com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY)) {
+                    a.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+                }
+            }
+        });
+
         addHeader(getString(R.string.whitelists_header));
         addBtn("🚫 " + getString(R.string.ignored_signatures_btn), color(R.color.bg_secondary),
             v -> showManagedListDialog(
