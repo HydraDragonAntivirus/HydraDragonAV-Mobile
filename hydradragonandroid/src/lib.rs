@@ -1238,11 +1238,11 @@ fn rescan_buffers_parallel(
                         if skip_by_size(&b.data) {
                             continue;
                         }
-                        // Skip pure image media (PNG/JPEG/GIF/WebP/BMP) — they
-                        // make up the bulk of APK resources and carry near-zero
-                        // risk. Everything else (XML, HTML, JS, text, unknown
-                        // binary) still goes through the engine.
-                        if skip_by_magic(&b.data) { continue; }
+                        // Skip pure image media (PNG/JPEG/GIF/WebP/BMP) only for
+                        // extracted archive children (i > 0). The top-level file
+                        // (i == 0) is always scanned — malware appends payloads
+                        // to innocent-looking images, and we must catch that.
+                        if i > 0 && skip_by_magic(&b.data) { continue; }
                         let name = if i == 0 {
                             path.to_string()
                         } else {
@@ -2623,126 +2623,119 @@ fn collect_buffers(
     std::thread::scope(|s| {
         for _ in 0..workers {
             s.spawn(|| {
-                loop {
-                    if capped.load(AtomOrdering::Relaxed) {
-                        break;
-                    }
-                    let item = {
-                        let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
-                        g.pop()
-                    };
-                    let item = match item {
-                        Some(it) => it,
-                        None => {
-                            // Nothing to pop right now. If `outstanding` is 0,
-                            // no worker is mid-extraction either, so nobody can
-                            // ever push more work — done. Otherwise some other
-                            // worker may still add children any moment; back
-                            // off briefly and check again.
-                            if outstanding.load(AtomOrdering::Acquire) == 0 {
-                                break;
+                // catch_unwind so a single bad buffer can never inflate
+                // `outstanding` without ever decrementing it, which would
+                // cause every other worker to loop forever (empty stack +
+                // outstanding > 0 → yield → repeat) and permanently hang
+                // the entire scan.
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    loop {
+                        if capped.load(AtomOrdering::Relaxed) {
+                            break;
+                        }
+                        let item = {
+                            let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
+                            g.pop()
+                        };
+                        let item = match item {
+                            Some(it) => it,
+                            None => {
+                                if outstanding.load(AtomOrdering::Acquire) == 0 {
+                                    break;
+                                }
+                                std::thread::yield_now();
+                                continue;
                             }
-                            std::thread::yield_now();
+                        };
+
+                        if item.buf.len() <= 12 {
+                            outstanding.fetch_sub(1, AtomOrdering::AcqRel);
                             continue;
                         }
-                    };
 
-                    if item.buf.len() <= 12 {
-                        outstanding.fetch_sub(1, AtomOrdering::AcqRel);
-                        continue;
-                    }
+                        let idx = emitted.fetch_add(1, AtomOrdering::Relaxed);
+                        let prior_total = total_bytes.fetch_add(item.buf.len() as u64, AtomOrdering::Relaxed);
+                        if idx >= 4096 || prior_total >= 2_000_000_000 {
+                            capped.store(true, AtomOrdering::Relaxed);
+                            outstanding.fetch_sub(1, AtomOrdering::AcqRel);
+                            break;
+                        }
 
-                    let idx = emitted.fetch_add(1, AtomOrdering::Relaxed);
-                    let prior_total = total_bytes.fetch_add(item.buf.len() as u64, AtomOrdering::Relaxed);
-                    if idx >= 4096 || prior_total >= 2_000_000_000 {
-                        capped.store(true, AtomOrdering::Relaxed);
-                        outstanding.fetch_sub(1, AtomOrdering::AcqRel);
-                        break;
-                    }
-
-                    let mut lineage = item.lineage;
-                    // Detect format ONCE per buffer (both for lineage and extraction).
-                    let fmt = hydradragonextractor::detect_format(&item.buf);
-                    if fmt == Some("zip") {
-                        // Reuse the caller's top-level MD5 when available — the
-                        // 162 MB APK is the only depth-0 zip we ever process, so
-                        // this avoids a second full-buffer hash for every APK
-                        // scan. Nested zips are small enough that their MD5
-                        // cost is negligible.
-                        let h = match top_md5 {
-                            Some(md5) if item.depth == 0 => md5.to_string(),
-                            _ => md5_hex(&item.buf),
-                        };
-                        lineage.push(h);
-                    }
-
-                    // Scan right here, on this same worker — no hand-off to a
-                    // separate scanner thread. Other workers are concurrently
-                    // doing the same for other buffers, so extraction and
-                    // scanning genuinely run at the same time across the pool.
-                    if let Some(clamav) = engine {
-                        if !dets_full.load(AtomOrdering::Relaxed) && !skip_by_size(&item.buf)
-                            && !skip_by_magic(&item.buf)
-                        {
-                            let name = if idx == 0 {
-                                path.to_string()
-                            } else {
-                                format!("{}#extract[{}]", path, idx)
+                        let mut lineage = item.lineage;
+                        let fmt = hydradragonextractor::detect_format(&item.buf);
+                        if fmt == Some("zip") {
+                            let h = match top_md5 {
+                                Some(md5) if item.depth == 0 => md5.to_string(),
+                                _ => md5_hex(&item.buf),
                             };
-                            let (matches, _) = clamav.scan_bytes_named_with_breakdown(
-                                &item.buf, &name, opts, module_meta,
-                            );
-                            if !matches.is_empty() {
-                                if let Ok(mut dg) = dets.lock() {
-                                    for m in matches {
-                                        dg.push((m.name, lineage.clone()));
-                                    }
-                                    if dg.len() >= max_dets {
-                                        dets_full.store(true, AtomOrdering::Relaxed);
+                            lineage.push(h);
+                        }
+
+                        if let Some(clamav) = engine {
+                            if !dets_full.load(AtomOrdering::Relaxed) && !skip_by_size(&item.buf)
+                                && (item.depth == 0 || !skip_by_magic(&item.buf))
+                            {
+                                let name = if idx == 0 {
+                                    path.to_string()
+                                } else {
+                                    format!("{}#extract[{}]", path, idx)
+                                };
+                                let (matches, _) = clamav.scan_bytes_named_with_breakdown(
+                                    &item.buf, &name, opts, module_meta,
+                                );
+                                if !matches.is_empty() {
+                                    if let Ok(mut dg) = dets.lock() {
+                                        for m in matches {
+                                            dg.push((m.name, lineage.clone()));
+                                        }
+                                        if dg.len() >= max_dets {
+                                            dets_full.store(true, AtomOrdering::Relaxed);
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    // Extract children (ZIP/tar/gz/… entries) — pushed back
-                    // onto the shared stack for this or any other worker to
-                    // pick up next.
-                    if item.depth < 16 && fmt.is_some() {
-                        match hydradragonextractor::extract_archive_from_bytes(&item.buf) {
-                            Ok(children) => {
-                                if !children.is_empty() {
-                                    // Publish BEFORE pushing, so no other
-                                    // worker can observe `outstanding == 0`
-                                    // while these children are about to land.
-                                    outstanding.fetch_add(children.len(), AtomOrdering::AcqRel);
-                                    let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
-                                    for child in children {
-                                        g.push(WorkItem {
-                                            buf: child,
-                                            depth: item.depth + 1,
-                                            lineage: lineage.clone(),
-                                        });
+                        if item.depth < 16 && fmt.is_some() {
+                            match hydradragonextractor::extract_archive_from_bytes(&item.buf) {
+                                Ok(children) => {
+                                    if !children.is_empty() {
+                                        let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
+                                        outstanding.fetch_add(children.len(), AtomOrdering::AcqRel);
+                                        for child in children {
+                                            g.push(WorkItem {
+                                                buf: child,
+                                                depth: item.depth + 1,
+                                                lineage: lineage.clone(),
+                                            });
+                                        }
                                     }
                                 }
-                            }
-                            Err(e) if hydradragonextractor::is_bomb_error(&e) => {
-                                if let Ok(mut dg) = dets.lock() {
-                                    dg.push(("HDR.Bomb.Decompression".to_string(), lineage.clone()));
+                                Err(e) if hydradragonextractor::is_bomb_error(&e) => {
+                                    if let Ok(mut dg) = dets.lock() {
+                                        dg.push(("HDR.Bomb.Decompression".to_string(), lineage.clone()));
+                                    }
                                 }
+                                Err(_) => {}
                             }
-                            Err(_) => {}
                         }
-                    }
 
-                    if let Ok(mut og) = out.lock() {
-                        og.push(Buf {
-                            data: item.buf,
-                            apk_lineage: lineage,
-                        });
-                    }
+                        if let Ok(mut og) = out.lock() {
+                            og.push(Buf {
+                                data: item.buf,
+                                apk_lineage: lineage,
+                            });
+                        }
 
-                    outstanding.fetch_sub(1, AtomOrdering::AcqRel);
+                        outstanding.fetch_sub(1, AtomOrdering::AcqRel);
+                    }
+                }));
+                // If this worker panicked, outstanding is off (item never
+                // decremented) — force-stop ALL workers via `capped` so
+                // they don't loop forever waiting for a count that will
+                // never reach zero.
+                if result.is_err() {
+                    capped.store(true, AtomOrdering::Release);
                 }
             });
         }
