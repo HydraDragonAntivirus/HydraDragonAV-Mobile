@@ -1238,11 +1238,11 @@ fn rescan_buffers_parallel(
                         if skip_by_size(&b.data) {
                             continue;
                         }
-                        // Skip pure image media (PNG/JPEG/GIF/WebP/BMP) — they
-                        // make up the bulk of APK resources and carry near-zero
-                        // risk. Everything else (XML, HTML, JS, text, unknown
-                        // binary) still goes through the engine.
-                        if skip_by_magic(&b.data) { continue; }
+                        // Skip pure image media (PNG/JPEG/GIF/WebP/BMP) only for
+                        // extracted archive children (i > 0). The top-level file
+                        // (i == 0) is always scanned — malware appends payloads
+                        // to innocent-looking images, and we must catch that.
+                        if i > 0 && skip_by_magic(&b.data) { continue; }
                         let name = if i == 0 {
                             path.to_string()
                         } else {
@@ -2673,7 +2673,7 @@ fn collect_buffers(
 
                         if let Some(clamav) = engine {
                             if !dets_full.load(AtomOrdering::Relaxed) && !skip_by_size(&item.buf)
-                                && !skip_by_magic(&item.buf)
+                                && (item.depth == 0 || !skip_by_magic(&item.buf))
                             {
                                 let name = if idx == 0 {
                                     path.to_string()
