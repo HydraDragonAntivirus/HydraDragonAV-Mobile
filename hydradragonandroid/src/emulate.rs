@@ -78,8 +78,22 @@ pub fn probe_emulation() -> bool {
     }
     let (tx, rx) = std::sync::mpsc::channel::<bool>();
     std::thread::spawn(move || {
-        // Minimal ARM64 test: one NOP (0xD503201F).
-        let code = &[0x1f, 0x20, 0x03, 0xd5];
+        // Realistic ARM64 snippet: exercises mov (immediate), add, and ret.
+        // This is more likely to trigger the ARM64-host TCG JIT hang bug than
+        // a single NOP, because the bug only manifests with non-trivial code
+        // sequences (branches, ALU ops) that stress the JIT compiler's
+        // register-allocation / block-chaining logic.
+        //
+        //   mov x0, #42         A0 02 80 D2
+        //   add x0, x0, #1      00 04 00 91
+        //   mov x1, #0          01 00 80 D2
+        //   ret                 C0 03 5F D6
+        let code: &[u8] = &[
+            0xA0, 0x02, 0x80, 0xD2,
+            0x00, 0x04, 0x00, 0x91,
+            0x01, 0x00, 0x80, 0xD2,
+            0xC0, 0x03, 0x5F, 0xD6,
+        ];
         let mut uc = match Unicorn::new(Arch::ARM64, Mode::LITTLE_ENDIAN) {
             Ok(u) => u,
             Err(_) => {
@@ -90,7 +104,7 @@ pub fn probe_emulation() -> bool {
         let base: u64 = 0x1000;
         if uc.mem_map(base, 0x1000, Prot::ALL).is_err()
             || uc.mem_write(base, code).is_err()
-            || uc.emu_start(base, base + 4, 5_000, 1).is_err()
+            || uc.emu_start(base, base + code.len() as u64, 10_000, 10).is_err()
         {
             let _ = tx.send(false);
             return;
@@ -99,7 +113,6 @@ pub fn probe_emulation() -> bool {
     });
     let ok = rx.recv_timeout(std::time::Duration::from_millis(300)).unwrap_or(false);
     EMULATION_PROBE.store(if ok { 1 } else { -1 }, Ordering::Release);
-    // Don't consume the slot — not needed for the probe.
     ok
 }
 
