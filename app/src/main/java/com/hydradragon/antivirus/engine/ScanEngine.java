@@ -699,10 +699,37 @@ public class ScanEngine {
         // If the file looks like an APK (named .apk AND starts with PK zip magic),
         // try the PackageManager analysis path. Otherwise skip straight to the
         // native engine to avoid noisy framework errors on non-APK content.
-        // Skip getPackageArchiveInfo entirely here — on this Vivo ROM the call
-        // itself hangs (never returns, never throws), so even the catch(Throwable)
-        // guard + apkPkgAnalyzerBroken flag can't help. The native engine
-        // (ClamAV/YARA/ML/TLSH) handles every file type, APK or not.
+        String name = file.getName().toLowerCase(java.util.Locale.US);
+        if (name.endsWith(".apk") && !apkPkgAnalyzerBroken) {
+            try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(file, "r")) {
+                byte[] magic = new byte[4];
+                if (raf.read(magic) == 4 && magic[0] == 0x50 && magic[1] == 0x4b
+                        && magic[2] == 0x03 && magic[3] == 0x04) {
+                    PackageManager pm = context.getPackageManager();
+                    PackageInfo pkgInfo = pm.getPackageArchiveInfo(file.getAbsolutePath(),
+                        PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
+                    if (pkgInfo != null) {
+                        pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
+                        pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
+                        ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
+                        if (result != null && result.isThreat()) return result;
+                    }
+                }
+            } catch (Throwable e) {
+                // getPackageArchiveInfo() isn't just Exception-safe on every ROM:
+                // on this Vivo build its internal PackageParser2 static init
+                // (ParsingPackageUtils.<clinit> -> AconfigFlags.<init>) throws
+                // ExceptionInInitializerError — an Error, not an Exception — when
+                // it can't open its aconfig flags file (ENOENT). catch(Exception)
+                // let that fall through uncaught, killing the whole scan thread
+                // and restarting the app process. Catch Throwable here instead so
+                // this ROM bug degrades to "fall through to native engine", not a
+                // crash. Once it fails once, the class is permanently broken, so
+                // set the flag to skip getPackageArchiveInfo entirely next time.
+                apkPkgAnalyzerBroken = true;
+                Log.w(TAG, "scanSingleFile: getPackageArchiveInfo failed for " + file.getAbsolutePath(), e);
+            }
+        }
         List<ThreatResult> out = new ArrayList<>();
         if (!scanGenericFile(file, out)) {
             // Genuinely crashed before reaching a verdict — NOT the same as
