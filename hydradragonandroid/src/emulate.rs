@@ -35,7 +35,7 @@
 use crate::elf::{self, EM_AARCH64, EM_ARM, EM_386, EM_X86_64};
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::atomic::{AtomicI8, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicI8, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
 use unicorn_engine::unicorn_const::{Arch, Mode, Prot};
 use unicorn_engine::{RegisterARM, RegisterARM64, RegisterX86, Unicorn};
@@ -59,6 +59,12 @@ unsafe extern "C" {
 
 /// Tri-state: 0 = untested, 1 = available, -1 = unavailable.
 static EMULATION_PROBE: AtomicI8 = AtomicI8::new(0);
+
+/// Number of consecutive hard timeouts before we permanently disable
+/// emulation.  Set low (1) because a single hang on this ARM64 device
+/// proves the JIT backend is broken — no need to waste more scans.
+const MAX_HARD_TIMEOUTS: u8 = 1;
+static HARD_TIMEOUT_COUNT: AtomicU8 = AtomicU8::new(0);
 
 /// Runs a quick Unicorn smoke test for ARM64 (the most commonly broken host
 /// backend).  Called once from lib.rs at startup.  Safe to call multiple
@@ -308,6 +314,16 @@ pub fn emulate(so_bytes: &[u8]) -> EmulationResult {
             if handle != 0 {
                 unsafe { uc_emu_stop(handle as *mut std::ffi::c_void); }
             }
+
+            // A hard timeout on real code means the ARM64 JIT backend is
+            // broken — auto-disable emulation for the rest of this process
+            // lifetime so subsequent calls skip immediately instead of
+            // burning another 600ms each.
+            let prev = HARD_TIMEOUT_COUNT.fetch_add(1, Ordering::AcqRel);
+            if prev + 1 >= MAX_HARD_TIMEOUTS {
+                EMULATION_PROBE.store(-1, Ordering::Release);
+            }
+
             EmulationResult::default()
         },
     }
