@@ -954,7 +954,7 @@ fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>) -> bool {
     match want {
         3 => looks_like_html(ctx.data),
         7 => looks_like_ascii_text(ctx.data),
-        _ => true,
+        _ => false,
     }
 }
 
