@@ -358,7 +358,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="malware_has_admin_msg">%1$s heeft zichzelf tot Apparaatbeheerder gemaakt, waardoor directe verwijdering wordt geblokkeerd — een veelgebruikte truc van malware om verwijdering te weerstaan. Deactiveer dit in het scherm dat opent (zoek %1$s en tik op Deactiveren), waarna de verwijdervraag automatisch verschijnt.</string>
     <string name="malware_has_admin_open_settings">APPARAATBEHEERDERINSTELLINGEN OPENEN</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">Veilige modus voorstellen als verwijderen mislukt</string>
     <string name="unicorn_unsupported">Emulatie (Unicorn) is niet beschikbaar op dit apparaat vanwege een bekende bug in de ARM64 JIT-backend. Scannen gaat normaal verder zonder deze pass.</string>
 
     <string name="disable_secure_flag_toggle">Schermopname toestaan</string>

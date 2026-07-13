@@ -357,7 +357,7 @@
     <string name="malware_has_admin_msg">%1$s ने खुद को डिवाइस एडमिनिस्ट्रेटर बना लिया है, जो इसे सीधे अनइंस्टॉल करने से रोकता है — यह मैलवेयर द्वारा हटाए जाने से बचने के लिए इस्तेमाल की जाने वाली एक आम तरकीब है। खुलने वाली स्क्रीन में इसे निष्क्रिय करें (%1$s को ढूंढें और निष्क्रिय करें पर टैप करें), फिर अनइंस्टॉल प्रॉम्प्ट अपने आप खुल जाएगा।</string>
     <string name="malware_has_admin_open_settings">डिवाइस एडमिन सेटिंग्स खोलें</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">अनइंस्टॉल विफल होने पर सुरक्षित मोड सुझाएं</string>
     <string name="unicorn_unsupported">ARM64 JIT बैकएंड में ज्ञात बग के कारण इस डिवाइस पर एमुलेशन (Unicorn) उपलब्ध नहीं है। स्कैनिंग इस पास के बिना सामान्य रूप से जारी रहती है।</string>
 
     <string name="disable_secure_flag_toggle">स्क्रीन रिकॉर्डिंग की अनुमति दें</string>

@@ -41,8 +41,9 @@ pub fn extract_to_dir(path: &Path, output_dir: &Path) -> Result<Vec<PathBuf>> {
     Ok(files)
 }
 
-/// Extract a RAR archive entirely in memory — reads each entry into `Vec<u8>`.
-pub fn extract_from_bytes(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+/// Extract a RAR archive entirely in memory — reads each entry into `Vec<u8>`,
+/// paired with its in-archive name.
+pub fn extract_from_bytes(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
     let archive_len = data.len();
 
     // Write to a temp file since `unrar` needs a file path.
@@ -51,7 +52,7 @@ pub fn extract_from_bytes(data: &[u8]) -> Result<Vec<Vec<u8>>> {
     std::fs::create_dir_all(&tmp_dir)?;
     std::fs::write(&tmp_rar, data)?;
 
-    let mut out: Vec<Vec<u8>> = Vec::new();
+    let mut out: Vec<(String, Vec<u8>)> = Vec::new();
     let mut archive = match unrar::Archive::new(&tmp_rar).open_for_processing() {
         Ok(a) => a,
         Err(e) => {
@@ -91,6 +92,7 @@ pub fn extract_from_bytes(data: &[u8]) -> Result<Vec<Vec<u8>>> {
             continue;
         }
 
+        let entry_name = header.entry().filename.to_string_lossy().into_owned();
         let (data, rest) = match header.read() {
             Ok(pair) => pair,
             Err(e) => {
@@ -104,7 +106,7 @@ pub fn extract_from_bytes(data: &[u8]) -> Result<Vec<Vec<u8>>> {
             let _ = std::fs::remove_dir_all(&tmp_dir);
             return Err(ExtractError::DecompressionBomb { format: "rar" });
         }
-        out.push(data);
+        out.push((entry_name, data));
         archive = rest;
     }
 

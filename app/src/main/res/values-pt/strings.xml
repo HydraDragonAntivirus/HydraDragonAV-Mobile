@@ -358,7 +358,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="malware_has_admin_msg">%1$s se tornou Administrador do Dispositivo, o que impede a desinstalação direta — este é um truque comum usado por malware para resistir à remoção. Desative-o na tela que se abrir (encontre %1$s e toque em Desativar), então a solicitação de desinstalação abrirá automaticamente.</string>
     <string name="malware_has_admin_open_settings">ABRIR CONFIGURAÇÕES DE ADMINISTRADOR DO DISPOSITIVO</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">Sugerir modo de segurança quando a desinstalação falhar</string>
     <string name="unicorn_unsupported">A emulação (Unicorn) não está disponível neste dispositivo devido a um bug conhecido no backend ARM64 JIT. A verificação continua normalmente sem esta passagem.</string>
 
     <string name="disable_secure_flag_toggle">Permitir gravação de tela</string>

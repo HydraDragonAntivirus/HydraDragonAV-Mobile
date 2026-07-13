@@ -358,7 +358,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="malware_has_admin_msg">%1$s uczyniła się Administratorem urządzenia, co blokuje bezpośrednie odinstalowanie — jest to popularna sztuczka malware, aby uniknąć usunięcia. Dezaktywuj to na ekranie, który się otworzy (znajdź %1$s i dotknij Dezaktywuj), a następnie automatycznie otworzy się okno odinstalowywania.</string>
     <string name="malware_has_admin_open_settings">OTWÓRZ USTAWIENIA ADMINISTRATORA URZĄDZENIA</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">Sugeruj tryb awaryjny, gdy odinstalowanie się nie powiedzie</string>
     <string name="unicorn_unsupported">Emulacja (Unicorn) jest niedostępna na tym urządzeniu z powodu znanego błędu w backendzie ARM64 JIT. Skanowanie przebiega normalnie bez tego przebiegu.</string>
 
     <string name="disable_secure_flag_toggle">Zezwól na nagrywanie ekranu</string>

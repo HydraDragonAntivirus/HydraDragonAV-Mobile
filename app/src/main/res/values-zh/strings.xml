@@ -358,7 +358,7 @@
     <string name="malware_has_admin_msg">%1$s 已将自身设为设备管理员，这会阻止直接卸载它 — 这是恶意软件常用来抵抗被移除的一种手段。请在打开的界面中先停用它（找到 %1$s 并点击停用），之后卸载提示将自动打开。</string>
     <string name="malware_has_admin_open_settings">打开设备管理员设置</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">卸载失败时建议进入安全模式</string>
     <string name="unicorn_unsupported">由于ARM64 JIT后端的已知错误，本设备上无法使用仿真（Unicorn）。扫描将继续正常进行，无需此过程。</string>
 
     <string name="disable_secure_flag_toggle">允许屏幕录制</string>

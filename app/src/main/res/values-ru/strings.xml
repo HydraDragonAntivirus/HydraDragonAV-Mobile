@@ -358,7 +358,7 @@
     <string name="malware_has_admin_msg">%1$s сделало себя Администратором устройства, что блокирует прямое удаление — это распространённый приём вредоносного ПО, позволяющий сопротивляться удалению. Деактивируйте его на открывшемся экране (найдите %1$s и нажмите Деактивировать), после чего запрос на удаление откроется автоматически.</string>
     <string name="malware_has_admin_open_settings">ОТКРЫТЬ НАСТРОЙКИ АДМИНИСТРАТОРА УСТРОЙСТВА</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">Предлагать безопасный режим при сбое удаления</string>
     <string name="unicorn_unsupported">Эмуляция (Unicorn) недоступна на этом устройстве из-за известной ошибки в ARM64 JIT бэкенде. Сканирование продолжается нормально без этого прохода.</string>
 
     <string name="disable_secure_flag_toggle">Разрешить запись экрана</string>

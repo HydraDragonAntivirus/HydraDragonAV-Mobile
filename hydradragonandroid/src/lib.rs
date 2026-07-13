@@ -1264,7 +1264,10 @@ fn rescan_buffers_parallel(
                         let name = if i == 0 {
                             path.to_string()
                         } else {
-                            format!("{path}#extract[{i}]")
+                            match &b.entry_name {
+                                Some(entry) => format!("{path}!/{entry}"),
+                                None => format!("{path}#extract[{i}]"),
+                            }
                         };
                         // yara-x has a known panic (Option::unwrap() on None
                         // in its WASM string module) on certain buffer
@@ -2605,6 +2608,10 @@ fn collect_packages(buffers: &[Buf]) -> Vec<String> {
 struct Buf {
     data: Vec<u8>,
     apk_lineage: Vec<String>,
+    /// In-archive path of this buffer relative to its immediate parent
+    /// archive (e.g. `lib/arm64-v8a/libfoo.so`), or `None` for the top-level
+    /// scanned file (which already has its own real path/name).
+    entry_name: Option<String>,
 }
 
 /// `top_md5` is Java's already-computed MD5 of the whole scanned file, reused for
@@ -2643,12 +2650,16 @@ fn collect_buffers(
         buf: Vec<u8>,
         depth: usize,
         lineage: Vec<String>,
+        /// In-archive path within its immediate parent, `None` for the seed
+        /// (top-level) item.
+        entry_name: Option<String>,
     }
 
     let stack: Mutex<Vec<WorkItem>> = Mutex::new(vec![WorkItem {
         buf: data.to_vec(),
         depth: 0,
         lineage: Vec::new(),
+        entry_name: None,
     }]);
     // Termination detection for the shared work stack: counts items that are
     // either sitting in `stack` or actively being processed by some worker.
@@ -2737,7 +2748,10 @@ fn collect_buffers(
                                 let name = if idx == 0 {
                                     path.to_string()
                                 } else {
-                                    format!("{}#extract[{}]", path, idx)
+                                    match &item.entry_name {
+                                        Some(entry) => format!("{path}!/{entry}"),
+                                        None => format!("{}#extract[{}]", path, idx),
+                                    }
                                 };
                                 // yara-x has a known panic (Option::unwrap() on
                                 // None in its WASM string module) triggered by
@@ -2782,11 +2796,16 @@ fn collect_buffers(
                                     if !children.is_empty() {
                                         let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
                                         outstanding.fetch_add(children.len(), AtomOrdering::AcqRel);
-                                        for child in children {
+                                        for (child_name, child) in children {
+                                            let entry_name = Some(match &item.entry_name {
+                                                Some(parent) => format!("{parent}!/{child_name}"),
+                                                None => child_name,
+                                            });
                                             g.push(WorkItem {
                                                 buf: child,
                                                 depth: item.depth + 1,
                                                 lineage: lineage.clone(),
+                                                entry_name,
                                             });
                                         }
                                     }
@@ -2804,6 +2823,7 @@ fn collect_buffers(
                             og.push(Buf {
                                 data: item.buf,
                                 apk_lineage: lineage,
+                                entry_name: item.entry_name,
                             });
                         }
 

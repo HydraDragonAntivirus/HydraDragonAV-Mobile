@@ -105,7 +105,10 @@ pub fn extract_archive(path: &Path, output_dir: &Path) -> Result<ExtractResult> 
     })
 }
 
-pub fn extract_archive_from_bytes(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+/// Extract every entry of an archive into memory, paired with its in-archive
+/// name/path (e.g. `lib/arm64-v8a/libfoo.so`) so callers can report detections
+/// against the real member instead of an opaque index.
+pub fn extract_archive_from_bytes(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
     if is_rar(data) {
         return rar::extract_from_bytes(data);
     }
@@ -151,7 +154,7 @@ fn extract_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // Internal: in-memory extraction
 // ---------------------------------------------------------------------------
 
-fn extract_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+fn extract_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
     let fmt = ArchiveFormat::from_magic(data);
     match fmt {
         ArchiveFormat::Zip => zip_to_memory(data),
@@ -272,12 +275,12 @@ fn gzip_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
     }
 }
 
-fn gzip_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+fn gzip_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
     let d = decompress_gzip(data)?;
     if is_tar(&d) {
         tar_to_memory(&d)
     } else {
-        Ok(vec![d])
+        Ok(vec![("decompressed".to_string(), d)])
     }
 }
 
@@ -292,12 +295,12 @@ fn xz_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
     }
 }
 
-fn xz_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+fn xz_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
     let d = decompress_xz(data)?;
     if is_tar(&d) {
         tar_to_memory(&d)
     } else {
-        Ok(vec![d])
+        Ok(vec![("decompressed".to_string(), d)])
     }
 }
 
@@ -312,12 +315,12 @@ fn bzip2_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
     }
 }
 
-fn bzip2_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+fn bzip2_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
     let d = decompress_bzip2(data)?;
     if is_tar(&d) {
         tar_to_memory(&d)
     } else {
-        Ok(vec![d])
+        Ok(vec![("decompressed".to_string(), d)])
     }
 }
 
@@ -335,7 +338,7 @@ fn bzip2_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
 /// decompressed into memory before the caller's outer buffer cap ever runs.
 pub(crate) const MAX_ARCHIVE_ENTRIES: usize = 4096;
 
-fn zip_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+fn zip_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
     let zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
     let names: Vec<String> = zip
         .entries()
@@ -354,7 +357,7 @@ fn zip_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
         .unwrap_or(2);
     let chunk_size = (names.len() + n_threads - 1) / n_threads;
 
-    let (tx, rx) = std::sync::mpsc::channel::<Vec<Vec<u8>>>();
+    let (tx, rx) = std::sync::mpsc::channel::<Vec<(String, Vec<u8>)>>();
     let bomb_found = std::sync::atomic::AtomicBool::new(false);
     let bomb_found_ref = &bomb_found;
     std::thread::scope(|s| {
@@ -371,7 +374,7 @@ fn zip_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
                                 if is_decompression_bomb(cloned.compressed_size as usize, content.len()) {
                                     bomb_found_ref.store(true, std::sync::atomic::Ordering::Relaxed);
                                 } else {
-                                    local.push(content);
+                                    local.push((name.clone(), content));
                                 }
                             }
                         }
@@ -430,7 +433,7 @@ fn zip_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // TAR
 // ---------------------------------------------------------------------------
 
-fn tar_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+fn tar_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
     let mut tar = TarReader::new(Cursor::new(data)).map_err(map_err)?;
     let mut out = Vec::new();
     let names: Vec<_> = tar
@@ -443,7 +446,7 @@ fn tar_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
     for name in names {
         let content = tar.extract_by_name(&name).map_err(map_err)?;
         if let Some(d) = content {
-            out.push(d);
+            out.push((name, d));
         }
     }
     Ok(out)
@@ -489,7 +492,7 @@ fn tar_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // 7z
 // ---------------------------------------------------------------------------
 
-fn sz_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
+fn sz_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
     let mut sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
     let entries = sz.entries();
     let count = entries.len().min(MAX_ARCHIVE_ENTRIES);
@@ -498,12 +501,13 @@ fn sz_to_memory(data: &[u8]) -> Result<Vec<Vec<u8>>> {
         if entries[i].name.ends_with('/') {
             continue;
         }
+        let name = entries[i].name.clone();
         let content = sz.extract(i).map_err(map_err)?;
         if is_decompression_bomb(data.len(), content.len()) {
             return Err(ExtractError::DecompressionBomb { format: "7z" });
         }
         if !content.is_empty() {
-            out.push(content);
+            out.push((name, content));
         }
     }
     Ok(out)

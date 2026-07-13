@@ -358,7 +358,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="malware_has_admin_msg">%1$s telah menjadikan dirinya Admin Perangkat, yang mencegah pencopotan pemasangan langsung — ini adalah trik umum yang digunakan malware untuk menolak dihapus. Nonaktifkan di layar yang terbuka (cari %1$s dan ketuk Nonaktifkan), lalu prompt pencopotan pemasangan akan terbuka secara otomatis.</string>
     <string name="malware_has_admin_open_settings">BUKA PENGATURAN ADMIN PERANGKAT</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">Sarankan mode aman saat pencopotan pemasangan gagal</string>
     <string name="unicorn_unsupported">Emulasi (Unicorn) tidak tersedia di perangkat ini karena bug backend ARM64 JIT yang diketahui. Pemindaian berjalan normal tanpa proses ini.</string>
 
     <string name="disable_secure_flag_toggle">Izinkan perekaman layar</string>

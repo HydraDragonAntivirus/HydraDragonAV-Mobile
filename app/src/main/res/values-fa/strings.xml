@@ -358,7 +358,7 @@
     <string name="malware_has_admin_msg">%1$s خودش را مدیر دستگاه کرده است، که مانع حذف نصب مستقیم آن می‌شود — ترفندی رایج که بدافزارها برای مقاومت در برابر حذف استفاده می‌کنند. آن را در صفحه‌ای که باز می‌شود غیرفعال کنید (%1$s را پیدا کرده و روی غیرفعال کردن ضربه بزنید)، سپس پنجره حذف نصب به‌طور خودکار باز خواهد شد.</string>
     <string name="malware_has_admin_open_settings">باز کردن تنظیمات مدیر دستگاه</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">پیشنهاد حالت ایمن هنگام شکست حذف نصب</string>
     <string name="unicorn_unsupported">شبیه‌سازی (Unicorn) به دلیل یک باگ شناخته شده در بک‌اند ARM64 JIT در این دستگاه در دسترس نیست. اسکن بدون این مرحله به طور عادی ادامه می‌یابد.</string>
 
     <string name="disable_secure_flag_toggle">اجازه ضبط صفحه‌نمایش</string>

@@ -358,7 +358,7 @@
     <string name="malware_has_admin_msg">%1$sは自身をデバイス管理者にしており、直接アンインストールできないようにしています — これはマルウェアが削除に抵抗するためによく使う手口です。開いた画面で無効化してください（%1$sを見つけて「無効にする」をタップ）。その後、アンインストールのプロンプトが自動的に開きます。</string>
     <string name="malware_has_admin_open_settings">デバイス管理者の設定を開く</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">アンインストールに失敗した場合にセーフモードを提案する</string>
     <string name="unicorn_unsupported">エミュレーション（Unicorn）は、ARM64 JITバックエンドの既知のバグにより、このデバイスでは利用できません。スキャンはこのパスなしで通常通り続行されます。</string>
 
     <string name="disable_secure_flag_toggle">画面録画を許可する</string>

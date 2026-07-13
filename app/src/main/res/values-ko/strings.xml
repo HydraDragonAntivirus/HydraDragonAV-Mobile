@@ -358,7 +358,7 @@
     <string name="malware_has_admin_msg">%1$s이(가) 스스로를 기기 관리자로 설정하여 직접 제거하지 못하도록 막고 있습니다 — 이는 악성코드가 제거에 저항하기 위해 흔히 사용하는 수법입니다. 열리는 화면에서 이를 비활성화하세요 (%1$s을(를) 찾아 비활성화를 탭). 그러면 제거 프롬프트가 자동으로 열립니다.</string>
     <string name="malware_has_admin_open_settings">기기 관리자 설정 열기</string>
 
-    <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
+    <string name="uninstall_warning_toggle">제거에 실패하면 안전 모드를 제안</string>
     <string name="unicorn_unsupported">ARM64 JIT 백엔드의 알려진 버그로 인해 이 기기에서 에뮬레이션(Unicorn)을 사용할 수 없습니다. 이 패스 없이 스캔이 정상적으로 계속됩니다.</string>
 
     <string name="disable_secure_flag_toggle">화면 녹화 허용</string>
