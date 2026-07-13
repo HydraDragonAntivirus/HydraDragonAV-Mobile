@@ -292,6 +292,9 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="ask_sig_on_remove_toggle">Ask to generate signature on unknown app removal (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Removing a Zero Trust UNKNOWN app will now ask to generate a signature first</string>
     <string name="ask_sig_on_remove_off_toast">Ask-on-remove OFF</string>
+    <string name="auto_delete_malware_toggle">Auto-delete malware immediately</string>
+    <string name="auto_delete_malware_on_toast">Auto-delete ON: threats are removed the instant they\'re found, no tap needed</string>
+    <string name="auto_delete_malware_off_toast">Auto-delete OFF: you\'ll be asked before anything is removed</string>
     <string name="gen_sig_on_remove_title">Generate signature before removing?</string>
     <string name="gen_sig_on_remove_msg">%1$s was never matched by any detector (Zero Trust: unverified, not confirmed clean). Generate a signature from it now, before it\'s removed?</string>
     <string name="gen_sig_on_remove_yes">YES, GENERATE</string>

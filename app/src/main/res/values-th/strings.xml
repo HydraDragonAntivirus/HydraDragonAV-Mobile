@@ -272,6 +272,9 @@
     <string name="ask_sig_on_remove_toggle">ถามเพื่อสร้างลายเซ็นเมื่อลบแอปที่ไม่รู้จัก (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">การลบแอป Zero Trust ที่ไม่รู้จักจะถามให้สร้างลายเซ็นก่อนแล้ว</string>
     <string name="ask_sig_on_remove_off_toast">ถามเมื่อลบ ปิด</string>
+    <string name="auto_delete_malware_toggle">ลบมัลแวร์อัตโนมัติทันที</string>
+    <string name="auto_delete_malware_on_toast">ลบอัตโนมัติ เปิด: ภัยคุกคามจะถูกลบทันทีที่พบ ไม่ต้องแตะยืนยัน</string>
+    <string name="auto_delete_malware_off_toast">ลบอัตโนมัติ ปิด: จะมีการถามคุณก่อนลบสิ่งใดก็ตาม</string>
     <string name="gen_sig_on_remove_title">สร้างลายเซ็นก่อนลบหรือไม่?</string>
     <string name="gen_sig_on_remove_msg">%1$s ไม่เคยตรงกับตัวตรวจจับใดเลย (Zero Trust: ยังไม่ได้ตรวจสอบ ไม่ยืนยันว่าปลอดภัย) ต้องการสร้างลายเซ็นจากแอปนี้ตอนนี้ก่อนที่จะลบหรือไม่?</string>
     <string name="gen_sig_on_remove_yes">ใช่ สร้างเลย</string>

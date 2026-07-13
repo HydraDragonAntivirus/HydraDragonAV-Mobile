@@ -272,6 +272,9 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="ask_sig_on_remove_toggle">Chiedi di generare una firma alla rimozione di un’app sconosciuta (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Rimuovendo un’app Zero Trust SCONOSCIUTA ora verrà chiesto prima di generare una firma</string>
     <string name="ask_sig_on_remove_off_toast">Richiesta alla rimozione DISATTIVATA</string>
+    <string name="auto_delete_malware_toggle">Elimina automaticamente il malware all\'istante</string>
+    <string name="auto_delete_malware_on_toast">Eliminazione automatica ATTIVA: le minacce vengono rimosse nell\'istante in cui vengono trovate, senza bisogno di confermare</string>
+    <string name="auto_delete_malware_off_toast">Eliminazione automatica DISATTIVATA: ti verrà chiesta conferma prima di rimuovere qualsiasi cosa</string>
     <string name="gen_sig_on_remove_title">Generare una firma prima della rimozione?</string>
     <string name="gen_sig_on_remove_msg">%1$s non è mai stata rilevata da alcun motore (Zero Trust: non verificata, non confermata pulita). Generare ora una firma da essa, prima di rimuoverla?</string>
     <string name="gen_sig_on_remove_yes">SÌ, GENERA</string>

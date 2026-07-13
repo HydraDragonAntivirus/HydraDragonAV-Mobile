@@ -258,6 +258,14 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.ask_sig_on_remove_off_toast), Toast.LENGTH_LONG).show();
         });
 
+        boolean autoDeleteMalware = com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(requireContext());
+        addToggle(getString(R.string.auto_delete_malware_toggle), autoDeleteMalware, (btn, on) -> {
+            com.hydradragon.antivirus.engine.AutoDeleteMalware.setEnabled(requireContext(), on);
+            Toast.makeText(getContext(), on
+                ? getString(R.string.auto_delete_malware_on_toast)
+                : getString(R.string.auto_delete_malware_off_toast), Toast.LENGTH_LONG).show();
+        });
+
         boolean scanCache = prefs().getBoolean("scan_cache_enabled", true);
         addToggle(getString(R.string.scan_cache_toggle), scanCache, (btn, on) -> {
             prefs().edit().putBoolean("scan_cache_enabled", on).apply();

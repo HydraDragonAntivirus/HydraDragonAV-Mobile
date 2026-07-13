@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -27,6 +28,7 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
 
     public interface OnThreatClickListener {
         void onThreatClick(ThreatResult threat);
+        default void onThreatDeleteClick(ThreatResult threat) {}
     }
 
     public ThreatAdapter(List<ThreatResult> threats) {
@@ -113,6 +115,12 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
                 listener.onThreatClick(threat);
             }
         });
+
+        holder.btnDelete.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onThreatDeleteClick(threat);
+            }
+        });
     }
 
     @Override
@@ -123,6 +131,7 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
     static class ThreatViewHolder extends RecyclerView.ViewHolder {
         TextView tvAppName, tvThreatLevel, tvPackage, tvReason, tvRiskScore, tvTime;
         ImageView ivAppIcon; // Icon object
+        ImageButton btnDelete;
 
         public ThreatViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -133,6 +142,7 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
             tvReason = itemView.findViewById(R.id.tv_reason);
             tvRiskScore = itemView.findViewById(R.id.tv_risk_score);
             tvTime = itemView.findViewById(R.id.tv_time);
+            btnDelete = itemView.findViewById(R.id.btn_delete_threat);
         }
     }
 }

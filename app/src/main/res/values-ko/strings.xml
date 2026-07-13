@@ -272,6 +272,9 @@
     <string name="ask_sig_on_remove_toggle">알 수 없는 앱 제거 시 서명 생성 여부 묻기 (제로 트러스트)</string>
     <string name="ask_sig_on_remove_on_toast">이제 제로 트러스트 \'알 수 없음\' 앱을 제거할 때 먼저 서명 생성 여부를 묻습니다</string>
     <string name="ask_sig_on_remove_off_toast">제거 시 묻기 꺼짐</string>
+    <string name="auto_delete_malware_toggle">악성코드 즉시 자동 삭제</string>
+    <string name="auto_delete_malware_on_toast">자동 삭제 켜짐: 위협이 발견되는 즉시 탭 없이 제거됩니다</string>
+    <string name="auto_delete_malware_off_toast">자동 삭제 꺼짐: 제거 전에 먼저 확인을 요청합니다</string>
     <string name="gen_sig_on_remove_title">제거하기 전에 서명을 생성할까요?</string>
     <string name="gen_sig_on_remove_msg">%1$s은(는) 어떤 탐지기에도 일치하지 않았습니다 (제로 트러스트: 미검증, 안전 확인 안 됨). 제거하기 전에 지금 서명을 생성하시겠습니까?</string>
     <string name="gen_sig_on_remove_yes">예, 생성</string>

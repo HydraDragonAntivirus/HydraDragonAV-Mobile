@@ -272,6 +272,9 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="ask_sig_on_remove_toggle">Vragen om handtekening te genereren bij verwijderen van onbekende app (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Bij het verwijderen van een Zero Trust ONBEKENDE app wordt nu eerst gevraagd een handtekening te genereren</string>
     <string name="ask_sig_on_remove_off_toast">Vragen bij verwijderen UIT</string>
+    <string name="auto_delete_malware_toggle">Malware direct automatisch verwijderen</string>
+    <string name="auto_delete_malware_on_toast">Automatisch verwijderen AAN: bedreigingen worden direct verwijderd zodra ze gevonden zijn, zonder te tikken</string>
+    <string name="auto_delete_malware_off_toast">Automatisch verwijderen UIT: je wordt eerst gevraagd voordat iets wordt verwijderd</string>
     <string name="gen_sig_on_remove_title">Handtekening genereren vóór verwijdering?</string>
     <string name="gen_sig_on_remove_msg">%1$s werd door geen enkele detector herkend (Zero Trust: niet-geverifieerd, niet bevestigd schoon). Nu een handtekening genereren, voordat deze wordt verwijderd?</string>
     <string name="gen_sig_on_remove_yes">JA, GENEREREN</string>

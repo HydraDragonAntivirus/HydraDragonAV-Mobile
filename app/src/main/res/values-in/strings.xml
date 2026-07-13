@@ -272,6 +272,9 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="ask_sig_on_remove_toggle">Tanya untuk membuat tanda tangan saat menghapus aplikasi tidak dikenal (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Menghapus aplikasi Zero Trust TIDAK DIKENAL kini akan menanyakan untuk membuat tanda tangan terlebih dahulu</string>
     <string name="ask_sig_on_remove_off_toast">Tanya saat menghapus NONAKTIF</string>
+    <string name="auto_delete_malware_toggle">Hapus malware otomatis dan langsung</string>
+    <string name="auto_delete_malware_on_toast">Hapus otomatis AKTIF: ancaman langsung dihapus begitu ditemukan, tanpa perlu ketuk apa pun</string>
+    <string name="auto_delete_malware_off_toast">Hapus otomatis NONAKTIF: kamu akan ditanya sebelum apa pun dihapus</string>
     <string name="gen_sig_on_remove_title">Buat tanda tangan sebelum menghapus?</string>
     <string name="gen_sig_on_remove_msg">%1$s tidak pernah cocok dengan detektor apa pun (Zero Trust: belum terverifikasi, belum dikonfirmasi bersih). Buat tanda tangan darinya sekarang, sebelum dihapus?</string>
     <string name="gen_sig_on_remove_yes">YA, BUAT</string>

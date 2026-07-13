@@ -272,6 +272,9 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="ask_sig_on_remove_toggle">Perguntar para gerar assinatura ao remover app desconhecido (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Ao remover um app Zero Trust DESCONHECIDO, agora será perguntado primeiro se deseja gerar uma assinatura</string>
     <string name="ask_sig_on_remove_off_toast">Perguntar ao remover DESATIVADO</string>
+    <string name="auto_delete_malware_toggle">Excluir malware automaticamente e imediatamente</string>
+    <string name="auto_delete_malware_on_toast">Exclusão automática ATIVADA: as ameaças são removidas no instante em que são encontradas, sem precisar tocar em nada</string>
+    <string name="auto_delete_malware_off_toast">Exclusão automática DESATIVADA: você será perguntado antes de qualquer remoção</string>
     <string name="gen_sig_on_remove_title">Gerar assinatura antes de remover?</string>
     <string name="gen_sig_on_remove_msg">%1$s nunca foi identificado por nenhum detector (Zero Trust: não verificado, não confirmado como limpo). Gerar uma assinatura dele agora, antes de removê-lo?</string>
     <string name="gen_sig_on_remove_yes">SIM, GERAR</string>

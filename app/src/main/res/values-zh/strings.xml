@@ -272,6 +272,9 @@
     <string name="ask_sig_on_remove_toggle">删除未知应用时询问是否生成签名（零信任）</string>
     <string name="ask_sig_on_remove_on_toast">删除零信任“未知”应用时，现在会先询问是否生成签名</string>
     <string name="ask_sig_on_remove_off_toast">删除时询问 已关闭</string>
+    <string name="auto_delete_malware_toggle">立即自动删除恶意软件</string>
+    <string name="auto_delete_malware_on_toast">自动删除已开启：发现威胁后立即删除，无需点击确认</string>
+    <string name="auto_delete_malware_off_toast">自动删除已关闭：删除任何内容前都会先询问你</string>
     <string name="gen_sig_on_remove_title">删除前生成签名？</string>
     <string name="gen_sig_on_remove_msg">%1$s 未被任何检测器匹配（零信任：未验证，未确认为干净）。是否现在从中生成签名，然后再删除？</string>
     <string name="gen_sig_on_remove_yes">是，生成</string>

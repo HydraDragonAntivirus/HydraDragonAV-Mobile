@@ -272,6 +272,9 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="ask_sig_on_remove_toggle">Pytaj o wygenerowanie sygnatury przy usuwaniu nieznanej aplikacji (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Podczas usuwania nieznanej aplikacji Zero Trust zostaniesz teraz najpierw zapytany o wygenerowanie sygnatury</string>
     <string name="ask_sig_on_remove_off_toast">Pytanie przy usuwaniu WYŁĄCZONE</string>
+    <string name="auto_delete_malware_toggle">Automatycznie usuwaj złośliwe oprogramowanie natychmiast</string>
+    <string name="auto_delete_malware_on_toast">Automatyczne usuwanie WŁĄCZONE: zagrożenia są usuwane natychmiast po wykryciu, bez konieczności potwierdzania</string>
+    <string name="auto_delete_malware_off_toast">Automatyczne usuwanie WYŁĄCZONE: przed usunięciem czegokolwiek zostaniesz zapytany</string>
     <string name="gen_sig_on_remove_title">Wygenerować sygnaturę przed usunięciem?</string>
     <string name="gen_sig_on_remove_msg">%1$s nie została dopasowana przez żaden detektor (Zero Trust: niezweryfikowana, niepotwierdzona jako czysta). Wygenerować z niej sygnaturę teraz, przed usunięciem?</string>
     <string name="gen_sig_on_remove_yes">TAK, GENERUJ</string>

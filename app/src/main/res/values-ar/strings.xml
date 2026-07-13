@@ -272,6 +272,9 @@
     <string name="ask_sig_on_remove_toggle">اسأل لإنشاء توقيع عند إزالة تطبيق غير معروف (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">عند إزالة تطبيق Zero Trust غير معروف سيُطلب الآن إنشاء توقيع أولاً</string>
     <string name="ask_sig_on_remove_off_toast">السؤال عند الإزالة معطّل</string>
+    <string name="auto_delete_malware_toggle">حذف البرمجيات الخبيثة تلقائيًا وفورًا</string>
+    <string name="auto_delete_malware_on_toast">الحذف التلقائي مفعّل: تُزال التهديدات فور اكتشافها دون الحاجة لأي لمسة</string>
+    <string name="auto_delete_malware_off_toast">الحذف التلقائي معطّل: سيُطلب منك التأكيد قبل إزالة أي شيء</string>
     <string name="gen_sig_on_remove_title">إنشاء توقيع قبل الإزالة؟</string>
     <string name="gen_sig_on_remove_msg">%1$s لم يطابقه أي كاشف (Zero Trust: غير مؤكد، وليس نظيفاً مؤكداً). هل تريد إنشاء توقيع منه الآن قبل إزالته؟</string>
     <string name="gen_sig_on_remove_yes">نعم، أنشئ</string>

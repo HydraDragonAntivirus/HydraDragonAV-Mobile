@@ -272,6 +272,9 @@
     <string name="ask_sig_on_remove_toggle">هنگام حذف برنامه ناشناخته برای ایجاد امضا بپرس (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">هنگام حذف یک برنامه ناشناخته Zero Trust اکنون ابتدا برای ایجاد امضا پرسیده می‌شود</string>
     <string name="ask_sig_on_remove_off_toast">پرسش هنگام حذف خاموش شد</string>
+    <string name="auto_delete_malware_toggle">حذف خودکار و فوری بدافزار</string>
+    <string name="auto_delete_malware_on_toast">حذف خودکار روشن است: تهدیدها به محض شناسایی، بدون نیاز به هیچ اقدامی حذف می‌شوند</string>
+    <string name="auto_delete_malware_off_toast">حذف خودکار خاموش است: پیش از حذف هر چیزی از شما پرسیده می‌شود</string>
     <string name="gen_sig_on_remove_title">قبل از حذف، امضا ایجاد شود؟</string>
     <string name="gen_sig_on_remove_msg">%1$s توسط هیچ آشکارسازی شناسایی نشد (Zero Trust: تأییدنشده، نه قطعاً پاک). آیا می‌خواهید همین حالا از آن یک امضا ایجاد کنید، قبل از حذف؟</string>
     <string name="gen_sig_on_remove_yes">بله، ایجاد کن</string>

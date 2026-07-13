@@ -272,6 +272,9 @@ Puntuación de riesgo: %2$d/100
     <string name="ask_sig_on_remove_toggle">Preguntar para generar firma al eliminar una app desconocida (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Al eliminar una app Zero Trust DESCONOCIDA ahora se preguntará primero si generar una firma</string>
     <string name="ask_sig_on_remove_off_toast">Preguntar al eliminar DESACTIVADO</string>
+    <string name="auto_delete_malware_toggle">Eliminar malware automáticamente al instante</string>
+    <string name="auto_delete_malware_on_toast">Eliminación automática ACTIVADA: las amenazas se eliminan al instante, sin necesidad de confirmar</string>
+    <string name="auto_delete_malware_off_toast">Eliminación automática DESACTIVADA: se te preguntará antes de eliminar algo</string>
     <string name="gen_sig_on_remove_title">¿Generar firma antes de eliminar?</string>
     <string name="gen_sig_on_remove_msg">%1$s nunca fue detectado por ningún motor (Zero Trust: no verificado, no confirmado como limpio). ¿Generar una firma de esta app ahora, antes de eliminarla?</string>
     <string name="gen_sig_on_remove_yes">SÍ, GENERAR</string>

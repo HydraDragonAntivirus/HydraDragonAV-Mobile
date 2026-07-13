@@ -290,6 +290,9 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="ask_sig_on_remove_toggle">Bilinmeyen uygulama kaldırılırken imza oluşturmayı sor (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Zero Trust BİLİNMEYEN bir uygulama kaldırılırken artık önce imza oluşturulsun mu diye sorulacak</string>
     <string name="ask_sig_on_remove_off_toast">Kaldırırken sor KAPALI</string>
+    <string name="auto_delete_malware_toggle">Kötü amaçlı yazılımı anında otomatik sil</string>
+    <string name="auto_delete_malware_on_toast">Otomatik silme AÇIK: tehditler bulunduğu anda dokunma gerekmeden kaldırılır</string>
+    <string name="auto_delete_malware_off_toast">Otomatik silme KAPALI: herhangi bir şey kaldırılmadan önce sana sorulur</string>
     <string name="gen_sig_on_remove_title">Kaldırmadan önce imza oluşturulsun mu?</string>
     <string name="gen_sig_on_remove_msg">%1$s hiçbir dedektör tarafından eşleşmedi (Zero Trust: doğrulanmamış, temiz olduğu onaylanmamış). Kaldırılmadan önce şimdi bundan bir imza oluşturulsun mu?</string>
     <string name="gen_sig_on_remove_yes">EVET, OLUŞTUR</string>

@@ -272,6 +272,9 @@
     <string name="ask_sig_on_remove_toggle">不明なアプリ削除時に署名生成を確認する（ゼロトラスト）</string>
     <string name="ask_sig_on_remove_on_toast">ゼロトラストの「不明」アプリを削除する際、先に署名生成を確認するようになりました</string>
     <string name="ask_sig_on_remove_off_toast">削除時の確認 OFF</string>
+    <string name="auto_delete_malware_toggle">マルウェアを即座に自動削除する</string>
+    <string name="auto_delete_malware_on_toast">自動削除 ON：脅威を検出した瞬間にタップ不要で削除します</string>
+    <string name="auto_delete_malware_off_toast">自動削除 OFF：削除の前に確認が表示されます</string>
     <string name="gen_sig_on_remove_title">削除前に署名を生成しますか？</string>
     <string name="gen_sig_on_remove_msg">%1$s はどの検出器にも一致しませんでした（ゼロトラスト：未検証、安全と確認されていません）。削除前に今すぐ署名を生成しますか？</string>
     <string name="gen_sig_on_remove_yes">はい、生成する</string>

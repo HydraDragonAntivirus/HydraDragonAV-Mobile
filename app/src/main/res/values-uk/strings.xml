@@ -272,6 +272,9 @@
     <string name="ask_sig_on_remove_toggle">Запитувати про генерацію сигнатури при видаленні невідомого додатка (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Під час видалення НЕВІДОМОГО додатка Zero Trust тепер спершу буде запропоновано згенерувати сигнатуру</string>
     <string name="ask_sig_on_remove_off_toast">Запит при видаленні ВИМКНЕНО</string>
+    <string name="auto_delete_malware_toggle">Негайно видаляти шкідливе ПЗ автоматично</string>
+    <string name="auto_delete_malware_on_toast">Автовидалення УВІМК: загрози видаляються миттєво після виявлення, без підтвердження</string>
+    <string name="auto_delete_malware_off_toast">Автовидалення ВИМК: перед видаленням у вас завжди запитають підтвердження</string>
     <string name="gen_sig_on_remove_title">Згенерувати сигнатуру перед видаленням?</string>
     <string name="gen_sig_on_remove_msg">%1$s не була розпізнана жодним детектором (Zero Trust: неперевірено, не підтверджено як чисте). Згенерувати сигнатуру зараз, перед видаленням?</string>
     <string name="gen_sig_on_remove_yes">ТАК, ЗГЕНЕРУВАТИ</string>

@@ -302,17 +302,21 @@ public class GuardService extends Service {
                     } catch (Throwable t) {
                         Log.e(TAG, "sendThreatNotification failed", t);
                     }
-                    // Auto-kill + uninstall prompt + full-screen "MALWARE FOUND"
-                    // only for background/auto scans (no UI listener attached).
-                    // During a manual scan the user is already looking at the
-                    // threat list in ScanFragment — let them tap to decide.
-                    if (uiScanCallback == null) {
-                        try {
+                    // Respond immediately regardless of manual vs background
+                    // scan: if auto-delete is on, remove it silently right
+                    // now (no ask); otherwise still show the unmissable
+                    // full-screen "MALWARE FOUND" ask instead of only a
+                    // notification the user might not see.
+                    try {
+                        if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(GuardService.this)) {
+                            com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(
+                                GuardService.this, threat);
+                        } else {
                             com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
                                 GuardService.this, threat);
-                        } catch (Throwable t) {
-                            Log.e(TAG, "killAndPromptUninstall failed", t);
                         }
+                    } catch (Throwable t) {
+                        Log.e(TAG, "threat response failed", t);
                     }
                     if (callback != null) callback.onThreatDetected(threat);
                 }

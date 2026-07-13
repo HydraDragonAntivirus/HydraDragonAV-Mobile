@@ -272,6 +272,9 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="ask_sig_on_remove_toggle">Demander de générer une signature lors de la suppression d’une app inconnue (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">La suppression d’une app Zero Trust INCONNUE demandera désormais d’abord de générer une signature</string>
     <string name="ask_sig_on_remove_off_toast">Demande à la suppression DÉSACTIVÉE</string>
+    <string name="auto_delete_malware_toggle">Supprimer automatiquement les malwares immédiatement</string>
+    <string name="auto_delete_malware_on_toast">Suppression automatique ACTIVÉE : les menaces sont supprimées dès leur détection, sans confirmation</string>
+    <string name="auto_delete_malware_off_toast">Suppression automatique DÉSACTIVÉE : une confirmation te sera demandée avant toute suppression</string>
     <string name="gen_sig_on_remove_title">Générer une signature avant la suppression ?</string>
     <string name="gen_sig_on_remove_msg">%1$s n’a jamais été reconnue par aucun détecteur (Zero Trust : non vérifiée, pas confirmée propre). Générer une signature maintenant, avant sa suppression ?</string>
     <string name="gen_sig_on_remove_yes">OUI, GÉNÉRER</string>

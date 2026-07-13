@@ -272,6 +272,9 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="ask_sig_on_remove_toggle">Beim Entfernen einer unbekannten App nach Signatur fragen (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Beim Entfernen einer Zero-Trust-UNBEKANNTEN App wird nun zuerst nach einer Signatur gefragt</string>
     <string name="ask_sig_on_remove_off_toast">Nachfrage beim Entfernen AUS</string>
+    <string name="auto_delete_malware_toggle">Malware sofort automatisch löschen</string>
+    <string name="auto_delete_malware_on_toast">Automatisches Löschen AN: Bedrohungen werden sofort nach dem Fund entfernt, ohne Bestätigung</string>
+    <string name="auto_delete_malware_off_toast">Automatisches Löschen AUS: Du wirst vor jeder Entfernung gefragt</string>
     <string name="gen_sig_on_remove_title">Signatur vor dem Entfernen erzeugen?</string>
     <string name="gen_sig_on_remove_msg">%1$s wurde von keinem Detektor erkannt (Zero Trust: nicht verifiziert, nicht bestätigt sauber). Jetzt eine Signatur davon erzeugen, bevor sie entfernt wird?</string>
     <string name="gen_sig_on_remove_yes">JA, ERZEUGEN</string>

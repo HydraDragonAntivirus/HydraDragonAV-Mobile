@@ -271,6 +271,9 @@
     <string name="ask_sig_on_remove_toggle">अज्ञात ऐप हटाते समय हस्ताक्षर बनाने के लिए पूछें (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">अब किसी Zero Trust अज्ञात ऐप को हटाते समय पहले हस्ताक्षर बनाने के लिए पूछा जाएगा</string>
     <string name="ask_sig_on_remove_off_toast">हटाते समय पूछना बंद</string>
+    <string name="auto_delete_malware_toggle">मैलवेयर को तुरंत ऑटो-डिलीट करें</string>
+    <string name="auto_delete_malware_on_toast">ऑटो-डिलीट ऑन: खतरे मिलते ही बिना किसी टैप के हटा दिए जाते हैं</string>
+    <string name="auto_delete_malware_off_toast">ऑटो-डिलीट ऑफ: कुछ भी हटाने से पहले आपसे पूछा जाएगा</string>
     <string name="gen_sig_on_remove_title">हटाने से पहले हस्ताक्षर बनाएं?</string>
     <string name="gen_sig_on_remove_msg">%1$s किसी भी डिटेक्टर से मेल नहीं खाया (Zero Trust: असत्यापित, पुष्टि रूप से साफ़ नहीं)। हटाने से पहले अभी इससे हस्ताक्षर बनाएं?</string>
     <string name="gen_sig_on_remove_yes">हाँ, बनाएं</string>

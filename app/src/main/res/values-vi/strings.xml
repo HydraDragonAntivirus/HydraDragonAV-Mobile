@@ -272,6 +272,9 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="ask_sig_on_remove_toggle">Hỏi tạo chữ ký khi gỡ ứng dụng không rõ (Zero Trust)</string>
     <string name="ask_sig_on_remove_on_toast">Khi gỡ một ứng dụng Zero Trust KHÔNG RÕ, giờ đây sẽ hỏi tạo chữ ký trước</string>
     <string name="ask_sig_on_remove_off_toast">Hỏi khi gỡ TẮT</string>
+    <string name="auto_delete_malware_toggle">Tự động xóa mã độc ngay lập tức</string>
+    <string name="auto_delete_malware_on_toast">Tự động xóa BẬT: mối đe dọa sẽ bị xóa ngay khi phát hiện, không cần chạm</string>
+    <string name="auto_delete_malware_off_toast">Tự động xóa TẮT: bạn sẽ được hỏi trước khi bất cứ thứ gì bị xóa</string>
     <string name="gen_sig_on_remove_title">Tạo chữ ký trước khi gỡ?</string>
     <string name="gen_sig_on_remove_msg">%1$s chưa từng khớp với bất kỳ trình phát hiện nào (Zero Trust: chưa xác minh, chưa xác nhận sạch). Tạo chữ ký từ ứng dụng này ngay bây giờ, trước khi gỡ?</string>
     <string name="gen_sig_on_remove_yes">CÓ, TẠO</string>

@@ -118,6 +118,38 @@ public final class BehaviorResponse {
         }
     }
 
+    /** Entry point used when {@link AutoDeleteMalware} is on: removes the
+     *  threat right away with no ask/notification step. An installed app
+     *  still has to go through the system uninstall confirmation (auto-fired
+     *  immediately, same as the ask path) since Android gives no third-party
+     *  app a truly silent uninstall; a standalone file needs no such
+     *  confirmation so it's deleted outright. No {@link #showMalwareFoundScreen}
+     *  here — that screen exists to ask, and there's nothing left to ask once
+     *  the removal has already happened. */
+    public static void autoDeleteThreat(Context context, ThreatResult threat) {
+        if (threat == null) return;
+        String pkg = threat.getPackageName();
+        boolean installed = pkg != null && !pkg.isEmpty() && isPackageInstalled(context, pkg);
+        if (installed) {
+            killAndPromptUninstall(context, pkg);
+            com.hydradragon.antivirus.service.ThreatLogger.logThreat(context, pkg, threat.getAppName(),
+                    "auto-delete: uninstall requested");
+        } else {
+            String path = threat.getApkPath();
+            if (path != null && !path.isEmpty()) {
+                try {
+                    java.io.File f = new java.io.File(path);
+                    boolean deleted = f.exists() && f.delete();
+                    Log.i(TAG, "autoDeleteThreat: " + (deleted ? "deleted " : "failed to delete ") + path);
+                } catch (Throwable t) {
+                    Log.w(TAG, "autoDeleteThreat: delete failed for " + path, t);
+                }
+            }
+            com.hydradragon.antivirus.service.ThreatLogger.logThreat(context, pkg, threat.getAppName(),
+                    "auto-delete: file removed");
+        }
+    }
+
     private static boolean isPackageInstalled(Context context, String pkg) {
         try {
             context.getPackageManager().getPackageInfo(pkg, 0);

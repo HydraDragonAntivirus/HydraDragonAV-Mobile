@@ -169,56 +169,27 @@ public class ScanFragment extends Fragment {
         }
 
         // SMART REMOVAL (distinguishes a standalone APK file from an installed app)
-        threatAdapter.setOnThreatClickListener(threat -> {
+        threatAdapter.setOnThreatClickListener(new com.hydradragon.antivirus.adapter.ThreatAdapter.OnThreatClickListener() {
+            @Override
+            public void onThreatDeleteClick(ThreatResult threat) {
+                // One-tap delete button on the row: a lightweight yes/no
+                // confirmation (not the full Destroy/Ignore/Ignore-signature
+                // dialog below) since an unconfirmed bare button risks
+                // accidental taps, then reuses the exact same destroy logic.
+                new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(getString(R.string.btn_destroy))
+                    .setMessage(getString(R.string.threat_found_dialog_msg, threat.getAppName(), threat.getRiskScore()))
+                    .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> destroyThreat(threat))
+                    .setNegativeButton(getString(R.string.btn_cancel), null)
+                    .show();
+            }
+
+            @Override
+            public void onThreatClick(ThreatResult threat) {
             new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle(getString(R.string.threat_found_dialog_title))
                 .setMessage(getString(R.string.threat_found_dialog_msg, threat.getAppName(), threat.getRiskScore()))
-                .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> {
-                    String path = threat.getApkPath();
-
-                    // CASE 1: a standalone file (loose APK or generic file) not
-                    // actually installed as an app — delete it directly instead
-                    // of firing ACTION_UNINSTALL, which would silently do
-                    // nothing for a non-package path.
-                    if (threat.isStandaloneFile() && path != null) {
-                        File file = new File(path);
-                        if (file.exists() && file.delete()) {
-                            Toast.makeText(getContext(), getString(R.string.threat_destroyed), Toast.LENGTH_LONG).show();
-                            // Write to the history log
-                            ThreatLogger.logThreat(getContext(), threat.getPackageName(), threat.getAppName(), getString(R.string.file_deleted_safe));
-                            // Remove it from the on-screen list immediately
-                            foundThreats.remove(threat);
-                            threatAdapter.notifyDataSetChanged();
-                            tvThreats.setText(String.valueOf(foundThreats.size()));
-                            if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
-                        } else {
-                            Toast.makeText(getContext(), getString(R.string.file_delete_failed), Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        // CASE 2: an app already INSTALLED on this phone
-                        boolean isZeroTrustUnknown = threat.getThreatType() == ThreatResult.ThreatType.UNKNOWN
-                            && com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext())
-                            && com.hydradragon.antivirus.engine.AskSignatureOnRemove.isEnabled(requireContext());
-                        if (isZeroTrustUnknown) {
-                            new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                                .setTitle(getString(R.string.gen_sig_on_remove_title))
-                                .setMessage(getString(R.string.gen_sig_on_remove_msg, threat.getAppName()))
-                                .setPositiveButton(getString(R.string.gen_sig_on_remove_yes), (d2, w2) -> {
-                                    boolean generated = guardService != null
-                                        && guardService.getScanEngine().generateRuleForApp(
-                                            threat.getApkPath(), threat.getPackageName());
-                                    Toast.makeText(getContext(), generated
-                                        ? getString(R.string.gen_sig_on_remove_done)
-                                        : getString(R.string.gen_sig_on_remove_failed), Toast.LENGTH_SHORT).show();
-                                    uninstallInstalledThreat(threat);
-                                })
-                                .setNegativeButton(getString(R.string.gen_sig_on_remove_no), (d2, w2) -> uninstallInstalledThreat(threat))
-                                .show();
-                        } else {
-                            uninstallInstalledThreat(threat);
-                        }
-                    }
-                })
+                .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> destroyThreat(threat))
                 .setNegativeButton(getString(R.string.btn_ignore), (dialog, which) -> {
                     // Whitelist this package/file so it is never flagged again.
                     String id = (threat.getPackageName() != null && !threat.getPackageName().isEmpty())
@@ -233,6 +204,7 @@ public class ScanFragment extends Fragment {
                 .setNeutralButton(getString(R.string.btn_ignore_signature), (dialog, which) ->
                     showIgnoreSignatureDialog(threat))
                 .show();
+            }
         });
 
         btnScan.setOnClickListener(v -> {
@@ -253,6 +225,58 @@ public class ScanFragment extends Fragment {
                 tvCurrentApp.setText(getString(R.string.scan_paused));
             }
         });
+    }
+
+    /** Removes a flagged threat right now: deletes it directly if it's a
+     *  standalone file, or uninstalls it (with the same Zero Trust
+     *  ask-for-signature-first detour) if it's an installed app. Shared by
+     *  the row-tap "SMART REMOVAL" dialog's Destroy button and the per-item
+     *  delete button's confirmation. */
+    private void destroyThreat(ThreatResult threat) {
+        String path = threat.getApkPath();
+
+        // CASE 1: a standalone file (loose APK or generic file) not
+        // actually installed as an app — delete it directly instead
+        // of firing ACTION_UNINSTALL, which would silently do
+        // nothing for a non-package path.
+        if (threat.isStandaloneFile() && path != null) {
+            File file = new File(path);
+            if (file.exists() && file.delete()) {
+                Toast.makeText(getContext(), getString(R.string.threat_destroyed), Toast.LENGTH_LONG).show();
+                // Write to the history log
+                ThreatLogger.logThreat(getContext(), threat.getPackageName(), threat.getAppName(), getString(R.string.file_deleted_safe));
+                // Remove it from the on-screen list immediately
+                foundThreats.remove(threat);
+                threatAdapter.notifyDataSetChanged();
+                tvThreats.setText(String.valueOf(foundThreats.size()));
+                if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
+            } else {
+                Toast.makeText(getContext(), getString(R.string.file_delete_failed), Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            // CASE 2: an app already INSTALLED on this phone
+            boolean isZeroTrustUnknown = threat.getThreatType() == ThreatResult.ThreatType.UNKNOWN
+                && com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext())
+                && com.hydradragon.antivirus.engine.AskSignatureOnRemove.isEnabled(requireContext());
+            if (isZeroTrustUnknown) {
+                new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(getString(R.string.gen_sig_on_remove_title))
+                    .setMessage(getString(R.string.gen_sig_on_remove_msg, threat.getAppName()))
+                    .setPositiveButton(getString(R.string.gen_sig_on_remove_yes), (d2, w2) -> {
+                        boolean generated = guardService != null
+                            && guardService.getScanEngine().generateRuleForApp(
+                                threat.getApkPath(), threat.getPackageName());
+                        Toast.makeText(getContext(), generated
+                            ? getString(R.string.gen_sig_on_remove_done)
+                            : getString(R.string.gen_sig_on_remove_failed), Toast.LENGTH_SHORT).show();
+                        uninstallInstalledThreat(threat);
+                    })
+                    .setNegativeButton(getString(R.string.gen_sig_on_remove_no), (d2, w2) -> uninstallInstalledThreat(threat))
+                    .show();
+            } else {
+                uninstallInstalledThreat(threat);
+            }
+        }
     }
 
     /** Lets the user pick which of THIS threat's specific detection/signature
