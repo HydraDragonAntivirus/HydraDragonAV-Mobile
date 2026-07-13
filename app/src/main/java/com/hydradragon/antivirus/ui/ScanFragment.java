@@ -604,6 +604,14 @@ public class ScanFragment extends Fragment {
                     btnScan.setText(getString(R.string.rescan));
                     btnScan.setEnabled(true);
                     btnPauseResume.setVisibility(View.INVISIBLE);
+                    // Otherwise the last file name and progress bar position
+                    // from the final onProgress() tick stay frozen on screen
+                    // forever after the scan actually finishes.
+                    tvCurrentApp.setText("");
+                    if (progressBar.getMax() > 0) progressBar.setProgress(progressBar.getMax());
+                    lastProgressCurrent = 0;
+                    lastProgressTotal = 0;
+                    lastProgressName = "";
                     long secs = result.getScanDurationMs() / 1000;
                     long millis = result.getScanDurationMs() % 1000;
                     String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
