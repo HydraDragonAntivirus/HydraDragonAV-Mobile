@@ -612,6 +612,17 @@ public class ScanFragment extends Fragment {
                     lastProgressCurrent = 0;
                     lastProgressTotal = 0;
                     lastProgressName = "";
+                    // Sync the threat list with the actual scan result —
+                    // during scanning, onThreatFound() populates foundThreats,
+                    // but the final authoritative list lives in result.getThreats().
+                    // Without this, stale entries from a prior scan (e.g. when
+                    // attaching to a mid-flight background scan that never ran
+                    // startScan()'s clear) or threats missed by onThreatFound()
+                    // permanently corrupt what the RecyclerView shows.
+                    foundThreats.clear();
+                    foundThreats.addAll(result.getThreats());
+                    threatAdapter.notifyDataSetChanged();
+                    tvThreats.setText(String.valueOf(foundThreats.size()));
                     long secs = result.getScanDurationMs() / 1000;
                     long millis = result.getScanDurationMs() % 1000;
                     String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
@@ -620,6 +631,7 @@ public class ScanFragment extends Fragment {
                         tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFFFFAA00);
                         tvCurrentApp.setText(lastScanStatus);
+                        tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
                     } else if (result.isClean()) {
                         lastScanStatus = getString(R.string.scan_clean_system) + " (" + duration + ")";
                         tvScanStatus.setText(lastScanStatus);
@@ -629,7 +641,7 @@ public class ScanFragment extends Fragment {
                         lastScanStatus = getString(R.string.threats_found_count, foundThreats.size()) + " (" + duration + ")";
                         tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFFFF0040);
-                        if (foundThreats.size() > 0) tvThreatLabel.setVisibility(View.VISIBLE);
+                        tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
                     }
                 });
             }
@@ -713,6 +725,14 @@ public class ScanFragment extends Fragment {
                             attachedToBackground = true;
                             isScanning = true;
                             hasScanned = true;
+                            // A background scan that's already in progress
+                            // started without our startScan(), so foundThreats
+                            // still holds stale results from the previous
+                            // user-initiated scan — clear it now.
+                            foundThreats.clear();
+                            threatAdapter.notifyDataSetChanged();
+                            tvThreats.setText("0");
+                            tvThreatLabel.setVisibility(View.GONE);
                             btnScan.setText(getString(R.string.scan_stop));
                             btnScan.setEnabled(true);
                             btnPauseResume.setVisibility(View.VISIBLE);
