@@ -788,7 +788,19 @@ public class ScanEngine {
      */
     private boolean scanGenericFile(java.io.File file, List<ThreatResult> threats) {
         try {
-            if (!NativeScanner.isReady()) return true;
+            if (!NativeScanner.isReady()) {
+                // Engine may still be loading its signature DBs in the
+                // background (up to ~70s, see NativeScanner.init) — wait for
+                // it instead of silently reporting "clean" (false negative,
+                // e.g. EICAR going undetected on slower real devices).
+                Log.i(TAG, "scanGenericFile: native engine not ready yet, waiting for "
+                    + file.getAbsolutePath());
+                if (!NativeScanner.waitUntilReady(90_000)) {
+                    Log.w(TAG, "scanGenericFile: native engine still not ready after wait, "
+                        + "skipping " + file.getAbsolutePath());
+                    return true;
+                }
+            }
             if (isOwnAppFile(file)) return true;
             if (!MaxScanFileSize.isWithinLimit(context, file)) {
                 Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + file.getAbsolutePath());

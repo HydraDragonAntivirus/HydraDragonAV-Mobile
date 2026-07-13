@@ -526,4 +526,33 @@ public final class NativeScanner {
         return LIB_LOADED && nativeIsReady();
     }
 
+    /**
+     * Block the calling thread (never the UI thread — callers must run this
+     * off the main thread) until the native engine finishes loading its
+     * signature databases, or until {@code timeoutMs} elapses. On a slow
+     * device the ~70s background load (see {@link #init}) can still be
+     * running when the user scans a file seconds after launch; without this
+     * wait {@code scanGenericFile} used to silently report "clean" instead
+     * of actually scanning (false negative — e.g. EICAR going undetected).
+     *
+     * @return true if the engine became ready within the timeout, false if
+     *         it timed out (or the library never loaded at all).
+     */
+    public static boolean waitUntilReady(long timeoutMs) {
+        if (!LIB_LOADED) return false;
+        long deadline = android.os.SystemClock.elapsedRealtime() + timeoutMs;
+        while (!isReady()) {
+            if (android.os.SystemClock.elapsedRealtime() >= deadline) {
+                return false;
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
