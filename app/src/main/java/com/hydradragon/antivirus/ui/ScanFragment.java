@@ -67,6 +67,8 @@ public class ScanFragment extends Fragment {
     private static int lastProgressTotal = 0;
     private static String lastProgressName = "";
 
+    private static final String TAG = "HydraDragon-Scan";
+
     private ThreatAdapter threatAdapter;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
@@ -485,8 +487,10 @@ public class ScanFragment extends Fragment {
 
 
     private void startScan(boolean isFullScan) {
-        if (!serviceBound || guardService == null) return;
+        Log.d(TAG, "startScan: isFullScan=" + isFullScan);
+        if (!serviceBound || guardService == null) { Log.w(TAG, "startScan: service not bound"); return; }
         if (guardService.isEngineLoading()) {
+            Log.w(TAG, "startScan: engine still loading");
             Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
             return;
         }
@@ -520,10 +524,12 @@ public class ScanFragment extends Fragment {
         tvThreatLabel.setVisibility(View.GONE);
 
         attachScanCallback();
+        Log.d(TAG, "startScan: calling scanAllApps(isFullScan=" + isFullScan + ")");
         if (guardService.getScanEngine() == null || !guardService.getScanEngine().scanAllApps(isFullScan)) {
             // Lost the race to a background scan — undo the optimistic UI
             // state instead of leaving this screen stuck on "SCANNING..."
             // forever with nothing to ever complete it.
+            Log.w(TAG, "startScan: scanAllApps returned false (race lost to background scan)");
             isScanning = false;
             stopScannerAnimation();
             btnScan.setText(getString(R.string.rescan));
@@ -534,15 +540,21 @@ public class ScanFragment extends Fragment {
 
         // Surface the native (Rust) engine status so a silent init failure
         // (clamav DB / model / .yrc) is visible without adb.
+        String engineStatus = com.hydradragon.antivirus.engine.NativeScanner.status();
+        Log.d(TAG, "Scan started successfully. Engine status: " + engineStatus);
         android.widget.Toast.makeText(getContext(),
-            getString(R.string.engine_status_format, com.hydradragon.antivirus.engine.NativeScanner.status()),
+            getString(R.string.engine_status_format, engineStatus),
             android.widget.Toast.LENGTH_LONG).show();
     }
 
     /** Stop button: request the engine to abort. The in-flight scan ends at its
      *  next file/app boundary and fires onScanComplete with what was found. */
     private void stopScan() {
-        if (!serviceBound || guardService == null || guardService.getScanEngine() == null) return;
+        Log.d(TAG, "stopScan: user requested cancel");
+        if (!serviceBound || guardService == null || guardService.getScanEngine() == null) {
+            Log.w(TAG, "stopScan: service not available");
+            return;
+        }
         guardService.getScanEngine().cancelScan();
         btnScan.setText(getString(R.string.scan_stopping));
         btnScan.setEnabled(false);
@@ -564,6 +576,9 @@ public class ScanFragment extends Fragment {
                 lastProgressTotal = total;
                 lastProgressName = packageName != null ? packageName : "";
                 lastScannedCount = current;
+                if (current % 50 == 0 || current == total || packageName != null) {
+                    Log.d(TAG, "onProgress: " + current + "/" + total + " — " + packageName);
+                }
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() -> {
                     progressBar.setMax(total);
@@ -576,6 +591,13 @@ public class ScanFragment extends Fragment {
 
             @Override
             public void onThreatFound(ThreatResult threat) {
+                Log.w(TAG, "onThreatFound: " + threat.getAppName()
+                    + " pkg=" + threat.getPackageName()
+                    + " path=" + threat.getApkPath()
+                    + " type=" + threat.getThreatType()
+                    + " risk=" + threat.getRiskScore()
+                    + " reasons=" + threat.getReasons()
+                    + " standalone=" + threat.isStandaloneFile());
                 if (getActivity() == null) return;
                 if (!threat.isThreat()) return;
                 getActivity().runOnUiThread(() -> {
@@ -592,12 +614,18 @@ public class ScanFragment extends Fragment {
 
             @Override
             public void onScanComplete(ScanResult result) {
+                Log.d(TAG, "onScanComplete: totalScanned=" + result.getTotalScanned()
+                    + " threatsFound=" + result.getThreatsFound()
+                    + " durationMs=" + result.getScanDurationMs()
+                    + " clean=" + result.isClean());
                 if (getActivity() == null) {
                     isScanning = false;
+                    Log.d(TAG, "onScanComplete: fragment detached, flag cleared");
                     return;
                 }
                 boolean wasCancelled = serviceBound && guardService != null
                     && guardService.getScanEngine().isCancelled();
+                Log.d(TAG, "onScanComplete: wasCancelled=" + wasCancelled);
                 getActivity().runOnUiThread(() -> {
                     isScanning = false;
                     stopScannerAnimation();
@@ -648,6 +676,7 @@ public class ScanFragment extends Fragment {
 
             @Override
             public void onError(String error) {
+                Log.e(TAG, "onError: " + error);
                 // Same fix as onScanComplete just above: clear the static flag
                 // even if the fragment is gone, or a background/engine error
                 // firing while this screen isn't visible leaves isScanning
@@ -722,6 +751,7 @@ public class ScanFragment extends Fragment {
                         // Background scan in progress — attach callback to show
                         // live progress (current file, scanned count, bar).
                         if (!attachedToBackground) {
+                            Log.d(TAG, "statusPollCheck: attaching to in-flight background scan");
                             attachedToBackground = true;
                             isScanning = true;
                             hasScanned = true;
@@ -851,7 +881,8 @@ public class ScanFragment extends Fragment {
      *  normal quick/full scan (attachScanCallback + the ScanCallback contract)
      *  since ScanEngine.scanCustomFolder() reports through it identically. */
     private void startCustomFolderScan(File dir) {
-        if (!serviceBound || guardService == null) return;
+        Log.d(TAG, "startCustomFolderScan: dir=" + dir.getAbsolutePath());
+        if (!serviceBound || guardService == null) { Log.w(TAG, "startCustomFolderScan: service not bound"); return; }
         if (guardService.isEngineLoading()) {
             Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
             return;
@@ -877,7 +908,9 @@ public class ScanFragment extends Fragment {
         tvThreatLabel.setVisibility(View.GONE);
 
         attachScanCallback();
+        Log.d(TAG, "startCustomFolderScan: calling scanCustomFolder");
         if (!guardService.getScanEngine().scanCustomFolder(dir)) {
+            Log.w(TAG, "startCustomFolderScan: scanCustomFolder returned false");
             // Same race-free check as startScan() — see its comment.
             isScanning = false;
             stopScannerAnimation();
@@ -888,7 +921,8 @@ public class ScanFragment extends Fragment {
     }
 
 private void scanCustomFile(android.net.Uri uri) {
-        if (!serviceBound || guardService == null) return;
+        Log.d(TAG, "scanCustomFile: uri=" + uri);
+        if (!serviceBound || guardService == null) { Log.w(TAG, "scanCustomFile: service not bound"); return; }
         if (guardService.isEngineLoading()) {
             Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
             return;
@@ -969,6 +1003,8 @@ private void scanCustomFile(android.net.Uri uri) {
 
             try {
                 final java.io.File scanFile = tempFile;
+                Log.d(TAG, "scanCustomFile: running scanSingleFile on " + scanFile.getAbsolutePath()
+                    + " (" + scanFile.length() + " bytes)");
                 final com.hydradragon.antivirus.model.ThreatResult result;
                 com.hydradragon.antivirus.engine.ScanEngine engine = guardService.getScanEngine();
                 if (engine != null) {
@@ -981,6 +1017,7 @@ private void scanCustomFile(android.net.Uri uri) {
                 // static flag first, unconditionally, THEN update views only
                 // if the fragment is still around to show them.
                 isScanning = false;
+                Log.d(TAG, "scanCustomFile: result=" + (result != null ? result.getAppName() + " isThreat=" + result.isThreat() : "null"));
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         stopScannerAnimation();
