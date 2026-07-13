@@ -141,6 +141,15 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="dark_light_mode">🌙 Donker  /  ☀ Licht</string>
     <string name="system">SYSTEEM</string>
     <string name="bloatware_cleaner">🧹 Bloatware-reiniger</string>
+    <string name="reset_settings_btn">Instellingen Resetten</string>
+    <string name="reset_cat_appearance">Uiterlijk (thema, taal)</string>
+    <string name="reset_cat_protection">Bescherming (schakelaars, scanschema)</string>
+    <string name="reset_cat_detection">Detectiecategorieën</string>
+    <string name="reset_cat_behavior">Gedragsdetectie</string>
+    <string name="reset_cat_privacy">Webschild en Privacy</string>
+    <string name="reset_cat_premium">Premiumfuncties</string>
+    <string name="reset_cat_whitelists">Whitelists (genegeerde handtekeningen, sites)</string>
+    <string name="reset_settings_done">Geselecteerde instellingen zijn gereset</string>
     <string name="about">OVER</string>
     <string name="engine_version">Engineversie</string>
     <string name="scanning_bloatware">🔍 Bezig met scannen...</string>

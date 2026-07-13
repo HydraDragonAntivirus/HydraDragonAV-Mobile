@@ -141,6 +141,15 @@
     <string name="dark_light_mode">🌙 โหมดมืด  /  ☀ โหมดสว่าง</string>
     <string name="system">ระบบ</string>
     <string name="bloatware_cleaner">🧹 ตัวล้างบลอทแวร์</string>
+    <string name="reset_settings_btn">รีเซ็ตการตั้งค่า</string>
+    <string name="reset_cat_appearance">รูปลักษณ์ (ธีม, ภาษา)</string>
+    <string name="reset_cat_protection">การป้องกัน (สวิตช์, ตารางสแกน)</string>
+    <string name="reset_cat_detection">หมวดหมู่การตรวจจับ</string>
+    <string name="reset_cat_behavior">การตรวจจับพฤติกรรม</string>
+    <string name="reset_cat_privacy">โล่เว็บและความเป็นส่วนตัว</string>
+    <string name="reset_cat_premium">ฟีเจอร์พรีเมียม</string>
+    <string name="reset_cat_whitelists">รายการที่อนุญาต (ลายเซ็นที่ไม่สนใจ, เว็บไซต์)</string>
+    <string name="reset_settings_done">การตั้งค่าที่เลือกได้รับการรีเซ็ตแล้ว</string>
     <string name="about">เกี่ยวกับ</string>
     <string name="engine_version">เวอร์ชันเอนจิ้น</string>
     <string name="scanning_bloatware">🔍 กำลังสแกน...</string>

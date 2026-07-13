@@ -141,6 +141,15 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="dark_light_mode">🌙 Ciemny  /  ☀ Jasny</string>
     <string name="system">SYSTEM</string>
     <string name="bloatware_cleaner">🧹 Czyszczenie zbędnych aplikacji</string>
+    <string name="reset_settings_btn">Zresetuj Ustawienia</string>
+    <string name="reset_cat_appearance">Wygląd (motyw, język)</string>
+    <string name="reset_cat_protection">Ochrona (przełączniki, harmonogram skanowania)</string>
+    <string name="reset_cat_detection">Kategorie Wykrywania</string>
+    <string name="reset_cat_behavior">Wykrywanie Zachowań</string>
+    <string name="reset_cat_privacy">Tarcza Internetowa i Prywatność</string>
+    <string name="reset_cat_premium">Funkcje Premium</string>
+    <string name="reset_cat_whitelists">Białe Listy (ignorowane sygnatury, strony)</string>
+    <string name="reset_settings_done">Wybrane ustawienia zostały zresetowane</string>
     <string name="about">INFORMACJE</string>
     <string name="engine_version">Wersja silnika</string>
     <string name="scanning_bloatware">🔍 Skanowanie...</string>

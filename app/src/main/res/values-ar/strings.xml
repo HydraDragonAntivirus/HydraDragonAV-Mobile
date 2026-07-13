@@ -141,6 +141,15 @@
     <string name="dark_light_mode">🌙 داكن  /  ☀ فاتح</string>
     <string name="system">النظام</string>
     <string name="bloatware_cleaner">🧹 منظف البرامج غير الضرورية</string>
+    <string name="reset_settings_btn">إعادة ضبط الإعدادات</string>
+    <string name="reset_cat_appearance">المظهر (السمة، اللغة)</string>
+    <string name="reset_cat_protection">الحماية (المفاتيح، جدول الفحص)</string>
+    <string name="reset_cat_detection">فئات الكشف</string>
+    <string name="reset_cat_behavior">كشف السلوك</string>
+    <string name="reset_cat_privacy">درع الويب والخصوصية</string>
+    <string name="reset_cat_premium">الميزات المميزة</string>
+    <string name="reset_cat_whitelists">القوائم البيضاء (التوقيعات المتجاهلة، المواقع)</string>
+    <string name="reset_settings_done">تمت إعادة ضبط الإعدادات المحددة</string>
     <string name="about">حول</string>
     <string name="engine_version">إصدار المحرك</string>
     <string name="scanning_bloatware">🔍 جارٍ الفحص...</string>

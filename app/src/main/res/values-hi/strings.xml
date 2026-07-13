@@ -141,6 +141,15 @@
     <string name="dark_light_mode">🌙 डार्क  /  ☀ लाइट मोड</string>
     <string name="system">सिस्टम</string>
     <string name="bloatware_cleaner">🧹 ब्लोटवेयर क्लीनर</string>
+    <string name="reset_settings_btn">सेटिंग्स रीसेट करें</string>
+    <string name="reset_cat_appearance">दिखावट (थीम, भाषा)</string>
+    <string name="reset_cat_protection">सुरक्षा (टॉगल, स्कैन शेड्यूल)</string>
+    <string name="reset_cat_detection">डिटेक्शन श्रेणियाँ</string>
+    <string name="reset_cat_behavior">व्यवहार डिटेक्शन</string>
+    <string name="reset_cat_privacy">वेब शील्ड और गोपनीयता</string>
+    <string name="reset_cat_premium">प्रीमियम सुविधाएँ</string>
+    <string name="reset_cat_whitelists">व्हाइटलिस्ट (अनदेखे हस्ताक्षर, साइटें)</string>
+    <string name="reset_settings_done">चयनित सेटिंग्स रीसेट कर दी गई हैं</string>
     <string name="about">परिचय</string>
     <string name="engine_version">इंजन वर्शन</string>
     <string name="scanning_bloatware">🔍 स्कैन हो रहा है...</string>

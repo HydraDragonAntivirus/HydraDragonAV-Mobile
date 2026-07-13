@@ -141,6 +141,15 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="dark_light_mode">🌙 Modo Escuro  /  ☀ Modo Claro</string>
     <string name="system">SISTEMA</string>
     <string name="bloatware_cleaner">🧹 Limpador de Bloatware</string>
+    <string name="reset_settings_btn">Redefinir Configurações</string>
+    <string name="reset_cat_appearance">Aparência (tema, idioma)</string>
+    <string name="reset_cat_protection">Proteção (interruptores, agenda de varredura)</string>
+    <string name="reset_cat_detection">Categorias de Detecção</string>
+    <string name="reset_cat_behavior">Detecção de Comportamento</string>
+    <string name="reset_cat_privacy">Escudo Web e Privacidade</string>
+    <string name="reset_cat_premium">Recursos Premium</string>
+    <string name="reset_cat_whitelists">Listas Brancas (assinaturas ignoradas, sites)</string>
+    <string name="reset_settings_done">As configurações selecionadas foram redefinidas</string>
     <string name="about">SOBRE</string>
     <string name="engine_version">Versão do Motor</string>
     <string name="scanning_bloatware">🔍 Verificando...</string>

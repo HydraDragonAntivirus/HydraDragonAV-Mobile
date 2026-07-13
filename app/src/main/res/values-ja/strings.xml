@@ -141,6 +141,15 @@
     <string name="dark_light_mode">🌙 ダーク  /  ☀ ライトモード</string>
     <string name="system">システム</string>
     <string name="bloatware_cleaner">🧹 不要アプリクリーナー</string>
+    <string name="reset_settings_btn">設定をリセット</string>
+    <string name="reset_cat_appearance">外観（テーマ、言語）</string>
+    <string name="reset_cat_protection">保護（スイッチ、スキャンスケジュール）</string>
+    <string name="reset_cat_detection">検出カテゴリ</string>
+    <string name="reset_cat_behavior">行動検出</string>
+    <string name="reset_cat_privacy">ウェブシールドとプライバシー</string>
+    <string name="reset_cat_premium">プレミアム機能</string>
+    <string name="reset_cat_whitelists">ホワイトリスト（無視した署名、サイト）</string>
+    <string name="reset_settings_done">選択した設定がリセットされました</string>
     <string name="about">アプリについて</string>
     <string name="engine_version">エンジンバージョン</string>
     <string name="scanning_bloatware">🔍 スキャン中...</string>

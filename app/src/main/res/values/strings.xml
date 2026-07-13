@@ -153,6 +153,15 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="dark_light_mode">🌙 Dark  /  ☀ Light Mode</string>
     <string name="system">SYSTEM</string>
     <string name="bloatware_cleaner">🧹 Bloatware Cleaner</string>
+    <string name="reset_settings_btn">Reset Settings</string>
+    <string name="reset_cat_appearance">Appearance (theme, language)</string>
+    <string name="reset_cat_protection">Protection (toggles, scan schedule)</string>
+    <string name="reset_cat_detection">Detection Categories</string>
+    <string name="reset_cat_behavior">Behavior Detection</string>
+    <string name="reset_cat_privacy">Web Shield &amp; Privacy</string>
+    <string name="reset_cat_premium">Premium Features</string>
+    <string name="reset_cat_whitelists">Whitelists (ignored signatures, sites)</string>
+    <string name="reset_settings_done">Selected settings have been reset to defaults</string>
     <string name="about">ABOUT</string>
     <string name="engine_version">Engine Version</string>
     <string name="scanning_bloatware">🔍 Scanning...</string>

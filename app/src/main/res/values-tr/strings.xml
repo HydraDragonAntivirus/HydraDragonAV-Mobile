@@ -153,6 +153,15 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="dark_light_mode">🌙 Karanlık  /  ☀ Aydınlık Mod</string>
     <string name="system">SİSTEM</string>
     <string name="bloatware_cleaner">🧹 Bloatware Temizleyici</string>
+    <string name="reset_settings_btn">Ayarları Sıfırla</string>
+    <string name="reset_cat_appearance">Görünüm (tema, dil)</string>
+    <string name="reset_cat_protection">Koruma (anahtarlar, tarama takvimi)</string>
+    <string name="reset_cat_detection">Algılama Kategorileri</string>
+    <string name="reset_cat_behavior">Davranış Algılama</string>
+    <string name="reset_cat_privacy">Web Kalkanı ve Gizlilik</string>
+    <string name="reset_cat_premium">Premium Özellikler</string>
+    <string name="reset_cat_whitelists">Beyaz Listeler (yok sayılan imzalar, siteler)</string>
+    <string name="reset_settings_done">Seçilen ayarlar varsayılana sıfırlandı</string>
     <string name="about">HAKKINDA</string>
     <string name="engine_version">Engine Sürümü</string>
     <string name="scanning_bloatware">🔍 Taranıyor...</string>

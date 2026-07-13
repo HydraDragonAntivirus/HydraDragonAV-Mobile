@@ -141,6 +141,15 @@
     <string name="dark_light_mode">🌙 Темний  /  ☀ Світлий режим</string>
     <string name="system">СИСТЕМА</string>
     <string name="bloatware_cleaner">🧹 Очищення від зайвих додатків</string>
+    <string name="reset_settings_btn">Скинути налаштування</string>
+    <string name="reset_cat_appearance">Зовнішній вигляд (тема, мова)</string>
+    <string name="reset_cat_protection">Захист (перемикачі, розклад сканування)</string>
+    <string name="reset_cat_detection">Категорії виявлення</string>
+    <string name="reset_cat_behavior">Виявлення поведінки</string>
+    <string name="reset_cat_privacy">Веб-щит і конфіденційність</string>
+    <string name="reset_cat_premium">Преміум-функції</string>
+    <string name="reset_cat_whitelists">Білі списки (ігноровані сигнатури, сайти)</string>
+    <string name="reset_settings_done">Вибрані налаштування скинуто</string>
     <string name="about">ПРО ДОДАТОК</string>
     <string name="engine_version">Версія рушія</string>
     <string name="scanning_bloatware">🔍 Сканування...</string>

@@ -393,9 +393,91 @@ public class SettingsFragment extends Fragment {
 
         addHeader(getString(R.string.system));
         addBtn(getString(R.string.bloatware_cleaner), color(R.color.neon_cyan), v -> runCleanup());
+        addBtn("⟲ " + getString(R.string.reset_settings_btn), 0xFFFF0040, v -> confirmResetSettings());
 
         addHeader(getString(R.string.about));
         addAbout();
+    }
+
+    // ─── RESET SETTINGS ─────────────────────────────────────────────
+    /** One row of the category picker: a label + the raw hydra_prefs keys that
+     *  category owns. Reset removes those keys (not put-defaults) so every
+     *  reader's own getX(ctx, DEFAULT) fallback is what decides the restored
+     *  value — one source of truth instead of duplicating defaults here. */
+    private static final class ResetCategory {
+        final int labelRes;
+        final String[] keys;
+        ResetCategory(int labelRes, String... keys) { this.labelRes = labelRes; this.keys = keys; }
+    }
+    private static final int CAT_APPEARANCE = 0;
+    private static final int CAT_PROTECTION = 1;
+    private static final int CAT_DETECTION = 2;
+    private static final int CAT_BEHAVIOR = 3;
+    private static final int CAT_PRIVACY = 4;
+    private static final int CAT_PREMIUM = 5;
+    private static final int CAT_WHITELISTS = 6;
+    private final ResetCategory[] resetCategories = {
+        new ResetCategory(R.string.reset_cat_appearance, "theme_mode", "dark_mode", "language"),
+        new ResetCategory(R.string.reset_cat_protection, "protection_enabled", "boot_auto_start",
+            "debug_mode_warning_enabled", "root_warning_enabled", "uninstall_warning_enabled",
+            "periodic_scan_enabled", "scan_interval_quick_min", "scan_interval_full_min",
+            "max_scan_file_size_mb"),
+        new ResetCategory(R.string.reset_cat_detection, "detect_cat_signatures", "detect_cat_ml",
+            "detect_cat_pua", "detect_cat_auto_rules", "detect_cat_permissions", "detect_cat_eicar",
+            "detect_cat_url_strings", "detect_cat_rootkit", "detect_cat_native_emulation"),
+        new ResetCategory(R.string.reset_cat_behavior, "ui_spam", "root_exploit", "dynamic_risk",
+            "ransomware", "task_hijack", "screen_security", "file_canary"),
+        new ResetCategory(R.string.reset_cat_privacy, KEY_SHIELD, "web_shield_decided", KEY_SCREEN_OCR,
+            "silent_mode", com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH,
+            "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "skip_image_media_enabled"),
+        new ResetCategory(R.string.reset_cat_premium, "zero_trust_mode", "auto_rule_generation",
+            "ask_signature_on_remove", "auto_delete_malware_enabled"),
+        new ResetCategory(R.string.reset_cat_whitelists, "ignored_signatures", "website_whitelist"),
+    };
+
+    private void confirmResetSettings() {
+        String[] labels = new String[resetCategories.length];
+        boolean[] checked = new boolean[resetCategories.length];
+        for (int i = 0; i < resetCategories.length; i++) {
+            labels[i] = getString(resetCategories[i].labelRes);
+            checked[i] = true;
+        }
+        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.reset_settings_btn))
+            .setMultiChoiceItems(labels, checked, (d, which, isChecked) -> checked[which] = isChecked)
+            .setPositiveButton(getString(R.string.reset_settings_btn), (d, w) -> resetSelectedSettings(checked))
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
+    }
+
+    private void resetSelectedSettings(boolean[] checked) {
+        boolean any = false;
+        for (boolean b : checked) if (b) { any = true; break; }
+        if (!any) return;
+
+        SharedPreferences.Editor editor = prefs().edit();
+        for (int i = 0; i < resetCategories.length; i++) {
+            if (!checked[i]) continue;
+            for (String key : resetCategories[i].keys) editor.remove(key);
+        }
+        editor.apply();
+
+        if (checked[CAT_APPEARANCE]) {
+            AppCompatDelegate.setApplicationLocales(androidx.core.os.LocaleListCompat.getEmptyLocaleList());
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        }
+        if (checked[CAT_PRIVACY]) {
+            disableWebShield();
+            stopScreenCapture();
+        }
+        if (checked[CAT_PROTECTION] || checked[CAT_DETECTION] || checked[CAT_PRIVACY]) {
+            Intent svc = new Intent(requireContext(), com.hydradragon.antivirus.service.GuardService.class);
+            requireContext().stopService(svc);
+            ContextCompat.startForegroundService(requireContext(), svc);
+        }
+        Toast.makeText(getContext(), getString(R.string.reset_settings_done), Toast.LENGTH_LONG).show();
+        if (checked[CAT_APPEARANCE] && getActivity() != null) getActivity().recreate();
+        else buildUI();
     }
 
     // ─── BLOATWARE ─────────────────────────────────────────────────

@@ -141,6 +141,15 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="dark_light_mode">🌙 Gelap  /  ☀ Mode Terang</string>
     <string name="system">SISTEM</string>
     <string name="bloatware_cleaner">🧹 Pembersih Bloatware</string>
+    <string name="reset_settings_btn">Reset Pengaturan</string>
+    <string name="reset_cat_appearance">Tampilan (tema, bahasa)</string>
+    <string name="reset_cat_protection">Perlindungan (sakelar, jadwal pemindaian)</string>
+    <string name="reset_cat_detection">Kategori Deteksi</string>
+    <string name="reset_cat_behavior">Deteksi Perilaku</string>
+    <string name="reset_cat_privacy">Perisai Web &amp; Privasi</string>
+    <string name="reset_cat_premium">Fitur Premium</string>
+    <string name="reset_cat_whitelists">Daftar Putih (tanda tangan yang diabaikan, situs)</string>
+    <string name="reset_settings_done">Pengaturan yang dipilih telah direset</string>
     <string name="about">TENTANG</string>
     <string name="engine_version">Versi Mesin</string>
     <string name="scanning_bloatware">🔍 Memindai...</string>

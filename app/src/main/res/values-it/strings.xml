@@ -141,6 +141,15 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="dark_light_mode">🌙 Scuro  /  ☀ Chiaro</string>
     <string name="system">SISTEMA</string>
     <string name="bloatware_cleaner">🧹 Pulitore Bloatware</string>
+    <string name="reset_settings_btn">Ripristina Impostazioni</string>
+    <string name="reset_cat_appearance">Aspetto (tema, lingua)</string>
+    <string name="reset_cat_protection">Protezione (interruttori, pianificazione scansioni)</string>
+    <string name="reset_cat_detection">Categorie di Rilevamento</string>
+    <string name="reset_cat_behavior">Rilevamento Comportamentale</string>
+    <string name="reset_cat_privacy">Scudo Web e Privacy</string>
+    <string name="reset_cat_premium">Funzioni Premium</string>
+    <string name="reset_cat_whitelists">Liste Bianche (firme ignorate, siti)</string>
+    <string name="reset_settings_done">Le impostazioni selezionate sono state ripristinate</string>
     <string name="about">INFORMAZIONI</string>
     <string name="engine_version">Versione motore</string>
     <string name="scanning_bloatware">🔍 Scansione in corso...</string>

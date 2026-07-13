@@ -141,6 +141,15 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="dark_light_mode">🌙 Chế độ Tối  /  ☀ Chế độ Sáng</string>
     <string name="system">HỆ THỐNG</string>
     <string name="bloatware_cleaner">🧹 Dọn dẹp Bloatware</string>
+    <string name="reset_settings_btn">Đặt lại Cài đặt</string>
+    <string name="reset_cat_appearance">Giao diện (chủ đề, ngôn ngữ)</string>
+    <string name="reset_cat_protection">Bảo vệ (công tắc, lịch quét)</string>
+    <string name="reset_cat_detection">Danh mục Phát hiện</string>
+    <string name="reset_cat_behavior">Phát hiện Hành vi</string>
+    <string name="reset_cat_privacy">Lá chắn Web &amp; Quyền riêng tư</string>
+    <string name="reset_cat_premium">Tính năng Cao cấp</string>
+    <string name="reset_cat_whitelists">Danh sách Trắng (chữ ký bị bỏ qua, trang web)</string>
+    <string name="reset_settings_done">Các cài đặt đã chọn đã được đặt lại</string>
     <string name="about">GIỚI THIỆU</string>
     <string name="engine_version">Phiên bản Công cụ</string>
     <string name="scanning_bloatware">🔍 Đang quét...</string>

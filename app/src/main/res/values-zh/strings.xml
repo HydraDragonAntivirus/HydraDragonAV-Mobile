@@ -141,6 +141,15 @@
     <string name="dark_light_mode">🌙 深色  /  ☀ 浅色模式</string>
     <string name="system">系统</string>
     <string name="bloatware_cleaner">🧹 垃圾软件清理</string>
+    <string name="reset_settings_btn">重置设置</string>
+    <string name="reset_cat_appearance">外观（主题、语言）</string>
+    <string name="reset_cat_protection">防护（开关、扫描计划）</string>
+    <string name="reset_cat_detection">检测类别</string>
+    <string name="reset_cat_behavior">行为检测</string>
+    <string name="reset_cat_privacy">网络防护盾与隐私</string>
+    <string name="reset_cat_premium">高级功能</string>
+    <string name="reset_cat_whitelists">白名单（忽略的签名、网站）</string>
+    <string name="reset_settings_done">所选设置已重置</string>
     <string name="about">关于</string>
     <string name="engine_version">引擎版本</string>
     <string name="scanning_bloatware">🔍 扫描中...</string>

@@ -141,6 +141,15 @@ Puntuación de riesgo: %2$d/100
     <string name="dark_light_mode">🌙 Modo Oscuro  /  ☀ Modo Claro</string>
     <string name="system">SISTEMA</string>
     <string name="bloatware_cleaner">🧹 Limpiador de Bloatware</string>
+    <string name="reset_settings_btn">Restablecer Ajustes</string>
+    <string name="reset_cat_appearance">Apariencia (tema, idioma)</string>
+    <string name="reset_cat_protection">Protección (interruptores, calendario de escaneo)</string>
+    <string name="reset_cat_detection">Categorías de Detección</string>
+    <string name="reset_cat_behavior">Detección de Comportamiento</string>
+    <string name="reset_cat_privacy">Escudo Web y Privacidad</string>
+    <string name="reset_cat_premium">Funciones Premium</string>
+    <string name="reset_cat_whitelists">Listas Blancas (firmas ignoradas, sitios)</string>
+    <string name="reset_settings_done">Los ajustes seleccionados se han restablecido</string>
     <string name="about">ACERCA DE</string>
     <string name="engine_version">Versión del Motor</string>
     <string name="scanning_bloatware">🔍 Escaneando...</string>

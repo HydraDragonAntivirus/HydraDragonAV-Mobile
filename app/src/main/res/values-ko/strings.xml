@@ -141,6 +141,15 @@
     <string name="dark_light_mode">🌙 다크  /  ☀ 라이트 모드</string>
     <string name="system">시스템</string>
     <string name="bloatware_cleaner">🧹 블로트웨어 클리너</string>
+    <string name="reset_settings_btn">설정 초기화</string>
+    <string name="reset_cat_appearance">외관 (테마, 언어)</string>
+    <string name="reset_cat_protection">보호 (스위치, 검사 일정)</string>
+    <string name="reset_cat_detection">탐지 카테고리</string>
+    <string name="reset_cat_behavior">행동 탐지</string>
+    <string name="reset_cat_privacy">웹 실드 및 개인정보 보호</string>
+    <string name="reset_cat_premium">프리미엄 기능</string>
+    <string name="reset_cat_whitelists">화이트리스트 (무시된 서명, 사이트)</string>
+    <string name="reset_settings_done">선택한 설정이 초기화되었습니다</string>
     <string name="about">정보</string>
     <string name="engine_version">엔진 버전</string>
     <string name="scanning_bloatware">🔍 스캔 중...</string>

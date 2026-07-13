@@ -141,6 +141,15 @@
     <string name="dark_light_mode">🌙 حالت تیره  /  ☀ حالت روشن</string>
     <string name="system">سیستم</string>
     <string name="bloatware_cleaner">🧹 پاک‌کننده Bloatware</string>
+    <string name="reset_settings_btn">بازنشانی تنظیمات</string>
+    <string name="reset_cat_appearance">ظاهر (تم، زبان)</string>
+    <string name="reset_cat_protection">محافظت (کلیدها، زمان‌بندی اسکن)</string>
+    <string name="reset_cat_detection">دسته‌های تشخیص</string>
+    <string name="reset_cat_behavior">تشخیص رفتار</string>
+    <string name="reset_cat_privacy">سپر وب و حریم خصوصی</string>
+    <string name="reset_cat_premium">ویژگی‌های ویژه</string>
+    <string name="reset_cat_whitelists">لیست‌های سفید (امضاهای نادیده‌گرفته‌شده، سایت‌ها)</string>
+    <string name="reset_settings_done">تنظیمات انتخاب‌شده بازنشانی شدند</string>
     <string name="about">درباره</string>
     <string name="engine_version">نسخه موتور</string>
     <string name="scanning_bloatware">🔍 در حال اسکن...</string>

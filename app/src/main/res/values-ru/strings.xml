@@ -141,6 +141,15 @@
     <string name="dark_light_mode">🌙 Тёмный  /  ☀ Светлый режим</string>
     <string name="system">СИСТЕМА</string>
     <string name="bloatware_cleaner">🧹 Очистка от лишних программ</string>
+    <string name="reset_settings_btn">Сбросить настройки</string>
+    <string name="reset_cat_appearance">Внешний вид (тема, язык)</string>
+    <string name="reset_cat_protection">Защита (переключатели, расписание сканирования)</string>
+    <string name="reset_cat_detection">Категории обнаружения</string>
+    <string name="reset_cat_behavior">Поведенческое обнаружение</string>
+    <string name="reset_cat_privacy">Веб-щит и конфиденциальность</string>
+    <string name="reset_cat_premium">Премиум-функции</string>
+    <string name="reset_cat_whitelists">Белые списки (игнорируемые сигнатуры, сайты)</string>
+    <string name="reset_settings_done">Выбранные настройки сброшены</string>
     <string name="about">О ПРИЛОЖЕНИИ</string>
     <string name="engine_version">Версия движка</string>
     <string name="scanning_bloatware">🔍 Сканирование...</string>
