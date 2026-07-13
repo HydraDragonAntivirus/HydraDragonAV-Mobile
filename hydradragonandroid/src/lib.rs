@@ -1330,6 +1330,11 @@ fn rescan_buffers_parallel(
                     if let Ok(mut t) = timing.lock() {
                         t.accumulate(local_timing);
                     }
+                } else {
+                    android_log(&format!(
+                        "rescan_buffers_parallel: worker PANIC on {path}: {}",
+                        last_panic()
+                    ));
                 }
                 // A panicking worker just contributes nothing further — its
                 // in-flight buffer's detections are lost, everyone else's stand.
@@ -2753,6 +2758,10 @@ fn collect_buffers(
                 // they don't loop forever waiting for a count that will
                 // never reach zero.
                 if result.is_err() {
+                    android_log(&format!(
+                        "collect_buffers: worker PANIC on {path}, aborting remaining extraction: {}",
+                        last_panic()
+                    ));
                     capped.store(true, AtomOrdering::Release);
                 }
             });
