@@ -1266,14 +1266,13 @@ fn rescan_buffers_parallel(
                         } else {
                             format!("{path}#extract[{i}]")
                         };
-                        let ctype: Option<&'static str> = b.container_type;
                         // yara-x has a known panic (Option::unwrap() on None
                         // in its WASM string module) on certain buffer
                         // content; isolate each scan call so one bad buffer
                         // only loses ITS OWN scan, not this worker's whole
                         // remaining queue.
                         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            clamav.scan_bytes_named_with_breakdown(&b.data, &name, ctype, opts, module_meta)
+                            clamav.scan_bytes_named_with_breakdown(&b.data, &name, opts, module_meta)
                         })) {
                             Ok((matches, bt)) => {
                                 for m in matches {
@@ -1297,7 +1296,6 @@ fn rescan_buffers_parallel(
                                 clamav.scan_bytes_named_with_breakdown(
                                     ds.text.as_bytes(),
                                     &dname,
-                                    ctype,
                                     opts,
                                     module_meta,
                                 )
@@ -1321,10 +1319,8 @@ fn rescan_buffers_parallel(
                         // buffer's native code revealed at runtime.
                         if let Some(decoded) = &emulated_strings[i] {
                             let ename = format!("{name}#emulated");
-                            // Emulated strings are synthetic — not a real file
-                            // extracted from the archive — so no container_type.
                             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                clamav.scan_bytes_named_with_breakdown(decoded, &ename, None, opts, module_meta)
+                                clamav.scan_bytes_named_with_breakdown(decoded, &ename, opts, module_meta)
                             })) {
                                 Ok((matches, bt)) => {
                                     for m in matches {
@@ -2609,10 +2605,6 @@ fn collect_packages(buffers: &[Buf]) -> Vec<String> {
 struct Buf {
     data: Vec<u8>,
     apk_lineage: Vec<String>,
-    /// ClamAV `CL_TYPE_*` of the archive this buffer was extracted from,
-    /// or `None` for the top-level file. Used to suppress type-specific
-    /// signatures (Target:6 ELF) on legitimate bundled native libraries.
-    container_type: Option<&'static str>,
 }
 
 /// `top_md5` is Java's already-computed MD5 of the whole scanned file, reused for
@@ -2630,28 +2622,6 @@ struct Buf {
 /// workers are already extracting/scanning its children concurrently.
 /// Scan results accumulate in `early_dets` as they arrive, regardless of
 /// whether a match was found.
-/// Map a short format name (as returned by `hydradragonextractor::detect_format`)
-/// to the corresponding ClamAV `CL_TYPE_*` constant. Used to tag extracted
-/// archive children with their parent's container type so type-specific signatures
-/// (e.g. ELF Target:6) can be suppressed on legitimate bundled native libraries.
-fn fmt_to_cl_type(fmt: &str) -> &'static str {
-    match fmt {
-        "zip" => "CL_TYPE_ZIP",
-        "rar" => "CL_TYPE_RAR",
-        "gz" | "gzip" => "CL_TYPE_GZIP",
-        "xz" => "CL_TYPE_XZ",
-        "tar" => "CL_TYPE_TAR",
-        "7z" => "CL_TYPE_7ZIP",
-        "bz2" | "bzip2" => "CL_TYPE_BZIP2",
-        "zst" | "zstd" => "CL_TYPE_ZSTD",
-        "lz4" => "CL_TYPE_LZ4",
-        "br" | "brotli" => "CL_TYPE_BROTLI",
-        "cab" => "CL_TYPE_CAB",
-        "iso" => "CL_TYPE_ISO",
-        _ => "CL_TYPE_ANY",
-    }
-}
-
 /// `module_meta` is passed through so YARA rules that depend on androguard/
 /// hydradragon module metadata detect correctly in the early pass (previously
 /// `&[]` was passed, causing YARA rules with module conditions to never match
@@ -2673,16 +2643,12 @@ fn collect_buffers(
         buf: Vec<u8>,
         depth: usize,
         lineage: Vec<String>,
-        /// ClamAV `CL_TYPE_*` of the archive we were extracted from,
-        /// or `None` at the top level.
-        container_type: Option<&'static str>,
     }
 
     let stack: Mutex<Vec<WorkItem>> = Mutex::new(vec![WorkItem {
         buf: data.to_vec(),
         depth: 0,
         lineage: Vec::new(),
-        container_type: None,
     }]);
     // Termination detection for the shared work stack: counts items that are
     // either sitting in `stack` or actively being processed by some worker.
@@ -2773,7 +2739,6 @@ fn collect_buffers(
                                 } else {
                                     format!("{}#extract[{}]", path, idx)
                                 };
-                                let ctype: Option<&'static str> = item.container_type;
                                 // yara-x has a known panic (Option::unwrap() on
                                 // None in its WASM string module) triggered by
                                 // certain buffer content. Isolated per-buffer so
@@ -2784,7 +2749,7 @@ fn collect_buffers(
                                 let scan_result = std::panic::catch_unwind(
                                     std::panic::AssertUnwindSafe(|| {
                                         clamav.scan_bytes_named_with_breakdown(
-                                            &item.buf, &name, ctype, opts, module_meta,
+                                            &item.buf, &name, opts, module_meta,
                                         )
                                     }),
                                 );
@@ -2815,7 +2780,6 @@ fn collect_buffers(
                             match hydradragonextractor::extract_archive_from_bytes(&item.buf) {
                                 Ok(children) => {
                                     if !children.is_empty() {
-                                        let child_ct = fmt.map(fmt_to_cl_type);
                                         let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
                                         outstanding.fetch_add(children.len(), AtomOrdering::AcqRel);
                                         for child in children {
@@ -2823,7 +2787,6 @@ fn collect_buffers(
                                                 buf: child,
                                                 depth: item.depth + 1,
                                                 lineage: lineage.clone(),
-                                                container_type: child_ct,
                                             });
                                         }
                                     }
@@ -2841,7 +2804,6 @@ fn collect_buffers(
                             og.push(Buf {
                                 data: item.buf,
                                 apk_lineage: lineage,
-                                container_type: item.container_type,
                             });
                         }
 
