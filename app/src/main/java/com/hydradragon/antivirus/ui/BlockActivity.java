@@ -1,18 +1,19 @@
 package com.hydradragon.antivirus.ui;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * Full-screen HTML "site blocked" page shown INSTEAD of a malicious website
  * (and instead of redirecting the user to the antivirus dashboard). Rendered as
  * a local WebView page — nothing from the malicious site is loaded.
  */
-public class BlockActivity extends Activity {
+public class BlockActivity extends AppCompatActivity {
 
     public static final String EXTRA_URL = "url";
     public static final String EXTRA_CAT = "cat";
