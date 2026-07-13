@@ -1266,39 +1266,75 @@ fn rescan_buffers_parallel(
                         } else {
                             format!("{path}#extract[{i}]")
                         };
-                        let (matches, bt) = clamav
-                            .scan_bytes_named_with_breakdown(&b.data, &name, opts, module_meta);
-                        for m in matches {
-                            local_dets.push((m.name, b.apk_lineage.clone()));
+                        // yara-x has a known panic (Option::unwrap() on None
+                        // in its WASM string module) on certain buffer
+                        // content; isolate each scan call so one bad buffer
+                        // only loses ITS OWN scan, not this worker's whole
+                        // remaining queue.
+                        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            clamav.scan_bytes_named_with_breakdown(&b.data, &name, opts, module_meta)
+                        })) {
+                            Ok((matches, bt)) => {
+                                for m in matches {
+                                    local_dets.push((m.name, b.apk_lineage.clone()));
+                                }
+                                local_timing.accumulate(bt);
+                            }
+                            Err(_) => {
+                                android_log(&format!(
+                                    "rescan_buffers_parallel: scan PANIC on {name}, skipping this buffer only: {}",
+                                    last_panic()
+                                ));
+                            }
                         }
-                        local_timing.accumulate(bt);
 
                         // Also scan the DEX's decoded string pool (method/class
                         // names contiguous, no MUTF-8/length-prefix noise).
                         if let Some(ds) = &dex_scans[i] {
                             let dname = format!("{name}#dex");
-                            let (matches, bt) = clamav.scan_bytes_named_with_breakdown(
-                                ds.text.as_bytes(),
-                                &dname,
-                                opts,
-                                module_meta,
-                            );
-                            for m in matches {
-                                local_dets.push((m.name, b.apk_lineage.clone()));
+                            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                clamav.scan_bytes_named_with_breakdown(
+                                    ds.text.as_bytes(),
+                                    &dname,
+                                    opts,
+                                    module_meta,
+                                )
+                            })) {
+                                Ok((matches, bt)) => {
+                                    for m in matches {
+                                        local_dets.push((m.name, b.apk_lineage.clone()));
+                                    }
+                                    local_timing.accumulate(bt);
+                                }
+                                Err(_) => {
+                                    android_log(&format!(
+                                        "rescan_buffers_parallel: scan PANIC on {dname}, skipping this buffer only: {}",
+                                        last_panic()
+                                    ));
+                                }
                             }
-                            local_timing.accumulate(bt);
                         }
 
                         // Also scan whatever new strings emulating this ELF
                         // buffer's native code revealed at runtime.
                         if let Some(decoded) = &emulated_strings[i] {
                             let ename = format!("{name}#emulated");
-                            let (matches, bt) = clamav
-                                .scan_bytes_named_with_breakdown(decoded, &ename, opts, module_meta);
-                            for m in matches {
-                                local_dets.push((m.name, b.apk_lineage.clone()));
+                            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                clamav.scan_bytes_named_with_breakdown(decoded, &ename, opts, module_meta)
+                            })) {
+                                Ok((matches, bt)) => {
+                                    for m in matches {
+                                        local_dets.push((m.name, b.apk_lineage.clone()));
+                                    }
+                                    local_timing.accumulate(bt);
+                                }
+                                Err(_) => {
+                                    android_log(&format!(
+                                        "rescan_buffers_parallel: scan PANIC on {ename}, skipping this buffer only: {}",
+                                        last_panic()
+                                    ));
+                                }
                             }
-                            local_timing.accumulate(bt);
                             for url in extract_and_scan_urls(engine, decoded) {
                                 local_dets.push((url, b.apk_lineage.clone()));
                             }
@@ -2703,17 +2739,38 @@ fn collect_buffers(
                                 } else {
                                     format!("{}#extract[{}]", path, idx)
                                 };
-                                let (matches, _) = clamav.scan_bytes_named_with_breakdown(
-                                    &item.buf, &name, opts, module_meta,
+                                // yara-x has a known panic (Option::unwrap() on
+                                // None in its WASM string module) triggered by
+                                // certain buffer content. Isolated per-buffer so
+                                // one bad buffer only loses ITS OWN scan, not
+                                // every remaining buffer in this APK — the
+                                // outer worker-level catch_unwind used to treat
+                                // this as fatal and abort the whole extraction.
+                                let scan_result = std::panic::catch_unwind(
+                                    std::panic::AssertUnwindSafe(|| {
+                                        clamav.scan_bytes_named_with_breakdown(
+                                            &item.buf, &name, opts, module_meta,
+                                        )
+                                    }),
                                 );
-                                if !matches.is_empty() {
-                                    if let Ok(mut dg) = dets.lock() {
-                                        for m in matches {
-                                            dg.push((m.name, lineage.clone()));
+                                match scan_result {
+                                    Ok((matches, _)) => {
+                                        if !matches.is_empty() {
+                                            if let Ok(mut dg) = dets.lock() {
+                                                for m in matches {
+                                                    dg.push((m.name, lineage.clone()));
+                                                }
+                                                if dg.len() >= max_dets {
+                                                    dets_full.store(true, AtomOrdering::Relaxed);
+                                                }
+                                            }
                                         }
-                                        if dg.len() >= max_dets {
-                                            dets_full.store(true, AtomOrdering::Relaxed);
-                                        }
+                                    }
+                                    Err(_) => {
+                                        android_log(&format!(
+                                            "collect_buffers: scan PANIC on {name}, skipping this buffer only: {}",
+                                            last_panic()
+                                        ));
                                     }
                                 }
                             }
