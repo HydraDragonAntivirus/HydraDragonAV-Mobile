@@ -507,6 +507,7 @@ public class ScanEngine {
         }
         cancelRequested = false;
         pauseRequested = false;
+        apkPkgAnalyzerBroken = false;
         engineTimingMs.clear();
         filesScannedCount.set(0);
         scanExecutor.execute(() -> {
@@ -597,6 +598,7 @@ public class ScanEngine {
         }
         cancelRequested = false;
         pauseRequested = false;
+        apkPkgAnalyzerBroken = false;
         engineTimingMs.clear();
         filesScannedCount.set(0);
         appsScannedBase = 0;
@@ -705,8 +707,13 @@ public class ScanEngine {
      *  Vivo ROMs). Once set, every future call to
      *  {@code PackageManager.getPackageArchiveInfo} would throw
      *  {@code NoClassDefFoundError} anyway, so skip the whole APK analysis path
-     *  and fall through directly to the native engine. */
-    private static boolean apkPkgAnalyzerBroken;
+     *  and fall through directly to the native engine. Reset at the start of
+     *  each full/custom-folder scan (see scanAllApps/scanCustomFolder) — a
+     *  single early Vivo crash used to permanently degrade PackageManager-
+     *  based analysis (permissions/signature/whitelist checks) for every APK
+     *  in every scan for the rest of the process, not just the run that hit
+     *  it; re-probing each scan lets a later successful call recover. */
+    private static volatile boolean apkPkgAnalyzerBroken;
 
     public ThreatResult scanSingleFile(java.io.File file) {
         // scanAllApps/scanCustomFolder reset this at their own start, but this
