@@ -353,6 +353,7 @@ impl Engine {
         &self,
         data: &[u8],
         object_path: &str,
+        container_type: Option<&'static str>,
         options: ScanOptions,
         module_meta: &[(&str, &[u8])],
     ) -> (Vec<ScanMatch>, TimingBreakdown) {
@@ -360,7 +361,7 @@ impl Engine {
             matches: Vec::new(),
         };
         let mut breakdown = TimingBreakdown::default();
-        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown));
+        self.scan_object(data, object_path, container_type, 0, options, module_meta, &mut state, &mut Some(&mut breakdown));
         (state.matches, breakdown)
     }
 
@@ -936,21 +937,28 @@ fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>) -> bool {
     if want == 0 {
         return true;
     }
-    // Prefer the precise `.ftm`-derived type when available (strict typing).
+    // ELF-targeted signatures (Target:6) never apply to files extracted from a
+    // container (APK/ZIP). Native libraries (.so) bundled inside Android APKs
+    // are legitimate ARM/ARM64 ELF files, not standalone ELF malware. Without
+    // this guard, a rule like `Unix.Backdoor.SpawnMole-10044412-1` would fire
+    // on every .so that happens to contain short 4-byte hex patterns that the
+    // rule's subsig matches — because the `.ftm` database also matches
+    // \x7fELF at offset 0 for these extracted children.
+    if ctx.container_type.is_some() && want == 6 {
+        return false;
+    }
+    // File-type detection is driven entirely by the `.ftm` database (daily.ftm
+    // is bundled in the app assets). The built-in magic fallback
+    // (`detect_builtin_target`) is deliberately excluded here so that extracted
+    // native libraries (.so ELF files) inside an APK are not mis-identified as
+    // standalone ELF binaries — the `.ftm` database correctly types them based on
+    // their container context and/or narrower magic entries, preventing
+    // ELF-targeted signatures (Target:6) from firing on legitimate .so bundles.
     if let Some(detected) = ctx.detected_target {
         return want == detected;
     }
-    // Concrete magic-based typing. ClamAV always types the file and only runs a
-    // signature whose Target matches; without this, a type-specific signature
-    // (e.g. a SWF `Target:11` exploit rule) fires on unrelated files (a PE DLL
-    // that merely contains the same strings) — a real false positive. So if the
-    // file is a KNOWN type different from the signature's target, reject it. This
-    // gate applies even in non-strict mode; it only rejects clear cross-type
-    // mismatches, never an indeterminate type (which stays permissive to avoid
-    // false negatives).
-    if let Some(detected) = detect_builtin_target(ctx) {
-        return want == detected;
-    }
+    // No `.ftm` classification available: only permissive heuristics for
+    // HTML (3) and ASCII text (7) apply; all other targets are rejected.
     match want {
         3 => looks_like_html(ctx.data),
         7 => looks_like_ascii_text(ctx.data),
