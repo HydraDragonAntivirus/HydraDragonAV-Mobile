@@ -850,7 +850,8 @@ public class ScanEngine {
             boolean hasEicar = false;
             for (NativeScanner.Verdict.Detection d : live) {
                 if ("ML".equals(d.name)) {
-                    if (DetectionCategories.isEnabled(context, DetectionCategories.ML)) {
+                    if (DetectionCategories.isEnabled(context, DetectionCategories.ML)
+                            && v.jaccard >= 0.55 && v.anomaly >= 0.33) {
                         mlMalicious = true;
                         hasRealThreat = true;
                     }
@@ -885,22 +886,20 @@ public class ScanEngine {
                 }
             }
             // Two-tier dangerous permissions (same as installed-app analysis):
-            // 10+ => certain malware, exactly 9 => suspicious. Calibrated against
-            // Malwarebytes' own permission footprint (contacts, SMS/MMS read+receive,
-            // storage, draw-over-other-apps = 8/36 on this list) — the threshold
-            // sits one above that so a legitimate heavy-permission security app
-            // isn't itself flagged as malware.
+            // 13+ => almost certainly a malware (exceeds even heavy carriers
+            // like Turkcell ≈ 11), exactly 12 => suspicious. Raised from 9/10
+            // so common apps with 9-11 dangerous permissions aren't flagged.
             if (DetectionCategories.isEnabled(context, DetectionCategories.PERMISSIONS)) {
-                if (v.permissions >= 10) {
+                if (v.permissions >= 13) {
                     riskScore = 100;
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                     reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/36)");
-                } else if (v.permissions == 9) {
-                    riskScore = Math.max(riskScore, 30);
+                } else if (v.permissions >= 12) {
+                    riskScore = Math.max(riskScore, 40);
                     if (!hasRealThreat) {
                         b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
                     }
-                    reasons.add("🔐 Suspicious permissions (9/36)");
+                    reasons.add("🔐 Suspicious permissions (" + v.permissions + "/36)");
                 }
             }
             if (mlMalicious) {
@@ -973,17 +972,8 @@ public class ScanEngine {
         if (!NativeScanner.isReady()) return;
         java.util.HashSet<String> seen = new java.util.HashSet<>();
         for (ThreatResult t : threats) if (t.getPackageName() != null) seen.add(t.getPackageName());
-        // Count eligible apps first so progress is meaningful.
-        int eligible = 0;
-        for (ApplicationInfo a : apps) {
-            if (a.sourceDir == null) continue;
-            if ((a.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0) continue;
-            if (a.packageName != null && (a.packageName.equals(context.getPackageName())
-                    || seen.contains(a.packageName)
-                    || photonCache.containsKey(a.packageName))) continue;
-            eligible++;
-        }
-        int scanned = 0;
+        // Use the same continuous counter (appsScannedBase + filesScannedCount)
+        // as scanAllStorageRoots so the progress never resets mid-scan.
         for (ApplicationInfo app : apps) {
             if (cancelRequested) return;
             
@@ -1007,9 +997,9 @@ public class ScanEngine {
                     Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + app.packageName);
                     continue;
                 }
-                scanned++;
+                int n = appsScannedBase + filesScannedCount.incrementAndGet();
                 if (callback != null)
-                    callback.onProgress(scanned, eligible, app.packageName + " [deep]");
+                    callback.onProgress(n, n, app.packageName + " [deep]");
                 long nativeT0 = android.os.SystemClock.elapsedRealtime();
                 NativeScanner.Verdict v = runNativeInterruptible(() ->
                     NativeScanner.scan(app.sourceDir, app.packageName, null, ZeroTrustMode.isEnabled(context)));
@@ -1022,7 +1012,7 @@ public class ScanEngine {
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
                 List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
                 if (cancelRequested) return;
-                if (live.isEmpty()) { reportFileScanned(new java.io.File(app.sourceDir)); continue; }
+                if (live.isEmpty()) continue;
                 ThreatResult.Builder b = new ThreatResult.Builder(
                     app.packageName != null ? app.packageName : app.sourceDir);
                 List<String> reasons = new java.util.ArrayList<>();
@@ -1058,7 +1048,7 @@ public class ScanEngine {
                 }
                 boolean anyEvidence = real || eicar || autoOnly || !reasons.isEmpty();
                 if (cancelRequested) return;
-                if (!anyEvidence) { reportFileScanned(new java.io.File(app.sourceDir)); continue; }
+                if (!anyEvidence) continue;
                 b.setThreatType(real
                     ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
                     : eicar
@@ -1079,7 +1069,6 @@ public class ScanEngine {
                     if (app.packageName != null) seen.add(app.packageName);
                     if (callback != null) callback.onThreatFound(r);
                 }
-                if (!cancelRequested) reportFileScanned(new java.io.File(app.sourceDir));
             } catch (Throwable ignore) { }
         }
     }
@@ -1377,7 +1366,8 @@ public class ScanEngine {
                         boolean hasAutoOnly = false;
                         for (NativeScanner.Verdict.Detection d : live) {
                             if ("ML".equals(d.name)) {
-                                if (DetectionCategories.isEnabled(context, DetectionCategories.ML)) {
+                                if (DetectionCategories.isEnabled(context, DetectionCategories.ML)
+                                        && v.jaccard >= 0.55 && v.anomaly >= 0.33) {
                                     mlMalicious = true; hasRealThreat = true;
                                 }
                                 continue;
@@ -1447,19 +1437,20 @@ public class ScanEngine {
                     // (the full 36-permission "dangerous" set — see lib.rs
                     // DANGEROUS_PERMS: SMS, call/phone, contacts, location, mic,
                     // camera, calendar, sensors, nearby devices, storage, overlay).
-                    // 10+ = almost certainly malware; exactly 9 = suspicious —
-                    // calibrated one above Malwarebytes' own footprint (8/36).
+                    // 13+ = almost certainly malware (exceeds heavy carriers like
+                    // Turkcell ≈ 11); exactly 12 = suspicious. Raised from 9/10
+                    // so common apps with 9-11 dangerous permissions aren't flagged.
                     if (DetectionCategories.isEnabled(context, DetectionCategories.PERMISSIONS)) {
-                        if (v.permissions >= 10) {
+                        if (v.permissions >= 13) {
                             riskScore = 100;
                             builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                             reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/36)");
                             nativeCorroborated = true;
-                        } else if (v.permissions == 9) {
-                            riskScore = Math.max(riskScore, 30);
+                        } else if (v.permissions >= 12) {
+                            riskScore = Math.max(riskScore, 40);
                             if (riskScore < 50) builder.setThreatType(
                                 com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
-                            reasons.add("🔐 Suspicious permissions (9/36)");
+                            reasons.add("🔐 Suspicious permissions (" + v.permissions + "/36)");
                             nativeCorroborated = true;
                         }
                     }
