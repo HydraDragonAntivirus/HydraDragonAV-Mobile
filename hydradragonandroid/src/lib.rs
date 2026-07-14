@@ -210,6 +210,46 @@ static LAST_PANIC: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None
 static SCAN_SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
 const SCAN_SERIAL_MAX_WAIT: std::time::Duration = std::time::Duration::from_secs(5);
 
+/// When true, `run_scan` defers Phase 3 (ClamAV / ML / emulation / TLSH) into
+/// `DEFERRED_QUEUE` and returns immediately with `{"status":"deferred"}`. Java
+/// calls `nativeBeginBatchScan()` before a scan loop and `nativeEndBatchScan()`
+/// after to flush all queued heavy scans in one pass.
+static BATCH_MODE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Holds the precomputed Phase-1+2 data for each file queued in batch mode.
+/// Flushed and cleared by `nativeEndBatchScan`.
+static DEFERRED_QUEUE: OnceLock<std::sync::Mutex<Vec<DeferredItem>>> = OnceLock::new();
+
+/// Returns the deferred queue, initialising it once on first access.
+fn deferred_queue() -> &'static std::sync::Mutex<Vec<DeferredItem>> {
+    DEFERRED_QUEUE.get_or_init(|| std::sync::Mutex::new(Vec::new()))
+}
+
+/// All data needed to run Phase 3 (ClamAV / ML / emulation / TLSH) for one
+/// file that was enqueued during batch mode. Only the non-whitelisted buffers
+/// are stored (skip_heavy==false after Phase 2), so memory usage is bounded
+/// by the size of truly unknown content, not the total APK corpus.
+struct DeferredItem {
+    path: String,
+    zero_trust: bool,
+    /// Non-whitelisted buffers only — skip_heavy is implicitly all-false for these.
+    buffers: Vec<Buf>,
+    /// DEX static-analysis results for each stored buffer (parallel to buffers).
+    dex_scans: Vec<Option<dex_scan::DexScan>>,
+    /// Androguard JSON (manifest + URL sweep), if built.
+    androguard_json: Option<String>,
+    /// Hydradragon/DEX merged meta bytes, if any.
+    hydradragon_meta: Option<Vec<u8>>,
+    /// Zip-bomb detections from the extraction phase.
+    bomb_dets: Vec<(String, String, Vec<String>)>,
+    perm_count: usize,
+    packages: Vec<String>,
+    hashes: Vec<String>,
+    extract_ms: u128,
+    dex_ms: u128,
+}
+
 /// See `SCAN_SERIAL`'s doc comment. Returns `Some(guard)` if the lock was
 /// acquired within the wait budget, `None` if we gave up and the caller
 /// should proceed without it (better than freezing the whole app).
@@ -1139,6 +1179,404 @@ fn scan_apk(
     }
 }
 
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeBeginBatchScan<'local>(
+    _env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+) {
+    BATCH_MODE.store(true, std::sync::atomic::Ordering::Relaxed);
+    if let Ok(mut q) = deferred_queue().lock() {
+        q.clear();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeEndBatchScan<'local>(
+    mut env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+) -> jstring {
+    BATCH_MODE.store(false, std::sync::atomic::Ordering::Relaxed);
+    let items = {
+        let mut q = match deferred_queue().lock() {
+            Ok(g) => g,
+            Err(_) => return env.with_env(|env| env.new_string("[]").map(|s| s.into_raw())).resolve::<LogErrorAndDefault>(),
+        };
+        std::mem::take(&mut *q)
+    };
+
+    let Some(engine_lock) = ENGINE.get() else {
+        return env.with_env(|env| env.new_string("[]").map(|s| s.into_raw())).resolve::<LogErrorAndDefault>();
+    };
+
+    let results = on_big_stack(move || {
+        let guard = match engine_lock.read() {
+            Ok(g) => g,
+            Err(_) => return "[]".to_string(),
+        };
+        let mut verdicts = Vec::new();
+        for item in items {
+            let res = run_deferred_item(&guard, item);
+            verdicts.push(res);
+        }
+        format!("[{}]", verdicts.join(","))
+    });
+
+    env.with_env(|env| {
+        let s = match results {
+            Ok(r) => r,
+            Err(_) => "[]".to_string(),
+        };
+        env.new_string(&s).map(|s| s.into_raw())
+    }).resolve::<LogErrorAndDefault>()
+}
+
+fn run_deferred_item(
+    engine: &Engine,
+    item: DeferredItem,
+) -> String {
+    let path = &item.path;
+    let zero_trust = item.zero_trust;
+    let buffers = item.buffers;
+    let dex_scans = item.dex_scans;
+    let androguard_json = item.androguard_json;
+    let hydradragon_meta = item.hydradragon_meta;
+    let bomb_dets = item.bomb_dets;
+    let perm_count = item.perm_count;
+    let packages = item.packages;
+    let hashes = item.hashes;
+    let extract_ms = item.extract_ms;
+    let dex_ms = item.dex_ms;
+
+    // Phase 3: heavy scans
+    let skip_heavy = vec![false; buffers.len()];
+    
+    // Build module_meta
+    let mut module_meta = Vec::new();
+    if let Some(ref j) = androguard_json {
+        module_meta.push(("androguard", j.as_bytes()));
+    }
+    if let Some(ref h) = hydradragon_meta {
+        if !h.is_empty() {
+            module_meta.push(("hydradragon", h.as_slice()));
+        }
+    }
+
+    // Emulation
+    let emulated: Vec<emulate::EmulationResult>;
+    let emulated_strings: Vec<Option<Vec<u8>>>;
+    let emulate_ms;
+    {
+        const MAX_EMULATED_BUFFERS: usize = 8;
+        let t_emulate = std::time::Instant::now();
+        emulated = if NATIVE_EMULATION_ENABLED.load(Ordering::Relaxed) {
+            let mut seen_hashes = std::collections::HashSet::new();
+            let mut emulated_count = 0usize;
+            buffers
+                .iter()
+                .map(|b| {
+                    if !b.data.starts_with(b"\x7fELF") {
+                        return emulate::EmulationResult::default();
+                    }
+                    if emulated_count >= MAX_EMULATED_BUFFERS {
+                        return emulate::EmulationResult::default();
+                    }
+                    if !seen_hashes.insert(md5_hex(&b.data)) {
+                        return emulate::EmulationResult::default();
+                    }
+                    emulated_count += 1;
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        emulate::emulate(&b.data)
+                    }))
+                    .unwrap_or_default()
+                })
+                .collect()
+        } else {
+            buffers.iter().map(|_| emulate::EmulationResult::default()).collect()
+        };
+        emulated_strings = emulated
+            .iter()
+            .map(|r| {
+                if r.strings.is_empty() {
+                    None
+                } else {
+                    Some(r.strings.join("\n").into_bytes())
+                }
+            })
+            .collect();
+        emulate_ms = t_emulate.elapsed().as_millis();
+    }
+
+    let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
+    let max_dets = 64;
+    let mut yara_dets: Vec<(String, String, Vec<String>)> = match &engine.clamav {
+        Some(clamav) => {
+            let opts = ScanOptions::default();
+            rescan_buffers_parallel(
+                clamav,
+                engine,
+                &buffers,
+                &skip_heavy,
+                &dex_scans,
+                &emulated,
+                &emulated_strings,
+                &module_meta,
+                path,
+                opts,
+                max_dets,
+                &mut scan_timing,
+            )
+        }
+        None => Vec::new(),
+    };
+    let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
+    let mut yara_agg: std::collections::HashMap<String, u128> = std::collections::HashMap::new();
+    for (name, ns) in &scan_timing.yara_per_engine {
+        *yara_agg.entry(name.clone()).or_insert(0) += ns;
+    }
+    let yara_total_ms = (yara_agg.values().sum::<u128>() / 1_000_000) as u128;
+
+    let t_ml = std::time::Instant::now();
+    let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest, ml_lineages) = match &engine.model {
+        Some(model) => {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let mut malicious = false;
+                let mut best_jaccard = 0.0_f32;
+                let mut worst_anomaly = f64::MAX;
+                let mut nearest: Option<String> = None;
+                let mut lineages: Vec<(String, Vec<String>)> = Vec::new();
+                for (i, b) in buffers.iter().enumerate() {
+                    if skip_by_size(&b.data) {
+                        continue;
+                    }
+                    if hydradragonextractor::detect_format(&b.data) != Some("zip") {
+                        continue;
+                    }
+                    if let Some(r) = model.scan(&b.data) {
+                        if r.malicious {
+                            malicious = true;
+                            let obj_path = if i == 0 {
+                                path.to_string()
+                            } else {
+                                match &b.entry_name {
+                                    Some(entry) => format!("{path}!/{entry}"),
+                                    None => format!("{path}#extract[{i}]"),
+                                }
+                            };
+                            lineages.push((obj_path, b.apk_lineage.clone()));
+                        }
+                        if r.best_jaccard > best_jaccard {
+                            best_jaccard = r.best_jaccard;
+                            nearest = r.nearest;
+                        }
+                        if r.anomaly_score < worst_anomaly {
+                            worst_anomaly = r.anomaly_score;
+                        }
+                    }
+                }
+                (malicious, best_jaccard, worst_anomaly, nearest, lineages)
+            })) {
+                Ok(res) => res,
+                Err(_) => {
+                    android_log(&format!("run_scan: ML model scan PANIC on {path}"));
+                    (false, 0.0, f64::MAX, None, Vec::new())
+                }
+            }
+        }
+        None => (false, 0.0, f64::MAX, None, Vec::new()),
+    };
+    let ml_ms = t_ml.elapsed().as_millis();
+
+    let mut detections: Vec<(String, String, Vec<String>)> = bomb_dets;
+    detections.append(&mut yara_dets);
+    for (obj_path, lin) in ml_lineages {
+        detections.push(("ML".to_string(), obj_path, lin));
+    }
+
+    for (i, b) in buffers.iter().enumerate() {
+        if let Some(ds) = &dex_scans[i] {
+            for f in &ds.findings {
+                if dex_scan::is_severe(f.severity) {
+                    let obj_path = if i == 0 {
+                        path.to_string()
+                    } else {
+                        match &b.entry_name {
+                            Some(entry) => format!("{path}!/{entry}"),
+                            None => format!("{path}#extract[{i}]"),
+                        }
+                    };
+                    detections.push((format!("DEX/{:?}: {}", f.severity, f.message), obj_path, b.apk_lineage.clone()));
+                }
+            }
+        }
+    }
+
+    let tlsh_ms = {
+        let t_tlsh = std::time::Instant::now();
+        for (i, b) in buffers.iter().enumerate() {
+            if skip_by_size(&b.data) {
+                continue;
+            }
+            if tlsh_relevant(&b.data) {
+                if let Some(dist) = tlsh_nearest(engine, &b.data) {
+                    let obj_path = if i == 0 {
+                        path.to_string()
+                    } else {
+                        match &b.entry_name {
+                            Some(entry) => format!("{path}!/{entry}"),
+                            None => format!("{path}#extract[{i}]"),
+                        }
+                    };
+                    detections.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
+                }
+            }
+        }
+        t_tlsh.elapsed().as_millis()
+    };
+
+    let mut yara_breakdown = String::new();
+    let mut yara_sorted: Vec<_> = yara_agg.into_iter().collect();
+    yara_sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    for (name, ns) in &yara_sorted {
+        let ms = ns / 1_000_000;
+        if ms > 0 || *ns > 0 {
+            if !yara_breakdown.is_empty() { yara_breakdown.push(' '); }
+            let _ = std::write!(yara_breakdown, "{name}={ms}ms");
+        }
+    }
+
+    let stages = [
+        ("extract", extract_ms),
+        ("dex", dex_ms),
+        ("emulate", emulate_ms),
+        ("clamav", clamav_ms),
+        ("yara", yara_total_ms),
+        ("ml", ml_ms),
+        ("tlsh", tlsh_ms),
+    ];
+    let slowest = stages.iter().max_by_key(|(_, ms)| *ms);
+    let mut breakdown = stages
+        .iter()
+        .map(|(name, ms)| format!("{name}={ms}ms"))
+        .collect::<Vec<_>>()
+        .join(" ");
+    if !yara_breakdown.is_empty() {
+        breakdown.push_str(&format!(" {{{yara_breakdown}}}"));
+    }
+    if let Some((slowest_name, slowest_ms)) = slowest {
+        rust_timing_log!(
+            "{path} :: {breakdown} :: slowest={slowest_name}({slowest_ms}ms)"
+        );
+    }
+
+    let malicious = !detections.is_empty();
+    fn entry_suffix(object_path: &str) -> Option<&str> {
+        object_path.split_once("!/").map(|(_, e)| e)
+    }
+    let scoped_entry_idx: Option<usize> = if detections.is_empty() {
+        None
+    } else {
+        let first = entry_suffix(&detections[0].1);
+        match first {
+            Some(fe) if detections.iter().all(|(_, op, _)| entry_suffix(op) == Some(fe)) => {
+                buffers.iter().position(|b| b.entry_name.as_deref() == Some(fe))
+            }
+            _ => None,
+        }
+    };
+    let file_hash = hashes.first().cloned().unwrap_or_default();
+    let scoped_file_hash: String = match scoped_entry_idx {
+        Some(idx) => md5_hex(&buffers[idx].data),
+        None => file_hash.clone(),
+    };
+    let generated_rule = if malicious || zero_trust {
+        generate_yara_rule(&scoped_file_hash, &packages, &detections, &dex_scans, scoped_entry_idx)
+    } else {
+        None
+    };
+    let generated_rule_json = match &generated_rule {
+        Some(r) => format!("\"{}\"", json_escape(r)),
+        None => "null".to_string(),
+    };
+    let detections_json = detections
+        .iter()
+        .map(|(name, object_path, lineage)| {
+            let hs = lineage
+                .iter()
+                .map(|h| format!("\"{}\"", h))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!("{{\"name\":\"{}\",\"object_path\":\"{}\",\"hashes\":[{}]}}", json_escape(name), json_escape(object_path), hs)
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let nearest_json = match ml_nearest {
+        Some(n) => format!("\"{}\"", json_escape(&n)),
+        None => "null".to_string(),
+    };
+    let packages_json = packages
+        .iter()
+        .map(|p| format!("\"{}\"", json_escape(p)))
+        .collect::<Vec<_>>()
+        .join(",");
+    let hashes_json = hashes
+        .iter()
+        .map(|h| format!("\"{}\"", h))
+        .collect::<Vec<_>>()
+        .join(",");
+
+    let mut entry_md5_pairs: Vec<String> = Vec::new();
+    let mut entry_tlsh_pairs: Vec<String> = Vec::new();
+    for (i, b) in buffers.iter().enumerate() {
+        if i == 0 { continue; }
+        let Some(ref entry) = b.entry_name else { continue };
+        if entry.is_empty() { continue; }
+        let md5 = md5_hex(&b.data);
+        entry_md5_pairs.push(format!(
+            r#""{}":"{}""#,
+            json_escape(entry),
+            md5,
+        ));
+        let tlsh = tlsh_rs::hash_bytes(&b.data)
+            .ok()
+            .map(|d| d.to_string())
+            .unwrap_or_default();
+        if !tlsh.is_empty() {
+            entry_tlsh_pairs.push(format!(
+                r#""{}":"{}""#,
+                json_escape(entry),
+                tlsh,
+            ));
+        }
+        if entry_md5_pairs.len() >= 1024 { break; }
+    }
+    let entry_md5s_json = if entry_md5_pairs.is_empty() {
+        "{}".to_string()
+    } else {
+        format!("{{{}}}", entry_md5_pairs.join(","))
+    };
+    let entry_tlshs_json = if entry_tlsh_pairs.is_empty() {
+        "{}".to_string()
+    } else {
+        format!("{{{}}}", entry_tlsh_pairs.join(","))
+    };
+
+    let mut file_tlsh = String::new();
+    if !buffers.is_empty() && buffers[0].entry_name.is_none() {
+        file_tlsh = tlsh_rs::hash_bytes(&buffers[0].data)
+            .ok()
+            .map(|d| d.to_string())
+            .unwrap_or_default();
+    }
+    let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
+
+    let hits_json = "";
+
+    format!(
+        r#"{{"path":"{}","malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}}}"#,
+        json_escape(path), malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json
+    )
+}
+
 /// `void nativeSetTlshThreshold(int threshold)` — sets the TLSH similarity
 /// threshold used by `tlsh_nearest` during malware scanning. Applied
 /// immediately; no engine reinit needed. Clamped to 1-200.
@@ -1506,7 +1944,9 @@ fn run_scan(
     // Phase 1: extract ALL buffers first (no scanning during extraction).
     // Whitelist data is collected next, and heavy scans (ClamAV, DEX, emulation,
     // ML, TLSH) only run on buffers not covered by any whitelist.
-    let buffers = collect_buffers(bytes, file_md5, path);
+    // Zip-bomb detections are returned alongside buffers so they are always
+    // surfaced even though scanning is deferred.
+    let (buffers, bomb_dets) = collect_buffers(bytes, file_md5, path);
     let extract_ms = t_extract.elapsed().as_millis();
 
     // MD5 of the whole top-level file (its "main hash") — Java builds a
@@ -1517,6 +1957,9 @@ fn run_scan(
     };
 
     let max_dets = 64;
+    // Phase 2: collect all whitelist data, build skip_heavy, run fast passes
+    // (DEX, permissions, androguard). Heavy passes (ClamAV, ML, emulation,
+    // TLSH) are either run here (non-batch) or queued for batch flush.
     let perm_count;
     let packages;
     let hashes;
@@ -1679,6 +2122,44 @@ fn run_scan(
         emulate_ms = t_emulate.elapsed().as_millis();
     }
 
+    // --- Batch mode: defer Phase 3 ---
+    // When BATCH_MODE is active, store only the non-whitelisted buffers (and
+    // their precomputed Phase-2 data) in the DEFERRED_QUEUE and return a
+    // lightweight sentinel. Java will call nativeEndBatchScan() after all files
+    // have been collected to run ClamAV / ML / emulation / TLSH in one pass.
+    if BATCH_MODE.load(std::sync::atomic::Ordering::Relaxed) {
+        // Keep only the buffers that need heavy scanning.
+        let (pending_buffers, pending_dex): (Vec<Buf>, Vec<Option<dex_scan::DexScan>>) = buffers
+            .into_iter()
+            .zip(dex_scans.into_iter())
+            .enumerate()
+            .filter(|(i, _)| !skip_heavy[*i])
+            .map(|(_, bd)| bd)
+            .unzip();
+
+        let item = DeferredItem {
+            path: path.to_string(),
+            zero_trust,
+            buffers: pending_buffers,
+            dex_scans: pending_dex,
+            androguard_json: androguard_json.map(|s| s.to_string()),
+            hydradragon_meta: hydradragon_meta.map(|v| v.to_vec()),
+            bomb_dets,
+            perm_count,
+            packages,
+            hashes,
+            extract_ms,
+            dex_ms,
+        };
+        if let Ok(mut q) = deferred_queue().lock() {
+            q.push(item);
+        }
+        return format!(
+            r#"{{"status":"deferred","path":"{}"}}"#,
+            json_escape(path)
+        );
+    }
+
     // Phase 3: heavy scans — ClamAV/YARA, ML, TLSH — only on non-whitelisted
     // buffers (skip_heavy[i] == true means whitelisted, skip everything for it).
     let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
@@ -1794,10 +2275,10 @@ fn run_scan(
         .collect::<Vec<_>>()
         .join(",");
 
-    // Unified detection list: ClamAV/YARA results first, then one "ML"
-    // detection per ml-flagged APK buffer. Each tagged with its suppressible
+    // Unified detection list: bomb detections first (from extraction phase),
+    // then ClamAV/YARA results, then ML. Each tagged with its suppressible
     // APK lineage.
-    let mut detections: Vec<(String, String, Vec<String>)> = Vec::new();
+    let mut detections: Vec<(String, String, Vec<String>)> = bomb_dets;
     detections.append(&mut yara_dets);
     for (obj_path, lin) in ml_lineages {
         detections.push(("ML".to_string(), obj_path, lin));
@@ -1825,11 +2306,8 @@ fn run_scan(
     // TLSH fuzzy-similarity to known malware: compare each apk/elf/dex buffer's
     // TLSH against the MalwareBazaar database; a small distance => a likely
     // variant. Tagged with the buffer's APK lineage so a whitelisted APK is
-    // still suppressed. Skip when the top-level buffer already triggered a
-    // detection — we already have a conclusive verdict.
-    let tlsh_ms = if early_hit {
-        0
-    } else {
+    // still suppressed.
+    let tlsh_ms = {
         let t_tlsh = std::time::Instant::now();
                 for (i, b) in buffers.iter().enumerate() {
                     if skip_heavy[i] {
@@ -2806,7 +3284,8 @@ struct Buf {
 /// hashed twice.
 ///
 /// Zip-bomb guard: stops extraction when total decompressed bytes exceed ~2 GB
-/// or when the number of extracted buffers exceeds 4096.
+/// or when the number of extracted buffers exceeds 4096. Any bomb errors are
+/// returned as detections in the second tuple element so they are never lost.
 ///
 /// After this returns, `run_scan` builds the whitelist (`skip_heavy`) then runs
 /// heavy passes (ClamAV/YARA, DEX, emulation, ML, TLSH) only on non-whitelisted
@@ -2816,7 +3295,7 @@ fn collect_buffers(
     data: &[u8],
     top_md5: Option<&str>,
     path: &str,
-) -> Vec<Buf> {
+) -> (Vec<Buf>, Vec<(String, String, Vec<String>)>) {
     use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering as AtomOrdering};
     use std::sync::Mutex;
 
@@ -2845,6 +3324,7 @@ fn collect_buffers(
     // empty AND no worker can produce more work — safe to stop.
     let outstanding = AtomicUsize::new(1);
     let out: Mutex<Vec<Buf>> = Mutex::new(Vec::new());
+    let bomb_dets: Mutex<Vec<(String, String, Vec<String>)>> = Mutex::new(Vec::new());
     let total_bytes = AtomicU64::new(0);
     // Count of buffers actually emitted to `out` — used for both the 4096 cap
     // and as each buffer's naming index (`path#extract[idx]`), without
@@ -2936,17 +3416,20 @@ fn collect_buffers(
                                     }
                                 }
                                 Err(e) if hydradragonextractor::is_bomb_error(&e) => {
-                                    // Zip-bomb detected: record it directly into out as a
-                                    // special sentinel so run_scan can surface it as a detection.
-                                    // We push a zero-length "BOMB" buffer with a special entry_name
-                                    // so rescan_buffers_parallel will see it in its scan loop.
-                                    // Actually we just log it — run_scan has no way to receive
-                                    // bomb detections from here after the early-scan removal.
-                                    // The decompression extractor's is_bomb_error check at the
-                                    // call site in rescan path handles this separately.
+                                    let obj_path = if idx == 0 {
+                                        path.to_string()
+                                    } else {
+                                        match &item.entry_name {
+                                            Some(entry) => format!("{path}!/{entry}"),
+                                            None => format!("{}#extract[{}]", path, idx),
+                                        }
+                                    };
                                     android_log(&format!(
-                                        "collect_buffers: zip-bomb guard triggered for {path}#{idx}: {e}"
+                                        "collect_buffers: zip-bomb triggered for {obj_path}: {e}"
                                     ));
+                                    if let Ok(mut dg) = bomb_dets.lock() {
+                                        dg.push(("HDR.Bomb.Decompression".to_string(), obj_path, lineage.clone()));
+                                    }
                                 }
                                 Err(_) => {}
                             }
@@ -2979,6 +3462,7 @@ fn collect_buffers(
     });
 
     let out = out.into_inner().unwrap_or_default();
+    let bomb_dets = bomb_dets.into_inner().unwrap_or_default();
     rust_timing_log!(
         "collect_buffers :: extracted {} buffers ({} workers), total {} MB",
         out.len(),
@@ -2986,7 +3470,7 @@ fn collect_buffers(
         total_bytes.load(AtomOrdering::Relaxed) / 1_000_000
     );
 
-    out
+    (out, bomb_dets)
 }
 
 /// The last captured panic ("message @ file:line"), for diagnostics.

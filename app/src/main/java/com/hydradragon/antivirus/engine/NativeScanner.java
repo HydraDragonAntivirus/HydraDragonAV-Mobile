@@ -146,6 +146,18 @@ public final class NativeScanner {
     }
 
     private static native String nativeScanApk(String path, String hydradragonJson, String fileMd5, boolean zeroTrust);
+    private static native void nativeBeginBatchScan();
+    private static native String nativeEndBatchScan();
+
+    public static void beginBatchScan() {
+        if (!LIB_LOADED) return;
+        try { nativeBeginBatchScan(); } catch (Throwable ignore) {}
+    }
+
+    public static String endBatchScan() {
+        if (!LIB_LOADED) return "[]";
+        try { return nativeEndBatchScan(); } catch (Throwable t) { return "[]"; }
+    }
 
     /** Diagnostics: what loaded / failed during the last nativeInit. */
     private static native String nativeStatus();
@@ -464,6 +476,8 @@ public final class NativeScanner {
          *  (androguard/hydradragon-aware condition, no whitelist-DB string
          *  filtering), or null for a clean scan / when nothing was extractable. */
         public String generatedRule;
+        public boolean deferred;
+        public String path;
 
         public boolean isError() { return error != null; }
         public boolean isSkipped() { return skippedTarget != null; }
@@ -502,13 +516,47 @@ public final class NativeScanner {
         }
         try {
             JSONObject o = new JSONObject(json);
-            if (o.has("error")) {
-                v.error = o.optString("error", "unknown");
-                return v;
+            return parseVerdictJson(o);
+        } catch (Throwable t) {
+            v.error = "bad json: " + t.getMessage();
+            return v;
+        }
+    }
+
+    public static List<Verdict> parseBatchVerdicts(String jsonArray) {
+        List<Verdict> list = new ArrayList<>();
+        if (jsonArray == null || jsonArray.isEmpty()) return list;
+        try {
+            JSONArray arr = new JSONArray(jsonArray);
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject o = arr.optJSONObject(i);
+                if (o != null) {
+                    list.add(parseVerdictJson(o));
+                }
             }
-            v.malicious = o.optBoolean("malicious", false);
-            v.permissions = o.optInt("permissions", 0);
-            JSONArray pkgs = o.optJSONArray("packages");
+        } catch (Throwable t) {
+            Log.e("NativeScanner", "parseBatchVerdicts failed", t);
+        }
+        return list;
+    }
+
+    public static Verdict parseVerdictJson(JSONObject o) throws Exception {
+        Verdict v = new Verdict();
+        if (o.has("error")) {
+            v.error = o.optString("error", "unknown");
+            return v;
+        }
+        if (o.has("status") && "deferred".equals(o.optString("status"))) {
+            v.deferred = true;
+            v.path = o.optString("path", "");
+            return v;
+        }
+        if (o.has("path")) {
+            v.path = o.optString("path", "");
+        }
+        v.malicious = o.optBoolean("malicious", false);
+        v.permissions = o.optInt("permissions", 0);
+        JSONArray pkgs = o.optJSONArray("packages");
             if (pkgs != null) {
                 for (int i = 0; i < pkgs.length(); i++) {
                     String p = pkgs.optString(i, null);
@@ -588,9 +636,6 @@ public final class NativeScanner {
                     v.nearest = ml.optString("nearest", null);
                 }
             }
-        } catch (JSONException e) {
-            v.error = "parse: " + e.getMessage();
-        }
         return v;
     }
 
