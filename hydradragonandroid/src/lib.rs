@@ -64,27 +64,11 @@ fn android_log(msg: &str) {
     unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
 }
 
-/// Wraps every `HydraDragon-RustTiming` performance/diagnostic line (per-file
-/// init/load timings, `collect_buffers`'s extraction stats, etc.) so it only
-/// exists in debug builds. In release (`cfg(debug_assertions)` off) this
-/// compiles to nothing — the `format!()` call that builds the message is
-/// never evaluated, not just the logcat write skipped — so a production scan
-/// doesn't pay any cost for diagnostics nobody in the field will read.
-/// Genuine failure/panic reports (`native-init FAILED`, `PANIC`, ...) stay on
-/// plain `android_log` calls and keep logging in release, since those matter
-/// for diagnosing real crashes on real devices.
-#[cfg(debug_assertions)]
+/// Writes a `HydraDragon-RustTiming` performance/diagnostic line to logcat
+/// (per-file init/load timings, `collect_buffers`'s extraction stats, etc.).
 macro_rules! rust_timing_log {
     ($($arg:tt)*) => {
         android_log(&format!($($arg)*))
-    };
-}
-#[cfg(not(debug_assertions))]
-macro_rules! rust_timing_log {
-    ($($arg:tt)*) => {
-        // Uncalled closure captures all referenced variables, suppressing
-        // unused-variable warnings without executing format!() at runtime.
-        let _ = || { format!($($arg)*) };
     };
 }
 

@@ -61,8 +61,6 @@ pub struct ScanMatch {
     pub view: ScanView,
 }
 
-// Only compiled in debug builds — release uses the macro's empty branch.
-#[cfg(debug_assertions)]
 #[cfg(target_os = "android")]
 #[link(name = "log")]
 unsafe extern "C" {
@@ -72,11 +70,9 @@ unsafe extern "C" {
         text: *const std::os::raw::c_char,
     );
 }
-#[cfg(debug_assertions)]
 #[cfg(target_os = "android")]
 const ANDROID_LOG_INFO: std::os::raw::c_int = 4;
 
-#[cfg(debug_assertions)]
 fn android_log(msg: &str) {
     #[cfg(target_os = "android")]
     {
@@ -95,20 +91,10 @@ fn android_log(msg: &str) {
     }
 }
 
-/// Wraps timing/diagnostic logcat lines so they only exist in debug builds.
-/// In release the format!() call is never evaluated — zero cost.
-#[cfg(debug_assertions)]
+/// Writes a timing/diagnostic logcat line.
 macro_rules! rust_timing_log {
     ($($arg:tt)*) => {
         android_log(&format!($($arg)*))
-    };
-}
-#[cfg(not(debug_assertions))]
-macro_rules! rust_timing_log {
-    ($($arg:tt)*) => {
-        // Uncalled closure captures all referenced variables, suppressing
-        // unused-variable warnings without executing format!() at runtime.
-        let _ = || { format!($($arg)*) };
     };
 }
 

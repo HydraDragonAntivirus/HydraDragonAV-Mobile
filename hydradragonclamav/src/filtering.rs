@@ -153,7 +153,6 @@ impl Filter {
             j += 1;
         }
 
-        debug_assert!(best_pos < len - 1);
         let pattern = &pattern[best_pos..];
         let mut len = len - best_pos;
         if len > MAXSOPATLEN {
