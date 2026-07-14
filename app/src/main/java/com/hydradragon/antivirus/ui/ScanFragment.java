@@ -197,7 +197,7 @@ public class ScanFragment extends Fragment {
                     String id = (threat.getPackageName() != null && !threat.getPackageName().isEmpty())
                         ? threat.getPackageName() : threat.getApkPath();
                     com.hydradragon.antivirus.engine.UserDecisions.allowThreat(getContext(), id);
-                    ThreatLogger.logThreat(getContext(), threat.getPackageName(), threat.getAppName(), "WHITELISTED (ignored)");
+                    ThreatLogger.logThreat(getContext(), threat, "WHITELISTED (ignored)");
                     foundThreats.remove(threat);
                     threatAdapter.notifyDataSetChanged();
                     tvThreats.setText(String.valueOf(foundThreats.size()));
@@ -246,7 +246,7 @@ public class ScanFragment extends Fragment {
             if (file.exists() && file.delete()) {
                 Toast.makeText(getContext(), getString(R.string.threat_destroyed), Toast.LENGTH_LONG).show();
                 // Write to the history log
-                ThreatLogger.logThreat(getContext(), threat.getPackageName(), threat.getAppName(), getString(R.string.file_deleted_safe));
+                ThreatLogger.logThreat(getContext(), threat, getString(R.string.file_deleted_safe));
                 // Remove it from the on-screen list immediately
                 foundThreats.remove(threat);
                 threatAdapter.notifyDataSetChanged();

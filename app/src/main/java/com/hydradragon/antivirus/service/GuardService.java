@@ -139,8 +139,7 @@ public class GuardService extends Service {
                        .setColor(0x00FF88);
             } else {
                 Log.e(TAG, "MALICIOUS DOWNLOAD: " + file.getAbsolutePath());
-                ThreatLogger.logThreat(this, file.getAbsolutePath(), file.getName(),
-                    getString(R.string.danger_download_desc));
+                ThreatLogger.logThreat(this, threat, getString(R.string.danger_download_desc));
                 if (callback != null) callback.onThreatDetected(threat);
 
                 android.content.Intent removeIntent = new android.content.Intent(this, UserActionReceiver.class)
@@ -283,9 +282,7 @@ public class GuardService extends Service {
                 // below — a logging failure must never block the UI
                 // forwarding at the end of this method.
                 try {
-                    ThreatLogger.logThreat(GuardService.this, threat.getPackageName(),
-                        threat.getAppName(),
-                        threat.getThreatType() + " (scan, risk " + threat.getRiskScore() + ")");
+                    ThreatLogger.logThreat(GuardService.this, threat, "SCAN DETECTED");
                 } catch (Throwable t) {
                     Log.e(TAG, "ThreatLogger.logThreat failed", t);
                 }

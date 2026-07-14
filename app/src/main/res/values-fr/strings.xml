@@ -143,7 +143,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="bloatware_cleaner">🧹 Nettoyeur de Bloatware</string>
     <string name="reset_settings_btn">Réinitialiser les Paramètres</string>
     <string name="reset_cat_appearance">Apparence (thème, langue)</string>
-    <string name="reset_cat_protection">Protection (interrupteurs, planning d'analyse)</string>
+    <string name="reset_cat_protection">Protection (interrupteurs, planning d\'analyse)</string>
     <string name="reset_cat_detection">Catégories de Détection</string>
     <string name="reset_cat_behavior">Détection de Comportement</string>
     <string name="reset_cat_privacy">Bouclier Web et Confidentialité</string>

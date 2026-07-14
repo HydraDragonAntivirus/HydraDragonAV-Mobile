@@ -132,7 +132,7 @@ public final class BehaviorResponse {
         boolean installed = pkg != null && !pkg.isEmpty() && isPackageInstalled(context, pkg);
         if (installed) {
             killAndPromptUninstall(context, pkg);
-            com.hydradragon.antivirus.service.ThreatLogger.logThreat(context, pkg, threat.getAppName(),
+            com.hydradragon.antivirus.service.ThreatLogger.logThreat(context, threat,
                     "auto-delete: uninstall requested");
         } else {
             String path = threat.getApkPath();
@@ -145,7 +145,7 @@ public final class BehaviorResponse {
                     Log.w(TAG, "autoDeleteThreat: delete failed for " + path, t);
                 }
             }
-            com.hydradragon.antivirus.service.ThreatLogger.logThreat(context, pkg, threat.getAppName(),
+            com.hydradragon.antivirus.service.ThreatLogger.logThreat(context, threat,
                     "auto-delete: file removed");
         }
     }
