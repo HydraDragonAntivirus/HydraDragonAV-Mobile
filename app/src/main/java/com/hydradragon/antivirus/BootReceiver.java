@@ -3,7 +3,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import androidx.core.content.ContextCompat;
 import com.hydradragon.antivirus.service.GuardService;
 
 public class BootReceiver extends BroadcastReceiver {
@@ -19,7 +18,7 @@ public class BootReceiver extends BroadcastReceiver {
             // thread before the user even opens the app.
             com.hydradragon.antivirus.engine.NativeScanner.init(context);
             Intent serviceIntent = new Intent(context, GuardService.class);
-            ContextCompat.startForegroundService(context, serviceIntent);
+            context.startService(serviceIntent);
         }
     }
 }
