@@ -446,6 +446,10 @@ public final class NativeScanner {
         }
         /** MD5 (lowercase hex) of the whole scanned file — its "main hash". */
         public String md5;
+        /** TLSH of the whole scanned file (its "main hash", mirrors {@link #md5}).
+         *  Used by the Anti-FN cache to match a repackaged/renamed variant of a
+         *  previously-caught top-level (non-archive) malicious file. */
+        public String fileTlsh;
         /** Per-entry MD5 map: entry_name -> md5 (from native verdict entry_md5s).
          *  Used by the Anti-FP cache to check individual zip entry hashes. */
         public final java.util.HashMap<String, String> entryMd5s = new java.util.HashMap<>();
@@ -520,6 +524,10 @@ public final class NativeScanner {
             }
             if (o.has("md5") && !o.isNull("md5")) {
                 v.md5 = o.optString("md5", null);
+            }
+            if (o.has("file_tlsh") && !o.isNull("file_tlsh")) {
+                String ft = o.optString("file_tlsh", null);
+                if (ft != null && !ft.isEmpty()) v.fileTlsh = ft;
             }
             if (o.has("skipped") && !o.isNull("skipped")) {
                 v.skippedTarget = o.optInt("skipped");

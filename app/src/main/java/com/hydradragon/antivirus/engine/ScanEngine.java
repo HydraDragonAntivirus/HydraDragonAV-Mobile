@@ -92,6 +92,7 @@ public class ScanEngine {
     private final AIEngine aiEngine;
     private final CodeAnalyzer codeAnalyzer;
     private final AntiFpCache antiFpCache;
+    private final AntiFnCache antiFnCache;
     // Process-wide, bounded below the device's core count. GuardService and
     // InstallReceiver each hold their own ScanEngine instance (InstallReceiver
     // creates a brand new one per install broadcast), so a per-instance pool —
@@ -342,6 +343,7 @@ public class ScanEngine {
         this.aiEngine = aiEngine;
         this.codeAnalyzer = new CodeAnalyzer(context);
         this.antiFpCache = new AntiFpCache(context);
+        this.antiFnCache = new AntiFnCache(context);
         loadPackageWhitelist();
         // Load YARA-X rulesets + ML model into the native engine (non-fatal).
         try { NativeScanner.init(context); } catch (Throwable t) { /* degrade gracefully */ }
@@ -528,7 +530,88 @@ public class ScanEngine {
             }
             out.add(d);
         }
+        upsellAntiFnDetections(v, out);
         return out;
+    }
+
+    /** Anti-FN upsell: for every nested entry (and the top-level file itself)
+     *  NOT already covered by a surviving detection, check it against the
+     *  Anti-FN cache of previously-confirmed-malicious entries. Anti-FN
+     *  matching defaults to TLSH similarity; MD5 exact match is used instead
+     *  only if the user picked MD5 mode in Settings ({@code anti_fn_match_mode}).
+     *  A hit synthesizes a Detection and appends it to {@code out} in place —
+     *  this is what upgrades an otherwise-clean scan to malicious when the
+     *  static signature alone misses a renamed/repacked variant. */
+    private void upsellAntiFnDetections(NativeScanner.Verdict v, List<NativeScanner.Verdict.Detection> out) {
+        if (!antiFnCache.isEnabled()) return;
+        java.util.Set<String> covered = new java.util.HashSet<>();
+        boolean topLevelCovered = false;
+        for (NativeScanner.Verdict.Detection d : out) {
+            if (d.objectPath == null) continue;
+            int bang = d.objectPath.indexOf('!');
+            if (bang >= 0 && bang + 1 < d.objectPath.length()) {
+                covered.add(d.objectPath.substring(bang + 1));
+            } else {
+                topLevelCovered = true;
+            }
+        }
+        boolean md5Mode = AntiFnCache.isMd5MatchMode(context);
+        int tlshThreshold = AntiFnCache.getTlshThreshold(context);
+        for (java.util.Map.Entry<String, String> e : v.entryTlshs.entrySet()) {
+            String entryName = e.getKey();
+            if (covered.contains(entryName)) continue;
+            String matched = md5Mode
+                ? matchAntiFnMd5(v.entryMd5s.get(entryName))
+                : antiFnCache.findSimilarTlsh(e.getValue(), tlshThreshold);
+            if (matched != null) {
+                Log.d(TAG, "DETECTION-UPSELLED[anti-FN] entry=" + entryName + " matched=" + matched);
+                out.add(new NativeScanner.Verdict.Detection(
+                    "AntiFN.Suspected: " + matched, v.md5 + "!" + entryName, java.util.Collections.emptyList()));
+            }
+        }
+        if (!topLevelCovered) {
+            String matched = md5Mode
+                ? matchAntiFnMd5(v.md5)
+                : antiFnCache.findSimilarTlsh(v.fileTlsh, tlshThreshold);
+            if (matched != null) {
+                Log.d(TAG, "DETECTION-UPSELLED[anti-FN] top-level matched=" + matched);
+                out.add(new NativeScanner.Verdict.Detection(
+                    "AntiFN.Suspected: " + matched, v.md5, java.util.Collections.emptyList()));
+            }
+        }
+    }
+
+    private String matchAntiFnMd5(String md5) {
+        return (md5 != null && !md5.isEmpty() && antiFnCache.isKnownMd5(md5)) ? "known sample" : null;
+    }
+
+    /** Populate the Anti-FN cache from a scan's confirmed-surviving detections
+     *  (called right after {@code survivingDetections} whenever it's non-empty
+     *  — the "confirmed detection" moment). Reuses the per-entry MD5/TLSH maps
+     *  already computed for this scan; no extra hashing pass. */
+    private void updateAntiFnCache(NativeScanner.Verdict v, List<NativeScanner.Verdict.Detection> live) {
+        if (!antiFnCache.isEnabled() || live.isEmpty()) return;
+        for (NativeScanner.Verdict.Detection d : live) {
+            String entryName = "";
+            String md5;
+            String tlsh;
+            if (d.objectPath != null) {
+                int bang = d.objectPath.indexOf('!');
+                if (bang >= 0 && bang + 1 < d.objectPath.length()) {
+                    entryName = d.objectPath.substring(bang + 1);
+                }
+            }
+            if (!entryName.isEmpty()) {
+                md5 = v.entryMd5s.get(entryName);
+                tlsh = v.entryTlshs.get(entryName);
+            } else {
+                md5 = v.md5;
+                tlsh = v.fileTlsh;
+            }
+            if (md5 != null && !md5.isEmpty()) {
+                antiFnCache.addEntry(md5, tlsh, entryName, d.name);
+            }
+        }
     }
 
     public void setCallback(ScanCallback callback) { this.callback = callback; }
@@ -890,6 +973,7 @@ public class ScanEngine {
             // alongside that APK in the same archive is NOT suppressed by the APK's
             // hash. Keep only the detections that survive.
             List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
+            updateAntiFnCache(v, live);
             boolean malicious = !live.isEmpty();
 
             if (!malicious && v.permissions < 6) return true;
@@ -1067,6 +1151,7 @@ public class ScanEngine {
                 // Per-detection suppression (a hit inside a whitelisted APK is an
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
                 List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
+                updateAntiFnCache(v, live);
                 if (cancelRequested) return;
                 if (live.isEmpty()) continue;
                 ThreatResult.Builder b = new ThreatResult.Builder(
@@ -1441,6 +1526,7 @@ public class ScanEngine {
                     // Per-detection whitelist suppression (hit inside a whitelisted
                     // APK = FP; non-APK virus alongside it survives).
                     List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
+                    updateAntiFnCache(v, live);
                     boolean mlMalicious = false;
                     if (!live.isEmpty()) {
                         // Split PUA.* / PUA_* hits (potentially-unwanted) and the

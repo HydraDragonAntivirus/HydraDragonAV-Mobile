@@ -382,5 +382,14 @@
     <string name="anti_fp_match_mode_toggle">Режим зіставлення Anti-FP — використовувати точний збіг MD5 замість подібності TLSH</string>
     <string name="anti_fp_match_mode_md5_toast">Режим зіставлення Anti-FP: MD5 (точний збіг)</string>
     <string name="anti_fp_match_mode_tlsh_toast">Режим зіставлення Anti-FP: TLSH (збіг за подібністю)</string>
+    <string name="anti_fn_enabled_toggle">Anti-FN — запам\'ятовувати підтверджені шкідливі записи (MD5 + TLSH) для виявлення перейменованих/перепакованих варіантів</string>
+    <string name="anti_fn_on_toast">Anti-FN УВІМК. — підтверджені виявлення кешуються</string>
+    <string name="anti_fn_off_toast">Anti-FN ВИМК. — кеш очищено</string>
+    <string name="anti_fn_tlsh_threshold_btn">Поріг схожості TLSH Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_hint">Поріг відстані TLSH (1-200). Нижче = суворіше, вище = агресивніше підвищення виявлення. За замовчуванням: 40</string>
+    <string name="anti_fn_tlsh_threshold_saved">Поріг TLSH Anti-FN встановлено на %1$d</string>
+    <string name="anti_fn_match_mode_toggle">Режим зіставлення Anti-FN — використовувати точний збіг MD5 замість подібності TLSH</string>
+    <string name="anti_fn_match_mode_md5_toast">Режим зіставлення Anti-FN: MD5 (точний збіг)</string>
+    <string name="anti_fn_match_mode_tlsh_toast">Режим зіставлення Anti-FN: TLSH (збіг за подібністю)</string>
 
 </resources>

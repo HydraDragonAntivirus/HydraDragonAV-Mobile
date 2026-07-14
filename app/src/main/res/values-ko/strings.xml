@@ -382,5 +382,14 @@
     <string name="anti_fp_match_mode_toggle">Anti-FP 일치 모드 — TLSH 유사도 대신 정확한 MD5 일치 사용</string>
     <string name="anti_fp_match_mode_md5_toast">Anti-FP 일치 모드: MD5(정확한 일치)</string>
     <string name="anti_fp_match_mode_tlsh_toast">Anti-FP 일치 모드: TLSH(유사도 일치)</string>
+    <string name="anti_fn_enabled_toggle">Anti-FN — 확인된 악성 항목(MD5 + TLSH)을 기억하여 이름이 변경되거나 재패키징된 변종을 탐지</string>
+    <string name="anti_fn_on_toast">Anti-FN 켜짐 — 확인된 탐지 결과가 캐시됩니다</string>
+    <string name="anti_fn_off_toast">Anti-FN 꺼짐 — 캐시가 지워졌습니다</string>
+    <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH 유사도 임계값</string>
+    <string name="anti_fn_tlsh_threshold_hint">TLSH 거리 임계값(1-200). 낮을수록 엄격, 높을수록 탐지 상향이 더 적극적. 기본값: 40</string>
+    <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSH 임계값이 %1$d(으)로 설정되었습니다</string>
+    <string name="anti_fn_match_mode_toggle">Anti-FN 일치 모드 — TLSH 유사도 대신 정확한 MD5 일치 사용</string>
+    <string name="anti_fn_match_mode_md5_toast">Anti-FN 일치 모드: MD5(정확한 일치)</string>
+    <string name="anti_fn_match_mode_tlsh_toast">Anti-FN 일치 모드: TLSH(유사도 일치)</string>
 
 </resources>

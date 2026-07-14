@@ -382,5 +382,14 @@
     <string name="anti_fp_match_mode_toggle">Режим сопоставления Anti-FP — использовать точное совпадение MD5 вместо сходства TLSH</string>
     <string name="anti_fp_match_mode_md5_toast">Режим сопоставления Anti-FP: MD5 (точное совпадение)</string>
     <string name="anti_fp_match_mode_tlsh_toast">Режим сопоставления Anti-FP: TLSH (совпадение по сходству)</string>
+    <string name="anti_fn_enabled_toggle">Anti-FN — запоминать подтверждённые вредоносные записи (MD5 + TLSH) для обнаружения переименованных/перепакованных вариантов</string>
+    <string name="anti_fn_on_toast">Anti-FN ВКЛ. — подтверждённые обнаружения кешируются</string>
+    <string name="anti_fn_off_toast">Anti-FN ВЫКЛ. — кеш очищен</string>
+    <string name="anti_fn_tlsh_threshold_btn">Порог схожести TLSH Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_hint">Порог расстояния TLSH (1-200). Ниже = строже, выше = более агрессивное повышение обнаружения. По умолчанию: 40</string>
+    <string name="anti_fn_tlsh_threshold_saved">Порог TLSH Anti-FN установлен на %1$d</string>
+    <string name="anti_fn_match_mode_toggle">Режим сопоставления Anti-FN — использовать точное совпадение MD5 вместо сходства TLSH</string>
+    <string name="anti_fn_match_mode_md5_toast">Режим сопоставления Anti-FN: MD5 (точное совпадение)</string>
+    <string name="anti_fn_match_mode_tlsh_toast">Режим сопоставления Anti-FN: TLSH (совпадение по сходству)</string>
 
 </resources>

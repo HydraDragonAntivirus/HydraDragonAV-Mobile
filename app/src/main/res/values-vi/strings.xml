@@ -382,5 +382,14 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="anti_fp_match_mode_toggle">Chế độ khớp Anti-FP — dùng khớp MD5 chính xác thay vì độ tương đồng TLSH</string>
     <string name="anti_fp_match_mode_md5_toast">Chế độ khớp Anti-FP: MD5 (khớp chính xác)</string>
     <string name="anti_fp_match_mode_tlsh_toast">Chế độ khớp Anti-FP: TLSH (khớp theo độ tương đồng)</string>
+    <string name="anti_fn_enabled_toggle">Anti-FN — ghi nhớ các mục đã xác nhận độc hại (MD5 + TLSH) để phát hiện các biến thể đổi tên/đóng gói lại</string>
+    <string name="anti_fn_on_toast">Anti-FN BẬT — các phát hiện đã xác nhận được lưu vào bộ nhớ đệm</string>
+    <string name="anti_fn_off_toast">Anti-FN TẮT — đã xóa bộ nhớ đệm</string>
+    <string name="anti_fn_tlsh_threshold_btn">Ngưỡng Tương tự TLSH của Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_hint">Ngưỡng khoảng cách TLSH (1-200). Thấp hơn = nghiêm ngặt hơn, cao hơn = nâng cấp phát hiện mạnh mẽ hơn. Mặc định: 40</string>
+    <string name="anti_fn_tlsh_threshold_saved">Đã đặt ngưỡng TLSH của Anti-FN thành %1$d</string>
+    <string name="anti_fn_match_mode_toggle">Chế độ khớp Anti-FN — dùng khớp MD5 chính xác thay vì độ tương đồng TLSH</string>
+    <string name="anti_fn_match_mode_md5_toast">Chế độ khớp Anti-FN: MD5 (khớp chính xác)</string>
+    <string name="anti_fn_match_mode_tlsh_toast">Chế độ khớp Anti-FN: TLSH (khớp theo độ tương đồng)</string>
 
 </resources>

@@ -382,5 +382,14 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="anti_fp_match_mode_toggle">Modo de correspondência Anti-FP — usar correspondência exata MD5 em vez de similaridade TLSH</string>
     <string name="anti_fp_match_mode_md5_toast">Modo de correspondência Anti-FP: MD5 (correspondência exata)</string>
     <string name="anti_fp_match_mode_tlsh_toast">Modo de correspondência Anti-FP: TLSH (correspondência por similaridade)</string>
+    <string name="anti_fn_enabled_toggle">Anti-FN — memorizar entradas confirmadas como maliciosas (MD5 + TLSH) para detectar variantes renomeadas/reempacotadas</string>
+    <string name="anti_fn_on_toast">Anti-FN ATIVADO — detecções confirmadas são armazenadas em cache</string>
+    <string name="anti_fn_off_toast">Anti-FN DESATIVADO — cache limpo</string>
+    <string name="anti_fn_tlsh_threshold_btn">Limiar de Similaridade TLSH Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_hint">Limiar de distância TLSH (1-200). Menor = mais rigoroso, maior = upgrade de detecção mais agressivo. Padrão: 40</string>
+    <string name="anti_fn_tlsh_threshold_saved">Limiar TLSH Anti-FN definido para %1$d</string>
+    <string name="anti_fn_match_mode_toggle">Modo de correspondência Anti-FN — usar correspondência exata MD5 em vez de similaridade TLSH</string>
+    <string name="anti_fn_match_mode_md5_toast">Modo de correspondência Anti-FN: MD5 (correspondência exata)</string>
+    <string name="anti_fn_match_mode_tlsh_toast">Modo de correspondência Anti-FN: TLSH (correspondência por similaridade)</string>
 
 </resources>

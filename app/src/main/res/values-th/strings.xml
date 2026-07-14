@@ -382,5 +382,14 @@
     <string name="anti_fp_match_mode_toggle">โหมดการจับคู่ Anti-FP — ใช้การจับคู่ MD5 แบบตรงทั้งหมดแทนความคล้ายคลึงของ TLSH</string>
     <string name="anti_fp_match_mode_md5_toast">โหมดการจับคู่ Anti-FP: MD5 (จับคู่ตรงทั้งหมด)</string>
     <string name="anti_fp_match_mode_tlsh_toast">โหมดการจับคู่ Anti-FP: TLSH (จับคู่ตามความคล้ายคลึง)</string>
+    <string name="anti_fn_enabled_toggle">Anti-FN — จดจำรายการที่ยืนยันแล้วว่าเป็นอันตราย (MD5 + TLSH) เพื่อตรวจจับตัวแปรที่เปลี่ยนชื่อ/แพ็กใหม่</string>
+    <string name="anti_fn_on_toast">Anti-FN เปิด — การตรวจพบที่ยืนยันแล้วถูกแคชไว้</string>
+    <string name="anti_fn_off_toast">Anti-FN ปิด — ล้างแคชแล้ว</string>
+    <string name="anti_fn_tlsh_threshold_btn">เกณฑ์ความคล้ายคลึง TLSH ของ Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_hint">เกณฑ์ระยะทาง TLSH (1-200) ค่าต่ำ = เข้มงวดมากขึ้น ค่าสูง = การอัปเกรดการตรวจจับที่รุนแรงขึ้น ค่าเริ่มต้น: 40</string>
+    <string name="anti_fn_tlsh_threshold_saved">ตั้งค่าเกณฑ์ TLSH ของ Anti-FN เป็น %1$d แล้ว</string>
+    <string name="anti_fn_match_mode_toggle">โหมดการจับคู่ Anti-FN — ใช้การจับคู่ MD5 แบบตรงทั้งหมดแทนความคล้ายคลึงของ TLSH</string>
+    <string name="anti_fn_match_mode_md5_toast">โหมดการจับคู่ Anti-FN: MD5 (จับคู่ตรงทั้งหมด)</string>
+    <string name="anti_fn_match_mode_tlsh_toast">โหมดการจับคู่ Anti-FN: TLSH (จับคู่ตามความคล้ายคลึง)</string>
 
 </resources>

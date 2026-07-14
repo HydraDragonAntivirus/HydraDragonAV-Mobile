@@ -382,5 +382,14 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="anti_fp_match_mode_toggle">Anti-FP-Abgleichmodus — exakten MD5-Abgleich statt TLSH-Ähnlichkeit verwenden</string>
     <string name="anti_fp_match_mode_md5_toast">Anti-FP-Abgleichmodus: MD5 (exakter Abgleich)</string>
     <string name="anti_fp_match_mode_tlsh_toast">Anti-FP-Abgleichmodus: TLSH (Ähnlichkeitsabgleich)</string>
+    <string name="anti_fn_enabled_toggle">Anti-FN — bestätigt bösartige Einträge (MD5 + TLSH) merken, um umbenannte/neu gepackte Varianten zu erkennen</string>
+    <string name="anti_fn_on_toast">Anti-FN AN — bestätigte Erkennungen werden zwischengespeichert</string>
+    <string name="anti_fn_off_toast">Anti-FN AUS — Cache geleert</string>
+    <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH-Ähnlichkeitsschwelle</string>
+    <string name="anti_fn_tlsh_threshold_hint">TLSH-Distanzschwellwert (1-200). Niedriger = strenger, höher = aggressivere Erkennungs-Hochstufung. Standard: 40</string>
+    <string name="anti_fn_tlsh_threshold_saved">Anti-FN-TLSH-Schwellwert auf %1$d gesetzt</string>
+    <string name="anti_fn_match_mode_toggle">Anti-FN-Abgleichmodus — exakten MD5-Abgleich statt TLSH-Ähnlichkeit verwenden</string>
+    <string name="anti_fn_match_mode_md5_toast">Anti-FN-Abgleichmodus: MD5 (exakter Abgleich)</string>
+    <string name="anti_fn_match_mode_tlsh_toast">Anti-FN-Abgleichmodus: TLSH (Ähnlichkeitsabgleich)</string>
 
 </resources>

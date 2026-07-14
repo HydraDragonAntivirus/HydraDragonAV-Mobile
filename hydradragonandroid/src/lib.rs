@@ -1916,6 +1916,29 @@ fn run_scan(
     }
 
     let malicious = !detections.is_empty();
+    // When every detection in this scan resolves to the SAME nested archive
+    // entry (object_path "outer!/entry"), scope the auto-generated rule to
+    // that entry alone: its own MD5 as sample_md5, and only its DexScan's
+    // strings — not the whole session's pooled strings. Keeps the generated
+    // signature specific to the actual malicious sub-file, not the container.
+    fn entry_suffix(object_path: &str) -> Option<&str> {
+        object_path.split_once("!/").map(|(_, e)| e)
+    }
+    let scoped_entry_idx: Option<usize> = if detections.is_empty() {
+        None
+    } else {
+        let first = entry_suffix(&detections[0].1);
+        match first {
+            Some(fe) if detections.iter().all(|(_, op, _)| entry_suffix(op) == Some(fe)) => {
+                buffers.iter().position(|b| b.entry_name.as_deref() == Some(fe))
+            }
+            _ => None,
+        }
+    };
+    let scoped_file_hash: String = match scoped_entry_idx {
+        Some(idx) => md5_hex(&buffers[idx].data),
+        None => file_hash.clone(),
+    };
     // yarGen-style auto-generated rule — strings come from this sample's own
     // DEX string pool. References the androguard and hydradragon modules in
     // its condition, not just literal strings, so it also fires on
@@ -1924,7 +1947,7 @@ fn run_scan(
     // matched" as "nothing worth cataloguing"; the rule is then based on the
     // sample's own strings/package rather than a named detection.
     let generated_rule = if malicious || zero_trust {
-        generate_yara_rule(&file_hash, &packages, &detections, &dex_scans)
+        generate_yara_rule(&scoped_file_hash, &packages, &detections, &dex_scans, scoped_entry_idx)
     } else {
         None
     };
@@ -2000,14 +2023,24 @@ fn run_scan(
         format!("{{{}}}", entry_tlsh_pairs.join(","))
     };
 
+    // TLSH of the whole top-level file (its "main hash", mirrors `file_hash`
+    // above) — lets the Java-side Anti-FN cache match a repackaged/renamed
+    // variant of a previously-caught top-level (non-archive) malicious file,
+    // not just nested zip entries (which already had entry-level TLSH).
+    let file_tlsh = tlsh_rs::hash_bytes(bytes)
+        .ok()
+        .map(|d| d.to_string())
+        .unwrap_or_default();
+    let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
+
     let err_json = match err {
         Some(e) => format!(",\"error\":\"{}\"", json_escape(&e)),
         None => String::new(),
     };
 
     format!(
-        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
-        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
+        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
+        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
     )
 }
 
@@ -2024,10 +2057,17 @@ fn generate_yara_rule(
     packages: &[String],
     detections: &[(String, String, Vec<String>)],
     dex_scans: &[Option<dex_scan::DexScan>],
+    only_index: Option<usize>,
 ) -> Option<String> {
     let mut strings: Vec<String> = Vec::new();
     let mut seen = std::collections::HashSet::new();
-    'outer: for ds in dex_scans.iter().flatten() {
+    let scanned = dex_scans.iter().enumerate().filter_map(|(i, o)| {
+        if let Some(idx) = only_index {
+            if i != idx { return None; }
+        }
+        o.as_ref()
+    });
+    'outer: for ds in scanned {
         for line in ds.text.lines() {
             let l = line.trim();
             if l.len() < 8 || l.len() > 128 || l.chars().any(|c| c.is_control()) {

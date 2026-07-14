@@ -310,6 +310,32 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.anti_fp_match_mode_tlsh_toast), Toast.LENGTH_SHORT).show();
         });
 
+        boolean antiFn = prefs().getBoolean("anti_fn_enabled", true);
+        addToggle(getString(R.string.anti_fn_enabled_toggle), antiFn, (btn, on) -> {
+            prefs().edit().putBoolean("anti_fn_enabled", on).apply();
+            if (!on) {
+                // Clear the cache when disabled
+                com.hydradragon.antivirus.engine.AntiFnCache cache =
+                    new com.hydradragon.antivirus.engine.AntiFnCache(requireContext());
+                cache.clear();
+            }
+            Toast.makeText(getContext(), on
+                ? getString(R.string.anti_fn_on_toast)
+                : getString(R.string.anti_fn_off_toast), Toast.LENGTH_SHORT).show();
+        });
+
+        int antiFnTlshThresh = prefs().getInt("anti_fn_tlsh_threshold", 40);
+        addBtn("🔀 " + getString(R.string.anti_fn_tlsh_threshold_btn) + " (" + antiFnTlshThresh + ")", color(R.color.bg_secondary),
+            v -> showAntiFnTlshThresholdDialog());
+
+        boolean antiFnMd5Mode = "md5".equals(prefs().getString("anti_fn_match_mode", "tlsh"));
+        addToggle(getString(R.string.anti_fn_match_mode_toggle), antiFnMd5Mode, (btn, on) -> {
+            prefs().edit().putString("anti_fn_match_mode", on ? "md5" : "tlsh").apply();
+            Toast.makeText(getContext(), on
+                ? getString(R.string.anti_fn_match_mode_md5_toast)
+                : getString(R.string.anti_fn_match_mode_tlsh_toast), Toast.LENGTH_SHORT).show();
+        });
+
         boolean skipMedia = prefs().getBoolean("skip_image_media_enabled", true);
         addToggle(getString(R.string.skip_media_toggle), skipMedia, (btn, on) -> {
             prefs().edit().putBoolean("skip_image_media_enabled", on).apply();
@@ -456,7 +482,8 @@ public class SettingsFragment extends Fragment {
         new ResetCategory(R.string.reset_cat_privacy, KEY_SHIELD, "web_shield_decided", KEY_SCREEN_OCR,
             "silent_mode", com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH,
             "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "skip_image_media_enabled",
-            "anti_fp_skip_enabled", "anti_fp_tlsh_threshold", "anti_fp_match_mode"),
+            "anti_fp_skip_enabled", "anti_fp_tlsh_threshold", "anti_fp_match_mode",
+            "anti_fn_enabled", "anti_fn_tlsh_threshold", "anti_fn_match_mode"),
         new ResetCategory(R.string.reset_cat_premium, "zero_trust_mode", "auto_rule_generation",
             "ask_signature_on_remove", "auto_delete_malware_enabled"),
         new ResetCategory(R.string.reset_cat_whitelists, "ignored_signatures", "website_whitelist"),
@@ -1005,6 +1032,45 @@ public class SettingsFragment extends Fragment {
                 com.hydradragon.antivirus.engine.NativeScanner.setTlshThreshold(val);
                 Toast.makeText(getContext(),
                     getString(R.string.anti_fp_tlsh_threshold_saved, val),
+                    Toast.LENGTH_SHORT).show();
+                buildUI();
+            })
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
+    }
+
+    /** TLSH similarity threshold for the Anti-FN cache (1-200, default 40).
+     *  Lower = stricter (only very close matches upgrade to malicious); higher =
+     *  more aggressive (more similar-looking entries are treated as known-bad). */
+    private void showAntiFnTlshThresholdDialog() {
+        LinearLayout box = new LinearLayout(requireContext());
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(48, 24, 48, 0);
+
+        TextView label = new TextView(requireContext());
+        label.setText(getString(R.string.anti_fn_tlsh_threshold_hint));
+        label.setTextColor(color(R.color.text_primary));
+        label.setPadding(0, 0, 0, 16);
+        box.addView(label);
+        android.widget.EditText input = new android.widget.EditText(requireContext());
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setText(String.valueOf(prefs().getInt("anti_fn_tlsh_threshold", 40)));
+        box.addView(input);
+
+        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.anti_fn_tlsh_threshold_btn))
+            .setView(box)
+            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
+                int val;
+                try {
+                    val = Integer.parseInt(input.getText().toString().trim());
+                } catch (Exception e) {
+                    val = 40;
+                }
+                val = Math.max(1, Math.min(200, val));
+                prefs().edit().putInt("anti_fn_tlsh_threshold", val).apply();
+                Toast.makeText(getContext(),
+                    getString(R.string.anti_fn_tlsh_threshold_saved, val),
                     Toast.LENGTH_SHORT).show();
                 buildUI();
             })

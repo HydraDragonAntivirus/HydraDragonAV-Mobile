@@ -385,5 +385,14 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="anti_fp_match_mode_toggle">Anti-FP Eşleşme Modu — TLSH benzerliği yerine tam MD5 eşleşmesi kullan</string>
     <string name="anti_fp_match_mode_md5_toast">Anti-FP Eşleşme Modu: MD5 (tam eşleşme)</string>
     <string name="anti_fp_match_mode_tlsh_toast">Anti-FP Eşleşme Modu: TLSH (benzerlik eşleşmesi)</string>
+    <string name="anti_fn_enabled_toggle">Anti-FN — yeniden adlandırılmış/yeniden paketlenmiş varyantları yakalamak için onaylanmış kötü amaçlı girişleri (MD5 + TLSH) hatırla</string>
+    <string name="anti_fn_on_toast">Anti-FN AÇIK — onaylanan tespitler önbelleğe alınır</string>
+    <string name="anti_fn_off_toast">Anti-FN KAPALI — önbellek temizlendi</string>
+    <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH Benzerlik Eşiği</string>
+    <string name="anti_fn_tlsh_threshold_hint">TLSH mesafe eşiği (1-200). Düşük = daha katı, yüksek = daha agresif tespit yükseltmesi. Varsayılan: 40</string>
+    <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSH eşiği %1$d olarak ayarlandı</string>
+    <string name="anti_fn_match_mode_toggle">Anti-FN Eşleşme Modu — TLSH benzerliği yerine tam MD5 eşleşmesi kullan</string>
+    <string name="anti_fn_match_mode_md5_toast">Anti-FN Eşleşme Modu: MD5 (tam eşleşme)</string>
+    <string name="anti_fn_match_mode_tlsh_toast">Anti-FN Eşleşme Modu: TLSH (benzerlik eşleşmesi)</string>
 
 </resources>
