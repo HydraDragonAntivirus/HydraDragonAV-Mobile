@@ -222,6 +222,12 @@ public class ScanEngine {
     public void cancelScan() {
         cancelRequested = true;
         pauseRequested = false; // Cancel overrides pause
+        // Also tell the native side to abandon its deferred Phase 3 flush — that
+        // final flushBatchScans()/endBatchScan() is one long blocking JNI call
+        // with no interruption point of its own, so without this Stop had no
+        // effect once the scan reached that stage (looked frozen until the whole
+        // queue of heavy scans finished).
+        NativeScanner.abortBatchScan();
     }
 
     /** Pause the running scan. Can be resumed with {@link #resumeScan()}. */
@@ -1838,6 +1844,9 @@ public class ScanEngine {
     }
 
     private void flushBatchScans(List<ThreatResult> threats) {
+        // endBatchScan() bails out early if cancelScan() called abortBatchScan()
+        // (see NativeScanner) — it then returns only the verdicts scanned before
+        // the abort, and the loop below still records those.
         String json = NativeScanner.endBatchScan();
         List<NativeScanner.Verdict> verdicts = NativeScanner.parseBatchVerdicts(json);
         for (NativeScanner.Verdict v : verdicts) {

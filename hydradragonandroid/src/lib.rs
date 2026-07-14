@@ -217,6 +217,13 @@ const SCAN_SERIAL_MAX_WAIT: std::time::Duration = std::time::Duration::from_secs
 static BATCH_MODE: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
+/// Set by `nativeAbortBatchScan` when the user presses Stop. The deferred-flush
+/// loop in `nativeEndBatchScan` checks this before each item and bails out early
+/// instead of grinding through every queued file's Phase 3 scan — otherwise Stop
+/// looked like it did nothing while that final one-JNI-call flush ran to the end.
+static BATCH_ABORT: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 /// Holds the precomputed Phase-1+2 data for each file queued in batch mode.
 /// Flushed and cleared by `nativeEndBatchScan`.
 static DEFERRED_QUEUE: OnceLock<std::sync::Mutex<Vec<DeferredItem>>> = OnceLock::new();
@@ -1185,9 +1192,20 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass<'local>,
 ) {
     BATCH_MODE.store(true, std::sync::atomic::Ordering::Relaxed);
+    BATCH_ABORT.store(false, std::sync::atomic::Ordering::Relaxed);
     if let Ok(mut q) = deferred_queue().lock() {
         q.clear();
     }
+}
+
+/// Signal an in-progress `nativeEndBatchScan` flush to stop early (user pressed
+/// Stop). Cheap and non-blocking — just flips the flag the flush loop polls.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeAbortBatchScan<'local>(
+    _env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+) {
+    BATCH_ABORT.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
 #[unsafe(no_mangle)]
@@ -1215,6 +1233,11 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         };
         let mut verdicts = Vec::new();
         for item in items {
+            // User pressed Stop mid-flush — abandon the rest of the queue. The
+            // already-scanned files' verdicts still return; the rest are dropped.
+            if BATCH_ABORT.load(std::sync::atomic::Ordering::Relaxed) {
+                break;
+            }
             let res = run_deferred_item(&guard, item);
             verdicts.push(res);
         }

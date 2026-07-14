@@ -148,6 +148,7 @@ public final class NativeScanner {
     private static native String nativeScanApk(String path, String hydradragonJson, String fileMd5, boolean zeroTrust);
     private static native void nativeBeginBatchScan();
     private static native String nativeEndBatchScan();
+    private static native void nativeAbortBatchScan();
 
     public static void beginBatchScan() {
         if (!LIB_LOADED) return;
@@ -157,6 +158,14 @@ public final class NativeScanner {
     public static String endBatchScan() {
         if (!LIB_LOADED) return "[]";
         try { return nativeEndBatchScan(); } catch (Throwable t) { return "[]"; }
+    }
+
+    /** Signal an in-progress endBatchScan() flush to stop early (user pressed
+     *  Stop). Non-blocking — just flips a native flag the flush loop polls, so
+     *  the deferred Phase 3 scan bails out instead of grinding to the end. */
+    public static void abortBatchScan() {
+        if (!LIB_LOADED) return;
+        try { nativeAbortBatchScan(); } catch (Throwable ignore) {}
     }
 
     /** Diagnostics: what loaded / failed during the last nativeInit. */
