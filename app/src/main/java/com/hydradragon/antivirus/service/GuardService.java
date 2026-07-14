@@ -291,6 +291,7 @@ public class GuardService extends Service {
         aiEngine = new AIEngine(this);
         scanEngine = new ScanEngine(this, aiEngine);
         backgroundScanEngine = new ScanEngine(this, aiEngine);
+        backgroundScanEngine.setBackgroundScan(true);
         networkMonitor = new NetworkMonitor(this);
         processDetector = new ProcessDetector(this);
 

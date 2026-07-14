@@ -344,6 +344,21 @@ public class SettingsFragment extends Fragment {
         addBtn("🔀 " + getString(R.string.anti_fp_tlsh_threshold_btn) + " (" + tlshThresh + ")", color(R.color.bg_secondary),
             v -> showTlshThresholdDialog());
 
+        boolean fastScan = com.hydradragon.antivirus.engine.FastScanMode.isEnabled(requireContext());
+        addToggle(getString(R.string.fast_scan_toggle), fastScan, (btn, on) -> {
+            com.hydradragon.antivirus.engine.FastScanMode.setEnabled(requireContext(), on);
+            Toast.makeText(getContext(), on
+                ? getString(R.string.fast_scan_on_toast)
+                : getString(R.string.fast_scan_off_toast), Toast.LENGTH_SHORT).show();
+        });
+
+        boolean systemScan = prefs().getBoolean("scan_system_files_enabled", false);
+        addToggle(getString(R.string.scan_system_toggle), systemScan, (btn, on) -> {
+            prefs().edit().putBoolean("scan_system_files_enabled", on).apply();
+            Toast.makeText(getContext(), on
+                ? getString(R.string.scan_system_on_toast)
+                : getString(R.string.scan_system_off_toast), Toast.LENGTH_LONG).show();
+        });
 
         boolean antiFn = prefs().getBoolean("anti_fn_enabled", true);
         addToggle(getString(R.string.anti_fn_enabled_toggle), antiFn, (btn, on) -> {

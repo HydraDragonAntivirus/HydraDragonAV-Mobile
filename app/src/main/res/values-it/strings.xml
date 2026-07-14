@@ -418,4 +418,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Threats</string>
     <string name="scan_view_all_files">📄 All Files</string>
+    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
+    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
+    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
 </resources>

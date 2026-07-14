@@ -234,6 +234,12 @@ public class ScanEngine {
      *  {@link #deepNativeScanInstalledApks} to skip the costly native engine
      *  on apps we already trust — their zip-entry hashes are already cached. */
     private final java.util.HashSet<String> whitelistedDuringScan = new java.util.HashSet<>();
+    private volatile boolean isBackgroundScan = false;
+
+    public void setBackgroundScan(boolean background) {
+        this.isBackgroundScan = background;
+    }
+
     /** Set by {@link #cancelScan()} to abort an in-flight scan at the next loop
      *  boundary. Volatile so the UI thread's request is seen by the scan thread. */
     private volatile boolean cancelRequested = false;
@@ -1032,8 +1038,10 @@ public class ScanEngine {
                         continue;
                     }
 
-                    // 3. Check persistent antiFpCache (known MD5 clean)
-                    if (antiFpCache != null && antiFpCache.isEnabled() && antiFpCache.isKnownMd5(apkMd5)) {
+                    // 3. Check persistent antiFpCache (known MD5 clean) —
+                    //    only during non-background scans (background scans
+                    //    must re-scan to keep the knowledge database fresh).
+                    if (!isBackgroundScan && antiFpCache != null && antiFpCache.isEnabled() && antiFpCache.isKnownMd5(apkMd5)) {
                         Log.i(TAG, "Anti-FP cache hit APK (known MD5 clean): " + file.getAbsolutePath());
                         fileScanCache.put(apkMd5, java.util.Optional.empty());
                         if (!cancelRequested) reportFileScanned(file, "Anti-FP cache hit - clean", 0, false);
@@ -1251,8 +1259,10 @@ public class ScanEngine {
                     return true;
                 }
 
-                // 3. Check persistent antiFpCache (known MD5 clean)
-                if (antiFpCache != null && antiFpCache.isEnabled() && antiFpCache.isKnownMd5(fileMd5)) {
+                // 3. Check persistent antiFpCache (known MD5 clean) —
+                //    only during non-background scans (background scans
+                //    must re-scan to keep the knowledge database fresh).
+                if (!isBackgroundScan && antiFpCache != null && antiFpCache.isEnabled() && antiFpCache.isKnownMd5(fileMd5)) {
                     Log.i(TAG, "Anti-FP cache hit (known MD5 clean): " + file.getAbsolutePath());
                     fileScanCache.put(fileMd5, java.util.Optional.empty());
                     return true;
@@ -1646,14 +1656,27 @@ public class ScanEngine {
         builder.setStandaloneFile(isApkFile);
 
         // Never flag ourselves — exact match against our release + debug package
-        // (debug build's packageName has a ".debug" suffix; a scanned own-APK
-        // file reports the release id). equals(), not startsWith(), so malware
-        // can't self-whitelist with a "com.hydradragon.antivirus.evil" prefix.
+        // (debug build's packageName has a ".debug" suffix; a scanned own-APK file
+        // reports the release id). equals(), not startsWith(), so malware can't
+        // self-whitelist with a "com.hydradragon.antivirus.evil" prefix.
         if (app.packageName != null
             && (app.packageName.equals(context.getPackageName())
                 || app.packageName.equals("com.hydradragon.antivirus")
                 || app.packageName.equals("com.hydradragon.antivirus.debug"))) {
             builder.setRiskScore(0); return builder.build();
+        }
+
+        // Fast scan mode: skip apps whose sourceDir MD5 is known-clean in the
+        // Anti-FP cache. Only applies to manual (non-background) scans so the
+        // background scan always populates the knowledge database.
+        if (!isBackgroundScan && FastScanMode.isEnabled(context)
+                && antiFpCache != null && antiFpCache.isEnabled()
+                && app.sourceDir != null) {
+            String sourceMd5 = computeFileMd5(new java.io.File(app.sourceDir));
+            if (sourceMd5 != null && antiFpCache.isKnownMd5(sourceMd5)) {
+                Log.i(TAG, "FAST-SCAN-SKIP[Anti-FP cache hit] " + app.packageName);
+                builder.setRiskScore(0); return builder.build();
+            }
         }
 
         boolean isSystem = (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0
@@ -1663,13 +1686,21 @@ public class ScanEngine {
             || app.sourceDir.startsWith("/oem/") || app.sourceDir.startsWith("/odm/")
             || app.sourceDir.startsWith("/apex/"))) isSystem = true;
         if (isSystem) {
-            Log.d(TAG, "CLEAR-EXIT[isSystem] " + app.packageName + " sourceDir=" + app.sourceDir);
+            // Still populate the Anti-FP cache regardless of the setting so
+            // fast-scan / normal-scan can benefit from known-clean entries.
             if (app.packageName != null) whitelistedDuringScan.add(app.packageName);
             if (antiFpCache.isEnabled() && app.sourceDir != null) {
                 String json = NativeScanner.computeZipEntryHashes(app.sourceDir);
                 antiFpCache.addEntries(json, app.packageName);
             }
-            builder.setRiskScore(0); return builder.build();
+            // Skip system apps unless the user explicitly enabled system file
+            // scanning (not recommended unless rooted — see Settings toggle).
+            if (!context.getSharedPreferences("hydra_prefs", 0)
+                    .getBoolean("scan_system_files_enabled", false)) {
+                Log.d(TAG, "CLEAR-EXIT[isSystem] " + app.packageName + " sourceDir=" + app.sourceDir);
+                builder.setRiskScore(0); return builder.build();
+            }
+            Log.d(TAG, "SYSTEM-SCAN[enabled] " + app.packageName + " sourceDir=" + app.sourceDir);
         }
 
         boolean isFromStore = false;
