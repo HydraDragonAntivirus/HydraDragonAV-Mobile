@@ -418,7 +418,11 @@
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Threats</string>
     <string name="scan_view_all_files">📄 All Files</string>
-    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
-    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
-    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
+    <string name="scan_system_toggle">Сканувати системні файли — не рекомендується, якщо пристрій не рутовано</string>
+    <string name="scan_system_on_toast">Сканування системних файлів увімкнено — може позначати легітимні системні додатки</string>
+    <string name="scan_system_off_toast">Сканування системних файлів вимкнено — системні додатки пропускатимуться</string>
+    <string name="fast_scan_toggle">Швидке сканування — пропускати відомі чисті файли за допомогою бази знань</string>
+    <string name="fast_scan_summary">Після ввімкнення ручні сканування пропускають записи з білого списку в кеші Anti-FP. Фонові сканування завжди виконують повне сканування, щоб база знань залишалася актуальною.</string>
+    <string name="fast_scan_on_toast">Швидке сканування ввімкнено — ручні сканування пропускатимуть відомі чисті файли</string>
+    <string name="fast_scan_off_toast">Швидке сканування вимкнено — всі файли скануватимуться як звичайно</string>
 </resources>

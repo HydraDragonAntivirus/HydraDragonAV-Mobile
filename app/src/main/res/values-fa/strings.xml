@@ -418,11 +418,11 @@
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Threats</string>
     <string name="scan_view_all_files">📄 All Files</string>
-    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
-    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
-    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
-    <string name="fast_scan_toggle">Fast Scan — skip known-clean files using knowledge database</string>
-    <string name="fast_scan_summary">When enabled, manual scans skip whitelisted entries from Anti-FP cache. Background scans always do a full scan to keep the knowledge database fresh.</string>
-    <string name="fast_scan_on_toast">Fast scan enabled — manual scans will skip known-clean files</string>
-    <string name="fast_scan_off_toast">Fast scan disabled — all files will be scanned normally</string>
+    <string name="scan_system_toggle">اسکن فایل‌های سیستم — توصیه نمی‌شود مگر اینکه دستگاه روت شده باشد</string>
+    <string name="scan_system_on_toast">اسکن فایل‌های سیستم فعال شد — ممکن است برنامه‌های سیستمی قانونی را پرچم‌گذاری کند</string>
+    <string name="scan_system_off_toast">اسکن فایل‌های سیستم غیرفعال شد — برنامه‌های سیستمی رد خواهند شد</string>
+    <string name="fast_scan_toggle">اسکن سریع — رد شدن از فایل‌های تمیز شناخته شده با استفاده از پایگاه دانش</string>
+    <string name="fast_scan_summary">هنگام فعال بودن، اسکن‌های دستی از ورودی‌های مجاز در حافظه نهان Anti-FP رد می‌شوند. اسکن‌های پس‌زمینه همیشه یک اسکن کامل انجام می‌دهند تا پایگاه دانش به‌روز بماند.</string>
+    <string name="fast_scan_on_toast">اسکن سریع فعال شد — اسکن‌های دستی از فایل‌های تمیز شناخته شده رد می‌شوند</string>
+    <string name="fast_scan_off_toast">اسکن سریع غیرفعال شد — همه فایل‌ها به طور عادی اسکن می‌شوند</string>
 </resources>

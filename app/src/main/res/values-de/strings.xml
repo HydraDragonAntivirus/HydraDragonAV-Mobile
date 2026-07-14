@@ -418,11 +418,11 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Threats</string>
     <string name="scan_view_all_files">📄 All Files</string>
-    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
-    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
-    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
-    <string name="fast_scan_toggle">Fast Scan — skip known-clean files using knowledge database</string>
-    <string name="fast_scan_summary">When enabled, manual scans skip whitelisted entries from Anti-FP cache. Background scans always do a full scan to keep the knowledge database fresh.</string>
-    <string name="fast_scan_on_toast">Fast scan enabled — manual scans will skip known-clean files</string>
-    <string name="fast_scan_off_toast">Fast scan disabled — all files will be scanned normally</string>
+    <string name="scan_system_toggle">Systemdateien scannen — nicht empfohlen, außer das Gerät ist gerootet</string>
+    <string name="scan_system_on_toast">Systemdateiscan aktiviert — kann legitime System-Apps markieren</string>
+    <string name="scan_system_off_toast">Systemdateiscan deaktiviert — System-Apps werden übersprungen</string>
+    <string name="fast_scan_toggle">Schnellscan — bekannte saubere Dateien mithilfe der Wissensdatenbank überspringen</string>
+    <string name="fast_scan_summary">Wenn aktiviert, überspringen manuelle Scans whitelistete Einträge aus dem Anti-FP-Cache. Hintergrundscans führen immer einen vollständigen Scan durch, um die Wissensdatenbank aktuell zu halten.</string>
+    <string name="fast_scan_on_toast">Schnellscan aktiviert — manuelle Scans überspringen bekannte saubere Dateien</string>
+    <string name="fast_scan_off_toast">Schnellscan deaktiviert — alle Dateien werden normal gescannt</string>
 </resources>

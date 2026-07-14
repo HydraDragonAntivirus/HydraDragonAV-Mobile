@@ -418,7 +418,11 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Threats</string>
     <string name="scan_view_all_files">📄 All Files</string>
-    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
-    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
-    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
+    <string name="scan_system_toggle">Analyser les fichiers système — déconseillé sauf si l'appareil est rooté</string>
+    <string name="scan_system_on_toast">Analyse des fichiers système activée — peut signaler des applications système légitimes</string>
+    <string name="scan_system_off_toast">Analyse des fichiers système désactivée — les applications système seront ignorées</string>
+    <string name="fast_scan_toggle">Analyse rapide — ignorer les fichiers propres connus via la base de connaissances</string>
+    <string name="fast_scan_summary">Lorsqu'activé, les analyses manuelles ignorent les entrées autorisées du cache Anti-FP. Les analyses en arrière-plan effectuent toujours une analyse complète pour maintenir la base de connaissances à jour.</string>
+    <string name="fast_scan_on_toast">Analyse rapide activée — les analyses manuelles ignoreront les fichiers propres connus</string>
+    <string name="fast_scan_off_toast">Analyse rapide désactivée — tous les fichiers seront analysés normalement</string>
 </resources>

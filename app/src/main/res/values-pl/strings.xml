@@ -418,7 +418,11 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Threats</string>
     <string name="scan_view_all_files">📄 All Files</string>
-    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
-    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
-    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
+    <string name="scan_system_toggle">Skanuj pliki systemowe — niezalecane, chyba że urządzenie jest zrootowane</string>
+    <string name="scan_system_on_toast">Skanowanie plików systemowych włączone — może oznaczać legalne aplikacje systemowe</string>
+    <string name="scan_system_off_toast">Skanowanie plików systemowych wyłączone — aplikacje systemowe zostaną pominięte</string>
+    <string name="fast_scan_toggle">Szybkie skanowanie — pomiń znane czyste pliki za pomocą bazy wiedzy</string>
+    <string name="fast_scan_summary">Po włączeniu ręczne skanowania pomijają wpisy z białej listy z pamięci podręcznej Anti-FP. Skanowania w tle zawsze wykonują pełne skanowanie, aby utrzymać aktualność bazy wiedzy.</string>
+    <string name="fast_scan_on_toast">Szybkie skanowanie włączone — ręczne skanowania pominą znane czyste pliki</string>
+    <string name="fast_scan_off_toast">Szybkie skanowanie wyłączone — wszystkie pliki będą skanowane normalnie</string>
 </resources>

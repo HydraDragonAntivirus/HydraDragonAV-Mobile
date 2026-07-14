@@ -418,7 +418,11 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Threats</string>
     <string name="scan_view_all_files">📄 All Files</string>
-    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
-    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
-    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
+    <string name="scan_system_toggle">Digitalizar arquivos do sistema — não recomendado a menos que o dispositivo esteja rooteado</string>
+    <string name="scan_system_on_toast">Digitalização de arquivos do sistema ativada — pode sinalizar aplicativos legítimos do sistema</string>
+    <string name="scan_system_off_toast">Digitalização de arquivos do sistema desativada — aplicativos do sistema serão ignorados</string>
+    <string name="fast_scan_toggle">Digitalização rápida — pular arquivos limpos conhecidos usando o banco de conhecimento</string>
+    <string name="fast_scan_summary">Quando ativado, as digitalizações manuais pulam entradas na lista de permissões do cache Anti-FP. As digitalizações em segundo plano sempre fazem uma digitalização completa para manter o banco de conhecimento atualizado.</string>
+    <string name="fast_scan_on_toast">Digitalização rápida ativada — digitalizações manuais pularão arquivos limpos conhecidos</string>
+    <string name="fast_scan_off_toast">Digitalização rápida desativada — todos os arquivos serão digitalizados normalmente</string>
 </resources>

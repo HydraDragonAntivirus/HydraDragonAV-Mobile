@@ -418,7 +418,11 @@
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Threats</string>
     <string name="scan_view_all_files">📄 All Files</string>
-    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
-    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
-    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
+    <string name="scan_system_toggle">扫描系统文件 — 除非设备已 root，否则不推荐</string>
+    <string name="scan_system_on_toast">系统文件扫描已启用 — 可能会标记合法的系统应用</string>
+    <string name="scan_system_off_toast">系统文件扫描已禁用 — 系统应用将被跳过</string>
+    <string name="fast_scan_toggle">快速扫描 — 使用知识数据库跳过已知的干净文件</string>
+    <string name="fast_scan_summary">启用后，手动扫描会跳过 Anti-FP 缓存中的白名单条目。后台扫描始终执行完整扫描以保持知识数据库最新。</string>
+    <string name="fast_scan_on_toast">快速扫描已启用 — 手动扫描将跳过已知的干净文件</string>
+    <string name="fast_scan_off_toast">快速扫描已禁用 — 所有文件将正常扫描</string>
 </resources>

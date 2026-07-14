@@ -418,7 +418,11 @@
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Threats</string>
     <string name="scan_view_all_files">📄 All Files</string>
-    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
-    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
-    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
+    <string name="scan_system_toggle">시스템 파일 검사 — 기기가 루팅되지 않은 경우 권장하지 않음</string>
+    <string name="scan_system_on_toast">시스템 파일 검사 활성화 — 합법적인 시스템 앱에 플래그가 지정될 수 있음</string>
+    <string name="scan_system_off_toast">시스템 파일 검사 비활성화 — 시스템 앱이 건너뛰어집니다</string>
+    <string name="fast_scan_toggle">빠른 검사 — 지식 데이터베이스를 사용하여 알려진 클린 파일 건너뛰기</string>
+    <string name="fast_scan_summary">활성화되면 수동 검사가 Anti-FP 캐시의 허용 목록 항목을 건너뜁니다. 백그라운드 검사는 지식 데이터베이스를 최신 상태로 유지하기 위해 항상 전체 검사를 수행합니다.</string>
+    <string name="fast_scan_on_toast">빠른 검사 활성화 — 수동 검사가 알려진 클린 파일을 건너뜁니다</string>
+    <string name="fast_scan_off_toast">빠른 검사 비활성화 — 모든 파일이 정상적으로 검사됩니다</string>
 </resources>

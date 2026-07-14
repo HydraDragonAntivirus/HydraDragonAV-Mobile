@@ -425,7 +425,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="net_event_detail_pid">🔢 PID:</string>
     <string name="scan_view_threats">⚠ Tehditler</string>
     <string name="scan_view_all_files">📄 Tüm Dosyalar</string>
-    <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
-    <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
-    <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
+    <string name="scan_system_toggle">Sistem Dosyalarını Tara — cihaz root'lu değilse önerilmez</string>
+    <string name="scan_system_on_toast">Sistem dosyası taraması etkin — meşru sistem uygulamalarını işaretleyebilir</string>
+    <string name="scan_system_off_toast">Sistem dosyası taraması devre dışı — sistem uygulamaları atlanacak</string>
 </resources>
