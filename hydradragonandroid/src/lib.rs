@@ -1215,13 +1215,13 @@ fn rescan_buffers_parallel(
     opts: ScanOptions,
     max_dets: usize,
     scan_timing: &mut hydradragonclamav::scanner::TimingBreakdown,
-) -> Vec<(String, Vec<String>)> {
+) -> Vec<(String, String, Vec<String>)> {
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering as AtomOrdering};
     use std::sync::Mutex;
 
     let next_idx = AtomicUsize::new(0);
     let dets_full = AtomicBool::new(false);
-    let results: Mutex<Vec<(String, Vec<String>)>> = Mutex::new(Vec::new());
+    let results: Mutex<Vec<(String, String, Vec<String>)>> = Mutex::new(Vec::new());
     let timing: Mutex<hydradragonclamav::scanner::TimingBreakdown> = Mutex::new(Default::default());
 
     // Small, capped pool — this runs INSIDE the SCAN_SERIAL lock (one file at
@@ -1239,7 +1239,7 @@ fn rescan_buffers_parallel(
                 // panic loses only that worker's remaining share of the work,
                 // not every other worker's already-collected detections.
                 let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    let mut local_dets: Vec<(String, Vec<String>)> = Vec::new();
+                    let mut local_dets: Vec<(String, String, Vec<String>)> = Vec::new();
                     let mut local_timing = hydradragonclamav::scanner::TimingBreakdown::default();
                     loop {
                         if dets_full.load(AtomOrdering::Relaxed) {
@@ -1279,7 +1279,7 @@ fn rescan_buffers_parallel(
                         })) {
                             Ok((matches, bt)) => {
                                 for m in matches {
-                                    local_dets.push((m.name, b.apk_lineage.clone()));
+                                    local_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
                                 }
                                 local_timing.accumulate(bt);
                             }
@@ -1305,7 +1305,7 @@ fn rescan_buffers_parallel(
                             })) {
                                 Ok((matches, bt)) => {
                                     for m in matches {
-                                        local_dets.push((m.name, b.apk_lineage.clone()));
+                                        local_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
                                     }
                                     local_timing.accumulate(bt);
                                 }
@@ -1327,7 +1327,7 @@ fn rescan_buffers_parallel(
                             })) {
                                 Ok((matches, bt)) => {
                                     for m in matches {
-                                        local_dets.push((m.name, b.apk_lineage.clone()));
+                                        local_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
                                     }
                                     local_timing.accumulate(bt);
                                 }
@@ -1339,7 +1339,7 @@ fn rescan_buffers_parallel(
                                 }
                             }
                             for url in extract_and_scan_urls(engine, decoded) {
-                                local_dets.push((url, b.apk_lineage.clone()));
+                                local_dets.push((url, name.clone(), b.apk_lineage.clone()));
                             }
                         }
 
@@ -1351,6 +1351,7 @@ fn rescan_buffers_parallel(
                             }
                             local_dets.push((
                                 format!("Behavior.Native: {}", call.name),
+                                name.clone(),
                                 b.apk_lineage.clone(),
                             ));
                         }
@@ -1420,7 +1421,7 @@ fn run_scan(
     let mut err: Option<String> = None;
     let t_extract = std::time::Instant::now();
     let max_dets = 64;
-    let mut early_dets: Vec<(String, Vec<String>)> = Vec::new();
+    let mut early_dets: Vec<(String, String, Vec<String>)> = Vec::new();
     // `module_meta` is not available yet (androguard JSON etc. is built below
     // from the extracted buffers), so the early-detection scanner thread gets
     // `&[]` at this point. This means YARA rules depending on androguard/
@@ -1593,7 +1594,7 @@ fn run_scan(
     // Each detection carries the APK lineage of the buffer it fired on, so Java
     // can suppress it iff one of those ancestor-APK hashes is whitelisted.
     let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
-    let mut yara_dets: Vec<(String, Vec<String>)> = if early_hit {
+    let mut yara_dets: Vec<(String, String, Vec<String>)> = if early_hit {
         // The extraction-time ClamAV pass already found a detection. Treat that as
         // a fast path and avoid rescanning the same buffers here.
         Vec::new()
@@ -1650,7 +1651,7 @@ fn run_scan(
                 let mut nearest: Option<String> = None;
                 // Lineage of every APK/zip buffer the model flagged malicious, so
                 // the ML detection is suppressible by a whitelisted ancestor too.
-                let mut lineages: Vec<Vec<String>> = Vec::new();
+                let mut lineages: Vec<(String, Vec<String>)> = Vec::new();
                 for (i, b) in buffers.iter().enumerate() {
                     if skip_heavy[i] {
                         continue;
@@ -1668,7 +1669,15 @@ fn run_scan(
                     if let Some(r) = model.scan(&b.data) {
                         if r.malicious {
                             malicious = true;
-                            lineages.push(b.apk_lineage.clone());
+                            let obj_path = if i == 0 {
+                                path.to_string()
+                            } else {
+                                match &b.entry_name {
+                                    Some(entry) => format!("{path}!/{entry}"),
+                                    None => format!("{path}#extract[{i}]"),
+                                }
+                            };
+                            lineages.push((obj_path, b.apk_lineage.clone()));
                         }
                         if r.best_jaccard > best_jaccard {
                             best_jaccard = r.best_jaccard;
@@ -1700,7 +1709,7 @@ fn run_scan(
     // `matches` stays the clamav/YARA names only (display + PUA classification).
     let hits_json = yara_dets
         .iter()
-        .map(|(h, _)| format!("\"{}\"", json_escape(h)))
+        .map(|(h, _, _)| format!("\"{}\"", json_escape(h)))
         .collect::<Vec<_>>()
         .join(",");
 
@@ -1708,10 +1717,10 @@ fn run_scan(
     // results, then one "ML" detection per ml-flagged APK buffer. Each tagged
     // with its suppressible APK lineage. Duplicates (early hit + full ClamAV
     // re-scan) are harmless — Java deduplicates on the client side.
-    let mut detections: Vec<(String, Vec<String>)> = early_dets;
+    let mut detections: Vec<(String, String, Vec<String>)> = early_dets;
     detections.append(&mut yara_dets);
-    for lin in ml_lineages {
-        detections.push(("ML".to_string(), lin));
+    for (obj_path, lin) in ml_lineages {
+        detections.push(("ML".to_string(), obj_path, lin));
     }
 
     // DEX static-analysis: only High/Critical findings count as malicious.
@@ -1719,7 +1728,15 @@ fn run_scan(
         if let Some(ds) = &dex_scans[i] {
             for f in &ds.findings {
                 if dex_scan::is_severe(f.severity) {
-                    detections.push((format!("DEX/{:?}: {}", f.severity, f.message), b.apk_lineage.clone()));
+                    let obj_path = if i == 0 {
+                        path.to_string()
+                    } else {
+                        match &b.entry_name {
+                            Some(entry) => format!("{path}!/{entry}"),
+                            None => format!("{path}#extract[{i}]"),
+                        }
+                    };
+                    detections.push((format!("DEX/{:?}: {}", f.severity, f.message), obj_path, b.apk_lineage.clone()));
                 }
             }
         }
@@ -1743,7 +1760,15 @@ fn run_scan(
                     }
             if tlsh_relevant(&b.data) {
                 if let Some(dist) = tlsh_nearest(engine, &b.data) {
-                    detections.push((format!("TLSH.Malware/dist={}", dist), b.apk_lineage.clone()));
+                    let obj_path = if i == 0 {
+                        path.to_string()
+                    } else {
+                        match &b.entry_name {
+                            Some(entry) => format!("{path}!/{entry}"),
+                            None => format!("{path}#extract[{i}]"),
+                        }
+                    };
+                    detections.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
                 }
             }
         }
@@ -1810,13 +1835,13 @@ fn run_scan(
     };
     let detections_json = detections
         .iter()
-        .map(|(name, lineage)| {
+        .map(|(name, object_path, lineage)| {
             let hs = lineage
                 .iter()
                 .map(|h| format!("\"{}\"", h))
                 .collect::<Vec<_>>()
                 .join(",");
-            format!("{{\"name\":\"{}\",\"hashes\":[{}]}}", json_escape(name), hs)
+            format!("{{\"name\":\"{}\",\"object_path\":\"{}\",\"hashes\":[{}]}}", json_escape(name), json_escape(object_path), hs)
         })
         .collect::<Vec<_>>()
         .join(",");
@@ -1857,7 +1882,7 @@ fn run_scan(
 fn generate_yara_rule(
     file_hash: &str,
     packages: &[String],
-    detections: &[(String, Vec<String>)],
+    detections: &[(String, String, Vec<String>)],
     dex_scans: &[Option<dex_scan::DexScan>],
 ) -> Option<String> {
     let mut strings: Vec<String> = Vec::new();
@@ -1888,7 +1913,7 @@ fn generate_yara_rule(
     out.push_str("  meta:\n");
     out.push_str("    generator = \"hydradragon-autogen (yarGen-style)\"\n");
     out.push_str(&format!("    sample_md5 = \"{}\"\n", file_hash));
-    let det_names: Vec<String> = detections.iter().map(|(n, _)| n.replace('"', "'")).collect();
+    let det_names: Vec<String> = detections.iter().map(|(n, _, _)| n.replace('"', "'")).collect();
     let based_on = if det_names.is_empty() {
         "none (Zero Trust: unmatched/unknown sample, not a confirmed detection)".to_string()
     } else {
@@ -2638,7 +2663,7 @@ fn collect_buffers(
     top_md5: Option<&str>,
     engine: Option<&ClamavEngine>,
     path: &str,
-    early_dets: &mut Vec<(String, Vec<String>)>,
+    early_dets: &mut Vec<(String, String, Vec<String>)>,
     max_dets: usize,
     module_meta: &[(&str, &[u8])],
 ) -> Vec<Buf> {
@@ -2670,7 +2695,7 @@ fn collect_buffers(
     // empty AND no worker can produce more work — safe to stop.
     let outstanding = AtomicUsize::new(1);
     let out: Mutex<Vec<Buf>> = Mutex::new(Vec::new());
-    let dets: Mutex<Vec<(String, Vec<String>)>> = Mutex::new(Vec::new());
+    let dets: Mutex<Vec<(String, String, Vec<String>)>> = Mutex::new(Vec::new());
     let total_bytes = AtomicU64::new(0);
     // Count of buffers actually emitted to `out` — used for both the 4096 cap
     // and as each buffer's naming index (`path#extract[idx]`), without
@@ -2772,7 +2797,7 @@ fn collect_buffers(
                                         if !matches.is_empty() {
                                             if let Ok(mut dg) = dets.lock() {
                                                 for m in matches {
-                                                    dg.push((m.name, lineage.clone()));
+                                                    dg.push((m.name, m.object_path, lineage.clone()));
                                                 }
                                                 if dg.len() >= max_dets {
                                                     dets_full.store(true, AtomOrdering::Relaxed);
@@ -2812,7 +2837,15 @@ fn collect_buffers(
                                 }
                                 Err(e) if hydradragonextractor::is_bomb_error(&e) => {
                                     if let Ok(mut dg) = dets.lock() {
-                                        dg.push(("HDR.Bomb.Decompression".to_string(), lineage.clone()));
+                                        let obj_path = if idx == 0 {
+                                            path.to_string()
+                                        } else {
+                                            match &item.entry_name {
+                                                Some(entry) => format!("{path}!/{entry}"),
+                                                None => format!("{}#extract[{}]", path, idx),
+                                            }
+                                        };
+                                        dg.push(("HDR.Bomb.Decompression".to_string(), obj_path, lineage.clone()));
                                     }
                                 }
                                 Err(_) => {}

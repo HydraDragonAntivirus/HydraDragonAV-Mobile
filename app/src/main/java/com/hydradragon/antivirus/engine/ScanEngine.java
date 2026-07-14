@@ -383,6 +383,16 @@ public class ScanEngine {
         return name != null && name.startsWith("DEX/") && !name.startsWith("DEX/Critical");
     }
 
+    /** " (in /full/outer/path.apk!/classes.dex)" when the detection fired on a
+     *  sub-file nested inside the scanned archive rather than the top-level file
+     *  itself; "" otherwise. Shows the FULL object_path as-is (not just the inner
+     *  entry name), so the outer archive is still visible even for deeply nested
+     *  archives (zip inside zip inside apk, etc). */
+    private static String subFileSuffix(String outerPath, String objectPath) {
+        if (objectPath == null || objectPath.isEmpty() || objectPath.equals(outerPath)) return "";
+        return " (in " + objectPath + ")";
+    }
+
     private void loadPackageWhitelist() {
         // Known-good NSRL package keys (whitelist_packages.db, table
         // whitelist_package, column "key" = package_id^^file_name) into an exact
@@ -858,14 +868,14 @@ public class ScanEngine {
                 } else if (isEicarName(d.name)) {
                     if (DetectionCategories.isEnabled(context, DetectionCategories.EICAR)) {
                         hasEicar = true;
-                        reasons.add("🧪 [TEST] " + d.name);
+                        reasons.add("🧪 [TEST] " + d.name + subFileSuffix(path, d.objectPath));
                     }
                 } else if (!isDexHeuristicName(d.name)) {
                     boolean isPua = isPuaName(d.name);
                     String category = isPua ? DetectionCategories.PUA : DetectionCategories.SIGNATURES;
                     if (DetectionCategories.isEnabled(context, category)) {
                         if (!isPua) hasRealThreat = true;
-                        reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + d.name);
+                        reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + d.name + subFileSuffix(path, d.objectPath));
                     }
                 }
             }
@@ -1026,7 +1036,7 @@ public class ScanEngine {
                     }
                     if (isEicarName(d.name)) {
                         if (DetectionCategories.isEnabled(context, DetectionCategories.EICAR)) {
-                            eicar = true; reasons.add("🧪 [TEST] " + d.name);
+                            eicar = true; reasons.add("🧪 [TEST] " + d.name + subFileSuffix(app.sourceDir, d.objectPath));
                         }
                         continue;
                     }
@@ -1039,7 +1049,7 @@ public class ScanEngine {
                     if (!DetectionCategories.isEnabled(context, category)) continue;
                     if (auto) autoOnly = true;
                     if (!pua && !auto) real = true;
-                    reasons.add((pua ? "⚠️ [PUA] " : auto ? "❔ [AUTO] " : "🛡️ [SIG] ") + d.name);
+                    reasons.add((pua ? "⚠️ [PUA] " : auto ? "❔ [AUTO] " : "🛡️ [SIG] ") + d.name + subFileSuffix(app.sourceDir, d.objectPath));
                 }
                 if (real) {
                     // Auto-signature generation only on an actual confirmed virus,
@@ -1374,7 +1384,7 @@ public class ScanEngine {
                             }
                             if (isEicarName(d.name)) {
                                 if (DetectionCategories.isEnabled(context, DetectionCategories.EICAR)) {
-                                    hasEicar = true; reasons.add("🧪 [TEST] " + d.name);
+                                    hasEicar = true; reasons.add("🧪 [TEST] " + d.name + subFileSuffix(apkPath, d.objectPath));
                                 }
                                 continue;
                             }
@@ -1392,7 +1402,7 @@ public class ScanEngine {
                             if (!DetectionCategories.isEnabled(context, category)) continue;
                             if (isAuto) hasAutoOnly = true;
                             if (!isPua && !isAuto) hasRealThreat = true;
-                            reasons.add((isPua ? "⚠️ [PUA] " : isAuto ? "❔ [AUTO] " : "🛡️ [SIG] ") + d.name);
+                            reasons.add((isPua ? "⚠️ [PUA] " : isAuto ? "❔ [AUTO] " : "🛡️ [SIG] ") + d.name + subFileSuffix(apkPath, d.objectPath));
                         }
                         // Decide by what actually survived category gating
                         // (reasons/hasRealThreat), not just "live wasn't empty"

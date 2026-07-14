@@ -404,8 +404,14 @@ public final class NativeScanner {
 
         public static final class Detection {
             public final String name;
+            /** Full in-archive path of the matched sub-file, e.g. {@code app.apk!/classes.dex}. */
+            public final String objectPath;
             public final List<String> hashes;
-            Detection(String name, List<String> hashes) { this.name = name; this.hashes = hashes; }
+            Detection(String name, String objectPath, List<String> hashes) {
+                this.name = name;
+                this.objectPath = objectPath;
+                this.hashes = hashes;
+            }
         }
         /** MD5 (lowercase hex) of the whole scanned file — its "main hash". */
         public String md5;
@@ -494,6 +500,7 @@ public final class NativeScanner {
                     JSONObject d = dets.optJSONObject(i);
                     if (d == null) continue;
                     String name = d.optString("name", "");
+                    String objectPath = d.optString("object_path", "");
                     List<String> dh = new ArrayList<>();
                     JSONArray dhArr = d.optJSONArray("hashes");
                     if (dhArr != null)
@@ -501,7 +508,7 @@ public final class NativeScanner {
                             String h = dhArr.optString(j, null);
                             if (h != null && !h.isEmpty()) dh.add(h);
                         }
-                    v.detections.add(new Verdict.Detection(name, dh));
+                    v.detections.add(new Verdict.Detection(name, objectPath, dh));
                 }
             }
             if (o.has("generated_rule") && !o.isNull("generated_rule")) {
