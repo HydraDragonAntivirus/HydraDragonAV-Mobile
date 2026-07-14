@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ ルート化された端末</string>
@@ -379,17 +379,11 @@
     <string name="anti_fp_tlsh_threshold_btn">TLSH類似度しきい値</string>
     <string name="anti_fp_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的にFPを抑制。デフォルト: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">TLSHしきい値を%1$dに設定しました</string>
-    <string name="anti_fp_match_mode_toggle">Anti-FP照合モード — TLSH類似度ではなく厳密なMD5一致を使用</string>
-    <string name="anti_fp_match_mode_md5_toast">Anti-FP照合モード: MD5（完全一致）</string>
-    <string name="anti_fp_match_mode_tlsh_toast">Anti-FP照合モード: TLSH（類似度一致）</string>
     <string name="anti_fn_enabled_toggle">Anti-FN — 確認済みのマルウェアエントリ（MD5 + TLSH）を記憶し、リネームや再パッケージされた亜種を検出</string>
     <string name="anti_fn_on_toast">Anti-FN オン — 確認済みの検出結果がキャッシュされます</string>
     <string name="anti_fn_off_toast">Anti-FN オフ — キャッシュをクリアしました</string>
     <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH類似度しきい値</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的に検出精度を引き上げ。デフォルト: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSHしきい値を%1$dに設定しました</string>
-    <string name="anti_fn_match_mode_toggle">Anti-FN照合モード — TLSH類似度ではなく厳密なMD5一致を使用</string>
-    <string name="anti_fn_match_mode_md5_toast">Anti-FN照合モード: MD5（完全一致）</string>
-    <string name="anti_fn_match_mode_tlsh_toast">Anti-FN照合モード: TLSH（類似度一致）</string>
 
 </resources>

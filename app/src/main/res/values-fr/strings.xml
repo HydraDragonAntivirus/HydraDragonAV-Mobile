@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ APPAREIL ROOTÉ</string>
@@ -379,17 +379,11 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="anti_fp_tlsh_threshold_btn">Seuil de similarité TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">Seuil de distance TLSH (1-200). Plus bas = plus strict, plus haut = suppression FP plus agressive. Défaut : 40</string>
     <string name="anti_fp_tlsh_threshold_saved">Seuil TLSH défini à %1$d</string>
-    <string name="anti_fp_match_mode_toggle">Mode de correspondance Anti-FP — utiliser la correspondance exacte MD5 au lieu de la similarité TLSH</string>
-    <string name="anti_fp_match_mode_md5_toast">Mode de correspondance Anti-FP : MD5 (correspondance exacte)</string>
-    <string name="anti_fp_match_mode_tlsh_toast">Mode de correspondance Anti-FP : TLSH (correspondance par similarité)</string>
     <string name="anti_fn_enabled_toggle">Anti-FN — mémorise les entrées confirmées malveillantes (MD5 + TLSH) pour détecter les variantes renommées/repackagées</string>
     <string name="anti_fn_on_toast">Anti-FN ACTIVÉ — les détections confirmées sont mises en cache</string>
     <string name="anti_fn_off_toast">Anti-FN DÉSACTIVÉ — cache effacé</string>
     <string name="anti_fn_tlsh_threshold_btn">Seuil de similarité TLSH Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">Seuil de distance TLSH (1-200). Plus bas = plus strict, plus haut = amélioration de détection plus agressive. Défaut : 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Seuil TLSH Anti-FN défini à %1$d</string>
-    <string name="anti_fn_match_mode_toggle">Mode de correspondance Anti-FN — utiliser la correspondance exacte MD5 au lieu de la similarité TLSH</string>
-    <string name="anti_fn_match_mode_md5_toast">Mode de correspondance Anti-FN : MD5 (correspondance exacte)</string>
-    <string name="anti_fn_match_mode_tlsh_toast">Mode de correspondance Anti-FN : TLSH (correspondance par similarité)</string>
 
 </resources>

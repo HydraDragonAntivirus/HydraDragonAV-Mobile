@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ 已 ROOT 设备</string>
@@ -379,17 +379,11 @@
     <string name="anti_fp_tlsh_threshold_btn">TLSH 相似度阈值</string>
     <string name="anti_fp_tlsh_threshold_hint">TLSH 距离阈值（1-200）。越低越严格，越高越积极抑制误报。默认值：40</string>
     <string name="anti_fp_tlsh_threshold_saved">TLSH 阈值已设置为 %1$d</string>
-    <string name="anti_fp_match_mode_toggle">Anti-FP 匹配模式 — 使用精确 MD5 匹配而非 TLSH 相似度匹配</string>
-    <string name="anti_fp_match_mode_md5_toast">Anti-FP 匹配模式：MD5（精确匹配）</string>
-    <string name="anti_fp_match_mode_tlsh_toast">Anti-FP 匹配模式：TLSH（相似度匹配）</string>
     <string name="anti_fn_enabled_toggle">Anti-FN — 记住已确认的恶意条目（MD5 + TLSH），以捕获重命名或重新打包的变体</string>
     <string name="anti_fn_on_toast">Anti-FN 已开启 — 已确认的检测结果已被缓存</string>
     <string name="anti_fn_off_toast">Anti-FN 已关闭 — 缓存已清空</string>
     <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH 相似度阈值</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH 距离阈值（1-200）。越低越严格，越高越积极提升检测。默认值：40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSH 阈值已设置为 %1$d</string>
-    <string name="anti_fn_match_mode_toggle">Anti-FN 匹配模式 — 使用精确 MD5 匹配而非 TLSH 相似度匹配</string>
-    <string name="anti_fn_match_mode_md5_toast">Anti-FN 匹配模式：MD5（精确匹配）</string>
-    <string name="anti_fn_match_mode_tlsh_toast">Anti-FN 匹配模式：TLSH（相似度匹配）</string>
 
 </resources>

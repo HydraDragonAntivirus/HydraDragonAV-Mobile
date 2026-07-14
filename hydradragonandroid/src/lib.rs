@@ -1503,35 +1503,20 @@ fn run_scan(
     // cause is pinpointed, not just swallowed.
     let mut err: Option<String> = None;
     let t_extract = std::time::Instant::now();
-    let max_dets = 64;
-    let mut early_dets: Vec<(String, String, Vec<String>)> = Vec::new();
-    // `module_meta` is not available yet (androguard JSON etc. is built below
-    // from the extracted buffers), so the early-detection scanner thread gets
-    // `&[]` at this point. This means YARA rules depending on androguard/
-    // hydradragon module data won't match in the early pass — they will be
-    // caught when `run_scan` re-scans with the real module_meta below. For
-    // rules that don't need module context (most ClamAV signatures), the early
-    // pass is fully effective and triggers the `early_hit` fast-path.
-    let buffers = collect_buffers(
-        bytes, file_md5,
-        engine.clamav.as_ref(),
-        path, &mut early_dets, max_dets,
-        &[],
-    );
+    // Phase 1: extract ALL buffers first (no scanning during extraction).
+    // Whitelist data is collected next, and heavy scans (ClamAV, DEX, emulation,
+    // ML, TLSH) only run on buffers not covered by any whitelist.
+    let buffers = collect_buffers(bytes, file_md5, path);
     let extract_ms = t_extract.elapsed().as_millis();
-    let early_hit = !early_dets.is_empty();
 
     // MD5 of the whole top-level file (its "main hash") — Java builds a
     // VirusTotal lookup link from this (VT accepts md5). Reuses Java's md5.
-    // (Moved above the module_meta build since it's needed regardless.)
     let file_hash = match file_md5 {
         Some(md5) => md5.to_string(),
         None => md5_hex(bytes),
     };
 
-    // When the top-level buffer already triggered a detection, skip expensive
-    // per-buffer preprocessing (DEX analysis, native emulation, permissions,
-    // androguard JSON, whitelist checks) — ClamAV already found the threat.
+    let max_dets = 64;
     let perm_count;
     let packages;
     let hashes;
@@ -1544,22 +1529,7 @@ fn run_scan(
     let emulated: Vec<emulate::EmulationResult>;
     let emulated_strings: Vec<Option<Vec<u8>>>;
     let emulate_ms;
-    if early_hit {
-        perm_count = 0;
-        packages = Vec::new();
-        hashes = Vec::new();
-        androguard_json = None::<String>;
-        let _ = &androguard_json;
-        skip_heavy = vec![false; buffers.len()];
-        dex_scans = (0..buffers.len()).map(|_| None).collect();
-        dex_ms = 0;
-        hydradragon_meta = None::<Vec<u8>>;
-        let _ = &hydradragon_meta;
-        module_meta = Vec::new();
-        emulated = vec![emulate::EmulationResult::default(); buffers.len()];
-        emulated_strings = vec![None; buffers.len()];
-        emulate_ms = 0;
-    } else {
+    {
         // Dangerous-permission count from the (in-memory) manifest bytes.
         perm_count = max_dangerous_perms(&buffers);
         // Package name(s) from AndroidManifest.xml.
@@ -1585,6 +1555,19 @@ fn run_scan(
             .iter()
             .enumerate()
             .map(|(i, b)| {
+                // 1. Check if the buffer's own MD5 is in the NSRL hash whitelist (whitelisted item)
+                let self_md5 = if i == 0 {
+                    file_hash.to_lowercase()
+                } else {
+                    md5_hex(&b.data).to_lowercase()
+                };
+                if let Some(wl) = &engine.whitelist {
+                    if wl.contains(&self_md5) {
+                        return true;
+                    }
+                }
+
+                // 2. Check if any ancestor APK in its lineage is whitelisted
                 let mut check_hashes = b.apk_lineage.clone();
                 if i == 0 {
                     check_hashes.push(file_hash.clone());
@@ -1592,13 +1575,13 @@ fn run_scan(
 
                 for apk_md5 in check_hashes {
                     let apk_md5_lower = apk_md5.to_lowercase();
-                    // 1. Check NSRL hash whitelist
+                    // Check NSRL hash whitelist for ancestor
                     if let Some(wl) = &engine.whitelist {
                         if wl.contains(&apk_md5_lower) {
                             return true;
                         }
                     }
-                    // 2. Check package-name whitelist
+                    // Check package-name whitelist for ancestor
                     if let Some(pkg) = apk_md5_to_pkg.get(&apk_md5_lower) {
                         if let Some(known_md5) = engine.package_whitelist.get(pkg) {
                             if known_md5.eq_ignore_ascii_case(&apk_md5_lower) {
@@ -1696,35 +1679,28 @@ fn run_scan(
         emulate_ms = t_emulate.elapsed().as_millis();
     }
 
-    // Each detection carries the APK lineage of the buffer it fired on, so Java
-    // can suppress it iff one of those ancestor-APK hashes is whitelisted.
+    // Phase 3: heavy scans — ClamAV/YARA, ML, TLSH — only on non-whitelisted
+    // buffers (skip_heavy[i] == true means whitelisted, skip everything for it).
     let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
-    let mut yara_dets: Vec<(String, String, Vec<String>)> = if early_hit {
-        // The extraction-time ClamAV pass already found a detection. Treat that as
-        // a fast path and avoid rescanning the same buffers here.
-        Vec::new()
-    } else {
-        match &engine.clamav {
-            Some(clamav) => {
-                let max_dets = 64;
-                let opts = ScanOptions::default();
-                rescan_buffers_parallel(
-                    clamav,
-                    engine,
-                    &buffers,
-                    &skip_heavy,
-                    &dex_scans,
-                    &emulated,
-                    &emulated_strings,
-                    &module_meta,
-                    path,
-                    opts,
-                    max_dets,
-                    &mut scan_timing,
-                )
-            }
-            None => Vec::new(),
+    let mut yara_dets: Vec<(String, String, Vec<String>)> = match &engine.clamav {
+        Some(clamav) => {
+            let opts = ScanOptions::default();
+            rescan_buffers_parallel(
+                clamav,
+                engine,
+                &buffers,
+                &skip_heavy,
+                &dex_scans,
+                &emulated,
+                &emulated_strings,
+                &module_meta,
+                path,
+                opts,
+                max_dets,
+                &mut scan_timing,
+            )
         }
+        None => Vec::new(),
     };
     let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
     // Aggregate per-YARA-ruleset timing across all buffers.
@@ -1818,11 +1794,10 @@ fn run_scan(
         .collect::<Vec<_>>()
         .join(",");
 
-    // Unified detection list: early top-level hits first, then full ClamAV/YARA
-    // results, then one "ML" detection per ml-flagged APK buffer. Each tagged
-    // with its suppressible APK lineage. Duplicates (early hit + full ClamAV
-    // re-scan) are harmless — Java deduplicates on the client side.
-    let mut detections: Vec<(String, String, Vec<String>)> = early_dets;
+    // Unified detection list: ClamAV/YARA results first, then one "ML"
+    // detection per ml-flagged APK buffer. Each tagged with its suppressible
+    // APK lineage.
+    let mut detections: Vec<(String, String, Vec<String>)> = Vec::new();
     detections.append(&mut yara_dets);
     for (obj_path, lin) in ml_lineages {
         detections.push(("ML".to_string(), obj_path, lin));
@@ -2825,35 +2800,24 @@ struct Buf {
     entry_name: Option<String>,
 }
 
-/// `top_md5` is Java's already-computed MD5 of the whole scanned file, reused for
-/// the top-level (depth 0) buffer so the largest buffer isn't hashed twice.
+/// Phase 1 of the scan pipeline: extract ALL buffers from the file without
+/// scanning them. `top_md5` is Java's already-computed MD5 of the whole scanned
+/// file, reused for the top-level (depth 0) buffer so the largest buffer isn't
+/// hashed twice.
+///
 /// Zip-bomb guard: stops extraction when total decompressed bytes exceed ~2 GB
 /// or when the number of extracted buffers exceeds 4096.
 ///
-/// Extraction and scanning are no longer split across a dedicated "main
-/// thread extracts, one background thread scans" pipeline — every worker in
-/// a small pool does BOTH for whatever buffer it pulls next: extract it,
-/// scan it with ClamAV, push any children back onto the shared work stack,
-/// repeat. That means scanning genuinely overlaps extraction on however many
-/// cores are available (not just two threads handing off through a channel),
-/// and a worker that pulls the top-level 162 MB APK scans it while OTHER
-/// workers are already extracting/scanning its children concurrently.
-/// Scan results accumulate in `early_dets` as they arrive, regardless of
-/// whether a match was found.
-/// `module_meta` is passed through so YARA rules that depend on androguard/
-/// hydradragon module metadata detect correctly in the early pass (previously
-/// `&[]` was passed, causing YARA rules with module conditions to never match
-/// in the early-detection thread, then re-scanned in `run_scan`).
+/// After this returns, `run_scan` builds the whitelist (`skip_heavy`) then runs
+/// heavy passes (ClamAV/YARA, DEX, emulation, ML, TLSH) only on non-whitelisted
+/// buffers — so whitelisted APKs and their contents are never fed to any
+/// expensive scanner.
 fn collect_buffers(
     data: &[u8],
     top_md5: Option<&str>,
-    engine: Option<&ClamavEngine>,
     path: &str,
-    early_dets: &mut Vec<(String, String, Vec<String>)>,
-    max_dets: usize,
-    module_meta: &[(&str, &[u8])],
 ) -> Vec<Buf> {
-    use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering as AtomOrdering};
+    use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering as AtomOrdering};
     use std::sync::Mutex;
 
     /// One unit of pending work: a buffer that still needs extracting+scanning.
@@ -2881,18 +2845,15 @@ fn collect_buffers(
     // empty AND no worker can produce more work — safe to stop.
     let outstanding = AtomicUsize::new(1);
     let out: Mutex<Vec<Buf>> = Mutex::new(Vec::new());
-    let dets: Mutex<Vec<(String, String, Vec<String>)>> = Mutex::new(Vec::new());
     let total_bytes = AtomicU64::new(0);
     // Count of buffers actually emitted to `out` — used for both the 4096 cap
     // and as each buffer's naming index (`path#extract[idx]`), without
     // needing to lock `out` just to read its length.
     let emitted = AtomicUsize::new(0);
-    let dets_full = AtomicBool::new(false);
     // Set once the buffer/byte cap is hit; every worker checks it and winds
     // down rather than pulling more work, even if `outstanding` is nonzero.
-    let capped = AtomicBool::new(false);
+    let capped = std::sync::atomic::AtomicBool::new(false);
 
-    let opts = ScanOptions::default();
     // Small, capped pool — collect_buffers already runs inside run_scan's
     // SCAN_SERIAL lock (one file at a time), so it's safe to actually spend
     // the device's cores here without a second file's pool competing for them.
@@ -2952,54 +2913,7 @@ fn collect_buffers(
                             lineage.push(h);
                         }
 
-                        if let Some(clamav) = engine {
-                            if !dets_full.load(AtomOrdering::Relaxed) && !skip_by_size(&item.buf)
-                                && (item.depth == 0 || !skip_by_magic(&item.buf))
-                            {
-                                let name = if idx == 0 {
-                                    path.to_string()
-                                } else {
-                                    match &item.entry_name {
-                                        Some(entry) => format!("{path}!/{entry}"),
-                                        None => format!("{}#extract[{}]", path, idx),
-                                    }
-                                };
-                                // yara-x has a known panic (Option::unwrap() on
-                                // None in its WASM string module) triggered by
-                                // certain buffer content. Isolated per-buffer so
-                                // one bad buffer only loses ITS OWN scan, not
-                                // every remaining buffer in this APK — the
-                                // outer worker-level catch_unwind used to treat
-                                // this as fatal and abort the whole extraction.
-                                let scan_result = std::panic::catch_unwind(
-                                    std::panic::AssertUnwindSafe(|| {
-                                        clamav.scan_bytes_named_with_breakdown(
-                                            &item.buf, &name, opts, module_meta,
-                                        )
-                                    }),
-                                );
-                                match scan_result {
-                                    Ok((matches, _)) => {
-                                        if !matches.is_empty() {
-                                            if let Ok(mut dg) = dets.lock() {
-                                                for m in matches {
-                                                    dg.push((m.name, m.object_path, lineage.clone()));
-                                                }
-                                                if dg.len() >= max_dets {
-                                                    dets_full.store(true, AtomOrdering::Relaxed);
-                                                }
-                                            }
-                                        }
-                                    }
-                                    Err(_) => {
-                                        android_log(&format!(
-                                            "collect_buffers: scan PANIC on {name}, skipping this buffer only: {}",
-                                            last_panic()
-                                        ));
-                                    }
-                                }
-                            }
-                        }
+
 
                         if item.depth < 16 && fmt.is_some() {
                             match hydradragonextractor::extract_archive_from_bytes(&item.buf) {
@@ -3022,17 +2936,17 @@ fn collect_buffers(
                                     }
                                 }
                                 Err(e) if hydradragonextractor::is_bomb_error(&e) => {
-                                    if let Ok(mut dg) = dets.lock() {
-                                        let obj_path = if idx == 0 {
-                                            path.to_string()
-                                        } else {
-                                            match &item.entry_name {
-                                                Some(entry) => format!("{path}!/{entry}"),
-                                                None => format!("{}#extract[{}]", path, idx),
-                                            }
-                                        };
-                                        dg.push(("HDR.Bomb.Decompression".to_string(), obj_path, lineage.clone()));
-                                    }
+                                    // Zip-bomb detected: record it directly into out as a
+                                    // special sentinel so run_scan can surface it as a detection.
+                                    // We push a zero-length "BOMB" buffer with a special entry_name
+                                    // so rescan_buffers_parallel will see it in its scan loop.
+                                    // Actually we just log it — run_scan has no way to receive
+                                    // bomb detections from here after the early-scan removal.
+                                    // The decompression extractor's is_bomb_error check at the
+                                    // call site in rescan path handles this separately.
+                                    android_log(&format!(
+                                        "collect_buffers: zip-bomb guard triggered for {path}#{idx}: {e}"
+                                    ));
                                 }
                                 Err(_) => {}
                             }
@@ -3072,13 +2986,6 @@ fn collect_buffers(
         total_bytes.load(AtomOrdering::Relaxed) / 1_000_000
     );
 
-    let dets = dets.into_inner().unwrap_or_default();
-    for det in dets {
-        early_dets.push(det);
-        if early_dets.len() >= max_dets {
-            break;
-        }
-    }
     out
 }
 

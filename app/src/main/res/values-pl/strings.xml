@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ZROOTOWANE URZĄDZENIE</string>
@@ -379,17 +379,11 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="anti_fp_tlsh_threshold_btn">Próg Podobieństwa TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">Próg odległości TLSH (1-200). Niższy = bardziej rygorystyczny, wyższy = bardziej agresywne tłumienie FP. Domyślnie: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">Próg TLSH ustawiony na %1$d</string>
-    <string name="anti_fp_match_mode_toggle">Tryb dopasowania Anti-FP — używaj dokładnego dopasowania MD5 zamiast podobieństwa TLSH</string>
-    <string name="anti_fp_match_mode_md5_toast">Tryb dopasowania Anti-FP: MD5 (dokładne dopasowanie)</string>
-    <string name="anti_fp_match_mode_tlsh_toast">Tryb dopasowania Anti-FP: TLSH (dopasowanie podobieństwa)</string>
     <string name="anti_fn_enabled_toggle">Anti-FN — zapamiętuj potwierdzone złośliwe wpisy (MD5 + TLSH), aby wykrywać zmienione/przepakowane warianty</string>
     <string name="anti_fn_on_toast">Anti-FN WŁ. — potwierdzone wykrycia są buforowane</string>
     <string name="anti_fn_off_toast">Anti-FN WYŁ. — pamięć podręczna wyczyszczona</string>
     <string name="anti_fn_tlsh_threshold_btn">Próg Podobieństwa TLSH Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">Próg odległości TLSH (1-200). Niższy = bardziej rygorystyczny, wyższy = bardziej agresywne podniesienie wykrywalności. Domyślnie: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Próg TLSH Anti-FN ustawiony na %1$d</string>
-    <string name="anti_fn_match_mode_toggle">Tryb dopasowania Anti-FN — używaj dokładnego dopasowania MD5 zamiast podobieństwa TLSH</string>
-    <string name="anti_fn_match_mode_md5_toast">Tryb dopasowania Anti-FN: MD5 (dokładne dopasowanie)</string>
-    <string name="anti_fn_match_mode_tlsh_toast">Tryb dopasowania Anti-FN: TLSH (dopasowanie podobieństwa)</string>
 
 </resources>

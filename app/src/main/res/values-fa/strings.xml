@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ دستگاه روت شده</string>
@@ -379,17 +379,11 @@
     <string name="anti_fp_tlsh_threshold_btn">آستانه تشابه TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">آستانه فاصله TLSH (1-200). کمتر = سخت‌گیرانه‌تر، بیشتر = سرکوب تهاجمی‌تر نتایج مثبت کاذب. پیش‌فرض: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">آستانه TLSH روی %1$d تنظیم شد</string>
-    <string name="anti_fp_match_mode_toggle">حالت تطبیق Anti-FP — استفاده از تطابق دقیق MD5 به‌جای شباهت TLSH</string>
-    <string name="anti_fp_match_mode_md5_toast">حالت تطبیق Anti-FP: MD5 (تطابق دقیق)</string>
-    <string name="anti_fp_match_mode_tlsh_toast">حالت تطبیق Anti-FP: TLSH (تطابق شباهت)</string>
     <string name="anti_fn_enabled_toggle">Anti-FN — به خاطر سپردن ورودی‌های تأییدشده مخرب (MD5 + TLSH) برای شناسایی نسخه‌های تغییرنام‌یافته/بازبسته‌بندی‌شده</string>
     <string name="anti_fn_on_toast">Anti-FN روشن — تشخیص‌های تأییدشده ذخیره می‌شوند</string>
     <string name="anti_fn_off_toast">Anti-FN خاموش — حافظه موقت پاک شد</string>
     <string name="anti_fn_tlsh_threshold_btn">آستانه تشابه TLSH برای Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">آستانه فاصله TLSH (1-200). کمتر = سخت‌گیرانه‌تر، بیشتر = ارتقای تهاجمی‌تر تشخیص. پیش‌فرض: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">آستانه TLSH برای Anti-FN روی %1$d تنظیم شد</string>
-    <string name="anti_fn_match_mode_toggle">حالت تطبیق Anti-FN — استفاده از تطابق دقیق MD5 به‌جای شباهت TLSH</string>
-    <string name="anti_fn_match_mode_md5_toast">حالت تطبیق Anti-FN: MD5 (تطابق دقیق)</string>
-    <string name="anti_fn_match_mode_tlsh_toast">حالت تطبیق Anti-FN: TLSH (تطابق شباهت)</string>
 
 </resources>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon एंटीवायरस</string>
     <string name="root_warning_title">⚠ ⚠ रूटेड डिवाइस</string>
@@ -378,17 +378,11 @@
     <string name="anti_fp_tlsh_threshold_btn">TLSH समानता सीमा</string>
     <string name="anti_fp_tlsh_threshold_hint">TLSH दूरी सीमा (1-200)। कम = सख्त, अधिक = अधिक आक्रामक FP दमन। डिफ़ॉल्ट: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">TLSH सीमा %1$d पर सेट की गई</string>
-    <string name="anti_fp_match_mode_toggle">Anti-FP मिलान मोड — TLSH समानता के बजाय सटीक MD5 मिलान का उपयोग करें</string>
-    <string name="anti_fp_match_mode_md5_toast">Anti-FP मिलान मोड: MD5 (सटीक मिलान)</string>
-    <string name="anti_fp_match_mode_tlsh_toast">Anti-FP मिलान मोड: TLSH (समानता मिलान)</string>
     <string name="anti_fn_enabled_toggle">Anti-FN — नाम बदली/रीपैक की गई विविधताओं को पकड़ने के लिए पुष्ट रूप से दुर्भावनापूर्ण प्रविष्टियों (MD5 + TLSH) को याद रखें</string>
     <string name="anti_fn_on_toast">Anti-FN चालू — पुष्ट पहचानें कैश की जाती हैं</string>
     <string name="anti_fn_off_toast">Anti-FN बंद — कैश साफ़ किया गया</string>
     <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH समानता सीमा</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH दूरी सीमा (1-200)। कम = सख्त, अधिक = अधिक आक्रामक पहचान अपग्रेड। डिफ़ॉल्ट: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSH सीमा %1$d पर सेट की गई</string>
-    <string name="anti_fn_match_mode_toggle">Anti-FN मिलान मोड — TLSH समानता के बजाय सटीक MD5 मिलान का उपयोग करें</string>
-    <string name="anti_fn_match_mode_md5_toast">Anti-FN मिलान मोड: MD5 (सटीक मिलान)</string>
-    <string name="anti_fn_match_mode_tlsh_toast">Anti-FN मिलान मोड: TLSH (समानता मिलान)</string>
 
 </resources>
