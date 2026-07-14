@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">การสแกนพื้นหลังตามระยะเวลา</string>
     <string name="periodic_scan_on_toast">เปิดการสแกนพื้นหลังตามระยะเวลาแล้ว</string>
     <string name="periodic_scan_off_toast">ปิดการสแกนพื้นหลังตามระยะเวลาแล้ว — การป้องกันแบบเรียลไทม์ (ตรวจสอบการดาวน์โหลด, สแกนตอนติดตั้ง) ยังคงทำงานอยู่</string>
+    <string name="scan_wakelock_toggle">สแกนต่อเมื่อปิดหน้าจอ</string>
+    <string name="scan_wakelock_on_toast">การสแกนพื้นหลังยังทำงานเมื่อปิดหน้าจอ</string>
+    <string name="scan_wakelock_off_toast">การสแกนพื้นหลังอาจหยุดชั่วคราวเมื่อปิดหน้าจอ (ประหยัดแบตเตอรี่)</string>
     <string name="scan_interval_btn">กำหนดค่าช่วงเวลาสแกน</string>
     <string name="scan_interval_quick_label">สแกนด่วนทุก (นาที):</string>
     <string name="scan_interval_full_label">สแกนแบบเต็มทุก (นาที):</string>

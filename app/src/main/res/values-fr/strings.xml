@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Analyse périodique en arrière-plan</string>
     <string name="periodic_scan_on_toast">Analyses périodiques en arrière-plan ACTIVÉES</string>
     <string name="periodic_scan_off_toast">Analyses périodiques en arrière-plan DÉSACTIVÉES — la protection en temps réel (surveillance des téléchargements, analyse à l\'installation) continue de fonctionner</string>
+    <string name="scan_wakelock_toggle">Continuer l'analyse écran éteint</string>
+    <string name="scan_wakelock_on_toast">Les analyses en arrière-plan restent actives écran éteint</string>
+    <string name="scan_wakelock_off_toast">Les analyses en arrière-plan peuvent s'interrompre écran éteint (économise la batterie)</string>
     <string name="scan_interval_btn">Configurer l\'intervalle d\'analyse</string>
     <string name="scan_interval_quick_label">Analyse rapide toutes les (minutes) :</string>
     <string name="scan_interval_full_label">Analyse complète toutes les (minutes) :</string>

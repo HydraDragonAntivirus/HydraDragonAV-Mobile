@@ -10,6 +10,7 @@ public final class ScanSchedule {
     private static final String KEY_QUICK = "scan_interval_quick_min";
     private static final String KEY_FULL = "scan_interval_full_min";
     private static final String KEY_ENABLED = "periodic_scan_enabled";
+    private static final String KEY_WAKELOCK = "scan_wakelock_enabled";
 
     public static final int DEFAULT_QUICK_MIN = 30;
     public static final int DEFAULT_FULL_MIN = 180;
@@ -29,6 +30,18 @@ public final class ScanSchedule {
 
     public static void setPeriodicScanEnabled(Context c, boolean enabled) {
         c.getSharedPreferences(PREFS, 0).edit().putBoolean(KEY_ENABLED, enabled).apply();
+    }
+
+    /** Whether a background scan holds a partial wake lock so it keeps running
+     *  while the screen is off / device is dozing. On by default — without it
+     *  background scans freeze when the phone is locked. Users who prefer to save
+     *  battery (and don't need locked-screen scanning) can turn it off. */
+    public static boolean isScanWakeLockEnabled(Context c) {
+        return c.getSharedPreferences(PREFS, 0).getBoolean(KEY_WAKELOCK, true);
+    }
+
+    public static void setScanWakeLockEnabled(Context c, boolean enabled) {
+        c.getSharedPreferences(PREFS, 0).edit().putBoolean(KEY_WAKELOCK, enabled).apply();
     }
 
     public static int getQuickScanIntervalMinutes(Context c) {

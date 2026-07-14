@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Quét nền định kỳ</string>
     <string name="periodic_scan_on_toast">Đã BẬT quét nền định kỳ</string>
     <string name="periodic_scan_off_toast">Đã TẮT quét nền định kỳ — bảo vệ theo thời gian thực (giám sát Tải xuống, quét khi cài đặt) vẫn tiếp tục hoạt động</string>
+    <string name="scan_wakelock_toggle">Tiếp tục quét khi tắt màn hình</string>
+    <string name="scan_wakelock_on_toast">Quét nền vẫn hoạt động khi tắt màn hình</string>
+    <string name="scan_wakelock_off_toast">Quét nền có thể tạm dừng khi tắt màn hình (tiết kiệm pin)</string>
     <string name="scan_interval_btn">Cấu hình chu kỳ quét</string>
     <string name="scan_interval_quick_label">Quét nhanh mỗi (phút):</string>
     <string name="scan_interval_full_label">Quét đầy đủ mỗi (phút):</string>

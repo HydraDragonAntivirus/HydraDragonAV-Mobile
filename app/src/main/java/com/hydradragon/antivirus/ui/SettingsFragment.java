@@ -191,9 +191,18 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.periodic_scan_off_toast), Toast.LENGTH_SHORT).show();
         });
 
+        boolean wakeLockOn = com.hydradragon.antivirus.engine.ScanSchedule.isScanWakeLockEnabled(requireContext());
+        addToggle(getString(R.string.scan_wakelock_toggle), wakeLockOn, (btn, on) -> {
+            com.hydradragon.antivirus.engine.ScanSchedule.setScanWakeLockEnabled(requireContext(), on);
+            // Read fresh at the start of each scan (acquireScanWakeLock), so no
+            // service restart needed — takes effect on the next scan.
+            Toast.makeText(getContext(), on
+                ? getString(R.string.scan_wakelock_on_toast)
+                : getString(R.string.scan_wakelock_off_toast), Toast.LENGTH_SHORT).show();
+        });
+
         addBtn("⏱ " + getString(R.string.scan_interval_btn), color(R.color.bg_secondary),
             v -> showScanIntervalDialog());
-
         addBtn("📦 " + getString(R.string.max_scan_file_size_btn), color(R.color.bg_secondary),
             v -> showMaxScanFileSizeDialog());
 

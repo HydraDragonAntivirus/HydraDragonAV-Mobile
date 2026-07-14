@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">اسکن دوره‌ای در پس‌زمینه</string>
     <string name="periodic_scan_on_toast">اسکن دوره‌ای پس‌زمینه روشن شد</string>
     <string name="periodic_scan_off_toast">اسکن دوره‌ای پس‌زمینه خاموش شد — محافظت بلادرنگ (پایش دانلودها، اسکن هنگام نصب) همچنان فعال است</string>
+    <string name="scan_wakelock_toggle">ادامه اسکن هنگام خاموش بودن صفحه</string>
+    <string name="scan_wakelock_on_toast">اسکن پس‌زمینه هنگام خاموش بودن صفحه فعال می‌ماند</string>
+    <string name="scan_wakelock_off_toast">اسکن پس‌زمینه ممکن است هنگام خاموش بودن صفحه متوقف شود (صرفه‌جویی در باتری)</string>
     <string name="scan_interval_btn">پیکربندی بازه اسکن</string>
     <string name="scan_interval_quick_label">اسکن سریع هر (دقیقه):</string>
     <string name="scan_interval_full_label">اسکن کامل هر (دقیقه):</string>

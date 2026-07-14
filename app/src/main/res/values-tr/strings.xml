@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Periyodik Arka Plan Taraması</string>
     <string name="periodic_scan_on_toast">Periyodik arka plan taramaları AÇIK</string>
     <string name="periodic_scan_off_toast">Periyodik arka plan taramaları KAPALI — gerçek zamanlı koruma (İndirilenler izleyici, kurulumda tarama) çalışmaya devam ediyor</string>
+    <string name="scan_wakelock_toggle">Ekran Kapalıyken Taramaya Devam Et</string>
+    <string name="scan_wakelock_on_toast">Ekran kapalıyken arka plan taraması çalışmaya devam eder</string>
+    <string name="scan_wakelock_off_toast">Ekran kapalıyken arka plan taraması duraklayabilir (pil tasarrufu)</string>
     <string name="scan_interval_btn">Tarama Aralığını Yapılandır</string>
     <string name="scan_interval_quick_label">Hızlı tarama her (dakika):</string>
     <string name="scan_interval_full_label">Tam tarama her (dakika):</string>

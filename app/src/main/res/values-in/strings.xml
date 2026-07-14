@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Pemindaian Latar Belakang Berkala</string>
     <string name="periodic_scan_on_toast">Pemindaian latar belakang berkala AKTIF</string>
     <string name="periodic_scan_off_toast">Pemindaian latar belakang berkala NONAKTIF — perlindungan real-time (pemantau Unduhan, pemindaian saat instal) tetap berjalan</string>
+    <string name="scan_wakelock_toggle">Terus Memindai Saat Layar Mati</string>
+    <string name="scan_wakelock_on_toast">Pemindaian latar belakang tetap aktif saat layar mati</string>
+    <string name="scan_wakelock_off_toast">Pemindaian latar belakang dapat berhenti saat layar mati (menghemat baterai)</string>
     <string name="scan_interval_btn">Konfigurasi Interval Pemindaian</string>
     <string name="scan_interval_quick_label">Pemindaian cepat setiap (menit):</string>
     <string name="scan_interval_full_label">Pemindaian lengkap setiap (menit):</string>

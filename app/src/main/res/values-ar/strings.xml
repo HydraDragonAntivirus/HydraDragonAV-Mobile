@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">الفحص الدوري في الخلفية</string>
     <string name="periodic_scan_on_toast">تم تفعيل الفحص الدوري في الخلفية</string>
     <string name="periodic_scan_off_toast">تم إيقاف الفحص الدوري في الخلفية — الحماية الفورية (مراقبة التنزيلات، فحص التثبيت) تستمر بالعمل</string>
+    <string name="scan_wakelock_toggle">متابعة الفحص أثناء إطفاء الشاشة</string>
+    <string name="scan_wakelock_on_toast">يبقى الفحص في الخلفية نشطًا أثناء إطفاء الشاشة</string>
+    <string name="scan_wakelock_off_toast">قد يتوقف الفحص في الخلفية مؤقتًا أثناء إطفاء الشاشة (يوفر البطارية)</string>
     <string name="scan_interval_btn">تهيئة فترة الفحص</string>
     <string name="scan_interval_quick_label">الفحص السريع كل (بالدقائق):</string>
     <string name="scan_interval_full_label">الفحص الكامل كل (بالدقائق):</string>

@@ -26,6 +26,9 @@
     <string name="periodic_scan_toggle">Periodic Background Scan</string>
     <string name="periodic_scan_on_toast">Periodic background scans ON</string>
     <string name="periodic_scan_off_toast">Periodic background scans OFF — real-time protection (Downloads watcher, on-install scan) keeps running</string>
+    <string name="scan_wakelock_toggle">Keep Scanning While Screen Off</string>
+    <string name="scan_wakelock_on_toast">Background scans stay awake while screen is off</string>
+    <string name="scan_wakelock_off_toast">Background scans may pause while screen is off (saves battery)</string>
     <string name="scan_interval_btn">Configure Scan Interval</string>
     <string name="scan_interval_quick_label">Quick scan every (minutes):</string>
     <string name="scan_interval_full_label">Full scan every (minutes):</string>

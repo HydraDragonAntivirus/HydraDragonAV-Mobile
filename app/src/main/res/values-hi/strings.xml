@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">आवधिक बैकग्राउंड स्कैन</string>
     <string name="periodic_scan_on_toast">आवधिक बैकग्राउंड स्कैन चालू</string>
     <string name="periodic_scan_off_toast">आवधिक बैकग्राउंड स्कैन बंद — रीयल-टाइम सुरक्षा (डाउनलोड मॉनिटर, इंस्टॉल पर स्कैन) चलती रहेगी</string>
+    <string name="scan_wakelock_toggle">स्क्रीन बंद होने पर भी स्कैन जारी रखें</string>
+    <string name="scan_wakelock_on_toast">स्क्रीन बंद होने पर बैकग्राउंड स्कैन सक्रिय रहता है</string>
+    <string name="scan_wakelock_off_toast">स्क्रीन बंद होने पर बैकग्राउंड स्कैन रुक सकता है (बैटरी बचाता है)</string>
     <string name="scan_interval_btn">स्कैन अंतराल कॉन्फ़िगर करें</string>
     <string name="scan_interval_quick_label">क्विक स्कैन हर (मिनट):</string>
     <string name="scan_interval_full_label">फुल स्कैन हर (मिनट):</string>

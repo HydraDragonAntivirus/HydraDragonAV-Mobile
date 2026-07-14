@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">定期后台扫描</string>
     <string name="periodic_scan_on_toast">定期后台扫描已开启</string>
     <string name="periodic_scan_off_toast">定期后台扫描已关闭 — 实时保护（下载监控、安装时扫描）仍在运行</string>
+    <string name="scan_wakelock_toggle">息屏时继续扫描</string>
+    <string name="scan_wakelock_on_toast">息屏时后台扫描保持运行</string>
+    <string name="scan_wakelock_off_toast">息屏时后台扫描可能暂停（省电）</string>
     <string name="scan_interval_btn">配置扫描间隔</string>
     <string name="scan_interval_quick_label">快速扫描间隔（分钟）：</string>
     <string name="scan_interval_full_label">完整扫描间隔（分钟）：</string>

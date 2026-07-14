@@ -356,6 +356,44 @@ public class ScanEngine {
         try { NativeScanner.init(context); } catch (Throwable t) { /* degrade gracefully */ }
     }
 
+    // Screen off / Doze parks the CPU, so a background scan (periodic timer or
+    // Downloads-observer triggered) would freeze mid-run until the screen came
+    // back on — the reason background scanning "didn't work" while the phone was
+    // locked (incl. screen-pinned). A partial wake lock held only for the scan's
+    // duration keeps the CPU running; released in finally so it never leaks.
+    private android.os.PowerManager.WakeLock scanWakeLock;
+
+    private synchronized android.os.PowerManager.WakeLock acquireScanWakeLock() {
+        // Off by user setting (Settings > keep scanning while screen off).
+        if (!ScanSchedule.isScanWakeLockEnabled(context)) return null;
+        try {
+            if (scanWakeLock == null) {
+                android.os.PowerManager pm =
+                    (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                if (pm == null) return null;
+                scanWakeLock = pm.newWakeLock(
+                    android.os.PowerManager.PARTIAL_WAKE_LOCK, "HydraDragon:scan");
+                // Reference-counted: overlapping scans (periodic + download) each
+                // acquire/release, so one finishing doesn't drop the lock out from
+                // under the other still running.
+                scanWakeLock.setReferenceCounted(true);
+            }
+            // 15 min cap so a hung scan can't drain the battery forever.
+            scanWakeLock.acquire(15 * 60 * 1000L);
+        } catch (Throwable t) {
+            Log.w(TAG, "wake lock acquire failed", t);
+        }
+        return scanWakeLock;
+    }
+
+    private synchronized void releaseScanWakeLock() {
+        try {
+            if (scanWakeLock != null && scanWakeLock.isHeld()) scanWakeLock.release();
+        } catch (Throwable t) {
+            Log.w(TAG, "wake lock release failed", t);
+        }
+    }
+
     /**
      * Scan an APK file with the native YARA + ML engine.
      *
@@ -676,6 +714,7 @@ public class ScanEngine {
         filesScannedCount.set(0);
         whitelistedDuringScan.clear();
         scanExecutor.execute(() -> {
+          acquireScanWakeLock();
           try {
             isBatchMode = true;
             NativeScanner.beginBatchScan();
@@ -751,6 +790,7 @@ public class ScanEngine {
           } finally {
               isBatchMode = false;
               scanRunning.set(false);
+              releaseScanWakeLock();
           }
         });
         return true;
@@ -776,6 +816,7 @@ public class ScanEngine {
         filesScannedCount.set(0);
         appsScannedBase = 0;
         scanExecutor.execute(() -> {
+          acquireScanWakeLock();
           try {
             isBatchMode = true;
             NativeScanner.beginBatchScan();
@@ -797,6 +838,7 @@ public class ScanEngine {
           } finally {
               isBatchMode = false;
               scanRunning.set(false);
+              releaseScanWakeLock();
           }
         });
         return true;
@@ -906,6 +948,10 @@ public class ScanEngine {
         // looking exactly like "can't be scanned".
         cancelRequested = false;
         if (file == null || !file.exists()) return null;
+        // Downloads-observer scans fire while the screen is off — hold the CPU
+        // awake for the scan's duration (see acquireScanWakeLock).
+        acquireScanWakeLock();
+        try {
         // If the file looks like an APK (named .apk AND starts with PK zip magic),
         // try the PackageManager analysis path. Otherwise skip straight to the
         // native engine to avoid noisy framework errors on non-APK content.
@@ -952,6 +998,9 @@ public class ScanEngine {
             throw new RuntimeException("scanGenericFile failed for " + file.getAbsolutePath());
         }
         return out.isEmpty() ? null : out.get(0);
+        } finally {
+            releaseScanWakeLock();
+        }
     }
 
     /** True if {@code file} IS our own running APK on disk (its installed

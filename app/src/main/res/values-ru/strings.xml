@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Периодическое фоновое сканирование</string>
     <string name="periodic_scan_on_toast">Периодическое фоновое сканирование ВКЛ</string>
     <string name="periodic_scan_off_toast">Периодическое фоновое сканирование ВЫКЛ — защита в реальном времени (монитор загрузок, сканирование при установке) продолжает работать</string>
+    <string name="scan_wakelock_toggle">Сканировать при выключенном экране</string>
+    <string name="scan_wakelock_on_toast">Фоновое сканирование продолжается при выключенном экране</string>
+    <string name="scan_wakelock_off_toast">Фоновое сканирование может приостанавливаться при выключенном экране (экономит заряд)</string>
     <string name="scan_interval_btn">Настроить интервал сканирования</string>
     <string name="scan_interval_quick_label">Быстрое сканирование каждые (минут):</string>
     <string name="scan_interval_full_label">Полное сканирование каждые (минут):</string>

@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Verificação periódica em segundo plano</string>
     <string name="periodic_scan_on_toast">Verificações periódicas em segundo plano ATIVADAS</string>
     <string name="periodic_scan_off_toast">Verificações periódicas em segundo plano DESATIVADAS — a proteção em tempo real (monitor de downloads, verificação na instalação) continua funcionando</string>
+    <string name="scan_wakelock_toggle">Continuar verificando com a tela desligada</string>
+    <string name="scan_wakelock_on_toast">As verificações em segundo plano permanecem ativas com a tela desligada</string>
+    <string name="scan_wakelock_off_toast">As verificações em segundo plano podem pausar com a tela desligada (economiza bateria)</string>
     <string name="scan_interval_btn">Configurar intervalo de verificação</string>
     <string name="scan_interval_quick_label">Verificação rápida a cada (minutos):</string>
     <string name="scan_interval_full_label">Verificação completa a cada (minutos):</string>

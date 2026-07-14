@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Scansione periodica in background</string>
     <string name="periodic_scan_on_toast">Scansioni periodiche in background ATTIVE</string>
     <string name="periodic_scan_off_toast">Scansioni periodiche in background DISATTIVATE — la protezione in tempo reale (monitor dei download, scansione all\'installazione) continua a funzionare</string>
+    <string name="scan_wakelock_toggle">Continua la scansione a schermo spento</string>
+    <string name="scan_wakelock_on_toast">Le scansioni in background restano attive a schermo spento</string>
+    <string name="scan_wakelock_off_toast">Le scansioni in background possono sospendersi a schermo spento (risparmia batteria)</string>
     <string name="scan_interval_btn">Configura intervallo di scansione</string>
     <string name="scan_interval_quick_label">Scansione rapida ogni (minuti):</string>
     <string name="scan_interval_full_label">Scansione completa ogni (minuti):</string>

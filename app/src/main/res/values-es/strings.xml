@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Análisis periódico en segundo plano</string>
     <string name="periodic_scan_on_toast">Análisis periódicos en segundo plano ACTIVADOS</string>
     <string name="periodic_scan_off_toast">Análisis periódicos en segundo plano DESACTIVADOS — la protección en tiempo real (monitor de descargas, análisis al instalar) sigue funcionando</string>
+    <string name="scan_wakelock_toggle">Seguir analizando con la pantalla apagada</string>
+    <string name="scan_wakelock_on_toast">Los análisis en segundo plano siguen activos con la pantalla apagada</string>
+    <string name="scan_wakelock_off_toast">Los análisis en segundo plano pueden pausarse con la pantalla apagada (ahorra batería)</string>
     <string name="scan_interval_btn">Configurar intervalo de análisis</string>
     <string name="scan_interval_quick_label">Análisis rápido cada (minutos):</string>
     <string name="scan_interval_full_label">Análisis completo cada (minutos):</string>

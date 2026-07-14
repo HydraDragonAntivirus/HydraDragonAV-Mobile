@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Periodischer Hintergrundscan</string>
     <string name="periodic_scan_on_toast">Periodische Hintergrundscans EIN</string>
     <string name="periodic_scan_off_toast">Periodische Hintergrundscans AUS — Echtzeitschutz (Downloads-Überwachung, Scan bei Installation) läuft weiter</string>
+    <string name="scan_wakelock_toggle">Weiterscannen bei ausgeschaltetem Bildschirm</string>
+    <string name="scan_wakelock_on_toast">Hintergrundscans bleiben bei ausgeschaltetem Bildschirm aktiv</string>
+    <string name="scan_wakelock_off_toast">Hintergrundscans können bei ausgeschaltetem Bildschirm pausieren (spart Akku)</string>
     <string name="scan_interval_btn">Scan-Intervall konfigurieren</string>
     <string name="scan_interval_quick_label">Schnellscan alle (Minuten):</string>
     <string name="scan_interval_full_label">Vollständiger Scan alle (Minuten):</string>

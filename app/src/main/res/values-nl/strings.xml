@@ -30,6 +30,9 @@
     <string name="periodic_scan_toggle">Periodieke achtergrondscan</string>
     <string name="periodic_scan_on_toast">Periodieke achtergrondscans AAN</string>
     <string name="periodic_scan_off_toast">Periodieke achtergrondscans UIT — realtime bescherming (downloadmonitor, scan bij installatie) blijft actief</string>
+    <string name="scan_wakelock_toggle">Blijven scannen bij scherm uit</string>
+    <string name="scan_wakelock_on_toast">Achtergrondscans blijven actief bij scherm uit</string>
+    <string name="scan_wakelock_off_toast">Achtergrondscans kunnen pauzeren bij scherm uit (bespaart batterij)</string>
     <string name="scan_interval_btn">Scaninterval configureren</string>
     <string name="scan_interval_quick_label">Snelle scan elke (minuten):</string>
     <string name="scan_interval_full_label">Volledige scan elke (minuten):</string>
