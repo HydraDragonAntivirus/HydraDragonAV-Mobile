@@ -26,7 +26,7 @@ pub struct Engine {
     /// Binary-Fuse16 atom/counter/threshold filter database: every signature's
     /// (and logical subsignature's) atoms are indexed into Bf16 set-membership
     /// filters at load time. Scanning promotes a slot directly off its hit
-    /// counter reaching threshold — there is no byte-level re-verification of
+    /// counter reaching threshold — there is byte-level re-verification of
     /// the matched atom or its owning pattern (see `atomfilter.rs`).
     atomfilter_db: crate::atomfilter::AtomFilterDb,
     /// YARA-x engines for scanning with compiled YARA rules (Android-relevant
@@ -755,6 +755,42 @@ impl Engine {
         let counts = &mut bufs.counts;
         let last_offsets = &mut bufs.last_offsets;
         let evaluated = &mut bufs.evaluated;
+
+        // Byte-level confirmation for Body subsigs (ClamAV cli_ac_scanbuff): the
+        // atom sweep only says "an atom of this subsig MAY be present" — the atom
+        // is a truncated, length-bucketed prefix, so an atom hit is a candidate,
+        // not a match. Re-scan the real pattern (wildcards, {-N} gaps, ::i) over
+        // the subsig's offset ranges and replace the candidate count with the
+        // true occurrence count. Without this, a signature whose atom shadow
+        // ("mira" for "mirai", "cryp" for "cryptor.c") appears fires spuriously.
+        for (i, subsig) in subsigs.iter().enumerate() {
+            let Subsignature::Body { offset, patterns } = subsig else {
+                continue;
+            };
+            if counts[i] == 0 {
+                continue; // atom absent → cannot match; leave at 0.
+            }
+            let ranges = match offset.as_deref() {
+                Some(spec) => {
+                    let r = spec.scan_ranges(ctx.data.len());
+                    // Unsupported anchor (EP/section/VI): can't compute the range,
+                    // stay permissive with a full-buffer scan (avoids a false
+                    // negative) rather than trusting the raw atom count.
+                    if r.is_empty() { vec![(0, ctx.data.len())] } else { r }
+                }
+                None => vec![(0, ctx.data.len())],
+            };
+            let mut hits = 0usize;
+            let mut last = None;
+            for pattern in patterns.iter() {
+                for m in pattern.find_all(ctx.data, &ranges, usize::MAX) {
+                    hits += 1;
+                    last = Some(m.start);
+                }
+            }
+            counts[i] = hits;
+            last_offsets[i] = last;
+        }
 
         let t_debug = std::time::Instant::now();
 
