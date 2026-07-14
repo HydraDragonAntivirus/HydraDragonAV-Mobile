@@ -1208,6 +1208,11 @@ public class ScanEngine {
             || app.sourceDir.startsWith("/apex/"))) isSystem = true;
         if (isSystem) {
             Log.d(TAG, "CLEAR-EXIT[isSystem] " + app.packageName + " sourceDir=" + app.sourceDir);
+            if (app.packageName != null) whitelistedDuringScan.add(app.packageName);
+            if (antiFpCache.isEnabled() && app.sourceDir != null) {
+                String json = NativeScanner.computeZipEntryHashes(app.sourceDir);
+                antiFpCache.addEntries(json, app.packageName);
+            }
             builder.setRiskScore(0); return builder.build();
         }
 
