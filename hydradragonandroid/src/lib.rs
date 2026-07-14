@@ -123,7 +123,9 @@ const WHITELIST_PACKAGES_DB: &str = "whitelist_packages.db";
 /// A scanned buffer whose TLSH distance to a known-malware digest is at or below
 /// this is flagged as similar. Lower = stricter (fewer FP). TLSH distance: 0 =
 /// identical, <30 very close, <70 related (per the TLSH paper).
-const TLSH_THRESHOLD: i32 = 40;
+/// Made mutable via an atomic so the user's Settings slider (anti_fp_tlsh_threshold)
+/// takes effect immediately without an engine restart.
+static TLSH_THRESHOLD: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(40);
 
 struct Engine {
     /// ClamAV engine: loaded from the bundled signature DB with the compiled
@@ -618,7 +620,8 @@ fn tlsh_nearest(engine: &Engine, buf: &[u8]) -> Option<i32> {
             }
         }
     }
-    (best <= TLSH_THRESHOLD).then_some(best)
+    let threshold = TLSH_THRESHOLD.load(std::sync::atomic::Ordering::Relaxed);
+    (best <= threshold).then_some(best)
 }
 
 /// Run `f` on a thread with a LARGE stack and return its result. yara_x's rule
@@ -1150,6 +1153,19 @@ fn scan_apk(
             )
         }
     }
+}
+
+/// `void nativeSetTlshThreshold(int threshold)` — sets the TLSH similarity
+/// threshold used by `tlsh_nearest` during malware scanning. Applied
+/// immediately; no engine reinit needed. Clamped to 1-200.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetTlshThreshold<'local>(
+    _env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    threshold: jint,
+) {
+    let t = threshold.max(1).min(200);
+    TLSH_THRESHOLD.store(t, std::sync::atomic::Ordering::Relaxed);
 }
 
 /// `int nativeTlshDiff(String tlsh1, String tlsh2)` — returns the TLSH diff

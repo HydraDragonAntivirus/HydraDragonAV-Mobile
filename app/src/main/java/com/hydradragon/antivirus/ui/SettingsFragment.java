@@ -994,6 +994,7 @@ public class SettingsFragment extends Fragment {
                 }
                 val = Math.max(1, Math.min(200, val));
                 prefs().edit().putInt("anti_fp_tlsh_threshold", val).apply();
+                com.hydradragon.antivirus.engine.NativeScanner.setTlshThreshold(val);
                 Toast.makeText(getContext(),
                     getString(R.string.anti_fp_tlsh_threshold_saved, val),
                     Toast.LENGTH_SHORT).show();

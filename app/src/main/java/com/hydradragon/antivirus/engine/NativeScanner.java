@@ -173,6 +173,8 @@ public final class NativeScanner {
 
     private static native String nativeScanHips(String hipsJson);
 
+    private static native void nativeSetTlshThreshold(int threshold);
+
     private static native int nativeTlshDiff(String tlsh1, String tlsh2);
 
     private static native String nativeComputeZipEntryHashes(String apkPath);
@@ -183,6 +185,14 @@ public final class NativeScanner {
     public static String computeZipEntryHashes(String apkPath) {
         if (!LIB_LOADED || apkPath == null || apkPath.isEmpty()) return "[]";
         try { return nativeComputeZipEntryHashes(apkPath); } catch (Throwable t) { return "[]"; }
+    }
+
+    /** Push the user's TLSH similarity threshold into the native engine so the
+     *  `tlsh_nearest` malware-similarity pass uses it immediately. Clamped
+     *  1-200 natively. */
+    public static void setTlshThreshold(int threshold) {
+        if (!LIB_LOADED) return;
+        try { nativeSetTlshThreshold(threshold); } catch (Throwable ignore) { }
     }
 
     /** TLSH diff distance between two hashes, or -1 on error. */
@@ -358,6 +368,8 @@ public final class NativeScanner {
                 .getBoolean("detect_zip_bomb_enabled", true));
             setSkipImageMedia(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("skip_image_media_enabled", true));
+            setTlshThreshold(context.getSharedPreferences("hydra_prefs", 0)
+                .getInt("anti_fp_tlsh_threshold", 40));
         }
         Log.i(TAG, "native init " + (isReady() ? "ok" : "background") + " | " + status());
         return isReady();
