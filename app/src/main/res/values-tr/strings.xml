@@ -376,4 +376,11 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="disable_secure_flag_toggle">Ekran kaydına izin ver</string>
     <string name="skip_media_toggle">APK taramalarında medya dosyalarını atla</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Atla — yanlış pozitifleri önlemek için beyaz listedeki APK zip giriş hash\'lerini (MD5 + TLSH) önbelleğe al</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Atla AÇIK — beyaz listedeki uygulamalardan gelen girişler önbelleğe alınır</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Atla KAPALI — önbellek temizlendi</string>
+    <string name="anti_fp_tlsh_threshold_btn">TLSH Benzerlik Eşiği</string>
+    <string name="anti_fp_tlsh_threshold_hint">TLSH mesafe eşiği (1-200). Düşük = daha katı, yüksek = daha agresif FP bastırma. Varsayılan: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">TLSH eşiği %1$d olarak ayarlandı</string>
+
 </resources>

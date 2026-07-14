@@ -373,4 +373,11 @@
     <string name="disable_secure_flag_toggle">允许屏幕录制</string>
     <string name="skip_media_toggle">在 APK 扫描中跳过媒体文件</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — 缓存白名单 APK 的 ZIP 条目哈希（MD5 + TLSH）以避免误报</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip 已开启 — 白名单应用的条目已被缓存</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip 已关闭 — 缓存已清空</string>
+    <string name="anti_fp_tlsh_threshold_btn">TLSH 相似度阈值</string>
+    <string name="anti_fp_tlsh_threshold_hint">TLSH 距离阈值（1-200）。越低越严格，越高越积极抑制误报。默认值：40</string>
+    <string name="anti_fp_tlsh_threshold_saved">TLSH 阈值已设置为 %1$d</string>
+
 </resources>

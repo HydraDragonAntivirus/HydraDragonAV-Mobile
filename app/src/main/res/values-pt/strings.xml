@@ -373,4 +373,11 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="disable_secure_flag_toggle">Permitir gravação de tela</string>
     <string name="skip_media_toggle">Ignorar arquivos de mídia nas varreduras de APK</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — armazenar em cache hashes (MD5 + TLSH) de entradas ZIP de APK na lista de permissões para evitar falsos positivos</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip ATIVADO — entradas de apps na lista de permissões são armazenadas em cache</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip DESATIVADO — cache limpo</string>
+    <string name="anti_fp_tlsh_threshold_btn">Limiar de Similaridade TLSH</string>
+    <string name="anti_fp_tlsh_threshold_hint">Limiar de distância TLSH (1-200). Menor = mais rigoroso, maior = supressão de FP mais agressiva. Padrão: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">Limiar TLSH definido para %1$d</string>
+
 </resources>

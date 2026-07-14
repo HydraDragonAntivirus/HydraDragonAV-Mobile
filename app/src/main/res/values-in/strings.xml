@@ -373,4 +373,11 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="disable_secure_flag_toggle">Izinkan perekaman layar</string>
     <string name="skip_media_toggle">Lewati file media dalam pemindaian APK</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — cache hash (MD5 + TLSH) entri ZIP APK yang masuk daftar putih untuk menghindari positif palsu</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip AKTIF — entri dari aplikasi di daftar putih di-cache</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip NONAKTIF — cache dibersihkan</string>
+    <string name="anti_fp_tlsh_threshold_btn">Ambang Kemiripan TLSH</string>
+    <string name="anti_fp_tlsh_threshold_hint">Ambang jarak TLSH (1-200). Lebih rendah = lebih ketat, lebih tinggi = penekanan FP lebih agresif. Default: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">Ambang TLSH diatur ke %1$d</string>
+
 </resources>

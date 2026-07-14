@@ -373,4 +373,11 @@ Puntuación de riesgo: %2$d/100
     <string name="disable_secure_flag_toggle">Permitir grabación de pantalla</string>
     <string name="skip_media_toggle">Omitir archivos multimedia en los escaneos de APK</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — almacenar en caché los hashes (MD5 + TLSH) de entradas ZIP de APK en lista blanca para evitar falsos positivos</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip ACTIVADO — las entradas de apps en lista blanca se almacenan en caché</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip DESACTIVADO — caché borrada</string>
+    <string name="anti_fp_tlsh_threshold_btn">Umbral de Similitud TLSH</string>
+    <string name="anti_fp_tlsh_threshold_hint">Umbral de distancia TLSH (1-200). Menor = más estricto, mayor = supresión de FP más agresiva. Predeterminado: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">Umbral TLSH establecido en %1$d</string>
+
 </resources>

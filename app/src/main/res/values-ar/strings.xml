@@ -373,4 +373,11 @@
     <string name="disable_secure_flag_toggle">السماح بتسجيل الشاشة</string>
     <string name="skip_media_toggle">تخطي ملفات الوسائط في فحوصات APK</string>
 
+    <string name="anti_fp_skip_toggle">تخطي النتائج الإيجابية الكاذبة (Anti-FP) — تخزين تجزئات (MD5 + TLSH) لإدخالات APK المضغوطة في القائمة البيضاء مؤقتًا لتجنب النتائج الإيجابية الكاذبة</string>
+    <string name="anti_fp_skip_on_toast">تم تشغيل Anti-FP Skip — يتم تخزين إدخالات التطبيقات في القائمة البيضاء مؤقتًا</string>
+    <string name="anti_fp_skip_off_toast">تم إيقاف Anti-FP Skip — تم مسح الذاكرة المخبأة</string>
+    <string name="anti_fp_tlsh_threshold_btn">حد تشابه TLSH</string>
+    <string name="anti_fp_tlsh_threshold_hint">حد مسافة TLSH (1-200). القيمة الأقل = أكثر صرامة، القيمة الأعلى = قمع أكثر عدوانية للإيجابيات الكاذبة. الافتراضي: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">تم تعيين حد TLSH إلى %1$d</string>
+
 </resources>

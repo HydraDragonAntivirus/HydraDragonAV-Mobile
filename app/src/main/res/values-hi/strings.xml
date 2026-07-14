@@ -372,4 +372,11 @@
     <string name="disable_secure_flag_toggle">स्क्रीन रिकॉर्डिंग की अनुमति दें</string>
     <string name="skip_media_toggle">APK स्कैन में मीडिया फ़ाइलें छोड़ें</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — गलत सकारात्मक परिणामों से बचने के लिए श्वेतसूचीबद्ध APK ज़िप प्रविष्टियों के हैश (MD5 + TLSH) कैश करें</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip चालू — श्वेतसूचीबद्ध ऐप्स की प्रविष्टियाँ कैश की जाती हैं</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip बंद — कैश साफ़ किया गया</string>
+    <string name="anti_fp_tlsh_threshold_btn">TLSH समानता सीमा</string>
+    <string name="anti_fp_tlsh_threshold_hint">TLSH दूरी सीमा (1-200)। कम = सख्त, अधिक = अधिक आक्रामक FP दमन। डिफ़ॉल्ट: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">TLSH सीमा %1$d पर सेट की गई</string>
+
 </resources>

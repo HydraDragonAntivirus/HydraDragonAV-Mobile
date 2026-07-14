@@ -373,4 +373,11 @@
     <string name="disable_secure_flag_toggle">화면 녹화 허용</string>
     <string name="skip_media_toggle">APK 검사에서 미디어 파일 건너뛰기</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — 화이트리스트에 등록된 APK ZIP 항목 해시(MD5 + TLSH)를 캐시하여 오탐(false positive) 방지</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip 켜짐 — 화이트리스트 앱의 항목이 캐시됩니다</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip 꺼짐 — 캐시가 지워졌습니다</string>
+    <string name="anti_fp_tlsh_threshold_btn">TLSH 유사도 임계값</string>
+    <string name="anti_fp_tlsh_threshold_hint">TLSH 거리 임계값(1-200). 낮을수록 엄격, 높을수록 FP 억제가 더 적극적. 기본값: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">TLSH 임계값이 %1$d(으)로 설정되었습니다</string>
+
 </resources>

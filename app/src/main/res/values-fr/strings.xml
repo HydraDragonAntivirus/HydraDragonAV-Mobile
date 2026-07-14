@@ -373,4 +373,11 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="disable_secure_flag_toggle">Autoriser l\'enregistrement d\'écran</string>
     <string name="skip_media_toggle">Ignorer les fichiers multimédias lors des analyses APK</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — mettre en cache les hachages (MD5 + TLSH) des entrées ZIP d\'APK sur liste blanche pour éviter les faux positifs</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip ACTIVÉ — les entrées des applications sur liste blanche sont mises en cache</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip DÉSACTIVÉ — cache vidé</string>
+    <string name="anti_fp_tlsh_threshold_btn">Seuil de similarité TLSH</string>
+    <string name="anti_fp_tlsh_threshold_hint">Seuil de distance TLSH (1-200). Plus bas = plus strict, plus haut = suppression FP plus agressive. Défaut : 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">Seuil TLSH défini à %1$d</string>
+
 </resources>

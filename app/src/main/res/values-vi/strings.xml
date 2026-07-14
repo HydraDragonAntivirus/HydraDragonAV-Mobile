@@ -373,4 +373,11 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="disable_secure_flag_toggle">Cho phép quay màn hình</string>
     <string name="skip_media_toggle">Bỏ qua tệp phương tiện khi quét APK</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — lưu vào bộ nhớ đệm các hash (MD5 + TLSH) của mục ZIP APK trong danh sách cho phép để tránh dương tính giả</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip BẬT — các mục từ ứng dụng trong danh sách cho phép được lưu vào bộ nhớ đệm</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip TẮT — đã xóa bộ nhớ đệm</string>
+    <string name="anti_fp_tlsh_threshold_btn">Ngưỡng Tương tự TLSH</string>
+    <string name="anti_fp_tlsh_threshold_hint">Ngưỡng khoảng cách TLSH (1-200). Thấp hơn = nghiêm ngặt hơn, cao hơn = triệt tiêu FP mạnh mẽ hơn. Mặc định: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">Đã đặt ngưỡng TLSH thành %1$d</string>
+
 </resources>

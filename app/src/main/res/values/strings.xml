@@ -383,4 +383,11 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="disable_secure_flag_toggle">Allow screen recording</string>
     <string name="skip_media_toggle">Skip media files in APK scans</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — cache whitelisted APK zip entry hashes (MD5 + TLSH) to avoid false positives</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip ON — entries from whitelisted apps are cached</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip OFF — cache cleared</string>
+    <string name="anti_fp_tlsh_threshold_btn">TLSH Similarity Threshold</string>
+    <string name="anti_fp_tlsh_threshold_hint">TLSH distance threshold (1-200). Lower = stricter, higher = more aggressive FP suppression. Default: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">TLSH threshold set to %1$d</string>
+
 </resources>

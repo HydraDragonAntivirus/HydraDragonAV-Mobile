@@ -373,4 +373,11 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="disable_secure_flag_toggle">Bildschirmaufnahme zulassen</string>
     <string name="skip_media_toggle">Mediendateien bei APK-Scans überspringen</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP-Skip — Hashwerte (MD5 + TLSH) von APK-Zip-Einträgen aus der Whitelist zwischenspeichern, um Fehlalarme zu vermeiden</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP-Skip EIN — Einträge von Apps auf der Whitelist werden zwischengespeichert</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP-Skip AUS — Cache geleert</string>
+    <string name="anti_fp_tlsh_threshold_btn">TLSH-Ähnlichkeitsschwellwert</string>
+    <string name="anti_fp_tlsh_threshold_hint">TLSH-Distanzschwellwert (1-200). Niedriger = strenger, höher = aggressiver bei der FP-Unterdrückung. Standard: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">TLSH-Schwellwert auf %1$d gesetzt</string>
+
 </resources>

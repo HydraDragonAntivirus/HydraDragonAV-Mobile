@@ -91,6 +91,7 @@ public class ScanEngine {
     private final Context context;
     private final AIEngine aiEngine;
     private final CodeAnalyzer codeAnalyzer;
+    private final AntiFpCache antiFpCache;
     // Process-wide, bounded below the device's core count. GuardService and
     // InstallReceiver each hold their own ScanEngine instance (InstallReceiver
     // creates a brand new one per install broadcast), so a per-instance pool —
@@ -335,6 +336,7 @@ public class ScanEngine {
         this.context = context;
         this.aiEngine = aiEngine;
         this.codeAnalyzer = new CodeAnalyzer(context);
+        this.antiFpCache = new AntiFpCache(context);
         loadPackageWhitelist();
         // Load YARA-X rulesets + ML model into the native engine (non-fatal).
         try { NativeScanner.init(context); } catch (Throwable t) { /* degrade gracefully */ }
@@ -479,13 +481,44 @@ public class ScanEngine {
         } catch (Exception e) { /* best effort — never block the scan on this */ }
     }
 
-    /** Detections that survive per-lineage whitelist suppression. A sibling
-     *  non-APK virus (empty/non-whitelisted lineage) survives even when a
-     *  whitelisted APK sits alongside it in the same archive. */
+    /** Detections that survive per-lineage whitelist suppression AND anti-FP
+     *  cache filtering. Anti-FP cache checks use ONLY MD5 (not SHA-256):
+     *  for each detection, the entry name (the part after {@code !} in
+     *  {@code objectPath}) is looked up in the verdict's {@code entryMd5s}/
+     *  {@code entryTlshs} maps, and if that hash is in the anti-FP cache
+     *  (from a whitelisted APK's zip entries), the detection is suppressed. */
     private List<NativeScanner.Verdict.Detection> survivingDetections(NativeScanner.Verdict v) {
         List<NativeScanner.Verdict.Detection> out = new ArrayList<>();
-        for (NativeScanner.Verdict.Detection d : v.detections)
-            if (!isDetectionWhitelisted(d)) out.add(d);
+        int tlshThreshold = AntiFpCache.getTlshThreshold(context);
+        for (NativeScanner.Verdict.Detection d : v.detections) {
+            if (isDetectionWhitelisted(d)) continue;
+            // Anti-FP cache: extract entry name from objectPath (after '!')
+            // and look up its MD5 + TLSH in the verdict's per-entry maps.
+            if (antiFpCache.isEnabled() && d.objectPath != null) {
+                int bang = d.objectPath.indexOf('!');
+                if (bang >= 0 && bang + 1 < d.objectPath.length()) {
+                    String entryName = d.objectPath.substring(bang + 1);
+                    // MD5 exact match
+                    String entryMd5 = v.entryMd5s.get(entryName);
+                    if (entryMd5 != null && !entryMd5.isEmpty()
+                            && antiFpCache.isKnownMd5(entryMd5)) {
+                        Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP MD5] "
+                            + d.name + " entry=" + entryName);
+                        continue;
+                    }
+                    // TLSH similarity match
+                    String entryTlsh = v.entryTlshs.get(entryName);
+                    if (entryTlsh != null && !entryTlsh.isEmpty()
+                            && tlshThreshold > 0
+                            && antiFpCache.hasSimilarTlsh(entryTlsh, tlshThreshold)) {
+                        Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP TLSH] "
+                            + d.name + " entry=" + entryName + " dist<=" + tlshThreshold);
+                        continue;
+                    }
+                }
+            }
+            out.add(d);
+        }
         return out;
     }
 
@@ -1199,6 +1232,12 @@ public class ScanEngine {
         // deep scan, independently.)
         if (isFromStore && isPackageWhitelisted(app.packageName)) {
             Log.d(TAG, "CLEAR-EXIT[store+NSRL-whitelisted] " + app.packageName);
+            // Populate Anti-FP cache with this whitelisted APK's zip entry
+            // hashes so identical entries found in other apps are never flagged.
+            if (antiFpCache.isEnabled() && app.sourceDir != null) {
+                String json = NativeScanner.computeZipEntryHashes(app.sourceDir);
+                antiFpCache.addEntries(json, app.packageName);
+            }
             builder.setRiskScore(0); return builder.build();
         }
 

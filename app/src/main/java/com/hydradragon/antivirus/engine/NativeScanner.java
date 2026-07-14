@@ -173,6 +173,25 @@ public final class NativeScanner {
 
     private static native String nativeScanHips(String hipsJson);
 
+    private static native int nativeTlshDiff(String tlsh1, String tlsh2);
+
+    private static native String nativeComputeZipEntryHashes(String apkPath);
+
+    /** Compute MD5 + TLSH hashes for every zip entry inside a whitelisted APK
+     *  so the Anti-FP cache can skip them on future scans. Returns a JSON array
+     *  of `{"entry":"...","md5":"...","tlsh":"..."}`, or `[]` on error. */
+    public static String computeZipEntryHashes(String apkPath) {
+        if (!LIB_LOADED || apkPath == null || apkPath.isEmpty()) return "[]";
+        try { return nativeComputeZipEntryHashes(apkPath); } catch (Throwable t) { return "[]"; }
+    }
+
+    /** TLSH diff distance between two hashes, or -1 on error. */
+    public static int tlshDiff(String tlsh1, String tlsh2) {
+        if (!LIB_LOADED || tlsh1 == null || tlsh2 == null
+                || tlsh1.isEmpty() || tlsh2.isEmpty()) return -1;
+        try { return nativeTlshDiff(tlsh1, tlsh2); } catch (Throwable t) { return -1; }
+    }
+
     /** Result of a HIPS behavioral scan. */
     public static final class HipsResult {
         public boolean malicious;
@@ -415,6 +434,12 @@ public final class NativeScanner {
         }
         /** MD5 (lowercase hex) of the whole scanned file — its "main hash". */
         public String md5;
+        /** Per-entry MD5 map: entry_name -> md5 (from native verdict entry_md5s).
+         *  Used by the Anti-FP cache to check individual zip entry hashes. */
+        public final java.util.HashMap<String, String> entryMd5s = new java.util.HashMap<>();
+        /** Per-entry TLSH map: entry_name -> tlsh (from native verdict entry_tlshs).
+         *  Used by the Anti-FP cache for TLSH similarity matching. */
+        public final java.util.HashMap<String, String> entryTlshs = new java.util.HashMap<>();
         /** Non-null ClamAV target number if the file type was skipped (PE/OLE2/…). */
         public Integer skippedTarget;
         /** Non-null if the native scan errored. */
@@ -513,6 +538,26 @@ public final class NativeScanner {
             }
             if (o.has("generated_rule") && !o.isNull("generated_rule")) {
                 v.generatedRule = o.optString("generated_rule", null);
+            }
+            JSONObject em = o.optJSONObject("entry_md5s");
+            if (em != null) {
+                for (java.util.Iterator<String> it = em.keys(); it.hasNext();) {
+                    String key = it.next();
+                    String val = em.optString(key, null);
+                    if (key != null && val != null && !key.isEmpty() && !val.isEmpty()) {
+                        v.entryMd5s.put(key, val);
+                    }
+                }
+            }
+            JSONObject et = o.optJSONObject("entry_tlshs");
+            if (et != null) {
+                for (java.util.Iterator<String> it = et.keys(); it.hasNext();) {
+                    String key = it.next();
+                    String val = et.optString(key, null);
+                    if (key != null && val != null && !key.isEmpty() && !val.isEmpty()) {
+                        v.entryTlshs.put(key, val);
+                    }
+                }
             }
             JSONObject ml = o.optJSONObject("ml");
             if (ml != null) {

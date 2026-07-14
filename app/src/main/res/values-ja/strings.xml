@@ -373,4 +373,11 @@
     <string name="disable_secure_flag_toggle">画面録画を許可する</string>
     <string name="skip_media_toggle">APKスキャンでメディアファイルをスキップ</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FPスキップ — 誤検出を防ぐため、ホワイトリスト登録されたAPKのZIPエントリのハッシュ（MD5 + TLSH）をキャッシュ</string>
+    <string name="anti_fp_skip_on_toast">Anti-FPスキップ オン — ホワイトリスト登録されたアプリのエントリがキャッシュされます</string>
+    <string name="anti_fp_skip_off_toast">Anti-FPスキップ オフ — キャッシュをクリアしました</string>
+    <string name="anti_fp_tlsh_threshold_btn">TLSH類似度しきい値</string>
+    <string name="anti_fp_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的にFPを抑制。デフォルト: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">TLSHしきい値を%1$dに設定しました</string>
+
 </resources>

@@ -373,4 +373,11 @@
     <string name="disable_secure_flag_toggle">อนุญาตการบันทึกหน้าจอ</string>
     <string name="skip_media_toggle">ข้ามไฟล์สื่อในการสแกน APK</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — แคชแฮช (MD5 + TLSH) ของรายการ ZIP APK ที่อยู่ในบัญชีขาวเพื่อหลีกเลี่ยงผลบวกลวง</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip เปิด — รายการจากแอปในบัญชีขาวถูกแคชแล้ว</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip ปิด — ล้างแคชแล้ว</string>
+    <string name="anti_fp_tlsh_threshold_btn">เกณฑ์ความคล้ายคลึง TLSH</string>
+    <string name="anti_fp_tlsh_threshold_hint">เกณฑ์ระยะทาง TLSH (1-200) ค่าต่ำ = เข้มงวดมากขึ้น ค่าสูง = การระงับ FP ที่รุนแรงขึ้น ค่าเริ่มต้น: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">ตั้งค่าเกณฑ์ TLSH เป็น %1$d แล้ว</string>
+
 </resources>

@@ -373,4 +373,11 @@
     <string name="disable_secure_flag_toggle">Разрешить запись экрана</string>
     <string name="skip_media_toggle">Пропускать медиафайлы при сканировании APK</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — кешировать хеши (MD5 + TLSH) записей ZIP APK из белого списка, чтобы избежать ложных срабатываний</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip ВКЛ. — записи из приложений белого списка кешируются</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip ВЫКЛ. — кеш очищен</string>
+    <string name="anti_fp_tlsh_threshold_btn">Порог схожести TLSH</string>
+    <string name="anti_fp_tlsh_threshold_hint">Порог расстояния TLSH (1-200). Ниже = строже, выше = более агрессивное подавление FP. По умолчанию: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">Порог TLSH установлен на %1$d</string>
+
 </resources>

@@ -1152,6 +1152,89 @@ fn scan_apk(
     }
 }
 
+/// `int nativeTlshDiff(String tlsh1, String tlsh2)` — returns the TLSH diff
+/// distance between two hashes, or -1 on error. Used by the Anti-FP cache to
+/// compare a scanned entry's TLSH against known-good TLSH digests.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeTlshDiff<'local>(
+    mut env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    tlsh1: JString<'local>,
+    tlsh2: JString<'local>,
+) -> jint {
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let s1: String = match tlsh1.try_to_string(env) {
+            Ok(s) => s,
+            Err(_) => return Ok(-1),
+        };
+        let s2: String = match tlsh2.try_to_string(env) {
+            Ok(s) => s,
+            Err(_) => return Ok(-1),
+        };
+        let d1 = match s1.parse::<tlsh_rs::TlshDigest>() {
+            Ok(d) => d,
+            Err(_) => return Ok(-1),
+        };
+        let d2 = match s2.parse::<tlsh_rs::TlshDigest>() {
+            Ok(d) => d,
+            Err(_) => return Ok(-1),
+        };
+        Ok(d1.diff(&d2))
+    }).resolve::<LogErrorAndDefault>()
+}
+
+/// `String nativeComputeZipEntryHashes(String apkPath)` — returns a JSON array
+/// of `{"entry":"<path>","md5":"<hex>","tlsh":"<hash>"}` for every decompressed
+/// entry inside an APK (zip). Used by the Anti-FP cache: when a whitelisted APK
+/// is encountered, its entry hashes are persisted so identical entries found
+/// elsewhere are never flagged again — an exact (MD5) match or a close (TLSH)
+/// match to a known-good component is treated as a false positive.
+/// Returns `[]` (empty array) on any error — never throws.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeComputeZipEntryHashes<'local>(
+    mut env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    apk_path: JString<'local>,
+) -> jstring {
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let path: String = match apk_path.try_to_string(env) {
+            Ok(s) => s,
+            Err(_) => return env.new_string("[]").map(|s| s.into_raw()),
+        };
+        let result = compute_zip_entry_hashes(&path);
+        env.new_string(&result).map(|s| s.into_raw())
+    }).resolve::<LogErrorAndDefault>()
+}
+
+fn compute_zip_entry_hashes(path: &str) -> String {
+    let bytes = match std::fs::read(path) {
+        Ok(b) => b,
+        Err(_) => return "[]".to_string(),
+    };
+    if hydradragonextractor::detect_format(&bytes) != Some("zip") {
+        return "[]".to_string();
+    }
+    let entries = match hydradragonextractor::extract_archive_from_bytes(&bytes) {
+        Ok(e) => e,
+        Err(_) => return "[]".to_string(),
+    };
+    let mut out = Vec::with_capacity(entries.len());
+    for (name, data) in &entries {
+        let md5 = md5_hex(data);
+        let tlsh = tlsh_rs::hash_bytes(data)
+            .ok()
+            .map(|d| d.to_string())
+            .unwrap_or_default();
+        out.push(format!(
+            r#"{{"entry":"{}","md5":"{}","tlsh":"{}"}}"#,
+            json_escape(name),
+            md5,
+            tlsh,
+        ));
+    }
+    format!("[{}]", out.join(","))
+}
+
 /// Check every emulation-decoded string (see emulate.rs) that looks like a
 /// whole URL against the URL/domain xor filters (`engine.url_scanner`) — a decoded
 /// C2 URL a signature/YARA rule was never written for can still be caught
@@ -1860,14 +1943,55 @@ fn run_scan(
         .collect::<Vec<_>>()
         .join(",");
 
+    // Per-buffer MD5 + TLSH maps for the Anti-FP cache: maps each buffer's
+    // entry name (relative path within the APK) to its MD5 and TLSH so Java
+    // can suppress detections whose entry content matches a known-good
+    // whitelisted APK's entry. Only MD5 is used for exact match; TLSH is
+    // used for similarity matching.
+    let mut entry_md5_pairs: Vec<String> = Vec::new();
+    let mut entry_tlsh_pairs: Vec<String> = Vec::new();
+    for (i, b) in buffers.iter().enumerate() {
+        if i == 0 { continue; }
+        let Some(ref entry) = b.entry_name else { continue };
+        if entry.is_empty() { continue; }
+        let md5 = md5_hex(&b.data);
+        entry_md5_pairs.push(format!(
+            r#""{}":"{}""#,
+            json_escape(entry),
+            md5,
+        ));
+        let tlsh = tlsh_rs::hash_bytes(&b.data)
+            .ok()
+            .map(|d| d.to_string())
+            .unwrap_or_default();
+        if !tlsh.is_empty() {
+            entry_tlsh_pairs.push(format!(
+                r#""{}":"{}""#,
+                json_escape(entry),
+                tlsh,
+            ));
+        }
+        if entry_md5_pairs.len() >= 1024 { break; }
+    }
+    let entry_md5s_json = if entry_md5_pairs.is_empty() {
+        "{}".to_string()
+    } else {
+        format!("{{{}}}", entry_md5_pairs.join(","))
+    };
+    let entry_tlshs_json = if entry_tlsh_pairs.is_empty() {
+        "{}".to_string()
+    } else {
+        format!("{{{}}}", entry_tlsh_pairs.join(","))
+    };
+
     let err_json = match err {
         Some(e) => format!(",\"error\":\"{}\"", json_escape(&e)),
         None => String::new(),
     };
 
     format!(
-        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}},"generated_rule":{}{}}}"#,
-        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, generated_rule_json, err_json
+        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
+        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
     )
 }
 

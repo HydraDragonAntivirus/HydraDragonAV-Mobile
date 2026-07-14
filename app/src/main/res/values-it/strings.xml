@@ -373,4 +373,11 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="disable_secure_flag_toggle">Consenti registrazione schermo</string>
     <string name="skip_media_toggle">Salta i file multimediali nelle scansioni APK</string>
 
+    <string name="anti_fp_skip_toggle">Anti-FP Skip — memorizza nella cache gli hash (MD5 + TLSH) delle voci ZIP di APK nella whitelist per evitare falsi positivi</string>
+    <string name="anti_fp_skip_on_toast">Anti-FP Skip ON — le voci delle app nella whitelist vengono memorizzate nella cache</string>
+    <string name="anti_fp_skip_off_toast">Anti-FP Skip OFF — cache cancellata</string>
+    <string name="anti_fp_tlsh_threshold_btn">Soglia di Similarità TLSH</string>
+    <string name="anti_fp_tlsh_threshold_hint">Soglia di distanza TLSH (1-200). Più basso = più severo, più alto = soppressione FP più aggressiva. Predefinito: 40</string>
+    <string name="anti_fp_tlsh_threshold_saved">Soglia TLSH impostata a %1$d</string>
+
 </resources>
