@@ -1570,22 +1570,44 @@ fn run_scan(
         androguard_json = build_androguard_json(&buffers);
 
         // Per-buffer whitelist check.
+        let mut apk_md5_to_pkg = std::collections::HashMap::new();
+        for b in &buffers {
+            if let Some(pkg) = axml_package(&b.data) {
+                if !pkg.is_empty() {
+                    if let Some(apk_md5) = b.apk_lineage.last() {
+                        apk_md5_to_pkg.insert(apk_md5.to_lowercase(), pkg);
+                    }
+                }
+            }
+        }
+
         skip_heavy = buffers
             .iter()
-            .map(|b| {
-                if engine.package_whitelist.is_empty() {
-                    return false;
+            .enumerate()
+            .map(|(i, b)| {
+                let mut check_hashes = b.apk_lineage.clone();
+                if i == 0 {
+                    check_hashes.push(file_hash.clone());
                 }
-                let Some(pkg) = axml_package(&b.data) else {
-                    return false;
-                };
-                if pkg.is_empty() {
-                    return false;
+
+                for apk_md5 in check_hashes {
+                    let apk_md5_lower = apk_md5.to_lowercase();
+                    // 1. Check NSRL hash whitelist
+                    if let Some(wl) = &engine.whitelist {
+                        if wl.contains(&apk_md5_lower) {
+                            return true;
+                        }
+                    }
+                    // 2. Check package-name whitelist
+                    if let Some(pkg) = apk_md5_to_pkg.get(&apk_md5_lower) {
+                        if let Some(known_md5) = engine.package_whitelist.get(pkg) {
+                            if known_md5.eq_ignore_ascii_case(&apk_md5_lower) {
+                                return true;
+                            }
+                        }
+                    }
                 }
-                match engine.package_whitelist.get(&pkg) {
-                    Some(known_md5) => known_md5.eq_ignore_ascii_case(&md5_hex(&b.data)),
-                    None => false,
-                }
+                false
             })
             .collect();
 

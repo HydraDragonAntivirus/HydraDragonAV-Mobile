@@ -499,7 +499,6 @@ public class ScanEngine {
     private List<NativeScanner.Verdict.Detection> survivingDetections(NativeScanner.Verdict v) {
         List<NativeScanner.Verdict.Detection> out = new ArrayList<>();
         int tlshThreshold = AntiFpCache.getTlshThreshold(context);
-        boolean md5Mode = AntiFpCache.isMd5MatchMode(context);
         for (NativeScanner.Verdict.Detection d : v.detections) {
             if (isDetectionWhitelisted(d)) continue;
             // Anti-FP cache: extract entry name from objectPath (after '!')
@@ -508,23 +507,24 @@ public class ScanEngine {
                 int bang = d.objectPath.indexOf('!');
                 if (bang >= 0 && bang + 1 < d.objectPath.length()) {
                     String entryName = d.objectPath.substring(bang + 1);
-                    if (md5Mode) {
-                        String entryMd5 = v.entryMd5s.get(entryName);
-                        if (entryMd5 != null && !entryMd5.isEmpty()
-                                && antiFpCache.isKnownMd5(entryMd5)) {
-                            Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP MD5] "
-                                + d.name + " entry=" + entryName);
-                            continue;
-                        }
-                    } else {
-                        String entryTlsh = v.entryTlshs.get(entryName);
-                        if (entryTlsh != null && !entryTlsh.isEmpty()
-                                && tlshThreshold > 0
-                                && antiFpCache.hasSimilarTlsh(entryTlsh, tlshThreshold)) {
-                            Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP TLSH] "
-                                + d.name + " entry=" + entryName + " dist<=" + tlshThreshold);
-                            continue;
-                        }
+                    
+                    // 1. Check exact MD5 match first (same file check)
+                    String entryMd5 = v.entryMd5s.get(entryName);
+                    if (entryMd5 != null && !entryMd5.isEmpty()
+                            && antiFpCache.isKnownMd5(entryMd5)) {
+                        Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP MD5] "
+                            + d.name + " entry=" + entryName);
+                        continue;
+                    }
+                    
+                    // 2. Fall back to TLSH similarity matching
+                    String entryTlsh = v.entryTlshs.get(entryName);
+                    if (entryTlsh != null && !entryTlsh.isEmpty()
+                            && tlshThreshold > 0
+                            && antiFpCache.hasSimilarTlsh(entryTlsh, tlshThreshold)) {
+                        Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP TLSH] "
+                            + d.name + " entry=" + entryName + " dist<=" + tlshThreshold);
+                        continue;
                     }
                 }
             }
@@ -536,9 +536,8 @@ public class ScanEngine {
 
     /** Anti-FN upsell: for every nested entry (and the top-level file itself)
      *  NOT already covered by a surviving detection, check it against the
-     *  Anti-FN cache of previously-confirmed-malicious entries. Anti-FN
-     *  matching defaults to TLSH similarity; MD5 exact match is used instead
-     *  only if the user picked MD5 mode in Settings ({@code anti_fn_match_mode}).
+     *  Anti-FN cache of previously-confirmed-malicious entries. Combined logic:
+     *  exact MD5 match is checked first, falling back to TLSH similarity matching.
      *  A hit synthesizes a Detection and appends it to {@code out} in place —
      *  this is what upgrades an otherwise-clean scan to malicious when the
      *  static signature alone misses a renamed/repacked variant. */
@@ -555,14 +554,20 @@ public class ScanEngine {
                 topLevelCovered = true;
             }
         }
-        boolean md5Mode = AntiFnCache.isMd5MatchMode(context);
         int tlshThreshold = AntiFnCache.getTlshThreshold(context);
         for (java.util.Map.Entry<String, String> e : v.entryTlshs.entrySet()) {
             String entryName = e.getKey();
             if (covered.contains(entryName)) continue;
-            String matched = md5Mode
-                ? matchAntiFnMd5(v.entryMd5s.get(entryName))
-                : antiFnCache.findSimilarTlsh(e.getValue(), tlshThreshold);
+            
+            // 1. Check exact MD5 match first
+            String entryMd5 = v.entryMd5s.get(entryName);
+            String matched = matchAntiFnMd5(entryMd5);
+            
+            // 2. Fall back to TLSH similarity match
+            if (matched == null) {
+                matched = antiFnCache.findSimilarTlsh(e.getValue(), tlshThreshold);
+            }
+            
             if (matched != null) {
                 Log.d(TAG, "DETECTION-UPSELLED[anti-FN] entry=" + entryName + " matched=" + matched);
                 out.add(new NativeScanner.Verdict.Detection(
@@ -570,9 +575,14 @@ public class ScanEngine {
             }
         }
         if (!topLevelCovered) {
-            String matched = md5Mode
-                ? matchAntiFnMd5(v.md5)
-                : antiFnCache.findSimilarTlsh(v.fileTlsh, tlshThreshold);
+            // 1. Check exact MD5 match first
+            String matched = matchAntiFnMd5(v.md5);
+            
+            // 2. Fall back to TLSH similarity match
+            if (matched == null) {
+                matched = antiFnCache.findSimilarTlsh(v.fileTlsh, tlshThreshold);
+            }
+            
             if (matched != null) {
                 Log.d(TAG, "DETECTION-UPSELLED[anti-FN] top-level matched=" + matched);
                 out.add(new NativeScanner.Verdict.Detection(

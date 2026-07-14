@@ -302,13 +302,6 @@ public class SettingsFragment extends Fragment {
         addBtn("🔀 " + getString(R.string.anti_fp_tlsh_threshold_btn) + " (" + tlshThresh + ")", color(R.color.bg_secondary),
             v -> showTlshThresholdDialog());
 
-        boolean antiFpMd5Mode = "md5".equals(prefs().getString("anti_fp_match_mode", "tlsh"));
-        addToggle(getString(R.string.anti_fp_match_mode_toggle), antiFpMd5Mode, (btn, on) -> {
-            prefs().edit().putString("anti_fp_match_mode", on ? "md5" : "tlsh").apply();
-            Toast.makeText(getContext(), on
-                ? getString(R.string.anti_fp_match_mode_md5_toast)
-                : getString(R.string.anti_fp_match_mode_tlsh_toast), Toast.LENGTH_SHORT).show();
-        });
 
         boolean antiFn = prefs().getBoolean("anti_fn_enabled", true);
         addToggle(getString(R.string.anti_fn_enabled_toggle), antiFn, (btn, on) -> {
@@ -328,13 +321,6 @@ public class SettingsFragment extends Fragment {
         addBtn("🔀 " + getString(R.string.anti_fn_tlsh_threshold_btn) + " (" + antiFnTlshThresh + ")", color(R.color.bg_secondary),
             v -> showAntiFnTlshThresholdDialog());
 
-        boolean antiFnMd5Mode = "md5".equals(prefs().getString("anti_fn_match_mode", "tlsh"));
-        addToggle(getString(R.string.anti_fn_match_mode_toggle), antiFnMd5Mode, (btn, on) -> {
-            prefs().edit().putString("anti_fn_match_mode", on ? "md5" : "tlsh").apply();
-            Toast.makeText(getContext(), on
-                ? getString(R.string.anti_fn_match_mode_md5_toast)
-                : getString(R.string.anti_fn_match_mode_tlsh_toast), Toast.LENGTH_SHORT).show();
-        });
 
         boolean skipMedia = prefs().getBoolean("skip_image_media_enabled", true);
         addToggle(getString(R.string.skip_media_toggle), skipMedia, (btn, on) -> {
