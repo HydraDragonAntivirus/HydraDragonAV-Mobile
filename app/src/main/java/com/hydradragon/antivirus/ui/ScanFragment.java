@@ -28,7 +28,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.hydradragon.antivirus.R;
+import com.hydradragon.antivirus.adapter.ScannedFileAdapter;
 import com.hydradragon.antivirus.adapter.ThreatAdapter;
+import com.hydradragon.antivirus.model.ScannedFileInfo;
 import com.hydradragon.antivirus.model.ScanResult;
 import com.hydradragon.antivirus.model.ThreatResult;
 import com.hydradragon.antivirus.service.GuardService;
@@ -44,14 +46,16 @@ public class ScanFragment extends Fragment {
     private Button btnPauseResume;
     private ProgressBar progressBar;
     private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats, tvThreatLabel, tvEngineWarning;
+    private TextView btnViewThreats, btnViewAllFiles, tvViewToggle;
     private ImageView ivScannerIcon;
-    private RecyclerView rvThreats;
+    private RecyclerView rvThreats, rvAllFiles;
 
     private GuardService guardService;
     private boolean serviceBound = false;
     private android.net.Uri pendingCustomScanUri = null;
     private String pendingUninstallPkg = null;
     private File pendingCustomScanDir = null;
+    private boolean showingThreats = true;
     
     // STATIC MEMORY: survives switching between tabs — this data stays put.
     private static boolean isScanning = false;
@@ -59,6 +63,7 @@ public class ScanFragment extends Fragment {
     private static String lastScanStatus = null;
     private static int lastScannedCount = 0;
     private static List<ThreatResult> foundThreats = new ArrayList<>();
+    private static List<ScannedFileInfo> scannedFiles = new ArrayList<>();
     // Latest onProgress() values — restored in onViewCreated so switching away
     // from this tab mid-scan and back doesn't show a stale/blank progress bar
     // until the NEXT progress tick happens to arrive (could be a noticeable
@@ -133,10 +138,21 @@ public class ScanFragment extends Fragment {
         tvEngineWarning = view.findViewById(R.id.tv_engine_warning);
         ivScannerIcon = view.findViewById(R.id.iv_scanner_icon);
         rvThreats = view.findViewById(R.id.rv_threats);
+        rvAllFiles = view.findViewById(R.id.rv_all_files);
+        btnViewThreats = view.findViewById(R.id.btn_view_threats);
+        btnViewAllFiles = view.findViewById(R.id.btn_view_all_files);
+        tvViewToggle = view.findViewById(R.id.tv_view_toggle);
 
         threatAdapter = new ThreatAdapter(foundThreats);
         rvThreats.setLayoutManager(new LinearLayoutManager(getContext()));
         rvThreats.setAdapter(threatAdapter);
+
+        ScannedFileAdapter fileAdapter = new ScannedFileAdapter(scannedFiles);
+        rvAllFiles.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvAllFiles.setAdapter(fileAdapter);
+
+        btnViewThreats.setOnClickListener(v -> switchView(true));
+        btnViewAllFiles.setOnClickListener(v -> switchView(false));
 
         // Switched tabs and came back — restore the last known state on screen
         if (hasScanned) {
@@ -503,6 +519,7 @@ public class ScanFragment extends Fragment {
         isScanning = true;
         hasScanned = true;
         foundThreats.clear();
+        scannedFiles.clear();
         threatAdapter.notifyDataSetChanged();
         lastProgressCurrent = 0;
         lastProgressTotal = 0;
@@ -613,6 +630,11 @@ public class ScanFragment extends Fragment {
             }
 
             @Override
+            public void onFileScanned(ScannedFileInfo info) {
+                scannedFiles.add(info);
+            }
+
+            @Override
             public void onScanComplete(ScanResult result) {
                 Log.d(TAG, "onScanComplete: totalScanned=" + result.getTotalScanned()
                     + " threatsFound=" + result.getThreatsFound()
@@ -693,6 +715,14 @@ public class ScanFragment extends Fragment {
                 });
             }
         });
+    }
+
+    private void switchView(boolean showThreats) {
+        showingThreats = showThreats;
+        rvThreats.setVisibility(showThreats ? View.VISIBLE : View.GONE);
+        rvAllFiles.setVisibility(showThreats ? View.GONE : View.VISIBLE);
+        btnViewThreats.setTextColor(showThreats ? 0xFF00FF88 : 0xFF888888);
+        btnViewAllFiles.setTextColor(showThreats ? 0xFF888888 : 0xFF00FF88);
     }
 
     private void startScannerAnimation() {

@@ -341,9 +341,7 @@ public class GuardService extends Service {
             }
 
             @Override
-            public void onError(String error) {
-                Log.e(TAG, "Background scan error: " + error);
-            }
+            public void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo info) {}
         });
 
         // Set ONCE — see uiScanCallback's javadoc for why ScanFragment must
@@ -424,6 +422,12 @@ public class GuardService extends Service {
                 }
                 ScanEngine.ScanCallback ui = uiScanCallback;
                 if (ui != null) ui.onScanComplete(result);
+            }
+
+            @Override
+            public void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo info) {
+                ScanEngine.ScanCallback ui = uiScanCallback;
+                if (ui != null) ui.onFileScanned(info);
             }
 
             @Override

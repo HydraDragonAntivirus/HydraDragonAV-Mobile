@@ -372,6 +372,7 @@ public class ScanEngine {
         void onThreatFound(ThreatResult threat);
         void onScanComplete(ScanResult result);
         void onError(String error);
+        void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo info);
     }
 
     public ScanEngine(Context context, AIEngine aiEngine) {
@@ -781,6 +782,7 @@ public class ScanEngine {
             PackageManager pm = context.getPackageManager();
             List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
             List<ThreatResult> threats = new ArrayList<>();
+            List<com.hydradragon.antivirus.model.ScannedFileInfo> scannedFiles = new ArrayList<>();
             int total = apps.size();
             appsScannedBase = total;
 
@@ -797,10 +799,22 @@ public class ScanEngine {
                 try {
                     if (callback != null) callback.onProgress(i + 1, total, app.packageName);
                     ThreatResult result = analyzeApp(app, pm, false);
-                    if (result != null && result.isThreat() && !threats.contains(result)) {
+                    boolean isThreat = result != null && result.isThreat();
+                    if (isThreat && !threats.contains(result)) {
                         threats.add(result);
                         if (callback != null) callback.onThreatFound(result);
                     }
+                    String appName = result != null ? result.getAppName() : "";
+                    String reason = isThreat
+                        ? String.join("; ", result.getReasons() != null ? result.getReasons() : java.util.Collections.emptyList())
+                        : "Clean";
+                    com.hydradragon.antivirus.model.ScannedFileInfo fi =
+                        new com.hydradragon.antivirus.model.ScannedFileInfo(
+                            app.sourceDir, app.packageName, appName,
+                            result != null ? result.getRiskScore() : 0, "", System.currentTimeMillis(),
+                            isThreat, reason);
+                    scannedFiles.add(fi);
+                    if (callback != null) callback.onFileScanned(fi);
                 } catch (Exception e) { }
             }
 
@@ -843,7 +857,7 @@ public class ScanEngine {
             long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
             int scannedTotal = total + filesScannedCount.get() + threats.size();
             if (callback != null)
-                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, elapsedMs));
+                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, scannedFiles, elapsedMs));
           } finally {
               isBatchMode = false;
               scanRunning.set(false);
@@ -882,7 +896,8 @@ public class ScanEngine {
             long scanStartMs = android.os.SystemClock.elapsedRealtime();
             PackageManager pm = context.getPackageManager();
             List<ThreatResult> threats = new ArrayList<>();
-            scanDirectoryForApks(dir, pm, threats, true);
+            List<com.hydradragon.antivirus.model.ScannedFileInfo> scannedFiles = new ArrayList<>();
+            scanDirectoryForApks(dir, pm, threats, true, scannedFiles);
 
             // Flush all deferred scans and run the heavy Phase 3 scan
             flushBatchScans(threats);
@@ -891,7 +906,7 @@ public class ScanEngine {
             long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
             int scannedTotal = filesScannedCount.get() + threats.size();
             if (callback != null)
-                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, elapsedMs));
+                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, scannedFiles, elapsedMs));
           } finally {
               isBatchMode = false;
               scanRunning.set(false);
@@ -903,7 +918,13 @@ public class ScanEngine {
 
     private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
                                       List<ThreatResult> threats, boolean fullScan) {
-        scanDirectoryForApks(dir, pm, threats, fullScan, null);
+        scanDirectoryForApks(dir, pm, threats, fullScan, (java.util.Set<String>) null);
+    }
+
+    private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
+                                      List<ThreatResult> threats, boolean fullScan,
+                                      List<com.hydradragon.antivirus.model.ScannedFileInfo> scannedFiles) {
+        scanDirectoryForApks(dir, pm, threats, fullScan, null, scannedFiles);
     }
 
     /** Bump the storage-file counter and push a live progress update so a full
@@ -914,8 +935,17 @@ public class ScanEngine {
      *  purpose: the eventual file count isn't known ahead of time, so this
      *  reports "how many scanned so far" rather than a completion percentage. */
     private void reportFileScanned(java.io.File file) {
+        reportFileScanned(file, "Scanned", 0, false);
+    }
+
+    private void reportFileScanned(java.io.File file, String reason, int riskScore, boolean isThreat) {
         int n = appsScannedBase + filesScannedCount.incrementAndGet();
-        if (callback != null) callback.onProgress(n, n, file.getName());
+        if (callback != null) {
+            callback.onProgress(n, n, file.getName());
+            callback.onFileScanned(new com.hydradragon.antivirus.model.ScannedFileInfo(
+                file.getAbsolutePath(), "", file.getName(),
+                riskScore, "", System.currentTimeMillis(), isThreat, reason));
+        }
     }
 
     /** @param skipPackages installed-package names already analyzed by the main
@@ -926,6 +956,13 @@ public class ScanEngine {
     private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
                                       List<ThreatResult> threats, boolean fullScan,
                                       java.util.Set<String> skipPackages) {
+        scanDirectoryForApks(dir, pm, threats, fullScan, skipPackages, null);
+    }
+
+    private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
+                                      List<ThreatResult> threats, boolean fullScan,
+                                      java.util.Set<String> skipPackages,
+                                      List<com.hydradragon.antivirus.model.ScannedFileInfo> scannedFiles) {
         if (dir == null || !dir.exists() || !dir.isDirectory()) return;
         java.io.File[] files = dir.listFiles();
         if (files == null) return;
@@ -945,7 +982,7 @@ public class ScanEngine {
             if (file.getName().startsWith(".pending-")) continue;
             if (cancelRequested) return;
             if (file.isDirectory()) {
-                scanDirectoryForApks(file, pm, threats, fullScan, skipPackages);
+                scanDirectoryForApks(file, pm, threats, fullScan, skipPackages, scannedFiles);
             } else if (file.getName().toLowerCase().endsWith(".apk")) {
                 // runPkgInfoInterruptible handles Vivo ROM hangs/timeouts internally
                 // and sets apkPkgAnalyzerBroken.
@@ -966,7 +1003,9 @@ public class ScanEngine {
                                 if (callback != null) callback.onThreatFound(cr);
                             }
                         }
-                        if (!cancelRequested) reportFileScanned(file);
+                        if (!cancelRequested) reportFileScanned(file,
+                            cachedApk.isPresent() ? "Cache hit - known threat" : "Cache hit - clean",
+                            cachedApk.isPresent() ? 100 : 0, cachedApk.isPresent());
                         continue; // skip analyzeApp entirely
                     }
 
@@ -989,7 +1028,7 @@ public class ScanEngine {
                             if (callback != null) callback.onThreatFound(r);
                         }
                         fileScanCache.put(apkMd5, java.util.Optional.of(r));
-                        if (!cancelRequested) reportFileScanned(file);
+                        if (!cancelRequested) reportFileScanned(file, "Anti-FN cache hit - threat", 100, true);
                         continue;
                     }
 
@@ -997,7 +1036,7 @@ public class ScanEngine {
                     if (antiFpCache != null && antiFpCache.isEnabled() && antiFpCache.isKnownMd5(apkMd5)) {
                         Log.i(TAG, "Anti-FP cache hit APK (known MD5 clean): " + file.getAbsolutePath());
                         fileScanCache.put(apkMd5, java.util.Optional.empty());
-                        if (!cancelRequested) reportFileScanned(file);
+                        if (!cancelRequested) reportFileScanned(file, "Anti-FP cache hit - clean", 0, false);
                         continue;
                     }
 
@@ -1005,7 +1044,7 @@ public class ScanEngine {
                     if (isHashWhitelisted(apkMd5)) {
                         Log.i(TAG, "NSRL Whitelist hit APK (MD5 clean): " + file.getAbsolutePath());
                         fileScanCache.put(apkMd5, java.util.Optional.empty());
-                        if (!cancelRequested) reportFileScanned(file);
+                        if (!cancelRequested) reportFileScanned(file, "NSRL whitelist - clean", 0, false);
                         continue;
                     }
                 }
