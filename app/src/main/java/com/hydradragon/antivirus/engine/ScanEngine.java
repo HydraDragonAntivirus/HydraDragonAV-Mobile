@@ -198,6 +198,11 @@ public class ScanEngine {
      *  standalone clear — a package name is spoofable, so it only clears an app
      *  when combined with a trusted-store install (see analyzeApp). */
     private final java.util.HashSet<String> whitelistPackages = new java.util.HashSet<>();
+    /** Packages found to be store+NSRL-whitelisted during the current scan run.
+     *  Populated by {@link #analyzeApp} and consumed by
+     *  {@link #deepNativeScanInstalledApks} to skip the costly native engine
+     *  on apps we already trust — their zip-entry hashes are already cached. */
+    private final java.util.HashSet<String> whitelistedDuringScan = new java.util.HashSet<>();
     /** Set by {@link #cancelScan()} to abort an in-flight scan at the next loop
      *  boundary. Volatile so the UI thread's request is seen by the scan thread. */
     private volatile boolean cancelRequested = false;
@@ -553,6 +558,7 @@ public class ScanEngine {
         apkPkgAnalyzerBroken = false;
         engineTimingMs.clear();
         filesScannedCount.set(0);
+        whitelistedDuringScan.clear();
         scanExecutor.execute(() -> {
           try {
             long scanStartMs = android.os.SystemClock.elapsedRealtime();
@@ -1007,11 +1013,13 @@ public class ScanEngine {
     }
 
     /** 2) Deep native (clamav/YARA/ML) scan of every installed app's APK — runs
-     *  even on name-whitelisted apps, since a signature/hash match is stronger
-     *  than a trusted package name. Hash/package whitelist still suppresses FPs.
+     *  ONLY on NON-whitelisted apps. Whitelisted apps (store+NSRL) were already
+     *  processed/cached by {@link #analyzeApp} and tracked in
+     *  {@link #whitelistedDuringScan} — skipping them here avoids redundant
+     *  native work (the Anti-FP cache is already populated).
      *  Reports progress so the user sees which APK is being deep-scanned. */
     private void deepNativeScanInstalledApks(List<ApplicationInfo> apps, PackageManager pm,
-                                             List<ThreatResult> threats) {
+                                              List<ThreatResult> threats) {
         if (!NativeScanner.isReady()) return;
         java.util.HashSet<String> seen = new java.util.HashSet<>();
         for (ThreatResult t : threats) if (t.getPackageName() != null) seen.add(t.getPackageName());
@@ -1035,7 +1043,8 @@ public class ScanEngine {
                         || app.sourceDir.startsWith("/product/") || app.sourceDir.startsWith("/apex/")) continue;
                 if (app.packageName != null && (app.packageName.equals(context.getPackageName())
                         || seen.contains(app.packageName)
-                        || photonCache.containsKey(app.packageName))) continue;
+                        || photonCache.containsKey(app.packageName)
+                        || whitelistedDuringScan.contains(app.packageName))) continue;
                 if (!MaxScanFileSize.isWithinLimit(context, new java.io.File(app.sourceDir))) {
                     Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + app.packageName);
                     continue;
@@ -1232,6 +1241,7 @@ public class ScanEngine {
         // deep scan, independently.)
         if (isFromStore && isPackageWhitelisted(app.packageName)) {
             Log.d(TAG, "CLEAR-EXIT[store+NSRL-whitelisted] " + app.packageName);
+            whitelistedDuringScan.add(app.packageName);
             // Populate Anti-FP cache with this whitelisted APK's zip entry
             // hashes so identical entries found in other apps are never flagged.
             if (antiFpCache.isEnabled() && app.sourceDir != null) {
