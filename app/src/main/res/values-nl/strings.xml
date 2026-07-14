@@ -386,4 +386,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH-afstandsdrempel (1-200). Lager = strenger, hoger = agressievere detectie-upgrade. Standaard: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN-TLSH-drempel ingesteld op %1$d</string>
 
+    <string name="save_auto_rules_toggle">Automatisch gegenereerde regels opslaan</string>
+    <string name="save_auto_rules_on_toast">Automatisch gegenereerde regels opslaan AAN: automatisch geleerde YARA-regels worden naar schijf geschreven en bij de volgende start opnieuw geladen</string>
+    <string name="save_auto_rules_off_toast">Automatisch gegenereerde regels opslaan UIT: regels worden nog steeds in deze sessie gebruikt maar worden NA een herstart NIET bewaard</string>
 </resources>

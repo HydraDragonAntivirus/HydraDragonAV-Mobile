@@ -250,6 +250,14 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.auto_rule_gen_off_toast), Toast.LENGTH_LONG).show();
         });
 
+        boolean saveAutoRules = com.hydradragon.antivirus.engine.SaveAutoRules.isEnabled(requireContext());
+        addToggle(getString(R.string.save_auto_rules_toggle), saveAutoRules, (btn, on) -> {
+            com.hydradragon.antivirus.engine.SaveAutoRules.setEnabled(requireContext(), on);
+            Toast.makeText(getContext(), on
+                ? getString(R.string.save_auto_rules_on_toast)
+                : getString(R.string.save_auto_rules_off_toast), Toast.LENGTH_LONG).show();
+        });
+
         boolean askSigOnRemove = com.hydradragon.antivirus.engine.AskSignatureOnRemove.isEnabled(requireContext());
         addToggle(getString(R.string.ask_sig_on_remove_toggle), askSigOnRemove, (btn, on) -> {
             com.hydradragon.antivirus.engine.AskSignatureOnRemove.setEnabled(requireContext(), on);

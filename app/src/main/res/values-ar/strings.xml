@@ -386,4 +386,7 @@
     <string name="anti_fn_tlsh_threshold_hint">حد مسافة TLSH (1-200). القيمة الأقل = أكثر صرامة، القيمة الأعلى = ترقية اكتشاف أكثر عدوانية. الافتراضي: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">تم تعيين حد TLSH لـ Anti-FN إلى %1$d</string>
 
+    <string name="save_auto_rules_toggle">حفظ القواعد المُنشأة تلقائيًا</string>
+    <string name="save_auto_rules_on_toast">حفظ القواعد التلقائية مُفعَّل: سيتم كتابة قواعد YARA المُتعلَّمة تلقائيًا على القرص وإعادة تحميلها عند التشغيل التالي</string>
+    <string name="save_auto_rules_off_toast">حفظ القواعد التلقائية مُعطَّل: لا تزال القواعد مُستخدَمة في هذه الجلسة لكنها لن تُحفظ بعد إعادة التشغيل</string>
 </resources>

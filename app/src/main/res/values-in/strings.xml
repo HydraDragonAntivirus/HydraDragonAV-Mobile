@@ -386,4 +386,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="anti_fn_tlsh_threshold_hint">Ambang jarak TLSH (1-200). Lebih rendah = lebih ketat, lebih tinggi = peningkatan deteksi lebih agresif. Default: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Ambang TLSH Anti-FN diatur ke %1$d</string>
 
+    <string name="save_auto_rules_toggle">Simpan Aturan yang Dibuat Otomatis</string>
+    <string name="save_auto_rules_on_toast">Simpan Aturan Otomatis AKTIF: aturan YARA yang dipelajari otomatis akan ditulis ke disk dan dimuat ulang saat peluncuran aplikasi berikutnya</string>
+    <string name="save_auto_rules_off_toast">Simpan Aturan Otomatis NONAKTIF: aturan masih digunakan sesi ini tetapi tidak akan disimpan setelah restart</string>
 </resources>

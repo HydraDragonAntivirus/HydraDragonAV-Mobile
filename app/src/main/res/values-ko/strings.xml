@@ -386,4 +386,7 @@
     <string name="anti_fn_tlsh_threshold_hint">TLSH 거리 임계값(1-200). 낮을수록 엄격, 높을수록 탐지 상향이 더 적극적. 기본값: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSH 임계값이 %1$d(으)로 설정되었습니다</string>
 
+    <string name="save_auto_rules_toggle">자동 생성 규칙 저장</string>
+    <string name="save_auto_rules_on_toast">자동 생성 규칙 저장 켜짐: 자동 학습된 YARA 규칙이 디스크에 기록되며 다음 앱 실행 시 다시 로드됩니다</string>
+    <string name="save_auto_rules_off_toast">자동 생성 규칙 저장 꺼짐: 규칙은 이번 세션에서 계속 사용되지만 재시작 후에는 유지되지 않습니다</string>
 </resources>

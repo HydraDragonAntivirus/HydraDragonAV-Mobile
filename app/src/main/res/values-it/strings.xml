@@ -386,4 +386,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="anti_fn_tlsh_threshold_hint">Soglia di distanza TLSH (1-200). Più basso = più severo, più alto = aggiornamento di rilevazione più aggressivo. Predefinito: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Soglia TLSH Anti-FN impostata a %1$d</string>
 
+    <string name="save_auto_rules_toggle">Salva regole autogenerate</string>
+    <string name="save_auto_rules_on_toast">Salva regole autogenerate ATTIVATO: le regole YARA apprese automaticamente verranno scritte su disco e ricaricate al prossimo avvio</string>
+    <string name="save_auto_rules_off_toast">Salva regole autogenerate DISATTIVATO: le regole sono ancora usate in questa sessione ma NON verranno mantenute dopo il riavvio</string>
 </resources>

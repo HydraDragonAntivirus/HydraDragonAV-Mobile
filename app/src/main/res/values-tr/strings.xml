@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirüs</string>
     <string name="root_warning_title">⚠ KÖKLÜ (ROOT) CİHAZ</string>
@@ -388,5 +388,8 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH Benzerlik Eşiği</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH mesafe eşiği (1-200). Düşük = daha katı, yüksek = daha agresif tespit yükseltmesi. Varsayılan: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSH eşiği %1$d olarak ayarlandı</string>
+    <string name="save_auto_rules_toggle">Otomatik Oluşturulan Kuralları Kaydet</string>
+    <string name="save_auto_rules_on_toast">Otomatik Oluşturulan Kuralları Kaydet AÇIK: otomatik öğrenilen YARA kuralları diske yazılacak ve sonraki uygulama başlatılmasında yeniden yüklenecek</string>
+    <string name="save_auto_rules_off_toast">Otomatik Oluşturulan Kuralları Kaydet KAPALI: kurallar bu oturumda hâlâ kullanılır ancak yeniden başlatmadan sonra SAKLANMAZ</string>
 
 </resources>

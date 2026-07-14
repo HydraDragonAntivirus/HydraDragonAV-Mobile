@@ -386,4 +386,7 @@
     <string name="anti_fn_tlsh_threshold_hint">Порог расстояния TLSH (1-200). Ниже = строже, выше = более агрессивное повышение обнаружения. По умолчанию: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Порог TLSH Anti-FN установлен на %1$d</string>
 
+    <string name="save_auto_rules_toggle">Сохранять автосгенерированные правила</string>
+    <string name="save_auto_rules_on_toast">Сохранение автоправил ВКЛЮЧЕНО: автоматически изученные правила YARA будут записаны на диск и перезагружены при следующем запуске</string>
+    <string name="save_auto_rules_off_toast">Сохранение автоправил ВЫКЛЮЧЕНО: правила по-прежнему используются в текущей сессии, но после перезапуска сохранены НЕ будут</string>
 </resources>

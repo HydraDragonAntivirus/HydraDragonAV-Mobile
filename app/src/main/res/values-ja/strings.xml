@@ -386,4 +386,7 @@
     <string name="anti_fn_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的に検出精度を引き上げ。デフォルト: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSHしきい値を%1$dに設定しました</string>
 
+    <string name="save_auto_rules_toggle">自動生成ルールを保存</string>
+    <string name="save_auto_rules_on_toast">自動生成ルール保存 ON：自動学習された YARA ルールがディスクに書き込まれ、次回起動時に再読み込みされます</string>
+    <string name="save_auto_rules_off_toast">自動生成ルール保存 OFF：ルールはこのセッションでは引き続き使用されますが、再起動後は保持されません</string>
 </resources>

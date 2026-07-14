@@ -386,4 +386,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="anti_fn_tlsh_threshold_hint">Ngưỡng khoảng cách TLSH (1-200). Thấp hơn = nghiêm ngặt hơn, cao hơn = nâng cấp phát hiện mạnh mẽ hơn. Mặc định: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Đã đặt ngưỡng TLSH của Anti-FN thành %1$d</string>
 
+    <string name="save_auto_rules_toggle">Luu quy tac duoc tao tu dong</string>
+    <string name="save_auto_rules_on_toast">Luu quy tac tu dong BAT: cac quy tac YARA tu hoc se duoc ghi vao dia va tai lai khi khoi dong ung dung lan sau</string>
+    <string name="save_auto_rules_off_toast">Luu quy tac tu dong TAT: quy tac van duoc su dung trong phien nay nhung se KHONG duoc giu lai sau khi khoi dong lai</string>
 </resources>

@@ -386,4 +386,7 @@
     <string name="anti_fn_tlsh_threshold_hint">เกณฑ์ระยะทาง TLSH (1-200) ค่าต่ำ = เข้มงวดมากขึ้น ค่าสูง = การอัปเกรดการตรวจจับที่รุนแรงขึ้น ค่าเริ่มต้น: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">ตั้งค่าเกณฑ์ TLSH ของ Anti-FN เป็น %1$d แล้ว</string>
 
+    <string name="save_auto_rules_toggle">บันทึกกฎที่สร้างอัตโนมัติ</string>
+    <string name="save_auto_rules_on_toast">บันทึกกฎอัตโนมัติ เปิด: กฎ YARA ที่เรียนรู้อัตโนมัติจะถูกเขียนลงดิสก์และโหลดใหม่เมื่อเปิดแอปครั้งถัดไป</string>
+    <string name="save_auto_rules_off_toast">บันทึกกฎอัตโนมัติ ปิด: กฎยังคงใช้งานในเซสชันนี้แต่จะไม่ถูกเก็บไว้หลังรีสตาร์ท</string>
 </resources>

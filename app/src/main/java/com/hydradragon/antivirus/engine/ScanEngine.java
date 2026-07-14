@@ -477,15 +477,27 @@ public class ScanEngine {
     private void saveGeneratedRule(NativeScanner.Verdict v) {
         if (v == null || v.generatedRule == null || v.generatedRule.isEmpty()) return;
         try {
-            java.io.File dir = new java.io.File(
-                new java.io.File(context.getFilesDir(), "hydra-scan"), "generated_rules");
-            if (!dir.exists() && !dir.mkdirs()) return;
-            String name = (v.md5 != null && !v.md5.isEmpty()) ? v.md5 : String.valueOf(System.nanoTime());
-            java.io.File out = new java.io.File(dir, "auto_" + name + ".yar");
-            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
-                fos.write(v.generatedRule.getBytes(StandardCharsets.UTF_8));
+            // Always hot-load the rule into the live engine so the current session
+            // benefits even if disk persistence is disabled by the user.
+            if (SaveAutoRules.isEnabled(context)) {
+                java.io.File dir = new java.io.File(
+                    new java.io.File(context.getFilesDir(), "hydra-scan"), "generated_rules");
+                if (!dir.exists() && !dir.mkdirs()) return;
+                String name = (v.md5 != null && !v.md5.isEmpty()) ? v.md5 : String.valueOf(System.nanoTime());
+                java.io.File out = new java.io.File(dir, "auto_" + name + ".yar");
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
+                    fos.write(v.generatedRule.getBytes(StandardCharsets.UTF_8));
+                }
+                NativeScanner.learnRule(out.getAbsolutePath());
+            } else {
+                // Disk save disabled — write to a temp file, hot-load it, then delete.
+                java.io.File tmp = java.io.File.createTempFile("auto_rule_", ".yar", context.getCacheDir());
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tmp)) {
+                    fos.write(v.generatedRule.getBytes(StandardCharsets.UTF_8));
+                }
+                NativeScanner.learnRule(tmp.getAbsolutePath());
+                tmp.delete();
             }
-            NativeScanner.learnRule(out.getAbsolutePath());
         } catch (Exception e) { /* best effort — never block the scan on this */ }
     }
 
@@ -977,8 +989,25 @@ public class ScanEngine {
                 Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + file.getAbsolutePath());
                 return true;
             }
-            if (callback != null)
-                callback.onProgress(0, 1, file.getName());
+            if (callback != null) {
+                // Show WHICH file is being native-scanned without resetting the
+                // running count. In a full scan this runs mid storage-walk where
+                // the counter is already at appsScannedBase + filesScannedCount;
+                // emitting 0/1 here dropped the UI's "scanned" number back to 0
+                // on every generic file (then reportFileScanned bumped it again),
+                // so the count kept flickering to 0 through the whole full scan.
+                // Report current==total==the count-so-far instead; the eventual
+                // increment still happens in reportFileScanned after this returns.
+                // Only in batch mode — a standalone scanSingleFile has no running
+                // total, so it keeps the plain 0/1.
+                if (isBatchMode) {
+                    int n = appsScannedBase + filesScannedCount.get();
+                    if (n < 1) n = 1;
+                    callback.onProgress(n, n, file.getName());
+                } else {
+                    callback.onProgress(0, 1, file.getName());
+                }
+            }
             String path = file.getAbsolutePath();
             long nativeT0 = android.os.SystemClock.elapsedRealtime();
             NativeScanner.Verdict v = runNativeInterruptible(() ->

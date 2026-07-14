@@ -386,4 +386,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH-Distanzschwellwert (1-200). Niedriger = strenger, höher = aggressivere Erkennungs-Hochstufung. Standard: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN-TLSH-Schwellwert auf %1$d gesetzt</string>
 
+    <string name="save_auto_rules_toggle">Autogenerierte Regeln speichern</string>
+    <string name="save_auto_rules_on_toast">Autogenerierte Regeln SPEICHERN EIN: automatisch erlernte YARA-Regeln werden auf die Festplatte geschrieben und beim naechsten App-Start neu geladen</string>
+    <string name="save_auto_rules_off_toast">Autogenerierte Regeln SPEICHERN AUS: Regeln werden in dieser Sitzung noch verwendet, aber nach einem Neustart nicht behalten</string>
 </resources>
