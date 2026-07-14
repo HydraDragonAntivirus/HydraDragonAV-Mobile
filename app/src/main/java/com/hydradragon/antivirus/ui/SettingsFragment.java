@@ -286,7 +286,7 @@ public class SettingsFragment extends Fragment {
         boolean scanCache = prefs().getBoolean("scan_cache_enabled", true);
         addToggle(getString(R.string.scan_cache_toggle), scanCache, (btn, on) -> {
             prefs().edit().putBoolean("scan_cache_enabled", on).apply();
-            if (!on) com.hydradragon.antivirus.engine.ScanEngine.clearCache();
+            if (!on) com.hydradragon.antivirus.engine.ScanEngine.clearCache(requireContext());
             Toast.makeText(getContext(), on
                 ? getString(R.string.scan_cache_on_toast)
                 : getString(R.string.scan_cache_off_toast), Toast.LENGTH_SHORT).show();
