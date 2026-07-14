@@ -18,7 +18,14 @@ public class BootReceiver extends BroadcastReceiver {
             // thread before the user even opens the app.
             com.hydradragon.antivirus.engine.NativeScanner.init(context);
             Intent serviceIntent = new Intent(context, GuardService.class);
-            context.startService(serviceIntent);
+            // Android 8+ (O+): background receivers cannot call startService() —
+            // must use startForegroundService() instead, since GuardService is a
+            // foreground service and will call startForeground() promptly on start.
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent);
+            } else {
+                context.startService(serviceIntent);
+            }
         }
     }
 }
