@@ -403,4 +403,12 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="save_auto_rules_toggle">Save Auto-Generated Rules</string>
     <string name="save_auto_rules_on_toast">Save Auto-Generated Rules ON: auto-learned YARA rules will be written to disk and reloaded on the next app launch</string>
     <string name="save_auto_rules_off_toast">Save Auto-Generated Rules OFF: rules are still used this session but will NOT be kept after restart</string>
+
+    <string name="knowledge_db_header">KNOWLEDGE DATABASE</string>
+    <string name="knowledge_db_export_btn">📤 Export Cache — share your anti-FP/FN cache to help others</string>
+    <string name="knowledge_db_import_btn">📥 Import Cache — load shared anti-FP/FN cache from another user</string>
+    <string name="knowledge_db_exported">Knowledge database exported — %1$d entries shared</string>
+    <string name="knowledge_db_export_failed">Failed to export knowledge database</string>
+    <string name="knowledge_db_imported">Knowledge database imported — %1$d new entries added</string>
+    <string name="knowledge_db_import_failed">Failed to import knowledge database — file may be corrupted or from an incompatible version</string>
 </resources>

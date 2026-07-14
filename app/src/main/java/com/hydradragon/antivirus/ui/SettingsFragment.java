@@ -82,6 +82,31 @@ public class SettingsFragment extends Fragment {
                 pendingExportRuleFile = null;
             });
 
+    private final androidx.activity.result.ActivityResultLauncher<String> knowledgeExportLauncher =
+        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
+            uri -> {
+                if (uri == null) return;
+                try {
+                    com.hydradragon.antivirus.engine.KnowledgeDatabase.exportCache(requireContext(), uri);
+                    Toast.makeText(getContext(), getString(R.string.knowledge_db_exported, 0), Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(getContext(), getString(R.string.knowledge_db_export_failed), Toast.LENGTH_SHORT).show();
+                }
+            });
+
+    private final androidx.activity.result.ActivityResultLauncher<String> knowledgeImportLauncher =
+        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.GetContent(),
+            uri -> {
+                if (uri == null) return;
+                try {
+                    int count = com.hydradragon.antivirus.engine.KnowledgeDatabase.importCache(requireContext(), uri);
+                    Toast.makeText(getContext(),
+                        getString(R.string.knowledge_db_imported, count), Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(getContext(), getString(R.string.knowledge_db_import_failed), Toast.LENGTH_SHORT).show();
+                }
+            });
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup p, @Nullable Bundle s) {
@@ -445,6 +470,12 @@ public class SettingsFragment extends Fragment {
                 com.hydradragon.antivirus.engine.WebsiteWhitelist::remove));
         addBtn("📜 " + getString(R.string.auto_rules_manager_btn), color(R.color.bg_secondary),
             v -> showAutoRulesManagerDialog());
+
+        addHeader(getString(R.string.knowledge_db_header));
+        addBtn("📤 " + getString(R.string.knowledge_db_export_btn), color(R.color.bg_secondary),
+            v -> exportKnowledgeDatabase());
+        addBtn("📥 " + getString(R.string.knowledge_db_import_btn), color(R.color.bg_secondary),
+            v -> importKnowledgeDatabase());
 
         addHeader(getString(R.string.system));
         addBtn(getString(R.string.bloatware_cleaner), color(R.color.neon_cyan), v -> runCleanup());
@@ -1216,6 +1247,14 @@ public class SettingsFragment extends Fragment {
             .setView(scroll)
             .setPositiveButton(getString(R.string.btn_close), null)
             .show();
+    }
+
+    private void exportKnowledgeDatabase() {
+        knowledgeExportLauncher.launch("hydradragon_knowledge_db.json");
+    }
+
+    private void importKnowledgeDatabase() {
+        knowledgeImportLauncher.launch("application/json");
     }
 
     /** Generic "type to add / tap to remove" manager, shared by Ignored
