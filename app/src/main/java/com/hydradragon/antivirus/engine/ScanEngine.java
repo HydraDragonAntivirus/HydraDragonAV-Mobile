@@ -979,7 +979,10 @@ public class ScanEngine {
                         b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                         b.setAppName(file.getName() + " (SD CARD)");
                         b.setApkPath(file.getAbsolutePath());
-                        b.setReasons(java.util.Arrays.asList("AntiFN.Suspected: known sample", "MD5: " + apkMd5));
+                        b.setReasons(java.util.Arrays.asList(
+                            "AntiFN.Suspected: known sample",
+                            "MD5: " + apkMd5,
+                            "🔍 VirusTotal: https://www.virustotal.com/gui/file/" + apkMd5));
                         ThreatResult r = b.build();
                         if (!threats.contains(r)) {
                             threats.add(r);
@@ -1196,7 +1199,10 @@ public class ScanEngine {
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                     b.setAppName(file.getName() + " (FILE)");
                     b.setApkPath(file.getAbsolutePath());
-                    b.setReasons(java.util.Arrays.asList("AntiFN.Suspected: known sample", "MD5: " + fileMd5));
+                    b.setReasons(java.util.Arrays.asList(
+                        "AntiFN.Suspected: known sample",
+                        "MD5: " + fileMd5,
+                        "🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileMd5));
                     ThreatResult r = b.build();
                     if (!threats.contains(r)) {
                         threats.add(r);
