@@ -1214,12 +1214,12 @@ public class ScanEngine {
                 // 2. Check persistent antiFnCache (known MD5 threat)
                 if (antiFnCache != null && antiFnCache.isEnabled() && antiFnCache.isKnownMd5(fileMd5)) {
                     Log.i(TAG, "Anti-FN cache hit (known MD5 threat): " + file.getAbsolutePath());
-                    ThreatResult.Builder b = new ThreatResult.Builder(path);
+                    ThreatResult.Builder b = new ThreatResult.Builder(file.getAbsolutePath());
                     b.setStandaloneFile(true);
                     b.setRiskScore(100);
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                     b.setAppName(file.getName() + " (FILE)");
-                    b.setApkPath(path);
+                    b.setApkPath(file.getAbsolutePath());
                     b.setReasons(java.util.Arrays.asList("AntiFN.Suspected: known sample", "MD5: " + fileMd5));
                     ThreatResult r = b.build();
                     if (!threats.contains(r)) {
