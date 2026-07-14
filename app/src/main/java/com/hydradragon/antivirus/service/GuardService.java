@@ -50,17 +50,30 @@ public class GuardService extends Service {
             // another CLOSE_WRITE — which the old mask never listened for,
             // so the completed file was never scanned at all. Also skip the
             // ".pending-" file itself outright: it's guaranteed incomplete.
-            downloadObserver = new android.os.FileObserver(downloadDir.getAbsolutePath(),
-                    android.os.FileObserver.CLOSE_WRITE | android.os.FileObserver.MOVED_TO) {
-                @Override
-                public void onEvent(int event, String path) {
-                    if (path == null || path.startsWith(".pending-")) return;
-                    com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
-                        .onFileEvent(GuardService.this, downloadDir.getAbsolutePath(), path);
-                    java.io.File file = new java.io.File(downloadDir, path);
-                    scanDownloadedFile(file);
-                }
-            };
+            int mask = android.os.FileObserver.CLOSE_WRITE | android.os.FileObserver.MOVED_TO;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                downloadObserver = new android.os.FileObserver(downloadDir, mask) {
+                    @Override
+                    public void onEvent(int event, String path) {
+                        if (path == null || path.startsWith(".pending-")) return;
+                        com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
+                            .onFileEvent(GuardService.this, downloadDir.getAbsolutePath(), path);
+                        java.io.File file = new java.io.File(downloadDir, path);
+                        scanDownloadedFile(file);
+                    }
+                };
+            } else {
+                downloadObserver = new android.os.FileObserver(downloadDir.getAbsolutePath(), mask) {
+                    @Override
+                    public void onEvent(int event, String path) {
+                        if (path == null || path.startsWith(".pending-")) return;
+                        com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
+                            .onFileEvent(GuardService.this, downloadDir.getAbsolutePath(), path);
+                        java.io.File file = new java.io.File(downloadDir, path);
+                        scanDownloadedFile(file);
+                    }
+                };
+            }
             downloadObserver.startWatching();
         }
     }
@@ -94,15 +107,28 @@ public class GuardService extends Service {
 
         for (String rootPath : roots) {
             java.io.File root = new java.io.File(rootPath);
-            android.os.FileObserver obs = new android.os.FileObserver(rootPath, android.os.FileObserver.CLOSE_WRITE) {
-                @Override
-                public void onEvent(int event, String path) {
-                    if (path == null) return;
-                    com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
-                        .onFileEvent(GuardService.this, rootPath, path);
-                    scanDownloadedFile(new java.io.File(root, path));
-                }
-            };
+            android.os.FileObserver obs;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                obs = new android.os.FileObserver(root, android.os.FileObserver.CLOSE_WRITE) {
+                    @Override
+                    public void onEvent(int event, String path) {
+                        if (path == null) return;
+                        com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
+                            .onFileEvent(GuardService.this, rootPath, path);
+                        scanDownloadedFile(new java.io.File(root, path));
+                    }
+                };
+            } else {
+                obs = new android.os.FileObserver(rootPath, android.os.FileObserver.CLOSE_WRITE) {
+                    @Override
+                    public void onEvent(int event, String path) {
+                        if (path == null) return;
+                        com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
+                            .onFileEvent(GuardService.this, rootPath, path);
+                        scanDownloadedFile(new java.io.File(root, path));
+                    }
+                };
+            }
             obs.startWatching();
             extraStorageObservers.add(obs);
         }

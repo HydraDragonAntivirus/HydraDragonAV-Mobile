@@ -36,6 +36,8 @@ public final class IntegrityCheck {
                     ? info.signingInfo.getApkContentsSigners()
                     : info.signingInfo.getSigningCertificateHistory();
             } else {
+                // No GET_SIGNING_CERTIFICATES below API 28 — this is the only
+                // path available for minSdk 26/27.
                 PackageInfo info = pm.getPackageInfo(context.getPackageName(),
                     PackageManager.GET_SIGNATURES);
                 sigs = info.signatures;

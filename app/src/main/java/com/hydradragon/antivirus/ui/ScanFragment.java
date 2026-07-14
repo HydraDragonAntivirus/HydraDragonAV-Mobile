@@ -719,7 +719,7 @@ public class ScanFragment extends Fragment {
                 btnScan.setEnabled(true);
                 if (!hasScanned) {
                     tvScanStatus.setText(getString(R.string.scan_prompt));
-                    tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+                    tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.text_secondary));
                 }
             }
         }
@@ -777,7 +777,7 @@ public class ScanFragment extends Fragment {
                         btnScan.setEnabled(true);
                         if (!hasScanned) {
                             tvScanStatus.setText(getString(R.string.scan_prompt));
-                            tvScanStatus.setTextColor(getResources().getColor(R.color.text_secondary));
+                            tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.text_secondary));
                         }
                     }
                 }

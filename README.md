@@ -5,7 +5,7 @@
 
 ![HydraDragonAndroid](assets/HydraDragonAndroid.png)
 
-![Android](https://img.shields.io/badge/Android-10.0%2B-3DDC84?style=for-the-badge&logo=android)
+![Android](https://img.shields.io/badge/Android-8.0%2B(Oreo)-3DDC84?style=for-the-badge&logo=android)
 ![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Native_Engine-DEA584?style=for-the-badge&logo=rust&logoColor=black)
 ![Security](https://img.shields.io/badge/Security-Zero_Trust-red?style=for-the-badge)
@@ -14,11 +14,11 @@
 
 HydraDragonAV Mobile is a multi-layered Android Antivirus and Security suite combining static analysis (YARA-X + ClamAV signatures + code anomaly detection), dynamic behavior analysis, and a lightweight on-device ML classifier — all gated by a NSRL-backed whitelist so known-good software is never a false positive. Designed with a **Zero-Trust architecture**, it actively defends the device against ransomware, clickjacking, spyware, SMS scams/phishing, and zero-day threats.
 
-> **📋 Requirements: Android 10 (API 29) or newer.** The per-app dynamic network
-> analysis — attributing each DNS/connection to the exact app that made it and
-> feeding it to the YARA-X `hydradragon` module — relies on
+> **📋 Requirements: Android 8.0 Oreo (API 26) or newer.** The per-app dynamic
+> network analysis — attributing each DNS/connection to the exact app that made
+> it and feeding it to the YARA-X `hydradragon` module — relies on
 > `ConnectivityManager.getConnectionOwnerUid`, which is only available on
-> Android 10+. On older versions the rest of the suite still runs, but per-app
+> Android 10+. On Oreo/API 26-28 the rest of the suite still runs, but per-app
 > connection attribution is unavailable.
 
 > **🤖 Android-only detection scope.** This is a minimalist, Android-focused

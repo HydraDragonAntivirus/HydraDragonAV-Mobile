@@ -680,7 +680,7 @@ public class ScanEngine {
                 // and sets apkPkgAnalyzerBroken.
                 PackageInfo pkgInfo = runPkgInfoInterruptible(() ->
                     pm.getPackageArchiveInfo(file.getAbsolutePath(),
-                        PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES));
+                        PackageManager.GET_PERMISSIONS));
                 if (pkgInfo != null) {
                     String pkgName = pkgInfo.applicationInfo.packageName;
                     if (skipPackages != null && pkgName != null && skipPackages.contains(pkgName)) {
@@ -745,7 +745,7 @@ public class ScanEngine {
                         && magic[2] == 0x03 && magic[3] == 0x04) {
                     PackageInfo pkgInfo = runPkgInfoInterruptible(() ->
                         context.getPackageManager().getPackageArchiveInfo(file.getAbsolutePath(),
-                            PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES));
+                            PackageManager.GET_PERMISSIONS));
                     if (pkgInfo != null) {
                         pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
                         pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
@@ -1172,9 +1172,13 @@ public class ScanEngine {
         boolean isFromStore = false;
         if (!isApkFile) {
             try {
-                String installer = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R
-                    ? pm.getInstallSourceInfo(app.packageName).getInstallingPackageName()
-                    : pm.getInstallerPackageName(app.packageName);
+                String installer;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                    installer = pm.getInstallSourceInfo(app.packageName).getInstallingPackageName();
+                } else {
+                    // No getInstallSourceInfo below API 30 — only path for minSdk 26-29.
+                    installer = pm.getInstallerPackageName(app.packageName);
+                }
                 if (installer != null && (installer.equals("com.android.vending")
                     || installer.equals("com.sec.android.app.samsungapps")
                     || installer.equals("com.xiaomi.mipicks")
@@ -1219,11 +1223,15 @@ public class ScanEngine {
         String mlSummary = null;
 
         // runPkgInfoInterruptible handles Vivo ROM hangs/timeouts internally
-        // and sets apkPkgAnalyzerBroken.
+        // and sets apkPkgAnalyzerBroken. GET_SIGNING_CERTIFICATES (API 28+) with
+        // a GET_SIGNATURES fallback below it — same dual-path IntegrityCheck.java
+        // uses, needed because minSdk 26 predates GET_SIGNING_CERTIFICATES.
+        int sigFlag = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P
+            ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
         PackageInfo pkgInfo = runPkgInfoInterruptible(() -> {
             if (isApkFile)
-                return pm.getPackageArchiveInfo(app.sourceDir, PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
-            return pm.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS | PackageManager.GET_SIGNATURES);
+                return pm.getPackageArchiveInfo(app.sourceDir, PackageManager.GET_PERMISSIONS | sigFlag);
+            return pm.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS | sigFlag);
         });
 
         try {
@@ -1231,8 +1239,18 @@ public class ScanEngine {
             if (pkgInfo.requestedPermissions != null) {
                 requestedPermissions.addAll(Arrays.asList(pkgInfo.requestedPermissions));
             }
-            if (pkgInfo.signatures != null && pkgInfo.signatures.length > 0) {
-                Signature sig = pkgInfo.signatures[0];
+            Signature[] sigs;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                sigs = (pkgInfo.signingInfo != null)
+                    ? (pkgInfo.signingInfo.hasMultipleSigners()
+                        ? pkgInfo.signingInfo.getApkContentsSigners()
+                        : pkgInfo.signingInfo.getSigningCertificateHistory())
+                    : null;
+            } else {
+                sigs = pkgInfo.signatures;
+            }
+            if (sigs != null && sigs.length > 0) {
+                Signature sig = sigs[0];
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(sig.toByteArray()));
                 String subject = cert.getSubjectDN().getName();

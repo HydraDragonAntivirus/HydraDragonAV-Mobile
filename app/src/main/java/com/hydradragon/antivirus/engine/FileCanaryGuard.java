@@ -151,14 +151,25 @@ public final class FileCanaryGuard {
     }
 
     private static void watchDir(Context context, File dir, String suspectPkg) {
-        FileObserver obs = new FileObserver(dir.getAbsolutePath(),
-                FileObserver.MOVED_TO | FileObserver.CLOSE_WRITE | FileObserver.DELETE) {
-            @Override
-            public void onEvent(int event, String path) {
-                if (path == null) return;
-                onCanaryDirEvent(context, dir, event, path, suspectPkg);
-            }
-        };
+        int mask = FileObserver.MOVED_TO | FileObserver.CLOSE_WRITE | FileObserver.DELETE;
+        FileObserver obs;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            obs = new FileObserver(dir, mask) {
+                @Override
+                public void onEvent(int event, String path) {
+                    if (path == null) return;
+                    onCanaryDirEvent(context, dir, event, path, suspectPkg);
+                }
+            };
+        } else {
+            obs = new FileObserver(dir.getAbsolutePath(), mask) {
+                @Override
+                public void onEvent(int event, String path) {
+                    if (path == null) return;
+                    onCanaryDirEvent(context, dir, event, path, suspectPkg);
+                }
+            };
+        }
         try {
             obs.startWatching();
             observers.add(obs);
