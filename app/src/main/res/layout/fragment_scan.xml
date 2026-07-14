@@ -204,6 +204,7 @@
 
     <!-- View Toggle: Threats / All Files -->
     <LinearLayout
+        android:id="@+id/layout_view_toggle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"

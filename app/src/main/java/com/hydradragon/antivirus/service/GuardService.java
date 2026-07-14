@@ -342,6 +342,11 @@ public class GuardService extends Service {
 
             @Override
             public void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo info) {}
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Background scan error: " + error);
+            }
         });
 
         // Set ONCE — see uiScanCallback's javadoc for why ScanFragment must

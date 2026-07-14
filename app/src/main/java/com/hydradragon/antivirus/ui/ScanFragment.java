@@ -46,7 +46,8 @@ public class ScanFragment extends Fragment {
     private Button btnPauseResume;
     private ProgressBar progressBar;
     private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats, tvThreatLabel, tvEngineWarning;
-    private TextView btnViewThreats, btnViewAllFiles, tvViewToggle;
+    private TextView btnViewThreats, btnViewAllFiles;
+    private View layoutViewToggle;
     private ImageView ivScannerIcon;
     private RecyclerView rvThreats, rvAllFiles;
 
@@ -141,7 +142,7 @@ public class ScanFragment extends Fragment {
         rvAllFiles = view.findViewById(R.id.rv_all_files);
         btnViewThreats = view.findViewById(R.id.btn_view_threats);
         btnViewAllFiles = view.findViewById(R.id.btn_view_all_files);
-        tvViewToggle = view.findViewById(R.id.tv_view_toggle);
+        layoutViewToggle = view.findViewById(R.id.layout_view_toggle);
 
         threatAdapter = new ThreatAdapter(foundThreats);
         rvThreats.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -673,6 +674,13 @@ public class ScanFragment extends Fragment {
                     foundThreats.addAll(result.getThreats());
                     threatAdapter.notifyDataSetChanged();
                     tvThreats.setText(String.valueOf(foundThreats.size()));
+
+                    layoutViewToggle.setVisibility(View.VISIBLE);
+                    if (foundThreats.isEmpty()) {
+                        switchView(false);
+                    } else {
+                        switchView(true);
+                    }
                     long secs = result.getScanDurationMs() / 1000;
                     long millis = result.getScanDurationMs() % 1000;
                     String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
@@ -790,6 +798,7 @@ public class ScanFragment extends Fragment {
                             // still holds stale results from the previous
                             // user-initiated scan — clear it now.
                             foundThreats.clear();
+                            scannedFiles.clear();
                             threatAdapter.notifyDataSetChanged();
                             tvThreats.setText("0");
                             tvThreatLabel.setVisibility(View.GONE);
@@ -920,6 +929,7 @@ public class ScanFragment extends Fragment {
         isScanning = true;
         hasScanned = true;
         foundThreats.clear();
+        scannedFiles.clear();
         threatAdapter.notifyDataSetChanged();
         lastProgressCurrent = 0;
         lastProgressTotal = 0;
@@ -960,6 +970,7 @@ private void scanCustomFile(android.net.Uri uri) {
         isScanning = true;
         hasScanned = true;
         foundThreats.clear();
+        scannedFiles.clear();
         threatAdapter.notifyDataSetChanged();
 
         // Keep the button enabled (unlike other transient states here) so its
