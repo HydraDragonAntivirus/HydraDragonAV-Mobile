@@ -16,7 +16,7 @@ public final class AutoRuleGeneration {
     private AutoRuleGeneration() {}
 
     public static boolean isEnabled(Context c) {
-        return c.getSharedPreferences(PREFS, 0).getBoolean(KEY, false);
+        return c.getSharedPreferences(PREFS, 0).getBoolean(KEY, true);
     }
 
     public static void setEnabled(Context c, boolean on) {
