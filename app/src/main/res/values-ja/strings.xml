@@ -379,5 +379,8 @@
     <string name="anti_fp_tlsh_threshold_btn">TLSH類似度しきい値</string>
     <string name="anti_fp_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的にFPを抑制。デフォルト: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">TLSHしきい値を%1$dに設定しました</string>
+    <string name="anti_fp_match_mode_toggle">Anti-FP照合モード — TLSH類似度ではなく厳密なMD5一致を使用</string>
+    <string name="anti_fp_match_mode_md5_toast">Anti-FP照合モード: MD5（完全一致）</string>
+    <string name="anti_fp_match_mode_tlsh_toast">Anti-FP照合モード: TLSH（類似度一致）</string>
 
 </resources>

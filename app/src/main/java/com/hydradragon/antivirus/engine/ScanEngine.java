@@ -487,38 +487,42 @@ public class ScanEngine {
     }
 
     /** Detections that survive per-lineage whitelist suppression AND anti-FP
-     *  cache filtering. Anti-FP cache checks use ONLY MD5 (not SHA-256):
-     *  for each detection, the entry name (the part after {@code !} in
-     *  {@code objectPath}) is looked up in the verdict's {@code entryMd5s}/
-     *  {@code entryTlshs} maps, and if that hash is in the anti-FP cache
-     *  (from a whitelisted APK's zip entries), the detection is suppressed. */
+     *  cache filtering. Anti-FP cache matching defaults to TLSH similarity;
+     *  MD5 exact match is used instead only if the user picked MD5 mode in
+     *  Settings ({@code anti_fp_match_mode}). For each detection, the entry
+     *  name (the part after {@code !} in {@code objectPath}) is looked up in
+     *  the verdict's {@code entryMd5s}/{@code entryTlshs} maps, and if that
+     *  hash is in the anti-FP cache (from a whitelisted APK's zip entries),
+     *  the detection is suppressed. */
     private List<NativeScanner.Verdict.Detection> survivingDetections(NativeScanner.Verdict v) {
         List<NativeScanner.Verdict.Detection> out = new ArrayList<>();
         int tlshThreshold = AntiFpCache.getTlshThreshold(context);
+        boolean md5Mode = AntiFpCache.isMd5MatchMode(context);
         for (NativeScanner.Verdict.Detection d : v.detections) {
             if (isDetectionWhitelisted(d)) continue;
             // Anti-FP cache: extract entry name from objectPath (after '!')
-            // and look up its MD5 + TLSH in the verdict's per-entry maps.
+            // and look up its hash in the verdict's per-entry maps.
             if (antiFpCache.isEnabled() && d.objectPath != null) {
                 int bang = d.objectPath.indexOf('!');
                 if (bang >= 0 && bang + 1 < d.objectPath.length()) {
                     String entryName = d.objectPath.substring(bang + 1);
-                    // MD5 exact match
-                    String entryMd5 = v.entryMd5s.get(entryName);
-                    if (entryMd5 != null && !entryMd5.isEmpty()
-                            && antiFpCache.isKnownMd5(entryMd5)) {
-                        Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP MD5] "
-                            + d.name + " entry=" + entryName);
-                        continue;
-                    }
-                    // TLSH similarity match
-                    String entryTlsh = v.entryTlshs.get(entryName);
-                    if (entryTlsh != null && !entryTlsh.isEmpty()
-                            && tlshThreshold > 0
-                            && antiFpCache.hasSimilarTlsh(entryTlsh, tlshThreshold)) {
-                        Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP TLSH] "
-                            + d.name + " entry=" + entryName + " dist<=" + tlshThreshold);
-                        continue;
+                    if (md5Mode) {
+                        String entryMd5 = v.entryMd5s.get(entryName);
+                        if (entryMd5 != null && !entryMd5.isEmpty()
+                                && antiFpCache.isKnownMd5(entryMd5)) {
+                            Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP MD5] "
+                                + d.name + " entry=" + entryName);
+                            continue;
+                        }
+                    } else {
+                        String entryTlsh = v.entryTlshs.get(entryName);
+                        if (entryTlsh != null && !entryTlsh.isEmpty()
+                                && tlshThreshold > 0
+                                && antiFpCache.hasSimilarTlsh(entryTlsh, tlshThreshold)) {
+                            Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP TLSH] "
+                                + d.name + " entry=" + entryName + " dist<=" + tlshThreshold);
+                            continue;
+                        }
                     }
                 }
             }

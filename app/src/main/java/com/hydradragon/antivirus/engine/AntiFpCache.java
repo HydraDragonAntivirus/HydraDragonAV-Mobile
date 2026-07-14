@@ -114,6 +114,12 @@ public final class AntiFpCache {
             .getInt("anti_fp_tlsh_threshold", 40);
     }
 
+    /** Anti-FP entry match mode: "tlsh" (default) or "md5", set in Settings. */
+    public static boolean isMd5MatchMode(Context context) {
+        return "md5".equals(context.getSharedPreferences("hydra_prefs", 0)
+            .getString("anti_fp_match_mode", "tlsh"));
+    }
+
     /** Remove stale entries older than `maxAgeMs`. */
     public void clean(long maxAgeMs) {
         if (db == null) return;

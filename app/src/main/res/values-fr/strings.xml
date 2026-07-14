@@ -379,5 +379,8 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="anti_fp_tlsh_threshold_btn">Seuil de similarité TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">Seuil de distance TLSH (1-200). Plus bas = plus strict, plus haut = suppression FP plus agressive. Défaut : 40</string>
     <string name="anti_fp_tlsh_threshold_saved">Seuil TLSH défini à %1$d</string>
+    <string name="anti_fp_match_mode_toggle">Mode de correspondance Anti-FP — utiliser la correspondance exacte MD5 au lieu de la similarité TLSH</string>
+    <string name="anti_fp_match_mode_md5_toast">Mode de correspondance Anti-FP : MD5 (correspondance exacte)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">Mode de correspondance Anti-FP : TLSH (correspondance par similarité)</string>
 
 </resources>

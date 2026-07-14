@@ -379,5 +379,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="anti_fp_tlsh_threshold_btn">Ngưỡng Tương tự TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">Ngưỡng khoảng cách TLSH (1-200). Thấp hơn = nghiêm ngặt hơn, cao hơn = triệt tiêu FP mạnh mẽ hơn. Mặc định: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">Đã đặt ngưỡng TLSH thành %1$d</string>
+    <string name="anti_fp_match_mode_toggle">Chế độ khớp Anti-FP — dùng khớp MD5 chính xác thay vì độ tương đồng TLSH</string>
+    <string name="anti_fp_match_mode_md5_toast">Chế độ khớp Anti-FP: MD5 (khớp chính xác)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">Chế độ khớp Anti-FP: TLSH (khớp theo độ tương đồng)</string>
 
 </resources>

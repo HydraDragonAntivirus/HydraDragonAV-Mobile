@@ -379,5 +379,8 @@
     <string name="anti_fp_tlsh_threshold_btn">Порог схожести TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">Порог расстояния TLSH (1-200). Ниже = строже, выше = более агрессивное подавление FP. По умолчанию: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">Порог TLSH установлен на %1$d</string>
+    <string name="anti_fp_match_mode_toggle">Режим сопоставления Anti-FP — использовать точное совпадение MD5 вместо сходства TLSH</string>
+    <string name="anti_fp_match_mode_md5_toast">Режим сопоставления Anti-FP: MD5 (точное совпадение)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">Режим сопоставления Anti-FP: TLSH (совпадение по сходству)</string>
 
 </resources>

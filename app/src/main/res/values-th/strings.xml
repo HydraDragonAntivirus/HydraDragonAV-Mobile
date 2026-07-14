@@ -379,5 +379,8 @@
     <string name="anti_fp_tlsh_threshold_btn">เกณฑ์ความคล้ายคลึง TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">เกณฑ์ระยะทาง TLSH (1-200) ค่าต่ำ = เข้มงวดมากขึ้น ค่าสูง = การระงับ FP ที่รุนแรงขึ้น ค่าเริ่มต้น: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">ตั้งค่าเกณฑ์ TLSH เป็น %1$d แล้ว</string>
+    <string name="anti_fp_match_mode_toggle">โหมดการจับคู่ Anti-FP — ใช้การจับคู่ MD5 แบบตรงทั้งหมดแทนความคล้ายคลึงของ TLSH</string>
+    <string name="anti_fp_match_mode_md5_toast">โหมดการจับคู่ Anti-FP: MD5 (จับคู่ตรงทั้งหมด)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">โหมดการจับคู่ Anti-FP: TLSH (จับคู่ตามความคล้ายคลึง)</string>
 
 </resources>

@@ -379,5 +379,8 @@
     <string name="anti_fp_tlsh_threshold_btn">آستانه تشابه TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">آستانه فاصله TLSH (1-200). کمتر = سخت‌گیرانه‌تر، بیشتر = سرکوب تهاجمی‌تر نتایج مثبت کاذب. پیش‌فرض: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">آستانه TLSH روی %1$d تنظیم شد</string>
+    <string name="anti_fp_match_mode_toggle">حالت تطبیق Anti-FP — استفاده از تطابق دقیق MD5 به‌جای شباهت TLSH</string>
+    <string name="anti_fp_match_mode_md5_toast">حالت تطبیق Anti-FP: MD5 (تطابق دقیق)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">حالت تطبیق Anti-FP: TLSH (تطابق شباهت)</string>
 
 </resources>

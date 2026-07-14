@@ -379,5 +379,8 @@
     <string name="anti_fp_tlsh_threshold_btn">حد تشابه TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">حد مسافة TLSH (1-200). القيمة الأقل = أكثر صرامة، القيمة الأعلى = قمع أكثر عدوانية للإيجابيات الكاذبة. الافتراضي: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">تم تعيين حد TLSH إلى %1$d</string>
+    <string name="anti_fp_match_mode_toggle">وضع مطابقة Anti-FP — استخدام تطابق MD5 الدقيق بدلاً من تشابه TLSH</string>
+    <string name="anti_fp_match_mode_md5_toast">وضع مطابقة Anti-FP: MD5 (تطابق دقيق)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">وضع مطابقة Anti-FP: TLSH (تطابق تشابه)</string>
 
 </resources>

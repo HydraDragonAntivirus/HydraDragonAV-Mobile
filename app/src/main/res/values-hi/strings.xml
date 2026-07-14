@@ -378,5 +378,8 @@
     <string name="anti_fp_tlsh_threshold_btn">TLSH समानता सीमा</string>
     <string name="anti_fp_tlsh_threshold_hint">TLSH दूरी सीमा (1-200)। कम = सख्त, अधिक = अधिक आक्रामक FP दमन। डिफ़ॉल्ट: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">TLSH सीमा %1$d पर सेट की गई</string>
+    <string name="anti_fp_match_mode_toggle">Anti-FP मिलान मोड — TLSH समानता के बजाय सटीक MD5 मिलान का उपयोग करें</string>
+    <string name="anti_fp_match_mode_md5_toast">Anti-FP मिलान मोड: MD5 (सटीक मिलान)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">Anti-FP मिलान मोड: TLSH (समानता मिलान)</string>
 
 </resources>

@@ -379,5 +379,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="anti_fp_tlsh_threshold_btn">TLSH-overeenkomstdrempel</string>
     <string name="anti_fp_tlsh_threshold_hint">TLSH-afstandsdrempel (1-200). Lager = strenger, hoger = agressievere FP-onderdrukking. Standaard: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">TLSH-drempel ingesteld op %1$d</string>
+    <string name="anti_fp_match_mode_toggle">Anti-FP-overeenkomstmodus — exacte MD5-overeenkomst gebruiken in plaats van TLSH-gelijkenis</string>
+    <string name="anti_fp_match_mode_md5_toast">Anti-FP-overeenkomstmodus: MD5 (exacte overeenkomst)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">Anti-FP-overeenkomstmodus: TLSH (gelijkenisovereenkomst)</string>
 
 </resources>

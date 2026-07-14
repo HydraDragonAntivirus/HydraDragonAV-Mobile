@@ -379,5 +379,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="anti_fp_tlsh_threshold_btn">Ambang Kemiripan TLSH</string>
     <string name="anti_fp_tlsh_threshold_hint">Ambang jarak TLSH (1-200). Lebih rendah = lebih ketat, lebih tinggi = penekanan FP lebih agresif. Default: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">Ambang TLSH diatur ke %1$d</string>
+    <string name="anti_fp_match_mode_toggle">Mode Kecocokan Anti-FP — gunakan kecocokan MD5 persis, bukan kemiripan TLSH</string>
+    <string name="anti_fp_match_mode_md5_toast">Mode Kecocokan Anti-FP: MD5 (kecocokan persis)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">Mode Kecocokan Anti-FP: TLSH (kecocokan kemiripan)</string>
 
 </resources>

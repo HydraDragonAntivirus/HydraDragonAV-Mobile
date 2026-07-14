@@ -302,6 +302,14 @@ public class SettingsFragment extends Fragment {
         addBtn("🔀 " + getString(R.string.anti_fp_tlsh_threshold_btn) + " (" + tlshThresh + ")", color(R.color.bg_secondary),
             v -> showTlshThresholdDialog());
 
+        boolean antiFpMd5Mode = "md5".equals(prefs().getString("anti_fp_match_mode", "tlsh"));
+        addToggle(getString(R.string.anti_fp_match_mode_toggle), antiFpMd5Mode, (btn, on) -> {
+            prefs().edit().putString("anti_fp_match_mode", on ? "md5" : "tlsh").apply();
+            Toast.makeText(getContext(), on
+                ? getString(R.string.anti_fp_match_mode_md5_toast)
+                : getString(R.string.anti_fp_match_mode_tlsh_toast), Toast.LENGTH_SHORT).show();
+        });
+
         boolean skipMedia = prefs().getBoolean("skip_image_media_enabled", true);
         addToggle(getString(R.string.skip_media_toggle), skipMedia, (btn, on) -> {
             prefs().edit().putBoolean("skip_image_media_enabled", on).apply();
@@ -448,7 +456,7 @@ public class SettingsFragment extends Fragment {
         new ResetCategory(R.string.reset_cat_privacy, KEY_SHIELD, "web_shield_decided", KEY_SCREEN_OCR,
             "silent_mode", com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH,
             "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "skip_image_media_enabled",
-            "anti_fp_skip_enabled", "anti_fp_tlsh_threshold"),
+            "anti_fp_skip_enabled", "anti_fp_tlsh_threshold", "anti_fp_match_mode"),
         new ResetCategory(R.string.reset_cat_premium, "zero_trust_mode", "auto_rule_generation",
             "ask_signature_on_remove", "auto_delete_malware_enabled"),
         new ResetCategory(R.string.reset_cat_whitelists, "ignored_signatures", "website_whitelist"),

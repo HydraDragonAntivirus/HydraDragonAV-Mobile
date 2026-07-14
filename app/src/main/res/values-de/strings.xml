@@ -379,5 +379,8 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="anti_fp_tlsh_threshold_btn">TLSH-Ähnlichkeitsschwellwert</string>
     <string name="anti_fp_tlsh_threshold_hint">TLSH-Distanzschwellwert (1-200). Niedriger = strenger, höher = aggressiver bei der FP-Unterdrückung. Standard: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">TLSH-Schwellwert auf %1$d gesetzt</string>
+    <string name="anti_fp_match_mode_toggle">Anti-FP-Abgleichmodus — exakten MD5-Abgleich statt TLSH-Ähnlichkeit verwenden</string>
+    <string name="anti_fp_match_mode_md5_toast">Anti-FP-Abgleichmodus: MD5 (exakter Abgleich)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">Anti-FP-Abgleichmodus: TLSH (Ähnlichkeitsabgleich)</string>
 
 </resources>

@@ -382,5 +382,8 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="anti_fp_tlsh_threshold_btn">TLSH Benzerlik Eşiği</string>
     <string name="anti_fp_tlsh_threshold_hint">TLSH mesafe eşiği (1-200). Düşük = daha katı, yüksek = daha agresif FP bastırma. Varsayılan: 40</string>
     <string name="anti_fp_tlsh_threshold_saved">TLSH eşiği %1$d olarak ayarlandı</string>
+    <string name="anti_fp_match_mode_toggle">Anti-FP Eşleşme Modu — TLSH benzerliği yerine tam MD5 eşleşmesi kullan</string>
+    <string name="anti_fp_match_mode_md5_toast">Anti-FP Eşleşme Modu: MD5 (tam eşleşme)</string>
+    <string name="anti_fp_match_mode_tlsh_toast">Anti-FP Eşleşme Modu: TLSH (benzerlik eşleşmesi)</string>
 
 </resources>
