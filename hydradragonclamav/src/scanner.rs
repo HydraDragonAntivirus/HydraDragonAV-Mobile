@@ -26,7 +26,7 @@ pub struct Engine {
     /// Binary-Fuse16 atom/counter/threshold filter database: every signature's
     /// (and logical subsignature's) atoms are indexed into Bf16 set-membership
     /// filters at load time. Scanning promotes a slot directly off its hit
-    /// counter reaching threshold — there is a byte-level re-verification of
+    /// counter reaching threshold — there is byte-level re-verification of
     /// the matched atom or its owning pattern (see `atomfilter.rs`).
     atomfilter_db: crate::atomfilter::AtomFilterDb,
     /// YARA-x engines for scanning with compiled YARA rules (Android-relevant
