@@ -421,6 +421,32 @@ public class SettingsFragment extends Fragment {
             }
         });
 
+        // Draw Over Other Apps — SYSTEM_ALERT_WINDOW is already declared in the
+        // manifest as the documented background-activity-start exemption (see
+        // AndroidManifest.xml). This toggle lets the user grant/revoke it via
+        // the system's special-access screen.
+        boolean overlayGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+            || android.provider.Settings.canDrawOverlays(requireContext());
+        addToggle(getString(R.string.draw_overlay_toggle), overlayGranted, (btn, on) -> {
+            if (on && !overlayGranted) {
+                try {
+                    startActivity(new Intent(
+                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + requireContext().getPackageName())));
+                } catch (Throwable ignore) { }
+                buildUI();
+            } else {
+                Toast.makeText(getContext(), getString(R.string.draw_overlay_off_toast),
+                    Toast.LENGTH_LONG).show();
+                try {
+                    startActivity(new Intent(
+                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + requireContext().getPackageName())));
+                } catch (Throwable ignore) { }
+                buildUI();
+            }
+        });
+
         // Off by default: one FileObserver thread per storage root, plus files
         // dropped outside Downloads are also already caught (just not instantly)
         // by GuardService's periodic Full Scan. See GuardService.KEY_REALTIME_STORAGE_WATCH.

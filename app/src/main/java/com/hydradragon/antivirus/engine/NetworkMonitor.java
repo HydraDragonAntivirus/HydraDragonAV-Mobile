@@ -347,6 +347,12 @@ public class NetworkMonitor {
 
     public List<NetworkEvent> getEventLog() { return new ArrayList<>(eventLog); }
 
+    /** Direct access to the static event log for export. */
+    public static List<NetworkEvent> getEventLogStatic() { return new ArrayList<>(eventLog); }
+
+    /** Direct reference to the static event log for import. */
+    public static CopyOnWriteArrayList<NetworkEvent> getEventLogStaticRef() { return eventLog; }
+
     /** Fetch received bytes, lazily refreshed from TrafficStats (cached 5s). */
     public long getBytesReceived() { refreshStats(); return bytesReceived; }
 

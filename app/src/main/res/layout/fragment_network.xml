@@ -145,6 +145,48 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Araç Çubuğu: Dışa/içe aktar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/btn_export_traffic"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="@string/net_traffic_export_btn"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:background="@drawable/bg_card"
+            android:clickable="true"
+            android:focusable="true"
+            android:filterTouchesWhenObscured="true"/>
+
+        <TextView
+            android:id="@+id/btn_import_traffic"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="@string/net_traffic_import_btn"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:background="@drawable/bg_card"
+            android:clickable="true"
+            android:focusable="true"
+            android:filterTouchesWhenObscured="true"/>
+    </LinearLayout>
+
     <!-- Olay Akışı Başlığı -->
     <TextView
         android:layout_width="wrap_content"

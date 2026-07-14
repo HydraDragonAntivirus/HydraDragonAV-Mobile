@@ -1,6 +1,8 @@
 // DOSYA: app/src/main/java/com/hydradragon/antivirus/adapter/NetworkEventAdapter.java
 package com.hydradragon.antivirus.adapter;
 
+import android.app.AlertDialog;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,9 +19,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Ağ olayları listesi adapter'ı
- */
 public class NetworkEventAdapter extends RecyclerView.Adapter<NetworkEventAdapter.EventViewHolder> {
 
     private final List<NetworkMonitor.NetworkEvent> events;
@@ -46,6 +45,7 @@ public class NetworkEventAdapter extends RecyclerView.Adapter<NetworkEventAdapte
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView tvTime, tvConnection, tvAction, tvReason;
+        private NetworkMonitor.NetworkEvent currentEvent;
 
         EventViewHolder(View v) {
             super(v);
@@ -53,9 +53,31 @@ public class NetworkEventAdapter extends RecyclerView.Adapter<NetworkEventAdapte
             tvConnection = v.findViewById(R.id.tv_connection);
             tvAction = v.findViewById(R.id.tv_action);
             tvReason = v.findViewById(R.id.tv_event_reason);
+            v.setOnClickListener(v2 -> {
+                if (currentEvent == null) return;
+                Context ctx = v2.getContext();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                String action = currentEvent.blocked
+                    ? ctx.getString(R.string.net_event_blocked)
+                    : ctx.getString(R.string.net_event_allowed);
+                String time = sdf.format(new Date(currentEvent.timestamp));
+                String detail = ctx.getString(R.string.net_event_detail_time) + " " + time + "\n"
+                    + ctx.getString(R.string.net_event_detail_source) + " " + currentEvent.sourceIp + "\n"
+                    + ctx.getString(R.string.net_event_detail_destination) + " " + currentEvent.destIp + ":" + currentEvent.destPort + "\n"
+                    + ctx.getString(R.string.net_event_detail_protocol) + " " + currentEvent.protocol + "\n"
+                    + ctx.getString(R.string.net_event_detail_action) + " " + action + "\n"
+                    + ctx.getString(R.string.net_event_detail_reason) + " " + currentEvent.reason + "\n"
+                    + ctx.getString(R.string.net_event_detail_pid) + " " + currentEvent.pid;
+                new AlertDialog.Builder(ctx, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(ctx.getString(R.string.net_event_detail_title))
+                    .setMessage(detail)
+                    .setPositiveButton(ctx.getString(R.string.btn_close), null)
+                    .show();
+            });
         }
 
         void bind(NetworkMonitor.NetworkEvent event) {
+            currentEvent = event;
             SimpleDateFormat sdf = new SimpleDateFormat("[HH:mm:ss]", Locale.getDefault());
             tvTime.setText(sdf.format(new Date(event.timestamp)));
 

@@ -1,10 +1,10 @@
-// FILE: app/src/main/java/com/hydradragon/antivirus/ui/NetworkFragment.java
 package com.hydradragon.antivirus.ui;
 
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -13,7 +13,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -23,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.hydradragon.antivirus.R;
 import com.hydradragon.antivirus.adapter.NetworkEventAdapter;
 import com.hydradragon.antivirus.engine.NetworkMonitor;
+import com.hydradragon.antivirus.engine.NetworkTrafficDB;
 import com.hydradragon.antivirus.service.GuardService;
 import com.hydradragon.antivirus.views.LiveNetworkChart;
 
@@ -30,10 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Network Fragment
- * Live network traffic monitoring screen.
- */
 public class NetworkFragment extends Fragment {
 
     private LiveNetworkChart liveChart;
@@ -50,6 +50,34 @@ public class NetworkFragment extends Fragment {
     private boolean serviceBound = false;
     private Handler handler;
     private Runnable statsUpdater;
+
+    private final ActivityResultLauncher<String> exportLauncher =
+        registerForActivityResult(new ActivityResultContracts.CreateDocument("application/json"),
+            uri -> {
+                if (uri == null) return;
+                try {
+                    NetworkTrafficDB.exportTraffic(requireContext(), uri);
+                    int count = NetworkMonitor.getEventLogStatic().size();
+                    Toast.makeText(getContext(),
+                        getString(R.string.net_traffic_exported, count), Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(getContext(), getString(R.string.net_traffic_export_failed), Toast.LENGTH_SHORT).show();
+                }
+            });
+
+    private final ActivityResultLauncher<String> importLauncher =
+        registerForActivityResult(new ActivityResultContracts.GetContent(),
+            uri -> {
+                if (uri == null) return;
+                try {
+                    int count = NetworkTrafficDB.importTraffic(requireContext(), uri);
+                    Toast.makeText(getContext(),
+                        getString(R.string.net_traffic_imported, count), Toast.LENGTH_SHORT).show();
+                    refreshEventList();
+                } catch (Exception e) {
+                    Toast.makeText(getContext(), getString(R.string.net_traffic_import_failed), Toast.LENGTH_SHORT).show();
+                }
+            });
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -90,6 +118,19 @@ public class NetworkFragment extends Fragment {
         eventAdapter = new NetworkEventAdapter(events);
         rvNetworkEvents.setLayoutManager(new LinearLayoutManager(getContext()));
         rvNetworkEvents.setAdapter(eventAdapter);
+
+        view.findViewById(R.id.btn_export_traffic).setOnClickListener(v ->
+            exportLauncher.launch("hydradragon_traffic_log.json"));
+        view.findViewById(R.id.btn_import_traffic).setOnClickListener(v ->
+            importLauncher.launch("application/json"));
+    }
+
+    private void refreshEventList() {
+        List<NetworkMonitor.NetworkEvent> currentEvents = NetworkMonitor.getEventLogStatic();
+        events.clear();
+        events.addAll(currentEvents.subList(0, Math.min(100, currentEvents.size())));
+        eventAdapter.notifyDataSetChanged();
+        rvNetworkEvents.scrollToPosition(0);
     }
 
     private void setupNetworkCallback() {
@@ -127,13 +168,11 @@ public class NetworkFragment extends Fragment {
             public void run() {
                 if (!serviceBound || guardService == null || guardService.getNetworkMonitor() == null) return;
                 NetworkMonitor nm = guardService.getNetworkMonitor();
-                // Update current event list
                 List<NetworkMonitor.NetworkEvent> currentEvents = nm.getEventLog();
                 if (events.isEmpty() && !currentEvents.isEmpty()) {
                     events.addAll(currentEvents.subList(0, Math.min(50, currentEvents.size())));
                     eventAdapter.notifyDataSetChanged();
                 }
-                // Poll stats directly (no background timer driving onStatsUpdate)
                 long totalIn = nm.getBytesReceived();
                 long totalOut = nm.getBytesSent();
                 tvBytesIn.setText(formatBytes(totalIn));

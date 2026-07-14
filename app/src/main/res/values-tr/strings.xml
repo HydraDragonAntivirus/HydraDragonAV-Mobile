@@ -395,4 +395,28 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="save_auto_rules_on_toast">Otomatik Oluşturulan Kuralları Kaydet AÇIK: otomatik öğrenilen YARA kuralları diske yazılacak ve sonraki uygulama başlatılmasında yeniden yüklenecek</string>
     <string name="save_auto_rules_off_toast">Otomatik Oluşturulan Kuralları Kaydet KAPALI: kurallar bu oturumda hâlâ kullanılır ancak yeniden başlatmadan sonra SAKLANMAZ</string>
 
+    <string name="draw_overlay_toggle">Diğer Uygulamaların Üzerinde Göster — arka planda kötü amaçlı yazılım uyarıları göster</string>
+    <string name="draw_overlay_on_toast">Kaplama izni verildi — tam ekran uyarılar artık arka plandan görünebilir</string>
+    <string name="draw_overlay_off_toast">İptal etmek için Uygulama Bilgisi > İzinler\'i açın</string>
+    <string name="knowledge_db_header">BİLİNÇ VERİTABANI</string>
+    <string name="knowledge_db_export_btn">📤 Önbelleği Dışa Aktar — anti-FP/FN önbelleğini başkalarıyla paylaş</string>
+    <string name="knowledge_db_import_btn">📥 Önbelleği İçe Aktar — başka bir kullanıcının anti-FP/FN önbelleğini yükle</string>
+    <string name="knowledge_db_exported">Bilgi veritabanı dışa aktarıldı — %1$d girdi paylaşıldı</string>
+    <string name="knowledge_db_imported">Bilgi veritabanı içe aktarıldı — %1$d yeni girdi eklendi</string>
+    <string name="knowledge_db_export_failed">Bilgi veritabanı dışa aktarılamadı</string>
+    <string name="knowledge_db_import_failed">Bilgi veritabanı içe aktarılamadı — dosya bozuk veya uyumsuz sürüm olabilir</string>
+    <string name="net_traffic_export_btn">📤 Trafik Kaydını Dışa Aktar</string>
+    <string name="net_traffic_import_btn">📥 Trafik Kaydını İçe Aktar</string>
+    <string name="net_traffic_exported">Trafik kaydı dışa aktarıldı — %1$d olay</string>
+    <string name="net_traffic_imported">Trafik kaydı içe aktarıldı — %1$d olay eklendi</string>
+    <string name="net_traffic_export_failed">Trafik kaydı dışa aktarılamadı</string>
+    <string name="net_traffic_import_failed">Trafik kaydı içe aktarılamadı — dosya bozuk olabilir</string>
+    <string name="net_event_detail_title">Ağ Olayı Detayı</string>
+    <string name="net_event_detail_time">⏱ Zaman:</string>
+    <string name="net_event_detail_source">📤 Kaynak:</string>
+    <string name="net_event_detail_destination">📥 Hedef:</string>
+    <string name="net_event_detail_protocol">🔌 Protokol:</string>
+    <string name="net_event_detail_action">🔹 İşlem:</string>
+    <string name="net_event_detail_reason">📋 Sebep:</string>
+    <string name="net_event_detail_pid">🔢 PID:</string>
 </resources>
