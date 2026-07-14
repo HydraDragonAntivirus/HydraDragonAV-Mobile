@@ -504,7 +504,7 @@ public class ScanEngine {
         } catch (Exception e) { /* missing — package whitelist disabled */ }
     }
 
-    /** True if {@code hash} (a whole-APK/file SHA-256) is a known-good NSRL hash.
+    /** True if {@code hash} (a whole-APK/file MD5) is a known-good NSRL hash.
      *  Delegates to the native xor filter whitelist (native memory). */
     private boolean isHashWhitelisted(String hash) {
         return hash != null && NativeScanner.isHashWhitelisted(hash.toLowerCase(java.util.Locale.US));
@@ -542,30 +542,7 @@ public class ScanEngine {
         }
     }
 
-    /**
-     * Compute the SHA-256 hex digest of a file's raw bytes.  Returns the lowercase
-     * hex string, or {@code null} if the file can't be read or SHA-256 fails.
-     */
-    private static String computeFileSha256(java.io.File file) {
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            try (java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
-                byte[] buf = new byte[65536];
-                int n;
-                while ((n = fis.read(buf)) != -1) md.update(buf, 0, n);
-            }
-            byte[] digest = md.digest();
-            StringBuilder sb = new StringBuilder(64);
-            for (byte b : digest) {
-                String h = Integer.toHexString(0xff & b);
-                if (h.length() == 1) sb.append('0');
-                sb.append(h);
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            return null;
-        }
-    }
+
 
     /** A native detection is a false positive iff one of the APKs in its
      *  extraction lineage is whitelisted (the hit lives inside a known-good APK),
@@ -1021,10 +998,9 @@ public class ScanEngine {
                         continue;
                     }
 
-                    // 4. Check native NSRL Whitelist (SHA-256 clean)
-                    String apkSha256 = computeFileSha256(file);
-                    if (apkSha256 != null && isHashWhitelisted(apkSha256)) {
-                        Log.i(TAG, "NSRL Whitelist hit APK (SHA-256 clean): " + file.getAbsolutePath());
+                    // 4. Check native NSRL Whitelist (MD5 clean)
+                    if (isHashWhitelisted(apkMd5)) {
+                        Log.i(TAG, "NSRL Whitelist hit APK (MD5 clean): " + file.getAbsolutePath());
                         fileScanCache.put(apkMd5, java.util.Optional.empty());
                         if (!cancelRequested) reportFileScanned(file);
                         continue;
@@ -1237,10 +1213,9 @@ public class ScanEngine {
                     return true;
                 }
 
-                // 4. Check native NSRL Whitelist (SHA-256 clean)
-                String fileSha256 = computeFileSha256(file);
-                if (fileSha256 != null && isHashWhitelisted(fileSha256)) {
-                    Log.i(TAG, "NSRL Whitelist hit (SHA-256 clean): " + file.getAbsolutePath());
+                // 4. Check native NSRL Whitelist (MD5 clean)
+                if (isHashWhitelisted(fileMd5)) {
+                    Log.i(TAG, "NSRL Whitelist hit (MD5 clean): " + file.getAbsolutePath());
                     fileScanCache.put(fileMd5, java.util.Optional.empty());
                     return true;
                 }
