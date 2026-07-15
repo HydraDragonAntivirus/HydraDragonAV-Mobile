@@ -631,8 +631,9 @@ public class ScanEngine {
             if (isDetectionWhitelisted(d)) continue;
             // Anti-FP cache: extract entry name from objectPath (after '!')
             // and look up its hash in the verdict's per-entry maps.
-            // Only checked during the dedicated Anti-FP scan.
-            if (antiFpMode && antiFpCache.isEnabled() && d.objectPath != null) {
+            // Checked for ALL scan types — suppression uses whatever the
+            // cache already has; only the dedicated Anti-FP scan populates it.
+            if (antiFpCache.isEnabled() && d.objectPath != null) {
                 int bang = d.objectPath.indexOf('!');
                 if (bang >= 0 && bang + 1 < d.objectPath.length()) {
                     String entryName = d.objectPath.substring(bang + 1);
