@@ -789,10 +789,12 @@ public class ScanEngine {
         if (reqType == SCAN_TYPE_NONE) {
             reqType = antiFpMode ? SCAN_TYPE_ANTI_FP : (isFullScan ? SCAN_TYPE_FULL : SCAN_TYPE_QUICK);
         }
+        // Snapshot background flag BEFORE the CAS to close a race where the
+        // background scan's finally block clears both scanRunning and
+        // isBackgroundScan between the CAS failure and the check below.
+        boolean bgScan = isBackgroundScan;
         if (!scanRunning.compareAndSet(false, true)) {
-            if (isBackgroundScan) {
-                // Adopt the background scan as the user's scan regardless of type.
-                // The background scan continues silently; the user's UI attaches to it.
+            if (bgScan) {
                 isBackgroundScan = false;
                 Log.d(TAG, "scanAllApps: adopted background scan for user");
                 return true;
@@ -801,7 +803,6 @@ public class ScanEngine {
             return false;
         }
         runningScanType = reqType;
-        isBackgroundScan = false; // user-initiated scan
         cancelRequested = false;
         pauseRequested = false;
         apkPkgAnalyzerBroken = false;
@@ -834,12 +835,12 @@ public class ScanEngine {
                 
                 ApplicationInfo app = apps.get(i);
                 try {
-                    if (callback != null) callback.onProgress(i + 1, total, app.packageName);
+                    if (!isBackgroundScan && callback != null) callback.onProgress(i + 1, total, app.packageName);
                     ThreatResult result = analyzeApp(app, pm, false);
                     boolean isThreat = result != null && result.isThreat();
                     if (isThreat && !threats.contains(result)) {
                         threats.add(result);
-                        if (callback != null) callback.onThreatFound(result);
+                        if (!isBackgroundScan && callback != null) callback.onThreatFound(result);
                     }
                     String appName = result != null ? result.getAppName() : "";
                     String reason = isThreat
@@ -851,7 +852,7 @@ public class ScanEngine {
                             result != null ? result.getRiskScore() : 0, "", System.currentTimeMillis(),
                             isThreat, reason);
                     scannedFiles.add(fi);
-                    if (callback != null) callback.onFileScanned(fi);
+                    if (!isBackgroundScan && callback != null) callback.onFileScanned(fi);
                 } catch (Exception e) { }
             }
 
@@ -893,7 +894,7 @@ public class ScanEngine {
             logEngineTimings();
             long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
             int scannedTotal = total + filesScannedCount.get() + threats.size();
-            if (callback != null)
+            if (!isBackgroundScan && callback != null)
                 callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, scannedFiles, elapsedMs));
           } finally {
               antiFpMode = false;

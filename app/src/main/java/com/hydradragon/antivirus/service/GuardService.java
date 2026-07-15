@@ -305,12 +305,14 @@ public class GuardService extends Service {
         scanEngine.setCallback(new ScanEngine.ScanCallback() {
             @Override
             public void onProgress(int current, int total, String packageName) {
+                if (scanEngine.isBackgroundScan()) return;
                 ScanEngine.ScanCallback ui = uiScanCallback;
                 if (ui != null) ui.onProgress(current, total, packageName);
             }
 
             @Override
             public void onThreatFound(ThreatResult threat) {
+                if (scanEngine.isBackgroundScan()) return;
                 // Always record to history; stay silent (no notification) while
                 // protection is paused. Isolated like sendThreatNotification
                 // below — a logging failure must never block the UI
@@ -338,11 +340,9 @@ public class GuardService extends Service {
                         }
                     }
                     // Auto-kill/auto-delete + full-screen "MALWARE FOUND" only
-                    // for background/auto scans (no UI listener attached).
-                    // During a manual scan the user is already looking at the
-                    // threat list in ScanFragment — let them tap to decide
-                    // (or use the row's delete button).
-                    if (uiScanCallback == null) {
+                    // for background/auto scans with no UI listener, excluding
+                    // the startup anti-FP cache scan (which must stay silent).
+                    if (uiScanCallback == null && !scanEngine.isBackgroundScan()) {
                         try {
                             if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(GuardService.this)) {
                                 com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(
@@ -363,22 +363,13 @@ public class GuardService extends Service {
 
             @Override
             public void onScanComplete(com.hydradragon.antivirus.model.ScanResult result) {
-                // Isolated in its own try/catch for the same reason as
-                // onThreatFound above: this whole method used to run as one
-                // unguarded block, so an exception in updateNotification (or
-                // anywhere before the UI forwarding below) aborted the method
-                // entirely — ui.onScanComplete(result) never ran, which meant
-                // ScanFragment never heard the scan finished and stayed stuck
-                // showing "Stopping…"/a disabled button forever, even though
-                // the engine thread itself had already finished.
+                if (scanEngine.isBackgroundScan()) return;
                 try {
-                    if (!scanEngine.isBackgroundScan()) {
-                        String status = result.isClean()
-                            ? getString(R.string.system_clean)
-                            : "⚠ " + result.getThreatsFound() + " " + getString(R.string.threat);
-                        updateNotification(status, result.isClean());
-                        if (callback != null) callback.onStatusUpdate(status);
-                    }
+                    String status = result.isClean()
+                        ? getString(R.string.system_clean)
+                        : "⚠ " + result.getThreatsFound() + " " + getString(R.string.threat);
+                    updateNotification(status, result.isClean());
+                    if (callback != null) callback.onStatusUpdate(status);
                 } catch (Throwable t) {
                     Log.e(TAG, "onScanComplete notification/status update failed", t);
                 }
@@ -388,12 +379,14 @@ public class GuardService extends Service {
 
             @Override
             public void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo info) {
+                if (scanEngine.isBackgroundScan()) return;
                 ScanEngine.ScanCallback ui = uiScanCallback;
                 if (ui != null) ui.onFileScanned(info);
             }
 
             @Override
             public void onError(String error) {
+                if (scanEngine.isBackgroundScan()) return;
                 Log.e(TAG, "Scan error: " + error);
                 ScanEngine.ScanCallback ui = uiScanCallback;
                 if (ui != null) ui.onError(error);
