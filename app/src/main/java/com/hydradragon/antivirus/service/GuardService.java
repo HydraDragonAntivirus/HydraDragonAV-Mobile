@@ -33,49 +33,73 @@ public class GuardService extends Service {
      *  see startFullStorageMonitor). Downloads is always watched regardless. */
     public static final String KEY_REALTIME_STORAGE_WATCH = "realtime_storage_watch";
 
-    private android.os.FileObserver downloadObserver;
+    private android.database.ContentObserver downloadObserver;
+    private volatile long lastDownloadCheckMs = 0L;
     private final java.util.List<android.os.FileObserver> extraStorageObservers = new java.util.ArrayList<>();
 
+    /** Register a ContentObserver on MediaStore.Downloads so we catch every
+     *  new downloaded file in real time — scoped storage (Android 10+) makes
+     *  FileObserver unreliable for this path. */
     private void startDownloadMonitor() {
-        java.io.File downloadDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
-        if (downloadDir.exists()) {
-            // CLOSE_WRITE alone isn't enough: while a download is still in
-            // progress, Android/the browser writes to a TEMPORARY
-            // ".pending-<id>-realname.ext" file (MediaStore's "pending"
-            // convention) — CLOSE_WRITE can fire on THAT file while it's
-            // still incomplete (zip central directory not fully written
-            // yet), so scanning it there fails to even open the archive and
-            // never finds anything. Once the download finishes, the system
-            // renames it to its final visible name — a MOVED_TO event, not
-            // another CLOSE_WRITE — which the old mask never listened for,
-            // so the completed file was never scanned at all. Also skip the
-            // ".pending-" file itself outright: it's guaranteed incomplete.
-            int mask = android.os.FileObserver.CLOSE_WRITE | android.os.FileObserver.MOVED_TO;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                downloadObserver = new android.os.FileObserver(downloadDir, mask) {
-                    @Override
-                    public void onEvent(int event, String path) {
-                        if (path == null || path.startsWith(".pending-")) return;
-                        com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
-                            .onFileEvent(GuardService.this, downloadDir.getAbsolutePath(), path);
-                        java.io.File file = new java.io.File(downloadDir, path);
-                        scanDownloadedFile(file);
-                    }
-                };
-            } else {
-                downloadObserver = new android.os.FileObserver(downloadDir.getAbsolutePath(), mask) {
-                    @Override
-                    public void onEvent(int event, String path) {
-                        if (path == null || path.startsWith(".pending-")) return;
-                        com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
-                            .onFileEvent(GuardService.this, downloadDir.getAbsolutePath(), path);
-                        java.io.File file = new java.io.File(downloadDir, path);
-                        scanDownloadedFile(file);
-                    }
-                };
-            }
-            downloadObserver.startWatching();
+        try {
+            // Guard against duplicate registration
+            if (downloadObserver != null) return;
+            android.net.Uri downloadsUri = android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+            downloadObserver = new android.database.ContentObserver(new android.os.Handler(android.os.Looper.getMainLooper())) {
+                @Override
+                public void onChange(boolean selfChange) {
+                    onChange(selfChange, null);
+                }
+                @Override
+                public void onChange(boolean selfChange, android.net.Uri uri) {
+                    scanMediaStoreDownloads();
+                }
+            };
+            getContentResolver().registerContentObserver(downloadsUri, true, downloadObserver);
+            Log.i(TAG, "MediaStore Downloads observer registered");
+        } catch (Throwable t) {
+            Log.e(TAG, "failed to register MediaStore observer", t);
         }
+    }
+
+    /** Query MediaStore.Downloads for files added/modified since our last poll,
+     *  and submit any new ones for scanning. */
+    private void scanMediaStoreDownloads() {
+        com.hydradragon.antivirus.engine.ScanEngine.runOrchestrated(() -> {
+            try {
+                long now = System.currentTimeMillis();
+                // Only scan files newer than our last check (with 2s margin)
+                long minModified = lastDownloadCheckMs > 0 ? lastDownloadCheckMs - 2000 : now - 10_000;
+                lastDownloadCheckMs = now;
+
+                android.net.Uri downloadsUri = android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+                String[] projection = {
+                    android.provider.MediaStore.Downloads._ID,
+                    android.provider.MediaStore.Downloads.DATA,        // file path (deprecated but works)
+                    android.provider.MediaStore.Downloads.DATE_MODIFIED,
+                    android.provider.MediaStore.Downloads.MIME_TYPE,
+                };
+                String selection = android.provider.MediaStore.Downloads.DATE_MODIFIED + " >= ?";
+                String[] selArgs = new String[]{ String.valueOf(minModified / 1000) };
+                // Newest first — so we process the latest download first
+                String order = android.provider.MediaStore.Downloads.DATE_MODIFIED + " DESC";
+
+                try (android.database.Cursor c = getContentResolver().query(
+                        downloadsUri, projection, selection, selArgs, order)) {
+                    if (c == null) return;
+                    while (c.moveToNext()) {
+                        String path = c.getString(c.getColumnIndexOrThrow(android.provider.MediaStore.Downloads.DATA));
+                        String mime = c.getString(c.getColumnIndexOrThrow(android.provider.MediaStore.Downloads.MIME_TYPE));
+                        if (path == null || path.isEmpty()) continue;
+                        java.io.File file = new java.io.File(path);
+                        if (!file.exists() || !file.isFile()) continue;
+                        scanDownloadedFile(file);
+                    }
+                }
+            } catch (Throwable t) {
+                Log.e(TAG, "MediaStore download scan failed", t);
+            }
+        });
     }
 
     /** Optional (Settings toggle, default OFF — battery/CPU cost of one watcher
@@ -651,7 +675,10 @@ public class GuardService extends Service {
         if (scheduler != null) scheduler.shutdown();
         if (networkMonitor != null) networkMonitor.stopMonitoring();
         if (aiEngine != null) aiEngine.close();
-        if (downloadObserver != null) downloadObserver.stopWatching();
+        if (downloadObserver != null) {
+            try { getContentResolver().unregisterContentObserver(downloadObserver); }
+            catch (Throwable t) { Log.e(TAG, "unregister download observer failed", t); }
+        }
         for (android.os.FileObserver obs : extraStorageObservers) obs.stopWatching();
         extraStorageObservers.clear();
         Log.i(TAG, "Guard Service destroyed");
