@@ -699,63 +699,56 @@ public class ScanFragment extends Fragment {
                     + " threatsFound=" + result.getThreatsFound()
                     + " durationMs=" + result.getScanDurationMs()
                     + " clean=" + result.isClean());
-                if (getActivity() == null) {
-                    isScanning = false;
-                    Log.d(TAG, "onScanComplete: fragment detached, flag cleared");
-                    return;
-                }
                 boolean wasCancelled = serviceBound && guardService != null
                     && guardService.getScanEngine().isCancelled();
                 Log.d(TAG, "onScanComplete: wasCancelled=" + wasCancelled);
+                long secs = result.getScanDurationMs() / 1000;
+                long millis = result.getScanDurationMs() % 1000;
+                String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
+                foundThreats.clear();
+                foundThreats.addAll(result.getThreats());
+                isScanning = false;
+                if (!isAdded()) {
+                    lastScanStatus = result.isClean() ? "System clean" : foundThreats.size() + " threats";
+                    if (wasCancelled) lastScanStatus = "Scan stopped";
+                    lastScanStatus += " (" + duration + ")";
+                    Log.d(TAG, "onScanComplete: fragment detached, status saved");
+                    return;
+                }
+                if (wasCancelled) {
+                    lastScanStatus = getString(R.string.scan_stopped) + " (" + duration + ")";
+                } else if (result.isClean()) {
+                    lastScanStatus = getString(R.string.scan_clean_system) + " (" + duration + ")";
+                } else {
+                    lastScanStatus = getString(R.string.threats_found_count, foundThreats.size()) + " (" + duration + ")";
+                }
                 getActivity().runOnUiThread(() -> {
-                    isScanning = false;
                     stopScannerAnimation();
                     btnScan.setText(getString(R.string.rescan));
                     btnScan.setEnabled(true);
                     btnPauseResume.setVisibility(View.INVISIBLE);
-                    // Otherwise the last file name and progress bar position
-                    // from the final onProgress() tick stay frozen on screen
-                    // forever after the scan actually finishes.
                     tvCurrentApp.setText("");
                     if (progressBar.getMax() > 0) progressBar.setProgress(progressBar.getMax());
                     lastProgressCurrent = 0;
                     lastProgressTotal = 0;
                     lastProgressName = "";
-                    // Sync the threat list with the actual scan result —
-                    // during scanning, onThreatFound() populates foundThreats,
-                    // but the final authoritative list lives in result.getThreats().
-                    // Without this, stale entries from a prior scan (e.g. when
-                    // attaching to a mid-flight background scan that never ran
-                    // startScan()'s clear) or threats missed by onThreatFound()
-                    // permanently corrupt what the RecyclerView shows.
-                    foundThreats.clear();
-                    foundThreats.addAll(result.getThreats());
                     threatAdapter.notifyDataSetChanged();
                     tvThreats.setText(String.valueOf(foundThreats.size()));
-
                     layoutViewToggle.setVisibility(View.VISIBLE);
                     if (foundThreats.isEmpty()) {
                         switchView(false);
                     } else {
                         switchView(true);
                     }
-                    long secs = result.getScanDurationMs() / 1000;
-                    long millis = result.getScanDurationMs() % 1000;
-                    String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
+                    tvScanStatus.setText(lastScanStatus);
                     if (wasCancelled) {
-                        lastScanStatus = getString(R.string.scan_stopped) + " (" + duration + ")";
-                        tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFFFFAA00);
                         tvCurrentApp.setText(lastScanStatus);
                         tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
                     } else if (result.isClean()) {
-                        lastScanStatus = getString(R.string.scan_clean_system) + " (" + duration + ")";
-                        tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFF00FF88);
                         tvThreatLabel.setVisibility(View.GONE);
                     } else {
-                        lastScanStatus = getString(R.string.threats_found_count, foundThreats.size()) + " (" + duration + ")";
-                        tvScanStatus.setText(lastScanStatus);
                         tvScanStatus.setTextColor(0xFFFF0040);
                         tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
                     }
