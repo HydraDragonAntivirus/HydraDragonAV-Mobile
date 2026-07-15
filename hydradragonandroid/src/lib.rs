@@ -2593,22 +2593,27 @@ fn generate_yara_rule(
         }
     }
     out.push_str("  condition:\n");
-    let mut clauses: Vec<String> = Vec::new();
-    for pkg in packages {
-        clauses.push(format!(
-            "androguard.package_name(\"{}\")",
-            pkg.replace('"', "'")
-        ));
+    let mut groups: Vec<String> = Vec::new();
+    // Package names: OR'd inside one group (an app has one package name)
+    if !packages.is_empty() {
+        let pkg_or: Vec<String> = packages.iter().map(|p| {
+            format!("androguard.package_name(\"{}\")", p.replace('"', "'"))
+        }).collect();
+        if pkg_or.len() == 1 {
+            groups.push(pkg_or.into_iter().next().unwrap());
+        } else {
+            groups.push(format!("({})", pkg_or.join(" or ")));
+        }
     }
     if !strings.is_empty() {
         let threshold = strings.len().min(6).max(1);
-        clauses.push(format!("{} of them", threshold));
+        groups.push(format!("{} of them", threshold));
     }
-    clauses.push("androguard.rootkit_behavior() == 1".to_string());
-    if clauses.is_empty() {
-        clauses.push("false".to_string());
+    groups.push("androguard.rootkit_behavior() == 1".to_string());
+    if groups.is_empty() {
+        groups.push("false".to_string());
     }
-    out.push_str(&format!("    {}\n", clauses.join(" or\n    ")));
+    out.push_str(&format!("    {}\n", groups.join(" and\n    ")));
     out.push_str("}\n");
     Some(out)
 }

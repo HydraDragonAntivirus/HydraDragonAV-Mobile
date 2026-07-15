@@ -45,7 +45,7 @@ public class ScanFragment extends Fragment {
     private Button btnScan;
     private Button btnPauseResume;
     private ProgressBar progressBar;
-    private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats, tvThreatLabel, tvEngineWarning;
+    private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats, tvActiveThreats, tvThreatLabel, tvEngineWarning;
     private TextView btnViewThreats, btnViewAllFiles;
     private View layoutViewToggle;
     private ImageView ivScannerIcon;
@@ -135,6 +135,7 @@ public class ScanFragment extends Fragment {
         tvScanStatus = view.findViewById(R.id.tv_scan_status);
         tvScanned = view.findViewById(R.id.tv_scanned_count);
         tvThreats = view.findViewById(R.id.tv_threat_count);
+        tvActiveThreats = view.findViewById(R.id.tv_active_threats);
         tvThreatLabel = view.findViewById(R.id.tv_threat_label);
         tvEngineWarning = view.findViewById(R.id.tv_engine_warning);
         ivScannerIcon = view.findViewById(R.id.iv_scanner_icon);
@@ -159,6 +160,7 @@ public class ScanFragment extends Fragment {
         if (hasScanned) {
             tvScanned.setText(String.valueOf(lastScannedCount));
             tvThreats.setText(String.valueOf(foundThreats.size()));
+                    tvActiveThreats.setText(String.valueOf(foundThreats.size()));
             tvScanStatus.setText(lastScanStatus);
             btnScan.setText(getString(R.string.rescan));
             if (foundThreats.size() > 0) {
@@ -257,6 +259,7 @@ public class ScanFragment extends Fragment {
                     foundThreats.remove(threat);
                     threatAdapter.notifyDataSetChanged();
                     tvThreats.setText(String.valueOf(foundThreats.size()));
+                    tvActiveThreats.setText(String.valueOf(foundThreats.size()));
                     if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
                 })
                 .setNeutralButton(getString(R.string.btn_ignore_signature), (dialog, which) ->
@@ -307,6 +310,7 @@ public class ScanFragment extends Fragment {
                 foundThreats.remove(threat);
                 threatAdapter.notifyDataSetChanged();
                 tvThreats.setText(String.valueOf(foundThreats.size()));
+                    tvActiveThreats.setText(String.valueOf(foundThreats.size()));
                 if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
             } else {
                 Toast.makeText(getContext(), getString(R.string.file_delete_failed), Toast.LENGTH_SHORT).show();
@@ -462,6 +466,7 @@ public class ScanFragment extends Fragment {
                         foundThreats.remove(t);
                         threatAdapter.notifyDataSetChanged();
                         tvThreats.setText(String.valueOf(foundThreats.size()));
+                    tvActiveThreats.setText(String.valueOf(foundThreats.size()));
                         if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
                         break;
                     }
@@ -580,6 +585,7 @@ public class ScanFragment extends Fragment {
         tvScanStatus.setText(lastScanStatus);
         tvScanStatus.setTextColor(0xFF00D9FF);
         tvThreats.setText("0");
+        tvActiveThreats.setText("0");
         tvThreatLabel.setVisibility(View.GONE);
 
         attachScanCallback();
@@ -635,6 +641,7 @@ public class ScanFragment extends Fragment {
         tvScanStatus.setText(lastScanStatus);
         tvScanStatus.setTextColor(0xFF00D9FF);
         tvThreats.setText("0");
+        tvActiveThreats.setText("0");
         tvThreatLabel.setVisibility(View.GONE);
 
         attachScanCallback();
@@ -711,6 +718,7 @@ public class ScanFragment extends Fragment {
                         foundThreats.add(threat);
                         threatAdapter.notifyItemInserted(foundThreats.size() - 1);
                     tvThreats.setText(String.valueOf(foundThreats.size()));
+                    tvActiveThreats.setText(String.valueOf(foundThreats.size()));
                     tvThreats.setTextColor(0xFFFF0040);
                     tvThreatLabel.setVisibility(View.VISIBLE);
                         tvThreatLabel.setVisibility(View.VISIBLE);
@@ -764,6 +772,7 @@ public class ScanFragment extends Fragment {
                     lastProgressName = "";
                     threatAdapter.notifyDataSetChanged();
                     tvThreats.setText(String.valueOf(foundThreats.size()));
+                    tvActiveThreats.setText(String.valueOf(foundThreats.size()));
                     layoutViewToggle.setVisibility(View.VISIBLE);
                     if (foundThreats.isEmpty()) {
                         switchView(false);
@@ -990,6 +999,7 @@ public class ScanFragment extends Fragment {
         tvScanStatus.setText(lastScanStatus);
         tvScanStatus.setTextColor(0xFF00D9FF);
         tvThreats.setText("0");
+        tvActiveThreats.setText("0");
         tvThreatLabel.setVisibility(View.GONE);
 
         attachScanCallback();
@@ -1114,6 +1124,7 @@ private void scanCustomFile(android.net.Uri uri) {
                             foundThreats.add(result);
                             threatAdapter.notifyItemInserted(0);
                             tvThreats.setText("1");
+                            tvActiveThreats.setText("1");
                             tvThreats.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.threat_red));
                             tvScanStatus.setText(getString(R.string.threats_found_count, 1));
                             tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.threat_red));

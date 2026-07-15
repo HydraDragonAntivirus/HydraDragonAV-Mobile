@@ -122,6 +122,7 @@
     <string name="scan_stopped">⏹ Tarama durduruldu</string>
     <string name="scanned">TARANAN</string>
     <string name="threat">TEHDİT</string>
+    <string name="active_threats">AKTİF TEHDİTLER</string>
     <string name="found_threats">⚠ BULUNAN TEHDİTLER</string>
     <string name="threat_found_dialog_title">⚠ Tehdit Tespit Edildi</string>
     <string name="threat_found_dialog_msg">%1$s

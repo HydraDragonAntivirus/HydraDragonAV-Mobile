@@ -122,6 +122,7 @@
     <string name="scan_resuming">Resuming…</string>
     <string name="scanned">SCANNED</string>
     <string name="threat">THREAT</string>
+    <string name="active_threats">ACTIVE THREATS</string>
     <string name="found_threats">⚠ MALICIOUS FILES DETECTED</string>
     <string name="threat_found_dialog_title">⚠ Threat Detected</string>
     <string name="threat_found_dialog_msg">%1$s
