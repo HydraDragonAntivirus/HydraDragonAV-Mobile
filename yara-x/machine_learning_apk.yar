@@ -2947,40 +2947,6 @@ rule _02944967154e515f87bb411641edd9931ea6b4a4088ab73efe87cbe7b9d5b59_35 {
       ) or ( all of them )
 }
 
-rule _53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13ce_36 {
-   meta:
-      description = "apk - from files 53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13cee.apk, cdcdef6cdfab4abbcf83265b1975fdecefbad68ab65931a74f4b930e5e22b29c.apk"
-      author = "HydraDragonAntivirus"
-      reference = "https://github.com/HydraDragonAntivirus"
-      date = "2026-06-28"
-      hash1 = "53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13cee"
-      hash2 = "cdcdef6cdfab4abbcf83265b1975fdecefbad68ab65931a74f4b930e5e22b29c"
-   strings:
-      $s1 = "3invalid key format: missing KEK URI or DEK template" fullword ascii
-      $s2 = "pAll children of a RecyclerView using CarouselLayoutManager must use MaskableFrameLayout as their root ViewGroup." fullword ascii
-      $s3 = "Protocol message had too many levels of nesting.  May be malicious.  Use CodedInputStream.setRecursionLimit() to increase the de" ascii
-      $s4 = "Protocol message had too many levels of nesting.  May be malicious.  Use CodedInputStream.setRecursionLimit() to increase the de" ascii
-      $s5 = "4layout index should not be -1 after unhiding a view:" fullword ascii
-      $s6 = ".Can't get the number of an unknown enum value." fullword ascii
-      $s7 = " . Valid keys must have 64 bytes." fullword ascii
-      $s8 = "\"Skipping profile installation for " fullword ascii
-      $s9 = "delete failed: " fullword ascii
-      $s10 = "8Scrapped or attached views may not be recycled. isScrap:" fullword ascii
-      $s11 = ", object identifier: " fullword ascii
-      $s12 = "Network connection lost" fullword ascii
-      $s13 = "invalid orientation" fullword ascii
-      $s14 = "(this Collection)" fullword ascii
-      $s15 = "ciphertext too short" fullword ascii
-      $s16 = "no primary in primitive set" fullword ascii
-      $s17 = "input is not hexadecimal" fullword ascii
-      $s18 = "deleting the database file: " fullword ascii
-      $s19 = "invalid IV size" fullword ascii
-      $s20 = ".Inconsistency detected. Invalid item position " fullword ascii
-   condition:
-      ( uint16(0) == 0x4b50 and ( 8 of them )
-      ) or ( all of them )
-}
-
 rule _53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13ce_37 {
    meta:
       description = "apk - from files 53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13cee.apk, 6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422e.apk"

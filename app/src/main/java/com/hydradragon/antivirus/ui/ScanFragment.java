@@ -563,31 +563,7 @@ public class ScanFragment extends Fragment {
         // scanAllApps() call below — so set up the UI optimistically, THEN
         // check scanAllApps()'s own return value (the real, atomic answer)
         // and roll the UI back if it turns out a scan was already running.
-        isScanning = true;
-        hasScanned = true;
-        foundThreats.clear();
-        scannedFiles.clear();
-        threatAdapter.notifyDataSetChanged();
-        lastProgressCurrent = 0;
-        lastProgressTotal = 0;
-        lastProgressName = "";
-
-        btnScan.setText(getString(R.string.scan_stop));
-        btnScan.setEnabled(true);
-        btnPauseResume.setVisibility(View.VISIBLE);
-        btnPauseResume.setText("⏸");
-        startScannerAnimation();
-
-        // Clear the PREVIOUS scan's final status ("System clean" / "N threats
-        // found") right away — otherwise it stays on screen, looking like a
-        // stale/wrong result, for this whole new scan until it finishes.
-        lastScanStatus = getString(R.string.scan_scanning_btn);
-        tvScanStatus.setText(lastScanStatus);
-        tvScanStatus.setTextColor(0xFF00D9FF);
-        tvThreats.setText("0");
-        tvActiveThreats.setText("0");
-        tvThreatLabel.setVisibility(View.GONE);
-
+        resetScanUI();
         attachScanCallback();
         Log.d(TAG, "startScan: calling scanAllApps(isFullScan=" + isFullScan + ")");
         if (guardService.getScanEngine() == null || !guardService.getScanEngine().scanAllApps(isFullScan)) {
@@ -622,28 +598,7 @@ public class ScanFragment extends Fragment {
             Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
             return;
         }
-        isScanning = true;
-        hasScanned = true;
-        foundThreats.clear();
-        scannedFiles.clear();
-        threatAdapter.notifyDataSetChanged();
-        lastProgressCurrent = 0;
-        lastProgressTotal = 0;
-        lastProgressName = "";
-
-        btnScan.setText(getString(R.string.scan_stop));
-        btnScan.setEnabled(true);
-        btnPauseResume.setVisibility(View.VISIBLE);
-        btnPauseResume.setText("⏸");
-        startScannerAnimation();
-
-        lastScanStatus = getString(R.string.scan_scanning_btn);
-        tvScanStatus.setText(lastScanStatus);
-        tvScanStatus.setTextColor(0xFF00D9FF);
-        tvThreats.setText("0");
-        tvActiveThreats.setText("0");
-        tvThreatLabel.setVisibility(View.GONE);
-
+        resetScanUI();
         attachScanCallback();
         Log.d(TAG, "startScanAntiFp: calling scanAllAppsAntiFp");
         if (guardService.getScanEngine() == null || !guardService.getScanEngine().scanAllAppsAntiFp()) {
@@ -833,6 +788,38 @@ public class ScanFragment extends Fragment {
 
     private void stopScannerAnimation() { ivScannerIcon.clearAnimation(); }
 
+    /** Clears all scan result UI so a new scan starts from a blank state. */
+    private void resetScanUI() {
+        isScanning = true;
+        hasScanned = true;
+        foundThreats.clear();
+        scannedFiles.clear();
+        threatAdapter.notifyDataSetChanged();
+        lastProgressCurrent = 0;
+        lastProgressTotal = 0;
+        lastProgressName = "";
+        lastScannedCount = 0;
+
+        btnScan.setText(getString(R.string.scan_stop));
+        btnScan.setEnabled(true);
+        btnPauseResume.setVisibility(View.VISIBLE);
+        btnPauseResume.setText("⏸");
+        startScannerAnimation();
+
+        lastScanStatus = getString(R.string.scan_scanning_btn);
+        tvScanStatus.setText(lastScanStatus);
+        tvScanStatus.setTextColor(0xFF00D9FF);
+        tvThreats.setText("0");
+        tvActiveThreats.setText("0");
+        tvThreatLabel.setVisibility(View.GONE);
+        tvScanned.setText("0");
+        tvProgress.setText("0/0");
+        tvCurrentApp.setText("");
+        progressBar.setProgress(0);
+        progressBar.setMax(0);
+        layoutViewToggle.setVisibility(View.GONE);
+    }
+
     private void checkEngineLoading() {
         if (!isAdded()) return;
         boolean loading = guardService != null && guardService.isEngineLoading();
@@ -980,28 +967,7 @@ public class ScanFragment extends Fragment {
             Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
             return;
         }
-        isScanning = true;
-        hasScanned = true;
-        foundThreats.clear();
-        scannedFiles.clear();
-        threatAdapter.notifyDataSetChanged();
-        lastProgressCurrent = 0;
-        lastProgressTotal = 0;
-        lastProgressName = "";
-
-        btnScan.setText(getString(R.string.scan_stop));
-        btnScan.setEnabled(true);
-        btnPauseResume.setVisibility(View.VISIBLE);
-        btnPauseResume.setText("⏸");
-        startScannerAnimation();
-
-        lastScanStatus = getString(R.string.scan_scanning_btn);
-        tvScanStatus.setText(lastScanStatus);
-        tvScanStatus.setTextColor(0xFF00D9FF);
-        tvThreats.setText("0");
-        tvActiveThreats.setText("0");
-        tvThreatLabel.setVisibility(View.GONE);
-
+        resetScanUI();
         attachScanCallback();
         Log.d(TAG, "startCustomFolderScan: calling scanCustomFolder");
         if (!guardService.getScanEngine().scanCustomFolder(dir)) {
@@ -1022,25 +988,15 @@ private void scanCustomFile(android.net.Uri uri) {
             Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
             return;
         }
-        isScanning = true;
-        hasScanned = true;
-        foundThreats.clear();
-        scannedFiles.clear();
-        threatAdapter.notifyDataSetChanged();
-
+        resetScanUI();
+        // Single-file scan doesn't support pause/resume.
+        btnPauseResume.setVisibility(View.INVISIBLE);
         // Keep the button enabled (unlike other transient states here) so its
         // onClickListener's `else stopScan()` branch (line ~221) can actually
         // fire — disabling it during a manual single-file scan meant Stop was
         // never clickable for this flow, even though stopScan()/cancelScan()
         // already works fine here (scanSingleFile polls cancelRequested the
         // same way scanAllApps/scanCustomFolder do).
-        btnScan.setText(getString(R.string.scan_stop));
-        btnScan.setEnabled(true);
-        startScannerAnimation();
-
-        lastScanStatus = getString(R.string.scan_scanning_btn);
-        tvScanStatus.setText(lastScanStatus);
-        tvScanStatus.setTextColor(0xFF00D9FF);
 
         new Thread(() -> {
             // Two separate try blocks so the status text can tell apart a
