@@ -488,6 +488,7 @@ public class ScanFragment extends Fragment {
         String[] options = {
             getString(R.string.btn_quick_scan),
             getString(R.string.btn_full_scan),
+            getString(R.string.btn_anti_fp_scan),
             getString(R.string.scan_custom),
             getString(R.string.scan_custom_folder)
         };
@@ -496,8 +497,9 @@ public class ScanFragment extends Fragment {
             .setItems(options, (dialog, which) -> {
                 if (which == 0) startScan(false);
                 else if (which == 1) startScan(true);
-                else if (which == 2) pickFileLauncher.launch("*/*");
-                else if (which == 3) pickFolderLauncher.launch(null);
+                else if (which == 2) startScanAntiFp();
+                else if (which == 3) pickFileLauncher.launch("*/*");
+                else if (which == 4) pickFolderLauncher.launch(null);
             })
             .show();
     }
@@ -563,6 +565,53 @@ public class ScanFragment extends Fragment {
         android.widget.Toast.makeText(getContext(),
             getString(R.string.engine_status_format, engineStatus),
             android.widget.Toast.LENGTH_LONG).show();
+    }
+
+    /** Start an Anti-FP scan: runs a full scan WITH anti-FP cache population
+     *  and detection suppression. This is the only scan type that uses the
+     *  anti-FP cache. */
+    private void startScanAntiFp() {
+        Log.d(TAG, "startScanAntiFp");
+        if (!serviceBound || guardService == null) { Log.w(TAG, "startScanAntiFp: service not bound"); return; }
+        if (guardService.isEngineLoading()) {
+            Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        isScanning = true;
+        hasScanned = true;
+        foundThreats.clear();
+        scannedFiles.clear();
+        threatAdapter.notifyDataSetChanged();
+        lastProgressCurrent = 0;
+        lastProgressTotal = 0;
+        lastProgressName = "";
+
+        btnScan.setText(getString(R.string.scan_stop));
+        btnScan.setEnabled(true);
+        btnPauseResume.setVisibility(View.VISIBLE);
+        btnPauseResume.setText("⏸");
+        startScannerAnimation();
+
+        lastScanStatus = getString(R.string.scan_scanning_btn);
+        tvScanStatus.setText(lastScanStatus);
+        tvScanStatus.setTextColor(0xFF00D9FF);
+        tvThreats.setText("0");
+        tvThreatLabel.setVisibility(View.GONE);
+
+        attachScanCallback();
+        Log.d(TAG, "startScanAntiFp: calling scanAllAppsAntiFp");
+        if (guardService.getScanEngine() == null || !guardService.getScanEngine().scanAllAppsAntiFp()) {
+            Log.w(TAG, "startScanAntiFp: scanAllAppsAntiFp returned false (race lost)");
+            isScanning = false;
+            stopScannerAnimation();
+            btnScan.setText(getString(R.string.rescan));
+            btnPauseResume.setVisibility(View.INVISIBLE);
+            Toast.makeText(getContext(), getString(R.string.scan_already_running), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String engineStatus = com.hydradragon.antivirus.engine.NativeScanner.status();
+        Log.d(TAG, "Anti-FP scan started. Engine status: " + engineStatus);
     }
 
     /** Stop button: request the engine to abort. The in-flight scan ends at its
@@ -763,13 +812,7 @@ public class ScanFragment extends Fragment {
         }
     }
 
-    // Tracks whether we attached to an already-running background scan.
-    private boolean attachedToBackground = false;
-
-    // Single poller that checks engine loading, background scan, and idle state
-    // — merged into ONE loop so two separate timers don't fight over
-    // tvScanStatus and cause flickering between "Engine loading…",
-    // "Background scan running…", and the normal prompt.
+    // Single poller that checks engine loading state only.
     private final android.os.Handler statusPoller = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable statusPollCheck = new Runnable() {
         @Override
@@ -783,36 +826,7 @@ public class ScanFragment extends Fragment {
                     tvScanStatus.setTextColor(0xFFFFAA00);
                 } else {
                     tvEngineWarning.setVisibility(View.GONE);
-                    if (guardService.getScanEngine() != null
-                            && guardService.getScanEngine().isScanRunning()
-                            && !isScanning) {
-                        // Background scan in progress — attach callback to show
-                        // live progress (current file, scanned count, bar).
-                        if (!attachedToBackground) {
-                            Log.d(TAG, "statusPollCheck: attaching to in-flight background scan");
-                            attachedToBackground = true;
-                            isScanning = true;
-                            hasScanned = true;
-                            // A background scan that's already in progress
-                            // started without our startScan(), so foundThreats
-                            // still holds stale results from the previous
-                            // user-initiated scan — clear it now.
-                            foundThreats.clear();
-                            scannedFiles.clear();
-                            threatAdapter.notifyDataSetChanged();
-                            tvThreats.setText("0");
-                            tvThreatLabel.setVisibility(View.GONE);
-                            btnScan.setText(getString(R.string.scan_stop));
-                            btnScan.setEnabled(true);
-                            btnPauseResume.setVisibility(View.VISIBLE);
-                            btnPauseResume.setText("⏸");
-                            startScannerAnimation();
-                            attachScanCallback();
-                        }
-                        tvScanStatus.setText(getString(R.string.background_scan_running));
-                        tvScanStatus.setTextColor(0xFF00D9FF);
-                    } else if (!isScanning) {
-                        attachedToBackground = false;
+                    if (!isScanning) {
                         btnScan.setEnabled(true);
                         if (!hasScanned) {
                             tvScanStatus.setText(getString(R.string.scan_prompt));
@@ -836,7 +850,6 @@ public class ScanFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        attachedToBackground = false;
         statusPoller.removeCallbacks(statusPollCheck);
         if (serviceBound) {
             // GuardService keeps scanning/notifying/logging on its own even

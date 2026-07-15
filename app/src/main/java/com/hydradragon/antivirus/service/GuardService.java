@@ -145,7 +145,7 @@ public class GuardService extends Service {
         com.hydradragon.antivirus.engine.ScanEngine.runOrchestrated(() -> {
             ThreatResult threat = null;
             try {
-                threat = backgroundScanEngine.scanSingleFile(file);
+                threat = scanEngine.scanSingleFile(file);
             } catch (Throwable t) {
                 Log.e(TAG, "download scan failed: " + file, t);
             }
@@ -212,7 +212,6 @@ public class GuardService extends Service {
 
     private AIEngine aiEngine;
     private ScanEngine scanEngine;
-    private ScanEngine backgroundScanEngine;
     private NetworkMonitor networkMonitor;
     private ProcessDetector processDetector;
     private volatile boolean engineLoading = true;
@@ -280,7 +279,14 @@ public class GuardService extends Service {
             engineLoading = false;
             Log.i(TAG, "engineLoading=false (engines ready)");
             updateNotification(getString(R.string.guard_protecting_status), true);
-            startPeriodicScans();
+            // Run a single Anti-FP scan on startup (not periodic)
+            Log.i(TAG, "Starting initial Anti-FP scan...");
+            try {
+                scanEngine.scanAllAppsAntiFp();
+            } catch (Throwable t) {
+                Log.e(TAG, "Initial Anti-FP scan failed", t);
+            }
+            startServiceMonitors();
             startDownloadMonitor();
             startFullStorageMonitor();
             Log.i(TAG, "Guard Service active");
@@ -290,65 +296,8 @@ public class GuardService extends Service {
     private void initializeEngines() {
         aiEngine = new AIEngine(this);
         scanEngine = new ScanEngine(this, aiEngine);
-        backgroundScanEngine = new ScanEngine(this, aiEngine);
-        backgroundScanEngine.setBackgroundScan(true);
         networkMonitor = new NetworkMonitor(this);
         processDetector = new ProcessDetector(this);
-
-        // Background scan engine callback - handles silent/background logic
-        backgroundScanEngine.setCallback(new ScanEngine.ScanCallback() {
-            @Override
-            public void onProgress(int current, int total, String packageName) {}
-
-            @Override
-            public void onThreatFound(ThreatResult threat) {
-                try {
-                    ThreatLogger.logThreat(GuardService.this, threat, "BACKGROUND SCAN DETECTED");
-                } catch (Throwable t) {
-                    Log.e(TAG, "ThreatLogger.logThreat failed", t);
-                }
-                if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {
-                    try {
-                        sendThreatNotification(threat);
-                    } catch (Throwable t) {
-                        Log.e(TAG, "sendThreatNotification failed", t);
-                    }
-                    try {
-                        if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(GuardService.this)) {
-                            com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(
-                                GuardService.this, threat);
-                        } else {
-                            com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
-                                GuardService.this, threat);
-                        }
-                    } catch (Throwable t) {
-                        Log.e(TAG, "threat response failed", t);
-                    }
-                    if (callback != null) callback.onThreatDetected(threat);
-                }
-            }
-
-            @Override
-            public void onScanComplete(com.hydradragon.antivirus.model.ScanResult result) {
-                try {
-                    String status = result.isClean()
-                        ? getString(R.string.system_clean)
-                        : "⚠ " + result.getThreatsFound() + " " + getString(R.string.threat);
-                    updateNotification(status, result.isClean());
-                    if (callback != null) callback.onStatusUpdate(status);
-                } catch (Throwable t) {
-                    Log.e(TAG, "onScanComplete notification/status update failed", t);
-                }
-            }
-
-            @Override
-            public void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo info) {}
-
-            @Override
-            public void onError(String error) {
-                Log.e(TAG, "Background scan error: " + error);
-            }
-        });
 
         // Set ONCE — see uiScanCallback's javadoc for why ScanFragment must
         // never call scanEngine.setCallback() itself.
@@ -478,55 +427,13 @@ public class GuardService extends Service {
         networkMonitor.startMonitoring();
     }
 
-    private void startPeriodicScans() {
+    private void startServiceMonitors() {
         scheduler = Executors.newScheduledThreadPool(2);
-
-        // The Quick/Full timer-driven re-scans are independently toggleable
-        // from Settings (see ScanSchedule#isPeriodicScanEnabled) — turning
-        // this off does NOT disable real-time protection (Downloads watcher,
-        // on-install scan, network/behavior monitors below all still run);
-        // it only stops the periodic background re-scan of already-installed
-        // apps and storage.
-        if (com.hydradragon.antivirus.engine.ScanSchedule.isPeriodicScanEnabled(this)) {
-            // Intervals are user-configurable from Settings (see ScanSchedule) —
-            // defaults match what used to be hardcoded (30 / 180 min). The initial
-            // delay is capped at the interval itself so a shorter user-set
-            // interval isn't stuck waiting out the old fixed delay first.
-            int quickMin = com.hydradragon.antivirus.engine.ScanSchedule.getQuickScanIntervalMinutes(this);
-            int fullMin = com.hydradragon.antivirus.engine.ScanSchedule.getFullScanIntervalMinutes(this);
-            int quickDelay = Math.min(5, quickMin);
-            int fullDelay = Math.min(45, fullMin);
-
-            scheduler.scheduleAtFixedRate(() -> {
-                Log.d(TAG, "Periodic scan started");
-                backgroundScanEngine.scanAllApps(false); // default: QUICK SCAN
-            }, quickDelay, quickMin, TimeUnit.MINUTES);
-
-            // A file copied straight onto external/SD storage from a computer (USB/
-            // MTP) outside the Downloads folder is invisible to the Downloads
-            // FileObserver AND to the frequent Quick Scan above (Downloads + installed
-            // apps only) — it would otherwise sit undetected until the user manually
-            // taps Full Scan. Periodic Full Scan (all storage roots + SD card) closes
-            // that gap without needing always-on real-time watchers on every folder.
-            scheduler.scheduleAtFixedRate(() -> {
-                Log.d(TAG, "Periodic FULL scan started (external storage coverage)");
-                backgroundScanEngine.scanAllApps(true);
-            }, fullDelay, fullMin, TimeUnit.MINUTES);
-        } else {
-            Log.i(TAG, "Periodic scans disabled by user setting");
-        }
 
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();
         }, 10, 60, TimeUnit.SECONDS);
 
-        // Dynamic root-exploit detection: a device that WASN'T rooted when this
-        // app started (MainActivity already blocks launch on an already-rooted
-        // device) suddenly becoming rooted mid-session is unambiguous proof some
-        // running app just used a root exploit — far stronger signal than static
-        // "su"/"magisk" string matching, and catches exploits that never touch a
-        // named su binary at all. Whichever app was in the foreground at the
-        // moment of the transition is the prime suspect.
         scheduler.scheduleAtFixedRate(this::checkRootTransition, 15, 60, TimeUnit.SECONDS);
     }
 
