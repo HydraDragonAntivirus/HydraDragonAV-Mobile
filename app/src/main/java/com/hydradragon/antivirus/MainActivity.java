@@ -35,6 +35,7 @@ import com.hydradragon.antivirus.ui.ThreatLogFragment;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_VPN = 102;
+    private static final int REQ_OVERLAY = 103;
 
     private com.hydradragon.antivirus.security.StrandHoggGuard strandHoggGuard;
     private com.hydradragon.antivirus.security.SecureWindowGuard windowGuard;
@@ -347,6 +348,17 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // Draw Over Other Apps (overlay) — optional, asked once at first launch.
+        // Without this permission, the MalwareFoundActivity dialog overlay won't
+        // show when the user is in another app; the alert still arrives as a
+        // notification instead.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this)) {
+            if (!prefs.getBoolean("overlay_decided", false)) {
+                showOptionalOverlayDialog();
+                return;
+            }
+        }
+
         startAppUI();
     }
 
@@ -390,6 +402,27 @@ public class MainActivity extends AppCompatActivity {
                     .putBoolean("web_shield_decided", true)
                     .putBoolean("web_shield_enabled", false).apply();
                 startAppUI();
+            })
+            .show();
+    }
+
+    private void showOptionalOverlayDialog() {
+        permissionDialogShowing = true;
+        new AlertDialog.Builder(this)
+            .setTitle(getString(R.string.overlay_request_title))
+            .setMessage(getString(R.string.overlay_request_msg))
+            .setCancelable(false)
+            .setPositiveButton(getString(R.string.btn_grant_now), (dialog, which) -> {
+                permissionDialogShowing = false;
+                Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, REQ_OVERLAY);
+            })
+            .setNegativeButton(getString(R.string.skip), (dialog, which) -> {
+                permissionDialogShowing = false;
+                getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("overlay_decided", true).apply();
+                checkMandatoryPermissions();
             })
             .show();
     }
@@ -438,6 +471,14 @@ public class MainActivity extends AppCompatActivity {
                     .putBoolean("web_shield_enabled", false).apply();
                 startAppUIIfHidden();
             }
+        } else if (requestCode == REQ_OVERLAY) {
+            getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                .putBoolean("overlay_decided", true).apply();
+            String toastMsg = android.provider.Settings.canDrawOverlays(this)
+                ? getString(R.string.overlay_granted_toast)
+                : getString(R.string.draw_overlay_off_toast);
+            Toast.makeText(this, toastMsg, Toast.LENGTH_LONG).show();
+            checkMandatoryPermissions();
         }
     }
 

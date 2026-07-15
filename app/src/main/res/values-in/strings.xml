@@ -396,6 +396,9 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="draw_overlay_toggle">Gambar di Atas Aplikasi Lain — tampilkan peringatan malware dari latar belakang</string>
     <string name="draw_overlay_on_toast">Izin overlay diberikan — peringatan layar penuh sekarang dapat muncul dari latar belakang</string>
     <string name="draw_overlay_off_toast">Buka Info Aplikasi > Izin untuk mencabut overlay</string>
+    <string name="overlay_request_title">Allow Overlay Permission?</string>
+    <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
+    <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
     <string name="knowledge_db_header">BASIS PENGETAHUAN</string>
     <string name="knowledge_db_export_btn">📤 Ekspor Cache — bagikan cache anti-FP/FN Anda untuk membantu orang lain</string>
     <string name="knowledge_db_import_btn">📥 Impor Cache — muat cache anti-FP/FN bersama dari pengguna lain</string>

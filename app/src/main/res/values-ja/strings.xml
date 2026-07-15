@@ -396,6 +396,9 @@
     <string name="draw_overlay_toggle">他のアプリの上に表示 — バックグラウンドからマルウェア警告を表示</string>
     <string name="draw_overlay_on_toast">オーバーレイ許可が付与されました — 全画面警告がバックグラウンドから表示できるようになりました</string>
     <string name="draw_overlay_off_toast">アプリ情報 > 権限を開いてオーバーレイを取り消す</string>
+    <string name="overlay_request_title">Allow Overlay Permission?</string>
+    <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
+    <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
     <string name="knowledge_db_header">ナレッジデータベース</string>
     <string name="knowledge_db_export_btn">📤 キャッシュをエクスポート — 他のユーザーを助けるためにanti-FP/FNキャッシュを共有</string>
     <string name="knowledge_db_import_btn">📥 キャッシュをインポート — 別のユーザーから共有されたanti-FP/FNキャッシュを読み込む</string>

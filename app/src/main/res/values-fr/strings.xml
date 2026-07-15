@@ -396,6 +396,9 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="draw_overlay_toggle">Affichage par-dessus les autres applications — afficher les alertes de malware depuis l\'arrière-plan</string>
     <string name="draw_overlay_on_toast">Autorisation de superposition accordée — les alertes plein écran peuvent maintenant apparaître depuis l\'arrière-plan</string>
     <string name="draw_overlay_off_toast">Ouvrir Infos App > Autorisations pour révoquer la superposition</string>
+    <string name="overlay_request_title">Allow Overlay Permission?</string>
+    <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
+    <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
     <string name="knowledge_db_header">BASE DE CONNAISSANCES</string>
     <string name="knowledge_db_export_btn">📤 Exporter le cache — partager votre cache anti-FP/FN pour aider les autres</string>
     <string name="knowledge_db_import_btn">📥 Importer le cache — charger le cache anti-FP/FN partagé d\'un autre utilisateur</string>

@@ -399,6 +399,9 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="draw_overlay_toggle">Diğer Uygulamaların Üzerinde Göster — arka planda kötü amaçlı yazılım uyarıları göster</string>
     <string name="draw_overlay_on_toast">Kaplama izni verildi — tam ekran uyarılar artık arka plandan görünebilir</string>
     <string name="draw_overlay_off_toast">İptal etmek için Uygulama Bilgisi > İzinler\'i açın</string>
+    <string name="overlay_request_title">Kaplama İzni Verilsin mi?</string>
+    <string name="overlay_request_msg">HydraDragonAV\'in diğer uygulamaları kullanırken bile tehdit uyarılarını açılır pencere olarak gösterebilmesi için kaplama izni gerekiyor.</string>
+    <string name="overlay_granted_toast">Kaplama izni verildi — tehdit uyarıları artık açılır pencere olarak görünebilir</string>
     <string name="knowledge_db_header">BİLİNÇ VERİTABANI</string>
     <string name="knowledge_db_export_btn">📤 Önbelleği Dışa Aktar — anti-FP/FN önbelleğini başkalarıyla paylaş</string>
     <string name="knowledge_db_import_btn">📥 Önbelleği İçe Aktar — başka bir kullanıcının anti-FP/FN önbelleğini yükle</string>

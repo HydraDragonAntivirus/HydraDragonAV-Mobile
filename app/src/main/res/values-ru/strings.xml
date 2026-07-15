@@ -396,6 +396,9 @@
     <string name="draw_overlay_toggle">Рисовать поверх других приложений — показывать оповещения о вредоносном ПО из фона</string>
     <string name="draw_overlay_on_toast">Разрешение на наложение предоставлено — полноэкранные оповещения теперь могут появляться из фона</string>
     <string name="draw_overlay_off_toast">Откройте Информация о приложении > Разрешения, чтобы отозвать наложение</string>
+    <string name="overlay_request_title">Allow Overlay Permission?</string>
+    <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
+    <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
     <string name="knowledge_db_header">БАЗА ЗНАНИЙ</string>
     <string name="knowledge_db_export_btn">📤 Экспортировать кэш — поделитесь своим кэшем anti-FP/FN, чтобы помочь другим</string>
     <string name="knowledge_db_import_btn">📥 Импортировать кэш — загрузить общий кэш anti-FP/FN от другого пользователя</string>

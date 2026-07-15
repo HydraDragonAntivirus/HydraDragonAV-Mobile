@@ -396,6 +396,9 @@
     <string name="draw_overlay_toggle">在其他应用上方显示 — 从后台显示恶意软件警报</string>
     <string name="draw_overlay_on_toast">已授予叠加权限 — 全屏警报现在可以从后台显示</string>
     <string name="draw_overlay_off_toast">打开应用信息 > 权限以撤销叠加</string>
+    <string name="overlay_request_title">Allow Overlay Permission?</string>
+    <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
+    <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
     <string name="knowledge_db_header">知识数据库</string>
     <string name="knowledge_db_export_btn">📤 导出缓存 — 分享您的 anti-FP/FN 缓存以帮助他人</string>
     <string name="knowledge_db_import_btn">📥 导入缓存 — 从其他用户加载共享的 anti-FP/FN 缓存</string>

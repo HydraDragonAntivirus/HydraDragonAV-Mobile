@@ -416,6 +416,9 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="draw_overlay_toggle">Draw Over Other Apps — show malware alerts from background</string>
     <string name="draw_overlay_on_toast">Overlay permission granted — full-screen alerts can now appear from background</string>
     <string name="draw_overlay_off_toast">Open App Info > Permissions to revoke overlay</string>
+    <string name="overlay_request_title">Allow Overlay Permission?</string>
+    <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
+    <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
 
     
     <string name="net_traffic_export_btn">📤 Export Traffic Log</string>

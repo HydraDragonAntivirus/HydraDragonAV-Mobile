@@ -396,6 +396,9 @@
     <string name="draw_overlay_toggle">نمایش روی سایر برنامه‌ها — نمایش هشدارهای بدافزار از پس‌زمینه</string>
     <string name="draw_overlay_on_toast">مجوز همپوشانی اعطا شد — هشدارهای تمام صفحه اکنون می‌توانند از پس‌زمینه ظاهر شوند</string>
     <string name="draw_overlay_off_toast">باز کردن اطلاعات برنامه > مجوزها برای لغو همپوشانی</string>
+    <string name="overlay_request_title">Allow Overlay Permission?</string>
+    <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
+    <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
     <string name="knowledge_db_header">پایگاه دانش</string>
     <string name="knowledge_db_export_btn">📤 خروجی گرفتن از حافظه نهان — حافظه نهان anti-FP/FN خود را برای کمک به دیگران به اشتراک بگذارید</string>
     <string name="knowledge_db_import_btn">📥 ورودی گرفتن حافظه نهان — بارگیری حافظه نهان anti-FP/FN به اشتراک گذاشته شده توسط کاربر دیگر</string>
