@@ -1,6 +1,7 @@
 package com.hydradragon.antivirus.security;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
@@ -90,8 +91,15 @@ public final class SecureWindowGuard {
         if (!watching) return;
         int flags = activity.getWindow().getAttributes().flags;
         if ((flags & WindowManager.LayoutParams.FLAG_SECURE) == 0) {
+            // If the user intentionally disabled FLAG_SECURE ("Allow screen
+            // recording" in settings), this is our own UI — not tampering.
+            SharedPreferences prefs = activity.getSharedPreferences("hydra_prefs", 0);
+            if (prefs.getBoolean("disable_secure_flag", false)) {
+                watching = false; // stop polling, flag was intentionally removed
+                return;
+            }
             if (callback != null) callback.onSecureFlagLost();
-            return; // don't reschedule past a detected tamper — caller decides what happens next
+            return; // don't reschedule — caller decides what happens next
         }
         handler.postDelayed(selfCheck, intervalMs);
     }
