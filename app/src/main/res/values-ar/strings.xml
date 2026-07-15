@@ -304,9 +304,9 @@
     <string name="sms_scanning_enabled">تم تفعيل فحص الرسائل النصية</string>
     <string name="sms_permission_denied">تم رفض إذن الرسائل النصية</string>
     <string name="silent_mode_toggle">الوضع الصامت (بدون إشعارات)</string>
-    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
-    <string name="scan_cache_on_toast">Scan Cache ON</string>
-    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+    <string name="scan_cache_toggle">ذاكرة التخزين المؤقت للفحص — تخطي إعادة فحص التطبيقات التي تم تحليلها بالفعل</string>
+    <string name="scan_cache_on_toast">ذاكرة التخزين المؤقت للفحص نشطة</string>
+    <string name="scan_cache_off_toast">ذاكرة التخزين المؤقت للفحص غير نشطة</string>
 
     <string name="detect_zip_bomb_toggle">اكتشاف القنابل التفريغية — رفض الأرشيفات التي تتمدد إلى حجم غير محدود</string>
     <string name="detect_zip_bomb_on_toast">تم تفعيل اكتشاف القنابل التفريغية</string>

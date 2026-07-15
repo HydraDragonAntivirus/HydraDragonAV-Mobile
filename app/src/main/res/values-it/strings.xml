@@ -304,9 +304,9 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="sms_scanning_enabled">Scansione SMS attivata</string>
     <string name="sms_permission_denied">Autorizzazione SMS negata</string>
     <string name="silent_mode_toggle">Modalità silenziosa (Nessuna notifica)</string>
-    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
-    <string name="scan_cache_on_toast">Scan Cache ON</string>
-    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+    <string name="scan_cache_toggle">Cache di scansione — salta la ri-analisi delle app già analizzate</string>
+    <string name="scan_cache_on_toast">Cache di scansione ATTIVO</string>
+    <string name="scan_cache_off_toast">Cache di scansione DISATTIVO</string>
 
     <string name="detect_zip_bomb_toggle">Rileva bombe di decompressione — rifiuta gli archivi che si espandono a una dimensione illimitata</string>
     <string name="detect_zip_bomb_on_toast">Rilevamento bombe di decompressione ATTIVATO</string>
@@ -394,7 +394,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="save_auto_rules_off_toast">Salva regole autogenerate DISATTIVATO: le regole sono ancora usate in questa sessione ma NON verranno mantenute dopo il riavvio</string>
     <string name="draw_overlay_toggle">Disegna sopra altre app — mostra avvisi malware dallo sfondo</string>
     <string name="draw_overlay_on_toast">Autorizzazione overlay concessa — gli avvisi a schermo intero possono ora apparire dallo sfondo</string>
-    <string name="draw_overlay_off_toast">Apri Info App > Permessi per revocare l'overlay</string>
+    <string name="draw_overlay_off_toast">Apri Info App > Permessi per revocare l\'overlay</string>
     <string name="knowledge_db_header">BASE DI CONOSCENZA</string>
     <string name="knowledge_db_export_btn">📤 Esporta cache — condividi la tua cache anti-FP/FN per aiutare gli altri</string>
     <string name="knowledge_db_import_btn">📥 Importa cache — carica cache anti-FP/FN condivisa da un altro utente</string>

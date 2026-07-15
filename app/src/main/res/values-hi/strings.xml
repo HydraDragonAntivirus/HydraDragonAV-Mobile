@@ -303,9 +303,9 @@
     <string name="sms_scanning_enabled">SMS स्कैनिंग सक्षम है</string>
     <string name="sms_permission_denied">SMS अनुमति अस्वीकृत</string>
     <string name="silent_mode_toggle">मूक मोड (कोई सूचना नहीं)</string>
-    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
-    <string name="scan_cache_on_toast">Scan Cache ON</string>
-    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+    <string name="scan_cache_toggle">स्कैन कैश — पहले से विश्लेषित ऐप्स को पुनः स्कैन करना छोड़ें</string>
+    <string name="scan_cache_on_toast">स्कैन कैश चालू</string>
+    <string name="scan_cache_off_toast">स्कैन कैश बंद</string>
 
     <string name="detect_zip_bomb_toggle">डीकंप्रेशन बम पहचानें — असीमित आकार में विस्तारित होने वाले संग्रह अस्वीकार करें</string>
     <string name="detect_zip_bomb_on_toast">डीकंप्रेशन बम पहचान चालू</string>

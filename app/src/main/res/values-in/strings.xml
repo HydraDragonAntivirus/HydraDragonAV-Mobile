@@ -304,9 +304,9 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="sms_scanning_enabled">Pemindaian SMS diaktifkan</string>
     <string name="sms_permission_denied">Izin SMS ditolak</string>
     <string name="silent_mode_toggle">Mode senyap (Tidak ada notifikasi)</string>
-    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
-    <string name="scan_cache_on_toast">Scan Cache ON</string>
-    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+    <string name="scan_cache_toggle">Cache Pemindaian — lewati pemindaian ulang aplikasi yang sudah dianalisis</string>
+    <string name="scan_cache_on_toast">Cache Pemindaian AKTIF</string>
+    <string name="scan_cache_off_toast">Cache Pemindaian NONAKTIF</string>
 
     <string name="detect_zip_bomb_toggle">Deteksi Bom Dekompresi — tolak arsip yang meluas hingga ukuran tak terbatas</string>
     <string name="detect_zip_bomb_on_toast">Deteksi Bom Dekompresi AKTIF</string>

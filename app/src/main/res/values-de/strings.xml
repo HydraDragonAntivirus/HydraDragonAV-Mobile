@@ -304,9 +304,9 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="sms_scanning_enabled">SMS-Scan aktiviert</string>
     <string name="sms_permission_denied">SMS-Berechtigung verweigert</string>
     <string name="silent_mode_toggle">Lautlosmodus (Keine Benachrichtigungen)</string>
-    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
-    <string name="scan_cache_on_toast">Scan Cache ON</string>
-    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+    <string name="scan_cache_toggle">Scan-Cache — bereits analysierte Apps nicht erneut scannen</string>
+    <string name="scan_cache_on_toast">Scan-Cache EIN</string>
+    <string name="scan_cache_off_toast">Scan-Cache AUS</string>
 
     <string name="detect_zip_bomb_toggle">Dekomprimierungsbomben erkennen — Archive ablehnen, die sich auf eine unbegrenzte Größe entpacken</string>
     <string name="detect_zip_bomb_on_toast">Erkennung von Dekomprimierungsbomben EIN</string>

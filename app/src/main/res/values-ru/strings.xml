@@ -304,9 +304,9 @@
     <string name="sms_scanning_enabled">Сканирование SMS включено</string>
     <string name="sms_permission_denied">Разрешение на SMS отклонено</string>
     <string name="silent_mode_toggle">Тихий режим (Без уведомлений)</string>
-    <string name="scan_cache_toggle">Scan Cache — skip re-scanning already-analysed apps</string>
-    <string name="scan_cache_on_toast">Scan Cache ON</string>
-    <string name="scan_cache_off_toast">Scan Cache OFF</string>
+    <string name="scan_cache_toggle">Кэш сканирования — пропустить повторное сканирование уже проанализированных приложений</string>
+    <string name="scan_cache_on_toast">Кэш сканирования ВКЛ</string>
+    <string name="scan_cache_off_toast">Кэш сканирования ВЫКЛ</string>
 
     <string name="detect_zip_bomb_toggle">Обнаружение бомб декомпрессии — отклонять архивы, распаковывающиеся до неограниченного размера</string>
     <string name="detect_zip_bomb_on_toast">Обнаружение бомб декомпрессии ВКЛЮЧЕНО</string>
