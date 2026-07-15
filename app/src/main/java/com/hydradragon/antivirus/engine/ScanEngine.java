@@ -429,8 +429,8 @@ public class ScanEngine {
                 // under the other still running.
                 scanWakeLock.setReferenceCounted(true);
             }
-            // 2 hour cap so a hung scan can't drain the battery forever.
-            scanWakeLock.acquire(2 * 60 * 60 * 1000L);
+            // 30 min cap so a hung scan can't drain the battery forever.
+            scanWakeLock.acquire(30 * 60 * 1000L);
         } catch (Throwable t) {
             Log.w(TAG, "wake lock acquire failed", t);
         }
@@ -812,8 +812,8 @@ public class ScanEngine {
         engineTimingMs.clear();
         filesScannedCount.set(0);
         whitelistedDuringScan.clear();
+        acquireScanWakeLock();
         scanExecutor.execute(() -> {
-          acquireScanWakeLock();
           try {
             isBatchMode = true;
             NativeScanner.beginBatchScan();
@@ -946,8 +946,8 @@ public class ScanEngine {
         engineTimingMs.clear();
         filesScannedCount.set(0);
         appsScannedBase = 0;
+        acquireScanWakeLock();
         scanExecutor.execute(() -> {
-          acquireScanWakeLock();
           try {
             isBatchMode = true;
             NativeScanner.beginBatchScan();
