@@ -212,6 +212,10 @@ public class GuardService extends Service {
 
     private AIEngine aiEngine;
     private ScanEngine scanEngine;
+    /** Separate engine for background periodic + startup scans — has its own
+     *  {@code scanRunning}, so user-initiated scans on {@link #scanEngine}
+     *  are NEVER blocked by background scans. */
+    private ScanEngine backgroundScanEngine;
     private NetworkMonitor networkMonitor;
     private ProcessDetector processDetector;
     private volatile boolean engineLoading = true;
@@ -279,14 +283,15 @@ public class GuardService extends Service {
             engineLoading = false;
             Log.i(TAG, "engineLoading=false (engines ready)");
             updateNotification(getString(R.string.guard_protecting_status), true);
-            // Run a single Anti-FP scan on startup (not periodic)
-            Log.i(TAG, "Starting initial Anti-FP scan...");
-            scanEngine.setBackgroundScan(true);
+            // Startup anti-FP scan on the BACKGROUND engine (separate
+            // instance → never blocks user-initiated scans).
+            backgroundScanEngine.setBackgroundScan(true);
             try {
-                scanEngine.scanAllAppsAntiFp();
+                backgroundScanEngine.scanAllAppsAntiFp();
             } catch (Throwable t) {
                 Log.e(TAG, "Initial Anti-FP scan failed", t);
             }
+            startPeriodicScans();
             startServiceMonitors();
             startDownloadMonitor();
             startFullStorageMonitor();
@@ -297,6 +302,8 @@ public class GuardService extends Service {
     private void initializeEngines() {
         aiEngine = new AIEngine(this);
         scanEngine = new ScanEngine(this, aiEngine);
+        backgroundScanEngine = new ScanEngine(this, aiEngine);
+        backgroundScanEngine.setBackgroundScan(true);
         networkMonitor = new NetworkMonitor(this);
         processDetector = new ProcessDetector(this);
 
@@ -427,8 +434,30 @@ public class GuardService extends Service {
         networkMonitor.startMonitoring();
     }
 
+    private void startPeriodicScans() {
+        if (com.hydradragon.antivirus.engine.ScanSchedule.isPeriodicScanEnabled(this)) {
+            int quickMin = com.hydradragon.antivirus.engine.ScanSchedule.getQuickScanIntervalMinutes(this);
+            int fullMin = com.hydradragon.antivirus.engine.ScanSchedule.getFullScanIntervalMinutes(this);
+            boolean wakelock = com.hydradragon.antivirus.engine.ScanSchedule.isScanWakeLockEnabled(this);
+            // Must outlive the scheduled tasks, so reference from the enclosing
+            // instance rather than a captured local (which would be collected
+            // after the first completion). Each periodic scan uses the
+            // backgroundScanEngine (separate instance → own scanRunning).
+            ScanEngine bg = backgroundScanEngine;
+            scheduler.scheduleAtFixedRate(() -> {
+                try { bg.scanAllApps(false); } catch (Throwable t) { Log.e(TAG, "Periodic quick scan failed", t); }
+            }, quickMin, quickMin, TimeUnit.MINUTES);
+            scheduler.scheduleAtFixedRate(() -> {
+                try { bg.scanAllApps(true); } catch (Throwable t) { Log.e(TAG, "Periodic full scan failed", t); }
+            }, fullMin, fullMin, TimeUnit.MINUTES);
+            Log.i(TAG, "Periodic scans scheduled: quick=" + quickMin + "m, full=" + fullMin + "m, wakelock=" + wakelock);
+        } else {
+            Log.i(TAG, "Periodic scans disabled by user setting");
+        }
+    }
+
     private void startServiceMonitors() {
-        scheduler = Executors.newScheduledThreadPool(2);
+        scheduler = Executors.newScheduledThreadPool(4);
 
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();
