@@ -425,4 +425,9 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scan_system_toggle">Quét tệp hệ thống — không khuyến nghị trừ khi thiết bị đã root</string>
     <string name="scan_system_on_toast">Đã bật quét tệp hệ thống — có thể gắn cờ các ứng dụng hệ thống hợp pháp</string>
     <string name="scan_system_off_toast">Đã tắt quét tệp hệ thống — các ứng dụng hệ thống sẽ bị bỏ qua</string>
+    <string name="clear_scan_cache_btn">Xóa Bộ Nhớ Đệm Quét</string>
+    <string name="cache_session">Bộ Nhớ Đệm Phiên (tạm thời)</string>
+    <string name="cache_anti_fp">Bộ Nhớ Đệm Anti-FP (dương tính giả)</string>
+    <string name="cache_anti_fn">Bộ Nhớ Đệm Anti-FN (âm tính giả)</string>
+    <string name="cache_cleared">Đã xóa các bộ nhớ đệm đã chọn</string>
 </resources>

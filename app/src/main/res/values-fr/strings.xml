@@ -425,4 +425,9 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="scan_system_toggle">Analyser les fichiers système — déconseillé sauf si l\'appareil est rooté</string>
     <string name="scan_system_on_toast">Analyse des fichiers système activée — peut signaler des applications système légitimes</string>
     <string name="scan_system_off_toast">Analyse des fichiers système désactivée — les applications système seront ignorées</string>
+    <string name="clear_scan_cache_btn">Vider le Cache d\'Analyse</string>
+    <string name="cache_session">Cache de Session (temporaire)</string>
+    <string name="cache_anti_fp">Cache Anti-FP (faux positifs)</string>
+    <string name="cache_anti_fn">Cache Anti-FN (faux négatifs)</string>
+    <string name="cache_cleared">Caches sélectionnées vidées</string>
 </resources>

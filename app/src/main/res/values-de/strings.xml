@@ -425,4 +425,9 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="scan_system_toggle">Systemdateien scannen — nicht empfohlen, außer das Gerät ist gerootet</string>
     <string name="scan_system_on_toast">Systemdateiscan aktiviert — kann legitime System-Apps markieren</string>
     <string name="scan_system_off_toast">Systemdateiscan deaktiviert — System-Apps werden übersprungen</string>
+    <string name="clear_scan_cache_btn">Scan-Cache leeren</string>
+    <string name="cache_session">Sitzungscache (temporär)</string>
+    <string name="cache_anti_fp">Anti-FP-Cache (Fehlalarme)</string>
+    <string name="cache_anti_fn">Anti-FN-Cache (falsch Negative)</string>
+    <string name="cache_cleared">Ausgewählte Caches gelöscht</string>
 </resources>

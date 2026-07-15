@@ -425,4 +425,9 @@
     <string name="scan_system_toggle">Сканувати системні файли — не рекомендується, якщо пристрій не рутовано</string>
     <string name="scan_system_on_toast">Сканування системних файлів увімкнено — може позначати легітимні системні додатки</string>
     <string name="scan_system_off_toast">Сканування системних файлів вимкнено — системні додатки пропускатимуться</string>
+    <string name="clear_scan_cache_btn">Очистити кеш сканування</string>
+    <string name="cache_session">Кеш сеансу (тимчасовий)</string>
+    <string name="cache_anti_fp">Кеш Anti-FP (хибні спрацьовування)</string>
+    <string name="cache_anti_fn">Кеш Anti-FN (хибні негативні)</string>
+    <string name="cache_cleared">Вибрані кеші очищено</string>
 </resources>

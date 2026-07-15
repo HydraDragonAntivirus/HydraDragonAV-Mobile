@@ -425,4 +425,9 @@
     <string name="scan_system_toggle">システムファイルをスキャン — デバイスがroot化されていない限り推奨しません</string>
     <string name="scan_system_on_toast">システムファイルスキャン有効 — 正規のシステムアプリにフラグが付く可能性があります</string>
     <string name="scan_system_off_toast">システムファイルスキャン無効 — システムアプリはスキップされます</string>
+    <string name="clear_scan_cache_btn">スキャンキャッシュをクリア</string>
+    <string name="cache_session">セッションキャッシュ（一時）</string>
+    <string name="cache_anti_fp">Anti-FPキャッシュ（誤検知）</string>
+    <string name="cache_anti_fn">Anti-FNキャッシュ（見逃し）</string>
+    <string name="cache_cleared">選択したキャッシュをクリアしました</string>
 </resources>

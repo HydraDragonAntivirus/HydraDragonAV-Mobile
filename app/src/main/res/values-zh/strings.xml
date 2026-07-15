@@ -425,4 +425,9 @@
     <string name="scan_system_toggle">扫描系统文件 — 除非设备已 root，否则不推荐</string>
     <string name="scan_system_on_toast">系统文件扫描已启用 — 可能会标记合法的系统应用</string>
     <string name="scan_system_off_toast">系统文件扫描已禁用 — 系统应用将被跳过</string>
+    <string name="clear_scan_cache_btn">清除扫描缓存</string>
+    <string name="cache_session">会话缓存（临时）</string>
+    <string name="cache_anti_fp">反误报缓存（误报）</string>
+    <string name="cache_anti_fn">反漏报缓存（漏报）</string>
+    <string name="cache_cleared">已清除选定的缓存</string>
 </resources>

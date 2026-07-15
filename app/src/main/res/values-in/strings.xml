@@ -425,4 +425,9 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scan_system_toggle">Pindai File Sistem — tidak disarankan kecuali perangkat di-root</string>
     <string name="scan_system_on_toast">Pemindaian file sistem diaktifkan — mungkin menandai aplikasi sistem yang sah</string>
     <string name="scan_system_off_toast">Pemindaian file sistem dinonaktifkan — aplikasi sistem akan dilewati</string>
+    <string name="clear_scan_cache_btn">Hapus Cache Pindai</string>
+    <string name="cache_session">Cache Sesi (sementara)</string>
+    <string name="cache_anti_fp">Cache Anti-FP (positif palsu)</string>
+    <string name="cache_anti_fn">Cache Anti-FN (negatif palsu)</string>
+    <string name="cache_cleared">Cache yang dipilih telah dibersihkan</string>
 </resources>

@@ -425,4 +425,9 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="scan_system_toggle">Skanuj pliki systemowe — niezalecane, chyba że urządzenie jest zrootowane</string>
     <string name="scan_system_on_toast">Skanowanie plików systemowych włączone — może oznaczać legalne aplikacje systemowe</string>
     <string name="scan_system_off_toast">Skanowanie plików systemowych wyłączone — aplikacje systemowe zostaną pominięte</string>
+    <string name="clear_scan_cache_btn">Wyczyść Pamięć Podręczną Skanowania</string>
+    <string name="cache_session">Pamięć Podręczna Sesji (tymczasowa)</string>
+    <string name="cache_anti_fp">Pamięć Podręczna Anti-FP (fałszywe pozytywy)</string>
+    <string name="cache_anti_fn">Pamięć Podręczna Anti-FN (fałszywe negatywy)</string>
+    <string name="cache_cleared">Wybrane pamięci podręczne wyczyszczone</string>
 </resources>

@@ -425,4 +425,9 @@
     <string name="scan_system_toggle">اسکن فایل‌های سیستم — توصیه نمی‌شود مگر اینکه دستگاه روت شده باشد</string>
     <string name="scan_system_on_toast">اسکن فایل‌های سیستم فعال شد — ممکن است برنامه‌های سیستمی قانونی را پرچم‌گذاری کند</string>
     <string name="scan_system_off_toast">اسکن فایل‌های سیستم غیرفعال شد — برنامه‌های سیستمی رد خواهند شد</string>
+    <string name="clear_scan_cache_btn">پاک کردن حافظه نهان اسکن</string>
+    <string name="cache_session">حافظه نهان جلسه (موقت)</string>
+    <string name="cache_anti_fp">حافظه نهان Anti-FP (مثبت کاذب)</string>
+    <string name="cache_anti_fn">حافظه نهان Anti-FN (منفی کاذب)</string>
+    <string name="cache_cleared">حافظه‌های نهان انتخاب شده پاک شدند</string>
 </resources>

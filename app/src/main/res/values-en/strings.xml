@@ -79,4 +79,9 @@
     <string name="scan_system_toggle">Scan System Files — not recommended unless device is rooted</string>
     <string name="scan_system_on_toast">System file scanning enabled — may flag legitimate system apps</string>
     <string name="scan_system_off_toast">System file scanning disabled — system apps will be skipped</string>
+    <string name="clear_scan_cache_btn">Clear Scan Cache</string>
+    <string name="cache_session">Session Cache (temporary)</string>
+    <string name="cache_anti_fp">Anti-FP Cache (false positives)</string>
+    <string name="cache_anti_fn">Anti-FN Cache (false negatives)</string>
+    <string name="cache_cleared">Selected caches cleared</string>
 </resources>

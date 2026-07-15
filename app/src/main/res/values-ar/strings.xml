@@ -425,4 +425,9 @@
     <string name="scan_system_toggle">مسح ملفات النظام — غير موصى به ما لم يكن الجهاز مجذر</string>
     <string name="scan_system_on_toast">تم تفعيل مسح ملفات النظام — قد يتم وضع علامة على تطبيقات النظام المشروعة</string>
     <string name="scan_system_off_toast">تم تعطيل مسح ملفات النظام — سيتم تخطي تطبيقات النظام</string>
+    <string name="clear_scan_cache_btn">مسح ذاكرة التخزين المؤقت للفحص</string>
+    <string name="cache_session">ذاكرة تخزين مؤقت للجلسة (مؤقتة)</string>
+    <string name="cache_anti_fp">ذاكرة تخزين مؤقت لمضادة FP (إيجابيات كاذبة)</string>
+    <string name="cache_anti_fn">ذاكرة تخزين مؤقت لمضادة FN (سلبيات كاذبة)</string>
+    <string name="cache_cleared">تم مسح ذاكرات التخزين المؤقت المحددة</string>
 </resources>

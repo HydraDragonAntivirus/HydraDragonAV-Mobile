@@ -424,4 +424,9 @@
     <string name="scan_system_toggle">सिस्टम फ़ाइलें स्कैन करें — डिवाइस रूटेड होने पर ही अनुशंसित</string>
     <string name="scan_system_on_toast">सिस्टम फ़ाइल स्कैनिंग सक्षम — वैध सिस्टम ऐप्स को फ़्लैग कर सकता है</string>
     <string name="scan_system_off_toast">सिस्टम फ़ाइल स्कैनिंग अक्षम — सिस्टम ऐप्स छोड़ दिए जाएंगे</string>
+    <string name="clear_scan_cache_btn">स्कैन कैश साफ़ करें</string>
+    <string name="cache_session">सत्र कैश (अस्थायी)</string>
+    <string name="cache_anti_fp">Anti-FP कैश (गलत सकारात्मक)</string>
+    <string name="cache_anti_fn">Anti-FN कैश (गलत नकारात्मक)</string>
+    <string name="cache_cleared">चयनित कैश साफ़ हो गए</string>
 </resources>

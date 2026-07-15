@@ -506,6 +506,8 @@ public class SettingsFragment extends Fragment {
                 com.hydradragon.antivirus.engine.WebsiteWhitelist::remove));
         addBtn("📜 " + getString(R.string.auto_rules_manager_btn), color(R.color.bg_secondary),
             v -> showAutoRulesManagerDialog());
+        addBtn("🗑 " + getString(R.string.clear_scan_cache_btn), color(R.color.bg_secondary),
+            v -> showClearCacheDialog());
 
         addHeader(getString(R.string.knowledge_db_header));
         addBtn("📤 " + getString(R.string.knowledge_db_export_btn), color(R.color.bg_secondary),
@@ -1190,6 +1192,41 @@ public class SettingsFragment extends Fragment {
                 }
                 com.hydradragon.antivirus.engine.MaxScanFileSize.setMaxMb(requireContext(), mb);
                 Toast.makeText(getContext(), getString(R.string.max_scan_file_size_saved), Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
+    }
+
+    /** Shows a multi-check dialog letting the user choose which scan caches
+     *  to clear. Session cache (in-memory, resets on app restart), Anti-FP
+     *  cache (persistent SQLite), and Anti-FN cache (persistent SQLite). */
+    private void showClearCacheDialog() {
+        String[] items = {
+            getString(R.string.cache_session),
+            getString(R.string.cache_anti_fp),
+            getString(R.string.cache_anti_fn),
+        };
+        boolean[] checked = {true, true, true};
+        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.clear_scan_cache_btn))
+            .setMultiChoiceItems(items, checked, (d, which, isChecked) -> checked[which] = isChecked)
+            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
+                boolean any = false;
+                if (checked[0]) {
+                    com.hydradragon.antivirus.engine.ScanEngine.clearCache();
+                    any = true;
+                }
+                if (checked[1]) {
+                    try { new com.hydradragon.antivirus.engine.AntiFpCache(requireContext()).clear(); }
+                    catch (Exception ignore) {}
+                    any = true;
+                }
+                if (checked[2]) {
+                    try { new com.hydradragon.antivirus.engine.AntiFnCache(requireContext()).clear(); }
+                    catch (Exception ignore) {}
+                    any = true;
+                }
+                if (any) Toast.makeText(getContext(), getString(R.string.cache_cleared), Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton(getString(R.string.btn_cancel), null)
             .show();
