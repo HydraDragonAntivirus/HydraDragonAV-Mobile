@@ -932,6 +932,44 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }).resolve::<LogErrorAndDefault>()
 }
 
+/// `boolean nativeIsHashWhitelistedForFile(String path, String md5)` — like
+/// nativeIsHashWhitelisted, but first validates the file header (must begin
+/// with ZIP magic bytes PK\x04\x03) so non-APK files are never whitelisted.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeIsHashWhitelistedForFile<'local>(
+    mut env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    path: JString<'local>,
+    hash: JString<'local>,
+) -> jboolean {
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let p: String = match path.try_to_string(env) {
+            Ok(s) => s,
+            Err(_) => return Ok(JNI_FALSE),
+        };
+        let h: String = match hash.try_to_string(env) {
+            Ok(s) => s,
+            Err(_) => return Ok(JNI_FALSE),
+        };
+        // Reject non-ZIP files by checking magic bytes (PK\x04\x03 = 0x504B).
+        match std::fs::File::open(&p) {
+            Ok(mut f) => {
+                let mut magic = [0u8; 2];
+                if std::io::Read::read_exact(&mut f, &mut magic).is_err() || magic != [0x50, 0x4B] {
+                    return Ok(JNI_FALSE);
+                }
+            }
+            Err(_) => return Ok(JNI_FALSE),
+        }
+        let hit = ENGINE
+            .get()
+            .and_then(|l| l.read().ok())
+            .map(|e| e.whitelist.as_ref().map(|wl| wl.contains(&h)).unwrap_or(false))
+            .unwrap_or(false);
+        Ok(if hit { JNI_TRUE } else { JNI_FALSE })
+    }).resolve::<LogErrorAndDefault>()
+}
+
 /// `String nativeScanUrl(String url)` — malicious category (e.g. "PHISHING")
 /// for an http(s) URL, or "" if clean / not a URL. All membership is the native
 /// xor-filter URL/domain scanner, so no filter sits in the Java heap.

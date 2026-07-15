@@ -172,6 +172,7 @@ public final class NativeScanner {
     private static native String nativeStatus();
 
     private static native boolean nativeIsHashWhitelisted(String md5);
+    private static native boolean nativeIsHashWhitelistedForFile(String path, String md5);
 
     private static native String nativeScanUrl(String url);
 
@@ -351,6 +352,13 @@ public final class NativeScanner {
     public static boolean isHashWhitelisted(String md5) {
         if (!isReady() || md5 == null || md5.isEmpty()) return false;
         try { return nativeIsHashWhitelisted(md5); } catch (Throwable t) { return false; }
+    }
+
+    /** True if the NSRL xor filter contains {@code md5} AND {@code path} is a
+     *  ZIP/APK (magic bytes validated in Rust). Non-APK files are rejected. */
+    public static boolean isHashWhitelistedForFile(String path, String md5) {
+        if (!isReady() || path == null || md5 == null || md5.isEmpty()) return false;
+        try { return nativeIsHashWhitelistedForFile(path, md5); } catch (Throwable t) { return false; }
     }
 
     /** Scan OCR'd on-screen text (from ScreenCaptureService) against the

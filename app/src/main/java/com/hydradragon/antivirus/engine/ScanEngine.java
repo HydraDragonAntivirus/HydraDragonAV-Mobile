@@ -522,9 +522,18 @@ public class ScanEngine {
     }
 
     /** True if {@code hash} (a whole-APK/file MD5) is a known-good NSRL hash.
-     *  Delegates to the native xor filter whitelist (native memory). */
+     *  Delegates to the native xor filter whitelist (native memory).
+     *  ONLY for files already confirmed to be APKs — does NOT check file header. */
     private boolean isHashWhitelisted(String hash) {
         return hash != null && NativeScanner.isHashWhitelisted(hash.toLowerCase(java.util.Locale.US));
+    }
+
+    /** Like {@link #isHashWhitelisted} but the Rust side first checks whether
+     *  {@code path} begins with ZIP magic bytes (PK\x04\x03) so non-APK files
+     *  (EICAR, PDF, etc.) are never whitelisted. */
+    private boolean isFileHashWhitelisted(String path, String hash) {
+        if (path == null || hash == null) return false;
+        return NativeScanner.isHashWhitelistedForFile(path, hash.toLowerCase(java.util.Locale.US));
     }
 
     /** True if {@code pkg} is an exact known-good NSRL package name. Spoofable on
@@ -1300,8 +1309,9 @@ public class ScanEngine {
                     return true;
                 }
 
-                // 4. Check native NSRL Whitelist (MD5 clean)
-                if (isHashWhitelisted(fileMd5)) {
+                // 4. Check native NSRL Whitelist (MD5 clean) — Rust validates file header
+                //    (must be ZIP/APK) before the xor-filter lookup.
+                if (isFileHashWhitelisted(file.getAbsolutePath(), fileMd5)) {
                     Log.i(TAG, "NSRL Whitelist hit (MD5 clean): " + file.getAbsolutePath());
                     fileScanCache.put(fileMd5, java.util.Optional.empty());
                     return true;
