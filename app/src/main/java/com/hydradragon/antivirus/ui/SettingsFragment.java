@@ -218,8 +218,10 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean wakeLockOn = com.hydradragon.antivirus.engine.ScanSchedule.isScanWakeLockEnabled(requireContext());
+        com.hydradragon.antivirus.engine.ScanEngine.setBackgroundPriority(!wakeLockOn);
         addToggle(getString(R.string.scan_wakelock_toggle), wakeLockOn, (btn, on) -> {
             com.hydradragon.antivirus.engine.ScanSchedule.setScanWakeLockEnabled(requireContext(), on);
+            com.hydradragon.antivirus.engine.ScanEngine.setBackgroundPriority(!on);
             // Read fresh at the start of each scan (acquireScanWakeLock), so no
             // service restart needed — takes effect on the next scan.
             Toast.makeText(getContext(), on

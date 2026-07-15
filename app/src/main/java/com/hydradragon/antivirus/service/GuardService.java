@@ -300,6 +300,8 @@ public class GuardService extends Service {
     }
 
     private void initializeEngines() {
+        com.hydradragon.antivirus.engine.ScanEngine.setBackgroundPriority(
+            !com.hydradragon.antivirus.engine.ScanSchedule.isScanWakeLockEnabled(this));
         aiEngine = new AIEngine(this);
         scanEngine = new ScanEngine(this, aiEngine);
         backgroundScanEngine = new ScanEngine(this, aiEngine);
