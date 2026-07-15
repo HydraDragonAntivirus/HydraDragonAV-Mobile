@@ -787,7 +787,7 @@ public class ScanEngine {
         int reqType = pendingScanType;
         pendingScanType = SCAN_TYPE_NONE;
         if (reqType == SCAN_TYPE_NONE) {
-            reqType = antiFpMode ? SCAN_TYPE_ANTI_FP : (isFullScan ? SCAN_TYPE_FULL : SCAN_TYPE_QUICK);
+            reqType = isFullScan ? SCAN_TYPE_FULL : SCAN_TYPE_QUICK;
         }
         // Snapshot background flag AND running type BEFORE the CAS to close
         // races where the background scan's finally block clears isBackgroundScan
