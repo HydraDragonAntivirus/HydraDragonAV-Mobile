@@ -789,17 +789,20 @@ public class ScanEngine {
         if (reqType == SCAN_TYPE_NONE) {
             reqType = antiFpMode ? SCAN_TYPE_ANTI_FP : (isFullScan ? SCAN_TYPE_FULL : SCAN_TYPE_QUICK);
         }
-        // Snapshot background flag BEFORE the CAS to close a race where the
-        // background scan's finally block clears both scanRunning and
-        // isBackgroundScan between the CAS failure and the check below.
+        // Snapshot background flag AND running type BEFORE the CAS to close
+        // races where the background scan's finally block clears isBackgroundScan
+        // (or the scan thread sets runningScanType) between those reads and the
+        // checks below.
         boolean bgScan = isBackgroundScan;
+        int currentType = runningScanType;
         if (!scanRunning.compareAndSet(false, true)) {
-            if (bgScan) {
+            if (bgScan && currentType == reqType) {
                 isBackgroundScan = false;
-                Log.d(TAG, "scanAllApps: adopted background scan for user");
+                Log.d(TAG, "scanAllApps: adopted background scan for user (type=" + reqType + ")");
                 return true;
             }
-            Log.w(TAG, "scanAllApps: a scan is already running, skipping this request");
+            Log.w(TAG, "scanAllApps: scan already running (type=" + currentType
+                + "), skipping request (type=" + reqType + ")");
             return false;
         }
         runningScanType = reqType;
