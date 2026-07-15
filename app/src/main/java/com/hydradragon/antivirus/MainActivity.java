@@ -335,10 +335,23 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // Draw Over Other Apps (overlay) — optional, asked once at first launch.
+        // Without this permission, the MalwareFoundActivity dialog overlay won't
+        // show when the user is in another app; the alert still arrives as a
+        // notification instead. MUST be checked BEFORE Web Shield, because both
+        // Web Shield buttons (Skip / Grant) bypass checkMandatoryPermissions()
+        // and go straight to startAppUI().
+        SharedPreferences prefs = getSharedPreferences("hydra_prefs", MODE_PRIVATE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this)) {
+            if (!prefs.getBoolean("overlay_decided", false)) {
+                showOptionalOverlayDialog();
+                return;
+            }
+        }
+
         // Optional local DNS-filtering VPN (Web Shield). The system VPN/key icon
         // only appears once VpnService.prepare() consent is granted AND the
         // service establishes the tunnel — so we must request consent here.
-        SharedPreferences prefs = getSharedPreferences("hydra_prefs", MODE_PRIVATE);
         if (!prefs.getBoolean("web_shield_decided", false)) {
             showOptionalWebShieldDialog();
             return;
@@ -346,17 +359,6 @@ public class MainActivity extends AppCompatActivity {
         if (prefs.getBoolean("web_shield_enabled", false)) {
             startWebShield();   // re-arms the tunnel; drives startAppUI()
             return;
-        }
-
-        // Draw Over Other Apps (overlay) — optional, asked once at first launch.
-        // Without this permission, the MalwareFoundActivity dialog overlay won't
-        // show when the user is in another app; the alert still arrives as a
-        // notification instead.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this)) {
-            if (!prefs.getBoolean("overlay_decided", false)) {
-                showOptionalOverlayDialog();
-                return;
-            }
         }
 
         startAppUI();
