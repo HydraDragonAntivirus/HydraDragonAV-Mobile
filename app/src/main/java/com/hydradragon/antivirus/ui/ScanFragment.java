@@ -204,9 +204,24 @@ public class ScanFragment extends Fragment {
                 // confirmation (not the full Destroy/Ignore/Ignore-signature
                 // dialog below) since an unconfirmed bare button risks
                 // accidental taps, then reuses the exact same destroy logic.
+                StringBuilder delMsg = new StringBuilder();
+                delMsg.append(getString(R.string.threat_found_dialog_msg, threat.getAppName(), threat.getRiskScore()));
+                if (!threat.getReasons().isEmpty()) {
+                    delMsg.append("\n\n");
+                    for (String r : threat.getReasons()) {
+                        delMsg.append("▸ ").append(r).append("\n");
+                    }
+                }
+                android.widget.TextView delTv = new android.widget.TextView(getContext());
+                delTv.setText(delMsg.toString().trim());
+                delTv.setTextSize(14);
+                delTv.setPadding(48, 24, 48, 24);
+                delTv.setAutoLinkMask(android.text.util.Linkify.WEB_URLS);
+                delTv.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+                delTv.setTextColor(0xFFE6EDF3);
                 new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                     .setTitle(getString(R.string.btn_destroy))
-                    .setMessage(getString(R.string.threat_found_dialog_msg, threat.getAppName(), threat.getRiskScore()))
+                    .setView(delTv)
                     .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> destroyThreat(threat))
                     .setNegativeButton(getString(R.string.btn_cancel), null)
                     .show();
@@ -214,9 +229,24 @@ public class ScanFragment extends Fragment {
 
             @Override
             public void onThreatClick(ThreatResult threat) {
+                StringBuilder msg = new StringBuilder();
+                msg.append(getString(R.string.threat_found_dialog_msg, threat.getAppName(), threat.getRiskScore()));
+                if (!threat.getReasons().isEmpty()) {
+                    msg.append("\n\n");
+                    for (String r : threat.getReasons()) {
+                        msg.append("▸ ").append(r).append("\n");
+                    }
+                }
+                android.widget.TextView tv = new android.widget.TextView(getContext());
+                tv.setText(msg.toString().trim());
+                tv.setTextSize(14);
+                tv.setPadding(48, 24, 48, 24);
+                tv.setAutoLinkMask(android.text.util.Linkify.WEB_URLS);
+                tv.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+                tv.setTextColor(0xFFE6EDF3);
             new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle(getString(R.string.threat_found_dialog_title))
-                .setMessage(getString(R.string.threat_found_dialog_msg, threat.getAppName(), threat.getRiskScore()))
+                .setView(tv)
                 .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> destroyThreat(threat))
                 .setNegativeButton(getString(R.string.btn_ignore), (dialog, which) -> {
                     // Whitelist this package/file so it is never flagged again.
