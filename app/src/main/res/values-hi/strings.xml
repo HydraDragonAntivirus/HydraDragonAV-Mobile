@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ स्कैन रोक दिया गया</string>
     <string name="scanned">स्कैन किया गया</string>
     <string name="threat">खतरा</string>
+    <string name="active_threats">सक्रिय खतरे</string>
     <string name="found_threats">⚠ दुर्भावनापूर्ण फ़ाइलें मिलीं</string>
     <string name="threat_found_dialog_title">⚠ खतरा मिला</string>
     <string name="threat_found_dialog_msg">%1$s

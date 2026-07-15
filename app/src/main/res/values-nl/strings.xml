@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ Scan gestopt</string>
     <string name="scanned">GESCAND</string>
     <string name="threat">DREIGING</string>
+    <string name="active_threats">ACTIEVE BEDREIGINGEN</string>
     <string name="found_threats">⚠ SCHADELIJKE BESTANDEN GEDETECTEERD</string>
     <string name="threat_found_dialog_title">⚠ Dreiging gedetecteerd</string>
     <string name="threat_found_dialog_msg">%1$s

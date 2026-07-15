@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ Analyse arrêtée</string>
     <string name="scanned">ANALYSÉ</string>
     <string name="threat">MENACE</string>
+    <string name="active_threats">MENACES ACTIVES</string>
     <string name="found_threats">⚠ FICHIERS MALVEILLANTS DÉTECTÉS</string>
     <string name="threat_found_dialog_title">⚠ Menace détectée</string>
     <string name="threat_found_dialog_msg">%1$s

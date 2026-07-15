@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ 스캔이 중지되었습니다</string>
     <string name="scanned">스캔됨</string>
     <string name="threat">위협</string>
+    <string name="active_threats">활성 위협</string>
     <string name="found_threats">⚠ 악성 파일 감지됨</string>
     <string name="threat_found_dialog_title">⚠ 위협 감지됨</string>
     <string name="threat_found_dialog_msg">%1$s

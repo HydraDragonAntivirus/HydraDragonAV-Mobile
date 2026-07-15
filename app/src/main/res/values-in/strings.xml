@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ Pemindaian dihentikan</string>
     <string name="scanned">DIPINDAI</string>
     <string name="threat">ANCAMAN</string>
+    <string name="active_threats">ANCAMAN AKTIF</string>
     <string name="found_threats">⚠ FILE BERBAHAYA TERDETEKSI</string>
     <string name="threat_found_dialog_title">⚠ Ancaman Terdeteksi</string>
     <string name="threat_found_dialog_msg">%1$s

@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ Сканування зупинено</string>
     <string name="scanned">ПРОСКАНОВАНО</string>
     <string name="threat">ЗАГРОЗА</string>
+    <string name="active_threats">АКТИВНІ ЗАГРОЗИ</string>
     <string name="found_threats">⚠ ВИЯВЛЕНО ШКІДЛИВІ ФАЙЛИ</string>
     <string name="threat_found_dialog_title">⚠ Виявлено загрозу</string>
     <string name="threat_found_dialog_msg">%1$s

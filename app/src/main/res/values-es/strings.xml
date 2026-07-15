@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ Escaneo detenido</string>
     <string name="scanned">ESCANEADO</string>
     <string name="threat">AMENAZA</string>
+    <string name="active_threats">AMENAZAS ACTIVAS</string>
     <string name="found_threats">⚠ ARCHIVOS MALICIOSOS DETECTADOS</string>
     <string name="threat_found_dialog_title">⚠ Amenaza Detectada</string>
     <string name="threat_found_dialog_msg">%1$s

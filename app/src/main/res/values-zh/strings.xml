@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ 扫描已停止</string>
     <string name="scanned">已扫描</string>
     <string name="threat">威胁</string>
+    <string name="active_threats">活跃威胁</string>
     <string name="found_threats">⚠ 检测到恶意文件</string>
     <string name="threat_found_dialog_title">⚠ 检测到威胁</string>
     <string name="threat_found_dialog_msg">%1$s

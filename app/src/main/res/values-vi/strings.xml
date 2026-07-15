@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ Đã dừng quét</string>
     <string name="scanned">ĐÃ QUÉT</string>
     <string name="threat">MỐI ĐE DỌA</string>
+    <string name="active_threats">MỐI ĐE DỌA ĐANG HOẠT ĐỘNG</string>
     <string name="found_threats">⚠ PHÁT HIỆN TỆP ĐỘC HẠI</string>
     <string name="threat_found_dialog_title">⚠ Đã Phát hiện Mối đe dọa</string>
     <string name="threat_found_dialog_msg">%1$s

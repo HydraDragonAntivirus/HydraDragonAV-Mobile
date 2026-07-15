@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ تم إيقاف الفحص</string>
     <string name="scanned">تم فحصه</string>
     <string name="threat">تهديد</string>
+    <string name="active_threats">تهديدات نشطة</string>
     <string name="found_threats">⚠ تم اكتشاف ملفات ضارة</string>
     <string name="threat_found_dialog_title">⚠ تم اكتشاف تهديد</string>
     <string name="threat_found_dialog_msg">%1$s

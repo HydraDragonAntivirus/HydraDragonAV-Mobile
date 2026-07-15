@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ Scan gestoppt</string>
     <string name="scanned">GESCANNT</string>
     <string name="threat">BEDROHUNG</string>
+    <string name="active_threats">AKTIVE BEDROHUNGEN</string>
     <string name="found_threats">⚠ SCHÄDLICHE DATEIEN GEFUNDEN</string>
     <string name="threat_found_dialog_title">⚠ Bedrohung erkannt</string>
     <string name="threat_found_dialog_msg">%1$s

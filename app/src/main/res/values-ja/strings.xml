@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ スキャンを停止しました</string>
     <string name="scanned">スキャン済み</string>
     <string name="threat">脅威</string>
+    <string name="active_threats">アクティブな脅威</string>
     <string name="found_threats">⚠ 悪意のあるファイルを検出</string>
     <string name="threat_found_dialog_title">⚠ 脅威を検出</string>
     <string name="threat_found_dialog_msg">%1$s

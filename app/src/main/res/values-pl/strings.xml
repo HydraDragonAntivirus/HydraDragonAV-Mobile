@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ Skanowanie zatrzymane</string>
     <string name="scanned">PRZESKANOWANO</string>
     <string name="threat">ZAGROŻENIE</string>
+    <string name="active_threats">AKTYWNE ZAGROŻENIA</string>
     <string name="found_threats">⚠ WYKRYTO ZŁOŚLIWE PLIKI</string>
     <string name="threat_found_dialog_title">⚠ Wykryto zagrożenie</string>
     <string name="threat_found_dialog_msg">%1$s

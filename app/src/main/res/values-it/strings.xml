@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ Scansione interrotta</string>
     <string name="scanned">SCANSIONATI</string>
     <string name="threat">MINACCIA</string>
+    <string name="active_threats">MINACCE ATTIVE</string>
     <string name="found_threats">⚠ FILE DANNOSI RILEVATI</string>
     <string name="threat_found_dialog_title">⚠ Minaccia rilevata</string>
     <string name="threat_found_dialog_msg">%1$s

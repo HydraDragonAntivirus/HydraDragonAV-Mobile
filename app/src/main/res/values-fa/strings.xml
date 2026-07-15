@@ -110,6 +110,7 @@
     <string name="scan_stopped">⏹ اسکن متوقف شد</string>
     <string name="scanned">اسکن‌شده</string>
     <string name="threat">تهدید</string>
+    <string name="active_threats">تهدیدهای فعال</string>
     <string name="found_threats">⚠ فایل‌های مخرب شناسایی شد</string>
     <string name="threat_found_dialog_title">⚠ تهدید شناسایی شد</string>
     <string name="threat_found_dialog_msg">%1$s
