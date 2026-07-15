@@ -429,8 +429,8 @@ public class ScanEngine {
                 // under the other still running.
                 scanWakeLock.setReferenceCounted(true);
             }
-            // 15 min cap so a hung scan can't drain the battery forever.
-            scanWakeLock.acquire(15 * 60 * 1000L);
+            // 2 hour cap so a hung scan can't drain the battery forever.
+            scanWakeLock.acquire(2 * 60 * 60 * 1000L);
         } catch (Throwable t) {
             Log.w(TAG, "wake lock acquire failed", t);
         }
@@ -1369,7 +1369,7 @@ public class ScanEngine {
             updateAntiFnCache(v, live);
             boolean malicious = !live.isEmpty();
 
-            if (!malicious && v.permissions < 6) return true;
+            if (!malicious && v.permissions < 25) return true;
 
             ThreatResult.Builder b = new ThreatResult.Builder(path);
             b.setStandaloneFile(true);
@@ -1415,16 +1415,12 @@ public class ScanEngine {
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
                 }
             }
-            // Two-tier dangerous permissions (same as installed-app analysis):
-            // 13+ => almost certainly a malware (exceeds even heavy carriers
-            // like Turkcell ≈ 11), exactly 12 => suspicious. Raised from 9/10
-            // so common apps with 9-11 dangerous permissions aren't flagged.
             if (DetectionCategories.isEnabled(context, DetectionCategories.PERMISSIONS)) {
-                if (v.permissions >= 13) {
+                if (v.permissions >= 30) {
                     riskScore = 100;
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                    reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/36)");
-                } else if (v.permissions >= 12) {
+                    reasons.add("🔐 Virus permissions (" + v.permissions + "/36)");
+                } else if (v.permissions >= 25) {
                     riskScore = Math.max(riskScore, 40);
                     if (!hasRealThreat) {
                         b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
@@ -2040,20 +2036,13 @@ public class ScanEngine {
                         Log.w(TAG, "native scan error: " + v.error);
                     }
 
-                    // Two-tier dangerous-permission decision on the native count
-                    // (the full 36-permission "dangerous" set — see lib.rs
-                    // DANGEROUS_PERMS: SMS, call/phone, contacts, location, mic,
-                    // camera, calendar, sensors, nearby devices, storage, overlay).
-                    // 13+ = almost certainly malware (exceeds heavy carriers like
-                    // Turkcell ≈ 11); exactly 12 = suspicious. Raised from 9/10
-                    // so common apps with 9-11 dangerous permissions aren't flagged.
                     if (DetectionCategories.isEnabled(context, DetectionCategories.PERMISSIONS)) {
-                        if (v.permissions >= 13) {
+                        if (v.permissions >= 30) {
                             riskScore = 100;
                             builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                            reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/36)");
+                            reasons.add("🔐 Virus permissions (" + v.permissions + "/36)");
                             nativeCorroborated = true;
-                        } else if (v.permissions >= 12) {
+                        } else if (v.permissions >= 25) {
                             riskScore = Math.max(riskScore, 40);
                             if (riskScore < 50) builder.setThreatType(
                                 com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
@@ -2294,12 +2283,12 @@ public class ScanEngine {
             }
 
             if (DetectionCategories.isEnabled(context, DetectionCategories.PERMISSIONS)) {
-                if (v.permissions >= 13) {
+                if (v.permissions >= 30) {
                     riskScore = 100;
                     builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                    reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/36)");
+                    reasons.add("🔐 Virus permissions (" + v.permissions + "/36)");
                     nativeCorroborated = true;
-                } else if (v.permissions >= 12) {
+                } else if (v.permissions >= 25) {
                     riskScore = Math.max(riskScore, 40);
                     if (riskScore < 50) builder.setThreatType(
                         com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
@@ -2433,11 +2422,11 @@ public class ScanEngine {
             }
         }
         if (DetectionCategories.isEnabled(context, DetectionCategories.PERMISSIONS)) {
-            if (v.permissions >= 13) {
+            if (v.permissions >= 30) {
                 riskScore = 100;
                 b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                reasons.add("🔐 Excessive dangerous permissions (" + v.permissions + "/36)");
-            } else if (v.permissions >= 12) {
+                reasons.add("🔐 Virus permissions (" + v.permissions + "/36)");
+            } else if (v.permissions >= 25) {
                 riskScore = Math.max(riskScore, 40);
                 if (!hasRealThreat) {
                     b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
