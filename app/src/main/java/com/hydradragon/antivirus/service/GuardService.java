@@ -291,8 +291,8 @@ public class GuardService extends Service {
             } catch (Throwable t) {
                 Log.e(TAG, "Initial Anti-FP scan failed", t);
             }
-            startPeriodicScans();
             startServiceMonitors();
+            startPeriodicScans();
             startDownloadMonitor();
             startFullStorageMonitor();
             Log.i(TAG, "Guard Service active");
