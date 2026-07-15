@@ -308,6 +308,19 @@ public class GuardService extends Service {
             @Override public void onProgress(int c, int t, String p) { }
             @Override public void onThreatFound(ThreatResult threat) {
                 ThreatLogger.logThreat(GuardService.this, threat, "BACKGROUND SCAN");
+                if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {
+                    try {
+                        if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(GuardService.this)) {
+                            com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(
+                                GuardService.this, threat);
+                        } else {
+                            com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
+                                GuardService.this, threat);
+                        }
+                    } catch (Throwable t) {
+                        Log.e(TAG, "background auto-kill failed", t);
+                    }
+                }
             }
             @Override public void onScanComplete(com.hydradragon.antivirus.model.ScanResult r) { }
             @Override public void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo i) { }
@@ -355,22 +368,7 @@ public class GuardService extends Service {
                             Log.e(TAG, "sendThreatNotification failed", t);
                         }
                     }
-                    // Auto-kill/auto-delete + full-screen "MALWARE FOUND" only
-                    // for background/auto scans with no UI listener, excluding
-                    // the startup anti-FP cache scan (which must stay silent).
-                    if (uiScanCallback == null && !scanEngine.isBackgroundScan()) {
-                        try {
-                            if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(GuardService.this)) {
-                                com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(
-                                    GuardService.this, threat);
-                            } else {
-                                com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
-                                    GuardService.this, threat);
-                            }
-                        } catch (Throwable t) {
-                            Log.e(TAG, "threat response failed", t);
-                        }
-                    }
+
                     if (callback != null) callback.onThreatDetected(threat);
                 }
                 ScanEngine.ScanCallback ui = uiScanCallback;
