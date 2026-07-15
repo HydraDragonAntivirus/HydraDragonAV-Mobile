@@ -35,7 +35,9 @@ public class GuardService extends Service {
 
     private android.database.ContentObserver downloadObserver;
     private volatile long lastDownloadCheckMs = 0L;
-    private final java.util.List<android.os.FileObserver> extraStorageObservers = new java.util.ArrayList<>();
+    private android.database.ContentObserver fullStorageObserver;
+    private volatile long lastFullStorageCheckMs = 0L;
+    private final java.util.concurrent.atomic.AtomicBoolean recentFilesScheduled = new java.util.concurrent.atomic.AtomicBoolean();
 
     /** Register a ContentObserver on MediaStore.Downloads so we catch every
      *  new downloaded file in real time — scoped storage (Android 10+) makes
@@ -102,61 +104,71 @@ public class GuardService extends Service {
         });
     }
 
-    /** Optional (Settings toggle, default OFF — battery/CPU cost of one watcher
-     *  thread per storage root): real-time detection for files dropped straight
-     *  onto external/SD storage from a computer (USB/MTP), OUTSIDE Downloads —
-     *  the periodic Full Scan above still catches those, just not instantly.
-     *  Each observer only watches its root's immediate children (Android's
-     *  FileObserver isn't recursive) — a file copied into a SUBFOLDER of a
-     *  storage root still waits for the periodic Full Scan, same trade-off the
-     *  user was told about when enabling this. */
+    /** Observes ALL files across all storage via MediaStore (unlike the
+     *  root-only FileObserver approach which was not recursive). On any
+     *  content change, queries MediaStore for recently modified files outside
+     *  the Downloads folder (already covered by startDownloadMonitor) and
+     *  scans them. Off by default (Settings toggle — battery/query cost). */
     private void startFullStorageMonitor() {
         if (!getSharedPreferences("hydra_prefs", MODE_PRIVATE)
                 .getBoolean(KEY_REALTIME_STORAGE_WATCH, false)) {
             return;
         }
-        java.util.LinkedHashSet<String> roots = new java.util.LinkedHashSet<>();
-        try {
-            java.io.File primary = android.os.Environment.getExternalStorageDirectory();
-            if (primary != null) roots.add(primary.getAbsolutePath());
-        } catch (Throwable ignore) { }
-        try {
-            java.io.File[] vols = new java.io.File("/storage").listFiles();
-            if (vols != null) for (java.io.File v : vols) {
-                String n = v.getName();
-                if (v.isDirectory() && v.canRead() && !n.equals("self") && !n.equals("emulated"))
-                    roots.add(v.getAbsolutePath());
+        if (fullStorageObserver != null) return;
+        android.net.Uri filesUri = android.provider.MediaStore.Files.getContentUri("external");
+        fullStorageObserver = new android.database.ContentObserver(new android.os.Handler(android.os.Looper.getMainLooper())) {
+            @Override
+            public void onChange(boolean selfChange) { onChange(selfChange, null); }
+            @Override
+            public void onChange(boolean selfChange, android.net.Uri uri) {
+                scanRecentFiles();
             }
-        } catch (Throwable ignore) { }
+        };
+        getContentResolver().registerContentObserver(filesUri, true, fullStorageObserver);
+        Log.i(TAG, "MediaStore full-storage observer registered");
+    }
 
-        for (String rootPath : roots) {
-            java.io.File root = new java.io.File(rootPath);
-            android.os.FileObserver obs;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                obs = new android.os.FileObserver(root, android.os.FileObserver.CLOSE_WRITE) {
-                    @Override
-                    public void onEvent(int event, String path) {
-                        if (path == null) return;
-                        com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
-                            .onFileEvent(GuardService.this, rootPath, path);
-                        scanDownloadedFile(new java.io.File(root, path));
+    /** Query MediaStore.Files for recently modified files outside Downloads
+     *  and scan them. Runs debounced to avoid thrashing on bulk changes. */
+    private void scanRecentFiles() {
+        if (recentFilesScheduled.getAndSet(true)) return;
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            recentFilesScheduled.set(false);
+            com.hydradragon.antivirus.engine.ScanEngine.runOrchestrated(() -> {
+                try {
+                    long now = System.currentTimeMillis();
+                    long minModified = lastFullStorageCheckMs > 0 ? lastFullStorageCheckMs - 2000 : now - 30_000;
+                    lastFullStorageCheckMs = now;
+                    android.net.Uri uri = android.provider.MediaStore.Files.getContentUri("external");
+                    String[] projection = {
+                        android.provider.MediaStore.Files.FileColumns._ID,
+                        android.provider.MediaStore.Files.FileColumns.DATA,
+                        android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED,
+                        android.provider.MediaStore.Files.FileColumns.MIME_TYPE,
+                    };
+                    // Exclude Downloads (covered by scanMediaStoreDownloads)
+                    String downloadsPath = android.os.Environment
+                        .getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                        .getAbsolutePath();
+                    String selection = android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED + " >= ? AND "
+                        + android.provider.MediaStore.Files.FileColumns.DATA + " NOT LIKE ?";
+                    String[] selArgs = new String[]{ String.valueOf(minModified / 1000), downloadsPath + "/%" };
+                    try (android.database.Cursor c = getContentResolver().query(
+                            uri, projection, selection, selArgs, null)) {
+                        if (c == null) return;
+                        while (c.moveToNext()) {
+                            String path = c.getString(1);
+                            if (path == null || path.isEmpty()) continue;
+                            java.io.File file = new java.io.File(path);
+                            if (!file.exists() || !file.isFile()) continue;
+                            scanDownloadedFile(file);
+                        }
                     }
-                };
-            } else {
-                obs = new android.os.FileObserver(rootPath, android.os.FileObserver.CLOSE_WRITE) {
-                    @Override
-                    public void onEvent(int event, String path) {
-                        if (path == null) return;
-                        com.hydradragon.antivirus.engine.RansomwareBehaviorGuard
-                            .onFileEvent(GuardService.this, rootPath, path);
-                        scanDownloadedFile(new java.io.File(root, path));
-                    }
-                };
-            }
-            obs.startWatching();
-            extraStorageObservers.add(obs);
-        }
-        Log.i(TAG, "Real-time full storage monitoring: watching " + roots.size() + " root(s)");
+                } catch (Throwable t) {
+                    Log.e(TAG, "MediaStore full-storage scan failed", t);
+                }
+            });
+        }, 2000);
     }
 
     /** Fired by the Downloads-folder FileObserver on CLOSE_WRITE — a file just
@@ -679,8 +691,10 @@ public class GuardService extends Service {
             try { getContentResolver().unregisterContentObserver(downloadObserver); }
             catch (Throwable t) { Log.e(TAG, "unregister download observer failed", t); }
         }
-        for (android.os.FileObserver obs : extraStorageObservers) obs.stopWatching();
-        extraStorageObservers.clear();
+        if (fullStorageObserver != null) {
+            try { getContentResolver().unregisterContentObserver(fullStorageObserver); }
+            catch (Throwable t) { Log.e(TAG, "unregister full-storage observer failed", t); }
+        }
         Log.i(TAG, "Guard Service destroyed");
     }
 }
