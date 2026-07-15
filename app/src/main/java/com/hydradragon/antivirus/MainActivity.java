@@ -403,7 +403,7 @@ public class MainActivity extends AppCompatActivity {
                 getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
                     .putBoolean("web_shield_decided", true)
                     .putBoolean("web_shield_enabled", false).apply();
-                startAppUI();
+                checkMandatoryPermissions();
             })
             .show();
     }
@@ -569,11 +569,12 @@ public class MainActivity extends AppCompatActivity {
             .setPositiveButton(getString(R.string.enable), (dialog, which) -> {
                 permissionDialogShowing = false;
                 openPlayProtectSettings();
-                startAppUI();
+                // Don't call startAppUI() — onResume will re-enter
+                // checkMandatoryPermissions() for the remaining dialog chain.
             })
             .setNegativeButton(getString(R.string.skip), (dialog, which) -> {
                 permissionDialogShowing = false;
-                startAppUI();
+                checkMandatoryPermissions();
             })
             .show();
     }
