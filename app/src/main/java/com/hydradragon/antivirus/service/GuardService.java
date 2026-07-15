@@ -281,6 +281,7 @@ public class GuardService extends Service {
             updateNotification(getString(R.string.guard_protecting_status), true);
             // Run a single Anti-FP scan on startup (not periodic)
             Log.i(TAG, "Starting initial Anti-FP scan...");
+            scanEngine.setBackgroundScan(true);
             try {
                 scanEngine.scanAllAppsAntiFp();
             } catch (Throwable t) {
@@ -327,10 +328,14 @@ public class GuardService extends Service {
                 // below NEVER ran either: the scan looked like it found nothing,
                 // both in the system tray AND in the app's own threat list.
                 if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {
-                    try {
-                        sendThreatNotification(threat);
-                    } catch (Throwable t) {
-                        Log.e(TAG, "sendThreatNotification failed", t);
+                    // Silently handle threats during background/auto scans — no
+                    // user-facing notification, no foreground-notification update.
+                    if (!scanEngine.isBackgroundScan()) {
+                        try {
+                            sendThreatNotification(threat);
+                        } catch (Throwable t) {
+                            Log.e(TAG, "sendThreatNotification failed", t);
+                        }
                     }
                     // Auto-kill/auto-delete + full-screen "MALWARE FOUND" only
                     // for background/auto scans (no UI listener attached).
@@ -367,11 +372,13 @@ public class GuardService extends Service {
                 // showing "Stopping…"/a disabled button forever, even though
                 // the engine thread itself had already finished.
                 try {
-                    String status = result.isClean()
-                        ? getString(R.string.system_clean)
-                        : "⚠ " + result.getThreatsFound() + " " + getString(R.string.threat);
-                    updateNotification(status, result.isClean());
-                    if (callback != null) callback.onStatusUpdate(status);
+                    if (!scanEngine.isBackgroundScan()) {
+                        String status = result.isClean()
+                            ? getString(R.string.system_clean)
+                            : "⚠ " + result.getThreatsFound() + " " + getString(R.string.threat);
+                        updateNotification(status, result.isClean());
+                        if (callback != null) callback.onStatusUpdate(status);
+                    }
                 } catch (Throwable t) {
                     Log.e(TAG, "onScanComplete notification/status update failed", t);
                 }

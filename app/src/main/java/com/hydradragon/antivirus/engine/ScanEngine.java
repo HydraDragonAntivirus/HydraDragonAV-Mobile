@@ -246,6 +246,14 @@ public class ScanEngine {
     public void setBackgroundScan(boolean background) {
         this.isBackgroundScan = background;
     }
+    public boolean isBackgroundScan() { return isBackgroundScan; }
+
+    static final int SCAN_TYPE_NONE = 0;
+    static final int SCAN_TYPE_QUICK = 1;
+    static final int SCAN_TYPE_FULL = 2;
+    static final int SCAN_TYPE_ANTI_FP = 3;
+    private volatile int runningScanType = SCAN_TYPE_NONE;
+    volatile int pendingScanType = SCAN_TYPE_NONE;
 
     /** Set by {@link #cancelScan()} to abort an in-flight scan at the next loop
      *  boundary. Volatile so the UI thread's request is seen by the scan thread. */
@@ -776,10 +784,24 @@ public class ScanEngine {
      *  the gap between that check and this call. Checking THIS return value
      *  instead closes that race. */
     public boolean scanAllApps(boolean isFullScan) {
+        int reqType = pendingScanType;
+        pendingScanType = SCAN_TYPE_NONE;
+        if (reqType == SCAN_TYPE_NONE) {
+            reqType = antiFpMode ? SCAN_TYPE_ANTI_FP : (isFullScan ? SCAN_TYPE_FULL : SCAN_TYPE_QUICK);
+        }
         if (!scanRunning.compareAndSet(false, true)) {
+            if (isBackgroundScan) {
+                // Adopt the background scan as the user's scan regardless of type.
+                // The background scan continues silently; the user's UI attaches to it.
+                isBackgroundScan = false;
+                Log.d(TAG, "scanAllApps: adopted background scan for user");
+                return true;
+            }
             Log.w(TAG, "scanAllApps: a scan is already running, skipping this request");
             return false;
         }
+        runningScanType = reqType;
+        isBackgroundScan = false; // user-initiated scan
         cancelRequested = false;
         pauseRequested = false;
         apkPkgAnalyzerBroken = false;
@@ -875,6 +897,8 @@ public class ScanEngine {
                 callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, scannedFiles, elapsedMs));
           } finally {
               antiFpMode = false;
+              isBackgroundScan = false;
+              runningScanType = SCAN_TYPE_NONE;
               isBatchMode = false;
               scanRunning.set(false);
               releaseScanWakeLock();
@@ -894,9 +918,13 @@ public class ScanEngine {
      *  already running (same race-free contract as scanAllApps).
      */
     public boolean scanAllAppsAntiFp() {
+        pendingScanType = SCAN_TYPE_ANTI_FP;
         antiFpMode = true;
         boolean started = scanAllApps(true);
-        if (!started) antiFpMode = false;
+        if (!started) {
+            antiFpMode = false;
+            pendingScanType = SCAN_TYPE_NONE;
+        }
         return started;
     }
 
