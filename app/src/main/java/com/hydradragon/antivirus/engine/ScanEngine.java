@@ -843,7 +843,7 @@ public class ScanEngine {
                     boolean isThreat = result != null && result.isThreat();
                     if (isThreat && !threats.contains(result)) {
                         threats.add(result);
-                        if (!isBackgroundScan && callback != null) callback.onThreatFound(result);
+                        if (callback != null) callback.onThreatFound(result);
                     }
                     String appName = result != null ? result.getAppName() : "";
                     String reason = isThreat

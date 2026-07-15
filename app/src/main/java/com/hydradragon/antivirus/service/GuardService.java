@@ -304,6 +304,15 @@ public class GuardService extends Service {
         scanEngine = new ScanEngine(this, aiEngine);
         backgroundScanEngine = new ScanEngine(this, aiEngine);
         backgroundScanEngine.setBackgroundScan(true);
+        backgroundScanEngine.setCallback(new ScanEngine.ScanCallback() {
+            @Override public void onProgress(int c, int t, String p) { }
+            @Override public void onThreatFound(ThreatResult threat) {
+                ThreatLogger.logThreat(GuardService.this, threat, "BACKGROUND SCAN");
+            }
+            @Override public void onScanComplete(com.hydradragon.antivirus.model.ScanResult r) { }
+            @Override public void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo i) { }
+            @Override public void onError(String e) { }
+        });
         networkMonitor = new NetworkMonitor(this);
         processDetector = new ProcessDetector(this);
 
