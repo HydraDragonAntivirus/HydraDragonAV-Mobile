@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -49,9 +50,9 @@ public class SettingsFragment extends Fragment {
     private static final int REQ_NOTIFICATION = 1204;
 
     // Self-protection: only the real user should be able to change settings.
-    // A transparent tapjacking overlay is caught by FLAG_WINDOW_IS_OBSCURED
-    // (setFilterTouchesWhenObscured, applied to every switch in addToggle()
-    // below) — but a malicious accessibility service calling
+    // A transparent tapjacking overlay is detected by FLAG_WINDOW_IS_OBSCURED
+    // (applyObscuredTouchWarning shows a Toast instead of blocking — PiP
+    // windows must not break toggles) — but a malicious accessibility service calling
     // AccessibilityNodeInfo.performAction(ACTION_CLICK) directly never
     // generates a MotionEvent at all, so obscure-touch filtering can't see
     // it. The only thing that technique CAN'T fake convincingly is HUMAN
@@ -817,6 +818,15 @@ public class SettingsFragment extends Fragment {
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.bottomMargin = 8; r.setLayoutParams(lp); return r;
     }
+    private void applyObscuredTouchWarning(View v) {
+        v.setOnTouchListener((view, event) -> {
+            if ((event.getFlags() & MotionEvent.FLAG_WINDOW_IS_OBSCURED) != 0
+                    && event.getAction() == MotionEvent.ACTION_DOWN) {
+                Toast.makeText(getContext(), R.string.obscured_touch_warning, Toast.LENGTH_SHORT).show();
+            }
+            return false;
+        });
+    }
     private void addInfo(String em, String label, String val) {
         LinearLayout r = row();
         TextView l = new TextView(getContext()); l.setText(em + "  " + label);
@@ -834,10 +844,9 @@ public class SettingsFragment extends Fragment {
         l.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         r.addView(l);
         Switch sw = new Switch(getContext()); sw.setChecked(state);
-        // Overlay-tapjacking defense — Android's own built-in
-        // FLAG_WINDOW_IS_OBSCURED/PARTIALLY_OBSCURED check, same technique
-        // SecurePinPad already used for the PIN pad.
-        sw.setFilterTouchesWhenObscured(true);
+        // Overlay warning instead of blocking — PiP windows (YouTube, etc.)
+        // would otherwise make toggles unresponsive.
+        applyObscuredTouchWarning(sw);
         sw.setOnCheckedChangeListener(guardedToggleListener(cb));
         r.addView(sw); container.addView(r);
     }
@@ -880,7 +889,7 @@ public class SettingsFragment extends Fragment {
         r.setOnClickListener(cl);
         r.setClickable(true);
         r.setFocusable(true);
-        r.setFilterTouchesWhenObscured(true);
+        applyObscuredTouchWarning(r);
         container.addView(r);
     }
 
@@ -926,7 +935,7 @@ public class SettingsFragment extends Fragment {
         b.setTextColor(color(R.color.text_primary)); b.setBackgroundColor(bgColor);
         b.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         b.setPadding(32,28,32,28); b.setTextSize(14); b.setGravity(Gravity.CENTER);
-        b.setFilterTouchesWhenObscured(true); // same overlay-tapjacking defense as addToggle()
+        applyObscuredTouchWarning(b); // warn instead of blocking (PiP-friendly)
         b.setOnClickListener(cl);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
