@@ -298,13 +298,51 @@ public final class NativeScanner {
     }
 
     /** Malicious category (e.g. "MALWARE_IP") for a resolved IP, or null if clean.
-     *  Exact match against the native per-category xor filters (no CIDR/subnet). */
+     *  Exact match against the native per-category xor filters (no CIDR/subnet).
+     *  Only valid public (non-private, non-loopback, non-link-local, non-multicast)
+     *  IPv4 and IPv6 addresses are scanned — domains and private IPs are rejected. */
     public static String scanIp(String ip) {
         if (!isReady() || ip == null || ip.isEmpty()) return null;
+        if (!isValidPublicIp(ip)) return null;
         try {
             String c = nativeScanIp(ip);
             return (c == null || c.isEmpty()) ? null : c;
         } catch (Throwable t) { return null; }
+    }
+
+    /** Returns true if {@code ip} is a valid public (non-private, non-loopback,
+     *  non-link-local, non-multicast) IPv4 address. Rejects domains, hostnames,
+     *  malformed strings, and IPv6 (not supported by the native IP xor filters). */
+    public static boolean isValidPublicIp(String ip) {
+        if (ip == null || ip.isEmpty()) return false;
+        // Reject anything that looks like a domain (contains letters).
+        // The IP xor filters only contain canonical IPv4 strings, so any
+        // non-digit/dot character means it's not a raw IP literal.
+        for (int i = 0; i < ip.length(); i++) {
+            char c = ip.charAt(i);
+            if (c != '.' && (c < '0' || c > '9')) return false;
+        }
+        String[] parts = ip.split("\\.");
+        if (parts.length != 4) return false;
+        try {
+            int[] octets = new int[4];
+            for (int i = 0; i < 4; i++) {
+                int val = Integer.parseInt(parts[i]);
+                if (val < 0 || val > 255) return false;
+                octets[i] = val;
+            }
+            // Exclude private ranges, loopback, link-local, multicast.
+            if (octets[0] == 10) return false;                          // 10.0.0.0/8
+            if (octets[0] == 127) return false;                         // 127.0.0.0/8
+            if (octets[0] == 169 && octets[1] == 254) return false;     // 169.254.0.0/16
+            if (octets[0] == 172 && (octets[1] >= 16 && octets[1] <= 31)) return false; // 172.16.0.0/12
+            if (octets[0] == 192 && octets[1] == 168) return false;     // 192.168.0.0/16
+            if (octets[0] >= 224 && octets[0] <= 239) return false;     // 224.0.0.0/4 multicast
+            if (octets[0] >= 240) return false;                         // 240.0.0.0/4 reserved
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     /** True if {@code md5} is in the NSRL whitelist (held in NATIVE memory as a
