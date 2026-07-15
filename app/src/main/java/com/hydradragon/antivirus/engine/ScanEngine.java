@@ -2175,9 +2175,44 @@ public class ScanEngine {
             if (state == null) continue;
             try {
                 ThreatResult r = processFinalVerdict(state, v);
-                if (r != null && r.isThreat() && !threats.contains(r)) {
-                    threats.add(r);
-                    if (callback != null) callback.onThreatFound(r);
+                if (r != null && r.isThreat()) {
+                    // Merge with existing threat for the same packageName instead
+                    // of adding a duplicate — a single app can be scanned by both
+                    // analyzeApp and deepNativeScanInstalledApks within the same
+                    // batch, producing separate SIG and AUTO entries.
+                    ThreatResult existing = null;
+                    for (ThreatResult t : threats) {
+                        String pkg = t.getPackageName();
+                        if (pkg != null && pkg.equals(r.getPackageName())) {
+                            existing = t; break;
+                        }
+                    }
+                    if (existing != null) {
+                        java.util.List<String> merged = new java.util.ArrayList<>();
+                        merged.addAll(existing.getReasons());
+                        for (String reason : r.getReasons()) {
+                            if (!merged.contains(reason)) merged.add(reason);
+                        }
+                        // Rebuild with merged reasons + higher risk score.
+                        ThreatResult mergedR = new ThreatResult.Builder(existing.getPackageName())
+                            .setAppName(existing.getAppName())
+                            .setApkPath(existing.getApkPath())
+                            .setRiskScore(Math.max(existing.getRiskScore(), r.getRiskScore()))
+                            .setThreatType(
+                                existing.getRiskScore() >= r.getRiskScore()
+                                    ? existing.getThreatType() : r.getThreatType())
+                            .setReasons(merged)
+                            .setStandaloneFile(existing.isStandaloneFile())
+                            .build();
+                        int idx = threats.indexOf(existing);
+                        if (idx >= 0) {
+                            threats.set(idx, mergedR);
+                            if (callback != null) callback.onThreatFound(mergedR);
+                        }
+                    } else {
+                        threats.add(r);
+                        if (callback != null) callback.onThreatFound(r);
+                    }
                 }
             } catch (Throwable t) {
                 Log.e(TAG, "Failed to process deferred verdict for " + v.path, t);
