@@ -173,9 +173,18 @@ public class ScanFragment extends Fragment {
         pollEngineLoading();
 
         if (isScanning) {
-            btnScan.setText(getString(R.string.scan_stop));
-            btnScan.setEnabled(true);
-            startScannerAnimation();
+            boolean cancelling = serviceBound && guardService != null
+                && guardService.getScanEngine() != null
+                && guardService.getScanEngine().isCancelled();
+            if (cancelling) {
+                btnScan.setText(getString(R.string.scan_stopping));
+                btnScan.setEnabled(false);
+                tvCurrentApp.setText(getString(R.string.scan_stopping));
+            } else {
+                btnScan.setText(getString(R.string.scan_stop));
+                btnScan.setEnabled(true);
+                startScannerAnimation();
+            }
             // Restore the last known progress immediately instead of leaving
             // the bar/labels at their fresh-inflated (0/blank) state until the
             // engine's next onProgress() call happens to arrive.
