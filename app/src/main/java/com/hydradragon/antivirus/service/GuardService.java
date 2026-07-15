@@ -285,8 +285,8 @@ public class GuardService extends Service {
             updateNotification(getString(R.string.guard_protecting_status), true);
             // Startup anti-FP scan on the BACKGROUND engine (separate
             // instance → never blocks user-initiated scans).
-            backgroundScanEngine.setBackgroundScan(true);
             try {
+                backgroundScanEngine.setBackgroundScan(true);
                 backgroundScanEngine.scanAllAppsAntiFp();
             } catch (Throwable t) {
                 Log.e(TAG, "Initial Anti-FP scan failed", t);
@@ -454,10 +454,12 @@ public class GuardService extends Service {
             // backgroundScanEngine (separate instance → own scanRunning).
             ScanEngine bg = backgroundScanEngine;
             scheduler.scheduleAtFixedRate(() -> {
-                try { bg.scanAllApps(false); } catch (Throwable t) { Log.e(TAG, "Periodic quick scan failed", t); }
+                try { bg.setBackgroundScan(true); bg.scanAllApps(false); }
+                catch (Throwable t) { Log.e(TAG, "Periodic quick scan failed", t); }
             }, quickMin, quickMin, TimeUnit.MINUTES);
             scheduler.scheduleAtFixedRate(() -> {
-                try { bg.scanAllApps(true); } catch (Throwable t) { Log.e(TAG, "Periodic full scan failed", t); }
+                try { bg.setBackgroundScan(true); bg.scanAllApps(true); }
+                catch (Throwable t) { Log.e(TAG, "Periodic full scan failed", t); }
             }, fullMin, fullMin, TimeUnit.MINUTES);
             Log.i(TAG, "Periodic scans scheduled: quick=" + quickMin + "m, full=" + fullMin + "m, wakelock=" + wakelock);
         } else {
