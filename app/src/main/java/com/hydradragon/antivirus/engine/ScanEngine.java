@@ -883,11 +883,6 @@ public class ScanEngine {
                     t0 = android.os.SystemClock.elapsedRealtime();
                     scanAccessibleDataDirs(pm, threats);
                     addTiming("scanAccessibleDataDirs", android.os.SystemClock.elapsedRealtime() - t0);
-                } else if (!cancelRequested) {
-                    // Quick scan: only APKs in Downloads.
-                    scanDirectoryForApks(
-                        android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
-                        pm, threats, false);
                 }
             } catch (Exception e) { }
 
