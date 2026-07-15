@@ -64,8 +64,7 @@
             android:name=".ui.MalwareFoundActivity"
             android:exported="false"
             android:excludeFromRecents="true"
-            android:taskAffinity=".malwarefound"
-            android:theme="@style/Theme.HydraDragon"/>
+            android:theme="@style/Theme.HydraDragon.Dialog"/>
 
         <activity
             android:name=".MainActivity"
