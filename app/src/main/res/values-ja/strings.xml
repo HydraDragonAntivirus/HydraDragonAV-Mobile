@@ -128,6 +128,7 @@
 🔍 フルスキャン：SDカードを含むストレージ全体を詳細に検査します（時間がかかる場合があります）。</string>
     <string name="btn_full_scan">🔍 フルスキャン</string>
     <string name="btn_quick_scan">🚀 クイックスキャン</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">キャンセル</string>
     <string name="system_clean">前回のスキャンによるとシステムはクリーンです</string>
     <string name="risk_critical">重大</string>
@@ -174,7 +175,6 @@
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ バックグラウンドスキャン実行中…</string>
     <string name="detection_categories_header">検出カテゴリ</string>
     <string name="detect_cat_signatures">シグネチャベース（YARA/ClamAV）</string>
     <string name="detect_cat_ml">ML異常検知</string>
@@ -421,8 +421,4 @@
     <string name="scan_system_toggle">システムファイルをスキャン — デバイスがroot化されていない限り推奨しません</string>
     <string name="scan_system_on_toast">システムファイルスキャン有効 — 正規のシステムアプリにフラグが付く可能性があります</string>
     <string name="scan_system_off_toast">システムファイルスキャン無効 — システムアプリはスキップされます</string>
-    <string name="fast_scan_toggle">クイックスキャン — ナレッジデータベースを使用して既知のクリーンファイルをスキップ</string>
-    <string name="fast_scan_summary">有効にすると、手動スキャンはAnti-FPキャッシュのホワイトリスト登録エントリをスキップします。バックグラウンドスキャンは常にフルスキャンを実行してナレッジデータベースを最新に保ちます。</string>
-    <string name="fast_scan_on_toast">クイックスキャン有効 — 手動スキャンは既知のクリーンファイルをスキップします</string>
-    <string name="fast_scan_off_toast">クイックスキャン無効 — すべてのファイルが通常どおりスキャンされます</string>
 </resources>

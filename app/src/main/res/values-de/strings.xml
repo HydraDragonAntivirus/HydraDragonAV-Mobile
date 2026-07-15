@@ -128,6 +128,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
 🔍 VOLLSTÄNDIGER SCAN: Durchsucht den gesamten Speicher gründlich, einschließlich SD-Karte (kann lange dauern).</string>
     <string name="btn_full_scan">🔍 VOLLSTÄNDIGER SCAN</string>
     <string name="btn_quick_scan">🚀 SCHNELLSCAN</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Abbrechen</string>
     <string name="system_clean">System laut letztem Scan sauber</string>
     <string name="risk_critical">KRITISCH</string>
@@ -174,7 +175,6 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ Hintergrundscan läuft…</string>
     <string name="detection_categories_header">Erkennungskategorien</string>
     <string name="detect_cat_signatures">Signaturbasiert (YARA/ClamAV)</string>
     <string name="detect_cat_ml">ML-Anomalieerkennung</string>
@@ -421,8 +421,4 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="scan_system_toggle">Systemdateien scannen — nicht empfohlen, außer das Gerät ist gerootet</string>
     <string name="scan_system_on_toast">Systemdateiscan aktiviert — kann legitime System-Apps markieren</string>
     <string name="scan_system_off_toast">Systemdateiscan deaktiviert — System-Apps werden übersprungen</string>
-    <string name="fast_scan_toggle">Schnellscan — bekannte saubere Dateien mithilfe der Wissensdatenbank überspringen</string>
-    <string name="fast_scan_summary">Wenn aktiviert, überspringen manuelle Scans whitelistete Einträge aus dem Anti-FP-Cache. Hintergrundscans führen immer einen vollständigen Scan durch, um die Wissensdatenbank aktuell zu halten.</string>
-    <string name="fast_scan_on_toast">Schnellscan aktiviert — manuelle Scans überspringen bekannte saubere Dateien</string>
-    <string name="fast_scan_off_toast">Schnellscan deaktiviert — alle Dateien werden normal gescannt</string>
 </resources>

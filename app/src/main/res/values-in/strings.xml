@@ -128,6 +128,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
 🔍 PEMINDAIAN LENGKAP: Memeriksa seluruh penyimpanan secara mendalam termasuk Kartu SD (mungkin memakan waktu lama).</string>
     <string name="btn_full_scan">🔍 PEMINDAIAN LENGKAP</string>
     <string name="btn_quick_scan">🚀 PEMINDAIAN CEPAT</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Batal</string>
     <string name="system_clean">Sistem Bersih Berdasarkan Pemindaian Terakhir</string>
     <string name="risk_critical">KRITIS</string>
@@ -174,7 +175,6 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ Pemindaian latar belakang sedang berjalan…</string>
     <string name="detection_categories_header">Kategori Deteksi</string>
     <string name="detect_cat_signatures">Berbasis tanda tangan (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Deteksi anomali ML</string>
@@ -421,8 +421,4 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scan_system_toggle">Pindai File Sistem — tidak disarankan kecuali perangkat di-root</string>
     <string name="scan_system_on_toast">Pemindaian file sistem diaktifkan — mungkin menandai aplikasi sistem yang sah</string>
     <string name="scan_system_off_toast">Pemindaian file sistem dinonaktifkan — aplikasi sistem akan dilewati</string>
-    <string name="fast_scan_toggle">Pindai Cepat — lewati file bersih yang diketahui menggunakan basis pengetahuan</string>
-    <string name="fast_scan_summary">Saat diaktifkan, pemindaian manual melewati entri yang masuk daftar putih dari cache Anti-FP. Pemindaian latar belakang selalu melakukan pemindaian penuh untuk menjaga basis pengetahuan tetap segar.</string>
-    <string name="fast_scan_on_toast">Pindai cepat diaktifkan — pemindaian manual akan melewati file bersih yang diketahui</string>
-    <string name="fast_scan_off_toast">Pindai cepat dinonaktifkan — semua file akan dipindai secara normal</string>
 </resources>

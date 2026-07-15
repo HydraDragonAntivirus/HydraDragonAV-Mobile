@@ -128,6 +128,7 @@
 🔍 สแกนแบบเต็ม: ตรวจสอบพื้นที่จัดเก็บทั้งหมดอย่างละเอียด รวมถึงการ์ด SD (อาจใช้เวลานาน)</string>
     <string name="btn_full_scan">🔍 สแกนแบบเต็ม</string>
     <string name="btn_quick_scan">🚀 สแกนด่วน</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">ยกเลิก</string>
     <string name="system_clean">ระบบสะอาดตามการสแกนล่าสุด</string>
     <string name="risk_critical">วิกฤต</string>
@@ -174,7 +175,6 @@
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ กำลังสแกนพื้นหลัง…</string>
     <string name="detection_categories_header">หมวดหมู่การตรวจจับ</string>
     <string name="detect_cat_signatures">ใช้ลายเซ็น (YARA/ClamAV)</string>
     <string name="detect_cat_ml">การตรวจจับความผิดปกติด้วย ML</string>
@@ -421,8 +421,4 @@
     <string name="scan_system_toggle">สแกนไฟล์ระบบ — ไม่แนะนำเว้นแต่อุปกรณ์จะรูทแล้ว</string>
     <string name="scan_system_on_toast">เปิดใช้งานการสแกนไฟล์ระบบ — อาจแจ้งเตือนแอประบบที่ถูกต้อง</string>
     <string name="scan_system_off_toast">ปิดใช้งานการสแกนไฟล์ระบบ — แอประบบจะถูกข้าม</string>
-    <string name="fast_scan_toggle">สแกนเร็ว — ข้ามไฟล์ที่สะอาดที่รู้จักโดยใช้ฐานความรู้</string>
-    <string name="fast_scan_summary">เมื่อเปิดใช้งาน การสแกนด้วยตนเองจะข้ามรายการที่อนุญาตจากแคช Anti-FP การสแกนพื้นหลังจะทำการสแกนแบบเต็มเสมอเพื่อให้ฐานความรู้สดใหม่</string>
-    <string name="fast_scan_on_toast">เปิดใช้งานการสแกนเร็ว — การสแกนด้วยตนเองจะข้ามไฟล์ที่สะอาดที่รู้จัก</string>
-    <string name="fast_scan_off_toast">ปิดใช้งานการสแกนเร็ว — ไฟล์ทั้งหมดจะถูกสแกนตามปกติ</string>
 </resources>

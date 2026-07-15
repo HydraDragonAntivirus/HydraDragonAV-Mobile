@@ -128,6 +128,7 @@
 🔍 ПОЛНОЕ СКАНИРОВАНИЕ: Тщательно проверяет всё хранилище, включая SD-карту (может занять много времени).</string>
     <string name="btn_full_scan">🔍 ПОЛНОЕ СКАНИРОВАНИЕ</string>
     <string name="btn_quick_scan">🚀 БЫСТРОЕ СКАНИРОВАНИЕ</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Отмена</string>
     <string name="system_clean">Система чиста по данным последнего сканирования</string>
     <string name="risk_critical">КРИТИЧЕСКИЙ</string>
@@ -174,7 +175,6 @@
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ Выполняется фоновое сканирование…</string>
     <string name="detection_categories_header">Категории обнаружения</string>
     <string name="detect_cat_signatures">На основе сигнатур (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Обнаружение аномалий ML</string>
@@ -421,8 +421,4 @@
     <string name="scan_system_toggle">Сканировать системные файлы — не рекомендуется, если устройство не рутировано</string>
     <string name="scan_system_on_toast">Сканирование системных файлов включено — может помечать легитимные системные приложения</string>
     <string name="scan_system_off_toast">Сканирование системных файлов отключено — системные приложения будут пропущены</string>
-    <string name="fast_scan_toggle">Быстрое сканирование — пропускать известные чистые файлы с помощью базы знаний</string>
-    <string name="fast_scan_summary">При включении ручные проверки пропускают записи из белого списка в кэше Anti-FP. Фоновые проверки всегда выполняют полное сканирование, чтобы база знаний оставалась актуальной.</string>
-    <string name="fast_scan_on_toast">Быстрое сканирование включено — ручные проверки будут пропускать известные чистые файлы</string>
-    <string name="fast_scan_off_toast">Быстрое сканирование отключено — все файлы будут сканироваться как обычно</string>
 </resources>

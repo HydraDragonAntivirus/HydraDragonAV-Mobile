@@ -128,6 +128,7 @@
 🔍 اسکن کامل: کل حافظه از جمله کارت SD را به‌طور کامل بررسی می‌کند (ممکن است زمان‌بر باشد).</string>
     <string name="btn_full_scan">🔍 اسکن کامل</string>
     <string name="btn_quick_scan">🚀 اسکن سریع</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">لغو</string>
     <string name="system_clean">طبق آخرین اسکن، سیستم پاک است</string>
     <string name="risk_critical">بحرانی</string>
@@ -174,7 +175,6 @@
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ اسکن پس‌زمینه در حال اجراست…</string>
     <string name="detection_categories_header">دسته‌های تشخیص</string>
     <string name="detect_cat_signatures">مبتنی بر امضا (YARA/ClamAV)</string>
     <string name="detect_cat_ml">تشخیص ناهنجاری با یادگیری ماشین</string>
@@ -421,8 +421,4 @@
     <string name="scan_system_toggle">اسکن فایل‌های سیستم — توصیه نمی‌شود مگر اینکه دستگاه روت شده باشد</string>
     <string name="scan_system_on_toast">اسکن فایل‌های سیستم فعال شد — ممکن است برنامه‌های سیستمی قانونی را پرچم‌گذاری کند</string>
     <string name="scan_system_off_toast">اسکن فایل‌های سیستم غیرفعال شد — برنامه‌های سیستمی رد خواهند شد</string>
-    <string name="fast_scan_toggle">اسکن سریع — رد شدن از فایل‌های تمیز شناخته شده با استفاده از پایگاه دانش</string>
-    <string name="fast_scan_summary">هنگام فعال بودن، اسکن‌های دستی از ورودی‌های مجاز در حافظه نهان Anti-FP رد می‌شوند. اسکن‌های پس‌زمینه همیشه یک اسکن کامل انجام می‌دهند تا پایگاه دانش به‌روز بماند.</string>
-    <string name="fast_scan_on_toast">اسکن سریع فعال شد — اسکن‌های دستی از فایل‌های تمیز شناخته شده رد می‌شوند</string>
-    <string name="fast_scan_off_toast">اسکن سریع غیرفعال شد — همه فایل‌ها به طور عادی اسکن می‌شوند</string>
 </resources>

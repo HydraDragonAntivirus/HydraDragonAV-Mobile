@@ -140,6 +140,7 @@ Do you want to completely remove this malicious file/app?</string>
 🔍 FULL SCAN: Deeply inspects entire storage including SD Card (May take long).</string>
     <string name="btn_full_scan">🔍 FULL SCAN</string>
     <string name="btn_quick_scan">🚀 QUICK SCAN</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Cancel</string>
     <string name="system_clean">System Clean According To Last Scan</string>
         <string name="risk_critical">CRITICAL</string>
@@ -211,7 +212,6 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="scan_custom_folder_unsupported">Can\'t resolve that folder to a real path (e.g. a cloud-backed provider) — pick a folder on local/SD storage instead</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-    <string name="background_scan_running">⏳ Background scan running…</string>
     <string name="detection_categories_header">Detection Categories</string>
     <string name="detect_cat_signatures">Signature-based (YARA/ClamAV)</string>
     <string name="detect_cat_ml">ML anomaly detection</string>
@@ -416,11 +416,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="draw_overlay_on_toast">Overlay permission granted — full-screen alerts can now appear from background</string>
     <string name="draw_overlay_off_toast">Open App Info > Permissions to revoke overlay</string>
 
-    <string name="fast_scan_toggle">Fast Scan — skip known-clean files using knowledge database</string>
-    <string name="fast_scan_summary">When enabled, manual scans skip whitelisted entries from Anti-FP cache. Background scans always do a full scan to keep the knowledge database fresh.</string>
-    <string name="fast_scan_on_toast">Fast scan enabled — manual scans will skip known-clean files</string>
-    <string name="fast_scan_off_toast">Fast scan disabled — all files will be scanned normally</string>
-
+    
     <string name="net_traffic_export_btn">📤 Export Traffic Log</string>
     <string name="net_traffic_import_btn">📥 Import Traffic Log</string>
     <string name="net_traffic_exported">Traffic log exported — %1$d events</string>

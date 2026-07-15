@@ -128,6 +128,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
 🔍 SCANSIONE COMPLETA: Analizza a fondo l\'intera memoria, inclusa la scheda SD (potrebbe richiedere molto tempo).</string>
     <string name="btn_full_scan">🔍 SCANSIONE COMPLETA</string>
     <string name="btn_quick_scan">🚀 SCANSIONE RAPIDA</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Annulla</string>
     <string name="system_clean">Sistema pulito secondo l\'ultima scansione</string>
     <string name="risk_critical">CRITICO</string>
@@ -174,7 +175,6 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ Scansione in background in corso…</string>
     <string name="detection_categories_header">Categorie di Rilevamento</string>
     <string name="detect_cat_signatures">Basato su firme (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Rilevamento anomalie ML</string>
@@ -421,8 +421,4 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="scan_system_toggle">Scansiona file di sistema — sconsigliato a meno che il dispositivo non sia rooted</string>
     <string name="scan_system_on_toast">Scansione file di sistema attivata — potrebbe contrassegnare app di sistema legittime</string>
     <string name="scan_system_off_toast">Scansione file di sistema disattivata — le app di sistema verranno saltate</string>
-    <string name="fast_scan_toggle">Scansione rapida — salta i file puliti conosciuti usando il database della conoscenza</string>
-    <string name="fast_scan_summary">Se attivata, le scansioni manuali saltano le voci autorizzate dalla cache Anti-FP. Le scansioni in background eseguono sempre una scansione completa per mantenere aggiornato il database della conoscenza.</string>
-    <string name="fast_scan_on_toast">Scansione rapida attivata — le scansioni manuali salteranno i file puliti conosciuti</string>
-    <string name="fast_scan_off_toast">Scansione rapida disattivata — tutti i file verranno scansionati normalmente</string>
 </resources>

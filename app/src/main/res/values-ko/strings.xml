@@ -128,6 +128,7 @@
 🔍 전체 스캔: SD 카드를 포함한 전체 저장소를 심층 검사합니다 (시간이 오래 걸릴 수 있습니다).</string>
     <string name="btn_full_scan">🔍 전체 스캔</string>
     <string name="btn_quick_scan">🚀 빠른 스캔</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">취소</string>
     <string name="system_clean">마지막 검사 기준 시스템 깨끗함</string>
     <string name="risk_critical">심각</string>
@@ -174,7 +175,6 @@
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ 백그라운드 스캔 실행 중…</string>
     <string name="detection_categories_header">탐지 카테고리</string>
     <string name="detect_cat_signatures">시그니처 기반 (YARA/ClamAV)</string>
     <string name="detect_cat_ml">ML 이상 탐지</string>
@@ -421,8 +421,4 @@
     <string name="scan_system_toggle">시스템 파일 검사 — 기기가 루팅되지 않은 경우 권장하지 않음</string>
     <string name="scan_system_on_toast">시스템 파일 검사 활성화 — 합법적인 시스템 앱에 플래그가 지정될 수 있음</string>
     <string name="scan_system_off_toast">시스템 파일 검사 비활성화 — 시스템 앱이 건너뛰어집니다</string>
-    <string name="fast_scan_toggle">빠른 검사 — 지식 데이터베이스를 사용하여 알려진 클린 파일 건너뛰기</string>
-    <string name="fast_scan_summary">활성화되면 수동 검사가 Anti-FP 캐시의 허용 목록 항목을 건너뜁니다. 백그라운드 검사는 지식 데이터베이스를 최신 상태로 유지하기 위해 항상 전체 검사를 수행합니다.</string>
-    <string name="fast_scan_on_toast">빠른 검사 활성화 — 수동 검사가 알려진 클린 파일을 건너뜁니다</string>
-    <string name="fast_scan_off_toast">빠른 검사 비활성화 — 모든 파일이 정상적으로 검사됩니다</string>
 </resources>

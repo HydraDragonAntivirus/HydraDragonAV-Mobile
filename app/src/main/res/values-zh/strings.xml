@@ -128,6 +128,7 @@
 🔍 完整扫描：深度检查整个存储空间，包括SD卡（可能需要较长时间）。</string>
     <string name="btn_full_scan">🔍 完整扫描</string>
     <string name="btn_quick_scan">🚀 快速扫描</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">取消</string>
     <string name="system_clean">根据上次扫描，系统清洁</string>
     <string name="risk_critical">严重</string>
@@ -174,7 +175,6 @@
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ 后台扫描运行中…</string>
     <string name="detection_categories_header">检测类别</string>
     <string name="detect_cat_signatures">基于签名（YARA/ClamAV）</string>
     <string name="detect_cat_ml">机器学习异常检测</string>
@@ -421,8 +421,4 @@
     <string name="scan_system_toggle">扫描系统文件 — 除非设备已 root，否则不推荐</string>
     <string name="scan_system_on_toast">系统文件扫描已启用 — 可能会标记合法的系统应用</string>
     <string name="scan_system_off_toast">系统文件扫描已禁用 — 系统应用将被跳过</string>
-    <string name="fast_scan_toggle">快速扫描 — 使用知识数据库跳过已知的干净文件</string>
-    <string name="fast_scan_summary">启用后，手动扫描会跳过 Anti-FP 缓存中的白名单条目。后台扫描始终执行完整扫描以保持知识数据库最新。</string>
-    <string name="fast_scan_on_toast">快速扫描已启用 — 手动扫描将跳过已知的干净文件</string>
-    <string name="fast_scan_off_toast">快速扫描已禁用 — 所有文件将正常扫描</string>
 </resources>

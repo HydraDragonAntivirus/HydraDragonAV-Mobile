@@ -128,6 +128,7 @@
 🔍 ПОВНЕ СКАНУВАННЯ: Глибока перевірка всього сховища, включно з SD-картою (може тривати довго).</string>
     <string name="btn_full_scan">🔍 ПОВНЕ СКАНУВАННЯ</string>
     <string name="btn_quick_scan">🚀 ШВИДКЕ СКАНУВАННЯ</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Скасувати</string>
     <string name="system_clean">Система чиста за даними останнього сканування</string>
     <string name="risk_critical">КРИТИЧНИЙ</string>
@@ -174,7 +175,6 @@
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ Виконується фонове сканування…</string>
     <string name="detection_categories_header">Категорії виявлення</string>
     <string name="detect_cat_signatures">На основі сигнатур (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Виявлення аномалій ML</string>
@@ -421,8 +421,4 @@
     <string name="scan_system_toggle">Сканувати системні файли — не рекомендується, якщо пристрій не рутовано</string>
     <string name="scan_system_on_toast">Сканування системних файлів увімкнено — може позначати легітимні системні додатки</string>
     <string name="scan_system_off_toast">Сканування системних файлів вимкнено — системні додатки пропускатимуться</string>
-    <string name="fast_scan_toggle">Швидке сканування — пропускати відомі чисті файли за допомогою бази знань</string>
-    <string name="fast_scan_summary">Після ввімкнення ручні сканування пропускають записи з білого списку в кеші Anti-FP. Фонові сканування завжди виконують повне сканування, щоб база знань залишалася актуальною.</string>
-    <string name="fast_scan_on_toast">Швидке сканування ввімкнено — ручні сканування пропускатимуть відомі чисті файли</string>
-    <string name="fast_scan_off_toast">Швидке сканування вимкнено — всі файли скануватимуться як звичайно</string>
 </resources>

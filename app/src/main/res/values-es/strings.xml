@@ -128,6 +128,7 @@ Puntuación de riesgo: %2$d/100
 🔍 ESCANEO COMPLETO: Inspecciona a fondo todo el almacenamiento, incluida la tarjeta SD (puede tardar mucho).</string>
     <string name="btn_full_scan">🔍 ESCANEO COMPLETO</string>
     <string name="btn_quick_scan">🚀 ESCANEO RÁPIDO</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Cancelar</string>
     <string name="system_clean">Sistema Limpio Según el Último Análisis</string>
     <string name="risk_critical">CRÍTICO</string>
@@ -174,7 +175,6 @@ Puntuación de riesgo: %2$d/100
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ Análisis en segundo plano en curso…</string>
     <string name="detection_categories_header">Categorías de Detección</string>
     <string name="detect_cat_signatures">Basado en firmas (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Detección de anomalías por ML</string>
@@ -421,8 +421,4 @@ Puntuación de riesgo: %2$d/100
     <string name="scan_system_toggle">Escanear archivos del sistema — no recomendado a menos que el dispositivo tenga root</string>
     <string name="scan_system_on_toast">Escaneo de archivos del sistema activado — puede marcar aplicaciones legítimas del sistema</string>
     <string name="scan_system_off_toast">Escaneo de archivos del sistema desactivado — se omitirán las aplicaciones del sistema</string>
-    <string name="fast_scan_toggle">Escaneo rápido — omitir archivos limpios conocidos usando la base de conocimiento</string>
-    <string name="fast_scan_summary">Cuando está activado, los escaneos manuales omiten las entradas permitidas de la caché Anti-FP. Los escaneos en segundo plano siempre realizan un escaneo completo para mantener actualizada la base de conocimiento.</string>
-    <string name="fast_scan_on_toast">Escaneo rápido activado — los escaneos manuales omitirán archivos limpios conocidos</string>
-    <string name="fast_scan_off_toast">Escaneo rápido desactivado — todos los archivos se escanearán normalmente</string>
 </resources>

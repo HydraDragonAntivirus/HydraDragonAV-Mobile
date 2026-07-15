@@ -128,6 +128,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
 🔍 VERIFICAÇÃO COMPLETA: Inspeciona profundamente todo o armazenamento, incluindo o Cartão SD (pode demorar).</string>
     <string name="btn_full_scan">🔍 VERIFICAÇÃO COMPLETA</string>
     <string name="btn_quick_scan">🚀 VERIFICAÇÃO RÁPIDA</string>
+    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Cancelar</string>
     <string name="system_clean">Sistema Limpo Segundo a Última Verificação</string>
     <string name="risk_critical">CRÍTICO</string>
@@ -174,7 +175,6 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
 
-    <string name="background_scan_running">⏳ Verificação em segundo plano em andamento…</string>
     <string name="detection_categories_header">Categorias de Detecção</string>
     <string name="detect_cat_signatures">Baseado em assinaturas (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Detecção de anomalias por ML</string>
@@ -421,8 +421,4 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="scan_system_toggle">Digitalizar arquivos do sistema — não recomendado a menos que o dispositivo esteja rooteado</string>
     <string name="scan_system_on_toast">Digitalização de arquivos do sistema ativada — pode sinalizar aplicativos legítimos do sistema</string>
     <string name="scan_system_off_toast">Digitalização de arquivos do sistema desativada — aplicativos do sistema serão ignorados</string>
-    <string name="fast_scan_toggle">Digitalização rápida — pular arquivos limpos conhecidos usando o banco de conhecimento</string>
-    <string name="fast_scan_summary">Quando ativado, as digitalizações manuais pulam entradas na lista de permissões do cache Anti-FP. As digitalizações em segundo plano sempre fazem uma digitalização completa para manter o banco de conhecimento atualizado.</string>
-    <string name="fast_scan_on_toast">Digitalização rápida ativada — digitalizações manuais pularão arquivos limpos conhecidos</string>
-    <string name="fast_scan_off_toast">Digitalização rápida desativada — todos os arquivos serão digitalizados normalmente</string>
 </resources>
