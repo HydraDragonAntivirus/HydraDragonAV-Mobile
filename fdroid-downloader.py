@@ -14,6 +14,7 @@ Config:
 """
 
 import os
+import time
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -37,11 +38,14 @@ FDROID_REPO_BASE = "https://f-droid.org/repo/"
 # Skip packages older than this many days. Set to 0 to disable age filter.
 MAX_AGE_DAYS = 365 * 2  # 2 years
 
-# Concurrent downloads
-MAX_WORKERS = 6
+# Concurrent downloads (F-Droid doesn't rate-limit; 32+ is fine)
+MAX_WORKERS = 32
 
-# Download timeout (seconds)
-TIMEOUT = 30
+# Download timeout (seconds) — some APKs are 50+ MB on slow connections
+TIMEOUT = 120
+
+# Max retries per APK before giving up
+MAX_RETRIES = 3
 
 # ──────────────────────── FUNCTIONS ────────────────────────────
 
@@ -73,11 +77,11 @@ def is_recent_enough(added_ms, last_updated_ms, max_age_days: int) -> bool:
     """Check whether the package is newer than max_age_days."""
     if max_age_days <= 0:
         return True
-    cutoff = datetime.now(datetime.UTC) - timedelta(days=max_age_days)
+    cutoff = datetime.now(datetime.timezone.utc) - timedelta(days=max_age_days)
     timestamps = [t for t in (added_ms, last_updated_ms) if t]
     if not timestamps:
         return True
-    newest_dt = datetime.fromtimestamp(max(timestamps) / 1000, tz=datetime.UTC)
+    newest_dt = datetime.fromtimestamp(max(timestamps) / 1000, tz=datetime.timezone.utc)
     return newest_dt >= cutoff
 
 
@@ -129,25 +133,53 @@ def build_download_list(index_data: dict, existing_filenames: set, max_age_days:
 
 
 def download_one(pkg_name: str, apk_name: str, url: str, dest_dir: str) -> str:
-    """Download a single APK to dest_dir. Returns a status string."""
+    """Download a single APK to dest_dir with retries and speed display."""
     dest_path = os.path.join(dest_dir, apk_name)
     if os.path.exists(dest_path):
-        return f"[SKIP] {apk_name} already in new folder"
+        return f"[SKIP] {apk_name}"
 
     tmp_path = dest_path + ".part"
-    try:
-        with requests.get(url, stream=True, timeout=TIMEOUT) as r:
-            r.raise_for_status()
-            with open(tmp_path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=256 * 1024):
-                    if chunk:
-                        f.write(chunk)
-        os.replace(tmp_path, dest_path)
-        return f"[OK] {apk_name}"
-    except Exception as e:
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
-        return f"[FAIL] {apk_name}: {e}"
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            with requests.get(url, stream=True, timeout=TIMEOUT) as r:
+                r.raise_for_status()
+                total = int(r.headers.get("content-length", 0))
+                downloaded = 0
+                start = time.time()
+                with open(tmp_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=512 * 1024):
+                        if chunk:
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                elapsed = time.time() - start
+                if total > 0:
+                    speed = downloaded / elapsed / (1024 * 1024)
+                    size_mb = total / (1024 * 1024)
+                    return f"[OK] {apk_name} ({size_mb:.1f} MB @ {speed:.1f} MB/s)"
+                else:
+                    speed = downloaded / elapsed / (1024 * 1024)
+                    return f"[OK] {apk_name} ({downloaded / (1024*1024):.1f} MB @ {speed:.1f} MB/s)"
+        except requests.Timeout:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            if attempt < MAX_RETRIES:
+                wait = attempt * 5
+                print(f"  [RETRY] {apk_name} timed out, retrying in {wait}s (attempt {attempt}/{MAX_RETRIES})")
+                time.sleep(wait)
+            else:
+                return f"[FAIL] {apk_name} timed out after {MAX_RETRIES} retries"
+        except Exception as e:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            if attempt < MAX_RETRIES:
+                wait = attempt * 5
+                print(f"  [RETRY] {apk_name}: {e}, retrying in {wait}s (attempt {attempt}/{MAX_RETRIES})")
+                time.sleep(wait)
+            else:
+                return f"[FAIL] {apk_name}: {e}"
+
+    return f"[FAIL] {apk_name} unknown error"
 
 
 # ─────────────────────────── MAIN ─────────────────────────────
@@ -170,6 +202,8 @@ def main():
         return
 
     done = 0
+    failed = 0
+    overall_start = time.time()
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {
             executor.submit(download_one, pkg, apk, url, NEW_DIR): apk
@@ -178,7 +212,17 @@ def main():
         for future in as_completed(futures):
             result = future.result()
             done += 1
+            if result.startswith("[FAIL]"):
+                failed += 1
             print(f"({done}/{len(to_download)}) {result}")
+            if done % 10 == 0 or done == len(to_download):
+                elapsed = time.time() - overall_start
+                rate = done / elapsed
+                remaining = (len(to_download) - done) / rate if rate > 0 else 0
+                print(
+                    f"  ⏱ {done}/{len(to_download)} | {failed} failed | "
+                    f"{rate:.1f} APK/min | ETA {remaining/60:.1f} min"
+                )
 
     print("[DONE] Download complete. Results saved in 'new' subfolder.")
 
