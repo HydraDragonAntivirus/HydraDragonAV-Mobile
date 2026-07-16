@@ -1,28 +1,14 @@
 [package]
 name = "hydradragonml"
-version = "0.1.0"
-edition = "2024"
-description = "Pure-Rust one-class APK malware detector for HydraDragon: feature extraction + MinHash/LSH near-duplicate matching + Isolation Forest anomaly scoring. No benign set required."
+version = "0.2.0"
+edition = "2021"
+description = "HydraDragon ML inference engine: tract-based ONNX malware/benign binary classifier."
 license = "GPL-2.0-or-later"
 
 [dependencies]
-# Pure-Rust zip reader to walk APK (zip) entries and pull AndroidManifest / DEX.
 zip = { version = "2", default-features = false, features = ["deflate"] }
-serde = { version = "1", features = ["derive"] }
-# Compact binary model format — loads ~10-50x faster than JSON (126k numbers as
-# raw bytes instead of text), so on-device init is near-instant.
-bincode-next = { version = "3.1.1", features = ["serde"] }
-# Parallel feature extraction over the 1000-sample corpus during training.
-rayon = "1"
+tract-onnx = "0.21"
 
 [lib]
 name = "hydradragonml"
 path = "src/lib.rs"
-
-[[bin]]
-name = "hydra-ml-train"
-path = "src/bin/train.rs"
-
-[[bin]]
-name = "hydra-ml-scan"
-path = "src/bin/scan.rs"

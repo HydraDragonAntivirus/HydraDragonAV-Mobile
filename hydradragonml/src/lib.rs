@@ -1,142 +1,44 @@
-//! HydraDragon one-class APK malware model.
-//!
-//! Pipeline: [`features`] turns an APK into a token set + dense vector;
-//! [`minhash`] does near-duplicate / variant matching (the generalising
-//! successor to the per-file YARA set); [`iforest`] gives a one-class
-//! "malware-likeness" anomaly score. Trained on malware only — no benign set.
-//!
-//! A scan is flagged malicious when EITHER signal fires:
-//!   * MinHash Jaccard to some known sample >= `jaccard_threshold`, or
-//!   * Isolation Forest anomaly score <= `anomaly_threshold`.
-//!
-//! However, when best_jaccard is zero (no MinHash similarity to any known
-//! malware sample), the anomaly-only signal produces false positives on benign
-//! apps. In that case both signals must fire to flag.
-//!
-//! Because the deployment whitelists known-good apps upstream, thresholds are
-//! tuned for recall, not precision.
-
 pub mod features;
-pub mod iforest;
-pub mod minhash;
 
-use serde::{Deserialize, Serialize};
+use std::io::Cursor;
 
-use features::ApkFeatures;
-use iforest::IForest;
-use minhash::LshIndex;
+use tract_onnx::prelude::*;
 
-/// Default: flag as a variant when >= this fraction of MinHash slots match.
-pub const DEFAULT_JACCARD_THRESHOLD: f32 = 0.55;
-/// When best_jaccard is below this floor, require both minhash AND iforest
-/// signals to fire. Prevents anomaly-only false positives on apps with zero
-/// MinHash similarity to known malware.
-pub const JACCARD_FLOOR_FOR_DUAL_SIGNAL: f32 = 0.01;
-/// Default Isolation Forest training params.
-pub const DEFAULT_N_TREES: usize = 150;
-pub const DEFAULT_SAMPLE_SIZE: usize = 256;
-/// Anomaly threshold is learned as this percentile of training scores.
-pub const DEFAULT_ANOMALY_PERCENTILE: f64 = 0.97;
+/// Minimum confidence to flag a sample as malicious.
+pub const DEFAULT_CONFIDENCE_THRESHOLD: f32 = 0.5;
 
-#[derive(Serialize, Deserialize)]
 pub struct Model {
-    /// MinHash signature per training sample.
-    signatures: Vec<Vec<u64>>,
-    /// Optional human label (sha/filename) per training sample, for reporting.
-    labels: Vec<String>,
-    iforest: IForest,
-    jaccard_threshold: f32,
-    anomaly_threshold: f64,
-
-    #[serde(skip)]
-    lsh: Option<LshIndex>,
+    plan: SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
+    confidence_threshold: f32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct ScanResult {
     pub malicious: bool,
-    pub best_jaccard: f32,
-    /// Label of the closest known sample (if any candidate was found).
+    /// Malware confidence 0.0 (benign) – 1.0 (malware).
+    pub confidence: f32,
+    /// Optional label (not used in tract mode, kept for ScanResult compatibility).
     pub nearest: Option<String>,
-    pub anomaly_score: f64,
-    /// Which signal(s) fired.
-    pub by_minhash: bool,
-    pub by_iforest: bool,
-}
-
-/// One training sample: its features plus a label for reporting.
-pub struct TrainSample {
-    pub label: String,
-    pub features: ApkFeatures,
 }
 
 impl Model {
-    /// Train from extracted features. Computes signatures, builds the LSH
-    /// index, trains the forest, and learns the anomaly threshold from the
-    /// training-score distribution.
-    pub fn train(
-        samples: Vec<TrainSample>,
-        jaccard_threshold: f32,
-        n_trees: usize,
-        sample_size: usize,
-        anomaly_percentile: f64,
-        seed: u64,
-    ) -> Model {
-        let signatures: Vec<Vec<u64>> = samples
-            .iter()
-            .map(|s| minhash::signature(&s.features.tokens))
-            .collect();
-        let labels: Vec<String> = samples.iter().map(|s| s.label.clone()).collect();
-        let dense: Vec<Vec<f32>> = samples.iter().map(|s| s.features.dense.clone()).collect();
-
-        let iforest = IForest::train(&dense, n_trees, sample_size, seed);
-
-        // Learn anomaly threshold = given percentile of training scores, so that
-        // an unseen APK at least as malware-like as that fraction is flagged.
-        let mut scores: Vec<f64> = dense.iter().map(|d| iforest.score(d)).collect();
-        scores.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        let k = ((scores.len() as f64) * anomaly_percentile).floor() as usize;
-        let anomaly_threshold = scores.get(k.min(scores.len().saturating_sub(1))).copied().unwrap_or(0.5);
-
-        let lsh = LshIndex::build(&signatures);
-
-        Model {
-            signatures,
-            labels,
-            iforest,
-            jaccard_threshold,
-            anomaly_threshold,
-            lsh: Some(lsh),
-        }
+    /// Load an ONNX model from bytes.
+    pub fn load_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+        let tract_model = onnx()
+            .model_for_read(&mut Cursor::new(bytes))?
+            .with_input_fact(0, InferenceFact::dt_shape(f32::datum_type(), tvec!(1, features::DENSE_DIM)))?
+            .into_optimized()?
+            .into_runnable()?;
+        Ok(Model {
+            plan: tract_model,
+            confidence_threshold: DEFAULT_CONFIDENCE_THRESHOLD,
+        })
     }
 
-    /// Rebuild the (non-serialised) LSH index after loading.
-    fn ensure_index(&mut self) {
-        if self.lsh.is_none() {
-            self.lsh = Some(LshIndex::build(&self.signatures));
-        }
-    }
-
-    /// Binary (bincode-next) model.
-    pub fn save_bin(&self, path: &std::path::Path) -> std::io::Result<()> {
-        let bytes = bincode_next::serde::encode_to_vec(self, bincode_next::config::standard())
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-        std::fs::write(path, bytes)
-    }
-
-    pub fn load_bin(path: &std::path::Path) -> std::io::Result<Model> {
+    /// Load an ONNX model from a file path.
+    pub fn load_bin(path: &std::path::Path) -> Result<Self, Box<dyn std::error::Error>> {
         let bytes = std::fs::read(path)?;
         Self::load_bytes(&bytes)
-    }
-
-    /// Load a bincode-serialized model from an already-read byte slice.
-    /// No filesystem I/O needed — useful when bytes come from Android assets.
-    pub fn load_bytes(bytes: &[u8]) -> std::io::Result<Model> {
-        let (mut model, _): (Model, usize) =
-            bincode_next::serde::decode_from_slice(bytes, bincode_next::config::standard())
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-        model.ensure_index();
-        Ok(model)
     }
 
     /// Score raw APK bytes.
@@ -145,55 +47,38 @@ impl Model {
         Some(self.scan_features(&feats))
     }
 
-    pub fn scan_features(&self, feats: &ApkFeatures) -> ScanResult {
-        let sig = minhash::signature(&feats.tokens);
-
-        let mut best_jaccard = 0.0f32;
-        let mut nearest: Option<String> = None;
-        if let Some(lsh) = &self.lsh {
-            for id in lsh.candidates(&sig) {
-                let j = minhash::jaccard(&sig, &self.signatures[id as usize]);
-                if j > best_jaccard {
-                    best_jaccard = j;
-                    nearest = self.labels.get(id as usize).cloned();
+    /// Score pre-extracted features.
+    pub fn scan_features(&self, feats: &features::ApkFeatures) -> ScanResult {
+        let input = tract_ndarray::Array2::from_shape_vec(
+            (1, features::DENSE_DIM),
+            feats.dense.clone(),
+        )
+        .unwrap();
+        let result = self.plan.run(tvec!(input.into_tensor().into()));
+        let confidence = match result {
+            Ok(outputs) => {
+                let output = outputs[0].to_array_view::<f32>().ok();
+                match output {
+                    Some(arr) => {
+                        let val = arr.iter().copied().next().unwrap_or(0.0);
+                        if val > 1.0 {
+                            1.0
+                        } else if val < 0.0 {
+                            0.0
+                        } else {
+                            val
+                        }
+                    }
+                    None => 0.0,
                 }
             }
-        }
-
-        let anomaly_score = self.iforest.score(&feats.dense);
-
-        let by_minhash = best_jaccard >= self.jaccard_threshold;
-        let by_iforest = anomaly_score <= self.anomaly_threshold;
-
-        // When Jaccard is effectively zero (no MinHash similarity to any
-        // known sample), the anomaly-only signal alone is too FP-prone on
-        // benign apps. Require both signals to fire in that case.
-        let malicious = if best_jaccard >= JACCARD_FLOOR_FOR_DUAL_SIGNAL {
-            by_minhash || by_iforest
-        } else {
-            by_minhash && by_iforest
+            Err(_) => 0.0,
         };
-
+        let malicious = confidence >= self.confidence_threshold;
         ScanResult {
             malicious,
-            best_jaccard,
-            nearest,
-            anomaly_score,
-            by_minhash,
-            by_iforest,
+            confidence,
+            nearest: None,
         }
-    }
-
-    pub fn anomaly_threshold(&self) -> f64 {
-        self.anomaly_threshold
-    }
-    pub fn jaccard_threshold(&self) -> f32 {
-        self.jaccard_threshold
-    }
-    pub fn len(&self) -> usize {
-        self.signatures.len()
-    }
-    pub fn is_empty(&self) -> bool {
-        self.signatures.is_empty()
     }
 }

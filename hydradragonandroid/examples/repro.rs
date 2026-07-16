@@ -1,9 +1,10 @@
-//! Host reproduction of the on-device native scan crash.
+//! Host reproduction of the on-device native scan.
 //!
-//! Loads the same clamav DB + .yrc rulesets + ML model the app bundles, then
-//! scans a directory of APKs exactly like `run_scan`, isolating each engine with
-//! catch_unwind. Rust's default panic hook prints "panicked at MSG, file:line"
-//! to stderr, so the offending APK + the exact panicking line are revealed.
+//! Loads the same clamav DB + .yrc rulesets + ONNX ML model the app bundles,
+//! then scans a directory of APKs exactly like `run_scan`, isolating each
+//! engine with catch_unwind. Rust's default panic hook prints
+//! "panicked at MSG, file:line" to stderr, so the offending APK + the exact
+//! panicking line are revealed.
 //!
 //! Usage:
 //!   cargo run --release --example repro -- <assets_scan_dir> <apk_dir>
@@ -51,7 +52,7 @@ fn run() {
         }
     }
     eprintln!("STEP: load_model");
-    let model = Model::load_bin(&base.join("apk_model.bin")).ok();
+    let model = Model::load_bin(&base.join("model.onnx")).ok();
     eprintln!("STEP: loaded ok");
     println!("loaded: clamav={} model={}", clamav.is_some(), model.is_some());
 

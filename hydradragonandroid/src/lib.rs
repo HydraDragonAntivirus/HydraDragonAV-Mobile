@@ -9,7 +9,7 @@
 //! Detection combines three signals; an APK is flagged if ANY fires:
 //!   1. clean_rules_filtered_verified.yrc  (generic Android/Linux malware)
 //!   2. valhalla-rules_filtered_verified.yrc
-//!   3. the one-class MinHash/LSH + Isolation Forest model (apk_model.json)
+//!   3. the ONNX malware/benign binary classifier model (model.onnx)
 
 use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
@@ -85,7 +85,7 @@ const DYNAMIC_YRC_FILES: &[&str] = &[
     "emerging-all.yrc",
     "hips_rules_filtered_verified.yrc",
 ];
-const MODEL_BIN: &str = "apk_model.bin";
+const MODEL_ONNX: &str = "model.onnx";
 /// Malware TLSH similarity database (one T1 digest per line), built from the
 /// MalwareBazaar dump filtered to apk/elf/so/dex (`gen_tlsh_db.py`).
 const TLSH_DB: &str = "malware_tlsh.txt";
@@ -432,7 +432,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
             let model_handle = s.spawn(move || {
                 let t_model = std::time::Instant::now();
                 let mut report = String::new();
-                let model_bytes = files.get(MODEL_BIN);
+                let model_bytes = files.get(MODEL_ONNX);
                 let model = match model_bytes.and_then(|b| {
                     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Option<Model> {
                         hydradragonml::Model::load_bytes(b).ok()
@@ -1401,8 +1401,7 @@ fn run_deferred_item(
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let mut malicious = false;
-                let mut best_jaccard = 0.0_f32;
-                let mut worst_anomaly = f64::MAX;
+                let mut best_confidence = 0.0_f32;
                 let mut nearest: Option<String> = None;
                 let mut lineages: Vec<(String, Vec<String>)> = Vec::new();
                 for (i, b) in buffers.iter().enumerate() {
@@ -1425,25 +1424,22 @@ fn run_deferred_item(
                             };
                             lineages.push((obj_path, b.apk_lineage.clone()));
                         }
-                        if r.best_jaccard > best_jaccard {
-                            best_jaccard = r.best_jaccard;
+                        if r.confidence > best_confidence {
+                            best_confidence = r.confidence;
                             nearest = r.nearest;
-                        }
-                        if r.anomaly_score < worst_anomaly {
-                            worst_anomaly = r.anomaly_score;
                         }
                     }
                 }
-                (malicious, best_jaccard, worst_anomaly, nearest, lineages)
+                (malicious, best_confidence, best_confidence as f64, nearest, lineages)
             })) {
                 Ok(res) => res,
                 Err(_) => {
                     android_log(&format!("run_scan: ML model scan PANIC on {path}"));
-                    (false, 0.0, f64::MAX, None, Vec::new())
+                    (false, 0.0, 0.0, None, Vec::new())
                 }
             }
         }
-        None => (false, 0.0, f64::MAX, None, Vec::new()),
+        None => (false, 0.0, 0.0, None, Vec::new()),
     };
     let ml_ms = t_ml.elapsed().as_millis();
 
@@ -2260,20 +2256,8 @@ fn run_scan(
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let mut malicious = false;
-                let mut best_jaccard = 0.0_f32;
-                // hydradragonml flags a buffer malicious when
-                // `anomaly_score <= anomaly_threshold` (LOWER = more anomalous —
-                // isolation-forest convention). Tracking the MAXIMUM here (as this
-                // used to) meant the one buffer that actually tripped `by_iforest`
-                // — typically a NEGATIVE score — could never overwrite the 0.0
-                // starting value, so the JSON verdict showed "anomaly": 0.0000
-                // even when the ML detection genuinely fired on a real anomaly.
-                // Track the MINIMUM (most anomalous) instead so the displayed
-                // number is always the one that actually caused the flag.
-                let mut worst_anomaly = f64::MAX;
+                let mut best_confidence = 0.0_f32;
                 let mut nearest: Option<String> = None;
-                // Lineage of every APK/zip buffer the model flagged malicious, so
-                // the ML detection is suppressible by a whitelisted ancestor too.
                 let mut lineages: Vec<(String, Vec<String>)> = Vec::new();
                 for (i, b) in buffers.iter().enumerate() {
                     if skip_heavy[i] {
@@ -2282,10 +2266,6 @@ fn run_scan(
                     if skip_by_size(&b.data) {
                         continue;
                     }
-                    // The model is trained on whole APKs (= zip). Running it on
-                    // raw extracted members (classes.dex, resources, .so, images)
-                    // produces false positives, so only score APK/zip buffers
-                    // (the top-level APK and any APK nested inside a zip).
                     if hydradragonextractor::detect_format(&b.data) != Some("zip") {
                         continue;
                     }
@@ -2302,19 +2282,13 @@ fn run_scan(
                             };
                             lineages.push((obj_path, b.apk_lineage.clone()));
                         }
-                        if r.best_jaccard > best_jaccard {
-                            best_jaccard = r.best_jaccard;
+                        if r.confidence > best_confidence {
+                            best_confidence = r.confidence;
                             nearest = r.nearest.clone();
-                        }
-                        if r.anomaly_score < worst_anomaly {
-                            worst_anomaly = r.anomaly_score;
                         }
                     }
                 }
-                if worst_anomaly == f64::MAX {
-                    worst_anomaly = 0.0; // no buffer was scored — nothing to report
-                }
-                (malicious, best_jaccard, worst_anomaly, nearest, lineages)
+                (malicious, best_confidence, best_confidence as f64, nearest, lineages)
             })) {
                 Ok(t) => t,
                 Err(_) => {

@@ -6,11 +6,11 @@ JNI bridge that scans APKs on-device by combining:
    - `clean_rules_filtered_verified.yrc`
    - `valhalla-rules_filtered_verified.yrc`
    - `AndroidOS_filtered.yrc`
-2. **`hydradragonml`** one-class model (`apk_model.json`) — MinHash/LSH +
-   Isolation Forest.
+2. **`hydradragonml`** ONNX malware/benign binary classifier (`model.onnx`).
 
 An APK is flagged **malicious** if any YARA ruleset matches **or** the ML model
-flags it. (Whitelisting happens upstream, so recall is favoured.)
+flags it (confidence >= 0.5). (Whitelisting happens upstream, so recall is
+favoured.)
 
 ## Native methods
 
@@ -18,14 +18,14 @@ Bound to `com.hydradragon.antivirus.engine.NativeScanner`:
 
 | Java | Native |
 |------|--------|
-| `boolean nativeInit(String dir)` | load `.yrc` rulesets + `apk_model.json` from `dir` |
+| `boolean nativeInit(String dir)` | load `.yrc` rulesets + `model.onnx` from `dir` |
 | `String nativeScanApk(String path)` | scan one APK → JSON verdict |
 
 Verdict JSON:
 ```json
 {"malicious":true,
  "yara":["AndroidOS_filtered.yrc::YARA.Some_Rule"],
- "ml":{"malicious":false,"jaccard":0.61,"anomaly":0.42,"nearest":"<sha>"}}
+ "ml":{"malicious":true,"jaccard":0.87,"anomaly":0.87,"nearest":null}}
 ```
 
 ## Prerequisites
@@ -72,7 +72,7 @@ export PKG_CONFIG_ALLOW_CROSS=1
 cargo ndk -t arm64-v8a build --release
 ```
 
-Gradle bundles `jniLibs/` and `app/src/main/assets/*.yrc|apk_model.json`
+Gradle bundles `jniLibs/` and `app/src/main/assets/*.yrc|model.onnx`
 automatically — no `build.gradle` changes needed.
 
 ## Use from the app
@@ -89,7 +89,7 @@ String verdict = NativeScanner.scanApk(apkFilePath);  // per APK
 
 1. Re-run `yara_filter.py` → regenerate `*_filtered_verified.yar`.
 2. Recompile to `.yrc` with `hydradragon_yara_x_compile`.
-3. Retrain the model with `hydra-ml-train` if needed.
-4. Copy the `.yrc` + `apk_model.json` into `app/src/main/assets/`.
+3. Train a new ONNX model in Python with your malware + benign dataset.
+4. Copy the `.yrc` + `model.onnx` into `app/src/main/assets/`.
    (Bump a version so `NativeScanner.init` re-copies — currently it re-copies
    only when an asset is missing or zero-length.)
