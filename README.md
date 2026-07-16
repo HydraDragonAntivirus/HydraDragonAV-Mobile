@@ -117,5 +117,5 @@ The on-device detection assets are generated offline from public threat-intel an
 
 - **`fdroid-downloader.py`** — downloads benign APKs from the official F-Droid repository for the dataset pipeline. Only downloads APKs not already present locally; compares by filename so updated versions are picked up automatically.
 - **`dataset/benign/F-Droid/`** — collected F-Droid open-source APKs (benign by nature).
-- **`dataset/malware/`** — malware samples (stored separately, not in this repo. Link: There is no infected password (to not people ask password but I might add password in featureq) so don't run on main machine. All of samples come from public MalwareBazaar database https://drive.google.com/file/d/1DJfbgyZucML2OENudJGrID8H_H1jmqA1).
+- **`dataset/malware/`** — malware samples (stored separately, not in this repo. Link: There is no infected password (to not people ask password but I might add password in feature.) so don't run on main machine. All of samples come from public MalwareBazaar database https://drive.google.com/file/d/1DJfbgyZucML2OENudJGrID8H_H1jmqA1).
 - **yargen (YARA rule generation) dataset — coming soon.**
