@@ -15,7 +15,7 @@ Config:
 
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
@@ -77,11 +77,11 @@ def is_recent_enough(added_ms, last_updated_ms, max_age_days: int) -> bool:
     """Check whether the package is newer than max_age_days."""
     if max_age_days <= 0:
         return True
-    cutoff = datetime.now(datetime.timezone.utc) - timedelta(days=max_age_days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
     timestamps = [t for t in (added_ms, last_updated_ms) if t]
     if not timestamps:
         return True
-    newest_dt = datetime.fromtimestamp(max(timestamps) / 1000, tz=datetime.timezone.utc)
+    newest_dt = datetime.fromtimestamp(max(timestamps) / 1000, tz=timezone.utc)
     return newest_dt >= cutoff
 
 
