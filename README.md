@@ -112,3 +112,10 @@ The on-device detection assets are generated offline from public threat-intel an
   ```bash
   python clam_juice.py --directory database_non_filtered --output database_filtered --profile cross-platform
   ```
+
+## 📦 Dataset Pipeline
+
+- **`fdroid-downloader.py`** — downloads benign APKs from the official F-Droid repository for the dataset pipeline. Only downloads APKs not already present locally; compares by filename so updated versions are picked up automatically.
+- **`dataset/benign/F-Droid/`** — collected F-Droid open-source APKs (benign by nature).
+- **`dataset/malware/`** — malware samples (stored separately, not in this repo).
+- **yargen (YARA rule generation) dataset — coming soon.**
