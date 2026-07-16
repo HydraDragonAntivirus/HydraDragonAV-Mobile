@@ -2174,10 +2174,41 @@ public class ScanEngine {
     }
 
     private void flushBatchScans(List<ThreatResult> threats) {
-        // endBatchScan() bails out early if cancelScan() called abortBatchScan()
-        // (see NativeScanner) — it then returns only the verdicts scanned before
-        // the abort, and the loop below still records those.
-        String json = NativeScanner.endBatchScan();
+        if (callback != null) {
+            callback.onProgress(0, 0, "Completing deep scans...");
+        }
+        if (cancelRequested) {
+            NativeScanner.abortBatchScan();
+            deferredScans.clear();
+            return;
+        }
+        // Run endBatchScan on orchestrationExecutor with timeout polling so the
+        // UI doesn't freeze — the native call has no Java-side interruption point
+        // of its own, but abortBatchScan() sets a flag the Rust side polls.
+        java.util.concurrent.Future<String> future = orchestrationExecutor.submit(() -> NativeScanner.endBatchScan());
+        String json = null;
+        int pollCount = 0;
+        while (true) {
+            if (cancelRequested) {
+                NativeScanner.abortBatchScan();
+                deferredScans.clear();
+                return;
+            }
+            try {
+                json = future.get(200, java.util.concurrent.TimeUnit.MILLISECONDS);
+                break;
+            } catch (java.util.concurrent.TimeoutException te) {
+                pollCount++;
+                if (pollCount % 25 == 0 && callback != null) {
+                    int sec = pollCount / 5;
+                    callback.onProgress(0, 0, "Deep scan in progress (" + sec + "s)...");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "endBatchScan failed", e);
+                deferredScans.clear();
+                return;
+            }
+        }
         List<NativeScanner.Verdict> verdicts = NativeScanner.parseBatchVerdicts(json);
         for (NativeScanner.Verdict v : verdicts) {
             if (v.path == null) continue;
@@ -2186,10 +2217,6 @@ public class ScanEngine {
             try {
                 ThreatResult r = processFinalVerdict(state, v);
                 if (r != null && r.isThreat()) {
-                    // Merge with existing threat for the same packageName instead
-                    // of adding a duplicate — a single app can be scanned by both
-                    // analyzeApp and deepNativeScanInstalledApks within the same
-                    // batch, producing separate SIG and AUTO entries.
                     ThreatResult existing = null;
                     for (ThreatResult t : threats) {
                         String pkg = t.getPackageName();
@@ -2203,7 +2230,6 @@ public class ScanEngine {
                         for (String reason : r.getReasons()) {
                             if (!merged.contains(reason)) merged.add(reason);
                         }
-                        // Rebuild with merged reasons + higher risk score.
                         ThreatResult mergedR = new ThreatResult.Builder(existing.getPackageName())
                             .setAppName(existing.getAppName())
                             .setApkPath(existing.getApkPath())

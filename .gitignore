@@ -1,9 +1,10 @@
+# Machine Learning Dataset must be public but not at github
+dataset/
 database_non_filtered/
 yara-x/clean_rules.yar
 yara-x/valhalla-rules.yar
 __pycache__/
 allxfilters/MalwareDomains.optimized.csv
-downloads/
 whitelist/
 # nist.gov RDS sql database
 sql/
