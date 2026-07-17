@@ -195,20 +195,18 @@ def main():
 
     model.eval()
     dummy = torch.randn(1, DENSE_DIM)
-    try:
-        torch.onnx.export(
-            model,
-            dummy,
-            "model.onnx",
-            input_names=["input"],
-            output_names=["output"],
-            opset_version=18,
-            dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}},
-            do_constant_folding=True,
-        )
-    except ModuleNotFoundError:
-        print("\nERROR: install onnxscript: pip install onnxscript")
-        return
+    import warnings
+    warnings.filterwarnings("ignore", category=UserWarning, module="torch")
+    warnings.filterwarnings("ignore", category=FutureWarning, module="copyreg")
+    torch.onnx.export(
+        model,
+        dummy,
+        "model.onnx",
+        input_names=["input"],
+        output_names=["output"],
+        opset_version=18,
+        do_constant_folding=True,
+    )
     print("\nOK model.onnx exported")
 
 
