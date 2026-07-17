@@ -41,6 +41,11 @@ impl Model {
         Self::load_bytes(&bytes)
     }
 
+    /// Override the confidence threshold (default: 0.5).
+    pub fn set_threshold(&mut self, t: f32) {
+        self.confidence_threshold = t.clamp(0.0, 1.0);
+    }
+
     /// Score raw APK bytes.
     pub fn scan(&self, apk: &[u8]) -> Option<ScanResult> {
         let feats = features::extract(apk)?;
