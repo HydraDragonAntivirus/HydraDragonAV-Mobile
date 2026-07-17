@@ -56,6 +56,9 @@ fn find_apks(root: &std::path::Path) -> Vec<PathBuf> {
     let mut apks = Vec::new();
     for entry in WalkDir::new(root).into_iter().filter_map(|e| e.ok()) {
         let path = entry.path();
+        if path.to_string_lossy().to_ascii_lowercase().contains("invalid") {
+            continue;
+        }
         if path
             .extension()
             .and_then(|e| e.to_str())

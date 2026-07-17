@@ -29,14 +29,16 @@ Why not add opcode n-grams, ELF analysis, CFG features, etc.?
 cd hydradragonml
 cargo build --release
 
-# Feature extraction only (no model)
+# Feature extraction only (no model — all APKs show BENIGN/0.0000)
 .\target\release\hydradragonml-scan.exe --dataset ..\dataset\
 
-# Full scan with ML model
+# Full scan with ML model (--model is required for actual inference)
 .\target\release\hydradragonml-scan.exe --dataset ..\dataset\ --model ..\app\src\main\assets\scan\model.onnx --threshold 0.5
 ```
 
-Scan pipeline per APK:
+Without `--model`, inference is skipped — every APK shows `BENIGN` with
+`confidence=0.0000` and `total time = 0 ms`. Always pass `--model` for
+real detection. Scan pipeline per APK:
 
 1. **ML model** (`model.onnx`) → `BENIGN` / `MALICIOUS` with confidence
 
