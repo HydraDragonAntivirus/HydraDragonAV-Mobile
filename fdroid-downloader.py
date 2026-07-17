@@ -47,6 +47,9 @@ TIMEOUT = 120
 # Max retries per APK before giving up
 MAX_RETRIES = 3
 
+# Skip APKs larger than this size (MB). Set to 0 to disable size filter.
+MAX_SIZE_MB = 100
+
 # ──────────────────────── FUNCTIONS ────────────────────────────
 
 
@@ -145,13 +148,27 @@ def download_one(pkg_name: str, apk_name: str, url: str, dest_dir: str) -> str:
             with requests.get(url, stream=True, timeout=TIMEOUT) as r:
                 r.raise_for_status()
                 total = int(r.headers.get("content-length", 0))
+
+                if MAX_SIZE_MB > 0 and total > MAX_SIZE_MB * 1024 * 1024:
+                    size_mb = total / (1024 * 1024)
+                    return f"[SKIP] {apk_name} too large ({size_mb:.1f} MB > {MAX_SIZE_MB} MB)"
+
                 downloaded = 0
                 start = time.time()
+                max_bytes = MAX_SIZE_MB * 1024 * 1024 if MAX_SIZE_MB > 0 else None
                 with open(tmp_path, "wb") as f:
                     for chunk in r.iter_content(chunk_size=512 * 1024):
                         if chunk:
                             f.write(chunk)
                             downloaded += len(chunk)
+                            if max_bytes and downloaded > max_bytes:
+                                f.close()
+                                if os.path.exists(tmp_path):
+                                    os.remove(tmp_path)
+                                return (
+                                    f"[SKIP] {apk_name} exceeded {MAX_SIZE_MB} MB "
+                                    f"during download, aborted"
+                                )
                 elapsed = time.time() - start
                 os.rename(tmp_path, dest_path)
                 if total > 0:
