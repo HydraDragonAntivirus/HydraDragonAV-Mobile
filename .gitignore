@@ -1,3 +1,6 @@
+# yarGen benign database
+dev-tools/yarGen/dbs.7z
+
 # Machine Learning Dataset must be public but not at github
 dataset/
 database_non_filtered/
