@@ -2,9 +2,10 @@ import os
 import zipfile
 
 import numpy as np
+import onnx
+from onnx import helper, TensorProto, numpy_helper
 import torch
 import torch.nn as nn
-import torch.onnx
 
 DENSE_DIM = 256
 MIN_STR_LEN = 5
@@ -194,20 +195,37 @@ def main():
         print(f"  Epoch {epoch+1:2d} loss={loss.item():.4f} acc={acc:.4f}")
 
     model.eval()
-    dummy = torch.randn(1, DENSE_DIM)
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="torch")
-    warnings.filterwarnings("ignore", category=FutureWarning, module="copyreg")
-    torch.onnx.export(
-        model,
-        dummy,
-        "model.onnx",
-        input_names=["input"],
-        output_names=["output"],
-        opset_version=18,
-        do_constant_folding=True,
+    w1 = model.net[0].weight.detach().numpy().T
+    b1 = model.net[0].bias.detach().numpy()
+    w2 = model.net[2].weight.detach().numpy().T
+    b2 = model.net[2].bias.detach().numpy()
+    w3 = model.net[4].weight.detach().numpy().T
+    b3 = model.net[4].bias.detach().numpy()
+
+    w1_init = numpy_helper.from_array(w1, "fc1_w")
+    b1_init = numpy_helper.from_array(b1, "fc1_b")
+    w2_init = numpy_helper.from_array(w2, "fc2_w")
+    b2_init = numpy_helper.from_array(b2, "fc2_b")
+    w3_init = numpy_helper.from_array(w3, "fc3_w")
+    b3_init = numpy_helper.from_array(b3, "fc3_b")
+
+    n1 = helper.make_node("Gemm", ["input", "fc1_w", "fc1_b"], ["fc1"], alpha=1.0, beta=1.0, transA=0, transB=0)
+    n2 = helper.make_node("Relu", ["fc1"], ["r1"])
+    n3 = helper.make_node("Gemm", ["r1", "fc2_w", "fc2_b"], ["fc2"], alpha=1.0, beta=1.0, transA=0, transB=0)
+    n4 = helper.make_node("Relu", ["fc2"], ["r2"])
+    n5 = helper.make_node("Gemm", ["r2", "fc3_w", "fc3_b"], ["fc3"], alpha=1.0, beta=1.0, transA=0, transB=0)
+    n6 = helper.make_node("Sigmoid", ["fc3"], ["output"])
+
+    graph = helper.make_graph(
+        [n1, n2, n3, n4, n5, n6], "net",
+        [helper.make_tensor_value_info("input", TensorProto.FLOAT, [None, DENSE_DIM])],
+        [helper.make_tensor_value_info("output", TensorProto.FLOAT, [None, 1])],
+        [w1_init, b1_init, w2_init, b2_init, w3_init, b3_init],
     )
-    print("\nOK model.onnx exported")
+    onnx_model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 11)])
+    with open("model.onnx", "wb") as f:
+        f.write(onnx_model.SerializeToString())
+    print("\nOK model.onnx exported (opset 11)")
 
 
 if __name__ == "__main__":

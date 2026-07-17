@@ -50,7 +50,7 @@ accuracy / precision / recall / F1 vs folder labels.
 A Python training script is at the repo root:
 
 ```powershell
-pip install torch numpy onnxscript
+pip install torch numpy
 python ..\train_model.py ..\dataset\
 ```
 
