@@ -10,21 +10,19 @@ APK strings (manifest, dex, resources) → 256-d vector → tract-onnx inference
 cd hydradragonml
 cargo build --release
 
-# Feature extraction only (no model / whitelist)
+# Feature extraction only (no model)
 .\target\release\hydradragonml-scan.exe --dataset ..\dataset\
 
-# Full scan: NSRL whitelist + package whitelist + ML model
-.\target\release\hydradragonml-scan.exe --dataset ..\dataset\ --model ..\app\src\main\assets\scan\model.onnx --whitelist ..\app\src\main\assets\scan\whitelist.xf --packages ..\app\src\main\assets\scan\whitelist_packages.db --threshold 0.5
+# Full scan with ML model
+.\target\release\hydradragonml-scan.exe --dataset ..\dataset\ --model ..\app\src\main\assets\scan\model.onnx --threshold 0.5
 ```
 
 Scan pipeline per APK:
 
-1. **NSRL hash whitelist** (`whitelist.xf`) → `NSRL.Whitelist` (stats only)
-2. **Package whitelist** (`whitelist_packages.db`) → `Package.Whitelist` (stats only)
-3. **ML model** (`model.onnx`) → `ML.Benign` / `ML.Malware` with confidence (always runs)
+1. **ML model** (`model.onnx`) → `BENIGN` / `MALICIOUS` with confidence
 
-Output includes per-file verdict, matching signatures, package name, MD5,
-and a summary with accuracy / precision / recall / F1 vs folder labels.
+Output includes per-file verdict, confidence score, and a summary with
+accuracy / precision / recall / F1 vs folder labels.
 
 ## Library
 

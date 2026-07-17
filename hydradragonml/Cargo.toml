@@ -9,9 +9,6 @@ license = "GPL-2.0-or-later"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 tract-onnx = "0.21"
 walkdir = "2"
-md-5 = "0.11"
-hydradragonxorfilter = { path = "../hydradragonxorfilter" }
-rusqlite = { version = "0.40", features = ["bundled"] }
 
 [lib]
 name = "hydradragonml"
