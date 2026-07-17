@@ -19,9 +19,9 @@ cargo build --release
 
 Scan pipeline per APK:
 
-1. **NSRL hash whitelist** (`whitelist.xf`) → `NSRL.Whitelist`, ML skipped
-2. **Package whitelist** (`whitelist_packages.db`) → `Package.Whitelist`, ML skipped
-3. **ML model** (`model.onnx`) → `ML.Benign` / `ML.Malware` with confidence
+1. **NSRL hash whitelist** (`whitelist.xf`) → `NSRL.Whitelist` (stats only)
+2. **Package whitelist** (`whitelist_packages.db`) → `Package.Whitelist` (stats only)
+3. **ML model** (`model.onnx`) → `ML.Benign` / `ML.Malware` with confidence (always runs)
 
 Output includes per-file verdict, matching signatures, package name, MD5,
 and a summary with accuracy / precision / recall / F1 vs folder labels.

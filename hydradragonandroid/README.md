@@ -2,15 +2,17 @@
 
 JNI bridge that scans APKs on-device by combining:
 
-1. **`hydradragonclamav`** YARA engine over three compiled rulesets:
-   - `clean_rules_filtered_verified.yrc`
-   - `valhalla-rules_filtered_verified.yrc`
-   - `AndroidOS_filtered.yrc`
-2. **`hydradragonml`** ONNX malware/benign binary classifier (`model.onnx`).
+1. **`hydradragonml`** ONNX malware/benign binary classifier (`model.onnx`)
+   runs first on every non-whitelisted buffer. If ML is confident benign
+   (confidence < 0.20), heavy scans are skipped for that buffer.
+2. **`hydradragonclamav`** YARA engine over three compiled rulesets
+   (`clean_rules_filtered_verified.yrc`, `valhalla-rules_filtered_verified.yrc`,
+   `AndroidOS_filtered.yrc`) — only runs on buffers where ML was not
+   confident benign.
+3. **TLSH** fuzzy hash similarity — same skip rules as YARA.
 
 An APK is flagged **malicious** if any YARA ruleset matches **or** the ML model
-flags it (confidence >= 0.5). (Whitelisting happens upstream, so recall is
-favoured.)
+flags it (confidence >= threshold). NSRL/package whitelisted APKs skip everything.
 
 ## Native methods
 

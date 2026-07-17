@@ -376,23 +376,19 @@ fn main() {
             signatures.push(ScanSignature { name: "Package.Whitelist".to_string() });
         }
 
-        // 3. ML model inference — only for non-whitelisted
-        let (ml_malicious, ml_confidence, ml_skipped) = if whitelisted || pkg_whitelisted {
-            (false, 0.0, true)
-        } else {
-            match &model {
-                Some(m) => {
-                    let feats = features::extract(&apk_bytes);
-                    match feats {
-                        Some(f) => {
-                            let result = m.scan_features(&f);
-                            (result.malicious, result.confidence, false)
-                        }
-                        None => (false, 0.0, true),
+        // 3. ML model inference — runs on EVERY APK regardless of whitelist.
+        //    Whitelist only affects reporting/stats, not whether ML runs.
+        let (ml_malicious, ml_confidence, ml_skipped) = match &model {
+            Some(m) => {
+                match features::extract(&apk_bytes) {
+                    Some(f) => {
+                        let result = m.scan_features(&f);
+                        (result.malicious, result.confidence, false)
                     }
+                    None => (false, 0.0, true),
                 }
-                None => (false, 0.0, true),
             }
+            None => (false, 0.0, true),
         };
 
         if whitelisted {
@@ -405,16 +401,14 @@ fn main() {
             ml_benign_not_whitelisted += 1;
         }
 
-        if !ml_skipped {
-            if ml_malicious {
-                signatures.push(ScanSignature {
-                    name: format!("ML.Malware/conf={:.4}", ml_confidence),
-                });
-            } else {
-                signatures.push(ScanSignature {
-                    name: format!("ML.Benign/conf={:.4}", ml_confidence),
-                });
-            }
+        if ml_malicious {
+            signatures.push(ScanSignature {
+                name: format!("ML.Malware/conf={:.4}", ml_confidence),
+            });
+        } else if !ml_skipped {
+            signatures.push(ScanSignature {
+                name: format!("ML.Benign/conf={:.4}", ml_confidence),
+            });
         }
 
         let elapsed = t0.elapsed().as_millis();

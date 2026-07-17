@@ -2217,40 +2217,16 @@ fn run_scan(
         );
     }
 
-    // Phase 3: heavy scans — ClamAV/YARA, ML, TLSH — only on non-whitelisted
-    // buffers (skip_heavy[i] == true means whitelisted, skip everything for it).
-    let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
-    let mut yara_dets: Vec<(String, String, Vec<String>)> = match &engine.clamav {
-        Some(clamav) => {
-            let opts = ScanOptions::default();
-            rescan_buffers_parallel(
-                clamav,
-                engine,
-                &buffers,
-                &skip_heavy,
-                &dex_scans,
-                &emulated,
-                &emulated_strings,
-                &module_meta,
-                path,
-                opts,
-                max_dets,
-                &mut scan_timing,
-            )
-        }
-        None => Vec::new(),
-    };
-    let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
-    // Aggregate per-YARA-ruleset timing across all buffers.
-    let mut yara_agg: std::collections::HashMap<String, u128> = std::collections::HashMap::new();
-    for (name, ns) in &scan_timing.yara_per_engine {
-        *yara_agg.entry(name.clone()).or_insert(0) += ns;
-    }
-    let yara_total_ms = (yara_agg.values().sum::<u128>() / 1_000_000) as u128;
-
-    // one-class ML model (independent of clamav's type gate), over the SAME
-    // buffers — so an APK nested inside a zip (or any other extracted member)
-    // also gets an ML verdict. The strongest signal across all buffers wins.
+    // Phase 3: ML runs FIRST on all non-whitelisted buffers. If ML is
+    // confident benign, heavy scans (ClamAV/YARA/TLSH) are skipped for
+    // that buffer — saves time on known-clean code.
+    //
+    // skip_heavy[i] is START as the NSRL/package whitelist:
+    // true → skip everything (ML + ClamAV + YARA + TLSH + emulation).
+    // After ML, buffers where ML is confident benign are ALSO marked
+    // skip for the remaining passes.
+    const ML_BENIGN_SKIP_CONFIDENCE: f32 = 0.20;
+    let mut skip_clamav = skip_heavy.clone();
     let t_ml = std::time::Instant::now();
     let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest, ml_lineages) = match &engine.model {
         Some(model) => {
@@ -2270,6 +2246,10 @@ fn run_scan(
                         continue;
                     }
                     if let Some(r) = model.scan(&b.data) {
+                        // ML confident benign → skip heavy scans for this buffer
+                        if !r.malicious && r.confidence < ML_BENIGN_SKIP_CONFIDENCE {
+                            skip_clamav[i] = true;
+                        }
                         if r.malicious {
                             malicious = true;
                             let obj_path = if i == 0 {
@@ -2303,23 +2283,47 @@ fn run_scan(
     };
     let ml_ms = t_ml.elapsed().as_millis();
 
-    // `matches` stays the clamav/YARA names only (display + PUA classification).
+    // ClamAV + YARA — only on buffers not skipped by whitelist OR ML.
+    let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
+    let mut yara_dets: Vec<(String, String, Vec<String>)> = match &engine.clamav {
+        Some(clamav) => {
+            let opts = ScanOptions::default();
+            rescan_buffers_parallel(
+                clamav,
+                engine,
+                &buffers,
+                &skip_clamav,
+                &dex_scans,
+                &emulated,
+                &emulated_strings,
+                &module_meta,
+                path,
+                opts,
+                max_dets,
+                &mut scan_timing,
+            )
+        }
+        None => Vec::new(),
+    };
+    let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
+    let mut yara_agg: std::collections::HashMap<String, u128> = std::collections::HashMap::new();
+    for (name, ns) in &scan_timing.yara_per_engine {
+        *yara_agg.entry(name.clone()).or_insert(0) += ns;
+    }
+    let yara_total_ms = (yara_agg.values().sum::<u128>() / 1_000_000) as u128;
+
     let hits_json = yara_dets
         .iter()
         .map(|(h, _, _)| format!("\"{}\"", json_escape(h)))
         .collect::<Vec<_>>()
         .join(",");
 
-    // Unified detection list: bomb detections first (from extraction phase),
-    // then ClamAV/YARA results, then ML. Each tagged with its suppressible
-    // APK lineage.
     let mut detections: Vec<(String, String, Vec<String>)> = bomb_dets;
     detections.append(&mut yara_dets);
     for (obj_path, lin) in ml_lineages {
         detections.push(("ML".to_string(), obj_path, lin));
     }
 
-    // DEX static-analysis: only High/Critical findings count as malicious.
     for (i, b) in buffers.iter().enumerate() {
         if let Some(ds) = &dex_scans[i] {
             for f in &ds.findings {
@@ -2338,19 +2342,15 @@ fn run_scan(
         }
     }
 
-    // TLSH fuzzy-similarity to known malware: compare each apk/elf/dex buffer's
-    // TLSH against the MalwareBazaar database; a small distance => a likely
-    // variant. Tagged with the buffer's APK lineage so a whitelisted APK is
-    // still suppressed.
     let tlsh_ms = {
         let t_tlsh = std::time::Instant::now();
-                for (i, b) in buffers.iter().enumerate() {
-                    if skip_heavy[i] {
-                        continue;
-                    }
-                    if skip_by_size(&b.data) {
-                        continue;
-                    }
+        for (i, b) in buffers.iter().enumerate() {
+            if skip_clamav[i] {
+                continue;
+            }
+            if skip_by_size(&b.data) {
+                continue;
+            }
             if tlsh_relevant(&b.data) {
                 if let Some(dist) = tlsh_nearest(engine, &b.data) {
                     let obj_path = if i == 0 {
