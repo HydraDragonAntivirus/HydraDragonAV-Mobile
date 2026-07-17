@@ -153,6 +153,7 @@ def download_one(pkg_name: str, apk_name: str, url: str, dest_dir: str) -> str:
                             f.write(chunk)
                             downloaded += len(chunk)
                 elapsed = time.time() - start
+                os.rename(tmp_path, dest_path)
                 if total > 0:
                     speed = downloaded / elapsed / (1024 * 1024)
                     size_mb = total / (1024 * 1024)
