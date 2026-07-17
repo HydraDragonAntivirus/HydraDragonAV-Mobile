@@ -29,7 +29,7 @@ Why not add opcode n-grams, ELF analysis, CFG features, etc.?
 cd hydradragonml
 cargo build --release
 
-# Feature extraction only (no model — all APKs show BENIGN/0.0000)
+# Feature extraction only (no model)
 .\target\release\hydradragonml-scan.exe --dataset ..\dataset\
 
 # Full scan with ML model (--model is required for actual inference)
