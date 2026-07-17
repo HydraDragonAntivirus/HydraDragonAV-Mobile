@@ -45,6 +45,23 @@ real detection. Scan pipeline per APK:
 Output includes per-file verdict, confidence score, and a summary with
 accuracy / precision / recall / F1 vs folder labels.
 
+## Training the model
+
+A Python training script is at the repo root:
+
+```powershell
+pip install torch numpy
+python ..\train_model.py ..\dataset\
+```
+
+This walks `dataset/benign/` and `dataset/malware/`, extracts 256-d feature
+vectors from each APK (same algorithm as the Rust inference), trains a small
+neural network, and exports `model.onnx` in the current directory.
+
+**Dataset hygiene**: if benign APKs are mixed into `malware/` folders or vice
+versa, the model learns wrong labels and produces garbage at inference time.
+Verify the split before training.
+
 ## Library
 
 ```rust

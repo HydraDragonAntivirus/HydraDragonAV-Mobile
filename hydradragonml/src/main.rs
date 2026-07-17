@@ -80,27 +80,29 @@ fn main() {
         std::process::exit(1);
     }
 
-    let model = args.model.as_ref().and_then(|p| {
-        if !p.exists() {
-            eprintln!("WARN: model path does not exist: {}. ML disabled.", p.display());
-            return None;
-        }
-        match Model::load_bin(p) {
-            Ok(mut m) => {
-                m.set_threshold(args.threshold);
-                eprintln!("OK  model loaded: {} (threshold={})", p.display(), args.threshold);
-                Some(m)
+    let model = match &args.model {
+        Some(p) => {
+            if !p.exists() {
+                eprintln!("ERROR: --model path does not exist: {}", p.display());
+                std::process::exit(1);
             }
-            Err(e) => {
-                eprintln!("WARN: failed to load model {p:?}: {e}. ML disabled.");
-                None
+            match Model::load_bin(p) {
+                Ok(mut m) => {
+                    m.set_threshold(args.threshold);
+                    eprintln!("OK  model loaded: {} (threshold={})", p.display(), args.threshold);
+                    Some(m)
+                }
+                Err(e) => {
+                    eprintln!("ERROR: failed to load model {p:?}: {e}");
+                    std::process::exit(1);
+                }
             }
         }
-    });
-
-    if model.is_none() {
-        eprintln!("WARNING: no model loaded. Only feature extraction will be performed.");
-    }
+        None => {
+            eprintln!("WARNING: --model not provided. All APKs will show BENIGN/0.0.");
+            None
+        }
+    };
 
     let apks = find_apks(&args.dataset);
     eprintln!("\nFound {} APK files. Scanning...\n", apks.len());
