@@ -202,7 +202,7 @@ def main():
             "model.onnx",
             input_names=["input"],
             output_names=["output"],
-            opset_version=9,
+            opset_version=18,
             dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}},
             do_constant_folding=True,
         )
