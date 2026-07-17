@@ -14,12 +14,7 @@ cargo build --release
 .\target\release\hydradragonml-scan.exe --dataset ..\dataset\
 
 # Full scan: NSRL whitelist + package whitelist + ML model
-.\target\release\hydradragonml-scan.exe `
-  --dataset ..\dataset\ `
-  --model ..\app\src\main\assets\scan\model.onnx `
-  --whitelist ..\app\src\main\assets\scan\whitelist.xf `
-  --packages ..\app\src\main\assets\scan\whitelist_packages.db `
-  --threshold 0.5
+.\target\release\hydradragonml-scan.exe --dataset ..\dataset\ --model ..\app\src\main\assets\scan\model.onnx --whitelist ..\app\src\main\assets\scan\whitelist.xf --packages ..\app\src\main\assets\scan\whitelist_packages.db --threshold 0.5
 ```
 
 Scan pipeline per APK:
