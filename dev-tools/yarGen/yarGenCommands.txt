@@ -16,5 +16,8 @@ python yarGen.py -m "C:\Users\semae\OneDrive\Belgeler\usbdosyalar\datamaliciouso
 // --- javascript/datamaliciousorder (JS): Generate YARA rules + export strings -> machine_learning_js.yar ---
 python yarGen.py -m "C:\Users\semae\OneDrive\Belgeler\usbdosyalar\javascript\datamaliciousorder" --excludegood --meaningful-words-only --nofilesize --nosimple -r "https://github.com/HydraDragonAntivirus" -l "GPLv2" -a "HydraDragonAntivirus" -e "C:\Users\semae\OneDrive\Belgeler\usbdosyalar\javascript_datamaliciousorder_strings" -o "C:\Users\semae\OneDrive\Belgeler\usbdosyalar\machine_learning_js.yar"
 
-// APK malware
-python yarGen.py -m "C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\downloads\27.06.2026 - 203930_212345\apk" --excludegood --meaningful-words-only --nofilesize --nosimple -r "https://github.com/HydraDragonAntivirus" -l "GPLv2" -a "HydraDragonAntivirus" -e "C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\downloads\27.06.2026 - 203930_212345\apk_strings" -o "C:\Users\semae\OneDrive\Belgeler\usbdosyalar\machine_learning_apk.yar"
+// --- android/F-Droid: Create benign/goodware reference DB from dataset (F-Droid APKs) ---
+python yarGen.py -g "C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\dataset\benign\F-Droid\16-07-2026-14.49" -c -i android_benign_fdroid
+
+// APK malware - train on dataset malware folder, exclude F-Droid goodware strings
+python yarGen.py -m "C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\dataset\malware\MalwareBazaar\27.06.2026 - 203930_212345\apk" -g "C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\dataset\benign\F-Droid\16-07-2026-14.49" --excludegood --meaningful-words-only --nofilesize --nosimple -r "https://github.com/HydraDragonAntivirus" -l "GPLv2" -a "HydraDragonAntivirus" -e "C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\dataset\malware\MalwareBazaar\27.06.2026 - 203930_212345\apk_strings" -o "C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\yara-x\machine_learning_apk.yar"
