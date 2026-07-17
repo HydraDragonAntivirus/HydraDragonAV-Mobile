@@ -1,6 +1,4 @@
-import hashlib
 import os
-import struct
 import zipfile
 
 import numpy as np
@@ -197,15 +195,20 @@ def main():
 
     model.eval()
     dummy = torch.randn(1, DENSE_DIM)
-    torch.onnx.export(
-        model,
-        dummy,
-        "model.onnx",
-        input_names=["input"],
-        output_names=["output"],
-        opset_version=9,
-        dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}},
-    )
+    try:
+        torch.onnx.export(
+            model,
+            dummy,
+            "model.onnx",
+            input_names=["input"],
+            output_names=["output"],
+            opset_version=9,
+            dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}},
+            do_constant_folding=True,
+        )
+    except ModuleNotFoundError:
+        print("\nERROR: install onnxscript: pip install onnxscript")
+        return
     print("\nOK model.onnx exported")
 
 
