@@ -15,7 +15,7 @@ use std::collections::HashSet;
 use std::io::{Cursor, Read};
 
 /// Width of the dense feature-hashed vector fed to the Isolation Forest.
-pub const DENSE_DIM: usize = 256;
+pub const DENSE_DIM: usize = 2048;
 
 /// Minimum length (in chars) for an extracted string to be kept.
 const MIN_STR_LEN: usize = 5;

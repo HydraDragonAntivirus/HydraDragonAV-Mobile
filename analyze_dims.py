@@ -69,7 +69,7 @@ def test_config(dense_dim, max_tokens, label):
     
     print(f"  {label:35s} sep={sep:.4f} b_std={benign_std:.4f} m_std={malware_std:.4f} b_zeros={benign_zeros:.0f} m_zeros={malware_zeros:.0f}")
     if sep > 0:
-        print(f"    Cohen's d≈{sep / np.sqrt((benign_std**2 + malware_std**2)/2):.4f}")
+        print(f"    Cohen's d={sep / np.sqrt((benign_std**2 + malware_std**2)/2):.4f}")
     
     tm.DENSE_DIM = old_dim
     tm.MAX_TOKENS = old_max
@@ -81,15 +81,15 @@ import train_model as tm
 orig_dim = tm.DENSE_DIM
 orig_max = tm.MAX_TOKENS
 
-# 1. 256 dim x various MAX_TOKENS
-test_config(256, 120000, "256-dim, 120k max")
-test_config(256, 5000, "256-dim, 5k max")
-test_config(256, 1000, "256-dim, 1k max")
+# 1. Current config: 2048 dim
+test_config(2048, 120000, "2048-dim, 120k max")
+test_config(2048,   5000, "2048-dim,   5k max")
+test_config(2048,   1000, "2048-dim,   1k max")
 
-# 2. 4096 dim x various MAX_TOKENS
-test_config(4096, 120000, "4096-dim, 120k max")
-test_config(4096, 5000, "4096-dim, 5k max")
-test_config(4096, 1000, "4096-dim, 1k max")
+# 2. Old config: 256 dim
+test_config(256, 120000, "256-dim,  120k max")
+test_config(256,   5000, "256-dim,    5k max")
+test_config(256,   1000, "256-dim,    1k max")
 
 # Restore
 tm.DENSE_DIM = orig_dim
