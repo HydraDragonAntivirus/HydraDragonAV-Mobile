@@ -184,19 +184,21 @@ def main():
 
     pos_weight = (len(y_train) - y_train.sum()) / y_train.sum()
     model = Net()
-    criterion = nn.BCELoss(pos_weight=torch.tensor(pos_weight))
+    criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     X_t = torch.from_numpy(X_train)
     y_t = torch.from_numpy(y_train).float()
     X_v = torch.from_numpy(X_val)
     y_v = torch.from_numpy(y_val).float()
+    pos_weight_tensor = torch.tensor(pos_weight)
 
     model.train()
     for epoch in range(50):
         optimizer.zero_grad()
         outputs = model(X_t)
         loss = criterion(outputs, y_t)
+        loss = (loss * torch.where(y_t == 1, pos_weight_tensor, 1.0)).mean()
         loss.backward()
         optimizer.step()
         with torch.no_grad():
