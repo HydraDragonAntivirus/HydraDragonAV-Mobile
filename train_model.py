@@ -85,8 +85,8 @@ def insert_string(s: bytes, prefix: str, tokens: set):
 
 def extract_features(apk_path: str):
     try:
-        with zipfile.ZipFile(apk_path, 'r') as z:
-            namelist = z.namelist()
+        z = zipfile.ZipFile(apk_path, 'r')
+        namelist = z.namelist()
     except Exception:
         return None
 
@@ -115,6 +115,7 @@ def extract_features(apk_path: str):
         else:
             prefix = 'res:'
         harvest_strings(data, prefix, tokens)
+    z.close()
 
     if not tokens:
         return None
@@ -131,8 +132,21 @@ def extract_features(apk_path: str):
     return v
 
 
+def _extract_one(args):
+    path, label = args
+    feats = extract_features(path)
+    if feats is not None:
+        return feats, label
+    return None
+
 def gather_dataset(dataset_root: str):
-    X, y = [], []
+    import concurrent.futures
+    try:
+        from tqdm import tqdm
+    except ImportError:
+        tqdm = lambda x, **kw: x
+
+    jobs = []
     for root, dirs, files in os.walk(dataset_root):
         for fname in files:
             if not fname.lower().endswith('.apk'):
@@ -141,11 +155,16 @@ def gather_dataset(dataset_root: str):
                 continue
             path = os.path.join(root, fname)
             label = 1 if 'malware' in root.lower() else 0
-            feats = extract_features(path)
-            if feats is not None:
+            jobs.append((path, label))
+
+    X, y = [], []
+    n_workers = max(1, os.cpu_count() or 4)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as pool:
+        for result in tqdm(pool.map(_extract_one, jobs), total=len(jobs), desc="Extracting"):
+            if result is not None:
+                feats, label = result
                 X.append(feats)
                 y.append(label)
-                print(f"  {'MALWARE' if label else 'BENIGN'} {fname}")
     return np.array(X, dtype=np.float32), np.array(y, dtype=np.int64)
 
 
