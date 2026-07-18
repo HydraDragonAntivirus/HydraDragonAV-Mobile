@@ -12,7 +12,6 @@ MIN_STR_LEN = 5
 MAX_TOKENS = 120000
 MAX_ENTRY_SCAN = 16 * 1024 * 1024
 
-# FNV-1a 64-bit constants
 FNV_OFFSET = 0xcbf29ce484222325
 FNV_PRIME = 0x00000100000001b3
 
@@ -30,55 +29,64 @@ def token(prefix: str, s: bytes) -> int:
 
 
 def harvest_strings(data: bytes, prefix: str, tokens: set):
-    # ASCII runs
-    start = None
-    for i, b in enumerate(data):
-        if 0x20 <= b < 0x7f:
-            if start is None:
-                start = i
-        elif start is not None:
-            if i - start >= MIN_STR_LEN:
-                insert_string(data[start:i], prefix, tokens)
-                if len(tokens) >= MAX_TOKENS:
-                    return
-            start = None
-    if start is not None and len(data) - start >= MIN_STR_LEN:
-        insert_string(data[start:], prefix, tokens)
+    ascii_start = None
+    utf16_buf = bytearray()
+    n = len(data)
 
-    # UTF-16LE runs
-    buf = bytearray()
-    j = 0
-    while j + 1 < len(data):
-        lo = data[j]
-        hi = data[j + 1]
-        if hi == 0 and 0x20 <= lo < 0x7f:
-            buf.append(lo)
-        else:
-            if len(buf) >= MIN_STR_LEN:
-                insert_string(bytes(buf), prefix, tokens)
+    for i in range(n):
+        b = data[i]
+        printable = 0x20 <= b < 0x7f
+
+        if printable:
+            if ascii_start is None:
+                ascii_start = i
+        elif ascii_start is not None:
+            if i - ascii_start >= MIN_STR_LEN:
+                insert_string(data[ascii_start:i], prefix, tokens)
                 if len(tokens) >= MAX_TOKENS:
                     return
-            buf.clear()
-        j += 2
-    if len(buf) >= MIN_STR_LEN:
-        insert_string(bytes(buf), prefix, tokens)
+            ascii_start = None
+
+        if i & 1 == 0 and i + 1 < n:
+            hi = data[i + 1]
+            if hi == 0 and printable:
+                utf16_buf.append(b)
+            elif len(utf16_buf) >= MIN_STR_LEN:
+                insert_string(bytes(utf16_buf), prefix, tokens)
+                if len(tokens) >= MAX_TOKENS:
+                    return
+                utf16_buf.clear()
+            else:
+                utf16_buf.clear()
+
+    if ascii_start is not None and n - ascii_start >= MIN_STR_LEN:
+        insert_string(data[ascii_start:], prefix, tokens)
+    if len(utf16_buf) >= MIN_STR_LEN:
+        insert_string(bytes(utf16_buf), prefix, tokens)
 
 
 def insert_string(s: bytes, prefix: str, tokens: set):
     tokens.add(token(prefix, s))
+
     try:
-        text = s.decode('utf-8', errors='replace')
-        lower = text.lower()
-        if 'permission.' in lower:
-            parts = lower.split('permission.', 1)
-            if len(parts) > 1:
-                perm = ''.join(c for c in parts[1] if c.isalnum() or c == '_')
-                if perm:
-                    tokens.add(token('perm:', perm.encode()))
-        if text.startswith('L') and '/' in text:
-            tokens.add(token('api:', text.encode()))
-        if lower.startswith('http://') or lower.startswith('https://') or '://' in lower:
-            tokens.add(token('url:', lower.encode()))
+        if len(s) >= 11:
+            idx = s.lower().find(b'permission.')
+            if idx >= 0:
+                after = s[idx + 11:]
+                end = 0
+                while end < len(after):
+                    c = after[end]
+                    if not (c.isalnum() or c == 95):  # 95 = ord('_')
+                        break
+                    end += 1
+                if end > 0:
+                    tokens.add(token('perm:', after[:end].lower()))
+
+        if len(s) > 1 and s[0] == 76 and 47 in s[1:]:  # ord('L')=76, ord('/')=47
+            tokens.add(token('api:', s))
+
+        if b'://' in s:
+            tokens.add(token('url:', s))
     except Exception:
         pass
 
@@ -101,11 +109,8 @@ def extract_features(apk_path: str):
         if not scan:
             continue
         try:
-            info = z.getinfo(name)
-            if info.file_size > MAX_ENTRY_SCAN:
-                data = z.read(name)[:MAX_ENTRY_SCAN]
-            else:
-                data = z.read(name)
+            with z.open(name) as f:
+                data = f.read(MAX_ENTRY_SCAN) or b''
         except Exception:
             continue
         if lname.endswith('.dex'):
@@ -203,8 +208,8 @@ def main():
 
     pos_weight = (len(y_train) - y_train.sum()) / y_train.sum()
     model = Net()
-    criterion = nn.BCELoss(reduction='none')  # per-sample loss icin reduction yok
-    val_criterion = nn.BCELoss()  # validasyon icin duz mean yeterli
+    criterion = nn.BCELoss(reduction='none')
+    val_criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     X_t = torch.from_numpy(X_train)
@@ -219,7 +224,7 @@ def main():
     for epoch in range(200):
         optimizer.zero_grad()
         outputs = model(X_t)
-        per_sample_loss = criterion(outputs, y_t)  # sekil: (batch,) - artik ortalanmiyor
+        per_sample_loss = criterion(outputs, y_t)
         weight_vec = torch.where(y_t == 1, pos_weight_tensor, torch.tensor(1.0))
         loss = (per_sample_loss * weight_vec).mean()
         loss.backward()

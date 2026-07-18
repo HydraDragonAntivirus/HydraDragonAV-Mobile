@@ -44,12 +44,8 @@ py_content = sess.run(['output'], {input_name: v_content.reshape(1,-1).astype(np
 print(f"\nonnxruntime with name-only  features: {py_name[0,0]:.6f}")
 print(f"onnxruntime with content    features: {py_content[0,0]:.6f}")
 
-# Also check what the model expects
-print(f"\nModel input.weights mean: tells us if it's 256 or 4096")
-    pass
-
 model = onnx.load("model.onnx")
 for init in model.graph.initializer:
     if init.name == 'fc1_w':
-        print(f"fc1_w shape: {list(init.dims)}")
+        print(f"\nfc1_w shape: {list(init.dims)}")
         break
