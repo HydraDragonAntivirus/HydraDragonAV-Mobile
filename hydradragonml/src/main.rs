@@ -117,6 +117,7 @@ fn main() {
     let mut fn_ = 0u64;
     let mut unknown = 0u64;
     let mut errors = 0u64;
+    let mut extract_failed = 0u64;
     let mut total_ms: u128 = 0;
 
     for apk_path in &apks {
@@ -133,10 +134,15 @@ fn main() {
 
         let t0 = Instant::now();
 
-        let result = model.as_ref().and_then(|m| {
-            let feats = features::extract(&apk_bytes)?;
-            Some(m.scan_features(&feats))
-        });
+        // extraction ve model tahminini ayrı tutuyoruz ki extraction hatasi
+        // "model malicious demedi" ile karismasin
+        let feats = model.as_ref().and_then(|_| features::extract(&apk_bytes));
+        let extraction_ok = model.is_none() || feats.is_some();
+
+        let result = match (&model, &feats) {
+            (Some(m), Some(f)) => Some(m.scan_features(f)),
+            _ => None,
+        };
 
         let elapsed = t0.elapsed().as_millis();
         total_ms += elapsed;
@@ -145,6 +151,17 @@ fn main() {
             .strip_prefix(&args.dataset)
             .unwrap_or(apk_path)
             .display();
+
+        if model.is_some() && !extraction_ok {
+            extract_failed += 1;
+            println!(
+                "  {:<12} {:<50}  [{:.3}s]  (feature extraction failed, skipped)",
+                "EXTRACT-FAIL",
+                relative.to_string().chars().take(48).collect::<String>(),
+                elapsed as f64 / 1000.0,
+            );
+            continue; // confusion matrix'i bozmasin, hesaba katma
+        }
 
         let malicious = result.as_ref().map(|r| r.malicious).unwrap_or(false);
         let confidence = result.as_ref().map(|r| r.confidence).unwrap_or(0.0);
@@ -175,6 +192,7 @@ fn main() {
     println!("=== SUMMARY ===");
     println!("Total APKs:       {}", apks.len());
     println!("Errors:           {}", errors);
+    println!("Extract failed:   {}", extract_failed);
     println!("Unknown label:    {}", unknown);
     println!("Total time:       {} ms", total_ms);
     if !apks.is_empty() {
