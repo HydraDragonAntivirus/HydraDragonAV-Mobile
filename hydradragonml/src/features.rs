@@ -1,10 +1,27 @@
+//! APK feature extraction.
+//!
+//! An APK is a ZIP. We do not fully parse binary `AndroidManifest.xml` (AXML);
+//! instead we harvest printable strings from the manifest, `resources.arsc`,
+//! and every `classes*.dex`, plus the archive entry names. Permission strings,
+//! API descriptors (`Landroid/...`), URLs, native lib names, etc. all survive
+//! as plain UTF-8 / UTF-16LE inside those blobs, which is robust against the
+//! many AXML encoder quirks found in real malware.
+//!
+//! Two representations come out:
+//!   * `tokens`  — a set of 64-bit hashed tokens, used for MinHash/Jaccard.
+//!   * `dense`   — a fixed-width feature-hashed vector, used for Isolation Forest.
+
 use std::collections::HashSet;
 use std::io::{Cursor, Read};
 
+/// Width of the dense feature-hashed vector fed to the Isolation Forest.
 pub const DENSE_DIM: usize = 256;
 
+/// Minimum length (in chars) for an extracted string to be kept.
 const MIN_STR_LEN: usize = 5;
+/// Hard cap on token-set size so a pathological APK can't blow up memory/time.
 const MAX_TOKENS: usize = 120_000;
+/// Cap on bytes scanned per entry (DEX files can be large; this bounds cost).
 const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
 pub struct ApkFeatures {
@@ -12,6 +29,7 @@ pub struct ApkFeatures {
     pub dense: Vec<f32>,
 }
 
+/// FNV-1a 64-bit — stable across runs/platforms (unlike `DefaultHasher`).
 pub fn fnv1a(bytes: &[u8]) -> u64 {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
     for &b in bytes {
@@ -34,6 +52,8 @@ fn token(prefix: &str, s: &[u8]) -> u64 {
     h
 }
 
+/// Extract features from raw APK bytes. Returns `None` only if the bytes are
+/// not a readable ZIP at all.
 pub fn extract(apk: &[u8]) -> Option<ApkFeatures> {
     let mut tokens: HashSet<u64> = HashSet::new();
     let reader = Cursor::new(apk);
@@ -47,28 +67,32 @@ pub fn extract(apk: &[u8]) -> Option<ApkFeatures> {
             Ok(e) => e,
             Err(_) => continue,
         };
-        let name = entry.name().to_owned();
+        let name = entry.name().to_string();
+        // Entry path itself is a feature (e.g. native lib names, asset layout).
         tokens.insert(token("name:", name.as_bytes()));
 
-        let name_bytes = name.as_bytes();
-        let scan = name_bytes.len() == "androidmanifest.xml".len()
-            && name_bytes.eq_ignore_ascii_case(b"androidmanifest.xml")
-            || name_bytes.len() == "resources.arsc".len()
-                && name_bytes.eq_ignore_ascii_case(b"resources.arsc")
-            || name_bytes.ends_with(b".dex")
-            || name_bytes.starts_with(b"META-INF/");
-        if !scan {
+        let lname = name.to_ascii_lowercase();
+        let scan_contents = lname == "androidmanifest.xml"
+            || lname == "resources.arsc"
+            || lname.ends_with(".dex")
+            || lname.starts_with("meta-inf/");
+        if !scan_contents {
             continue;
         }
 
-        let mut buf = Vec::with_capacity(MAX_ENTRY_SCAN.min(65536));
-        if entry.by_ref().take(MAX_ENTRY_SCAN as u64).read_to_end(&mut buf).is_err() {
+        let mut buf = Vec::new();
+        if entry
+            .by_ref()
+            .take(MAX_ENTRY_SCAN as u64)
+            .read_to_end(&mut buf)
+            .is_err()
+        {
             continue;
         }
 
-        let prefix = if name_bytes.ends_with(b".dex") {
+        let prefix = if lname.ends_with(".dex") {
             "dex:"
-        } else if name_bytes.eq_ignore_ascii_case(b"androidmanifest.xml") {
+        } else if lname == "androidmanifest.xml" {
             "manifest:"
         } else {
             "res:"
@@ -84,19 +108,17 @@ pub fn extract(apk: &[u8]) -> Option<ApkFeatures> {
     Some(ApkFeatures { tokens, dense })
 }
 
+/// Pull ASCII and UTF-16LE printable runs and insert them as tokens.
 fn harvest_strings(data: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
-    let mut ascii_start: Option<usize> = None;
-    let mut utf16_buf: Vec<u8> = Vec::new();
-
-    for i in 0..data.len() {
-        let b = data[i];
+    // ASCII runs.
+    let mut start: Option<usize> = None;
+    for (i, &b) in data.iter().enumerate() {
         let printable = (0x20..0x7f).contains(&b);
-
         if printable {
-            if ascii_start.is_none() {
-                ascii_start = Some(i);
+            if start.is_none() {
+                start = Some(i);
             }
-        } else if let Some(s) = ascii_start.take() {
+        } else if let Some(s) = start.take() {
             if i - s >= MIN_STR_LEN {
                 insert_string(&data[s..i], prefix, tokens);
                 if tokens.len() >= MAX_TOKENS {
@@ -104,77 +126,70 @@ fn harvest_strings(data: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
                 }
             }
         }
-
-        if i & 1 == 0 && i + 1 < data.len() {
-            let hi = data[i + 1];
-            if hi == 0 && printable {
-                utf16_buf.push(b);
-            } else if utf16_buf.len() >= MIN_STR_LEN {
-                insert_string(&utf16_buf, prefix, tokens);
-                if tokens.len() >= MAX_TOKENS {
-                    return;
-                }
-                utf16_buf.clear();
-            } else {
-                utf16_buf.clear();
-            }
-        }
     }
-
-    if let Some(s) = ascii_start {
+    if let Some(s) = start {
         if data.len() - s >= MIN_STR_LEN {
             insert_string(&data[s..], prefix, tokens);
         }
     }
-    if utf16_buf.len() >= MIN_STR_LEN {
-        insert_string(&utf16_buf, prefix, tokens);
+
+    // UTF-16LE runs (manifest/resources string pools are commonly UTF-16).
+    let mut buf: Vec<u8> = Vec::new();
+    let mut j = 0;
+    while j + 1 < data.len() {
+        let lo = data[j];
+        let hi = data[j + 1];
+        if hi == 0 && (0x20..0x7f).contains(&lo) {
+            buf.push(lo);
+        } else {
+            if buf.len() >= MIN_STR_LEN {
+                insert_string(&buf, prefix, tokens);
+                if tokens.len() >= MAX_TOKENS {
+                    return;
+                }
+            }
+            buf.clear();
+        }
+        j += 2;
+    }
+    if buf.len() >= MIN_STR_LEN {
+        insert_string(&buf, prefix, tokens);
     }
 }
 
 fn insert_string(s: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
     tokens.insert(token(prefix, s));
 
-    // permission. - case-insensitive byte search, no allocation
-    if s.len() >= 11 {
-        let mut found = false;
-        for w in s.windows(11) {
-            if w.iter()
-                .zip(b"permission.")
-                .all(|(&a, &b)| a.eq_ignore_ascii_case(&b))
-            {
-                let after = &s[(w.as_ptr() as usize - s.as_ptr() as usize) + 11..];
-                let end = after
-                    .iter()
-                    .position(|&c| !c.is_ascii_alphanumeric() && c != b'_')
-                    .unwrap_or(after.len());
-                if end > 0 {
-                    let mut perm = Vec::with_capacity(end);
-                    for &c in &after[..end] {
-                        perm.push(c.to_ascii_lowercase());
-                    }
-                    tokens.insert(token("perm:", &perm));
+    // Promote high-signal substrings to their own (prefix-free) tokens so two
+    // APKs that share a permission/API but little else still collide.
+    if let Ok(text) = std::str::from_utf8(s) {
+        let lower = text.to_ascii_lowercase();
+        if lower.contains("permission.") {
+            if let Some(p) = lower.split("permission.").nth(1) {
+                let perm: String = p
+                    .chars()
+                    .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                    .collect();
+                if !perm.is_empty() {
+                    tokens.insert(token("perm:", perm.as_bytes()));
                 }
-                found = true;
-                break;
             }
         }
-        let _ = found;
-    }
-
-    // API descriptor: L.../
-    if s.len() > 1 && s[0] == b'L' && s[1..].contains(&b'/') {
-        tokens.insert(token("api:", s));
-    }
-
-    // URL: contains ://
-    if s.len() >= 3 && s.windows(3).any(|w| w == b"://") {
-        tokens.insert(token("url:", s));
+        // DEX type/method descriptors and URLs.
+        if text.starts_with('L') && text.contains('/') {
+            tokens.insert(token("api:", text.as_bytes()));
+        }
+        if lower.starts_with("http://") || lower.starts_with("https://") || lower.contains("://") {
+            tokens.insert(token("url:", lower.as_bytes()));
+        }
     }
 }
 
+/// Feature-hash the token set into a fixed-width, L2-normalised vector.
 fn dense_vector(tokens: &HashSet<u64>) -> Vec<f32> {
     let mut counts = vec![0u32; DENSE_DIM];
     for &t in tokens {
+        // Signed hashing trick reduces collision bias.
         let bucket = (t % DENSE_DIM as u64) as usize;
         counts[bucket] = counts[bucket].saturating_add(1);
     }
