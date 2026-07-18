@@ -21,7 +21,7 @@ def main():
 
         feats_2d = feats.reshape(1, -1)  # (1, 256)
         out = sess.run(None, {input_name: feats_2d})
-        confidence = float(out[0][0][0])
+        confidence = float(out[0].flat[0])
         print(f"{apk_path}: confidence={confidence:.6f}  ->  {'MALWARE' if confidence >= 0.5 else 'BENIGN'}")
 
         # debug: dense vektoru dosyaya yaz, Rust ciktisiyla karsilastirmak icin

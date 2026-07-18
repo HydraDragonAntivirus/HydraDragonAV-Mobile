@@ -5,7 +5,9 @@ use std::io::Cursor;
 use tract_onnx::prelude::*;
 
 /// Minimum confidence to flag a sample as malicious.
-pub const DEFAULT_CONFIDENCE_THRESHOLD: f32 = 0.5;
+pub const DEFAULT_CONFIDENCE_THRESHOLD: f32 = 0.95;
+/// Minimum confidence to flag a sample as suspicious (below malicious threshold).
+pub const SUSPICIOUS_THRESHOLD: f32 = 0.90;
 
 pub struct Model {
     plan: SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
@@ -15,6 +17,8 @@ pub struct Model {
 #[derive(Debug)]
 pub struct ScanResult {
     pub malicious: bool,
+    /// Confidence is >= SUSPICIOUS_THRESHOLD but < confidence_threshold.
+    pub suspicious: bool,
     /// Malware confidence 0.0 (benign) – 1.0 (malware).
     pub confidence: f32,
     /// Optional label (not used in tract mode, kept for ScanResult compatibility).
@@ -80,8 +84,10 @@ impl Model {
             Err(_) => 0.0,
         };
         let malicious = confidence >= self.confidence_threshold;
+        let suspicious = !malicious && confidence >= SUSPICIOUS_THRESHOLD;
         ScanResult {
             malicious,
+            suspicious,
             confidence,
             nearest: None,
         }

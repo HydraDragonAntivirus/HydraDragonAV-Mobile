@@ -41,8 +41,8 @@ input_name = sess.get_inputs()[0].name
 py_name = sess.run(['output'], {input_name: v_name.reshape(1,-1).astype(np.float32)})[0]
 py_content = sess.run(['output'], {input_name: v_content.reshape(1,-1).astype(np.float32)})[0]
 
-print(f"\nonnxruntime with name-only  features: {py_name[0,0]:.6f}")
-print(f"onnxruntime with content    features: {py_content[0,0]:.6f}")
+print(f"\nonnxruntime with name-only  features: {py_name[0]:.6f}")
+print(f"onnxruntime with content    features: {py_content[0]:.6f}")
 
 model = onnx.load("model.onnx")
 for init in model.graph.initializer:
