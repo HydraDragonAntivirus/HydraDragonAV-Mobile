@@ -7,7 +7,7 @@ from onnx import helper, TensorProto, numpy_helper
 import torch
 import torch.nn as nn
 
-DENSE_DIM = 256
+DENSE_DIM = 4096
 MIN_STR_LEN = 5
 MAX_TOKENS = 120000
 MAX_ENTRY_SCAN = 16 * 1024 * 1024
@@ -172,11 +172,11 @@ class Net(nn.Module):
     def __init__(self):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(DENSE_DIM, 128),
+            nn.Linear(DENSE_DIM, 512),
             nn.ReLU(),
-            nn.Linear(128, 64),
+            nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Linear(256, 1),
             nn.Sigmoid(),
         )
 
