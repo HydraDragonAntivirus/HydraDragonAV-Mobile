@@ -176,23 +176,39 @@ def main():
         print("ERROR: no APKs found")
         return
 
+    idx = np.random.permutation(len(X))
+    X, y = X[idx], y[idx]
+    split = int(len(X) * 0.8)
+    X_train, X_val = X[:split], X[split:]
+    y_train, y_val = y[:split], y[split:]
+
+    pos_weight = (len(y_train) - y_train.sum()) / y_train.sum()
     model = Net()
-    criterion = nn.BCELoss()
+    criterion = nn.BCELoss(pos_weight=torch.tensor(pos_weight))
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    X_t = torch.from_numpy(X)
-    y_t = torch.from_numpy(y).float()
+    X_t = torch.from_numpy(X_train)
+    y_t = torch.from_numpy(y_train).float()
+    X_v = torch.from_numpy(X_val)
+    y_v = torch.from_numpy(y_val).float()
 
     model.train()
-    for epoch in range(20):
+    for epoch in range(50):
         optimizer.zero_grad()
         outputs = model(X_t)
         loss = criterion(outputs, y_t)
         loss.backward()
         optimizer.step()
-        preds = (outputs > 0.5).float()
-        acc = (preds == y_t).float().mean().item()
-        print(f"  Epoch {epoch+1:2d} loss={loss.item():.4f} acc={acc:.4f}")
+        with torch.no_grad():
+            preds = (outputs > 0.5).float()
+            acc = (preds == y_t).float().mean().item()
+            v_out = model(X_v)
+            v_preds = (v_out > 0.5).float()
+            v_acc = (v_preds == y_v).float().mean().item()
+            v_tp = (v_preds * y_v).sum().item()
+            v_fn = ((1 - v_preds) * y_v).sum().item()
+            v_f1 = 2 * v_tp / (2 * v_tp + v_fn + ((v_preds * (1 - y_v)).sum().item()) + 1e-8)
+        print(f"  Epoch {epoch+1:2d} loss={loss.item():.4f} acc={acc:.4f} val_acc={v_acc:.4f} val_f1={v_f1:.4f}")
 
     model.eval()
     w1 = model.net[0].weight.detach().numpy().T
