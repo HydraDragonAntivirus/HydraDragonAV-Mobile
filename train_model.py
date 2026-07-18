@@ -184,7 +184,8 @@ def main():
 
     pos_weight = (len(y_train) - y_train.sum()) / y_train.sum()
     model = Net()
-    criterion = nn.BCELoss()
+    criterion = nn.BCELoss(reduction='none')  # per-sample loss icin reduction yok
+    val_criterion = nn.BCELoss()  # validasyon icin duz mean yeterli
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     X_t = torch.from_numpy(X_train)
@@ -193,24 +194,36 @@ def main():
     y_v = torch.from_numpy(y_val).float()
     pos_weight_tensor = torch.tensor(pos_weight)
 
+    best_val_loss = float("inf")
+    stall = 0
     model.train()
-    for epoch in range(50):
+    for epoch in range(200):
         optimizer.zero_grad()
         outputs = model(X_t)
-        loss = criterion(outputs, y_t)
-        loss = (loss * torch.where(y_t == 1, pos_weight_tensor, 1.0)).mean()
+        per_sample_loss = criterion(outputs, y_t)  # sekil: (batch,) - artik ortalanmiyor
+        weight_vec = torch.where(y_t == 1, pos_weight_tensor, torch.tensor(1.0))
+        loss = (per_sample_loss * weight_vec).mean()
         loss.backward()
         optimizer.step()
         with torch.no_grad():
             preds = (outputs > 0.5).float()
             acc = (preds == y_t).float().mean().item()
             v_out = model(X_v)
+            v_loss = val_criterion(v_out, y_v).item()
             v_preds = (v_out > 0.5).float()
             v_acc = (v_preds == y_v).float().mean().item()
             v_tp = (v_preds * y_v).sum().item()
             v_fn = ((1 - v_preds) * y_v).sum().item()
             v_f1 = 2 * v_tp / (2 * v_tp + v_fn + ((v_preds * (1 - y_v)).sum().item()) + 1e-8)
-        print(f"  Epoch {epoch+1:2d} loss={loss.item():.4f} acc={acc:.4f} val_acc={v_acc:.4f} val_f1={v_f1:.4f}")
+        print(f"  Epoch {epoch+1:3d} loss={loss.item():.4f} val_loss={v_loss:.4f} val_acc={v_acc:.4f} val_f1={v_f1:.4f}")
+        if v_loss < best_val_loss:
+            best_val_loss = v_loss
+            stall = 0
+        else:
+            stall += 1
+            if stall >= 20:
+                print(f"  Early stop at epoch {epoch+1}, best val_loss={best_val_loss:.4f}, final val_f1={v_f1:.4f}")
+                break
 
     model.eval()
     w1 = model.net[0].weight.detach().numpy().T
