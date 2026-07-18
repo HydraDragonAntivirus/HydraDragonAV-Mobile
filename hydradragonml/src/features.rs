@@ -12,16 +12,12 @@
 //!   * `dense`   — a fixed-width feature-hashed vector, used for Isolation Forest.
 
 use std::collections::HashSet;
-use std::io::{Cursor, Read};
+use std::io::Cursor;
 
-/// Width of the dense feature-hashed vector fed to the Isolation Forest.
 pub const DENSE_DIM: usize = 256;
 
-/// Minimum length (in chars) for an extracted string to be kept.
 const MIN_STR_LEN: usize = 5;
-/// Hard cap on token-set size so a pathological APK can't blow up memory/time.
 const MAX_TOKENS: usize = 120_000;
-/// Cap on bytes scanned per entry (DEX files can be large; this bounds cost).
 const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
 pub struct ApkFeatures {
@@ -52,9 +48,10 @@ fn token(prefix: &str, s: &[u8]) -> u64 {
     h
 }
 
-/// Extract features from raw APK bytes. Returns `None` only if the bytes are
-/// not a readable ZIP at all.
+/// Extract features from raw APK bytes.
 pub fn extract(apk: &[u8]) -> Option<ApkFeatures> {
+    use std::io::Read;
+
     let mut tokens: HashSet<u64> = HashSet::new();
     let reader = Cursor::new(apk);
     let mut archive = zip::ZipArchive::new(reader).ok()?;
@@ -68,25 +65,19 @@ pub fn extract(apk: &[u8]) -> Option<ApkFeatures> {
             Err(_) => continue,
         };
         let name = entry.name().to_string();
-        // Entry path itself is a feature (e.g. native lib names, asset layout).
         tokens.insert(token("name:", name.as_bytes()));
 
         let lname = name.to_ascii_lowercase();
-        let scan_contents = lname == "androidmanifest.xml"
+        let scan = lname == "androidmanifest.xml"
             || lname == "resources.arsc"
             || lname.ends_with(".dex")
             || lname.starts_with("meta-inf/");
-        if !scan_contents {
+        if !scan {
             continue;
         }
 
         let mut buf = Vec::new();
-        if entry
-            .by_ref()
-            .take(MAX_ENTRY_SCAN as u64)
-            .read_to_end(&mut buf)
-            .is_err()
-        {
+        if entry.by_ref().take(MAX_ENTRY_SCAN as u64).read_to_end(&mut buf).is_err() {
             continue;
         }
 
@@ -108,9 +99,7 @@ pub fn extract(apk: &[u8]) -> Option<ApkFeatures> {
     Some(ApkFeatures { tokens, dense })
 }
 
-/// Pull ASCII and UTF-16LE printable runs and insert them as tokens.
 fn harvest_strings(data: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
-    // ASCII runs.
     let mut start: Option<usize> = None;
     for (i, &b) in data.iter().enumerate() {
         let printable = (0x20..0x7f).contains(&b);
@@ -133,7 +122,6 @@ fn harvest_strings(data: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
         }
     }
 
-    // UTF-16LE runs (manifest/resources string pools are commonly UTF-16).
     let mut buf: Vec<u8> = Vec::new();
     let mut j = 0;
     while j + 1 < data.len() {
@@ -159,9 +147,6 @@ fn harvest_strings(data: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
 
 fn insert_string(s: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
     tokens.insert(token(prefix, s));
-
-    // Promote high-signal substrings to their own (prefix-free) tokens so two
-    // APKs that share a permission/API but little else still collide.
     if let Ok(text) = std::str::from_utf8(s) {
         let lower = text.to_ascii_lowercase();
         if lower.contains("permission.") {
@@ -175,7 +160,6 @@ fn insert_string(s: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
                 }
             }
         }
-        // DEX type/method descriptors and URLs.
         if text.starts_with('L') && text.contains('/') {
             tokens.insert(token("api:", text.as_bytes()));
         }
