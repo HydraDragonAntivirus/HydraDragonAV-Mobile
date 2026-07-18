@@ -10,13 +10,13 @@ mals = random.sample(os.listdir(mal_dir), 10)
 ben_scores = []
 for f in bens:
     fe = extract_features(os.path.join(ben_dir, f))
-    out = sess.run(['output'],{sess.get_inputs()[0].name:fe.reshape(1,-1).astype('f4')})[0][0]
+    out = sess.run(['output'],{sess.get_inputs()[0].name:fe.reshape(1,-1).astype('f4')})[0][0][0]
     ben_scores.append(out)
 
 mal_scores = []
 for f in mals:
     fe = extract_features(os.path.join(mal_dir, f))
-    out = sess.run(['output'],{sess.get_inputs()[0].name:fe.reshape(1,-1).astype('f4')})[0][0]
+    out = sess.run(['output'],{sess.get_inputs()[0].name:fe.reshape(1,-1).astype('f4')})[0][0][0]
     mal_scores.append(out)
 
 ben_arr = np.array(ben_scores)

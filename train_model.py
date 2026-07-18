@@ -284,20 +284,70 @@ def main():
                 print(f'  Early stop at epoch {epoch+1}, best val_loss={best_val_loss:.4f}')
                 break
 
-    # Export to ONNX using torch.onnx.export (requires onnxscript)
+    # ── ONNX export: opset 11, BatchNorm fused into fc1, Dropout removed ────
+    # tract-onnx (Android inference) supports opset ≤ 13 and requires a simple
+    # Gemm→Relu→…→Sigmoid graph. torch.onnx.export produces opset 18 + Squeeze
+    # which tract can't load.  We export manually instead.
+    #
+    # BatchNorm at eval time is a fixed linear transform:
+    #   y = (x - mean) / sqrt(var + eps) * gamma + beta
+    # Fusing it into the preceding Linear layer:
+    #   scale    = gamma / sqrt(var + eps)          # [512]
+    #   W_fused  = W1 * scale[:, None]  (transposed for Gemm)
+    #   b_fused  = (b1 - mean) * scale + beta
     model.eval()
-    dummy = torch.zeros(1, DENSE_DIM)
-    torch.onnx.export(
-        model,
-        dummy,
-        'model.onnx',
-        input_names=['input'],
-        output_names=['output'],
-        dynamic_axes={'input': {0: 'batch'}, 'output': {0: 'batch'}},
-        opset_version=11,
+    eps      = model.net[1].eps
+    bn_mean  = model.net[1].running_mean.detach().numpy()
+    bn_var   = model.net[1].running_var.detach().numpy()
+    bn_g     = model.net[1].weight.detach().numpy()
+    bn_b     = model.net[1].bias.detach().numpy()
+    scale    = bn_g / np.sqrt(bn_var + eps)
+
+    w1_raw   = model.net[0].weight.detach().numpy()   # [512, 2048]
+    b1_raw   = model.net[0].bias.detach().numpy()
+    w1_fused = (w1_raw * scale[:, None]).T             # [2048, 512]
+    b1_fused = (b1_raw - bn_mean) * scale + bn_b
+
+    # net[3] = Dropout (identity at eval) → skip
+    w2 = model.net[4].weight.detach().numpy().T        # [512, 128]
+    b2 = model.net[4].bias.detach().numpy()
+    # net[6] = Dropout (identity at eval) → skip
+    w3 = model.net[7].weight.detach().numpy().T        # [128, 1]
+    b3 = model.net[7].bias.detach().numpy()
+
+    from onnx import helper, TensorProto, numpy_helper
+    inits = [
+        numpy_helper.from_array(w1_fused.astype(np.float32), 'fc1_w'),
+        numpy_helper.from_array(b1_fused.astype(np.float32), 'fc1_b'),
+        numpy_helper.from_array(w2.astype(np.float32),        'fc2_w'),
+        numpy_helper.from_array(b2.astype(np.float32),        'fc2_b'),
+        numpy_helper.from_array(w3.astype(np.float32),        'fc3_w'),
+        numpy_helper.from_array(b3.astype(np.float32),        'fc3_b'),
+    ]
+    nodes = [
+        helper.make_node('Gemm',    ['input','fc1_w','fc1_b'], ['fc1'],    alpha=1.0, beta=1.0, transA=0, transB=0),
+        helper.make_node('Relu',    ['fc1'],                    ['r1']),
+        helper.make_node('Gemm',    ['r1','fc2_w','fc2_b'],    ['fc2'],    alpha=1.0, beta=1.0, transA=0, transB=0),
+        helper.make_node('Relu',    ['fc2'],                    ['r2']),
+        helper.make_node('Gemm',    ['r2','fc3_w','fc3_b'],    ['fc3'],    alpha=1.0, beta=1.0, transA=0, transB=0),
+        helper.make_node('Sigmoid', ['fc3'],                    ['output']),
+    ]
+    graph = helper.make_graph(
+        nodes, 'hydradragon_ml',
+        [helper.make_tensor_value_info('input',  TensorProto.FLOAT, [None, DENSE_DIM])],
+        [helper.make_tensor_value_info('output', TensorProto.FLOAT, [None, 1])],
+        inits,
     )
-    print('\nOK model.onnx exported (opset 11)')
+    onnx_model = helper.make_model(graph, opset_imports=[helper.make_opsetid('', 11)])
+    with open('model.onnx', 'wb') as f:
+        f.write(onnx_model.SerializeToString())
+
+    # Save PyTorch weights so export_onnx_opset11.py can reload without retraining
+    torch.save(model.state_dict(), 'model_weights.pt')
+    print('\nOK model.onnx exported (opset 11, BN fused, tract-onnx compatible)')
+    print('OK model_weights.pt saved')
 
 
 if __name__ == '__main__':
     main()
+
