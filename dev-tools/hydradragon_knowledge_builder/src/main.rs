@@ -31,6 +31,7 @@ fn is_text_like(data: &[u8]) -> bool {
             text_bytes += 1;
             i += 1;
         } else if b >= 0x80 {
+            // Try to consume a valid UTF-8 multi-byte sequence
             let rem = sample.len() - i;
             if b & 0xE0 == 0xC0 && rem >= 2 && sample[i + 1] & 0xC0 == 0x80 {
                 text_bytes += 2;
@@ -46,9 +47,11 @@ fn is_text_like(data: &[u8]) -> bool {
                 text_bytes += 4;
                 i += 4;
             } else {
+                // Invalid UTF-8 leader byte → not text
                 i += 1;
             }
         } else {
+            // Non-printable ASCII control char (e.g. null, escape) → not text
             i += 1;
         }
     }
@@ -57,18 +60,7 @@ fn is_text_like(data: &[u8]) -> bool {
 
 fn is_relevant_entry(name: &str, data: &[u8]) -> bool {
     let lower = name.to_ascii_lowercase();
-    if (lower.contains("classes") && lower.ends_with(".dex"))
-        || lower.ends_with(".so")
-        || lower == "androidmanifest.xml"
-        || lower.ends_with(".txt")
-        || lower.ends_with(".html")
-        || lower.ends_with(".htm")
-        || lower.ends_with(".js")
-        || lower.ends_with(".json")
-        || lower.ends_with(".php")
-        || lower.ends_with(".py")
-        || lower.ends_with(".sh")
-        || lower.ends_with(".xml")
+    if (lower.contains("classes") && lower.ends_with(".dex")) || lower.ends_with(".so") || lower == "androidmanifest.xml"
     {
         return true;
     }
@@ -169,9 +161,17 @@ fn build_db(db_path: &Path, apk_dir: &Path, is_malicious: bool) {
         .as_millis() as i64;
     let mut total_entries = 0usize;
     let mut apk_count = 0usize;
-    let mut dir_entries: Vec<PathBuf> = fs::read_dir(apk_dir)
-        .unwrap()
-        .filter_map(|e| e.ok().map(|e| e.path()))
+    let mut dir_entries: Vec<PathBuf> = walkdir::WalkDir::new(apk_dir)
+        .into_iter()
+        .filter_entry(|e| {
+            !e.file_name()
+                .to_str()
+                .map(|s| s.eq_ignore_ascii_case("invalid"))
+                .unwrap_or(false)
+        })
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+        .map(|e| e.path().to_path_buf())
         .filter(|p| p.extension().map(|e| e == "apk").unwrap_or(false))
         .collect();
     dir_entries.sort();

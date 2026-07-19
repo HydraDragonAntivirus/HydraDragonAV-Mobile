@@ -1799,14 +1799,9 @@ fn compute_zip_entry_hashes(path: &str) -> String {
     };
     let mut out = Vec::new();
     for (name, data) in &entries {
-        // Only hash entries that can trigger a detection — DEX, native libs,
-        // and AndroidManifest. Everything else (images, layouts, .arsc, etc.)
-        // is never scanned individually, so caching it wastes space.
-        let lower = name.to_ascii_lowercase();
-        let relevant = lower.contains("classes") && lower.ends_with(".dex")
-            || lower.ends_with(".so")
-            || lower == "androidmanifest.xml";
-        if !relevant {
+        // Only hash entries that SCAN_RELEVANT_ONLY would scan — DEX, native
+        // libs, AndroidManifest, and text-like files (EICAR, scripts, etc.).
+        if !is_relevant_buffer(Some(name), data) {
             continue;
         }
         let md5 = md5_hex(data);
