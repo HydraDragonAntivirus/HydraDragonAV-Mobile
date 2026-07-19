@@ -21,6 +21,63 @@ fn md5_hex(data: &[u8]) -> String {
     d.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
+fn is_text_like(data: &[u8]) -> bool {
+    let sample = if data.len() > 256 { &data[..256] } else { data };
+    let mut text_bytes: usize = 0;
+    let mut i = 0;
+    while i < sample.len() {
+        let b = sample[i];
+        if b.is_ascii_graphic() || b.is_ascii_whitespace() {
+            text_bytes += 1;
+            i += 1;
+        } else if b >= 0x80 {
+            let rem = sample.len() - i;
+            if b & 0xE0 == 0xC0 && rem >= 2 && sample[i + 1] & 0xC0 == 0x80 {
+                text_bytes += 2;
+                i += 2;
+            } else if b & 0xF0 == 0xE0 && rem >= 3 && sample[i + 1] & 0xC0 == 0x80 && sample[i + 2] & 0xC0 == 0x80 {
+                text_bytes += 3;
+                i += 3;
+            } else if b & 0xF8 == 0xF0 && rem >= 4
+                && sample[i + 1] & 0xC0 == 0x80
+                && sample[i + 2] & 0xC0 == 0x80
+                && sample[i + 3] & 0xC0 == 0x80
+            {
+                text_bytes += 4;
+                i += 4;
+            } else {
+                i += 1;
+            }
+        } else {
+            i += 1;
+        }
+    }
+    text_bytes > sample.len() * 9 / 10
+}
+
+fn is_relevant_entry(name: &str, data: &[u8]) -> bool {
+    let lower = name.to_ascii_lowercase();
+    if (lower.contains("classes") && lower.ends_with(".dex"))
+        || lower.ends_with(".so")
+        || lower == "androidmanifest.xml"
+        || lower.ends_with(".txt")
+        || lower.ends_with(".html")
+        || lower.ends_with(".htm")
+        || lower.ends_with(".js")
+        || lower.ends_with(".json")
+        || lower.ends_with(".php")
+        || lower.ends_with(".py")
+        || lower.ends_with(".sh")
+        || lower.ends_with(".xml")
+    {
+        return true;
+    }
+    if data.starts_with(b"dex\n") || data.starts_with(b"\x7fELF") || data.starts_with(b"<?xml") {
+        return true;
+    }
+    is_text_like(data)
+}
+
 fn process_apk(apk_path: &Path) -> Vec<(String, String, String)> {
     let file = match fs::read(apk_path) {
         Ok(b) => b,
@@ -46,15 +103,11 @@ fn process_apk(apk_path: &Path) -> Vec<(String, String, String)> {
         if entry.is_dir() || name.starts_with("META-INF/") {
             continue;
         }
-        let lower = name.to_ascii_lowercase();
-        let relevant = (lower.contains("classes") && lower.ends_with(".dex"))
-            || lower.ends_with(".so")
-            || lower == "androidmanifest.xml";
-        if !relevant {
-            continue;
-        }
         let mut data = Vec::with_capacity(entry.size() as usize);
         if std::io::Read::read_to_end(&mut entry, &mut data).is_err() {
+            continue;
+        }
+        if !is_relevant_entry(&name, &data) {
             continue;
         }
         let md5 = md5_hex(&data);
