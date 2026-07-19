@@ -38,6 +38,7 @@ public final class AntiFpCache {
         SQLiteDatabase d;
         try {
             d = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
+            d.execSQL("PRAGMA cache_size=-2000");
             d.execSQL(SQL_CREATE);
             d.execSQL(SQL_INDEX_TLSH);
         } catch (Exception e) {
@@ -126,6 +127,7 @@ public final class AntiFpCache {
         long cutoff = System.currentTimeMillis() - maxAgeMs;
         try {
             db.execSQL("DELETE FROM " + TABLE + " WHERE added_at < ?", new Object[]{cutoff});
+            db.execSQL("VACUUM");
         } catch (Exception e) {
             Log.w(TAG, "Failed to clean anti-FP cache", e);
         }
@@ -136,6 +138,7 @@ public final class AntiFpCache {
         if (db == null) return;
         try {
             db.execSQL("DELETE FROM " + TABLE);
+            db.execSQL("VACUUM");
         } catch (Exception e) {
             Log.w(TAG, "Failed to clear anti-FP cache", e);
         }
