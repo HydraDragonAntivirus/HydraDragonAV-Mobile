@@ -1735,8 +1735,18 @@ fn compute_zip_entry_hashes(path: &str) -> String {
         Ok(e) => e,
         Err(_) => return "[]".to_string(),
     };
-    let mut out = Vec::with_capacity(entries.len());
+    let mut out = Vec::new();
     for (name, data) in &entries {
+        // Only hash entries that can trigger a detection — DEX, native libs,
+        // and AndroidManifest. Everything else (images, layouts, .arsc, etc.)
+        // is never scanned individually, so caching it wastes space.
+        let lower = name.to_ascii_lowercase();
+        let relevant = lower.contains("classes") && lower.ends_with(".dex")
+            || lower.ends_with(".so")
+            || lower == "androidmanifest.xml";
+        if !relevant {
+            continue;
+        }
         let md5 = md5_hex(data);
         let tlsh = tlsh_rs::hash_bytes(data)
             .ok()

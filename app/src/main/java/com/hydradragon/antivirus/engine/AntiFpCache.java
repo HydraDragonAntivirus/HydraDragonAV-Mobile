@@ -28,38 +28,46 @@ public final class AntiFpCache {
     private static final String SQL_INDEX_TLSH =
         "CREATE INDEX IF NOT EXISTS idx_tlsh ON " + TABLE + "(tlsh)";
 
-    private final SQLiteDatabase db;
-    private final boolean enabled;
+    private SQLiteDatabase db;
+    private final Context context;
 
     public AntiFpCache(Context context) {
-        enabled = context.getSharedPreferences("hydra_prefs", 0)
+        this.context = context;
+    }
+
+    private boolean isPrefEnabled() {
+        return context.getSharedPreferences("hydra_prefs", 0)
             .getBoolean("anti_fp_skip_enabled", true);
+    }
+
+    private SQLiteDatabase getDb() {
+        if (db != null) return db;
+        if (!isPrefEnabled()) return null;
         File dbFile = new File(context.getNoBackupFilesDir(), DB_NAME);
-        SQLiteDatabase d;
         try {
-            d = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
-            d.execSQL("PRAGMA cache_size=-2000");
-            d.execSQL(SQL_CREATE);
-            d.execSQL(SQL_INDEX_TLSH);
+            db = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
+            db.execSQL("PRAGMA cache_size=-2000");
+            db.execSQL(SQL_CREATE);
+            db.execSQL(SQL_INDEX_TLSH);
         } catch (Exception e) {
             Log.w(TAG, "Failed to open anti-FP cache DB", e);
-            d = null;
+            db = null;
         }
-        db = d;
+        return db;
     }
 
     public boolean isEnabled() {
-        return enabled && db != null;
+        return isPrefEnabled() && getDb() != null;
     }
 
-    /** Populate the cache from a JSON array returned by
-     *  {@link NativeScanner#computeZipEntryHashes}. */
     public void addEntries(String jsonArray, String sourcePkg) {
-        if (!isEnabled() || jsonArray == null || jsonArray.isEmpty()) return;
+        if (!isPrefEnabled() || jsonArray == null || jsonArray.isEmpty()) return;
+        SQLiteDatabase d = getDb();
+        if (d == null) return;
         long now = System.currentTimeMillis();
         try {
             JSONArray arr = new JSONArray(jsonArray);
-            db.beginTransaction();
+            d.beginTransaction();
             try {
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject o = arr.getJSONObject(i);
@@ -67,23 +75,24 @@ public final class AntiFpCache {
                     if (md5.isEmpty()) continue;
                     String tlsh = o.optString("tlsh", "");
                     String entry = o.optString("entry", "");
-                    db.execSQL("INSERT OR IGNORE INTO " + TABLE
+                    d.execSQL("INSERT OR IGNORE INTO " + TABLE
                             + "(md5,tlsh,entry_name,source_apk_pkg,added_at) VALUES(?,?,?,?,?)",
                         new Object[]{md5, tlsh, entry, sourcePkg, now});
                 }
-                db.setTransactionSuccessful();
+                d.setTransactionSuccessful();
             } finally {
-                db.endTransaction();
+                d.endTransaction();
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to add anti-FP entries", e);
         }
     }
 
-    /** True if `md5` is a known-good entry from a whitelisted APK. */
     public boolean isKnownMd5(String md5) {
-        if (!isEnabled() || md5 == null || md5.isEmpty()) return false;
-        try (Cursor c = db.rawQuery("SELECT 1 FROM " + TABLE + " WHERE md5=? LIMIT 1",
+        if (!isPrefEnabled() || md5 == null || md5.isEmpty()) return false;
+        SQLiteDatabase d = getDb();
+        if (d == null) return false;
+        try (Cursor c = d.rawQuery("SELECT 1 FROM " + TABLE + " WHERE md5=? LIMIT 1",
                 new String[]{md5.toLowerCase(java.util.Locale.US)})) {
             return c.moveToFirst();
         } catch (Exception e) {
@@ -91,11 +100,11 @@ public final class AntiFpCache {
         }
     }
 
-    /** True if `tlsh` has a close match in the cache (distance <= threshold).
-     *  Uses the configured TLSH similarity threshold from settings. */
     public boolean hasSimilarTlsh(String tlsh, int threshold) {
-        if (!isEnabled() || tlsh == null || tlsh.isEmpty() || threshold <= 0) return false;
-        try (Cursor c = db.rawQuery("SELECT tlsh FROM " + TABLE
+        if (!isPrefEnabled() || tlsh == null || tlsh.isEmpty() || threshold <= 0) return false;
+        SQLiteDatabase d = getDb();
+        if (d == null) return false;
+        try (Cursor c = d.rawQuery("SELECT tlsh FROM " + TABLE
                 + " WHERE tlsh IS NOT NULL AND tlsh != ''", null)) {
             while (c.moveToNext()) {
                 String cached = c.getString(0);
@@ -109,36 +118,34 @@ public final class AntiFpCache {
         return false;
     }
 
-    /** Get the configured TLSH threshold from settings. */
     public static int getTlshThreshold(Context context) {
         return context.getSharedPreferences("hydra_prefs", 0)
             .getInt("anti_fp_tlsh_threshold", 40);
     }
 
-    /** Anti-FP entry match mode: "tlsh" (default) or "md5", set in Settings. */
     public static boolean isMd5MatchMode(Context context) {
         return "md5".equals(context.getSharedPreferences("hydra_prefs", 0)
             .getString("anti_fp_match_mode", "tlsh"));
     }
 
-    /** Remove stale entries older than `maxAgeMs`. */
     public void clean(long maxAgeMs) {
-        if (db == null) return;
+        SQLiteDatabase d = getDb();
+        if (d == null) return;
         long cutoff = System.currentTimeMillis() - maxAgeMs;
         try {
-            db.execSQL("DELETE FROM " + TABLE + " WHERE added_at < ?", new Object[]{cutoff});
-            db.execSQL("VACUUM");
+            d.execSQL("DELETE FROM " + TABLE + " WHERE added_at < ?", new Object[]{cutoff});
+            d.execSQL("VACUUM");
         } catch (Exception e) {
             Log.w(TAG, "Failed to clean anti-FP cache", e);
         }
     }
 
-    /** Drop everything. Called when the user toggles the setting off. */
     public void clear() {
-        if (db == null) return;
+        SQLiteDatabase d = getDb();
+        if (d == null) return;
         try {
-            db.execSQL("DELETE FROM " + TABLE);
-            db.execSQL("VACUUM");
+            d.execSQL("DELETE FROM " + TABLE);
+            d.execSQL("VACUUM");
         } catch (Exception e) {
             Log.w(TAG, "Failed to clear anti-FP cache", e);
         }

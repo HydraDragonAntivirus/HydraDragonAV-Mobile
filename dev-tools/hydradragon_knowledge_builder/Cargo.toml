@@ -1,0 +1,11 @@
+[package]
+name = "hydradragon_knowledge_builder"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zip = "2"
+md-5 = "0.11"
+tlsh-rs = "0.1.0"
+rusqlite = { version = "0.40", features = ["bundled"] }
+clap = { version = "4", features = ["derive"] }
