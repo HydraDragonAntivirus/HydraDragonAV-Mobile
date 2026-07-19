@@ -1,4 +1,5 @@
 import "hydradragon"
+import "androguard"
 
 // ── UI Spam ──────────────────────────────────────────────────────────────────
 
@@ -433,4 +434,173 @@ rule HIPS_UDP_Suspicious_Port
     suggestion = "warn"
   condition:
     hydradragon.network.udp(/^(4444|5353|6666|6667|1337|1900|4500|5000|5001|8080)$/) >= 1
+}
+
+// ── Aggressive Adware / Launcher Hijack ──────────────────────────────────────
+// Behavioral rules for detecting adware that hijacks the home screen or
+// aggressively pushes ads, even when the APK claims to have no ads.
+// Specifically targets the behavior pattern of com.murder.back.look.win
+// and similar aggressive adware families.
+
+rule HIPS_Adware_Aggressive_Notification_UI
+{
+  meta:
+    description = "Detects aggressive adware: massive notification spam combined with high UI event volume (typical of forced full-screen or interstitial ads)"
+    severity = "critical"
+    category = "ADWARE"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.notification_spam(/./) >= 15 and hydradragon.ui_spam(/./) >= 20
+}
+
+rule HIPS_Adware_Launcher_Hijack_Behavior
+{
+  meta:
+    description = "Detects an app forcing itself into the foreground repeatedly while spamming notifications and UI events — the behavioral fingerprint of launcher-hijacking adware"
+    severity = "critical"
+    category = "ADWARE"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.foreground_package(/./) >= 1 and
+    hydradragon.notification_spam(/./) >= 10 and
+    hydradragon.ui_spam(/./) >= 10
+}
+
+rule HIPS_Adware_Overlay_Abuse
+{
+  meta:
+    description = "Detects apps abusing SYSTEM_ALERT_WINDOW / draw-over-apps (StrandHogg-style) combined with ad-like UI or notification spam — hallmark of overlay adware"
+    severity = "critical"
+    category = "ADWARE"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.strandhogg(/./) >= 1 and
+    (
+      hydradragon.notification_spam(/./) >= 5 or
+      hydradragon.ui_spam(/./) >= 10
+    )
+}
+
+rule HIPS_Adware_Ad_Network_URL_UI_Spam
+{
+  meta:
+    description = "Detects apps actively contacting major ad networks while generating excessive UI events — aggressive in-app advertising behaviour even if the app claims ad-free"
+    severity = "high"
+    category = "ADWARE"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.url(/(?i)(googlesyndication\.com|doubleclick\.net|adnxs\.com|admob\.com|adcolony\.com|applovin\.com|unityads\.unity3d\.com|ironsource\.com|mopub\.com|vungle\.com|tapjoy\.com|startappservice\.com|inmobi\.com|chartboost\.com|wortise\.com)/) >= 1 and
+    hydradragon.ui_spam(/./) >= 15
+}
+
+rule HIPS_Adware_Boot_Persist_Notification_Spam
+{
+  meta:
+    description = "Detects adware that persists across reboots (via foreground package observations) and spams notifications — typical of aggressive adware that auto-starts to show ads"
+    severity = "high"
+    category = "ADWARE"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.foreground_package(/./) >= 1 and
+    hydradragon.notification_spam(/./) >= 20
+}
+
+rule HIPS_Adware_Multiple_Ad_Network_Connections
+{
+  meta:
+    description = "Detects apps contacting multiple different advertising networks simultaneously — a clear sign of aggressive or SDK-stacked adware monetisation abuse"
+    severity = "high"
+    category = "ADWARE"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.url(/(?i)(googlesyndication\.com|doubleclick\.net)/) >= 1 and
+    hydradragon.url(/(?i)(applovin\.com|unityads\.unity3d\.com|ironsource\.com|adcolony\.com|tapjoy\.com|startappservice\.com|chartboost\.com)/) >= 1
+}
+
+// ── Static Adware / Launcher Hijack (androguard module) ──────────────────────
+// These rules fire during APK static scan using manifest and DEX analysis.
+// Specifically targets apps that hijack the home screen and show ads even
+// when claiming to be ad-free (e.g. com.murder.back.look.win).
+
+rule Android_Murder_Back_Look_Win : android adware
+{
+  meta:
+    author      = "HydraDragonAV"
+    date        = "2025-07-19"
+    description = "Detects com.murder.back.look.win — aggressive adware that hijacks the Android home screen and displays ads despite claiming otherwise"
+    reference   = "https://play.google.com/store/apps/details?id=com.murder.back.look.win"
+    severity    = "critical"
+    category    = "adware"
+    suggestion  = "uninstall"
+  condition:
+    androguard.package_name(/com\.murder\.back\.look\.win/)
+}
+
+rule Android_Aggressive_Adware_Launcher_Hijack : android adware
+{
+  meta:
+    author      = "HydraDragonAV"
+    date        = "2025-07-19"
+    description = "Detects APKs that register as an Android HOME screen launcher AND embed ad SDKs — aggressive adware that silently replaces the home screen to inject ads"
+    severity    = "critical"
+    category    = "adware"
+    suggestion  = "uninstall"
+  strings:
+    $ad_admob    = "com/google/android/gms/ads"
+    $ad_admob2   = "com/google/ads"
+    $ad_unity    = "com/unity3d/ads"
+    $ad_applovin = "com/applovin"
+    $ad_mopub    = "com/mopub"
+    $ad_fb       = "com/facebook/ads"
+    $ad_ironsrc  = "com/ironsource/mediationsdk"
+    $ad_vungle   = "com/vungle/warren"
+    $ad_chartb   = "com/chartboost"
+    $ad_inmobi   = "com/inmobi"
+    $ad_startapp = "com/startapp"
+    $ad_tapjoy   = "com/tapjoy"
+    $ad_adcolony = "com/adcolony"
+    $ad_wortise  = "com/wortise"
+    $ag_intrstl  = "InterstitialAd"
+    $ag_reward   = "RewardedAd"
+    $ag_fullscr  = "FullScreenAdActivity"
+    $ag_overlay  = "OverlayAd"
+  condition:
+    androguard.activity(/android\.intent\.category\.HOME/) and
+    (2 of ($ad_*) or 1 of ($ag_*)) and
+    (
+      androguard.permission(/android\.permission\.SYSTEM_ALERT_WINDOW/) or
+      androguard.permission(/android\.permission\.RECEIVE_BOOT_COMPLETED/) or
+      androguard.permission(/android\.permission\.FOREGROUND_SERVICE/)
+    )
+}
+
+rule Android_Launcher_Hijack_Hidden_Ads : android adware
+{
+  meta:
+    author      = "HydraDragonAV"
+    date        = "2025-07-19"
+    description = "Detects APKs that register as a HOME/DEFAULT launcher and contain ad network domains or overlay-injection code — catches adware that falsely claims 'no ads'"
+    severity    = "high"
+    category    = "adware"
+    suggestion  = "uninstall"
+  strings:
+    $home        = "android.intent.category.HOME"
+    $default_cat = "android.intent.category.DEFAULT"
+    $net_google  = "googlesyndication.com"
+    $net_dclick  = "doubleclick.net"
+    $net_admob   = "admob.com"
+    $net_adnxs   = "adnxs.com"
+    $net_adsys   = "adsystem.g.doubleclick.net"
+    $net_applovin= "applovin.com"
+    $net_unity   = "unityads.unity3d.com"
+    $net_ironsrc = "ironSource.com"
+    $net_startapp= "startappservice.com"
+    $net_tapjoy  = "tapjoy.com"
+    $inj_popup   = "android/widget/PopupWindow"
+    $inj_wm_add  = "android/view/WindowManager;->addView"
+    $inj_alarm   = "android/app/AlarmManager;->setRepeating"
+    $inj_setcomp = "android/content/pm/PackageManager;->setComponentEnabledSetting"
+  condition:
+    $home and $default_cat and
+    (2 of ($net_*) or 2 of ($inj_*))
 }
