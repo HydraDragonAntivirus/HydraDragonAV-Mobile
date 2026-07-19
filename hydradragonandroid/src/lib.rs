@@ -2725,9 +2725,17 @@ fn generate_yara_rule(
     }
     if !hips_groups.is_empty() {
         let hips_cond = hips_groups.join(" or\n        ");
+        let pkg_prefix = if packages.len() == 1 {
+            format!("androguard.package_name(\"{}\")", packages[0].replace('"', "'"))
+        } else {
+            let pkg_ors: Vec<String> = packages.iter().map(|p| {
+                format!("androguard.package_name(\"{}\")", p.replace('"', "'"))
+            }).collect();
+            format!("({})", pkg_ors.join(" or "))
+        };
         out.push_str(&format!(
-            "    ({})\n    or\n    ({})\n",
-            static_cond, hips_cond
+            "    ({})\n    or\n    ({} and (\n        {}\n    ))\n",
+            static_cond, pkg_prefix, hips_cond
         ));
     } else {
         out.push_str(&format!("    {}\n", static_cond));
