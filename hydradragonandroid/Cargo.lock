@@ -1334,6 +1334,7 @@ name = "hydradragonml"
 version = "0.2.0"
 dependencies = [
  "tract-onnx",
+ "walkdir",
  "zip 2.4.2",
 ]
 
