@@ -447,5 +447,6 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="cache_session">Session Cache (temporary)</string>
     <string name="cache_anti_fp">Anti-FP Cache (false positives)</string>
     <string name="cache_anti_fn">Anti-FN Cache (false negatives)</string>
-    <string name="cache_cleared">Selected caches cleared</string>
+    <string name="cache_cleared">Selected caches cleared</string>
+    <string name="scan_cancelled">Scan cancelled</string>
 </resources>

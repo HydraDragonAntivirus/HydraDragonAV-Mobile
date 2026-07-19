@@ -9,6 +9,7 @@ import android.content.pm.ResolveInfo;
 import android.content.pm.Signature;
 import android.util.Log;
 
+import com.hydradragon.antivirus.R;
 import com.hydradragon.antivirus.model.ThreatResult;
 import com.hydradragon.antivirus.model.ScanResult;
 
@@ -2211,13 +2212,16 @@ public class ScanEngine {
     }
 
     private void flushBatchScans(List<ThreatResult> threats) {
-        if (callback != null) {
-            callback.onProgress(0, 0, "Completing deep scans...");
-        }
         if (cancelRequested) {
             NativeScanner.abortBatchScan();
+            reportCancelled();
             deferredScans.clear();
             return;
+        }
+        int base = appsScannedBase + filesScannedCount.get();
+        int pending = deferredScans.size();
+        if (callback != null) {
+            callback.onProgress(base, base + pending, firstDeferredName());
         }
         // Run endBatchScan on orchestrationExecutor with timeout polling so the
         // UI doesn't freeze — the native call has no Java-side interruption point
@@ -2228,6 +2232,7 @@ public class ScanEngine {
         while (true) {
             if (cancelRequested) {
                 NativeScanner.abortBatchScan();
+                reportCancelled();
                 deferredScans.clear();
                 return;
             }
@@ -2237,8 +2242,8 @@ public class ScanEngine {
             } catch (java.util.concurrent.TimeoutException te) {
                 pollCount++;
                 if (pollCount % 25 == 0 && callback != null) {
-                    int sec = pollCount / 5;
-                    callback.onProgress(0, 0, "Deep scan in progress (" + sec + "s)...");
+                    int done = appsScannedBase + filesScannedCount.get();
+                    callback.onProgress(done, done + deferredScans.size(), firstDeferredName());
                 }
             } catch (Exception e) {
                 Log.e(TAG, "endBatchScan failed", e);
@@ -2292,6 +2297,26 @@ public class ScanEngine {
             }
         }
         deferredScans.clear();
+    }
+
+    private String firstDeferredName() {
+        for (DeferredScanState s : deferredScans.values()) {
+            if (s.app != null && s.app.packageName != null) return s.app.packageName;
+            if (s.file != null) return s.file.getName();
+            return s.path;
+        }
+        return null;
+    }
+
+    private void reportCancelled() {
+        if (callback == null) return;
+        long now = System.currentTimeMillis();
+        String cancelledLabel = context.getString(R.string.scan_cancelled);
+        for (DeferredScanState s : deferredScans.values()) {
+            String name = s.app != null ? s.app.packageName : (s.file != null ? s.file.getName() : s.path);
+            callback.onFileScanned(new com.hydradragon.antivirus.model.ScannedFileInfo(
+                s.path, name, name, 0, null, now, false, cancelledLabel));
+        }
     }
 
     private ThreatResult processFinalVerdict(DeferredScanState state, NativeScanner.Verdict v) {

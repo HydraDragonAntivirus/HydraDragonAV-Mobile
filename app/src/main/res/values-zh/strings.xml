@@ -430,4 +430,5 @@
     <string name="cache_anti_fp">反误报缓存（误报）</string>
     <string name="cache_anti_fn">反漏报缓存（漏报）</string>
     <string name="cache_cleared">已清除选定的缓存</string>
+    <string name="scan_cancelled">扫描已取消</string>
 </resources>

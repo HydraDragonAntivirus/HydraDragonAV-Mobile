@@ -430,4 +430,5 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="cache_anti_fp">Anti-FP-Cache (Fehlalarme)</string>
     <string name="cache_anti_fn">Anti-FN-Cache (falsch Negative)</string>
     <string name="cache_cleared">Ausgewählte Caches gelöscht</string>
+    <string name="scan_cancelled">Scan abgebrochen</string>
 </resources>

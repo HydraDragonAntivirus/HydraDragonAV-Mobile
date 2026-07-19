@@ -430,4 +430,5 @@
     <string name="cache_anti_fp">ذاكرة تخزين مؤقت لمضادة FP (إيجابيات كاذبة)</string>
     <string name="cache_anti_fn">ذاكرة تخزين مؤقت لمضادة FN (سلبيات كاذبة)</string>
     <string name="cache_cleared">تم مسح ذاكرات التخزين المؤقت المحددة</string>
+    <string name="scan_cancelled">تم إلغاء الفحص</string>
 </resources>

@@ -430,4 +430,5 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="cache_anti_fp">Cache Anti-FP (positif palsu)</string>
     <string name="cache_anti_fn">Cache Anti-FN (negatif palsu)</string>
     <string name="cache_cleared">Cache yang dipilih telah dibersihkan</string>
+    <string name="scan_cancelled">Pemindaian dibatalkan</string>
 </resources>

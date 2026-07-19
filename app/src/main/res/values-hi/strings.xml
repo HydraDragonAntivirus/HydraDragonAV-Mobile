@@ -429,4 +429,5 @@
     <string name="cache_anti_fp">Anti-FP कैश (गलत सकारात्मक)</string>
     <string name="cache_anti_fn">Anti-FN कैश (गलत नकारात्मक)</string>
     <string name="cache_cleared">चयनित कैश साफ़ हो गए</string>
+    <string name="scan_cancelled">स्कैन रद्द कर दिया गया</string>
 </resources>

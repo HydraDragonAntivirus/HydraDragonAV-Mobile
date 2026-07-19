@@ -430,4 +430,5 @@
     <string name="cache_anti_fp">Кэш Anti-FP (ложные срабатывания)</string>
     <string name="cache_anti_fn">Кэш Anti-FN (ложные отрицания)</string>
     <string name="cache_cleared">Выбранные кэши очищены</string>
+    <string name="scan_cancelled">Сканирование отменено</string>
 </resources>

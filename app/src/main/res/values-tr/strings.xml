@@ -433,4 +433,5 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="cache_anti_fp">Anti-YP Önbelleği (yanlış pozitifler)</string>
     <string name="cache_anti_fn">Anti-YN Önbelleği (yanlış negatifler)</string>
     <string name="cache_cleared">Seçilen önbellekler temizlendi</string>
+    <string name="scan_cancelled">Tarama iptal edildi</string>
 </resources>

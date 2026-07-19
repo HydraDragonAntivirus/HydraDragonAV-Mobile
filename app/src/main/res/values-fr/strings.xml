@@ -430,4 +430,5 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="cache_anti_fp">Cache Anti-FP (faux positifs)</string>
     <string name="cache_anti_fn">Cache Anti-FN (faux négatifs)</string>
     <string name="cache_cleared">Caches sélectionnées vidées</string>
+    <string name="scan_cancelled">Analyse annulée</string>
 </resources>

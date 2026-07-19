@@ -430,4 +430,5 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="cache_anti_fp">Anti-FP-Cache (valse positieven)</string>
     <string name="cache_anti_fn">Anti-FN-Cache (valse negatieven)</string>
     <string name="cache_cleared">Geselecteerde caches gewist</string>
+    <string name="scan_cancelled">Scan geannuleerd</string>
 </resources>
