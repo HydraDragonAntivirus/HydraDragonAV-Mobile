@@ -17,6 +17,7 @@ use std::sync::OnceLock;
 use hydradragonclamav::{Engine as ClamavEngine, ScanOptions};
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
+use base64::Engine as Base64Engine;
 
 mod asset_reader;
 mod dex_scan;
@@ -1779,6 +1780,69 @@ fn extract_and_scan_urls(engine: &Engine, decoded: &[u8]) -> Vec<String> {
     out
 }
 
+/// Base64-encoded URL prefixes to search for in a buffer.
+/// Derived from the InQuest Labs `Base64_Encoded_URL` YARA rule
+/// (labs.inquest.net). The rule detects Base64-encoded `http://` and
+/// `https://` prefixes in both standard and wide (UTF-16LE) encoding.
+///
+/// `aHR0cDovL`             = base64("http://")
+/// `aHR0cHM6Ly`            = base64("https://")
+/// `aAB0AHQAcAA2AC8ALw`    = base64 wide("http://")
+/// `aAB0AHQAcABzADoALwAv`  = base64 wide("https://")
+const B64_URL_PREFIXES: &[&[u8]] = &[
+    b"aHR0cDovL",
+    b"aHR0cHM6Ly",
+    b"aAB0AHQAcAA2AC8ALw",
+    b"aAB0AHQAcABzADoALwAv",
+];
+
+fn is_b64_char(c: u8) -> bool {
+    c.is_ascii_alphanumeric() || c == b'+' || c == b'/'
+}
+
+/// Scan a byte buffer for Base64-encoded URLs, decode them, and check each
+/// against the threat URL scanner. Returns detection strings like
+/// `"URL.PHISHING: http://..."` for any matches.
+fn extract_decode_base64_urls(data: &[u8], scanner: &url_scan::UrlScanner) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut start = 0;
+    while start + 8 <= data.len() {
+        // Check if current position starts with any known prefix
+        let matched = B64_URL_PREFIXES.iter().any(|p| data[start..].starts_with(p));
+        if !matched {
+            start += 1;
+            continue;
+        }
+        // Found a prefix — extract the full contiguous base64 string
+        let begin = start;
+        let mut end = start + 8;
+        while end < data.len() && is_b64_char(data[end]) {
+            end += 1;
+        }
+        // Include up to 2 trailing '=' padding chars
+        while end < data.len() && data[end] == b'=' && end - begin < 100 {
+            end += 1;
+        }
+        let b64_slice = &data[begin..end];
+        // Try to decode
+        if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(b64_slice) {
+            if let Ok(s) = String::from_utf8(decoded) {
+                let s = s.trim();
+                if s.starts_with("http://") || s.starts_with("https://") {
+                    if let Some(cat) = scanner.scan(s) {
+                        out.push(format!("URL.{cat}: {s}"));
+                        if out.len() >= 16 {
+                            return out;
+                        }
+                    }
+                }
+            }
+        }
+        start = end;
+    }
+    out
+}
+
 /// Re-scans every extracted buffer with the FULL `module_meta` (androguard +
 /// hydradragon metadata) that wasn't available yet when `collect_buffers`
 /// ran its own concurrent ClamAV pass during extraction — see the doc
@@ -1873,12 +1937,16 @@ fn rescan_buffers_parallel(
                         // content; isolate each scan call so one bad buffer
                         // only loses ITS OWN scan, not this worker's whole
                         // remaining queue.
+                        let mut has_b64_url_rule = false;
                         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                             clamav.scan_bytes_named_with_breakdown(&b.data, &name, opts, module_meta)
                         })) {
                             Ok((matches, bt)) => {
-                                for m in matches {
-                                    local_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
+                                for m in &matches {
+                                    if m.name.contains("Base64_Encoded_URL") {
+                                        has_b64_url_rule = true;
+                                    }
+                                    local_dets.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
                                 }
                                 local_timing.accumulate(bt);
                             }
@@ -1887,6 +1955,17 @@ fn rescan_buffers_parallel(
                                     "rescan_buffers_parallel: scan PANIC on {name}, skipping this buffer only: {}",
                                     last_panic()
                                 ));
+                            }
+                        }
+
+                        // If Base64_Encoded_URL rule matched, extract and
+                        // decode any Base64-encoded URLs in this buffer, then
+                        // scan them against the threat URL database.
+                        if has_b64_url_rule {
+                            if let Some(scanner) = engine.url_scanner.as_ref() {
+                                for url_det in extract_decode_base64_urls(&b.data, scanner) {
+                                    local_dets.push((url_det, name.clone(), b.apk_lineage.clone()));
+                                }
                             }
                         }
 

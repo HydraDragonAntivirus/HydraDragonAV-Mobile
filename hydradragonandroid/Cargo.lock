@@ -1302,6 +1302,7 @@ dependencies = [
 name = "hydradragonandroid"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "dex-analysis",
  "dex-core",
  "hydradragonclamav",
