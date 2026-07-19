@@ -418,6 +418,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="cache_anti_fp">Pamięć Podręczna Anti-FP (fałszywe pozytywy)</string>
     <string name="cache_anti_fn">Pamięć Podręczna Anti-FN (fałszywe negatywy)</string>
     <string name="cache_cleared">Wybrane pamięci podręczne wyczyszczone</string>
-    <string name="scan_cancelled">Skanowanie anulowane</string>
+    <string name="scan_cancelled">Skanowanie anulowane</string>
     <string name="scan_relevant_only_toggle">Skanuj tylko istotne (DEX/ELF/tekst)</string>
 </resources>
+

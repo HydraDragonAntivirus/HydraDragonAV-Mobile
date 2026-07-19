@@ -418,6 +418,7 @@
     <string name="cache_anti_fp">Кеш Anti-FP (хибні спрацьовування)</string>
     <string name="cache_anti_fn">Кеш Anti-FN (хибні негативні)</string>
     <string name="cache_cleared">Вибрані кеші очищено</string>
-    <string name="scan_cancelled">Сканування скасовано</string>
+    <string name="scan_cancelled">Сканування скасовано</string>
     <string name="scan_relevant_only_toggle">Сканувати лише релевантне (DEX/ELF/текст)</string>
 </resources>
+

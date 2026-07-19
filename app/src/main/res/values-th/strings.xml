@@ -418,6 +418,7 @@
     <string name="cache_anti_fp">แคช Anti-FP (ผลบวกลวง)</string>
     <string name="cache_anti_fn">แคช Anti-FN (ผลลบลวง)</string>
     <string name="cache_cleared">ล้างแคชที่เลือกแล้ว</string>
-    <string name="scan_cancelled">การสแกนถูกยกเลิก</string>
+    <string name="scan_cancelled">การสแกนถูกยกเลิก</string>
     <string name="scan_relevant_only_toggle">สแกนเฉพาะไฟล์ที่เกี่ยวข้อง (DEX/ELF/ข้อความ)</string>
 </resources>
+

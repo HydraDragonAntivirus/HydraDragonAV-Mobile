@@ -418,6 +418,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="cache_anti_fp">Cache Anti-FP (falsi positivi)</string>
     <string name="cache_anti_fn">Cache Anti-FN (falsi negativi)</string>
     <string name="cache_cleared">Cache selezionate pulite</string>
-    <string name="scan_cancelled">Scansione annullata</string>
+    <string name="scan_cancelled">Scansione annullata</string>
     <string name="scan_relevant_only_toggle">Scansiona solo pertinenti (DEX/ELF/testo)</string>
 </resources>
+

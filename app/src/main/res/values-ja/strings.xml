@@ -418,6 +418,7 @@
     <string name="cache_anti_fp">Anti-FPキャッシュ（誤検知）</string>
     <string name="cache_anti_fn">Anti-FNキャッシュ（見逃し）</string>
     <string name="cache_cleared">選択したキャッシュをクリアしました</string>
-    <string name="scan_cancelled">スキャンがキャンセルされました</string>
+    <string name="scan_cancelled">スキャンがキャンセルされました</string>
     <string name="scan_relevant_only_toggle">関連ファイルのみスキャン (DEX/ELF/テキスト)</string>
 </resources>
+

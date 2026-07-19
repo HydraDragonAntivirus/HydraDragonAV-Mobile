@@ -418,6 +418,7 @@
     <string name="cache_anti_fp">حافظه نهان Anti-FP (مثبت کاذب)</string>
     <string name="cache_anti_fn">حافظه نهان Anti-FN (منفی کاذب)</string>
     <string name="cache_cleared">حافظه‌های نهان انتخاب شده پاک شدند</string>
-    <string name="scan_cancelled">اسکن لغو شد</string>
+    <string name="scan_cancelled">اسکن لغو شد</string>
     <string name="scan_relevant_only_toggle">فقط اسکن مرتبط (DEX/ELF/متن)</string>
 </resources>
+

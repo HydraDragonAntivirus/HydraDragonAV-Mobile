@@ -418,6 +418,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="cache_anti_fp">Cache Anti-FP (falsos positivos)</string>
     <string name="cache_anti_fn">Cache Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Caches selecionados limpos</string>
-    <string name="scan_cancelled">Verificação cancelada</string>
+    <string name="scan_cancelled">Verificação cancelada</string>
     <string name="scan_relevant_only_toggle">Digitalizar apenas relevantes (DEX/ELF/texto)</string>
 </resources>
+
