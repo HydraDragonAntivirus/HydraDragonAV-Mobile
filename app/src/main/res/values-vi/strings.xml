@@ -418,7 +418,6 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="cache_anti_fp">Bộ Nhớ Đệm Anti-FP (dương tính giả)</string>
     <string name="cache_anti_fn">Bộ Nhớ Đệm Anti-FN (âm tính giả)</string>
     <string name="cache_cleared">Đã xóa các bộ nhớ đệm đã chọn</string>
-    <string name="scan_cancelled">Đã hủy quét</string>
+    <string name="scan_cancelled">Đã hủy quét</string>
     <string name="scan_relevant_only_toggle">Chỉ quét tệp liên quan (DEX/ELF/văn bản)</string>
 </resources>
-

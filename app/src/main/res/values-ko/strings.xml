@@ -418,7 +418,6 @@
     <string name="cache_anti_fp">Anti-FP 캐시 (오탐)</string>
     <string name="cache_anti_fn">Anti-FN 캐시 (미탐)</string>
     <string name="cache_cleared">선택한 캐시가 지워졌습니다</string>
-    <string name="scan_cancelled">검사가 취소되었습니다</string>
+    <string name="scan_cancelled">검사가 취소되었습니다</string>
     <string name="scan_relevant_only_toggle">관련 파일만 검사 (DEX/ELF/텍스트)</string>
 </resources>
-

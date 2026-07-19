@@ -418,7 +418,6 @@ Puntuación de riesgo: %2$d/100
     <string name="cache_anti_fp">Caché Anti-FP (falsos positivos)</string>
     <string name="cache_anti_fn">Caché Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Cachés seleccionadas limpiadas</string>
-    <string name="scan_cancelled">Escaneo cancelado</string>
+    <string name="scan_cancelled">Escaneo cancelado</string>
     <string name="scan_relevant_only_toggle">Escanear solo relevantes (DEX/ELF/texto)</string>
 </resources>
-
