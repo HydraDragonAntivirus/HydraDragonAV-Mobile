@@ -29,6 +29,9 @@ import java.util.concurrent.Executors;
 public class ScanEngine {
     private static final String TAG = "HydraDragon-ScanEngine";
 
+    /** Previously observed default home/launcher package, or null on first check. */
+    private static String previousDefaultLauncher = null;
+
     // Dangerous-permission detection moved to the native (Rust) engine — it counts
     // them from the manifest bytes (covers in-memory/inner APKs). Java only applies
     // the 5/6 decision on the count the native scan returns.
@@ -781,6 +784,38 @@ public class ScanEngine {
 
     public boolean isScanRunning() { return scanRunning.get(); }
 
+    /** Check whether the default home/launcher has changed since the last scan.
+     *  If so, emit a {@code LAUNCHER_CHANGE} behavioral signal so the
+     *  YARA-X hydradragon launcher_change rule can fire. */
+    private static void checkDefaultLauncher(Context context) {
+        try {
+            PackageManager pm = context.getPackageManager();
+            Intent homeIntent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
+            ResolveInfo ri = pm.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY);
+            if (ri == null || ri.activityInfo == null) return;
+            String current = ri.activityInfo.packageName;
+            String prev = previousDefaultLauncher;
+            previousDefaultLauncher = current;
+            if (prev == null) return; // first check — no baseline yet
+            if (current.equals(prev)) return;
+            // The launcher changed. Determine which app caused it: the new one.
+            boolean isSystem;
+            try {
+                isSystem = (pm.getApplicationInfo(current, 0).flags
+                    & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
+            } catch (PackageManager.NameNotFoundException e) {
+                isSystem = false;
+            }
+            HipsMonitor.reportLauncherChange(
+                current, true,
+                "category_home_resolution",
+                !isSystem  // a non-system app replacing the launcher is suspicious
+            );
+        } catch (Exception e) {
+            Log.w(TAG, "checkDefaultLauncher failed", e);
+        }
+    }
+
     /** @return true if this call actually started a scan, false if one was
      *  already running (see scanRunning) and this request was skipped. The
      *  caller (e.g. ScanFragment) MUST check this — an isScanRunning() check
@@ -823,6 +858,8 @@ public class ScanEngine {
             isBatchMode = true;
             NativeScanner.beginBatchScan();
             deferredScans.clear();
+
+            checkDefaultLauncher(context);
 
             long scanStartMs = android.os.SystemClock.elapsedRealtime();
             PackageManager pm = context.getPackageManager();

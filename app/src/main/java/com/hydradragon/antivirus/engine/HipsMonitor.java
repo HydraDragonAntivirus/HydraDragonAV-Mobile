@@ -110,6 +110,13 @@ public final class HipsMonitor {
         long timestamp;
     }
 
+    private static final class LauncherChangeEvent {
+        String packageName;
+        boolean changed;
+        String method;
+        boolean suspicious;
+    }
+
     private static final class BehaviorFlagEntry {
         String packageName;
         final List<String> flags = new ArrayList<>();
@@ -123,6 +130,7 @@ public final class HipsMonitor {
     private static final List<NetworkEvent> networkEvents = new ArrayList<>();
     private static final List<StrandHoggEvent> strandhoggEvents = new ArrayList<>();
     private static final List<RemovalResistanceEvent> removalResistanceEvents = new ArrayList<>();
+    private static final List<LauncherChangeEvent> launcherChangeEvents = new ArrayList<>();
     private static final Map<String, BehaviorFlagEntry> behaviorFlags = new HashMap<>();
 
     private static boolean isRooted = false;
@@ -214,6 +222,16 @@ public final class HipsMonitor {
         removalResistanceEvents.add(e);
         if (removalResistanceEvents.size() > MAX_EVENTS_PER_TYPE) removalResistanceEvents.remove(0);
         addBehaviorFlag(pkg, "REMOVAL_RESISTANCE");
+        observePackage(pkg);
+    }
+
+    public static synchronized void reportLauncherChange(String pkg, boolean changed, String method, boolean suspicious) {
+        if (pkg == null) return;
+        LauncherChangeEvent e = new LauncherChangeEvent();
+        e.packageName = pkg; e.changed = changed; e.method = method; e.suspicious = suspicious;
+        launcherChangeEvents.add(e);
+        if (launcherChangeEvents.size() > MAX_EVENTS_PER_TYPE) launcherChangeEvents.remove(0);
+        addBehaviorFlag(pkg, "LAUNCHER_CHANGE");
         observePackage(pkg);
     }
 
@@ -380,6 +398,19 @@ public final class HipsMonitor {
             }
             root.put("removal_resistance_events", rrArr);
             removalResistanceEvents.clear();
+
+            // Launcher-change events (homepage/app default launcher hijacking)
+            JSONArray lcArr = new JSONArray();
+            for (LauncherChangeEvent e : launcherChangeEvents) {
+                JSONObject o = new JSONObject();
+                o.put("package_name", e.packageName);
+                o.put("changed", e.changed);
+                o.put("method", e.method != null ? e.method : "");
+                o.put("is_suspicious", e.suspicious);
+                lcArr.put(o);
+            }
+            root.put("launcher_change_events", lcArr);
+            launcherChangeEvents.clear();
 
             // System state
             JSONObject sys = new JSONObject();

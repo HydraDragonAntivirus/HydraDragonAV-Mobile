@@ -2586,15 +2586,29 @@ fn generate_yara_rule(
     only_index: Option<usize>,
 ) -> Option<String> {
     let mut strings: Vec<String> = Vec::new();
+    let mut has_launcher_hijack = false;
     let mut seen = std::collections::HashSet::new();
-    let scanned = dex_scans.iter().enumerate().filter_map(|(i, o)| {
+    let scanned: Vec<&dex_scan::DexScan> = dex_scans.iter().enumerate().filter_map(|(i, o)| {
         if let Some(idx) = only_index {
             if i != idx { return None; }
         }
         o.as_ref()
-    });
-    'outer: for ds in scanned {
+    }).collect();
+    for ds in &scanned {
+        // First pass: launcher-hijacking API call detection
+        if !has_launcher_hijack {
+            has_launcher_hijack = ds.api_calls.iter().any(|call| {
+                let launcher_patterns = [
+                    "clearPackagePreferredActivities",
+                    "addPreferredActivity",
+                    "createRequestRoleIntent",
+                ];
+                launcher_patterns.iter().any(|p| call.contains(p))
+            });
+        }
+        // Second pass: extract strings for YARA pattern matching
         for line in ds.text.lines() {
+            if strings.len() >= 40 { break; }
             let l = line.trim();
             if l.len() < 8 || l.len() > 128 || l.chars().any(|c| c.is_control()) {
                 continue;
@@ -2603,9 +2617,6 @@ fn generate_yara_rule(
                 continue;
             }
             strings.push(l.to_string());
-            if strings.len() >= 40 {
-                break 'outer;
-            }
         }
     }
     if strings.is_empty() && packages.is_empty() {
@@ -2654,6 +2665,9 @@ fn generate_yara_rule(
         groups.push(format!("{} of them", threshold));
     }
     groups.push("androguard.rootkit_behavior() == 1".to_string());
+    if has_launcher_hijack {
+        groups.push(r#"hydradragon.api_call(/clearPackagePreferredActivities|addPreferredActivity|createRequestRoleIntent/) > 0"#.to_string());
+    }
     if groups.is_empty() {
         groups.push("false".to_string());
     }
