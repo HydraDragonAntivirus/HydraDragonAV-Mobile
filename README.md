@@ -116,7 +116,7 @@ The on-device detection assets are generated offline from public threat-intel an
 ## 📦 Dataset Pipeline
 
 - **`fdroid-downloader.py`** — downloads benign APKs from the official F-Droid repository for the dataset pipeline. Only downloads APKs not already present locally; compares by filename so updated versions are picked up automatically.
-- **`dataset/benign/F-Droid/`** — collected F-Droid open-source APKs (benign by nature with 2805 APKs). https://huggingface.co/datasets/HydraDragonAntivirus/BenignAPKDataset/tree/main (uploaded via "hf upload HydraDragonAntivirus/BenignAPKDataset dataset\benign --repo-type=dataset")
+- **`dataset/benign/F-Droid/`** — collected F-Droid open-source APKs (benign by nature with 2805 APKs). https://huggingface.co/datasets/HydraDragonAntivirus/BenignAPKDataset/tree/main (uploaded via "set HF_STORAGE_MODE=git;hf upload HydraDragonAntivirus/BenignAPKDataset dataset\benign --repo-type=dataset")
 - **`dataset/malware/`** — malware samples (stored separately, not in this repo. Link: https://drive.google.com/file/d/1Il2bvcjxmc0w-XirL27R0_bKpznIeIiG Password: infected).
 - **yarGen (YARA rule generation) dataset: https://drive.google.com/file/d/1BrLoMNzz2pJB886A6JfEqFris_c7Ua8o**
 - Note: yarGen contains data2 = PE benign dataset javascript = javascript benign dataset android = andorid benign dataset
