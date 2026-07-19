@@ -338,7 +338,7 @@ fn set_status(s: String) {
 fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_auto_rules: bool) -> Engine {
     let t0 = std::time::Instant::now();
 
-    let (clamav_out, model_out, tlsh_out, whitelist_out, pkg_out, url_out, ip_out) =
+    let (clamav_out, model_out, tlsh_out, whitelist_out, pkg_out, url_out, ip_out, benign_out) =
         std::thread::scope(|s| {
             let clamav_handle = s.spawn(move || {
                 let t_db = std::time::Instant::now();
@@ -3422,15 +3422,13 @@ fn extract_certificate(buffers: &[Buf]) -> Option<CertInfo> {
     if off >= cert_set_end {
         return None;
     }
-    let cert_start = *off; // at the SEQUENCE tag byte
+    let cert_start = off; // at the SEQUENCE tag byte
     der_expect_tag(sig_data, &mut off, 0x30)?; // Certificate SEQUENCE
     let cert_len = der_len(sig_data, &mut off)?; // advances past length
     let cert_end = off.checked_add(cert_len)?;
     let cert_der = sig_data.get(cert_start..cert_end)?; // tag + len + content
 
     let sha1 = sha1_hex(cert_der);
-
-    let sha1 = sha1_hex(cert_raw);
 
     // Parse TBSCertificate inside the certificate.
     der_expect_tag(sig_data, &mut off, 0x30)?; // TBSCertificate SEQUENCE
