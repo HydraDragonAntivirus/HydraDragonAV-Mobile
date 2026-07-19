@@ -375,8 +375,6 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="unicorn_unsupported">Emulation (Unicorn) ist auf diesem Gerät aufgrund eines bekannten ARM64-JIT-Backend-Fehlers nicht verfügbar. Der Scan läuft ohne diesen Durchlauf normal weiter.</string>
 
     <string name="disable_secure_flag_toggle">Bildschirmaufnahme zulassen</string>
-    <string name="skip_media_toggle">Mediendateien bei APK-Scans überspringen</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP-Skip — Hashwerte (MD5 + TLSH) von APK-Zip-Einträgen aus der Whitelist zwischenspeichern, um Fehlalarme zu vermeiden</string>
     <string name="anti_fp_skip_on_toast">Anti-FP-Skip EIN — Einträge von Apps auf der Whitelist werden zwischengespeichert</string>
     <string name="anti_fp_skip_off_toast">Anti-FP-Skip AUS — Cache geleert</string>
@@ -430,5 +428,9 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="cache_anti_fp">Anti-FP-Cache (Fehlalarme)</string>
     <string name="cache_anti_fn">Anti-FN-Cache (falsch Negative)</string>
     <string name="cache_cleared">Ausgewählte Caches gelöscht</string>
-    <string name="scan_cancelled">Scan abgebrochen</string>
+    <string name="scan_cancelled">Scan abgebrochen</string>
+    <string name="scan_relevant_only_toggle">Nur relevante Dateien scannen (DEX/ELF/Text)</string>
 </resources>
+
+
+

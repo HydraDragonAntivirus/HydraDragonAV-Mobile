@@ -375,8 +375,6 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="unicorn_unsupported">Emulacja (Unicorn) jest niedostępna na tym urządzeniu z powodu znanego błędu w backendzie ARM64 JIT. Skanowanie przebiega normalnie bez tego przebiegu.</string>
 
     <string name="disable_secure_flag_toggle">Zezwól na nagrywanie ekranu</string>
-    <string name="skip_media_toggle">Pomijaj pliki multimedialne podczas skanowania APK</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Skip — buforuj hasze (MD5 + TLSH) wpisów ZIP APK z białej listy, aby uniknąć fałszywie pozytywnych wyników</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip WŁ. — wpisy z aplikacji z białej listy są buforowane</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip WYŁ. — pamięć podręczna wyczyszczona</string>
@@ -430,5 +428,9 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="cache_anti_fp">Pamięć Podręczna Anti-FP (fałszywe pozytywy)</string>
     <string name="cache_anti_fn">Pamięć Podręczna Anti-FN (fałszywe negatywy)</string>
     <string name="cache_cleared">Wybrane pamięci podręczne wyczyszczone</string>
-    <string name="scan_cancelled">Skanowanie anulowane</string>
+    <string name="scan_cancelled">Skanowanie anulowane</string>
+    <string name="scan_relevant_only_toggle">Skanuj tylko istotne (DEX/ELF/tekst)</string>
 </resources>
+
+
+

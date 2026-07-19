@@ -375,8 +375,6 @@
     <string name="unicorn_unsupported">ARM64 JIT 백엔드의 알려진 버그로 인해 이 기기에서 에뮬레이션(Unicorn)을 사용할 수 없습니다. 이 패스 없이 스캔이 정상적으로 계속됩니다.</string>
 
     <string name="disable_secure_flag_toggle">화면 녹화 허용</string>
-    <string name="skip_media_toggle">APK 검사에서 미디어 파일 건너뛰기</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Skip — 화이트리스트에 등록된 APK ZIP 항목 해시(MD5 + TLSH)를 캐시하여 오탐(false positive) 방지</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip 켜짐 — 화이트리스트 앱의 항목이 캐시됩니다</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip 꺼짐 — 캐시가 지워졌습니다</string>
@@ -430,5 +428,9 @@
     <string name="cache_anti_fp">Anti-FP 캐시 (오탐)</string>
     <string name="cache_anti_fn">Anti-FN 캐시 (미탐)</string>
     <string name="cache_cleared">선택한 캐시가 지워졌습니다</string>
-    <string name="scan_cancelled">검사가 취소되었습니다</string>
+    <string name="scan_cancelled">검사가 취소되었습니다</string>
+    <string name="scan_relevant_only_toggle">관련 파일만 검사 (DEX/ELF/텍스트)</string>
 </resources>
+
+
+

@@ -375,8 +375,6 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="unicorn_unsupported">Trình giả lập (Unicorn) không khả dụng trên thiết bị này do lỗi đã biết trong backend ARM64 JIT. Quá trình quét tiếp tục bình thường mà không có bước này.</string>
 
     <string name="disable_secure_flag_toggle">Cho phép quay màn hình</string>
-    <string name="skip_media_toggle">Bỏ qua tệp phương tiện khi quét APK</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Skip — lưu vào bộ nhớ đệm các hash (MD5 + TLSH) của mục ZIP APK trong danh sách cho phép để tránh dương tính giả</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip BẬT — các mục từ ứng dụng trong danh sách cho phép được lưu vào bộ nhớ đệm</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip TẮT — đã xóa bộ nhớ đệm</string>
@@ -430,5 +428,9 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="cache_anti_fp">Bộ Nhớ Đệm Anti-FP (dương tính giả)</string>
     <string name="cache_anti_fn">Bộ Nhớ Đệm Anti-FN (âm tính giả)</string>
     <string name="cache_cleared">Đã xóa các bộ nhớ đệm đã chọn</string>
-    <string name="scan_cancelled">Đã hủy quét</string>
+    <string name="scan_cancelled">Đã hủy quét</string>
+    <string name="scan_relevant_only_toggle">Chỉ quét tệp liên quan (DEX/ELF/văn bản)</string>
 </resources>
+
+
+

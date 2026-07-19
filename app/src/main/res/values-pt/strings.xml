@@ -375,8 +375,6 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="unicorn_unsupported">A emulação (Unicorn) não está disponível neste dispositivo devido a um bug conhecido no backend ARM64 JIT. A verificação continua normalmente sem esta passagem.</string>
 
     <string name="disable_secure_flag_toggle">Permitir gravação de tela</string>
-    <string name="skip_media_toggle">Ignorar arquivos de mídia nas varreduras de APK</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Skip — armazenar em cache hashes (MD5 + TLSH) de entradas ZIP de APK na lista de permissões para evitar falsos positivos</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip ATIVADO — entradas de apps na lista de permissões são armazenadas em cache</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip DESATIVADO — cache limpo</string>
@@ -430,5 +428,9 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="cache_anti_fp">Cache Anti-FP (falsos positivos)</string>
     <string name="cache_anti_fn">Cache Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Caches selecionados limpos</string>
-    <string name="scan_cancelled">Verificação cancelada</string>
+    <string name="scan_cancelled">Verificação cancelada</string>
+    <string name="scan_relevant_only_toggle">Digitalizar apenas relevantes (DEX/ELF/texto)</string>
 </resources>
+
+
+

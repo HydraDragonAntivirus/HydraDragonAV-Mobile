@@ -86,7 +86,7 @@ public final class NativeScanner {
 
     private static native void nativeSetDetectZipBomb(boolean enabled);
 
-    private static native void nativeSetSkipImageMedia(boolean skip);
+    private static native void nativeSetScanRelevantOnly(boolean on);
 
     /** Settings toggle for the Unicorn-based native-code emulation pass (runs
      *  every embedded .so's JNI_OnLoad/entry point in a bounded, syscall-free
@@ -125,12 +125,13 @@ public final class NativeScanner {
         try { nativeSetDetectZipBomb(enabled); } catch (Throwable ignore) { }
     }
 
-    /** Settings toggle for skipping image-media files (PNG/JPEG/GIF/WebP/BMP)
-     *  inside APKs during ClamAV scanning. True = skip (faster, default);
-     *  false = full scan. Applied immediately; no reinit needed. */
-    public static void setSkipImageMedia(boolean skip) {
+    /** Settings toggle for relevant-only scanning: when true, only DEX, ELF,
+     *  AndroidManifest.xml, and text-like files are scanned inside APKs; all
+     *  other assets (images, layouts, resources.arsc, etc.) are skipped.
+     *  Applied immediately; no reinit needed. */
+    public static void setScanRelevantOnly(boolean on) {
         if (!LIB_LOADED) return;
-        try { nativeSetSkipImageMedia(skip); } catch (Throwable ignore) { }
+        try { nativeSetScanRelevantOnly(on); } catch (Throwable ignore) { }
     }
 
     /** Hot-load a single freshly auto-generated {@code .yar} rule (already written
@@ -433,8 +434,8 @@ public final class NativeScanner {
             setMaxScanSizeMb(com.hydradragon.antivirus.engine.MaxScanFileSize.getMaxMb(context));
             setDetectZipBomb(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("detect_zip_bomb_enabled", true));
-            setSkipImageMedia(context.getSharedPreferences("hydra_prefs", 0)
-                .getBoolean("skip_image_media_enabled", true));
+            setScanRelevantOnly(context.getSharedPreferences("hydra_prefs", 0)
+                .getBoolean("scan_relevant_only_enabled", false));
             setTlshThreshold(context.getSharedPreferences("hydra_prefs", 0)
                 .getInt("anti_fp_tlsh_threshold", 40));
         }

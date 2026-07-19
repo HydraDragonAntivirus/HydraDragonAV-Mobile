@@ -375,8 +375,6 @@
     <string name="unicorn_unsupported">المحاكاة (Unicorn) غير متوفرة على هذا الجهاز بسبب خطأ معروف في المحرك الخلفي ARM64 JIT. يستمر المسح بشكل طبيعي بدون هذه المرحلة.</string>
 
     <string name="disable_secure_flag_toggle">السماح بتسجيل الشاشة</string>
-    <string name="skip_media_toggle">تخطي ملفات الوسائط في فحوصات APK</string>
-
     <string name="anti_fp_skip_toggle">تخطي النتائج الإيجابية الكاذبة (Anti-FP) — تخزين تجزئات (MD5 + TLSH) لإدخالات APK المضغوطة في القائمة البيضاء مؤقتًا لتجنب النتائج الإيجابية الكاذبة</string>
     <string name="anti_fp_skip_on_toast">تم تشغيل Anti-FP Skip — يتم تخزين إدخالات التطبيقات في القائمة البيضاء مؤقتًا</string>
     <string name="anti_fp_skip_off_toast">تم إيقاف Anti-FP Skip — تم مسح الذاكرة المخبأة</string>
@@ -430,5 +428,9 @@
     <string name="cache_anti_fp">ذاكرة تخزين مؤقت لمضادة FP (إيجابيات كاذبة)</string>
     <string name="cache_anti_fn">ذاكرة تخزين مؤقت لمضادة FN (سلبيات كاذبة)</string>
     <string name="cache_cleared">تم مسح ذاكرات التخزين المؤقت المحددة</string>
-    <string name="scan_cancelled">تم إلغاء الفحص</string>
+    <string name="scan_cancelled">تم إلغاء الفحص</string>
+    <string name="scan_relevant_only_toggle">فحص العناصر ذات الصلة فقط (DEX/ELF/نص)</string>
 </resources>
+
+
+

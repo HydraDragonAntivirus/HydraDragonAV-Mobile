@@ -375,8 +375,6 @@
     <string name="unicorn_unsupported">การจำลอง (Unicorn) ไม่พร้อมใช้งานบนอุปกรณ์นี้เนื่องจากข้อบกพร่องที่ทราบในแบ็กเอนด์ ARM64 JIT การสแกนจะดำเนินการตามปกติโดยไม่ผ่านขั้นตอนนี้</string>
 
     <string name="disable_secure_flag_toggle">อนุญาตการบันทึกหน้าจอ</string>
-    <string name="skip_media_toggle">ข้ามไฟล์สื่อในการสแกน APK</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Skip — แคชแฮช (MD5 + TLSH) ของรายการ ZIP APK ที่อยู่ในบัญชีขาวเพื่อหลีกเลี่ยงผลบวกลวง</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip เปิด — รายการจากแอปในบัญชีขาวถูกแคชแล้ว</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip ปิด — ล้างแคชแล้ว</string>
@@ -430,5 +428,9 @@
     <string name="cache_anti_fp">แคช Anti-FP (ผลบวกลวง)</string>
     <string name="cache_anti_fn">แคช Anti-FN (ผลลบลวง)</string>
     <string name="cache_cleared">ล้างแคชที่เลือกแล้ว</string>
-    <string name="scan_cancelled">การสแกนถูกยกเลิก</string>
+    <string name="scan_cancelled">การสแกนถูกยกเลิก</string>
+    <string name="scan_relevant_only_toggle">สแกนเฉพาะไฟล์ที่เกี่ยวข้อง (DEX/ELF/ข้อความ)</string>
 </resources>
+
+
+

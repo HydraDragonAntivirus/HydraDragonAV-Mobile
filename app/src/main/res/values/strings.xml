@@ -385,8 +385,6 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="uninstall_warning_toggle">Suggest safe mode when uninstall fails</string>
     <string name="unicorn_unsupported">Emulation (Unicorn) is unavailable on this device due to a known ARM64 JIT backend bug. Scanning continues normally without this pass.</string>
     <string name="disable_secure_flag_toggle">Allow screen recording</string>
-    <string name="skip_media_toggle">Skip media files in APK scans</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Skip — cache whitelisted APK zip entry hashes (MD5 + TLSH) to avoid false positives</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip ON — entries from whitelisted apps are cached</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip OFF — cache cleared</string>
@@ -448,5 +446,9 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="cache_anti_fp">Anti-FP Cache (false positives)</string>
     <string name="cache_anti_fn">Anti-FN Cache (false negatives)</string>
     <string name="cache_cleared">Selected caches cleared</string>
-    <string name="scan_cancelled">Scan cancelled</string>
+    <string name="scan_cancelled">Scan cancelled</string>
+    <string name="scan_relevant_only_toggle">Relevant-only scan (DEX/ELF/text only)</string>
 </resources>
+
+
+

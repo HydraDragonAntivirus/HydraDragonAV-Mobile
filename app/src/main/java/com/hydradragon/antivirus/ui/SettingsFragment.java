@@ -374,10 +374,10 @@ public class SettingsFragment extends Fragment {
             v -> showAntiFnTlshThresholdDialog());
 
 
-        boolean skipMedia = prefs().getBoolean("skip_image_media_enabled", true);
-        addToggle(getString(R.string.skip_media_toggle), skipMedia, (btn, on) -> {
-            prefs().edit().putBoolean("skip_image_media_enabled", on).apply();
-            com.hydradragon.antivirus.engine.NativeScanner.setSkipImageMedia(on);
+        boolean relevantOnly = prefs().getBoolean("scan_relevant_only_enabled", false);
+        addToggle(getString(R.string.scan_relevant_only_toggle), relevantOnly, (btn, on) -> {
+            prefs().edit().putBoolean("scan_relevant_only_enabled", on).apply();
+            com.hydradragon.antivirus.engine.NativeScanner.setScanRelevantOnly(on);
         });
 
         boolean screenOcr = prefs().getBoolean(KEY_SCREEN_OCR, false);
@@ -553,7 +553,7 @@ public class SettingsFragment extends Fragment {
             "ransomware", "task_hijack", "screen_security", "file_canary"),
         new ResetCategory(R.string.reset_cat_privacy, KEY_SHIELD, "web_shield_decided", KEY_SCREEN_OCR,
             "silent_mode", com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH,
-            "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "skip_image_media_enabled",
+            "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "scan_relevant_only_enabled",
             "anti_fp_skip_enabled", "anti_fp_tlsh_threshold", "anti_fp_match_mode",
             "anti_fn_enabled", "anti_fn_tlsh_threshold", "anti_fn_match_mode"),
         new ResetCategory(R.string.reset_cat_premium, "zero_trust_mode", "auto_rule_generation",

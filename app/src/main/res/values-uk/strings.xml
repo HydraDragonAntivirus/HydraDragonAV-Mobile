@@ -375,8 +375,6 @@
     <string name="unicorn_unsupported">Емуляція (Unicorn) недоступна на цьому пристрої через відому помилку в ARM64 JIT бекенді. Сканування триває нормально без цього проходу.</string>
 
     <string name="disable_secure_flag_toggle">Дозволити запис екрана</string>
-    <string name="skip_media_toggle">Пропускати медіафайли під час сканування APK</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Skip — кешувати хеші (MD5 + TLSH) записів ZIP APK із білого списку, щоб уникнути хибних спрацьовувань</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip УВІМК. — записи з застосунків білого списку кешуються</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip ВИМК. — кеш очищено</string>
@@ -430,5 +428,9 @@
     <string name="cache_anti_fp">Кеш Anti-FP (хибні спрацьовування)</string>
     <string name="cache_anti_fn">Кеш Anti-FN (хибні негативні)</string>
     <string name="cache_cleared">Вибрані кеші очищено</string>
-    <string name="scan_cancelled">Сканування скасовано</string>
+    <string name="scan_cancelled">Сканування скасовано</string>
+    <string name="scan_relevant_only_toggle">Сканувати лише релевантне (DEX/ELF/текст)</string>
 </resources>
+
+
+

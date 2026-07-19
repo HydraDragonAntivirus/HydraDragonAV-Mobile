@@ -375,8 +375,6 @@
     <string name="unicorn_unsupported">由于ARM64 JIT后端的已知错误，本设备上无法使用仿真（Unicorn）。扫描将继续正常进行，无需此过程。</string>
 
     <string name="disable_secure_flag_toggle">允许屏幕录制</string>
-    <string name="skip_media_toggle">在 APK 扫描中跳过媒体文件</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Skip — 缓存白名单 APK 的 ZIP 条目哈希（MD5 + TLSH）以避免误报</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip 已开启 — 白名单应用的条目已被缓存</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip 已关闭 — 缓存已清空</string>
@@ -430,5 +428,9 @@
     <string name="cache_anti_fp">反误报缓存（误报）</string>
     <string name="cache_anti_fn">反漏报缓存（漏报）</string>
     <string name="cache_cleared">已清除选定的缓存</string>
-    <string name="scan_cancelled">扫描已取消</string>
+    <string name="scan_cancelled">扫描已取消</string>
+    <string name="scan_relevant_only_toggle">仅扫描相关文件 (DEX/ELF/文本)</string>
 </resources>
+
+
+

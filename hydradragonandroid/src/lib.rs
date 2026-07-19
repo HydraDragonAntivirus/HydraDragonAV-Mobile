@@ -158,11 +158,11 @@ static NATIVE_EMULATION_ENABLED: std::sync::atomic::AtomicBool =
 static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
     std::sync::atomic::AtomicU32::new(650);
 
-/// User-configurable toggle: when false, extracted image children (PNG/JPEG/GIF/
-/// WebP/BMP) are NOT skipped during ClamAV scanning — useful for deep/investigative
-/// scans where steganographic payloads matter. Default true (skip images for speed).
-static SKIP_IMAGE_MEDIA: std::sync::atomic::AtomicBool =
-    std::sync::atomic::AtomicBool::new(true);
+/// User-configurable toggle: when true, only scan extracted buffers that are
+/// DEX files, ELF native libs, or AndroidManifest.xml — skip all other assets
+/// (images, layouts, resources.arsc, etc.). Default false (scan everything).
+static SCAN_RELEVANT_ONLY: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
 
 /// Whether the DYNAMIC_YRC_FILES have been loaded into the live engine (lazy,
 /// first nativeScanHips call). Avoids re-loading them on every HIPS scan tick.
@@ -634,26 +634,50 @@ fn skip_by_size(buf: &[u8]) -> bool {
     buf.len() <= 12 || buf.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024
 }
 
-/// Skip buffers whose magic bytes identify them as pure image media (PNG, JPEG,
-/// GIF, WebP, BMP) or XML. These make up the vast bulk of APK resource files
-/// and carry near-zero malware risk in practice. Everything else — HTML, JS,
-/// text, unknown binary — still goes through the engine.
-fn skip_by_magic(buf: &[u8]) -> bool {
-    if buf.len() < 4 { return false; }
-    if buf.starts_with(b"<?xml") { return true; }
-    match &buf[..4] {
-        b"\x89PNG" | b"\xff\xd8\xff" | b"GIF8" => true,
-        b"RIFF" if buf.len() >= 12 && &buf[8..12] == b"WEBP" => true,
-        _ => buf.len() >= 2 && &buf[..2] == b"BM",
-    }
-}
-
 /// Whether `buf` is a file type we have TLSH malware digests for (apk/zip, ELF,
 /// or DEX) — so we only fuzzy-compare relevant buffers, not every PNG/XML.
 fn tlsh_relevant(buf: &[u8]) -> bool {
     hydradragonextractor::detect_format(buf) == Some("zip")
         || buf.starts_with(b"\x7fELF")
         || buf.starts_with(b"dex\n")
+}
+
+/// Check if a buffer's content is relevant for malware scanning: DEX, ELF,
+/// AndroidManifest.xml, or text-like files (ASCII text, scripts, EICAR test
+/// strings, etc.). Uses entry name when available, falls back to content check
+/// for renamed/misnamed files.
+fn is_relevant_buffer(name: Option<&str>, data: &[u8]) -> bool {
+    // Always scan the top-level file (APK container itself)
+    if name.is_none() {
+        return true;
+    }
+    let name = name.unwrap();
+    let lower = name.to_ascii_lowercase();
+    // Check by entry name first
+    if (lower.contains("classes") && lower.ends_with(".dex"))
+        || lower.ends_with(".so")
+        || lower == "androidmanifest.xml"
+        || lower.ends_with(".txt")
+        || lower.ends_with(".html")
+        || lower.ends_with(".htm")
+        || lower.ends_with(".js")
+        || lower.ends_with(".json")
+        || lower.ends_with(".php")
+        || lower.ends_with(".py")
+        || lower.ends_with(".sh")
+        || lower.ends_with(".xml")
+    {
+        return true;
+    }
+    // Fallback: check magic bytes
+    if data.starts_with(b"dex\n") || data.starts_with(b"\x7fELF") || data.starts_with(b"<?xml") {
+        return true;
+    }
+    // Also scan text-like files: mostly printable ASCII (catches EICAR, scripts,
+    // config files, etc. without needing an exhaustive extension list).
+    let sample = if data.len() > 256 { &data[..256] } else { data };
+    let text_score = sample.iter().filter(|&&b| b.is_ascii_graphic() || b.is_ascii_whitespace()).count();
+    text_score > sample.len() * 9 / 10
 }
 
 /// Smallest TLSH distance from `buf` to any known-malware digest, or None when
@@ -880,16 +904,16 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     hydradragonextractor::set_bomb_detection_enabled(enabled != JNI_FALSE);
 }
 
-/// `void nativeSetSkipImageMedia(boolean skip)` — Settings toggle for
-/// skipping image-media files (PNG/JPEG/GIF/WebP/BMP) inside APKs during
-/// ClamAV scanning. True = skip (faster, default); false = full scan.
+/// `void nativeSetScanRelevantOnly(boolean on)` — Settings toggle: when true,
+/// only scan DEX, ELF, and AndroidManifest.xml inside APKs; skip all other
+/// assets. Applied immediately; no reinit needed.
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetSkipImageMedia(
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetScanRelevantOnly(
     _env: EnvUnowned,
     _class: JClass,
-    skip: jboolean,
+    on: jboolean,
 ) {
-    SKIP_IMAGE_MEDIA.store(skip != JNI_FALSE, Ordering::Relaxed);
+    SCAN_RELEVANT_ONLY.store(on != JNI_FALSE, Ordering::Relaxed);
 }
 
 /// `boolean nativeLearnRule(String yarPath)` — hot-load ONE freshly
@@ -1933,7 +1957,9 @@ fn rescan_buffers_parallel(
                         // extracted archive children (i > 0). The top-level file
                         // (i == 0) is always scanned — malware appends payloads
                         // to innocent-looking images, and we must catch that.
-                        if i > 0 && SKIP_IMAGE_MEDIA.load(Ordering::Relaxed) && skip_by_magic(&b.data) { continue; }
+                        if SCAN_RELEVANT_ONLY.load(Ordering::Relaxed)
+                            && i > 0
+                            && !is_relevant_buffer(b.entry_name.as_deref(), &b.data) { continue; }
                         let name = if i == 0 {
                             path.to_string()
                         } else {

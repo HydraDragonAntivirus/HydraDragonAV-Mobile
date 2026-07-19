@@ -375,8 +375,6 @@
     <string name="unicorn_unsupported">شبیه‌سازی (Unicorn) به دلیل یک باگ شناخته شده در بک‌اند ARM64 JIT در این دستگاه در دسترس نیست. اسکن بدون این مرحله به طور عادی ادامه می‌یابد.</string>
 
     <string name="disable_secure_flag_toggle">اجازه ضبط صفحه‌نمایش</string>
-    <string name="skip_media_toggle">رد شدن از فایل‌های رسانه‌ای در اسکن APK</string>
-
     <string name="anti_fp_skip_toggle">رد شدن از FP (Anti-FP) — ذخیره‌سازی هش (MD5 + TLSH) ورودی‌های ZIP APK لیست سفید برای جلوگیری از نتایج مثبت کاذب</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip روشن — ورودی‌های برنامه‌های لیست سفید ذخیره می‌شوند</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip خاموش — حافظه موقت پاک شد</string>
@@ -430,5 +428,9 @@
     <string name="cache_anti_fp">حافظه نهان Anti-FP (مثبت کاذب)</string>
     <string name="cache_anti_fn">حافظه نهان Anti-FN (منفی کاذب)</string>
     <string name="cache_cleared">حافظه‌های نهان انتخاب شده پاک شدند</string>
-    <string name="scan_cancelled">اسکن لغو شد</string>
+    <string name="scan_cancelled">اسکن لغو شد</string>
+    <string name="scan_relevant_only_toggle">فقط اسکن مرتبط (DEX/ELF/متن)</string>
 </resources>
+
+
+

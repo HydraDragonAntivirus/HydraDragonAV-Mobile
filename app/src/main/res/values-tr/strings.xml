@@ -378,8 +378,6 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="unicorn_unsupported">Öykünme (Unicorn), ARM64 JIT arka ucundaki bilinen bir hata nedeniyle bu cihazda kullanılamıyor. Tarama bu adım olmadan normal şekilde devam eder.</string>
 
     <string name="disable_secure_flag_toggle">Ekran kaydına izin ver</string>
-    <string name="skip_media_toggle">APK taramalarında medya dosyalarını atla</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Atla — yanlış pozitifleri önlemek için beyaz listedeki APK zip giriş hash\'lerini (MD5 + TLSH) önbelleğe al</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Atla AÇIK — beyaz listedeki uygulamalardan gelen girişler önbelleğe alınır</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Atla KAPALI — önbellek temizlendi</string>
@@ -433,5 +431,9 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="cache_anti_fp">Anti-YP Önbelleği (yanlış pozitifler)</string>
     <string name="cache_anti_fn">Anti-YN Önbelleği (yanlış negatifler)</string>
     <string name="cache_cleared">Seçilen önbellekler temizlendi</string>
-    <string name="scan_cancelled">Tarama iptal edildi</string>
+    <string name="scan_cancelled">Tarama iptal edildi</string>
+    <string name="scan_relevant_only_toggle">Sadece ilgili dosyaları tara (DEX/ELF/metin)</string>
 </resources>
+
+
+

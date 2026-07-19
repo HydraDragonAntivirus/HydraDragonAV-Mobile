@@ -375,8 +375,6 @@
     <string name="unicorn_unsupported">エミュレーション（Unicorn）は、ARM64 JITバックエンドの既知のバグにより、このデバイスでは利用できません。スキャンはこのパスなしで通常通り続行されます。</string>
 
     <string name="disable_secure_flag_toggle">画面録画を許可する</string>
-    <string name="skip_media_toggle">APKスキャンでメディアファイルをスキップ</string>
-
     <string name="anti_fp_skip_toggle">Anti-FPスキップ — 誤検出を防ぐため、ホワイトリスト登録されたAPKのZIPエントリのハッシュ（MD5 + TLSH）をキャッシュ</string>
     <string name="anti_fp_skip_on_toast">Anti-FPスキップ オン — ホワイトリスト登録されたアプリのエントリがキャッシュされます</string>
     <string name="anti_fp_skip_off_toast">Anti-FPスキップ オフ — キャッシュをクリアしました</string>
@@ -430,5 +428,9 @@
     <string name="cache_anti_fp">Anti-FPキャッシュ（誤検知）</string>
     <string name="cache_anti_fn">Anti-FNキャッシュ（見逃し）</string>
     <string name="cache_cleared">選択したキャッシュをクリアしました</string>
-    <string name="scan_cancelled">スキャンがキャンセルされました</string>
+    <string name="scan_cancelled">スキャンがキャンセルされました</string>
+    <string name="scan_relevant_only_toggle">関連ファイルのみスキャン (DEX/ELF/テキスト)</string>
 </resources>
+
+
+

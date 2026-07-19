@@ -375,8 +375,6 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="unicorn_unsupported">Emulatie (Unicorn) is niet beschikbaar op dit apparaat vanwege een bekende bug in de ARM64 JIT-backend. Scannen gaat normaal verder zonder deze pass.</string>
 
     <string name="disable_secure_flag_toggle">Schermopname toestaan</string>
-    <string name="skip_media_toggle">Mediabestanden overslaan bij APK-scans</string>
-
     <string name="anti_fp_skip_toggle">Anti-FP Skip — hashes (MD5 + TLSH) van ZIP-items van APK op de whitelist cachen om valse positieven te voorkomen</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip AAN — items van apps op de whitelist worden gecache</string>
     <string name="anti_fp_skip_off_toast">Anti-FP Skip UIT — cache gewist</string>
@@ -430,5 +428,9 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="cache_anti_fp">Anti-FP-Cache (valse positieven)</string>
     <string name="cache_anti_fn">Anti-FN-Cache (valse negatieven)</string>
     <string name="cache_cleared">Geselecteerde caches gewist</string>
-    <string name="scan_cancelled">Scan geannuleerd</string>
+    <string name="scan_cancelled">Scan geannuleerd</string>
+    <string name="scan_relevant_only_toggle">Alleen relevante scannen (DEX/ELF/tekst)</string>
 </resources>
+
+
+

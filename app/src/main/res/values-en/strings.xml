@@ -42,7 +42,6 @@
     <string name="theme_system">System Default</string>
     <string name="theme_dark">🌙 Dark</string>
     <string name="theme_light">☀ Light</string>
-    <string name="skip_media_toggle">Skip media files in APK scans</string>
     <string name="disable_secure_flag_toggle">Allow screen recording</string>
     <string name="save_auto_rules_toggle">Save Auto-Generated Rules</string>
     <string name="save_auto_rules_on_toast">Save Auto-Generated Rules ON: auto-learned YARA rules will be written to disk and reloaded on the next app launch</string>
@@ -84,5 +83,9 @@
     <string name="cache_anti_fp">Anti-FP Cache (false positives)</string>
     <string name="cache_anti_fn">Anti-FN Cache (false negatives)</string>
     <string name="cache_cleared">Selected caches cleared</string>
-    <string name="scan_cancelled">Scan cancelled</string>
+    <string name="scan_cancelled">Scan cancelled</string>
+    <string name="scan_relevant_only_toggle">Relevant-only scan (DEX/ELF/text only)</string>
 </resources>
+
+
+
