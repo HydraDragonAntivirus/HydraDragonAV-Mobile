@@ -1,7 +1,7 @@
 import "hydradragon"
 import "androguard"
 
-// ── UI Spam ──────────────────────────────────────────────────────────────────
+// -- UI Spam ------------------------------------------------------------------
 
 rule HIPS_UI_Spam
 {
@@ -25,7 +25,7 @@ rule HIPS_UI_Spam_Excessive
     hydradragon.ui_spam(/./) >= 100
 }
 
-// ── Notification Spam ────────────────────────────────────────────────────────
+// -- Notification Spam --------------------------------------------------------
 
 rule HIPS_Notification_Spam
 {
@@ -49,7 +49,7 @@ rule HIPS_Notification_Spam_Excessive
     hydradragon.notification_spam(/./) >= 50
 }
 
-// ── Clickjacking ─────────────────────────────────────────────────────────────
+// -- Clickjacking -------------------------------------------------------------
 
 rule HIPS_Clickjack
 {
@@ -73,7 +73,7 @@ rule HIPS_Clickjack_PackageInstaller
     hydradragon.clickjack(/com\.android\.packageinstaller/) >= 1
 }
 
-// ── Ransomware ───────────────────────────────────────────────────────────────
+// -- Ransomware ---------------------------------------------------------------
 
 rule HIPS_Ransomware
 {
@@ -97,7 +97,7 @@ rule HIPS_Ransomware_Mass_Encryption
     hydradragon.ransomware_behavior(/./) >= 20
 }
 
-// ── Canary Traps ─────────────────────────────────────────────────────────────
+// -- Canary Traps -------------------------------------------------------------
 
 rule HIPS_Canary_Triggered
 {
@@ -121,7 +121,7 @@ rule HIPS_Canary_And_Flags
     hydradragon.canary_triggered(/./) >= 1 and hydradragon.behavior_flagged(/./) >= 1
 }
 
-// ── StrandHogg ───────────────────────────────────────────────────────────────
+// -- StrandHogg ---------------------------------------------------------------
 
 rule HIPS_StrandHogg
 {
@@ -145,7 +145,7 @@ rule HIPS_StrandHogg_With_Flags
     hydradragon.strandhogg(/./) >= 1 and hydradragon.behavior_flagged(/./) >= 1
 }
 
-// ── System Security ──────────────────────────────────────────────────────────
+// -- System Security ----------------------------------------------------------
 
 rule HIPS_Rooted
 {
@@ -180,7 +180,7 @@ rule HIPS_Rooted_And_Debug
     hydradragon.rooted() >= 1 and hydradragon.debug_mode() >= 1
 }
 
-// ── Behavioral Combinations ──────────────────────────────────────────────────
+// -- Behavioral Combinations --------------------------------------------------
 
 rule HIPS_Multiple_Flags
 {
@@ -237,7 +237,7 @@ rule HIPS_Network_And_Flags
     hydradragon.network_connections(/./) >= 10 and hydradragon.behavior_flagged(/./) >= 1
 }
 
-// ── Foreground Threats ───────────────────────────────────────────────────────
+// -- Foreground Threats -------------------------------------------------------
 
 rule HIPS_Foreground_Threat
 {
@@ -250,7 +250,7 @@ rule HIPS_Foreground_Threat
     hydradragon.foreground_package(/./) >= 1 and hydradragon.behavior_flagged(/./) >= 1
 }
 
-// ── URL Threats ──────────────────────────────────────────────────────────────
+// -- URL Threats --------------------------------------------------------------
 
 rule HIPS_Malicious_URL
 {
@@ -285,7 +285,7 @@ rule HIPS_URL_And_Flags
     hydradragon.url(/(?i)(tor2web|\.onion\/|\.i2p\/|bitcoin:|malware|exploit|backdoor|rat\b)/) >= 1 and hydradragon.behavior_flagged(/./) >= 1
 }
 
-// ── DEX Static Analysis ──────────────────────────────────────────────────────
+// -- DEX Static Analysis ------------------------------------------------------
 
 rule HIPS_DEX_Severe_Finding
 {
@@ -342,7 +342,7 @@ rule HIPS_DEX_And_Behavior
     hydradragon.dex_severe_finding_count() >= 1 and hydradragon.behavior_flagged(/./) >= 1
 }
 
-// ── System Package (self-protection observation) ─────────────────────────────
+// -- System Package (self-protection observation) -----------------------------
 
 rule HIPS_Suspicious_System_Package
 {
@@ -355,7 +355,7 @@ rule HIPS_Suspicious_System_Package
     hydradragon.system_package(/(?i)(spy|stalk|camera|sms|call_recorder|keylogger|trojan|malware|rat|backdoor)/) >= 1
 }
 
-// ── Observed Packages ────────────────────────────────────────────────────────
+// -- Observed Packages --------------------------------------------------------
 
 rule HIPS_Multiple_Observed_Packages
 {
@@ -368,7 +368,7 @@ rule HIPS_Multiple_Observed_Packages
     hydradragon.observed_packages(/./) >= 50
 }
 
-// ── Cuckoo-Compatible Network (HTTP from packet captures) ────────────────────
+// -- Cuckoo-Compatible Network (HTTP from packet captures) --------------------
 
 rule HIPS_HTTP_Suspicious_Request
 {
@@ -436,7 +436,7 @@ rule HIPS_UDP_Suspicious_Port
     hydradragon.network.udp(/^(4444|5353|6666|6667|1337|1900|4500|5000|5001|8080)$/) >= 1
 }
 
-// ── Aggressive Adware / Launcher Hijack ──────────────────────────────────────
+// -- Aggressive Adware / Launcher Hijack --------------------------------------
 // Behavioral rules for detecting adware that hijacks the home screen or
 // aggressively pushes ads, even when the APK claims to have no ads.
 // Specifically targets the behavior pattern of com.murder.back.look.win
@@ -517,7 +517,7 @@ rule HIPS_Adware_Multiple_Ad_Network_Connections
     hydradragon.url(/(?i)(applovin\.com|unityads\.unity3d\.com|ironsource\.com|adcolony\.com|tapjoy\.com|startappservice\.com|chartboost\.com)/) >= 1
 }
 
-// ── Static Adware / Launcher Hijack (androguard module) ──────────────────────
+// -- Static Adware / Launcher Hijack (androguard module) ----------------------
 // These rules fire during APK static scan using manifest and DEX analysis.
 // Specifically targets apps that hijack the home screen and show ads even
 // when claiming to be ad-free (e.g. com.murder.back.look.win).
