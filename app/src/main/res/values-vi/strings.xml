@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ PHÁT HIỆN TỆP ĐỘC HẠI</string>
     <string name="threat_found_dialog_title">⚠ Đã Phát hiện Mối đe dọa</string>
     <string name="threat_found_dialog_msg">%1$s
-
 Điểm Rủi ro: %2$d/100
-
 Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</string>
     <string name="btn_destroy">CÓ, XÓA</string>
     <string name="btn_ignore">BỎ QUA</string>
@@ -125,7 +123,6 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="file_delete_failed">Không thể xóa tệp! (Kiểm tra quyền)</string>
     <string name="scan_type_title">Chọn Loại Quét</string>
     <string name="scan_type_msg">🚀 QUÉT NHANH: Chỉ quét các ứng dụng đã cài đặt và thư mục Tải xuống.
-
 🔍 QUÉT ĐẦY ĐỦ: Kiểm tra sâu toàn bộ bộ nhớ bao gồm cả Thẻ SD (có thể mất nhiều thời gian).</string>
     <string name="btn_full_scan">🔍 QUÉT ĐẦY ĐỦ</string>
     <string name="btn_quick_scan">🚀 QUÉT NHANH</string>
@@ -167,7 +164,6 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="btn_skip">BỎ QUA →</string>
     <string name="btn_close">Đóng</string>
     <string name="ram_usage">💾 %1$d MB RAM
-
 ⏳ Còn lại: %2$d</string>
     <string name="scan_btn">QUÉT</string>
     <string name="scan_initial_status">Nhấn QUÉT để bắt đầu</string>
@@ -175,7 +171,6 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scan_already_running">Đã có một lượt quét nền đang chạy — vui lòng đợi cho đến khi hoàn tất</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">Danh mục Phát hiện</string>
     <string name="detect_cat_signatures">Dựa trên chữ ký (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Phát hiện bất thường bằng ML</string>
@@ -308,11 +303,9 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scan_cache_toggle">Bộ nhớ đệm quét — bỏ qua quét lại các ứng dụng đã được phân tích</string>
     <string name="scan_cache_on_toast">Bộ nhớ đệm quét BẬT</string>
     <string name="scan_cache_off_toast">Bộ nhớ đệm quét TẮT</string>
-
     <string name="detect_zip_bomb_toggle">Phát hiện bom giải nén — từ chối các tệp nén giải nén ra dung lượng không giới hạn</string>
     <string name="detect_zip_bomb_on_toast">Phát hiện bom giải nén đã BẬT</string>
     <string name="detect_zip_bomb_off_toast">Phát hiện bom giải nén đã TẮT</string>
-
     <string name="dashboard_firewall_active">Công cụ Tường lửa ĐANG HOẠT ĐỘNG</string>
     <string name="dashboard_system_secure">Hệ thống An toàn</string>
     <string name="dashboard_status_secure_desc">• Giám sát đang hoạt động\n• Đã áp dụng quy tắc mạng\n• %1$s</string>
@@ -370,10 +363,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="malware_has_admin_title">Ứng Dụng Này Có Quyền Quản Trị Thiết Bị</string>
     <string name="malware_has_admin_msg">%1$s đã tự đặt mình làm Quản trị viên thiết bị, điều này ngăn việc gỡ cài đặt trực tiếp — đây là một thủ thuật phổ biến mà phần mềm độc hại dùng để chống lại việc bị gỡ bỏ. Hãy vô hiệu hóa nó trong màn hình sẽ mở ra (tìm %1$s và nhấn Vô hiệu hóa), sau đó lời nhắc gỡ cài đặt sẽ tự động mở ra.</string>
     <string name="malware_has_admin_open_settings">MỞ CÀI ĐẶT QUẢN TRỊ THIẾT BỊ</string>
-
     <string name="uninstall_warning_toggle">Đề xuất chế độ an toàn khi gỡ cài đặt không thành công</string>
     <string name="unicorn_unsupported">Trình giả lập (Unicorn) không khả dụng trên thiết bị này do lỗi đã biết trong backend ARM64 JIT. Quá trình quét tiếp tục bình thường mà không có bước này.</string>
-
     <string name="disable_secure_flag_toggle">Cho phép quay màn hình</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — lưu vào bộ nhớ đệm các hash (MD5 + TLSH) của mục ZIP APK trong danh sách cho phép để tránh dương tính giả</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip BẬT — các mục từ ứng dụng trong danh sách cho phép được lưu vào bộ nhớ đệm</string>
@@ -387,7 +378,6 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="anti_fn_tlsh_threshold_btn">Ngưỡng Tương tự TLSH của Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">Ngưỡng khoảng cách TLSH (1-200). Thấp hơn = nghiêm ngặt hơn, cao hơn = nâng cấp phát hiện mạnh mẽ hơn. Mặc định: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Đã đặt ngưỡng TLSH của Anti-FN thành %1$d</string>
-
     <string name="save_auto_rules_toggle">Luu quy tac duoc tao tu dong</string>
     <string name="save_auto_rules_on_toast">Luu quy tac tu dong BAT: cac quy tac YARA tu hoc se duoc ghi vao dia va tai lai khi khoi dong ung dung lan sau</string>
     <string name="save_auto_rules_off_toast">Luu quy tac tu dong TAT: quy tac van duoc su dung trong phien nay nhung se KHONG duoc giu lai sau khi khoi dong lai</string>
@@ -431,6 +421,4 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scan_cancelled">Đã hủy quét</string>
     <string name="scan_relevant_only_toggle">Chỉ quét tệp liên quan (DEX/ELF/văn bản)</string>
 </resources>
-
-
 

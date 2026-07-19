@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ ВИЯВЛЕНО ШКІДЛИВІ ФАЙЛИ</string>
     <string name="threat_found_dialog_title">⚠ Виявлено загрозу</string>
     <string name="threat_found_dialog_msg">%1$s
-
 Оцінка ризику: %2$d/100
-
 Бажаєте повністю видалити цей шкідливий файл/додаток?</string>
     <string name="btn_destroy">ТАК, ВИДАЛИТИ</string>
     <string name="btn_ignore">ІГНОРУВАТИ</string>
@@ -125,7 +123,6 @@
     <string name="file_delete_failed">Не вдалося видалити файл! (Перевірте дозволи)</string>
     <string name="scan_type_title">Оберіть тип сканування</string>
     <string name="scan_type_msg">🚀 ШВИДКЕ СКАНУВАННЯ: Перевіряє лише встановлені додатки та папку Завантаження.
-
 🔍 ПОВНЕ СКАНУВАННЯ: Глибока перевірка всього сховища, включно з SD-картою (може тривати довго).</string>
     <string name="btn_full_scan">🔍 ПОВНЕ СКАНУВАННЯ</string>
     <string name="btn_quick_scan">🚀 ШВИДКЕ СКАНУВАННЯ</string>
@@ -167,7 +164,6 @@
     <string name="btn_skip">ПРОПУСТИТИ →</string>
     <string name="btn_close">Закрити</string>
     <string name="ram_usage">💾 %1$d МБ RAM
-
 ⏳ Залишилось: %2$d</string>
     <string name="scan_btn">СКАНУВАТИ</string>
     <string name="scan_initial_status">Натисніть СКАНУВАТИ для початку</string>
@@ -175,7 +171,6 @@
     <string name="scan_already_running">Фонове сканування вже виконується — зачекайте на його завершення</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">Категорії виявлення</string>
     <string name="detect_cat_signatures">На основі сигнатур (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Виявлення аномалій ML</string>
@@ -308,11 +303,9 @@
     <string name="scan_cache_toggle">Кеш сканування — пропустити повторне сканування вже проаналізованих додатків</string>
     <string name="scan_cache_on_toast">Кеш сканування УВІМК</string>
     <string name="scan_cache_off_toast">Кеш сканування ВИМК</string>
-
     <string name="detect_zip_bomb_toggle">Виявлення бомб декомпресії — відхиляти архіви, що розпаковуються до необмеженого розміру</string>
     <string name="detect_zip_bomb_on_toast">Виявлення бомб декомпресії УВІМКНЕНО</string>
     <string name="detect_zip_bomb_off_toast">Виявлення бомб декомпресії ВИМКНЕНО</string>
-
     <string name="dashboard_firewall_active">Двигун брандмауера АКТИВНИЙ</string>
     <string name="dashboard_system_secure">Система захищена</string>
     <string name="dashboard_status_secure_desc">• Моніторинг активний\n• Мережеві правила застосовано\n• %1$s</string>
@@ -370,10 +363,8 @@
     <string name="malware_has_admin_title">Цей додаток має права адміністратора пристрою</string>
     <string name="malware_has_admin_msg">%1$s зробив себе адміністратором пристрою, що блокує його пряме видалення — це поширений прийом, яким користується шкідливе ПЗ, щоб опиратися видаленню. Деактивуйте це на екрані, що відкриється (знайдіть %1$s і натисніть Деактивувати), після чого запит на видалення відкриється автоматично.</string>
     <string name="malware_has_admin_open_settings">ВІДКРИТИ НАЛАШТУВАННЯ АДМІНІСТРАТОРА ПРИСТРОЮ</string>
-
     <string name="uninstall_warning_toggle">Пропонувати безпечний режим у разі невдалого видалення</string>
     <string name="unicorn_unsupported">Емуляція (Unicorn) недоступна на цьому пристрої через відому помилку в ARM64 JIT бекенді. Сканування триває нормально без цього проходу.</string>
-
     <string name="disable_secure_flag_toggle">Дозволити запис екрана</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — кешувати хеші (MD5 + TLSH) записів ZIP APK із білого списку, щоб уникнути хибних спрацьовувань</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip УВІМК. — записи з застосунків білого списку кешуються</string>
@@ -387,7 +378,6 @@
     <string name="anti_fn_tlsh_threshold_btn">Поріг схожості TLSH Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">Поріг відстані TLSH (1-200). Нижче = суворіше, вище = агресивніше підвищення виявлення. За замовчуванням: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Поріг TLSH Anti-FN встановлено на %1$d</string>
-
     <string name="save_auto_rules_toggle">Зберігати автозгенеровані правила</string>
     <string name="save_auto_rules_on_toast">Збереження автоправил УВІМКНЕНО: автоматично вивчені правила YARA будуть записані на диск і перезавантажені при наступному запуску</string>
     <string name="save_auto_rules_off_toast">Збереження автоправил ВИМКНЕНО: правила ще використовуються в поточній сесії, але після перезапуску збережені НЕ будуть</string>
@@ -431,6 +421,4 @@
     <string name="scan_cancelled">Сканування скасовано</string>
     <string name="scan_relevant_only_toggle">Сканувати лише релевантне (DEX/ELF/текст)</string>
 </resources>
-
-
 

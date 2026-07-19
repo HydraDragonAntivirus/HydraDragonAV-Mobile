@@ -126,9 +126,7 @@
     <string name="found_threats">⚠ BULUNAN TEHDİTLER</string>
     <string name="threat_found_dialog_title">⚠ Tehdit Tespit Edildi</string>
     <string name="threat_found_dialog_msg">%1$s
-
 Risk Skoru: %2$d/100
-
 Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</string>
     <string name="btn_destroy">EVET, YOK ET</string>
     <string name="btn_ignore">YOKSAY</string>
@@ -137,7 +135,6 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="file_delete_failed">Dosya silinemedi! (İzinleri kontrol edin)</string>
     <string name="scan_type_title">Tarama Türünü Seçin</string>
     <string name="scan_type_msg">🚀 HIZLI TARAMA: Sadece yüklü uygulamaları ve İndirilenler (Download) klasöründeki dosyaları tarar.
-
 🔍 TAM TARAMA: Tüm depolama birimini (SD Kart dâhil) derinlemesine didik didik eder (Uzun sürebilir).</string>
     <string name="btn_full_scan">🔍 TAM TARA</string>
     <string name="btn_quick_scan">🚀 HIZLI TARA</string>
@@ -179,9 +176,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="btn_skip">ATLA →</string>
     <string name="btn_close">Kapat</string>
     <string name="ram_usage">💾 %1$d MB RAM
-
 ⏳ Kalan: %2$d</string>
-
     <string name="scan_btn">TARA</string>
     <string name="scan_initial_status">Taramayı başlatmak için TARA butonuna basın</string>
     <string name="scan_scanning_btn">TARANIYOR...</string>
@@ -221,8 +216,6 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="threat_log_title">--- TEHDİT GÜNLÜKLERİ ---</string>
     <string name="threat_log_empty">Henüz kaydedilmiş bir tehdit günlüğü yok.</string>
     <string name="app_lock">Uygulama Kilidi</string>
-
-
     <string name="lock_sub">Bu uygulama kilitli. Lütfen PIN girin:</string>
     <string name="lock_unlock">KİLİDİ AÇ</string>
     <string name="lock_wrong">Yanlış Şifre!</string>
@@ -233,7 +226,6 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="lock_enter_pin">Yeni PIN Girin</string>
     <string name="lock_save">KAYDET</string>
     <string name="lock_saved">PIN Kaydedildi!</string>
-
     <string name="language_settings">Dil Seçimi</string>
     <string name="scan_custom">📁 Özel Dosya Taraması</string>
     <string name="scan_custom_folder">🗂 Özel Klasör Taraması</string>
@@ -326,11 +318,9 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="scan_cache_toggle">Tarama Önbelleği — zaten analiz edilmiş uygulamaları yeniden taramayı atla</string>
     <string name="scan_cache_on_toast">Tarama Önbelleği AÇIK</string>
     <string name="scan_cache_off_toast">Tarama Önbelleği KAPALI</string>
-
     <string name="detect_zip_bomb_toggle">Sıkıştırma Bombalarını Algıla — sınırsız boyuta genişleyen arşivleri reddet</string>
     <string name="detect_zip_bomb_on_toast">Sıkıştırma Bombası Algılama AÇIK</string>
     <string name="detect_zip_bomb_off_toast">Sıkıştırma Bombası Algılama KAPALI</string>
-
     <string name="dashboard_firewall_active">Güvenlik Duvarı Motoru AKTİF</string>
     <string name="dashboard_system_secure">Sistem Güvende</string>
     <string name="dashboard_status_secure_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n• %1$s</string>
@@ -373,10 +363,8 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="net_event_blocked">ENGELLENDİ</string>
     <string name="net_event_allowed">İZİN VERİLDİ</string>
     <string name="risk_score_format">Risk: %1$d/100</string>
-
     <string name="uninstall_warning_toggle">Kaldırma başarısız olduğunda Güvenli Mod\'u öner</string>
     <string name="unicorn_unsupported">Öykünme (Unicorn), ARM64 JIT arka ucundaki bilinen bir hata nedeniyle bu cihazda kullanılamıyor. Tarama bu adım olmadan normal şekilde devam eder.</string>
-
     <string name="disable_secure_flag_toggle">Ekran kaydına izin ver</string>
     <string name="anti_fp_skip_toggle">Anti-FP Atla — yanlış pozitifleri önlemek için beyaz listedeki APK zip giriş hash\'lerini (MD5 + TLSH) önbelleğe al</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Atla AÇIK — beyaz listedeki uygulamalardan gelen girişler önbelleğe alınır</string>
@@ -393,7 +381,6 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="save_auto_rules_toggle">Otomatik Oluşturulan Kuralları Kaydet</string>
     <string name="save_auto_rules_on_toast">Otomatik Oluşturulan Kuralları Kaydet AÇIK: otomatik öğrenilen YARA kuralları diske yazılacak ve sonraki uygulama başlatılmasında yeniden yüklenecek</string>
     <string name="save_auto_rules_off_toast">Otomatik Oluşturulan Kuralları Kaydet KAPALI: kurallar bu oturumda hâlâ kullanılır ancak yeniden başlatmadan sonra SAKLANMAZ</string>
-
     <string name="draw_overlay_toggle">Diğer Uygulamaların Üzerinde Göster — arka planda kötü amaçlı yazılım uyarıları göster</string>
     <string name="draw_overlay_on_toast">Kaplama izni verildi — tam ekran uyarılar artık arka plandan görünebilir</string>
     <string name="draw_overlay_off_toast">İptal etmek için Uygulama Bilgisi > İzinler\'i açın</string>
@@ -434,6 +421,4 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="scan_cancelled">Tarama iptal edildi</string>
     <string name="scan_relevant_only_toggle">Sadece ilgili dosyaları tara (DEX/ELF/metin)</string>
 </resources>
-
-
 
