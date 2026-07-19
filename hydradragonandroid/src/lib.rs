@@ -3313,6 +3313,7 @@ fn collect_urls(buffers: &[Buf]) -> Vec<String> {
 fn build_androguard_json(buffers: &[Buf]) -> Option<String> {
     let manifest = buffers.iter().find_map(|b| parse_manifest(&b.data))?;
     let urls = collect_urls(buffers);
+    let cert = extract_certificate(buffers);
 
     let arr = |items: &[String]| -> String {
         items
@@ -3327,7 +3328,6 @@ fn build_androguard_json(buffers: &[Buf]) -> Option<String> {
             None => "null".to_string(),
         }
     };
-    // SDK versions are emitted as strings (the C module ran atoi over strings).
     let opt_sdk = |o: Option<i64>| -> String {
         match o {
             Some(v) => format!("\"{}\"", v),
@@ -3341,7 +3341,7 @@ fn build_androguard_json(buffers: &[Buf]) -> Option<String> {
             "\"activities\":[{}],\"services\":[{}],\"receivers\":[{}],",
             "\"permissions\":[{}],\"new_permissions\":[{}],\"urls\":[{}],",
             "\"min_sdk_version\":{},\"max_sdk_version\":{},\"target_sdk_version\":{},",
-            "\"certificate\":{{\"subjectDN\":null,\"IssuerDN\":null,\"sha1\":null}}}}"
+            "\"certificate\":{{\"subjectDN\":{},\"IssuerDN\":{},\"sha1\":{}}}}}"
         ),
         opt_str(&manifest.package),
         opt_str(&manifest.app_name),
@@ -3350,12 +3350,314 @@ fn build_androguard_json(buffers: &[Buf]) -> Option<String> {
         arr(&manifest.services),
         arr(&manifest.receivers),
         arr(&manifest.permissions),
-        arr(&manifest.permissions), // new_permissions mirrors permissions here
+        arr(&manifest.permissions),
         arr(&urls),
         opt_sdk(manifest.min_sdk),
         opt_sdk(manifest.max_sdk),
         opt_sdk(manifest.target_sdk),
+        opt_str(&cert.as_ref().map(|c| c.subject.clone())),
+        opt_str(&cert.as_ref().map(|c| c.issuer.clone())),
+        opt_str(&cert.as_ref().map(|c| c.sha1.clone())),
     ))
+}
+
+struct CertInfo {
+    subject: String,
+    issuer: String,
+    sha1: String,
+}
+
+fn extract_certificate(buffers: &[Buf]) -> Option<CertInfo> {
+    // Find the signing-block entry (META-INF/*.RSA / .DSA / .EC).
+    let sig_data = buffers.iter().find_map(|b| {
+        let name = b.entry_name.as_deref()?;
+        let upper = name.to_uppercase();
+        if upper.starts_with("META-INF/")
+            && (upper.ends_with(".RSA") || upper.ends_with(".DSA") || upper.ends_with(".EC"))
+        {
+            Some(&b.data[..])
+        } else {
+            None
+        }
+    })?;
+
+    // Navigate PKCS7 ContentInfo → SignedData → first X.509 certificate.
+    // DER structure:
+    //   SEQUENCE (ContentInfo)
+    //     OID (1.2.840.113549.1.7.2 = signedData)
+    //     [0] EXPLICIT → SEQUENCE (SignedData)
+    //       INTEGER (version, skip)
+    //       SET (digestAlgorithms, skip)
+    //       SEQUENCE (encapContentInfo, skip)
+    //       [0] IMPLICIT → SET OF Certificate (take first)
+    let mut off = 0;
+    der_expect_tag(sig_data, &mut off, 0x30)?; // ContentInfo SEQUENCE
+    let ci_len = der_len(sig_data, &mut off)?;
+    let ci_end = off + ci_len;
+
+    der_skip(sig_data, &mut off)?; // OID
+    der_expect_tag(sig_data, &mut off, 0xa0)?; // [0] EXPLICIT
+    let explicit_len = der_len(sig_data, &mut off)?;
+    let explicit_end = off + explicit_len;
+
+    der_expect_tag(sig_data, &mut off, 0x30)?; // SignedData SEQUENCE
+    let sd_len = der_len(sig_data, &mut off)?;
+    let sd_end = off + sd_len;
+
+    der_skip(sig_data, &mut off)?; // version INTEGER
+    // digestAlgorithms — could be SET or SET OF, but we just skip it.
+    // Count elements until we see [0] context tag (0xa0) or run out.
+    while off < sd_end && sig_data.get(off).copied() != Some(0xa0) {
+        der_skip(sig_data, &mut off)?;
+    }
+    if off >= sd_end {
+        return None;
+    }
+    // [0] IMPLICIT → SET OF Certificate
+    der_expect_tag(sig_data, &mut off, 0xa0)?;
+    let cert_set_len = der_len(sig_data, &mut off)?;
+    let cert_set_end = off + cert_set_len;
+
+    // First certificate — capture full DER bytes before parsing.
+    if off >= cert_set_end {
+        return None;
+    }
+    let cert_start = *off; // at the SEQUENCE tag byte
+    der_expect_tag(sig_data, &mut off, 0x30)?; // Certificate SEQUENCE
+    let cert_len = der_len(sig_data, &mut off)?; // advances past length
+    let cert_end = off.checked_add(cert_len)?;
+    let cert_der = sig_data.get(cert_start..cert_end)?; // tag + len + content
+
+    let sha1 = sha1_hex(cert_der);
+
+    let sha1 = sha1_hex(cert_raw);
+
+    // Parse TBSCertificate inside the certificate.
+    der_expect_tag(sig_data, &mut off, 0x30)?; // TBSCertificate SEQUENCE
+    let tbs_len = der_len(sig_data, &mut off)?;
+    let tbs_end = off + tbs_len;
+
+    // Skip version [0] EXPLICIT INTEGER (optional, context tag 0xa0)
+    if off < tbs_end && sig_data.get(off).copied() == Some(0xa0) {
+        der_skip(sig_data, &mut off)?;
+    }
+    der_skip(sig_data, &mut off)?; // serialNumber INTEGER
+    der_skip(sig_data, &mut off)?; // signature SEQUENCE (AlgorithmIdentifier)
+
+    let issuer = parse_dn(sig_data, &mut off)?; // issuer
+
+    der_skip(sig_data, &mut off)?; // validity SEQUENCE (notBefore, notAfter)
+
+    let subject = parse_dn(sig_data, &mut off)?; // subject
+
+    Some(CertInfo { subject, issuer, sha1 })
+}
+
+// ── DER helpers ────────────────────────────────────────────────────────────
+
+fn der_len(data: &[u8], off: &mut usize) -> Option<usize> {
+    let b = *data.get(*off)?;
+    *off += 1;
+    if b & 0x80 == 0 {
+        Some(b as usize)
+    } else {
+        let n = (b & 0x7f) as usize;
+        if n > 4 || *off + n > data.len() {
+            return None;
+        }
+        let mut len = 0usize;
+        for _ in 0..n {
+            len = (len << 8) | data[*off] as usize;
+            *off += 1;
+        }
+        Some(len)
+    }
+}
+
+fn der_expect_tag(data: &[u8], off: &mut usize, tag: u8) -> Option<()> {
+    let b = *data.get(*off)?;
+    if b != tag {
+        return None;
+    }
+    *off += 1;
+    Some(())
+}
+
+fn der_skip(data: &[u8], off: &mut usize) -> Option<()> {
+    let _tag = *data.get(*off)?;
+    *off += 1;
+    let len = der_len(data, off)?;
+    *off = off.checked_add(len)?;
+    Some(())
+}
+
+// ── X.509 DN parser ────────────────────────────────────────────────────────
+
+/// Parse a DistinguishedName (SEQUENCE OF SET OF SEQUENCE { OID, value })
+/// into OpenSSL-style "/key=value/..." format.
+fn parse_dn(data: &[u8], off: &mut usize) -> Option<String> {
+    der_expect_tag(data, off, 0x30)?; // SEQUENCE
+    let dn_len = der_len(data, off)?;
+    let dn_end = off.checked_add(dn_len)?;
+
+    let mut parts: Vec<String> = Vec::new();
+    while *off < dn_end {
+        der_expect_tag(data, off, 0x31)?; // SET
+        let set_len = der_len(data, off)?;
+        let set_end = off.checked_add(set_len)?;
+
+        der_expect_tag(data, off, 0x30)?; // SEQUENCE
+        let seq_len = der_len(data, off)?;
+        let seq_end = off.checked_add(seq_len)?;
+        let _seq_start = *off;
+
+        // OID
+        if *off >= seq_end || *data.get(*off)? != 0x06 {
+            return None;
+        }
+        *off += 1;
+        let oid_len = der_len(data, off)?;
+        let oid_raw = data.get(*off..*off + oid_len)?;
+        *off = off.checked_add(oid_len)?;
+        let oid_str = oid_to_str(oid_raw);
+
+        // Value (any string type: PrintableString, UTF8String, IA5String, TeletexString)
+        if *off >= seq_end {
+            return None;
+        }
+        let _val_tag = *data.get(*off)?;
+        *off += 1;
+        let val_len = der_len(data, off)?;
+        let val_raw = data.get(*off..*off + val_len)?;
+        *off = off.checked_add(val_len)?;
+        let val_str = String::from_utf8_lossy(val_raw).into_owned();
+
+        parts.push(format!("/{oid_str}={val_str}"));
+
+        *off = set_end;
+    }
+
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.concat())
+    }
+}
+
+fn oid_to_str(oid: &[u8]) -> &'static str {
+    // Common X.509 DN OIDs (dotted-decimal form in the DER bytes).
+    match oid {
+        // 2.5.4.x
+        [85, 4, 3] => "CN",
+        [85, 4, 4] => "SN",
+        [85, 4, 5] => "serialNumber",
+        [85, 4, 6] => "C",
+        [85, 4, 7] => "L",
+        [85, 4, 8] => "ST",
+        [85, 4, 9] => "STREET",
+        [85, 4, 10] => "O",
+        [85, 4, 11] => "OU",
+        [85, 4, 12] => "T",
+        [85, 4, 17] => "postalCode",
+        [85, 4, 41] => "name",
+        [85, 4, 42] => "GN",
+        [85, 4, 43] => "initials",
+        [85, 4, 44] => "generationQualifier",
+        [85, 4, 46] => "DNQ",
+        [85, 4, 65] => "pseudonym",
+        // 0.9.2342.19200300.100.1.1 → UID
+        [9, 130, 0x4a, 132, 0x14, 131, 0x1a, 100, 1, 1] => "UID",
+        // 0.9.2342.19200300.100.1.25 → DC (domainComponent)
+        [9, 130, 0x4a, 132, 0x14, 131, 0x1a, 100, 1, 25] => "DC",
+        // 1.2.840.113549.1.9.1 → emailAddress
+        [42, 134, 72, 134, 0xf7, 13, 1, 9, 1] => "emailAddress",
+        // 1.3.6.1.4.1.311.60.2.1.3 → jurisdictionC
+        [43, 6, 1, 4, 1, 0x93, 60, 2, 1, 3] => "jurisdictionC",
+        // 1.3.6.1.4.1.311.60.2.1.2 → jurisdictionST
+        [43, 6, 1, 4, 1, 0x93, 60, 2, 1, 2] => "jurisdictionST",
+        // 1.3.6.1.4.1.311.60.2.1.1 → jurisdictionL
+        [43, 6, 1, 4, 1, 0x93, 60, 2, 1, 1] => "jurisdictionL",
+        // 2.5.4.97 → organizationIdentifier
+        [85, 4, 97] => "organizationIdentifier",
+        _ => "UNKNOWN",
+    }
+}
+
+// ── SHA-1 (RFC 3174) ──────────────────────────────────────────────────────
+
+fn sha1_hex(data: &[u8]) -> String {
+    use std::fmt::Write;
+    let digest = sha1_hash(data);
+    let mut s = String::with_capacity(40);
+    for b in digest {
+        write!(&mut s, "{:02x}", b).unwrap();
+    }
+    s
+}
+
+fn sha1_hash(data: &[u8]) -> [u8; 20] {
+    let mut h: [u32; 5] = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
+
+    let ml = data.len() as u64 * 8;
+    let mut msg = data.to_vec();
+    msg.push(0x80);
+    while (msg.len() % 64) != 56 {
+        msg.push(0);
+    }
+    msg.extend_from_slice(&ml.to_be_bytes());
+
+    for chunk in msg.chunks(64) {
+        let mut w = [0u32; 80];
+        for t in 0..16 {
+            w[t] = u32::from_be_bytes([
+                chunk[t * 4],
+                chunk[t * 4 + 1],
+                chunk[t * 4 + 2],
+                chunk[t * 4 + 3],
+            ]);
+        }
+        for t in 16..80 {
+            w[t] = (w[t - 3] ^ w[t - 8] ^ w[t - 14] ^ w[t - 16]).rotate_left(1);
+        }
+
+        let mut a = h[0];
+        let mut b = h[1];
+        let mut c = h[2];
+        let mut d = h[3];
+        let mut e = h[4];
+
+        for t in 0..80 {
+            let (f, k): (u32, u32) = match t {
+                0..=19 => ((b & c) | (!b & d), 0x5a827999),
+                20..=39 => (b ^ c ^ d, 0x6ed9eba1),
+                40..=59 => ((b & c) | (b & d) | (c & d), 0x8f1bbcdc),
+                _ => (b ^ c ^ d, 0xca62c1d6),
+            };
+            let temp = a
+                .rotate_left(5)
+                .wrapping_add(f)
+                .wrapping_add(e)
+                .wrapping_add(k)
+                .wrapping_add(w[t]);
+            e = d;
+            d = c;
+            c = b.rotate_left(30);
+            b = a;
+            a = temp;
+        }
+
+        h[0] = h[0].wrapping_add(a);
+        h[1] = h[1].wrapping_add(b);
+        h[2] = h[2].wrapping_add(c);
+        h[3] = h[3].wrapping_add(d);
+        h[4] = h[4].wrapping_add(e);
+    }
+
+    let mut out = [0u8; 20];
+    for (i, v) in h.iter().enumerate() {
+        out[i * 4..(i + 1) * 4].copy_from_slice(&v.to_be_bytes());
+    }
+    out
 }
 
 /// Lowercase hex MD5 of `data` (the whitelist is keyed on MD5).
