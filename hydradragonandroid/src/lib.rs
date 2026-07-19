@@ -682,6 +682,24 @@ fn is_text_like(data: &[u8]) -> bool {
     text_bytes > sample.len() * 9 / 10
 }
 
+fn is_obfuscated_xml(data: &[u8]) -> bool {
+    let sample = if data.len() > 1024 { &data[..1024] } else { data };
+    let non_ascii = sample.iter().filter(|&&b| !b.is_ascii()).count();
+    non_ascii > sample.len() / 4
+}
+
+fn is_resource_path(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    lower.starts_with("res/layout/")
+        || lower.starts_with("res/values/")
+        || lower.starts_with("res/menu/")
+        || lower.starts_with("res/drawable/")
+        || lower.starts_with("res/anim/")
+        || lower.starts_with("res/color/")
+        || lower.starts_with("res/raw/")
+        || lower.starts_with("res/xml/")
+}
+
 /// Check if a buffer's content is relevant for malware scanning: DEX, ELF,
 /// AndroidManifest.xml, and text-like files (ASCII, UTF-8, scripts, EICAR test
 /// strings, etc.). Uses entry name when available, falls back to content check
@@ -693,29 +711,51 @@ fn is_relevant_buffer(name: Option<&str>, data: &[u8]) -> bool {
     }
     let name = name.unwrap();
     let lower = name.to_ascii_lowercase();
-    // Check by entry name first
-    if (lower.contains("classes") && lower.ends_with(".dex"))
-        || lower.ends_with(".so")
-        || lower == "androidmanifest.xml"
-        || lower.ends_with(".txt")
-        || lower.ends_with(".html")
-        || lower.ends_with(".htm")
-        || lower.ends_with(".js")
-        || lower.ends_with(".json")
-        || lower.ends_with(".php")
-        || lower.ends_with(".py")
-        || lower.ends_with(".sh")
-        || lower.ends_with(".xml")
+    if (lower.contains("classes") && lower.ends_with(".dex")) || lower.ends_with(".so") || lower == "androidmanifest.xml"
     {
         return true;
     }
-    // Fallback: check magic bytes
-    if data.starts_with(b"dex\n") || data.starts_with(b"\x7fELF") || data.starts_with(b"<?xml") {
+    if data.starts_with(b"dex\n") || data.starts_with(b"\x7fELF") {
         return true;
     }
-    // Also scan text-like files (catches EICAR, scripts, config files, UTF-8
-    // texts, etc. without needing an exhaustive extension list).
-    is_text_like(data)
+    if is_resource_path(&lower) {
+        return data.starts_with(b"<?xml") && is_obfuscated_xml(data);
+    }
+    if data.starts_with(b"<?xml") || is_text_like(data) {
+        return true;
+    }
+    has_network_indicators(data)
+}
+
+fn has_network_indicators(data: &[u8]) -> bool {
+    let sample = if data.len() > 4096 { &data[..4096] } else { data };
+    if let Ok(s) = std::str::from_utf8(sample) {
+        if s.contains("http://") || s.contains("https://") || s.contains("www.") {
+            return true;
+        }
+        if sample.windows(7).any(|w| {
+            w.iter().filter(|&&b| b == b'.').count() >= 3
+                && w.iter().filter(|&&b| b.is_ascii_digit() || b == b'.').count() >= 7
+        }) {
+            return true;
+        }
+        if let Ok(text) = std::str::from_utf8(sample) {
+            for part in text.split_whitespace() {
+                let part = part.trim_matches(|c: char| !c.is_ascii_alphanumeric() && c != '.' && c != '-');
+                if let Some(dot) = part.rfind('.') {
+                    let tld = &part[dot + 1..];
+                    if (2..=6).contains(&tld.len()) && tld.bytes().all(|b| b.is_ascii_alphabetic()) {
+                        let domain = &part[..dot];
+                        if domain.len() >= 2 && domain.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-')
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
 }
 
 /// Smallest TLSH distance from `buf` to any known-malware digest, or None when

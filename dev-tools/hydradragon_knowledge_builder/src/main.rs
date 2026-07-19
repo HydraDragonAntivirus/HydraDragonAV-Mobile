@@ -58,16 +58,73 @@ fn is_text_like(data: &[u8]) -> bool {
     text_bytes > sample.len() * 9 / 10
 }
 
+fn is_resource_path(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    lower.starts_with("res/layout/")
+        || lower.starts_with("res/values/")
+        || lower.starts_with("res/menu/")
+        || lower.starts_with("res/drawable/")
+        || lower.starts_with("res/anim/")
+        || lower.starts_with("res/color/")
+        || lower.starts_with("res/raw/")
+        || lower.starts_with("res/xml/")
+}
+
+fn is_obfuscated_xml(data: &[u8]) -> bool {
+    let sample = if data.len() > 1024 { &data[..1024] } else { data };
+    let non_ascii = sample.iter().filter(|&&b| !b.is_ascii()).count();
+    non_ascii > sample.len() / 4
+}
+
 fn is_relevant_entry(name: &str, data: &[u8]) -> bool {
     let lower = name.to_ascii_lowercase();
     if (lower.contains("classes") && lower.ends_with(".dex")) || lower.ends_with(".so") || lower == "androidmanifest.xml"
     {
         return true;
     }
-    if data.starts_with(b"dex\n") || data.starts_with(b"\x7fELF") || data.starts_with(b"<?xml") {
+    if data.starts_with(b"dex\n") || data.starts_with(b"\x7fELF") {
         return true;
     }
-    is_text_like(data)
+    if is_resource_path(&lower) {
+        return data.starts_with(b"<?xml") && is_obfuscated_xml(data);
+    }
+    if data.starts_with(b"<?xml") || is_text_like(data) {
+        return true;
+    }
+    has_network_indicators(data)
+}
+
+fn has_network_indicators(data: &[u8]) -> bool {
+    let sample = if data.len() > 4096 { &data[..4096] } else { data };
+    if let Ok(s) = std::str::from_utf8(sample) {
+        if s.contains("http://") || s.contains("https://") || s.contains("www.") {
+            return true;
+        }
+        // IPv4: at least 3 dots within 7 bytes, mostly digits
+        if sample.windows(7).any(|w| {
+            w.iter().filter(|&&b| b == b'.').count() >= 3
+                && w.iter().filter(|&&b| b.is_ascii_digit() || b == b'.').count() >= 7
+        }) {
+            return true;
+        }
+        // Domain: word.XXX where XXX is a 2-6 letter TLD (com, org, io, xyz, online, etc.)
+        if let Ok(text) = std::str::from_utf8(sample) {
+            for part in text.split_whitespace() {
+                let part = part.trim_matches(|c: char| !c.is_ascii_alphanumeric() && c != '.' && c != '-');
+                if let Some(dot) = part.rfind('.') {
+                    let tld = &part[dot + 1..];
+                    if (2..=6).contains(&tld.len()) && tld.bytes().all(|b| b.is_ascii_alphabetic()) {
+                        let domain = &part[..dot];
+                        if domain.len() >= 2 && domain.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-')
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
 }
 
 fn process_apk(apk_path: &Path) -> Vec<(String, String, String)> {
