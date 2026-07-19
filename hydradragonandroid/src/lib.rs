@@ -2697,10 +2697,49 @@ fn generate_yara_rule(
         let re = suspicious_api_patterns.join("|");
         groups.push(format!("hydradragon.api_call(/{re}/) > 0"));
     }
-    if groups.is_empty() {
-        groups.push("false".to_string());
+    // Static condition: package + strings + rootkit + dex findings
+    let static_cond = if groups.is_empty() {
+        "false".to_string()
+    } else {
+        groups.join(" and\n        ")
+    };
+    // HIPS runtime behavioral conditions (fire at runtime, not at scan time)
+    let mut hips_groups: Vec<String> = Vec::new();
+    if !packages.is_empty() {
+        let pkg_re: String = packages.iter().map(|p| {
+            p.replace('\\', "\\\\").replace('/', "\\/").replace('.', "\\.")
+        }).collect::<Vec<_>>().join("|");
+        let pkg_re = format!("/({})/", pkg_re);
+        for hips_cond in [
+            format!("hydradragon.ui_spam{pkg_re} > 0"),
+            format!("hydradragon.notification_spam{pkg_re} > 0"),
+            format!("hydradragon.clickjack{pkg_re} > 0"),
+            format!("hydradragon.ransomware{pkg_re} > 0"),
+            format!("hydradragon.strandhogg{pkg_re} > 0"),
+            format!("hydradragon.removal_resistance{pkg_re} > 0"),
+            format!("hydradragon.launcher_change{pkg_re} > 0"),
+            format!("hydradragon.network_connections{pkg_re} > 0"),
+        ] {
+            hips_groups.push(hips_cond);
+        }
     }
-    out.push_str(&format!("    {}\n", groups.join(" and\n    ")));
+    if !hips_groups.is_empty() {
+        let hips_cond = hips_groups.join(" or\n        ");
+        let pkg_prefix = if packages.len() == 1 {
+            format!("androguard.package_name(\"{}\")", packages[0].replace('"', "'"))
+        } else {
+            let pkg_ors: Vec<String> = packages.iter().map(|p| {
+                format!("androguard.package_name(\"{}\")", p.replace('"', "'"))
+            }).collect();
+            format!("({})", pkg_ors.join(" or "))
+        };
+        out.push_str(&format!(
+            "    ({})\n    or\n    ({} and (\n        {}\n    ))\n",
+            static_cond, pkg_prefix, hips_cond
+        ));
+    } else {
+        out.push_str(&format!("    {}\n", static_cond));
+    }
     out.push_str("}\n");
     Some(out)
 }
