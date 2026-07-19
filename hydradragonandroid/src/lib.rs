@@ -2587,6 +2587,8 @@ fn generate_yara_rule(
 ) -> Option<String> {
     let mut strings: Vec<String> = Vec::new();
     let mut has_launcher_hijack = false;
+    let mut has_severe_findings = false;
+    let mut suspicious_api_patterns: Vec<&str> = Vec::new();
     let mut seen = std::collections::HashSet::new();
     let scanned: Vec<&dex_scan::DexScan> = dex_scans.iter().enumerate().filter_map(|(i, o)| {
         if let Some(idx) = only_index {
@@ -2595,7 +2597,13 @@ fn generate_yara_rule(
         o.as_ref()
     }).collect();
     for ds in &scanned {
-        // First pass: launcher-hijacking API call detection
+        // Severe static-analysis findings
+        for f in &ds.findings {
+            if dex_scan::is_severe(f.severity) {
+                has_severe_findings = true;
+            }
+        }
+        // Launcher-hijacking API call detection
         if !has_launcher_hijack {
             has_launcher_hijack = ds.api_calls.iter().any(|call| {
                 let launcher_patterns = [
@@ -2606,7 +2614,21 @@ fn generate_yara_rule(
                 launcher_patterns.iter().any(|p| call.contains(p))
             });
         }
-        // Second pass: extract strings for YARA pattern matching
+        // Suspicious API call patterns (loader/dropper, SMS fraud, spyware)
+        if suspicious_api_patterns.is_empty() {
+            let patterns = [
+                "Landroid/telephony/SmsManager;->sendTextMessage",
+                "Landroid/telephony/TelephonyManager;->getDeviceId",
+                "Landroid/app/admin/DevicePolicyManager;->lockNow",
+                "dalvik/system/DexClassLoader",
+                "Ljava/lang/Runtime;->exec",
+                "Landroid/content/Intent;->setFlags",
+            ];
+            if ds.api_calls.iter().any(|call| patterns.iter().any(|p| call.contains(p))) {
+                suspicious_api_patterns.extend(patterns);
+            }
+        }
+        // Extract strings for YARA pattern matching
         for line in ds.text.lines() {
             if strings.len() >= 40 { break; }
             let l = line.trim();
@@ -2667,6 +2689,13 @@ fn generate_yara_rule(
     groups.push("androguard.rootkit_behavior() == 1".to_string());
     if has_launcher_hijack {
         groups.push(r#"hydradragon.api_call(/clearPackagePreferredActivities|addPreferredActivity|createRequestRoleIntent/) > 0"#.to_string());
+    }
+    if has_severe_findings {
+        groups.push("hydradragon.dex_severe_finding_count() > 0".to_string());
+    }
+    if !suspicious_api_patterns.is_empty() {
+        let re = suspicious_api_patterns.join("|");
+        groups.push(format!("hydradragon.api_call(/{re}/) > 0"));
     }
     if groups.is_empty() {
         groups.push("false".to_string());
