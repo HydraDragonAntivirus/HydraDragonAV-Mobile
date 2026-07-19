@@ -78,15 +78,26 @@ fn is_obfuscated_xml(data: &[u8]) -> bool {
 
 fn is_relevant_entry(name: &str, data: &[u8]) -> bool {
     let lower = name.to_ascii_lowercase();
-    if (lower.contains("classes") && lower.ends_with(".dex")) || lower.ends_with(".so") || lower == "androidmanifest.xml"
+    if (lower.contains("classes")
+        && (lower.ends_with(".dex") || lower.ends_with(".vdex") || lower.ends_with(".odex")))
+        || lower.ends_with(".so")
+        || lower == "androidmanifest.xml"
     {
         return true;
     }
-    if data.starts_with(b"dex\n") || data.starts_with(b"\x7fELF") {
+    if data.starts_with(b"dex\n") || data.starts_with(b"vdex") || data.starts_with(b"\x7fELF") {
         return true;
     }
     if is_resource_path(&lower) {
-        return data.starts_with(b"<?xml") && is_obfuscated_xml(data);
+        let is_xml = data.starts_with(b"<?xml");
+        if (is_xml && is_obfuscated_xml(data))
+            || has_network_indicators(data)
+            || has_base64(data)
+            || has_embedded_data(data)
+        {
+            return true;
+        }
+        return false;
     }
     if data.starts_with(b"<?xml") || is_text_like(data) {
         return true;
@@ -125,6 +136,31 @@ fn has_network_indicators(data: &[u8]) -> bool {
         }
     }
     false
+}
+
+fn has_base64(data: &[u8]) -> bool {
+    let sample = if data.len() > 4096 { &data[..4096] } else { data };
+    let mut run: usize = 0;
+    for &b in sample {
+        if b.is_ascii_alphanumeric() || b == b'+' || b == b'/' || b == b'=' {
+            run += 1;
+            if run >= 60 {
+                return true;
+            }
+        } else {
+            run = 0;
+        }
+    }
+    false
+}
+
+fn has_embedded_data(data: &[u8]) -> bool {
+    let sample = if data.len() > 4096 { &data[..4096] } else { data };
+    let printable = sample
+        .iter()
+        .filter(|&&b| b.is_ascii_graphic() || b.is_ascii_whitespace())
+        .count();
+    printable > sample.len() / 4
 }
 
 fn process_apk(apk_path: &Path) -> Vec<(String, String, String)> {
