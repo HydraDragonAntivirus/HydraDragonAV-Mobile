@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ FICHIERS MALVEILLANTS DÉTECTÉS</string>
     <string name="threat_found_dialog_title">⚠ Menace détectée</string>
     <string name="threat_found_dialog_msg">%1$s
-
 Score de risque : %2$d/100
-
 Voulez-vous supprimer complètement ce fichier/application malveillant ?</string>
     <string name="btn_destroy">OUI, SUPPRIMER</string>
     <string name="btn_ignore">IGNORER</string>
@@ -125,7 +123,6 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="file_delete_failed">Échec de la suppression du fichier ! (Vérifiez les autorisations)</string>
     <string name="scan_type_title">Sélectionner le Type d\'Analyse</string>
     <string name="scan_type_msg">🚀 ANALYSE RAPIDE : Analyse uniquement les applications installées et le dossier Téléchargements.
-
 🔍 ANALYSE COMPLÈTE : Inspecte en profondeur tout le stockage, y compris la carte SD (peut prendre du temps).</string>
     <string name="btn_full_scan">🔍 ANALYSE COMPLÈTE</string>
     <string name="btn_quick_scan">🚀 ANALYSE RAPIDE</string>
@@ -167,7 +164,6 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="btn_skip">IGNORER →</string>
     <string name="btn_close">Fermer</string>
     <string name="ram_usage">💾 %1$d Mo RAM
-
 ⏳ Restant : %2$d</string>
     <string name="scan_btn">ANALYSER</string>
     <string name="scan_initial_status">Appuyez sur ANALYSER pour commencer</string>
@@ -175,7 +171,6 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="scan_already_running">Une analyse en arrière-plan est déjà en cours — veuillez attendre qu\'elle se termine</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">Catégories de Détection</string>
     <string name="detect_cat_signatures">Basé sur des signatures (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Détection d\'anomalies par ML</string>
@@ -308,11 +303,9 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="scan_cache_toggle">Cache d\'analyse — ignorer la re-analyse des applications déjà analysées</string>
     <string name="scan_cache_on_toast">Cache d\'analyse ACTIF</string>
     <string name="scan_cache_off_toast">Cache d\'analyse INACTIF</string>
-
     <string name="detect_zip_bomb_toggle">Détecter les bombes de décompression — rejeter les archives qui se décompressent vers une taille illimitée</string>
     <string name="detect_zip_bomb_on_toast">Détection des bombes de décompression ACTIVÉE</string>
     <string name="detect_zip_bomb_off_toast">Détection des bombes de décompression DÉSACTIVÉE</string>
-
     <string name="dashboard_firewall_active">Moteur de Pare-feu ACTIF</string>
     <string name="dashboard_system_secure">Système Sécurisé</string>
     <string name="dashboard_status_secure_desc">• Surveillance active\n• Règles réseau appliquées\n• %1$s</string>
@@ -370,10 +363,8 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="malware_has_admin_title">Cette Application a des Droits d\'Administrateur de l\'Appareil</string>
     <string name="malware_has_admin_msg">%1$s s\'est fait Administrateur de l\'appareil, ce qui empêche sa désinstallation directe — une astuce courante utilisée par les malwares pour résister à la suppression. Désactivez-le sur l\'écran qui s\'ouvre (trouvez %1$s et appuyez sur Désactiver), puis l\'invite de désinstallation s\'ouvrira automatiquement.</string>
     <string name="malware_has_admin_open_settings">OUVRIR LES PARAMÈTRES D\'ADMINISTRATEUR DE L\'APPAREIL</string>
-
     <string name="uninstall_warning_toggle">Suggérer le mode sans échec en cas d\'échec de la désinstallation</string>
     <string name="unicorn_unsupported">L\'émulation (Unicorn) n\'est pas disponible sur cet appareil en raison d\'un bogue connu du backend ARM64 JIT. L\'analyse continue normalement sans cette passe.</string>
-
     <string name="disable_secure_flag_toggle">Autoriser l\'enregistrement d\'écran</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — mettre en cache les hachages (MD5 + TLSH) des entrées ZIP d\'APK sur liste blanche pour éviter les faux positifs</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip ACTIVÉ — les entrées des applications sur liste blanche sont mises en cache</string>
@@ -387,7 +378,6 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="anti_fn_tlsh_threshold_btn">Seuil de similarité TLSH Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">Seuil de distance TLSH (1-200). Plus bas = plus strict, plus haut = amélioration de détection plus agressive. Défaut : 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Seuil TLSH Anti-FN défini à %1$d</string>
-
     <string name="save_auto_rules_toggle">Enregistrer les regles autogenerees</string>
     <string name="save_auto_rules_on_toast">Enregistrement des regles autogenerees ACTIVE : les regles YARA auto-apprises seront ecrites sur le disque et rechargees au prochain demarrage</string>
     <string name="save_auto_rules_off_toast">Enregistrement des regles autogenerees DESACTIVE : les regles sont encore utilisees cette session mais ne seront PAS conservees apres redemarrage</string>
@@ -431,6 +421,4 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="scan_cancelled">Analyse annulée</string>
     <string name="scan_relevant_only_toggle">Analyse pertinente uniquement (DEX/ELF/texte)</string>
 </resources>
-
-
 

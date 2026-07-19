@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ ตรวจพบไฟล์อันตราย</string>
     <string name="threat_found_dialog_title">⚠ ตรวจพบภัยคุกคาม</string>
     <string name="threat_found_dialog_msg">%1$s
-
 คะแนนความเสี่ยง: %2$d/100
-
 คุณต้องการลบไฟล์/แอปที่เป็นอันตรายนี้ออกทั้งหมดหรือไม่?</string>
     <string name="btn_destroy">ใช่ ลบเลย</string>
     <string name="btn_ignore">ละเว้น</string>
@@ -125,7 +123,6 @@
     <string name="file_delete_failed">ลบไฟล์ล้มเหลว! (ตรวจสอบสิทธิ์)</string>
     <string name="scan_type_title">เลือกประเภทการสแกน</string>
     <string name="scan_type_msg">🚀 สแกนด่วน: สแกนเฉพาะแอปที่ติดตั้งและโฟลเดอร์ดาวน์โหลดเท่านั้น
-
 🔍 สแกนแบบเต็ม: ตรวจสอบพื้นที่จัดเก็บทั้งหมดอย่างละเอียด รวมถึงการ์ด SD (อาจใช้เวลานาน)</string>
     <string name="btn_full_scan">🔍 สแกนแบบเต็ม</string>
     <string name="btn_quick_scan">🚀 สแกนด่วน</string>
@@ -167,7 +164,6 @@
     <string name="btn_skip">ข้าม →</string>
     <string name="btn_close">ปิด</string>
     <string name="ram_usage">💾 %1$d MB แรม
-
 ⏳ เหลือ: %2$d</string>
     <string name="scan_btn">สแกน</string>
     <string name="scan_initial_status">กดสแกนเพื่อเริ่มต้น</string>
@@ -175,7 +171,6 @@
     <string name="scan_already_running">มีการสแกนเบื้องหลังทำงานอยู่แล้ว — โปรดรอจนกว่าจะเสร็จสิ้น</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">หมวดหมู่การตรวจจับ</string>
     <string name="detect_cat_signatures">ใช้ลายเซ็น (YARA/ClamAV)</string>
     <string name="detect_cat_ml">การตรวจจับความผิดปกติด้วย ML</string>
@@ -308,11 +303,9 @@
     <string name="scan_cache_toggle">แคชการสแกน — ข้ามการสแกนซ้ำแอปที่วิเคราะห์แล้ว</string>
     <string name="scan_cache_on_toast">แคชการสแกน เปิด</string>
     <string name="scan_cache_off_toast">แคชการสแกน ปิด</string>
-
     <string name="detect_zip_bomb_toggle">ตรวจจับระเบิดการคลายบีบอัด — ปฏิเสธไฟล์บีบอัดที่ขยายขนาดแบบไม่จำกัด</string>
     <string name="detect_zip_bomb_on_toast">เปิดการตรวจจับระเบิดการคลายบีบอัดแล้ว</string>
     <string name="detect_zip_bomb_off_toast">ปิดการตรวจจับระเบิดการคลายบีบอัดแล้ว</string>
-
     <string name="dashboard_firewall_active">เอนจิ้นไฟร์วอลล์ทำงานอยู่</string>
     <string name="dashboard_system_secure">ระบบปลอดภัย</string>
     <string name="dashboard_status_secure_desc">• การตรวจสอบทำงานอยู่\n• ใช้กฎเครือข่ายแล้ว\n• %1$s</string>
@@ -370,10 +363,8 @@
     <string name="malware_has_admin_title">แอปนี้มีสิทธิ์ผู้ดูแลอุปกรณ์</string>
     <string name="malware_has_admin_msg">%1$s ได้ตั้งตัวเองเป็นผู้ดูแลอุปกรณ์ ซึ่งขัดขวางการถอนการติดตั้งโดยตรง — นี่เป็นเทคนิคที่มัลแวร์มักใช้เพื่อต้านทานการลบ ให้ปิดใช้งานในหน้าจอที่เปิดขึ้น (ค้นหา %1$s แล้วแตะปิดใช้งาน) จากนั้นข้อความถอนการติดตั้งจะเปิดขึ้นโดยอัตโนมัติ</string>
     <string name="malware_has_admin_open_settings">เปิดการตั้งค่าผู้ดูแลอุปกรณ์</string>
-
     <string name="uninstall_warning_toggle">แนะนำเซฟโหมดเมื่อการถอนการติดตั้งล้มเหลว</string>
     <string name="unicorn_unsupported">การจำลอง (Unicorn) ไม่พร้อมใช้งานบนอุปกรณ์นี้เนื่องจากข้อบกพร่องที่ทราบในแบ็กเอนด์ ARM64 JIT การสแกนจะดำเนินการตามปกติโดยไม่ผ่านขั้นตอนนี้</string>
-
     <string name="disable_secure_flag_toggle">อนุญาตการบันทึกหน้าจอ</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — แคชแฮช (MD5 + TLSH) ของรายการ ZIP APK ที่อยู่ในบัญชีขาวเพื่อหลีกเลี่ยงผลบวกลวง</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip เปิด — รายการจากแอปในบัญชีขาวถูกแคชแล้ว</string>
@@ -387,7 +378,6 @@
     <string name="anti_fn_tlsh_threshold_btn">เกณฑ์ความคล้ายคลึง TLSH ของ Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">เกณฑ์ระยะทาง TLSH (1-200) ค่าต่ำ = เข้มงวดมากขึ้น ค่าสูง = การอัปเกรดการตรวจจับที่รุนแรงขึ้น ค่าเริ่มต้น: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">ตั้งค่าเกณฑ์ TLSH ของ Anti-FN เป็น %1$d แล้ว</string>
-
     <string name="save_auto_rules_toggle">บันทึกกฎที่สร้างอัตโนมัติ</string>
     <string name="save_auto_rules_on_toast">บันทึกกฎอัตโนมัติ เปิด: กฎ YARA ที่เรียนรู้อัตโนมัติจะถูกเขียนลงดิสก์และโหลดใหม่เมื่อเปิดแอปครั้งถัดไป</string>
     <string name="save_auto_rules_off_toast">บันทึกกฎอัตโนมัติ ปิด: กฎยังคงใช้งานในเซสชันนี้แต่จะไม่ถูกเก็บไว้หลังรีสตาร์ท</string>
@@ -431,6 +421,4 @@
     <string name="scan_cancelled">การสแกนถูกยกเลิก</string>
     <string name="scan_relevant_only_toggle">สแกนเฉพาะไฟล์ที่เกี่ยวข้อง (DEX/ELF/ข้อความ)</string>
 </resources>
-
-
 

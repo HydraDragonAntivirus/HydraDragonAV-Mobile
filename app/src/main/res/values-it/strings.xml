@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ FILE DANNOSI RILEVATI</string>
     <string name="threat_found_dialog_title">⚠ Minaccia rilevata</string>
     <string name="threat_found_dialog_msg">%1$s
-
 Punteggio di rischio: %2$d/100
-
 Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="btn_destroy">SÌ, ELIMINA</string>
     <string name="btn_ignore">IGNORA</string>
@@ -125,7 +123,6 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="file_delete_failed">Impossibile eliminare il file! (Controlla i permessi)</string>
     <string name="scan_type_title">Seleziona il tipo di scansione</string>
     <string name="scan_type_msg">🚀 SCANSIONE RAPIDA: Analizza solo le app installate e la cartella Download.
-
 🔍 SCANSIONE COMPLETA: Analizza a fondo l\'intera memoria, inclusa la scheda SD (potrebbe richiedere molto tempo).</string>
     <string name="btn_full_scan">🔍 SCANSIONE COMPLETA</string>
     <string name="btn_quick_scan">🚀 SCANSIONE RAPIDA</string>
@@ -167,7 +164,6 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="btn_skip">SALTA →</string>
     <string name="btn_close">Chiudi</string>
     <string name="ram_usage">💾 %1$d MB RAM
-
 ⏳ Rimanenti: %2$d</string>
     <string name="scan_btn">SCANSIONA</string>
     <string name="scan_initial_status">Premi SCAN per iniziare</string>
@@ -175,7 +171,6 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="scan_already_running">Una scansione in background è già in corso — attendi che finisca</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">Categorie di Rilevamento</string>
     <string name="detect_cat_signatures">Basato su firme (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Rilevamento anomalie ML</string>
@@ -308,11 +303,9 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="scan_cache_toggle">Cache di scansione — salta la ri-analisi delle app già analizzate</string>
     <string name="scan_cache_on_toast">Cache di scansione ATTIVO</string>
     <string name="scan_cache_off_toast">Cache di scansione DISATTIVO</string>
-
     <string name="detect_zip_bomb_toggle">Rileva bombe di decompressione — rifiuta gli archivi che si espandono a una dimensione illimitata</string>
     <string name="detect_zip_bomb_on_toast">Rilevamento bombe di decompressione ATTIVATO</string>
     <string name="detect_zip_bomb_off_toast">Rilevamento bombe di decompressione DISATTIVATO</string>
-
     <string name="dashboard_firewall_active">Motore firewall ATTIVO</string>
     <string name="dashboard_system_secure">Sistema sicuro</string>
     <string name="dashboard_status_secure_desc">• Monitoraggio attivo\n• Regole di rete applicate\n• %1$s</string>
@@ -370,10 +363,8 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="malware_has_admin_title">Questa app ha i diritti di Amministratore dispositivo</string>
     <string name="malware_has_admin_msg">%1$s si è resa Amministratore dispositivo, il che impedisce di disinstallarla direttamente — è un trucco comune usato dal malware per resistere alla rimozione. Disattivala nella schermata che si apre (trova %1$s e tocca Disattiva), quindi la richiesta di disinstallazione si aprirà automaticamente.</string>
     <string name="malware_has_admin_open_settings">APRI IMPOSTAZIONI AMMINISTRATORE DISPOSITIVO</string>
-
     <string name="uninstall_warning_toggle">Suggerisci la modalità provvisoria quando la disinstallazione fallisce</string>
     <string name="unicorn_unsupported">L\'emulazione (Unicorn) non è disponibile su questo dispositivo a causa di un bug noto del backend ARM64 JIT. La scansione continua normalmente senza questo passaggio.</string>
-
     <string name="disable_secure_flag_toggle">Consenti registrazione schermo</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — memorizza nella cache gli hash (MD5 + TLSH) delle voci ZIP di APK nella whitelist per evitare falsi positivi</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip ON — le voci delle app nella whitelist vengono memorizzate nella cache</string>
@@ -387,7 +378,6 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="anti_fn_tlsh_threshold_btn">Soglia di similarità TLSH Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">Soglia di distanza TLSH (1-200). Più basso = più severo, più alto = aggiornamento di rilevazione più aggressivo. Predefinito: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Soglia TLSH Anti-FN impostata a %1$d</string>
-
     <string name="save_auto_rules_toggle">Salva regole autogenerate</string>
     <string name="save_auto_rules_on_toast">Salva regole autogenerate ATTIVATO: le regole YARA apprese automaticamente verranno scritte su disco e ricaricate al prossimo avvio</string>
     <string name="save_auto_rules_off_toast">Salva regole autogenerate DISATTIVATO: le regole sono ancora usate in questa sessione ma NON verranno mantenute dopo il riavvio</string>
@@ -431,6 +421,4 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="scan_cancelled">Scansione annullata</string>
     <string name="scan_relevant_only_toggle">Scansiona solo pertinenti (DEX/ELF/testo)</string>
 </resources>
-
-
 

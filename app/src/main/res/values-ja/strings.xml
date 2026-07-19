@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ 悪意のあるファイルを検出</string>
     <string name="threat_found_dialog_title">⚠ 脅威を検出</string>
     <string name="threat_found_dialog_msg">%1$s
-
 リスクスコア：%2$d/100
-
 この悪意のあるファイル/アプリを完全に削除しますか？</string>
     <string name="btn_destroy">はい、削除する</string>
     <string name="btn_ignore">無視する</string>
@@ -125,7 +123,6 @@
     <string name="file_delete_failed">ファイルの削除に失敗しました！（権限を確認してください）</string>
     <string name="scan_type_title">スキャンの種類を選択</string>
     <string name="scan_type_msg">🚀 クイックスキャン：インストール済みアプリとダウンロードフォルダのみをスキャンします。
-
 🔍 フルスキャン：SDカードを含むストレージ全体を詳細に検査します（時間がかかる場合があります）。</string>
     <string name="btn_full_scan">🔍 フルスキャン</string>
     <string name="btn_quick_scan">🚀 クイックスキャン</string>
@@ -167,7 +164,6 @@
     <string name="btn_skip">スキップ →</string>
     <string name="btn_close">閉じる</string>
     <string name="ram_usage">💾 %1$d MB RAM
-
 ⏳ 残り：%2$d</string>
     <string name="scan_btn">スキャン</string>
     <string name="scan_initial_status">スキャンを押して開始</string>
@@ -175,7 +171,6 @@
     <string name="scan_already_running">バックグラウンドスキャンが既に実行中です — 終了までお待ちください</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">検出カテゴリ</string>
     <string name="detect_cat_signatures">シグネチャベース（YARA/ClamAV）</string>
     <string name="detect_cat_ml">ML異常検知</string>
@@ -308,11 +303,9 @@
     <string name="scan_cache_toggle">スキャンキャッシュ — 分析済みアプリの再スキャンをスキップ</string>
     <string name="scan_cache_on_toast">スキャンキャッシュ オン</string>
     <string name="scan_cache_off_toast">スキャンキャッシュ オフ</string>
-
     <string name="detect_zip_bomb_toggle">解凍爆弾（デコンプレッションボム）を検出 — 無制限のサイズに展開されるアーカイブを拒否します</string>
     <string name="detect_zip_bomb_on_toast">解凍爆弾検出をオンにしました</string>
     <string name="detect_zip_bomb_off_toast">解凍爆弾検出をオフにしました</string>
-
     <string name="dashboard_firewall_active">ファイアウォールエンジン稼働中</string>
     <string name="dashboard_system_secure">システムは安全です</string>
     <string name="dashboard_status_secure_desc">• 監視は有効です\n• ネットワークルールが適用されています\n• %1$s</string>
@@ -370,10 +363,8 @@
     <string name="malware_has_admin_title">このアプリはデバイス管理者権限を持っています</string>
     <string name="malware_has_admin_msg">%1$sは自身をデバイス管理者にしており、直接アンインストールできないようにしています — これはマルウェアが削除に抵抗するためによく使う手口です。開いた画面で無効化してください（%1$sを見つけて「無効にする」をタップ）。その後、アンインストールのプロンプトが自動的に開きます。</string>
     <string name="malware_has_admin_open_settings">デバイス管理者の設定を開く</string>
-
     <string name="uninstall_warning_toggle">アンインストールに失敗した場合にセーフモードを提案する</string>
     <string name="unicorn_unsupported">エミュレーション（Unicorn）は、ARM64 JITバックエンドの既知のバグにより、このデバイスでは利用できません。スキャンはこのパスなしで通常通り続行されます。</string>
-
     <string name="disable_secure_flag_toggle">画面録画を許可する</string>
     <string name="anti_fp_skip_toggle">Anti-FPスキップ — 誤検出を防ぐため、ホワイトリスト登録されたAPKのZIPエントリのハッシュ（MD5 + TLSH）をキャッシュ</string>
     <string name="anti_fp_skip_on_toast">Anti-FPスキップ オン — ホワイトリスト登録されたアプリのエントリがキャッシュされます</string>
@@ -387,7 +378,6 @@
     <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH類似度しきい値</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的に検出精度を引き上げ。デフォルト: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSHしきい値を%1$dに設定しました</string>
-
     <string name="save_auto_rules_toggle">自動生成ルールを保存</string>
     <string name="save_auto_rules_on_toast">自動生成ルール保存 ON：自動学習された YARA ルールがディスクに書き込まれ、次回起動時に再読み込みされます</string>
     <string name="save_auto_rules_off_toast">自動生成ルール保存 OFF：ルールはこのセッションでは引き続き使用されますが、再起動後は保持されません</string>
@@ -431,6 +421,4 @@
     <string name="scan_cancelled">スキャンがキャンセルされました</string>
     <string name="scan_relevant_only_toggle">関連ファイルのみスキャン (DEX/ELF/テキスト)</string>
 </resources>
-
-
 

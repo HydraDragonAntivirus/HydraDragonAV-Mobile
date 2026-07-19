@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ WYKRYTO ZŁOŚLIWE PLIKI</string>
     <string name="threat_found_dialog_title">⚠ Wykryto zagrożenie</string>
     <string name="threat_found_dialog_msg">%1$s
-
 Wynik ryzyka: %2$d/100
-
 Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="btn_destroy">TAK, USUŃ</string>
     <string name="btn_ignore">IGNORUJ</string>
@@ -125,7 +123,6 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="file_delete_failed">Nie udało się usunąć pliku! (Sprawdź uprawnienia)</string>
     <string name="scan_type_title">Wybierz typ skanowania</string>
     <string name="scan_type_msg">🚀 SZYBKIE SKANOWANIE: Skanuje tylko zainstalowane aplikacje i folder Pobrane.
-
 🔍 PEŁNE SKANOWANIE: Dokładnie sprawdza całą pamięć, w tym kartę SD (może potrwać długo).</string>
     <string name="btn_full_scan">🔍 PEŁNE SKANOWANIE</string>
     <string name="btn_quick_scan">🚀 SZYBKIE SKANOWANIE</string>
@@ -167,7 +164,6 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="btn_skip">POMIŃ →</string>
     <string name="btn_close">Zamknij</string>
     <string name="ram_usage">💾 %1$d MB RAM
-
 ⏳ Pozostało: %2$d</string>
     <string name="scan_btn">SKANUJ</string>
     <string name="scan_initial_status">Naciśnij SKANUJ, aby rozpocząć</string>
@@ -175,7 +171,6 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="scan_already_running">Skanowanie w tle jest już w toku — poczekaj, aż się zakończy</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">Kategorie wykrywania</string>
     <string name="detect_cat_signatures">Na podstawie sygnatur (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Wykrywanie anomalii ML</string>
@@ -308,11 +303,9 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="scan_cache_toggle">Pamięć podręczna skanowania — pomiń ponowne skanowanie już przeanalizowanych aplikacji</string>
     <string name="scan_cache_on_toast">Pamięć podręczna skanowania WŁ</string>
     <string name="scan_cache_off_toast">Pamięć podręczna skanowania WYŁ</string>
-
     <string name="detect_zip_bomb_toggle">Wykrywaj bomby dekompresyjne — odrzucaj archiwa rozpakowujące się do nieograniczonego rozmiaru</string>
     <string name="detect_zip_bomb_on_toast">Wykrywanie bomb dekompresyjnych WŁĄCZONE</string>
     <string name="detect_zip_bomb_off_toast">Wykrywanie bomb dekompresyjnych WYŁĄCZONE</string>
-
     <string name="dashboard_firewall_active">Silnik zapory AKTYWNY</string>
     <string name="dashboard_system_secure">System bezpieczny</string>
     <string name="dashboard_status_secure_desc">• Monitorowanie aktywne\n• Reguły sieciowe egzekwowane\n• %1$s</string>
@@ -370,10 +363,8 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="malware_has_admin_title">Ta aplikacja ma uprawnienia administratora urządzenia</string>
     <string name="malware_has_admin_msg">%1$s uczyniła się Administratorem urządzenia, co blokuje bezpośrednie odinstalowanie — jest to popularna sztuczka malware, aby uniknąć usunięcia. Dezaktywuj to na ekranie, który się otworzy (znajdź %1$s i dotknij Dezaktywuj), a następnie automatycznie otworzy się okno odinstalowywania.</string>
     <string name="malware_has_admin_open_settings">OTWÓRZ USTAWIENIA ADMINISTRATORA URZĄDZENIA</string>
-
     <string name="uninstall_warning_toggle">Sugeruj tryb awaryjny, gdy odinstalowanie się nie powiedzie</string>
     <string name="unicorn_unsupported">Emulacja (Unicorn) jest niedostępna na tym urządzeniu z powodu znanego błędu w backendzie ARM64 JIT. Skanowanie przebiega normalnie bez tego przebiegu.</string>
-
     <string name="disable_secure_flag_toggle">Zezwól na nagrywanie ekranu</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — buforuj hasze (MD5 + TLSH) wpisów ZIP APK z białej listy, aby uniknąć fałszywie pozytywnych wyników</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip WŁ. — wpisy z aplikacji z białej listy są buforowane</string>
@@ -387,7 +378,6 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="anti_fn_tlsh_threshold_btn">Próg Podobieństwa TLSH Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">Próg odległości TLSH (1-200). Niższy = bardziej rygorystyczny, wyższy = bardziej agresywne podniesienie wykrywalności. Domyślnie: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Próg TLSH Anti-FN ustawiony na %1$d</string>
-
     <string name="save_auto_rules_toggle">Zapisz automatycznie generowane reguly</string>
     <string name="save_auto_rules_on_toast">Zapisywanie automatycznych regul WLACZONE: automatycznie uczone reguly YARA beda zapisywane na dysku i przeladowywane przy nastepnym uruchomieniu aplikacji</string>
     <string name="save_auto_rules_off_toast">Zapisywanie automatycznych regul WYLACZONE: reguly sa nadal uzywane w tej sesji, ale NIE zostana zachowane po restarcie</string>
@@ -431,6 +421,4 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="scan_cancelled">Skanowanie anulowane</string>
     <string name="scan_relevant_only_toggle">Skanuj tylko istotne (DEX/ELF/tekst)</string>
 </resources>
-
-
 

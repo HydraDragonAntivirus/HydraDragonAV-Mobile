@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ SCHADELIJKE BESTANDEN GEDETECTEERD</string>
     <string name="threat_found_dialog_title">⚠ Dreiging gedetecteerd</string>
     <string name="threat_found_dialog_msg">%1$s
-
 Risicoscore: %2$d/100
-
 Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="btn_destroy">JA, VERWIJDEREN</string>
     <string name="btn_ignore">NEGEREN</string>
@@ -125,7 +123,6 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="file_delete_failed">Bestand verwijderen mislukt! (Controleer machtigingen)</string>
     <string name="scan_type_title">Selecteer scantype</string>
     <string name="scan_type_msg">🚀 SNELLE SCAN: Scant alleen geïnstalleerde apps en de map Downloads.
-
 🔍 VOLLEDIGE SCAN: Doorzoekt grondig de volledige opslag, inclusief SD-kaart (kan lang duren).</string>
     <string name="btn_full_scan">🔍 VOLLEDIGE SCAN</string>
     <string name="btn_quick_scan">🚀 SNELLE SCAN</string>
@@ -167,7 +164,6 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="btn_skip">OVERSLAAN →</string>
     <string name="btn_close">Sluiten</string>
     <string name="ram_usage">💾 %1$d MB RAM
-
 ⏳ Resterend: %2$d</string>
     <string name="scan_btn">SCANNEN</string>
     <string name="scan_initial_status">Druk op SCAN om te beginnen</string>
@@ -175,7 +171,6 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="scan_already_running">Er wordt al een achtergrondscan uitgevoerd — wacht tot deze is voltooid</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">Detectiecategorieën</string>
     <string name="detect_cat_signatures">Op handtekeningen gebaseerd (YARA/ClamAV)</string>
     <string name="detect_cat_ml">ML-anomaliedetectie</string>
@@ -308,11 +303,9 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="scan_cache_toggle">Scancache — opnieuw scannen van reeds geanalyseerde apps overslaan</string>
     <string name="scan_cache_on_toast">Scancache AAN</string>
     <string name="scan_cache_off_toast">Scancache UIT</string>
-
     <string name="detect_zip_bomb_toggle">Decompressiebommen detecteren — archieven weigeren die naar een onbegrensde grootte uitpakken</string>
     <string name="detect_zip_bomb_on_toast">Detectie van decompressiebommen AAN</string>
     <string name="detect_zip_bomb_off_toast">Detectie van decompressiebommen UIT</string>
-
     <string name="dashboard_firewall_active">Firewall-engine ACTIEF</string>
     <string name="dashboard_system_secure">Systeem beveiligd</string>
     <string name="dashboard_status_secure_desc">• Bewaking actief\n• Netwerkregels afgedwongen\n• %1$s</string>
@@ -370,10 +363,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="malware_has_admin_title">Deze app heeft apparaatbeheerderrechten</string>
     <string name="malware_has_admin_msg">%1$s heeft zichzelf tot Apparaatbeheerder gemaakt, waardoor directe verwijdering wordt geblokkeerd — een veelgebruikte truc van malware om verwijdering te weerstaan. Deactiveer dit in het scherm dat opent (zoek %1$s en tik op Deactiveren), waarna de verwijdervraag automatisch verschijnt.</string>
     <string name="malware_has_admin_open_settings">APPARAATBEHEERDERINSTELLINGEN OPENEN</string>
-
     <string name="uninstall_warning_toggle">Veilige modus voorstellen als verwijderen mislukt</string>
     <string name="unicorn_unsupported">Emulatie (Unicorn) is niet beschikbaar op dit apparaat vanwege een bekende bug in de ARM64 JIT-backend. Scannen gaat normaal verder zonder deze pass.</string>
-
     <string name="disable_secure_flag_toggle">Schermopname toestaan</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — hashes (MD5 + TLSH) van ZIP-items van APK op de whitelist cachen om valse positieven te voorkomen</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip AAN — items van apps op de whitelist worden gecache</string>
@@ -387,7 +378,6 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH-gelijkenisdrempel</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH-afstandsdrempel (1-200). Lager = strenger, hoger = agressievere detectie-upgrade. Standaard: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN-TLSH-drempel ingesteld op %1$d</string>
-
     <string name="save_auto_rules_toggle">Automatisch gegenereerde regels opslaan</string>
     <string name="save_auto_rules_on_toast">Automatisch gegenereerde regels opslaan AAN: automatisch geleerde YARA-regels worden naar schijf geschreven en bij de volgende start opnieuw geladen</string>
     <string name="save_auto_rules_off_toast">Automatisch gegenereerde regels opslaan UIT: regels worden nog steeds in deze sessie gebruikt maar worden NA een herstart NIET bewaard</string>
@@ -431,6 +421,4 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="scan_cancelled">Scan geannuleerd</string>
     <string name="scan_relevant_only_toggle">Alleen relevante scannen (DEX/ELF/tekst)</string>
 </resources>
-
-
 

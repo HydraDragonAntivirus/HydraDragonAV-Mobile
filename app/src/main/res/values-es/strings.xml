@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ ARCHIVOS MALICIOSOS DETECTADOS</string>
     <string name="threat_found_dialog_title">⚠ Amenaza Detectada</string>
     <string name="threat_found_dialog_msg">%1$s
-
 Puntuación de riesgo: %2$d/100
-
 ¿Deseas eliminar por completo este archivo/aplicación maliciosa?</string>
     <string name="btn_destroy">SÍ, ELIMINAR</string>
     <string name="btn_ignore">IGNORAR</string>
@@ -125,7 +123,6 @@ Puntuación de riesgo: %2$d/100
     <string name="file_delete_failed">¡No se pudo eliminar el archivo! (Verifica los permisos)</string>
     <string name="scan_type_title">Seleccionar Tipo de Escaneo</string>
     <string name="scan_type_msg">🚀 ESCANEO RÁPIDO: Solo escanea las aplicaciones instaladas y la carpeta de Descargas.
-
 🔍 ESCANEO COMPLETO: Inspecciona a fondo todo el almacenamiento, incluida la tarjeta SD (puede tardar mucho).</string>
     <string name="btn_full_scan">🔍 ESCANEO COMPLETO</string>
     <string name="btn_quick_scan">🚀 ESCANEO RÁPIDO</string>
@@ -167,7 +164,6 @@ Puntuación de riesgo: %2$d/100
     <string name="btn_skip">OMITIR →</string>
     <string name="btn_close">Cerrar</string>
     <string name="ram_usage">💾 %1$d MB RAM
-
 ⏳ Restante: %2$d</string>
     <string name="scan_btn">ESCANEAR</string>
     <string name="scan_initial_status">Presiona ESCANEAR para comenzar</string>
@@ -175,7 +171,6 @@ Puntuación de riesgo: %2$d/100
     <string name="scan_already_running">Ya hay un análisis en segundo plano en curso — espera a que termine</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">Categorías de Detección</string>
     <string name="detect_cat_signatures">Basado en firmas (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Detección de anomalías por ML</string>
@@ -308,11 +303,9 @@ Puntuación de riesgo: %2$d/100
     <string name="scan_cache_toggle">Caché de escaneo — omitir el reanálisis de aplicaciones ya analizadas</string>
     <string name="scan_cache_on_toast">Caché de escaneo ACTIVADO</string>
     <string name="scan_cache_off_toast">Caché de escaneo DESACTIVADO</string>
-
     <string name="detect_zip_bomb_toggle">Detectar bombas de descompresión — rechazar archivos que se expanden a un tamaño ilimitado</string>
     <string name="detect_zip_bomb_on_toast">Detección de bombas de descompresión ACTIVADA</string>
     <string name="detect_zip_bomb_off_toast">Detección de bombas de descompresión DESACTIVADA</string>
-
     <string name="dashboard_firewall_active">Motor de Firewall ACTIVO</string>
     <string name="dashboard_system_secure">Sistema Seguro</string>
     <string name="dashboard_status_secure_desc">• Monitoreo activo\n• Reglas de red aplicadas\n• %1$s</string>
@@ -370,10 +363,8 @@ Puntuación de riesgo: %2$d/100
     <string name="malware_has_admin_title">Esta App Tiene Derechos de Administrador del Dispositivo</string>
     <string name="malware_has_admin_msg">%1$s se ha convertido en Administrador del dispositivo, lo que impide desinstalarla directamente — un truco común que usa el malware para resistirse a ser eliminado. Desactívalo en la pantalla que se abre (busca %1$s y toca Desactivar), y luego el aviso de desinstalación se abrirá automáticamente.</string>
     <string name="malware_has_admin_open_settings">ABRIR AJUSTES DE ADMINISTRADOR DEL DISPOSITIVO</string>
-
     <string name="uninstall_warning_toggle">Sugerir modo seguro cuando falla la desinstalación</string>
     <string name="unicorn_unsupported">La emulación (Unicorn) no está disponible en este dispositivo debido a un error conocido del backend ARM64 JIT. El escaneo continúa normalmente sin esta pasada.</string>
-
     <string name="disable_secure_flag_toggle">Permitir grabación de pantalla</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — almacenar en caché los hashes (MD5 + TLSH) de entradas ZIP de APK en lista blanca para evitar falsos positivos</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip ACTIVADO — las entradas de apps en lista blanca se almacenan en caché</string>
@@ -387,7 +378,6 @@ Puntuación de riesgo: %2$d/100
     <string name="anti_fn_tlsh_threshold_btn">Umbral de similitud TLSH de Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">Umbral de distancia TLSH (1-200). Menor = más estricto, mayor = mejora de detección más agresiva. Predeterminado: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Umbral TLSH de Anti-FN establecido en %1$d</string>
-
     <string name="save_auto_rules_toggle">Guardar reglas autogeneradas</string>
     <string name="save_auto_rules_on_toast">Guardar reglas autogeneradas ACTIVADO: las reglas YARA aprendidas automaticamente se escribiran en el disco y se recargaran en el proximo inicio</string>
     <string name="save_auto_rules_off_toast">Guardar reglas autogeneradas DESACTIVADO: las reglas se siguen usando en esta sesion pero NO se conservaran tras el reinicio</string>
@@ -431,6 +421,4 @@ Puntuación de riesgo: %2$d/100
     <string name="scan_cancelled">Escaneo cancelado</string>
     <string name="scan_relevant_only_toggle">Escanear solo relevantes (DEX/ELF/texto)</string>
 </resources>
-
-
 

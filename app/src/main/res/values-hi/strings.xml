@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ दुर्भावनापूर्ण फ़ाइलें मिलीं</string>
     <string name="threat_found_dialog_title">⚠ खतरा मिला</string>
     <string name="threat_found_dialog_msg">%1$s
-
 जोखिम स्कोर: %2$d/100
-
 क्या आप इस दुर्भावनापूर्ण फ़ाइल/ऐप को पूरी तरह हटाना चाहते हैं?</string>
     <string name="btn_destroy">हाँ, हटाएँ</string>
     <string name="btn_ignore">अनदेखा करें</string>
@@ -125,7 +123,6 @@
     <string name="file_delete_failed">फ़ाइल हटाने में विफल! (अनुमतियाँ जाँचें)</string>
     <string name="scan_type_title">स्कैन प्रकार चुनें</string>
     <string name="scan_type_msg">🚀 त्वरित स्कैन: केवल इंस्टॉल किए गए ऐप्स और डाउनलोड फ़ोल्डर को स्कैन करता है।
-
 🔍 पूर्ण स्कैन: SD कार्ड सहित संपूर्ण स्टोरेज की गहराई से जाँच करता है (समय लग सकता है)।</string>
     <string name="btn_full_scan">🔍 पूर्ण स्कैन</string>
     <string name="btn_quick_scan">🚀 त्वरित स्कैन</string>
@@ -167,7 +164,6 @@
     <string name="btn_skip">छोड़ें →</string>
     <string name="btn_close">बंद करें</string>
     <string name="ram_usage">💾 %1$d MB रैम
-
 ⏳ शेष: %2$d</string>
     <string name="scan_btn">स्कैन</string>
     <string name="scan_initial_status">शुरू करने के लिए स्कैन दबाएँ</string>
@@ -307,11 +303,9 @@
     <string name="scan_cache_toggle">स्कैन कैश — पहले से विश्लेषित ऐप्स को पुनः स्कैन करना छोड़ें</string>
     <string name="scan_cache_on_toast">स्कैन कैश चालू</string>
     <string name="scan_cache_off_toast">स्कैन कैश बंद</string>
-
     <string name="detect_zip_bomb_toggle">डीकंप्रेशन बम पहचानें — असीमित आकार में विस्तारित होने वाले संग्रह अस्वीकार करें</string>
     <string name="detect_zip_bomb_on_toast">डीकंप्रेशन बम पहचान चालू</string>
     <string name="detect_zip_bomb_off_toast">डीकंप्रेशन बम पहचान बंद</string>
-
     <string name="dashboard_firewall_active">फ़ायरवॉल इंजन सक्रिय है</string>
     <string name="dashboard_system_secure">सिस्टम सुरक्षित है</string>
     <string name="dashboard_status_secure_desc">• निगरानी सक्रिय\n• नेटवर्क नियम लागू\n• %1$s</string>
@@ -369,10 +363,8 @@
     <string name="malware_has_admin_title">इस ऐप के पास डिवाइस एडमिन अधिकार हैं</string>
     <string name="malware_has_admin_msg">%1$s ने खुद को डिवाइस एडमिनिस्ट्रेटर बना लिया है, जो इसे सीधे अनइंस्टॉल करने से रोकता है — यह मैलवेयर द्वारा हटाए जाने से बचने के लिए इस्तेमाल की जाने वाली एक आम तरकीब है। खुलने वाली स्क्रीन में इसे निष्क्रिय करें (%1$s को ढूंढें और निष्क्रिय करें पर टैप करें), फिर अनइंस्टॉल प्रॉम्प्ट अपने आप खुल जाएगा।</string>
     <string name="malware_has_admin_open_settings">डिवाइस एडमिन सेटिंग्स खोलें</string>
-
     <string name="uninstall_warning_toggle">अनइंस्टॉल विफल होने पर सुरक्षित मोड सुझाएं</string>
     <string name="unicorn_unsupported">ARM64 JIT बैकएंड में ज्ञात बग के कारण इस डिवाइस पर एमुलेशन (Unicorn) उपलब्ध नहीं है। स्कैनिंग इस पास के बिना सामान्य रूप से जारी रहती है।</string>
-
     <string name="disable_secure_flag_toggle">स्क्रीन रिकॉर्डिंग की अनुमति दें</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — गलत सकारात्मक परिणामों से बचने के लिए श्वेतसूचीबद्ध APK ज़िप प्रविष्टियों के हैश (MD5 + TLSH) कैश करें</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip चालू — श्वेतसूचीबद्ध ऐप्स की प्रविष्टियाँ कैश की जाती हैं</string>
@@ -386,7 +378,6 @@
     <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH समानता सीमा</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH दूरी सीमा (1-200)। कम = सख्त, अधिक = अधिक आक्रामक पहचान अपग्रेड। डिफ़ॉल्ट: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSH सीमा %1$d पर सेट की गई</string>
-
     <string name="save_auto_rules_toggle">स्वत: उत्पन्न नियम सहेजें</string>
     <string name="save_auto_rules_on_toast">स्वत: उत्पन्न नियम सहेजना चालू: स्वत: सीखे YARA नियम डिस्क पर लिखे जाएंगे और अगली बार ऐप शुरू होने पर फिर से लोड होंगे</string>
     <string name="save_auto_rules_off_toast">स्वत: उत्पन्न नियम सहेजना बंद: नियम इस सत्र में अभी भी उपयोग किए जाते हैं लेकिन पुनरारंभ के बाद रखे नहीं जाएंगे</string>
@@ -430,6 +421,4 @@
     <string name="scan_cancelled">स्कैन रद्द कर दिया गया</string>
     <string name="scan_relevant_only_toggle">केवल प्रासंगिक स्कैन करें (DEX/ELF/टेक्स्ट)</string>
 </resources>
-
-
 

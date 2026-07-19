@@ -31,7 +31,6 @@
     <string name="scan_stop">⛔ STOP</string>
     <string name="scan_stopping">Stopping…</string>
     <string name="scan_stopped">⏹ Scan stopped</string>
-
     <string name="uninstall_failed_title">⚠ Uninstall Failed</string>
     <string name="uninstall_failed_msg">%1$s is still running — the uninstall is still in progress or has failed.\n\nUse Safe Mode to run the antivirus and remove malware: restart your device, hold the volume-down key during boot, then run a full scan.</string>
     <string name="uninstall_failed_safe_mode">OPEN SETTINGS TO REBOOT TO SAFE MODE</string>
@@ -86,6 +85,4 @@
     <string name="scan_cancelled">Scan cancelled</string>
     <string name="scan_relevant_only_toggle">Relevant-only scan (DEX/ELF/text only)</string>
 </resources>
-
-
 

@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ 악성 파일 감지됨</string>
     <string name="threat_found_dialog_title">⚠ 위협 감지됨</string>
     <string name="threat_found_dialog_msg">%1$s
-
 위험 점수: %2$d/100
-
 이 악성 파일/앱을 완전히 삭제하시겠습니까?</string>
     <string name="btn_destroy">예, 삭제합니다</string>
     <string name="btn_ignore">무시</string>
@@ -125,7 +123,6 @@
     <string name="file_delete_failed">파일 삭제 실패! (권한을 확인하세요)</string>
     <string name="scan_type_title">스캔 유형 선택</string>
     <string name="scan_type_msg">🚀 빠른 스캔: 설치된 앱과 다운로드 폴더만 스캔합니다.
-
 🔍 전체 스캔: SD 카드를 포함한 전체 저장소를 심층 검사합니다 (시간이 오래 걸릴 수 있습니다).</string>
     <string name="btn_full_scan">🔍 전체 스캔</string>
     <string name="btn_quick_scan">🚀 빠른 스캔</string>
@@ -167,7 +164,6 @@
     <string name="btn_skip">건너뛰기 →</string>
     <string name="btn_close">닫기</string>
     <string name="ram_usage">💾 %1$d MB RAM
-
 ⏳ 남음: %2$d</string>
     <string name="scan_btn">스캔</string>
     <string name="scan_initial_status">스캔을 눌러 시작하세요</string>
@@ -175,7 +171,6 @@
     <string name="scan_already_running">백그라운드 스캔이 이미 실행 중입니다 — 완료될 때까지 기다려 주세요</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">탐지 카테고리</string>
     <string name="detect_cat_signatures">시그니처 기반 (YARA/ClamAV)</string>
     <string name="detect_cat_ml">ML 이상 탐지</string>
@@ -308,11 +303,9 @@
     <string name="scan_cache_toggle">스캔 캐시 — 이미 분석된 앱 재스캔 건너뛰기</string>
     <string name="scan_cache_on_toast">스캔 캐시 켜짐</string>
     <string name="scan_cache_off_toast">스캔 캐시 꺼짐</string>
-
     <string name="detect_zip_bomb_toggle">압축 폭탄 감지 — 무제한 크기로 압축이 풀리는 압축 파일 거부</string>
     <string name="detect_zip_bomb_on_toast">압축 폭탄 감지 켜짐</string>
     <string name="detect_zip_bomb_off_toast">압축 폭탄 감지 꺼짐</string>
-
     <string name="dashboard_firewall_active">방화벽 엔진 활성</string>
     <string name="dashboard_system_secure">시스템 안전</string>
     <string name="dashboard_status_secure_desc">• 모니터링 활성화됨\n• 네트워크 규칙 적용됨\n• %1$s</string>
@@ -370,10 +363,8 @@
     <string name="malware_has_admin_title">이 앱은 기기 관리자 권한을 가지고 있습니다</string>
     <string name="malware_has_admin_msg">%1$s이(가) 스스로를 기기 관리자로 설정하여 직접 제거하지 못하도록 막고 있습니다 — 이는 악성코드가 제거에 저항하기 위해 흔히 사용하는 수법입니다. 열리는 화면에서 이를 비활성화하세요 (%1$s을(를) 찾아 비활성화를 탭). 그러면 제거 프롬프트가 자동으로 열립니다.</string>
     <string name="malware_has_admin_open_settings">기기 관리자 설정 열기</string>
-
     <string name="uninstall_warning_toggle">제거에 실패하면 안전 모드를 제안</string>
     <string name="unicorn_unsupported">ARM64 JIT 백엔드의 알려진 버그로 인해 이 기기에서 에뮬레이션(Unicorn)을 사용할 수 없습니다. 이 패스 없이 스캔이 정상적으로 계속됩니다.</string>
-
     <string name="disable_secure_flag_toggle">화면 녹화 허용</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — 화이트리스트에 등록된 APK ZIP 항목 해시(MD5 + TLSH)를 캐시하여 오탐(false positive) 방지</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip 켜짐 — 화이트리스트 앱의 항목이 캐시됩니다</string>
@@ -387,7 +378,6 @@
     <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH 유사도 임계값</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH 거리 임계값(1-200). 낮을수록 엄격, 높을수록 탐지 상향이 더 적극적. 기본값: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSH 임계값이 %1$d(으)로 설정되었습니다</string>
-
     <string name="save_auto_rules_toggle">자동 생성 규칙 저장</string>
     <string name="save_auto_rules_on_toast">자동 생성 규칙 저장 켜짐: 자동 학습된 YARA 규칙이 디스크에 기록되며 다음 앱 실행 시 다시 로드됩니다</string>
     <string name="save_auto_rules_off_toast">자동 생성 규칙 저장 꺼짐: 규칙은 이번 세션에서 계속 사용되지만 재시작 후에는 유지되지 않습니다</string>
@@ -431,6 +421,4 @@
     <string name="scan_cancelled">검사가 취소되었습니다</string>
     <string name="scan_relevant_only_toggle">관련 파일만 검사 (DEX/ELF/텍스트)</string>
 </resources>
-
-
 

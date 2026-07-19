@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ FILE BERBAHAYA TERDETEKSI</string>
     <string name="threat_found_dialog_title">⚠ Ancaman Terdeteksi</string>
     <string name="threat_found_dialog_msg">%1$s
-
 Skor Risiko: %2$d/100
-
 Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="btn_destroy">YA, HAPUS</string>
     <string name="btn_ignore">ABAIKAN</string>
@@ -125,7 +123,6 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="file_delete_failed">Gagal menghapus file! (Periksa izin)</string>
     <string name="scan_type_title">Pilih Jenis Pemindaian</string>
     <string name="scan_type_msg">🚀 PEMINDAIAN CEPAT: Hanya memindai aplikasi terinstal dan folder Unduhan.
-
 🔍 PEMINDAIAN LENGKAP: Memeriksa seluruh penyimpanan secara mendalam termasuk Kartu SD (mungkin memakan waktu lama).</string>
     <string name="btn_full_scan">🔍 PEMINDAIAN LENGKAP</string>
     <string name="btn_quick_scan">🚀 PEMINDAIAN CEPAT</string>
@@ -167,7 +164,6 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="btn_skip">LEWATI →</string>
     <string name="btn_close">Tutup</string>
     <string name="ram_usage">💾 %1$d MB RAM
-
 ⏳ Tersisa: %2$d</string>
     <string name="scan_btn">PINDAI</string>
     <string name="scan_initial_status">Tekan PINDAI untuk mulai</string>
@@ -175,7 +171,6 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scan_already_running">Pemindaian latar belakang sudah berjalan — harap tunggu hingga selesai</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">Kategori Deteksi</string>
     <string name="detect_cat_signatures">Berbasis tanda tangan (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Deteksi anomali ML</string>
@@ -308,11 +303,9 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scan_cache_toggle">Cache Pemindaian — lewati pemindaian ulang aplikasi yang sudah dianalisis</string>
     <string name="scan_cache_on_toast">Cache Pemindaian AKTIF</string>
     <string name="scan_cache_off_toast">Cache Pemindaian NONAKTIF</string>
-
     <string name="detect_zip_bomb_toggle">Deteksi Bom Dekompresi — tolak arsip yang meluas hingga ukuran tak terbatas</string>
     <string name="detect_zip_bomb_on_toast">Deteksi Bom Dekompresi AKTIF</string>
     <string name="detect_zip_bomb_off_toast">Deteksi Bom Dekompresi NONAKTIF</string>
-
     <string name="dashboard_firewall_active">Mesin Firewall AKTIF</string>
     <string name="dashboard_system_secure">Sistem Aman</string>
     <string name="dashboard_status_secure_desc">• Pemantauan aktif\n• Aturan jaringan diterapkan\n• %1$s</string>
@@ -370,10 +363,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="malware_has_admin_title">Aplikasi Ini Memiliki Hak Admin Perangkat</string>
     <string name="malware_has_admin_msg">%1$s telah menjadikan dirinya Admin Perangkat, yang mencegah pencopotan pemasangan langsung — ini adalah trik umum yang digunakan malware untuk menolak dihapus. Nonaktifkan di layar yang terbuka (cari %1$s dan ketuk Nonaktifkan), lalu prompt pencopotan pemasangan akan terbuka secara otomatis.</string>
     <string name="malware_has_admin_open_settings">BUKA PENGATURAN ADMIN PERANGKAT</string>
-
     <string name="uninstall_warning_toggle">Sarankan mode aman saat pencopotan pemasangan gagal</string>
     <string name="unicorn_unsupported">Emulasi (Unicorn) tidak tersedia di perangkat ini karena bug backend ARM64 JIT yang diketahui. Pemindaian berjalan normal tanpa proses ini.</string>
-
     <string name="disable_secure_flag_toggle">Izinkan perekaman layar</string>
     <string name="anti_fp_skip_toggle">Anti-FP Skip — cache hash (MD5 + TLSH) entri ZIP APK yang masuk daftar putih untuk menghindari positif palsu</string>
     <string name="anti_fp_skip_on_toast">Anti-FP Skip AKTIF — entri dari aplikasi di daftar putih di-cache</string>
@@ -387,7 +378,6 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="anti_fn_tlsh_threshold_btn">Ambang Kemiripan TLSH Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">Ambang jarak TLSH (1-200). Lebih rendah = lebih ketat, lebih tinggi = peningkatan deteksi lebih agresif. Default: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">Ambang TLSH Anti-FN diatur ke %1$d</string>
-
     <string name="save_auto_rules_toggle">Simpan Aturan yang Dibuat Otomatis</string>
     <string name="save_auto_rules_on_toast">Simpan Aturan Otomatis AKTIF: aturan YARA yang dipelajari otomatis akan ditulis ke disk dan dimuat ulang saat peluncuran aplikasi berikutnya</string>
     <string name="save_auto_rules_off_toast">Simpan Aturan Otomatis NONAKTIF: aturan masih digunakan sesi ini tetapi tidak akan disimpan setelah restart</string>
@@ -431,6 +421,4 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scan_cancelled">Pemindaian dibatalkan</string>
     <string name="scan_relevant_only_toggle">Pindai hanya yang relevan (DEX/ELF/teks)</string>
 </resources>
-
-
 

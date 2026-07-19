@@ -114,9 +114,7 @@
     <string name="found_threats">⚠ تم اكتشاف ملفات ضارة</string>
     <string name="threat_found_dialog_title">⚠ تم اكتشاف تهديد</string>
     <string name="threat_found_dialog_msg">%1$s
-
 درجة الخطورة: %2$d/100
-
 هل تريد إزالة هذا الملف/التطبيق الضار بالكامل؟</string>
     <string name="btn_destroy">نعم، احذفه</string>
     <string name="btn_ignore">تجاهل</string>
@@ -125,7 +123,6 @@
     <string name="file_delete_failed">فشل حذف الملف! (تحقق من الأذونات)</string>
     <string name="scan_type_title">اختر نوع الفحص</string>
     <string name="scan_type_msg">🚀 فحص سريع: يفحص فقط التطبيقات المثبتة ومجلد التنزيلات.
-
 🔍 فحص كامل: يفحص بعمق كامل مساحة التخزين بما في ذلك بطاقة SD (قد يستغرق وقتاً طويلاً).</string>
     <string name="btn_full_scan">🔍 فحص كامل</string>
     <string name="btn_quick_scan">🚀 فحص سريع</string>
@@ -167,7 +164,6 @@
     <string name="btn_skip">تخطي →</string>
     <string name="btn_close">إغلاق</string>
     <string name="ram_usage">💾 %1$d ميجابايت من الذاكرة
-
 ⏳ المتبقي: %2$d</string>
     <string name="scan_btn">فحص</string>
     <string name="scan_initial_status">اضغط فحص للبدء</string>
@@ -175,7 +171,6 @@
     <string name="scan_already_running">هناك فحص يعمل بالفعل في الخلفية — يرجى الانتظار حتى ينتهي</string>
     <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
     <string name="engine_loading_status">Engine loading…</string>
-
     <string name="detection_categories_header">فئات الاكتشاف</string>
     <string name="detect_cat_signatures">قائم على التوقيعات (YARA/ClamAV)</string>
     <string name="detect_cat_ml">اكتشاف الشذوذ بالتعلم الآلي</string>
@@ -308,11 +303,9 @@
     <string name="scan_cache_toggle">ذاكرة التخزين المؤقت للفحص — تخطي إعادة فحص التطبيقات التي تم تحليلها بالفعل</string>
     <string name="scan_cache_on_toast">ذاكرة التخزين المؤقت للفحص نشطة</string>
     <string name="scan_cache_off_toast">ذاكرة التخزين المؤقت للفحص غير نشطة</string>
-
     <string name="detect_zip_bomb_toggle">اكتشاف القنابل التفريغية — رفض الأرشيفات التي تتمدد إلى حجم غير محدود</string>
     <string name="detect_zip_bomb_on_toast">تم تفعيل اكتشاف القنابل التفريغية</string>
     <string name="detect_zip_bomb_off_toast">تم إيقاف اكتشاف القنابل التفريغية</string>
-
     <string name="dashboard_firewall_active">محرك جدار الحماية نشط</string>
     <string name="dashboard_system_secure">النظام آمن</string>
     <string name="dashboard_status_secure_desc">• المراقبة نشطة\n• قواعد الشبكة مفعّلة\n• %1$s</string>
@@ -370,10 +363,8 @@
     <string name="malware_has_admin_title">هذا التطبيق يملك صلاحيات مسؤول الجهاز</string>
     <string name="malware_has_admin_msg">جعل %1$s نفسه مسؤول جهاز، مما يمنع إلغاء تثبيته مباشرة — وهي حيلة شائعة تستخدمها البرمجيات الخبيثة لمقاومة الإزالة. عطّله في الشاشة التي ستفتح (ابحث عن %1$s واضغط إلغاء التفعيل)، ثم ستفتح رسالة إلغاء التثبيت تلقائيًا.</string>
     <string name="malware_has_admin_open_settings">افتح إعدادات مسؤول الجهاز</string>
-
     <string name="uninstall_warning_toggle">اقترح الوضع الآمن عند فشل إلغاء التثبيت</string>
     <string name="unicorn_unsupported">المحاكاة (Unicorn) غير متوفرة على هذا الجهاز بسبب خطأ معروف في المحرك الخلفي ARM64 JIT. يستمر المسح بشكل طبيعي بدون هذه المرحلة.</string>
-
     <string name="disable_secure_flag_toggle">السماح بتسجيل الشاشة</string>
     <string name="anti_fp_skip_toggle">تخطي النتائج الإيجابية الكاذبة (Anti-FP) — تخزين تجزئات (MD5 + TLSH) لإدخالات APK المضغوطة في القائمة البيضاء مؤقتًا لتجنب النتائج الإيجابية الكاذبة</string>
     <string name="anti_fp_skip_on_toast">تم تشغيل Anti-FP Skip — يتم تخزين إدخالات التطبيقات في القائمة البيضاء مؤقتًا</string>
@@ -387,7 +378,6 @@
     <string name="anti_fn_tlsh_threshold_btn">حد تشابه TLSH لـ Anti-FN</string>
     <string name="anti_fn_tlsh_threshold_hint">حد مسافة TLSH (1-200). القيمة الأقل = أكثر صرامة، القيمة الأعلى = ترقية اكتشاف أكثر عدوانية. الافتراضي: 40</string>
     <string name="anti_fn_tlsh_threshold_saved">تم تعيين حد TLSH لـ Anti-FN إلى %1$d</string>
-
     <string name="save_auto_rules_toggle">حفظ القواعد المُنشأة تلقائيًا</string>
     <string name="save_auto_rules_on_toast">حفظ القواعد التلقائية مُفعَّل: سيتم كتابة قواعد YARA المُتعلَّمة تلقائيًا على القرص وإعادة تحميلها عند التشغيل التالي</string>
     <string name="save_auto_rules_off_toast">حفظ القواعد التلقائية مُعطَّل: لا تزال القواعد مُستخدَمة في هذه الجلسة لكنها لن تُحفظ بعد إعادة التشغيل</string>
@@ -431,6 +421,4 @@
     <string name="scan_cancelled">تم إلغاء الفحص</string>
     <string name="scan_relevant_only_toggle">فحص العناصر ذات الصلة فقط (DEX/ELF/نص)</string>
 </resources>
-
-
 
