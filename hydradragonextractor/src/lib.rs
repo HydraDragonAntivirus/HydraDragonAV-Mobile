@@ -115,6 +115,175 @@ pub fn extract_archive_from_bytes(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>>
     extract_to_memory(data)
 }
 
+#[derive(Clone, Debug)]
+pub struct ZipEntryInfo {
+    pub name: String,
+    pub size: u64,
+    pub compressed_size: u64,
+}
+
+/// List ZIP entry names and sizes without extracting their content.
+/// Enables the caller to filter by name first, then extract only relevant entries.
+pub fn zip_list_entries(data: &[u8]) -> Result<Vec<ZipEntryInfo>> {
+    let zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
+    Ok(zip
+        .entries()
+        .iter()
+        .filter(|e| !e.name.ends_with('/'))
+        .take(MAX_ARCHIVE_ENTRIES)
+        .map(|e| ZipEntryInfo {
+            name: e.name.clone(),
+            size: e.size,
+            compressed_size: e.compressed_size,
+        })
+        .collect())
+}
+
+/// Extract a single ZIP entry by name. More efficient than extracting all
+/// entries when only a subset is needed — the caller first filters names
+/// from [`zip_list_entries`], then extracts only matching entries.
+pub fn zip_extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
+    let mut zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
+    let entry = zip.entry_by_name(name).ok_or_else(|| ExtractError::OperationFailed {
+        reason: format!("entry not found in zip: {name}"),
+    })?;
+    let cloned = entry.clone();
+    let content = zip.extract(&cloned).map_err(map_err)?;
+    Ok(content)
+}
+
+// ---------------------------------------------------------------------------
+// Generic lazy-list + extract API (all archive formats)
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Debug)]
+pub struct EntryInfo {
+    pub name: String,
+    pub size: u64,
+}
+
+/// List entry names without extracting their content.
+pub fn list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
+    if is_rar(data) {
+        return rar::list_entries(data);
+    }
+    let fmt = ArchiveFormat::from_magic(data);
+    match fmt {
+        ArchiveFormat::Zip => {
+            zip_list_entries(data).map(|v| {
+                v.into_iter()
+                    .map(|e| EntryInfo { name: e.name, size: e.size })
+                    .collect()
+            })
+        }
+        ArchiveFormat::Tar => tar_list_entries(data),
+        ArchiveFormat::SevenZip => sz_list_entries(data),
+        ArchiveFormat::Gzip | ArchiveFormat::Xz | ArchiveFormat::Bzip2 | ArchiveFormat::Zstd
+        | ArchiveFormat::Lz4 | ArchiveFormat::Brotli | ArchiveFormat::Snappy => {
+            Ok(vec![EntryInfo {
+                name: "decompressed".to_string(),
+                size: 0,
+            }])
+        }
+        _ => {
+            if is_tar(data) {
+                tar_list_entries(data)
+            } else if is_lzma(data) {
+                Ok(vec![EntryInfo {
+                    name: "decompressed".to_string(),
+                    size: 0,
+                }])
+            } else {
+                Err(ExtractError::OperationFailed {
+                    reason: "listing not supported for this format".to_string(),
+                })
+            }
+        }
+    }
+}
+
+/// Extract a single entry by name from an archive.
+pub fn extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
+    if is_rar(data) {
+        return rar::extract_entry(data, name);
+    }
+    let fmt = ArchiveFormat::from_magic(data);
+    match fmt {
+        ArchiveFormat::Zip => zip_extract_entry(data, name),
+        ArchiveFormat::Tar => tar_extract_entry(data, name),
+        ArchiveFormat::SevenZip => sz_extract_entry(data, name),
+        ArchiveFormat::Gzip => decompress_gzip(data),
+        ArchiveFormat::Xz => decompress_xz(data),
+        ArchiveFormat::Bzip2 => decompress_bzip2(data),
+        ArchiveFormat::Zstd | ArchiveFormat::Lz4 | ArchiveFormat::Brotli | ArchiveFormat::Snappy => {
+            Err(ExtractError::OperationFailed {
+                reason: format!("single-entry extraction not implemented for {:?}", fmt),
+            })
+        }
+        _ => {
+            if is_tar(data) {
+                tar_extract_entry(data, name)
+            } else if is_lzma(data) {
+                decompress_xz(data)
+            } else {
+                Err(ExtractError::OperationFailed {
+                    reason: "extraction not supported for this format".to_string(),
+                })
+            }
+        }
+    }
+}
+
+fn tar_list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
+    let tar = TarReader::new(Cursor::new(data)).map_err(map_err)?;
+    Ok(tar
+        .entries()
+        .iter()
+        .filter(|e| !e.name.ends_with('/'))
+        .take(MAX_ARCHIVE_ENTRIES)
+        .map(|e| EntryInfo {
+            name: e.name.clone(),
+            size: e.size,
+        })
+        .collect())
+}
+
+fn tar_extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
+    let mut tar = TarReader::new(Cursor::new(data)).map_err(map_err)?;
+    tar.extract_by_name(name)
+        .map_err(map_err)?
+        .ok_or_else(|| ExtractError::OperationFailed {
+            reason: format!("entry not found in tar: {name}"),
+        })
+}
+
+fn sz_list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
+    let sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
+    Ok(sz
+        .entries()
+        .iter()
+        .filter(|e| !e.name.ends_with('/'))
+        .take(MAX_ARCHIVE_ENTRIES)
+        .map(|e| EntryInfo {
+            name: e.name.clone(),
+            size: e.size,
+        })
+        .collect())
+}
+
+fn sz_extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
+    let sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
+    let entries = sz.entries();
+    let idx = entries
+        .iter()
+        .position(|e| e.name == name)
+        .ok_or_else(|| ExtractError::OperationFailed {
+            reason: format!("entry not found in 7z: {name}"),
+        })?;
+    let mut sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
+    sz.extract(idx).map_err(map_err)
+}
+
 // ---------------------------------------------------------------------------
 // Internal: disk-based extraction
 // ---------------------------------------------------------------------------

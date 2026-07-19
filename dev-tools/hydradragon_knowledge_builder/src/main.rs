@@ -1,6 +1,7 @@
 use clap::Parser;
 use rusqlite::Connection;
 use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use zip::ZipArchive;
 
@@ -163,7 +164,7 @@ fn has_embedded_data(data: &[u8]) -> bool {
     printable > sample.len() / 4
 }
 
-fn process_apk(apk_path: &Path) -> Vec<(String, String, String)> {
+fn process_apk(apk_path: &Path, compute_tlsh: bool) -> Vec<(String, String, String)> {
     let file = match fs::read(apk_path) {
         Ok(b) => b,
         Err(e) => {
@@ -188,18 +189,46 @@ fn process_apk(apk_path: &Path) -> Vec<(String, String, String)> {
         if entry.is_dir() || name.starts_with("META-INF/") {
             continue;
         }
-        let mut data = Vec::with_capacity(entry.size() as usize);
-        if std::io::Read::read_to_end(&mut entry, &mut data).is_err() {
+        let entry_size = entry.size() as usize;
+        let header_size = 4096.min(entry_size);
+        let mut header = vec![0u8; header_size];
+        let mut pos = 0;
+        while pos < header_size {
+            match entry.read(&mut header[pos..]) {
+                Ok(0) => break,
+                Ok(n) => pos += n,
+                Err(_) => break,
+            }
+        }
+        header.truncate(pos);
+        if !is_relevant_entry(&name, &header) {
             continue;
         }
-        if !is_relevant_entry(&name, &data) {
-            continue;
+        let remaining = entry_size.saturating_sub(header.len());
+        let mut full_data = header;
+        if remaining > 0 {
+            full_data.reserve(remaining);
+            let mut tail = vec![0u8; remaining];
+            pos = 0;
+            while pos < remaining {
+                match entry.read(&mut tail[pos..]) {
+                    Ok(0) => break,
+                    Ok(n) => pos += n,
+                    Err(_) => break,
+                }
+            }
+            tail.truncate(pos);
+            full_data.extend_from_slice(&tail);
         }
-        let md5 = md5_hex(&data);
-        let tlsh = tlsh_rs::hash_bytes(&data)
-            .ok()
-            .map(|d| d.to_string())
-            .unwrap_or_default();
+        let md5 = md5_hex(&full_data);
+        let tlsh = if compute_tlsh {
+            tlsh_rs::hash_bytes(&full_data)
+                .ok()
+                .map(|d| d.to_string())
+                .unwrap_or_default()
+        } else {
+            String::new()
+        };
         entries.push((name, md5, tlsh));
     }
     entries
@@ -273,7 +302,7 @@ fn build_db(db_path: &Path, apk_dir: &Path, is_malicious: bool) {
         conn.execute_batch("BEGIN;").ok();
         for apk_path in &dir_entries {
             print!("  {} ... ", apk_path.display());
-            let entries = process_apk(apk_path);
+            let entries = process_apk(apk_path, true);
             if entries.is_empty() {
                 println!("0 entries");
                 continue;
@@ -300,7 +329,7 @@ fn build_db(db_path: &Path, apk_dir: &Path, is_malicious: bool) {
                 .unwrap_or_default()
                 .to_string_lossy()
                 .to_string();
-            let entries = process_apk(apk_path);
+            let entries = process_apk(apk_path, false);
             if entries.is_empty() {
                 println!("0 entries");
                 continue;
