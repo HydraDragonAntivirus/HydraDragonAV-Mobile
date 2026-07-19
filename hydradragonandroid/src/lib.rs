@@ -530,8 +530,9 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                     None => None,
                 };
                 let benign_ms = t_benign.elapsed().as_millis();
-                let count = benign_db.as_ref().map(|db| db.package_count()).unwrap_or(0);
-                (benign_db, format!(" benign_wl={benign_ms}ms({count})"))
+                let pkg_count = benign_db.as_ref().map(|db| db.package_count()).unwrap_or(0);
+                let sig_count = benign_db.as_ref().map(|db| db.signature_count()).unwrap_or(0);
+                (benign_db, format!(" benign_wl={benign_ms}ms(pkg={pkg_count} sig={sig_count})"))
             });
 
             (
