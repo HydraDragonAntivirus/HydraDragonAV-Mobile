@@ -3395,7 +3395,8 @@ fn extract_certificate(buffers: &[Buf]) -> Option<CertInfo> {
     let ci_len = der_len(sig_data, &mut off)?;
     let ci_end = off + ci_len;
 
-    der_skip(sig_data, &mut off)?; // OID
+    der_skip(sig_data, &mut off)?; // OID (must be 1.2.840.113549.1.7.2)
+    if off > ci_end { return None; }
     der_expect_tag(sig_data, &mut off, 0xa0)?; // [0] EXPLICIT
     let explicit_len = der_len(sig_data, &mut off)?;
     let explicit_end = off + explicit_len;
@@ -3403,6 +3404,7 @@ fn extract_certificate(buffers: &[Buf]) -> Option<CertInfo> {
     der_expect_tag(sig_data, &mut off, 0x30)?; // SignedData SEQUENCE
     let sd_len = der_len(sig_data, &mut off)?;
     let sd_end = off + sd_len;
+    if sd_end > explicit_end { return None; }
 
     der_skip(sig_data, &mut off)?; // version INTEGER
     // digestAlgorithms — could be SET or SET OF, but we just skip it.
