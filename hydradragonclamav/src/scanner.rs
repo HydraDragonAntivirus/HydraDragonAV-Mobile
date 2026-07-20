@@ -1033,6 +1033,14 @@ fn detect_builtin_target(ctx: &ScanContext<'_>) -> Option<u32> {
     {
         return Some(11); // CL_TYPE_SWF
     }
+    // Heuristic-based detection (no fixed magic) for format-agnostic types
+    // that ClamAV signatures legitimately target.  The same heuristics are
+    // also used in `target_matches` as a per-signature fallback — adding them
+    // here too ensures the pre‑gate type check identifies these files as
+    // supported so the engine actually runs on them.
+    if looks_like_html(d) {
+        return Some(3); // CL_TYPE_HTML
+    }
     if looks_like_ascii_text(d) {
         return Some(7); // CL_TYPE_ASCII_TEXT
     }
