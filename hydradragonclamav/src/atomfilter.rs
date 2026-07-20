@@ -114,6 +114,15 @@ pub struct AtomFilterDb {
     pub ext_slot: Vec<ExtSlot>,
     /// Indexed by logical signature index, then by subsignature index.
     pub log_subsig_slots: Vec<Box<[SubsigSlot]>>,
+    /// Logical signatures that must be visited on EVERY buffer because at
+    /// least one subsignature is `External` (Pcre/ByteCompare/Fuzzy) or
+    /// `AutoMatch` — those can't be gated by atom counts, so the scanner
+    /// cannot skip the signature even when no atom hit. Every other logical
+    /// signature is fully `Atom`-gated and is only visited when one of its
+    /// slots reached threshold (derived from `slots[].target` at scan time),
+    /// so the scan loop scales with the number of signatures that *might*
+    /// match rather than the total loaded.
+    pub log_always_scan: Vec<u32>,
 }
 
 impl AtomFilterDb {
@@ -124,6 +133,7 @@ impl AtomFilterDb {
             slots: Vec::new(),
             ext_slot: Vec::new(),
             log_subsig_slots: Vec::new(),
+            log_always_scan: Vec::new(),
         }
     }
 }

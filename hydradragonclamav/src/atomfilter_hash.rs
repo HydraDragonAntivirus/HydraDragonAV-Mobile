@@ -37,6 +37,29 @@ pub fn hash_window(data: &[u8]) -> u64 {
     h
 }
 
+/// Case-folded variant of [`hash_window`]: each byte is ASCII-lowercased before
+/// it enters the hash, so the result equals `hash_window` of a lowercased copy
+/// — but without allocating or writing that copy. Nocase bucket keys are built
+/// from lowercased atoms (`required_atom_nocase`), so probing the original
+/// buffer through this fold matches them exactly.
+pub fn hash_window_fold(data: &[u8]) -> u64 {
+    let mut h = 0u64;
+    for &b in data {
+        let f = b.to_ascii_lowercase() as u64;
+        h = h.wrapping_mul(ROLL_BASE).wrapping_add(f);
+    }
+    h
+}
+
+/// Read one scan byte, optionally case-folded. Centralising the fold keeps the
+/// rolling-hash math in `atomscan.rs` byte-exact between the exact and nocase
+/// sweeps (only the byte value differs, never the arithmetic).
+#[inline]
+pub fn read_byte(data: &[u8], at: usize, fold: bool) -> u64 {
+    let b = data[at];
+    (if fold { b.to_ascii_lowercase() } else { b }) as u64
+}
+
 /// `ROLL_BASE^(len - 1) mod 2^64` — the coefficient of the byte about to
 /// leave a length-`len` rolling window.
 pub(crate) fn leading_coeff(len: usize) -> u64 {
@@ -99,5 +122,25 @@ mod tests {
         assert_eq!(bucket_len(15), Some(12));
         assert_eq!(bucket_len(16), Some(16));
         assert_eq!(bucket_len(1000), Some(16));
+    }
+
+    #[test]
+    fn hash_window_fold_equals_hash_of_lowercased_copy() {
+        let cases: &[&[u8]] = &[
+            b"",
+            b"A",
+            b"AbC",
+            b"HydraDragon",
+            b"MixedCaseAtomWith1More",
+            &[0xff, 0x41, 0x5a, 0x60, 0x7b, 0xc0],
+        ];
+        for &data in cases {
+            let lowered: Vec<u8> = data.iter().map(|b| b.to_ascii_lowercase()).collect();
+            assert_eq!(
+                hash_window_fold(data),
+                hash_window(&lowered),
+                "data={data:?}",
+            );
+        }
     }
 }

@@ -173,6 +173,13 @@ struct LogicalScanBufs {
     /// refilled every call, only formatted into a log line when the caller
     /// decides the signature was slow enough to be worth the detail.
     detail: Vec<SubsigDetail>,
+    /// Reusable bitmap, one bit per logical signature, marking the signatures
+    /// whose atom slot(s) reached threshold this buffer (the hit-driven
+    /// candidates). `scan_logical` sets bits from threshold slots, then visits
+    /// the set bits plus `log_always_scan`; cleared (filled false) at the start
+    /// of each buffer. Resized once and reused across buffers, so no per-buffer
+    /// allocation.
+    candidate_set: Vec<bool>,
 }
 
 /// One phase-1 subsig's contribution to a slow logical-signature scan.
@@ -558,7 +565,7 @@ impl Engine {
         let t_ext = std::time::Instant::now();
         let mut count = 0usize;
         for pattern in &signature.patterns {
-            count += pattern.find_all(ctx.data, &ranges, usize::MAX).len();
+            count += pattern.count_all(ctx.data, &ranges, usize::MAX).0;
         }
         let ms = t_ext.elapsed().as_millis();
         if ms >= 20 {
@@ -591,32 +598,46 @@ impl Engine {
             last_offsets: Vec::new(),
             evaluated: Vec::new(),
             detail: Vec::new(),
+            candidate_set: Vec::new(),
         };
-        for si in 0..self.database.logical.len() {
-            // Fast pre-check: if every subsig atom slot is below threshold
-            // and there are no External (Pcre/ByteCompare/Fuzzy) or AutoMatch
-            // subsigs, this signature can't match — skip it entirely.
-            if si < self.atomfilter_db.log_subsig_slots.len() {
-                let sub_slots = &self.atomfilter_db.log_subsig_slots[si];
-                let mut any_hope = false;
-                for subsig in sub_slots.iter() {
-                    match subsig {
-                        crate::atomfilter::SubsigSlot::AutoMatch
-                        | crate::atomfilter::SubsigSlot::External => {
-                            any_hope = true;
-                            break;
-                        }
-                        crate::atomfilter::SubsigSlot::Atom(id) => {
-                            if slot_counts.get(*id) >= self.atomfilter_db.slots[*id as usize].threshold {
-                                any_hope = true;
-                                break;
-                            }
-                        }
-                    }
+        // Hit-driven candidate selection: instead of running the per-sig
+        // "is any subsig slot above threshold?" pre-check across every loaded
+        // logical signature on every buffer, derive the candidate set straight
+        // from the slots that actually reached threshold. A slot whose target
+        // is a logical subsig marks that signature as a candidate; extended-sig
+        // slots are skipped here (they belong to `scan_extended`). Signatures
+        // with an External/AutoMatch subsig (`log_always_scan`) can't be gated
+        // by atoms and are visited unconditionally. The union is then walked
+        // exactly once per candidate, so the loop scales with the number of
+        // signatures that might match rather than the total loaded.
+        let n_log = self.database.logical.len();
+        bufs.candidate_set.clear();
+        bufs.candidate_set.resize(n_log, false);
+        for (slot_id, slot) in self.atomfilter_db.slots.iter().enumerate() {
+            if slot_counts.get(slot_id as crate::atomfilter::SlotId) < slot.threshold {
+                continue;
+            }
+            if let crate::atomfilter::SlotTarget::LogicalSubsig { sig_index, .. } = slot.target {
+                let si = sig_index as usize;
+                if si < n_log {
+                    bufs.candidate_set[si] = true;
                 }
-                if !any_hope {
-                    continue;
-                }
+            }
+        }
+
+        // Visit the union of always-scan and hit-driven candidates without
+        // double-processing a signature that is in both: fold the always-scan
+        // list into the same bitmap, then walk the set bits in order.
+        for &si in &self.atomfilter_db.log_always_scan {
+            let si = si as usize;
+            if si < n_log {
+                bufs.candidate_set[si] = true;
+            }
+        }
+
+        for si in 0..n_log {
+            if !bufs.candidate_set[si] {
+                continue;
             }
             let t = std::time::Instant::now();
             self.scan_one_logical(si, slot_counts, ctx, matches, &mut bufs);
@@ -769,9 +790,10 @@ impl Engine {
             let mut hits = 0usize;
             let mut last = None;
             for pattern in patterns.iter() {
-                for m in pattern.find_all(ctx.data, &ranges, usize::MAX) {
-                    hits += 1;
-                    last = Some(m.start);
+                let (phits, plast) = pattern.count_all(ctx.data, &ranges, usize::MAX);
+                hits += phits;
+                if let Some(p) = plast {
+                    last = Some(p);
                 }
             }
             counts[i] = hits;

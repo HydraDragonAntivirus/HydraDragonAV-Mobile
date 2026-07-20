@@ -17,7 +17,7 @@
 //! subsigs are "present" for their triggers.
 
 use crate::atomfilter::{AtomBucket, AtomFilterDb, ExtSlot, SlotDef, SlotId, SubsigSlot};
-use crate::atomfilter_hash::{hash_window, leading_coeff, ATOM_LENGTHS};
+use crate::atomfilter_hash::{hash_window, hash_window_fold, leading_coeff, read_byte, ATOM_LENGTHS};
 
 /// Per-slot hit counts (and last-seen window offset) for one buffer, indexed
 /// by [`SlotId`]. The offset is captured incidentally while sweeping for
@@ -60,15 +60,16 @@ impl<'a> AtomFilterScanner<'a> {
             counts: vec![0u32; self.db.slots.len()],
             last_offset: vec![u32::MAX; self.db.slots.len()],
         };
-        sweep_buckets(&self.db.buckets, data, &mut counts);
+        sweep_buckets(&self.db.buckets, data, false, &mut counts);
 
-        // Mirrors `AtomPrefilter::candidates`'s nocase guard: nocase atoms
-        // were case-folded at build time, so they only ever match a
-        // lowercased copy of the buffer. Skip the O(n) allocation entirely
-        // when there are no nocase atoms to match against.
+        // Nocase atoms were case-folded at build time (lowercased keys), so
+        // they match a lowercased view of the buffer. Instead of allocating a
+        // full lowercased copy and re-sweeping it, sweep the original buffer
+        // with `fold = true` — the rolling hash lowercases each byte on the
+        // fly, producing the same hash the copied-buffer sweep would have.
+        // Skipped entirely when there are no nocase buckets.
         if self.db.buckets_nocase.iter().any(Option::is_some) {
-            let lowered: Vec<u8> = data.iter().map(|b| b.to_ascii_lowercase()).collect();
-            sweep_buckets(&self.db.buckets_nocase, &lowered, &mut counts);
+            sweep_buckets(&self.db.buckets_nocase, data, true, &mut counts);
         }
 
         counts
@@ -78,6 +79,7 @@ impl<'a> AtomFilterScanner<'a> {
 fn sweep_buckets(
     buckets: &[Option<AtomBucket>; ATOM_LENGTHS.len()],
     data: &[u8],
+    fold: bool,
     counts: &mut SlotCounts,
 ) {
     // Collect active (non-None) bucket indices — max 5, so a small fixed array.
@@ -100,7 +102,11 @@ fn sweep_buckets(
     for j in 0..n {
         let len = ATOM_LENGTHS[active[j]];
         if data.len() >= len {
-            h[j] = hash_window(&data[..len]);
+            h[j] = if fold {
+                hash_window_fold(&data[..len])
+            } else {
+                hash_window(&data[..len])
+            };
             coeff[j] = leading_coeff(len);
         }
     }
@@ -121,10 +127,10 @@ fn sweep_buckets(
     // check the corresponding bucket — but only for lengths whose current
     // window is still fully inside `data`. This reads `data[s]` once and
     // `data[s + len_j]` once per active length, instead of doing separate
-    // per-length sweeps.
+    // per-length sweeps. `fold` lowercases the read bytes for nocase buckets.
     let max_pos = data.len() - min_len;
     for s in 0..max_pos {
-        let leaving = data[s] as u64;
+        let leaving = read_byte(data, s, fold);
         for j in 0..n {
             let len = ATOM_LENGTHS[active[j]];
             let next_start = s + 1;
@@ -134,7 +140,7 @@ fn sweep_buckets(
             h[j] = h[j]
                 .wrapping_sub(leaving.wrapping_mul(coeff[j]))
                 .wrapping_mul(crate::atomfilter_hash::ROLL_BASE)
-                .wrapping_add(data[s + len] as u64);
+                .wrapping_add(read_byte(data, s + len, fold));
             if let Some(slots) = buckets[active[j]].as_ref().unwrap().resolve(h[j]) {
                 for &slot_id in slots {
                     let si = slot_id as usize;

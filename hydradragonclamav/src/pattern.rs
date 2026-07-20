@@ -676,6 +676,100 @@ impl Pattern {
         self.find_all_fallback_bruteforce(data, ranges, min_len, limit)
     }
 
+    /// Count matches in `data` within `ranges` without materialising the
+    /// `Vec<MatchRange>` that `find_all` would build. Returns `(count,
+    /// last_start)` — the count of distinct match start positions and the
+    /// highest-offset one's start (mirroring the `last` the callers derived
+    /// from `find_all(...).last()`). Identical match/dedup/limit semantics to
+    /// `find_all`; only the per-match storage differs (a counter + one slot
+    /// vs. a growing heap vector), so callers that only need the count avoid
+    /// the allocation + grow work on patterns that hit many times.
+    pub fn count_all(
+        &self,
+        data: &[u8],
+        ranges: &[(usize, usize)],
+        limit: usize,
+    ) -> (usize, Option<usize>) {
+        if limit == 0 || self.instructions.is_empty() {
+            return (0, None);
+        }
+        let min_len = self.min_match_len().max(1);
+
+        if let Some((prefix, needle)) = self.best_anchor() {
+            return self.count_all_anchored(data, ranges, min_len, limit, prefix, &needle);
+        }
+
+        let any_byte = self.find_any_fixed_byte();
+        if let Some((byte_off, byte_val, nocase)) = any_byte {
+            let (min_pre, max_pre) = match self.prefix_range_to(byte_off) {
+                Some(r) => r,
+                None => return (0, None),
+            };
+            if max_pre.saturating_sub(min_pre) > 4096 {
+                return self.count_all_fallback_bruteforce(data, ranges, min_len, limit);
+            }
+            let fuel = std::cell::Cell::new(SIG_FUEL_BUDGET);
+            let mut count = 0usize;
+            let mut last: Option<usize> = None;
+            let b_lo = byte_val.to_ascii_lowercase();
+            let b_up = byte_val.to_ascii_uppercase();
+            for &(start, end) in ranges {
+                let start = start.min(data.len());
+                let end = end.min(data.len());
+                if start > end {
+                    continue;
+                }
+                let max_pos = end.saturating_sub(min_len).max(start);
+                let lo = (start + min_pre).min(data.len());
+                let hi = (max_pos.saturating_add(max_pre).saturating_add(1)).min(data.len());
+                if lo >= hi {
+                    continue;
+                }
+                let mut search = lo;
+                while search < hi {
+                    if fuel.get() == 0 {
+                        return (count, last);
+                    }
+                    let rel = if nocase && b_lo != b_up {
+                        memchr::memchr2(b_lo, b_up, &data[search..hi])
+                    } else {
+                        memchr::memchr(byte_val, &data[search..hi])
+                    };
+                    let Some(rel) = rel else { break };
+                    let occ = search + rel;
+                    search = occ + 1;
+                    let cand_lo = occ.saturating_sub(max_pre);
+                    let cand_hi = occ.saturating_sub(min_pre);
+                    for pos in cand_lo..=cand_hi {
+                        if pos > max_pos {
+                            break;
+                        }
+                        if pos < start {
+                            continue;
+                        }
+                        if fuel.get() == 0 {
+                            return (count, last);
+                        }
+                        if let Some(match_end) = self.match_rec(data, pos, 0, 0, &fuel) {
+                            if self.fullword && !is_fullword(data, pos, match_end) {
+                                continue;
+                            }
+                            if last != Some(pos) {
+                                count += 1;
+                                last = Some(pos);
+                                if count >= limit {
+                                    return (count, last);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return (count, last);
+        }
+        self.count_all_fallback_bruteforce(data, ranges, min_len, limit)
+    }
+
     /// A required fixed needle and its constant byte distance from the pattern
     /// start, used to anchor a full scan (`find_all_anchored`): the scan searches
     /// for the needle and only verifies there. The needle is the **most selective**
@@ -903,6 +997,116 @@ impl Pattern {
         out
     }
 
+    /// Counting counterpart to [`find_all_anchored`]: same anchoring, dedup,
+    /// fuel and limit semantics, but returns `(count, last_start)` instead of a
+    /// `Vec<MatchRange>`. See [`Pattern::count_all`].
+    fn count_all_anchored(
+        &self,
+        data: &[u8],
+        ranges: &[(usize, usize)],
+        min_len: usize,
+        limit: usize,
+        byte_prefix: usize,
+        needle: &[(u8, bool)],
+    ) -> (usize, Option<usize>) {
+        if needle.is_empty() {
+            return (0, None);
+        }
+        let fuel = std::cell::Cell::new(SIG_FUEL_BUDGET);
+        let mut count = 0usize;
+        // `last_start` dedups candidate positions (mirrors `find_all_anchored`'s
+        // same-named local); `last_match` is the highest-offset *verified* match
+        // start returned to the caller (mirrors `out.last().start`).
+        let mut last_start: Option<usize> = None;
+        let mut last_match: Option<usize> = None;
+        let all_exact = needle.iter().all(|&(_, nc)| !nc);
+        let exact: Vec<u8> = needle.iter().map(|&(b, _)| b).collect();
+        let (anc_idx, anc_byte, anc_nocase) = needle
+            .iter()
+            .enumerate()
+            .max_by_key(|&(_, &(b, nc))| byte_weight(b, nc))
+            .map(|(i, &(b, nc))| (i, b, nc))
+            .expect("needle non-empty");
+        let anc_lo = anc_byte.to_ascii_lowercase();
+        let anc_up = anc_byte.to_ascii_uppercase();
+
+        for &(start, end) in ranges {
+            let start = start.min(data.len());
+            let end = end.min(data.len());
+            if start > end {
+                continue;
+            }
+            let max_pos = end.saturating_sub(min_len).max(start);
+            let (search_off, search_len) = if all_exact {
+                (byte_prefix, exact.len())
+            } else {
+                (byte_prefix + anc_idx, 1)
+            };
+            let lo = (start + search_off).min(data.len());
+            let hi = max_pos
+                .saturating_add(search_off)
+                .saturating_add(search_len)
+                .min(data.len());
+            if lo >= hi {
+                continue;
+            }
+            let window = &data[lo..hi];
+            let mut from = 0usize;
+            while from < window.len() {
+                let rel = if all_exact {
+                    memchr::memmem::find(&window[from..], &exact)
+                } else if anc_nocase && anc_lo != anc_up {
+                    memchr::memchr2(anc_lo, anc_up, &window[from..])
+                } else {
+                    memchr::memchr(anc_byte, &window[from..])
+                };
+                let Some(rel) = rel else {
+                    break;
+                };
+                let occ = lo + from + rel;
+                from += rel + 1;
+                let Some(pos) = occ.checked_sub(search_off) else {
+                    continue;
+                };
+                if pos < start || pos > max_pos || last_start == Some(pos) {
+                    continue;
+                }
+                last_start = Some(pos);
+                if !all_exact {
+                    let ns = pos + byte_prefix;
+                    if ns + needle.len() > data.len() {
+                        continue;
+                    }
+                    let ok = needle.iter().enumerate().all(|(k, &(b, nc))| {
+                        let d = data[ns + k];
+                        if nc {
+                            d.to_ascii_lowercase() == b
+                        } else {
+                            d == b
+                        }
+                    });
+                    if !ok {
+                        continue;
+                    }
+                }
+                if fuel.get() == 0 {
+                    return (count, last_match);
+                }
+                if let Some(match_end) = self.match_rec(data, pos, 0, 0, &fuel) {
+                    if self.fullword && !is_fullword(data, pos, match_end) {
+                        continue;
+                    }
+                    last_match = Some(pos);
+                    count += 1;
+                    if count >= limit {
+                        return (count, last_match);
+                    }
+                }
+            }
+        }
+        (count, last_match)
+    }
+
     /// Find all matches using prefilter hints (positions of a required literal).
     /// Respects `ranges` to enforce offset spec restrictions.
     pub fn find_all_at(
@@ -1028,6 +1232,48 @@ impl Pattern {
             }
         }
         out
+    }
+
+    /// Counting counterpart to [`find_all_fallback_bruteforce`]: same
+    /// every-position verification, fuel, dedup and limit, returning
+    /// `(count, last_start)` instead of a `Vec<MatchRange>`. See
+    /// [`Pattern::count_all`].
+    fn count_all_fallback_bruteforce(
+        &self,
+        data: &[u8],
+        ranges: &[(usize, usize)],
+        min_len: usize,
+        limit: usize,
+    ) -> (usize, Option<usize>) {
+        let fuel = std::cell::Cell::new(SIG_FUEL_BUDGET);
+        let mut count = 0usize;
+        let mut last: Option<usize> = None;
+        for &(start, end) in ranges {
+            let start = start.min(data.len());
+            let end = end.min(data.len());
+            if start > end {
+                continue;
+            }
+            let max_pos = end.saturating_sub(min_len).max(start);
+            for pos in start..=max_pos {
+                if fuel.get() == 0 {
+                    return (count, last);
+                }
+                if let Some(match_end) = self.match_rec(data, pos, 0, 0, &fuel) {
+                    if self.fullword && !is_fullword(data, pos, match_end) {
+                        continue;
+                    }
+                    if last != Some(pos) {
+                        count += 1;
+                        last = Some(pos);
+                        if count >= limit {
+                            return (count, last);
+                        }
+                    }
+                }
+            }
+        }
+        (count, last)
     }
 
     /// Try to match the pattern at a specific position in data.
@@ -1810,6 +2056,47 @@ mod tests {
         ).unwrap().remove(0);
         assert!(fullword.is_match(b" hi "));
         assert!(!fullword.is_match(b"this"));
+    }
+
+    /// `count_all` must return exactly the count `find_all` materialises and
+    /// the same highest-offset start, across all three internal paths
+    /// (SIMD-anchored exact run, memchr-anchored nocase/fixed byte, and the
+    /// brute-force fallback). Covers multi-hit buffers so the dedup and limit
+    /// branches are exercised too.
+    #[test]
+    fn count_all_matches_find_all_across_paths() {
+        let full = vec![(0usize, usize::MAX)];
+        let cases: &[(&str, &[u8], Modifiers)] = &[
+            // Exact anchored run, several occurrences.
+            ("4142", b"zzABABABzz", Modifiers::default()),
+            // Nocase literal — memchr2 anchoring path.
+            ("68656c6c6f", b"Hello HELLO hello xyz hello", Modifiers {
+                nocase: true,
+                ..Modifiers::default()
+            }),
+            // Fixed byte behind a bounded gap — memchr-anchored, prefix range.
+            ("41{2-5}42", b"A--BA---BA----BAxx", Modifiers::default()),
+            // Open gap before the literal — prefix range too wide → brute force.
+            ("{*10}4142", b"0000000000AB9999", Modifiers::default()),
+            // Fullword — exercises the fullword reject branch.
+            ("6869", b"hi this chi hi hide", Modifiers {
+                fullword: true,
+                ..Modifiers::default()
+            }),
+            // No occurrence at all.
+            ("deadbeef", b"nothing here at all", Modifiers::default()),
+        ];
+        for &(raw, data, mods) in cases {
+            let pat = compile_pattern_variants(raw, mods).unwrap().remove(0);
+            let found = pat.find_all(data, &full, usize::MAX);
+            let (count, last) = pat.count_all(data, &full, usize::MAX);
+            assert_eq!(count, found.len(), "raw={raw} data={data:?}");
+            assert_eq!(
+                last,
+                found.last().map(|m| m.start),
+                "raw={raw} data={data:?}",
+            );
+        }
     }
 
     #[test]
