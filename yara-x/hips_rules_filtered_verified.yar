@@ -287,17 +287,6 @@ rule HIPS_URL_And_Flags
 
 // -- DEX Static Analysis ------------------------------------------------------
 
-rule HIPS_DEX_Severe_Finding
-{
-  meta:
-    description = "Detects severe static DEX analysis findings (High/Critical)"
-    severity = "high"
-    category = "DEX"
-    suggestion = "warn"
-  condition:
-    hydradragon.dex_severe_finding_count() >= 1
-}
-
 rule HIPS_DEX_Multiple_Severe_Findings
 {
   meta:
