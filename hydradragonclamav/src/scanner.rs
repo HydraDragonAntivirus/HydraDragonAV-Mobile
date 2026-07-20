@@ -402,7 +402,7 @@ impl Engine {
         // Java, …) are skipped outright — this avoids paying for the whole-buffer
         // atom prefilter only to have `target_matches` reject every candidate.
         let confident_target = detected_target.or_else(|| detect_builtin_target(&ctx));
-        if confident_target.is_some() && clamav_target_allowed(confident_target) {
+        if confident_target.is_none() || clamav_target_allowed(confident_target) {
             // Time ClamAV scan_context
             let t_clamav = timing.as_ref().map(|_| Instant::now());
             self.scan_context(&ctx, &mut state.matches);
