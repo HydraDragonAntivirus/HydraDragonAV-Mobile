@@ -904,6 +904,32 @@ public class ScanFragment extends Fragment {
     private File uriTreeToFile(Uri treeUri) {
         try {
             String docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
+            return resolveDocumentId(docId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Resolves a single-document content URI (e.g. from GetContent) to a real
+     *  filesystem File. Works for local storage volumes (primary + SD card)
+     *  and file:// URIs. Returns null for cloud providers or unresolvable URIs. */
+    private File uriToRealFile(Uri uri) {
+        if ("file".equals(uri.getScheme())) {
+            return new File(uri.getPath());
+        }
+        if (!"content".equals(uri.getScheme())) return null;
+        try {
+            String docId = android.provider.DocumentsContract.getDocumentId(uri);
+            return resolveDocumentId(docId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Shared resolver: given a document ID like "primary:Download/file.apk"
+     *  or "XXXX-XXXX:some/path", return the real File or null. */
+    private File resolveDocumentId(String docId) {
+        try {
             String[] split = docId.split(":", 2);
             String volume = split[0];
             String relative = split.length > 1 ? split[1] : "";
@@ -973,62 +999,49 @@ private void scanCustomFile(android.net.Uri uri) {
         // same way scanAllApps/scanCustomFolder do).
 
         new Thread(() -> {
-            // Two separate try blocks so the status text can tell apart a
-            // failure copying the picked URI's bytes (real "file read error")
-            // from a failure inside ScanEngine.scanSingleFile/the native+JNI
-            // path — previously both fell into one catch and both showed
-            // "error_reading_file", hiding which side actually broke.
-            java.io.File tempFile;
-            try {
-                // Copy the picked file to a temp file preserving its original name
-                // so ScanEngine.scanSingleFile can route it correctly (APK → analyzeApp,
-                // other → native engine).
+            // Try to resolve the URI to a real filesystem path so the scan
+            // result shows the original file location instead of a cache copy.
+            java.io.File realFile = uriToRealFile(uri);
+            java.io.File scanFile;
+            if (realFile != null && realFile.isFile() && realFile.canRead()) {
+                scanFile = realFile;
+                Log.d(TAG, "scanCustomFile: using real path " + scanFile.getAbsolutePath()
+                    + " (" + scanFile.length() + " bytes)");
+            } else {
+                // Fall back to copying to cache (cloud provider, etc.)
                 String originalName = uri.getLastPathSegment();
                 if (originalName == null || originalName.isEmpty()) originalName = "custom_scan_file";
-                // DocumentsProvider URIs (e.g. primary:Download/file.apk) may
-                // contain colons, slashes, or percent-encoded chars that are
-                // invalid in cache-dir file names — strip down to bare name.
                 int slash = originalName.lastIndexOf('/');
                 if (slash >= 0) originalName = originalName.substring(slash + 1);
                 originalName = originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
-                tempFile = new java.io.File(getContext().getCacheDir(), originalName);
-                java.io.InputStream is = getContext().getContentResolver().openInputStream(uri);
-                if (is == null) {
-                    // openInputStream() legitimately CAN return null (revoked URI
-                    // permission, provider gone, etc.) — without this check the
-                    // very next line throws a bare NullPointerException that got
-                    // swallowed by the catch below with no indication this was
-                    // the actual cause.
-                    throw new java.io.IOException("openInputStream returned null for " + uri);
+                try {
+                    java.io.File tempFile = new java.io.File(getContext().getCacheDir(), originalName);
+                    java.io.InputStream is = getContext().getContentResolver().openInputStream(uri);
+                    if (is == null) throw new java.io.IOException("openInputStream returned null for " + uri);
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    while ((read = is.read(buffer)) != -1) fos.write(buffer, 0, read);
+                    fos.flush(); fos.close(); is.close();
+                    scanFile = tempFile;
+                    Log.d(TAG, "scanCustomFile: using cache copy " + scanFile.getAbsolutePath()
+                        + " (" + scanFile.length() + " bytes)");
+                } catch (Exception e) {
+                    Log.e("ScanFragment", "scanCustomFile: failed copying uri=" + uri, e);
+                    isScanning = false;
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            stopScannerAnimation();
+                            btnScan.setText(getString(R.string.rescan));
+                            btnScan.setEnabled(true);
+                            tvScanStatus.setText(getString(R.string.error_reading_file));
+                        });
+                    }
+                    return;
                 }
-                java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = is.read(buffer)) != -1) fos.write(buffer, 0, read);
-                fos.flush(); fos.close(); is.close();
-            } catch (Exception e) {
-                Log.e("ScanFragment", "scanCustomFile: failed copying uri=" + uri, e);
-                // isScanning is a static flag shared across fragment instances —
-                // it MUST clear regardless of whether this Fragment is still
-                // attached, or every future scan attempt silently refuses to
-                // start (looks like the scan feature is permanently "stuck").
-                // Previously this lived inside the getActivity()-guarded block
-                // below, so a detach at exactly this moment (rotation, backing
-                // out, switching tabs) left it true forever.
-                isScanning = false;
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        stopScannerAnimation();
-                        btnScan.setText(getString(R.string.rescan));
-                        btnScan.setEnabled(true);
-                        tvScanStatus.setText(getString(R.string.error_reading_file));
-                    });
-                }
-                return;
             }
 
             try {
-                final java.io.File scanFile = tempFile;
                 Log.d(TAG, "scanCustomFile: running scanSingleFile on " + scanFile.getAbsolutePath()
                     + " (" + scanFile.length() + " bytes)");
                 final com.hydradragon.antivirus.model.ThreatResult result;
