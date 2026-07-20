@@ -126,7 +126,6 @@
 🔍 ПОЛНОЕ СКАНИРОВАНИЕ: Тщательно проверяет всё хранилище, включая SD-карту (может занять много времени).</string>
     <string name="btn_full_scan">🔍 ПОЛНОЕ СКАНИРОВАНИЕ</string>
     <string name="btn_quick_scan">🚀 БЫСТРОЕ СКАНИРОВАНИЕ</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Отмена</string>
     <string name="system_clean">Система чиста по данным последнего сканирования</string>
     <string name="risk_critical">КРИТИЧЕСКИЙ</string>
@@ -366,18 +365,13 @@
     <string name="uninstall_warning_toggle">Предлагать безопасный режим при сбое удаления</string>
     <string name="unicorn_unsupported">Эмуляция (Unicorn) недоступна на этом устройстве из-за известной ошибки в ARM64 JIT бэкенде. Сканирование продолжается нормально без этого прохода.</string>
     <string name="disable_secure_flag_toggle">Разрешить запись экрана</string>
-    <string name="anti_fp_skip_toggle">Anti-FP Skip — кешировать хеши (MD5 + TLSH) записей ZIP APK из белого списка, чтобы избежать ложных срабатываний</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip ВКЛ. — записи из приложений белого списка кешируются</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip ВЫКЛ. — кеш очищен</string>
-    <string name="anti_fp_tlsh_threshold_btn">Порог схожести TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">Порог расстояния TLSH (1-200). Ниже = строже, выше = более агрессивное подавление FP. По умолчанию: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">Порог TLSH установлен на %1$d</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — запоминать подтверждённые вредоносные записи (MD5 + TLSH) для обнаружения переименованных/перепакованных вариантов</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — запоминать подтверждённые вредоносные отпечатки TLSH для обнаружения переименованных/перепакованных вариантов</string>
     <string name="anti_fn_on_toast">Anti-FN ВКЛ. — подтверждённые обнаружения кешируются</string>
     <string name="anti_fn_off_toast">Anti-FN ВЫКЛ. — кеш очищен</string>
-    <string name="anti_fn_tlsh_threshold_btn">Порог схожести TLSH Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">Порог схожести TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">Порог расстояния TLSH (1-200). Ниже = строже, выше = более агрессивное повышение обнаружения. По умолчанию: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Порог TLSH Anti-FN установлен на %1$d</string>
+    <string name="anti_fn_tlsh_threshold_saved">Порог TLSH установлен на %1$d</string>
     <string name="save_auto_rules_toggle">Сохранять автосгенерированные правила</string>
     <string name="save_auto_rules_on_toast">Сохранение автоправил ВКЛЮЧЕНО: автоматически изученные правила YARA будут записаны на диск и перезагружены при следующем запуске</string>
     <string name="save_auto_rules_off_toast">Сохранение автоправил ВЫКЛЮЧЕНО: правила по-прежнему используются в текущей сессии, но после перезапуска сохранены НЕ будут</string>
@@ -415,7 +409,6 @@
     <string name="scan_system_off_toast">Сканирование системных файлов отключено — системные приложения будут пропущены</string>
     <string name="clear_scan_cache_btn">Очистить кэш сканирования</string>
     <string name="cache_session">Кэш сеанса (временный)</string>
-    <string name="cache_anti_fp">Кэш Anti-FP (ложные срабатывания)</string>
     <string name="cache_anti_fn">Кэш Anti-FN (ложные отрицания)</string>
     <string name="cache_cleared">Выбранные кэши очищены</string>
     <string name="scan_cancelled">Сканирование отменено</string>

@@ -126,7 +126,6 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
 🔍 SCANSIONE COMPLETA: Analizza a fondo l\'intera memoria, inclusa la scheda SD (potrebbe richiedere molto tempo).</string>
     <string name="btn_full_scan">🔍 SCANSIONE COMPLETA</string>
     <string name="btn_quick_scan">🚀 SCANSIONE RAPIDA</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Annulla</string>
     <string name="system_clean">Sistema pulito secondo l\'ultima scansione</string>
     <string name="risk_critical">CRITICO</string>
@@ -366,18 +365,13 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="uninstall_warning_toggle">Suggerisci la modalità provvisoria quando la disinstallazione fallisce</string>
     <string name="unicorn_unsupported">L\'emulazione (Unicorn) non è disponibile su questo dispositivo a causa di un bug noto del backend ARM64 JIT. La scansione continua normalmente senza questo passaggio.</string>
     <string name="disable_secure_flag_toggle">Consenti registrazione schermo</string>
-    <string name="anti_fp_skip_toggle">Anti-FP Skip — memorizza nella cache gli hash (MD5 + TLSH) delle voci ZIP di APK nella whitelist per evitare falsi positivi</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip ON — le voci delle app nella whitelist vengono memorizzate nella cache</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip OFF — cache cancellata</string>
-    <string name="anti_fp_tlsh_threshold_btn">Soglia di Similarità TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">Soglia di distanza TLSH (1-200). Più basso = più severo, più alto = soppressione FP più aggressiva. Predefinito: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">Soglia TLSH impostata a %1$d</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — ricorda le voci confermate come dannose (MD5 + TLSH) per individuare varianti rinominate/ripacchettizzate</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — ricorda le impronte TLSH confermate come dannose per individuare varianti rinominate/ripacchettizzate</string>
     <string name="anti_fn_on_toast">Anti-FN ATTIVO — le rilevazioni confermate vengono memorizzate nella cache</string>
     <string name="anti_fn_off_toast">Anti-FN DISATTIVO — cache svuotata</string>
-    <string name="anti_fn_tlsh_threshold_btn">Soglia di similarità TLSH Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">Soglia di similarità TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">Soglia di distanza TLSH (1-200). Più basso = più severo, più alto = aggiornamento di rilevazione più aggressivo. Predefinito: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Soglia TLSH Anti-FN impostata a %1$d</string>
+    <string name="anti_fn_tlsh_threshold_saved">Soglia TLSH impostata a %1$d</string>
     <string name="save_auto_rules_toggle">Salva regole autogenerate</string>
     <string name="save_auto_rules_on_toast">Salva regole autogenerate ATTIVATO: le regole YARA apprese automaticamente verranno scritte su disco e ricaricate al prossimo avvio</string>
     <string name="save_auto_rules_off_toast">Salva regole autogenerate DISATTIVATO: le regole sono ancora usate in questa sessione ma NON verranno mantenute dopo il riavvio</string>
@@ -415,7 +409,6 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="scan_system_off_toast">Scansione file di sistema disattivata — le app di sistema verranno saltate</string>
     <string name="clear_scan_cache_btn">Pulisci Cache di Scansione</string>
     <string name="cache_session">Cache di Sessione (temporanea)</string>
-    <string name="cache_anti_fp">Cache Anti-FP (falsi positivi)</string>
     <string name="cache_anti_fn">Cache Anti-FN (falsi negativi)</string>
     <string name="cache_cleared">Cache selezionate pulite</string>
     <string name="scan_cancelled">Scansione annullata</string>

@@ -95,7 +95,6 @@ public class ScanEngine {
     private final Context context;
     private final AIEngine aiEngine;
     private final CodeAnalyzer codeAnalyzer;
-    private final AntiFpCache antiFpCache;
     private final AntiFnCache antiFnCache;
     // Process-wide, bounded below the device's core count. GuardService and
     // InstallReceiver each hold their own ScanEngine instance (InstallReceiver
@@ -167,15 +166,12 @@ public class ScanEngine {
 
     /**
      * Clear all transient caches (photonCache, fileScanCache) and also drop/clear
-     * the persistent SQLite caches (antiFpCache, antiFnCache) if context is provided.
+     * the persistent SQLite caches (antiFnCache) if context is provided.
      */
     public static void clearCache(Context context) {
         photonCache.clear();
         fileScanCache.clear();
         if (context != null) {
-            try {
-                new AntiFpCache(context).clear();
-            } catch (Exception ignore) {}
             try {
                 new AntiFnCache(context).clear();
             } catch (Exception ignore) {}
@@ -233,9 +229,7 @@ public class ScanEngine {
     /** When set, anti-FP cache is populated and checked during scans.
      *  Only enabled for the dedicated Anti-FP scan option; quick and full
      *  scans never touch the anti-FP cache. */
-    private volatile boolean antiFpMode = false;
 
-    public void setAntiFpMode(boolean mode) { this.antiFpMode = mode; }
 
     private volatile boolean isBackgroundScan = false;
 
@@ -247,7 +241,6 @@ public class ScanEngine {
     static final int SCAN_TYPE_NONE = 0;
     static final int SCAN_TYPE_QUICK = 1;
     static final int SCAN_TYPE_FULL = 2;
-    static final int SCAN_TYPE_ANTI_FP = 3;
     private volatile int runningScanType = SCAN_TYPE_NONE;
     volatile int pendingScanType = SCAN_TYPE_NONE;
 
@@ -399,7 +392,6 @@ public class ScanEngine {
         this.context = context;
         this.aiEngine = aiEngine;
         this.codeAnalyzer = new CodeAnalyzer(context);
-        this.antiFpCache = new AntiFpCache(context);
         this.antiFnCache = new AntiFnCache(context);
         loadPackageWhitelist();
         // Load YARA-X rulesets + ML model into the native engine (non-fatal).
@@ -632,61 +624,16 @@ public class ScanEngine {
         } catch (Exception e) { /* best effort — never block the scan on this */ }
     }
 
-    /** Detections that survive per-lineage whitelist suppression AND anti-FP
-     *  cache filtering. Anti-FP cache matching defaults to TLSH similarity;
-     *  MD5 exact match is used instead only if the user picked MD5 mode in
-     *  Settings ({@code anti_fp_match_mode}). For each detection, the entry
-     *  name (the part after {@code !} in {@code objectPath}) is looked up in
-     *  the verdict's {@code entryMd5s}/{@code entryTlshs} maps, and if that
-     *  hash is in the anti-FP cache (from a whitelisted APK's zip entries),
-     *  the detection is suppressed. */
     private List<NativeScanner.Verdict.Detection> survivingDetections(NativeScanner.Verdict v) {
         List<NativeScanner.Verdict.Detection> out = new ArrayList<>();
-        int tlshThreshold = AntiFpCache.getTlshThreshold(context);
         for (NativeScanner.Verdict.Detection d : v.detections) {
             if (isDetectionWhitelisted(d)) continue;
-            // Anti-FP cache: extract entry name from objectPath (after '!')
-            // and look up its hash in the verdict's per-entry maps.
-            // Checked for ALL scan types — suppression uses whatever the
-            // cache already has; only the dedicated Anti-FP scan populates it.
-            if (antiFpCache.isEnabled() && d.objectPath != null) {
-                int bang = d.objectPath.indexOf('!');
-                if (bang >= 0 && bang + 1 < d.objectPath.length()) {
-                    String entryName = d.objectPath.substring(bang + 1);
-                    
-                    // 1. Check exact MD5 match first (same file check)
-                    String entryMd5 = v.entryMd5s.get(entryName);
-                    if (entryMd5 != null && !entryMd5.isEmpty()
-                            && antiFpCache.isKnownMd5(entryMd5)) {
-                        Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP MD5] "
-                            + d.name + " entry=" + entryName);
-                        continue;
-                    }
-                    
-                    // 2. Fall back to TLSH similarity matching
-                    String entryTlsh = v.entryTlshs.get(entryName);
-                    if (entryTlsh != null && !entryTlsh.isEmpty()
-                            && tlshThreshold > 0
-                            && antiFpCache.hasSimilarTlsh(entryTlsh, tlshThreshold)) {
-                        Log.d(TAG, "DETECTION-SUPPRESSED[anti-FP TLSH] "
-                            + d.name + " entry=" + entryName + " dist<=" + tlshThreshold);
-                        continue;
-                    }
-                }
-            }
             out.add(d);
         }
         upsellAntiFnDetections(v, out);
         return out;
     }
 
-    /** Anti-FN upsell: for every nested entry (and the top-level file itself)
-     *  NOT already covered by a surviving detection, check it against the
-     *  Anti-FN cache of previously-confirmed-malicious entries. Combined logic:
-     *  exact MD5 match is checked first, falling back to TLSH similarity matching.
-     *  A hit synthesizes a Detection and appends it to {@code out} in place —
-     *  this is what upgrades an otherwise-clean scan to malicious when the
-     *  static signature alone misses a renamed/repacked variant. */
     private void upsellAntiFnDetections(NativeScanner.Verdict v, List<NativeScanner.Verdict.Detection> out) {
         if (!antiFnCache.isEnabled()) return;
         java.util.Set<String> covered = new java.util.HashSet<>();
@@ -704,16 +651,7 @@ public class ScanEngine {
         for (java.util.Map.Entry<String, String> e : v.entryTlshs.entrySet()) {
             String entryName = e.getKey();
             if (covered.contains(entryName)) continue;
-            
-            // 1. Check exact MD5 match first
-            String entryMd5 = v.entryMd5s.get(entryName);
-            String matched = matchAntiFnMd5(entryMd5);
-            
-            // 2. Fall back to TLSH similarity match
-            if (matched == null) {
-                matched = antiFnCache.findSimilarTlsh(e.getValue(), tlshThreshold);
-            }
-            
+            String matched = antiFnCache.findSimilarTlsh(e.getValue(), tlshThreshold);
             if (matched != null) {
                 Log.d(TAG, "DETECTION-UPSELLED[anti-FN] entry=" + entryName + " matched=" + matched);
                 out.add(new NativeScanner.Verdict.Detection(
@@ -721,14 +659,7 @@ public class ScanEngine {
             }
         }
         if (!topLevelCovered) {
-            // 1. Check exact MD5 match first
-            String matched = matchAntiFnMd5(v.md5);
-            
-            // 2. Fall back to TLSH similarity match
-            if (matched == null) {
-                matched = antiFnCache.findSimilarTlsh(v.fileTlsh, tlshThreshold);
-            }
-            
+            String matched = antiFnCache.findSimilarTlsh(v.fileTlsh, tlshThreshold);
             if (matched != null) {
                 Log.d(TAG, "DETECTION-UPSELLED[anti-FN] top-level matched=" + matched);
                 out.add(new NativeScanner.Verdict.Detection(
@@ -737,19 +668,10 @@ public class ScanEngine {
         }
     }
 
-    private String matchAntiFnMd5(String md5) {
-        return (md5 != null && !md5.isEmpty() && antiFnCache.isKnownMd5(md5)) ? "known sample" : null;
-    }
-
-    /** Populate the Anti-FN cache from a scan's confirmed-surviving detections
-     *  (called right after {@code survivingDetections} whenever it's non-empty
-     *  — the "confirmed detection" moment). Reuses the per-entry MD5/TLSH maps
-     *  already computed for this scan; no extra hashing pass. */
     private void updateAntiFnCache(NativeScanner.Verdict v, List<NativeScanner.Verdict.Detection> live) {
         if (!antiFnCache.isEnabled() || live.isEmpty()) return;
         for (NativeScanner.Verdict.Detection d : live) {
             String entryName = "";
-            String md5;
             String tlsh;
             if (d.objectPath != null) {
                 int bang = d.objectPath.indexOf('!');
@@ -758,14 +680,12 @@ public class ScanEngine {
                 }
             }
             if (!entryName.isEmpty()) {
-                md5 = v.entryMd5s.get(entryName);
                 tlsh = v.entryTlshs.get(entryName);
             } else {
-                md5 = v.md5;
                 tlsh = v.fileTlsh;
             }
-            if (md5 != null && !md5.isEmpty()) {
-                antiFnCache.addEntry(md5, tlsh, entryName, d.name);
+            if (tlsh != null && !tlsh.isEmpty()) {
+                antiFnCache.addEntry(tlsh, d.name);
             }
         }
     }
@@ -938,7 +858,6 @@ public class ScanEngine {
             if (!isBackgroundScan && callback != null)
                 callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, scannedFiles, elapsedMs));
           } finally {
-              antiFpMode = false;
               isBackgroundScan = false;
               runningScanType = SCAN_TYPE_NONE;
               isBatchMode = false;
@@ -949,26 +868,7 @@ public class ScanEngine {
         return true;
     }
 
-    /**
-     * Anti-FP scan: runs a full scan of all installed apps WITH anti-FP cache
-     * population and detection suppression enabled. System apps and
-     * store+NSRL-whitelisted apps populate the cache; detected entries whose
-     * hash matches the cache are suppressed as false positives.
-     * Quick and full scans never touch the anti-FP cache — this is the only
-     * scan type that does.
-     * @return true if this call actually started the scan, false if one was
-     *  already running (same race-free contract as scanAllApps).
-     */
-    public boolean scanAllAppsAntiFp() {
-        pendingScanType = SCAN_TYPE_ANTI_FP;
-        antiFpMode = true;
-        boolean started = scanAllApps(true);
-        if (!started) {
-            antiFpMode = false;
-            pendingScanType = SCAN_TYPE_NONE;
-        }
-        return started;
-    }
+
 
     /** User-picked custom folder scan (see ScanFragment's folder-picker option
      *  in the Custom Scan dialog). Walks every file under {@code dir} — APKs
@@ -1749,13 +1649,7 @@ public class ScanEngine {
             || app.sourceDir.startsWith("/oem/") || app.sourceDir.startsWith("/odm/")
             || app.sourceDir.startsWith("/apex/"))) isSystem = true;
         if (isSystem) {
-            // Still populate the Anti-FP cache regardless of the setting so
-            // normal-scan can benefit from known-clean entries.
             if (app.packageName != null) whitelistedDuringScan.add(app.packageName);
-            if (antiFpMode && antiFpCache.isEnabled() && app.sourceDir != null) {
-                String json = NativeScanner.computeZipEntryHashes(app.sourceDir);
-                antiFpCache.addEntries(json, app.packageName);
-            }
             // Skip system apps unless the user explicitly enabled system file
             // scanning (not recommended unless rooted — see Settings toggle).
             if (!context.getSharedPreferences("hydra_prefs", 0)
@@ -1797,12 +1691,6 @@ public class ScanEngine {
         if (isFromStore && isPackageWhitelisted(app.packageName)) {
             Log.d(TAG, "CLEAR-EXIT[store+NSRL-whitelisted] " + app.packageName);
             whitelistedDuringScan.add(app.packageName);
-            // Populate Anti-FP cache with this whitelisted APK's zip entry
-            // hashes so identical entries found in other apps are never flagged.
-            if (antiFpMode && antiFpCache.isEnabled() && app.sourceDir != null) {
-                String json = NativeScanner.computeZipEntryHashes(app.sourceDir);
-                antiFpCache.addEntries(json, app.packageName);
-            }
             builder.setRiskScore(0); return builder.build();
         }
 

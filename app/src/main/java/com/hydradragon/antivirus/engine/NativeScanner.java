@@ -200,16 +200,6 @@ public final class NativeScanner {
 
     private static native int nativeTlshDiff(String tlsh1, String tlsh2);
 
-    private static native String nativeComputeZipEntryHashes(String apkPath);
-
-    /** Compute MD5 + TLSH hashes for every zip entry inside a whitelisted APK
-     *  so the Anti-FP cache can skip them on future scans. Returns a JSON array
-     *  of `{"entry":"...","md5":"...","tlsh":"..."}`, or `[]` on error. */
-    public static String computeZipEntryHashes(String apkPath) {
-        if (!LIB_LOADED || apkPath == null || apkPath.isEmpty()) return "[]";
-        try { return nativeComputeZipEntryHashes(apkPath); } catch (Throwable t) { return "[]"; }
-    }
-
     /** Push the user's TLSH similarity threshold into the native engine so the
      *  `tlsh_nearest` malware-similarity pass uses it immediately. Clamped
      *  1-200 natively. */
@@ -437,7 +427,7 @@ public final class NativeScanner {
             setScanRelevantOnly(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("scan_relevant_only_enabled", false));
             setTlshThreshold(context.getSharedPreferences("hydra_prefs", 0)
-                .getInt("anti_fp_tlsh_threshold", 40));
+                .getInt("anti_fn_tlsh_threshold", 40));
         }
         Log.i(TAG, "native init " + (isReady() ? "ok" : "background") + " | " + status());
         return isReady();

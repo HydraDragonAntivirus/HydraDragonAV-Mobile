@@ -9,9 +9,7 @@ use zip::ZipArchive;
 #[command(name = "hydradragon_knowledge_builder")]
 struct Args {
     #[arg(long, required = true)]
-    good: PathBuf,
-    #[arg(long)]
-    malicious: Option<PathBuf>,
+    malicious: PathBuf,
     #[arg(long, default_value = ".")]
     output: PathBuf,
 }
@@ -234,7 +232,7 @@ fn process_apk(apk_path: &Path, compute_tlsh: bool) -> Vec<(String, String, Stri
     entries
 }
 
-fn build_db(db_path: &Path, apk_dir: &Path, is_malicious: bool, fp_cache: Option<&Path>) {
+fn build_fn_db(db_path: &Path, apk_dir: &Path) {
     if !apk_dir.is_dir() {
         eprintln!("ERROR: {} is not a directory", apk_dir.display());
         return;
@@ -248,35 +246,14 @@ fn build_db(db_path: &Path, apk_dir: &Path, is_malicious: bool, fp_cache: Option
     };
     conn.execute_batch("PRAGMA cache_size=-2000; PRAGMA page_size=4096; PRAGMA synchronous=OFF")
         .ok();
-    if is_malicious {
-        conn.execute_batch(
-            "CREATE TABLE IF NOT EXISTS malicious_entry_cache (
-                md5 TEXT PRIMARY KEY,
-                tlsh TEXT NOT NULL DEFAULT '',
-                entry_name TEXT NOT NULL,
-                detection_name TEXT NOT NULL DEFAULT '',
-                added_at INTEGER NOT NULL
-            );",
-        )
-        .ok();
-        conn.execute_batch(
-            "CREATE INDEX IF NOT EXISTS idx_tlsh ON malicious_entry_cache(tlsh);",
-        )
-        .ok();
-    } else {
-        conn.execute_batch(
-            "CREATE TABLE IF NOT EXISTS entry_cache (
-                md5 TEXT PRIMARY KEY,
-                tlsh TEXT NOT NULL DEFAULT '',
-                entry_name TEXT NOT NULL,
-                source_apk_pkg TEXT NOT NULL DEFAULT '',
-                added_at INTEGER NOT NULL
-            );",
-        )
-        .ok();
-        conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_tlsh ON entry_cache(tlsh);")
-            .ok();
-    }
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS malicious_tlsh (
+            tlsh TEXT PRIMARY KEY,
+            detection_name TEXT NOT NULL DEFAULT '',
+            added_at INTEGER NOT NULL
+        );",
+    )
+    .ok();
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
@@ -297,87 +274,31 @@ fn build_db(db_path: &Path, apk_dir: &Path, is_malicious: bool, fp_cache: Option
         .filter(|p| p.extension().map(|e| e == "apk").unwrap_or(false))
         .collect();
     dir_entries.sort();
-    if is_malicious {
-        let label = apk_dir.file_name().unwrap_or_default().to_string_lossy().to_string();
-        conn.execute_batch("BEGIN;").ok();
-        let fp_conn = fp_cache.and_then(|p| Connection::open(p).ok());
-        for apk_path in &dir_entries {
-            print!("  {} ... ", apk_path.display());
-            let data = match fs::read(apk_path) {
-                Ok(b) => b,
-                Err(e) => {
-                    eprintln!("SKIP: {}", e);
-                    continue;
-                }
-            };
-            let mut inserted = 0;
-            // 1. Full APK hash (exact-match detection)
-            let apk_md5 = md5_hex(&data);
-            let apk_tlsh = tlsh_rs::hash_bytes(&data)
-                .ok()
-                .map(|d| d.to_string())
-                .unwrap_or_default();
-            if conn.execute(
-                "INSERT OR IGNORE INTO malicious_entry_cache(md5,tlsh,entry_name,detection_name,added_at) VALUES(?1,?2,?3,?4,?5)",
-                rusqlite::params![&apk_md5, &apk_tlsh, "apk", &label, now],
-            ).is_ok() { inserted += 1; }
-            // 2. Individual entries unique to this malware (not in FP)
-            let entries = process_apk(apk_path, true);
-            for (name, md5, tlsh) in &entries {
-                if let Some(ref fp) = fp_conn {
-                    let in_fp: bool = fp
-                        .query_row(
-                            "SELECT EXISTS(SELECT 1 FROM entry_cache WHERE md5 = ?1)",
-                            rusqlite::params![md5],
-                            |r| r.get(0),
-                        )
-                        .unwrap_or(false);
-                    if in_fp {
-                        continue;
-                    }
-                }
-                if conn.execute(
-                    "INSERT OR IGNORE INTO malicious_entry_cache(md5,tlsh,entry_name,detection_name,added_at) VALUES(?1,?2,?3,?4,?5)",
-                    rusqlite::params![md5, tlsh, name, &label, now],
-                ).is_ok() { inserted += 1; }
+    let label = apk_dir.file_name().unwrap_or_default().to_string_lossy().to_string();
+    conn.execute_batch("BEGIN;").ok();
+    for apk_path in &dir_entries {
+        print!("  {} ... ", apk_path.display());
+        let entries = process_apk(apk_path, true);
+        let mut inserted = 0;
+        for (_name, _md5, tlsh) in &entries {
+            if !tlsh.is_empty()
+                && conn.execute(
+                    "INSERT OR IGNORE INTO malicious_tlsh(tlsh,detection_name,added_at) VALUES(?1,?2,?3)",
+                    rusqlite::params![tlsh, &label, now],
+                ).is_ok()
+            {
+                inserted += 1;
             }
-            println!("{} entries ({} unique)", entries.len() + 1, inserted);
-            total_entries += inserted;
-            apk_count += 1;
         }
-        conn.execute_batch("COMMIT;").ok();
-    } else {
-        conn.execute_batch("BEGIN;").ok();
-        for apk_path in &dir_entries {
-            print!("  {} ... ", apk_path.display());
-            let source_pkg = apk_path
-                .file_stem()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .to_string();
-            let entries = process_apk(apk_path, false);
-            if entries.is_empty() {
-                println!("0 entries");
-                continue;
-            }
-            for (name, md5, tlsh) in &entries {
-                if let Err(e) = conn.execute(
-                    "INSERT OR IGNORE INTO entry_cache(md5,tlsh,entry_name,source_apk_pkg,added_at) VALUES(?1,?2,?3,?4,?5)",
-                    rusqlite::params![md5, tlsh, name, source_pkg, now],
-                ) {
-                    eprintln!("  DB insert error: {}", e);
-                }
-            }
-            println!("{} entries", entries.len());
-            total_entries += entries.len();
-            apk_count += 1;
-        }
-        conn.execute_batch("COMMIT;").ok();
+        println!("{} entries ({} inserted)", entries.len(), inserted);
+        total_entries += inserted;
+        apk_count += 1;
     }
+    conn.execute_batch("COMMIT;").ok();
     conn.execute_batch("VACUUM;").ok();
     let db_size = fs::metadata(db_path).map(|m| m.len()).unwrap_or(0);
     println!(
-        "  Done: {} APKs, {} entries, {} KB database",
+        "  Done: {} APKs, {} TLSH entries, {} KB database",
         apk_count,
         total_entries,
         db_size / 1024
@@ -387,13 +308,8 @@ fn build_db(db_path: &Path, apk_dir: &Path, is_malicious: bool, fp_cache: Option
 fn main() {
     let args = Args::parse();
     fs::create_dir_all(&args.output).ok();
-    println!("Building anti_fp_cache.db from good APKs...");
-    let fp_path = args.output.join("anti_fp_cache.db");
-    build_db(&fp_path, &args.good, false, None);
-    if let Some(ref malicious_dir) = args.malicious {
-        println!("\nBuilding anti_fn_cache.db from malicious APKs...");
-        let fn_path = args.output.join("anti_fn_cache.db");
-        build_db(&fn_path, malicious_dir, true, Some(&fp_path));
-    }
+    println!("Building anti_fn_cache.db from malicious APKs...");
+    let fn_path = args.output.join("anti_fn_cache.db");
+    build_fn_db(&fn_path, &args.malicious);
     println!("\nDone.");
 }

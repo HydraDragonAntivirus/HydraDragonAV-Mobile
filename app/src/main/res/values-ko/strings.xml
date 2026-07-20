@@ -126,7 +126,6 @@
 🔍 전체 스캔: SD 카드를 포함한 전체 저장소를 심층 검사합니다 (시간이 오래 걸릴 수 있습니다).</string>
     <string name="btn_full_scan">🔍 전체 스캔</string>
     <string name="btn_quick_scan">🚀 빠른 스캔</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">취소</string>
     <string name="system_clean">마지막 검사 기준 시스템 깨끗함</string>
     <string name="risk_critical">심각</string>
@@ -366,18 +365,13 @@
     <string name="uninstall_warning_toggle">제거에 실패하면 안전 모드를 제안</string>
     <string name="unicorn_unsupported">ARM64 JIT 백엔드의 알려진 버그로 인해 이 기기에서 에뮬레이션(Unicorn)을 사용할 수 없습니다. 이 패스 없이 스캔이 정상적으로 계속됩니다.</string>
     <string name="disable_secure_flag_toggle">화면 녹화 허용</string>
-    <string name="anti_fp_skip_toggle">Anti-FP Skip — 화이트리스트에 등록된 APK ZIP 항목 해시(MD5 + TLSH)를 캐시하여 오탐(false positive) 방지</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip 켜짐 — 화이트리스트 앱의 항목이 캐시됩니다</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip 꺼짐 — 캐시가 지워졌습니다</string>
-    <string name="anti_fp_tlsh_threshold_btn">TLSH 유사도 임계값</string>
-    <string name="anti_fp_tlsh_threshold_hint">TLSH 거리 임계값(1-200). 낮을수록 엄격, 높을수록 FP 억제가 더 적극적. 기본값: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">TLSH 임계값이 %1$d(으)로 설정되었습니다</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — 확인된 악성 항목(MD5 + TLSH)을 기억하여 이름이 변경되거나 재패키징된 변종을 탐지</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — 확인된 악성 TLSH 지문을 기억하여 이름이 변경되거나 재패키징된 변종을 탐지</string>
     <string name="anti_fn_on_toast">Anti-FN 켜짐 — 확인된 탐지 결과가 캐시됩니다</string>
     <string name="anti_fn_off_toast">Anti-FN 꺼짐 — 캐시가 지워졌습니다</string>
-    <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH 유사도 임계값</string>
+    <string name="anti_fn_tlsh_threshold_btn">TLSH 유사도 임계값</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH 거리 임계값(1-200). 낮을수록 엄격, 높을수록 탐지 상향이 더 적극적. 기본값: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSH 임계값이 %1$d(으)로 설정되었습니다</string>
+    <string name="anti_fn_tlsh_threshold_saved">TLSH 임계값이 %1$d(으)로 설정되었습니다</string>
     <string name="save_auto_rules_toggle">자동 생성 규칙 저장</string>
     <string name="save_auto_rules_on_toast">자동 생성 규칙 저장 켜짐: 자동 학습된 YARA 규칙이 디스크에 기록되며 다음 앱 실행 시 다시 로드됩니다</string>
     <string name="save_auto_rules_off_toast">자동 생성 규칙 저장 꺼짐: 규칙은 이번 세션에서 계속 사용되지만 재시작 후에는 유지되지 않습니다</string>
@@ -415,7 +409,6 @@
     <string name="scan_system_off_toast">시스템 파일 검사 비활성화 — 시스템 앱이 건너뛰어집니다</string>
     <string name="clear_scan_cache_btn">검사 캐시 지우기</string>
     <string name="cache_session">세션 캐시 (임시)</string>
-    <string name="cache_anti_fp">Anti-FP 캐시 (오탐)</string>
     <string name="cache_anti_fn">Anti-FN 캐시 (미탐)</string>
     <string name="cache_cleared">선택한 캐시가 지워졌습니다</string>
     <string name="scan_cancelled">검사가 취소되었습니다</string>

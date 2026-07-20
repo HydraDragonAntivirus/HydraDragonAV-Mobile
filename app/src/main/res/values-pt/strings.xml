@@ -126,7 +126,6 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
 🔍 VERIFICAÇÃO COMPLETA: Inspeciona profundamente todo o armazenamento, incluindo o Cartão SD (pode demorar).</string>
     <string name="btn_full_scan">🔍 VERIFICAÇÃO COMPLETA</string>
     <string name="btn_quick_scan">🚀 VERIFICAÇÃO RÁPIDA</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Cancelar</string>
     <string name="system_clean">Sistema Limpo Segundo a Última Verificação</string>
     <string name="risk_critical">CRÍTICO</string>
@@ -366,18 +365,13 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="uninstall_warning_toggle">Sugerir modo de segurança quando a desinstalação falhar</string>
     <string name="unicorn_unsupported">A emulação (Unicorn) não está disponível neste dispositivo devido a um bug conhecido no backend ARM64 JIT. A verificação continua normalmente sem esta passagem.</string>
     <string name="disable_secure_flag_toggle">Permitir gravação de tela</string>
-    <string name="anti_fp_skip_toggle">Anti-FP Skip — armazenar em cache hashes (MD5 + TLSH) de entradas ZIP de APK na lista de permissões para evitar falsos positivos</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip ATIVADO — entradas de apps na lista de permissões são armazenadas em cache</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip DESATIVADO — cache limpo</string>
-    <string name="anti_fp_tlsh_threshold_btn">Limiar de Similaridade TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">Limiar de distância TLSH (1-200). Menor = mais rigoroso, maior = supressão de FP mais agressiva. Padrão: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">Limiar TLSH definido para %1$d</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — memorizar entradas confirmadas como maliciosas (MD5 + TLSH) para detectar variantes renomeadas/reempacotadas</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — memorizar impressões digitais TLSH confirmadas como maliciosas para detectar variantes renomeadas/reempacotadas</string>
     <string name="anti_fn_on_toast">Anti-FN ATIVADO — detecções confirmadas são armazenadas em cache</string>
     <string name="anti_fn_off_toast">Anti-FN DESATIVADO — cache limpo</string>
-    <string name="anti_fn_tlsh_threshold_btn">Limiar de Similaridade TLSH Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">Limiar de Similaridade TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">Limiar de distância TLSH (1-200). Menor = mais rigoroso, maior = upgrade de detecção mais agressivo. Padrão: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Limiar TLSH Anti-FN definido para %1$d</string>
+    <string name="anti_fn_tlsh_threshold_saved">Limiar TLSH definido para %1$d</string>
     <string name="save_auto_rules_toggle">Salvar regras autogeradas</string>
     <string name="save_auto_rules_on_toast">Salvar regras autogeradas ATIVADO: regras YARA aprendidas automaticamente serao gravadas em disco e recarregadas na proxima inicializacao</string>
     <string name="save_auto_rules_off_toast">Salvar regras autogeradas DESATIVADO: as regras ainda sao usadas nesta sessao mas NAO serao mantidas apos reinicializacao</string>
@@ -415,7 +409,6 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="scan_system_off_toast">Digitalização de arquivos do sistema desativada — aplicativos do sistema serão ignorados</string>
     <string name="clear_scan_cache_btn">Limpar Cache de Digitalização</string>
     <string name="cache_session">Cache de Sessão (temporário)</string>
-    <string name="cache_anti_fp">Cache Anti-FP (falsos positivos)</string>
     <string name="cache_anti_fn">Cache Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Caches selecionados limpos</string>
     <string name="scan_cancelled">Verificação cancelada</string>

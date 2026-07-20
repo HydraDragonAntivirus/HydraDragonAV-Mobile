@@ -126,7 +126,6 @@ Puntuación de riesgo: %2$d/100
 🔍 ESCANEO COMPLETO: Inspecciona a fondo todo el almacenamiento, incluida la tarjeta SD (puede tardar mucho).</string>
     <string name="btn_full_scan">🔍 ESCANEO COMPLETO</string>
     <string name="btn_quick_scan">🚀 ESCANEO RÁPIDO</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Cancelar</string>
     <string name="system_clean">Sistema Limpio Según el Último Análisis</string>
     <string name="risk_critical">CRÍTICO</string>
@@ -366,18 +365,13 @@ Puntuación de riesgo: %2$d/100
     <string name="uninstall_warning_toggle">Sugerir modo seguro cuando falla la desinstalación</string>
     <string name="unicorn_unsupported">La emulación (Unicorn) no está disponible en este dispositivo debido a un error conocido del backend ARM64 JIT. El escaneo continúa normalmente sin esta pasada.</string>
     <string name="disable_secure_flag_toggle">Permitir grabación de pantalla</string>
-    <string name="anti_fp_skip_toggle">Anti-FP Skip — almacenar en caché los hashes (MD5 + TLSH) de entradas ZIP de APK en lista blanca para evitar falsos positivos</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip ACTIVADO — las entradas de apps en lista blanca se almacenan en caché</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip DESACTIVADO — caché borrada</string>
-    <string name="anti_fp_tlsh_threshold_btn">Umbral de Similitud TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">Umbral de distancia TLSH (1-200). Menor = más estricto, mayor = supresión de FP más agresiva. Predeterminado: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">Umbral TLSH establecido en %1$d</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — recuerda entradas confirmadas como maliciosas (MD5 + TLSH) para detectar variantes renombradas/reempaquetadas</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — recuerda huellas digitales TLSH confirmadas como maliciosas para detectar variantes renombradas/reempaquetadas</string>
     <string name="anti_fn_on_toast">Anti-FN ACTIVADO — las detecciones confirmadas se almacenan en caché</string>
     <string name="anti_fn_off_toast">Anti-FN DESACTIVADO — caché borrada</string>
-    <string name="anti_fn_tlsh_threshold_btn">Umbral de similitud TLSH de Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">Umbral de similitud TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">Umbral de distancia TLSH (1-200). Menor = más estricto, mayor = mejora de detección más agresiva. Predeterminado: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Umbral TLSH de Anti-FN establecido en %1$d</string>
+    <string name="anti_fn_tlsh_threshold_saved">Umbral TLSH establecido en %1$d</string>
     <string name="save_auto_rules_toggle">Guardar reglas autogeneradas</string>
     <string name="save_auto_rules_on_toast">Guardar reglas autogeneradas ACTIVADO: las reglas YARA aprendidas automaticamente se escribiran en el disco y se recargaran en el proximo inicio</string>
     <string name="save_auto_rules_off_toast">Guardar reglas autogeneradas DESACTIVADO: las reglas se siguen usando en esta sesion pero NO se conservaran tras el reinicio</string>
@@ -415,7 +409,6 @@ Puntuación de riesgo: %2$d/100
     <string name="scan_system_off_toast">Escaneo de archivos del sistema desactivado — se omitirán las aplicaciones del sistema</string>
     <string name="clear_scan_cache_btn">Limpiar Caché de Escaneo</string>
     <string name="cache_session">Caché de Sesión (temporal)</string>
-    <string name="cache_anti_fp">Caché Anti-FP (falsos positivos)</string>
     <string name="cache_anti_fn">Caché Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Cachés seleccionadas limpiadas</string>
     <string name="scan_cancelled">Escaneo cancelado</string>

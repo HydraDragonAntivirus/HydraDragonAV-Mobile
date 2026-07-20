@@ -1837,63 +1837,6 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }).resolve::<LogErrorAndDefault>()
 }
 
-/// `String nativeComputeZipEntryHashes(String apkPath)` — returns a JSON array
-/// of `{"entry":"<path>","md5":"<hex>","tlsh":"<hash>"}` for every decompressed
-/// entry inside an APK (zip). Used by the Anti-FP cache: when a whitelisted APK
-/// is encountered, its entry hashes are persisted so identical entries found
-/// elsewhere are never flagged again — an exact (MD5) match or a close (TLSH)
-/// match to a known-good component is treated as a false positive.
-/// Returns `[]` (empty array) on any error — never throws.
-#[unsafe(no_mangle)]
-pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeComputeZipEntryHashes<'local>(
-    mut env: EnvUnowned<'local>,
-    _class: JClass<'local>,
-    apk_path: JString<'local>,
-) -> jstring {
-    env.with_env(|env| -> jni::errors::Result<_> {
-        let path: String = match apk_path.try_to_string(env) {
-            Ok(s) => s,
-            Err(_) => return env.new_string("[]").map(|s| s.into_raw()),
-        };
-        let result = compute_zip_entry_hashes(&path);
-        env.new_string(&result).map(|s| s.into_raw())
-    }).resolve::<LogErrorAndDefault>()
-}
-
-fn compute_zip_entry_hashes(path: &str) -> String {
-    let bytes = match std::fs::read(path) {
-        Ok(b) => b,
-        Err(_) => return "[]".to_string(),
-    };
-    if hydradragonextractor::detect_format(&bytes) != Some("zip") {
-        return "[]".to_string();
-    }
-    let entries = match hydradragonextractor::extract_archive_from_bytes(&bytes) {
-        Ok(e) => e,
-        Err(_) => return "[]".to_string(),
-    };
-    let mut out = Vec::new();
-    for (name, data) in &entries {
-        // Only hash entries that SCAN_RELEVANT_ONLY would scan — DEX, native
-        // libs, AndroidManifest, and text-like files (EICAR, scripts, etc.).
-        if !is_relevant_buffer(Some(name), data) {
-            continue;
-        }
-        let md5 = md5_hex(data);
-        let tlsh = tlsh_rs::hash_bytes(data)
-            .ok()
-            .map(|d| d.to_string())
-            .unwrap_or_default();
-        out.push(format!(
-            r#"{{"entry":"{}","md5":"{}","tlsh":"{}"}}"#,
-            json_escape(name),
-            md5,
-            tlsh,
-        ));
-    }
-    format!("[{}]", out.join(","))
-}
-
 /// Check every emulation-decoded string (see emulate.rs) that looks like a
 /// whole URL against the URL/domain xor filters (`engine.url_scanner`) — a decoded
 /// C2 URL a signature/YARA rule was never written for can still be caught

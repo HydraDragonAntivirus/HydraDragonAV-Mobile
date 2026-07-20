@@ -126,7 +126,6 @@
 🔍 สแกนแบบเต็ม: ตรวจสอบพื้นที่จัดเก็บทั้งหมดอย่างละเอียด รวมถึงการ์ด SD (อาจใช้เวลานาน)</string>
     <string name="btn_full_scan">🔍 สแกนแบบเต็ม</string>
     <string name="btn_quick_scan">🚀 สแกนด่วน</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">ยกเลิก</string>
     <string name="system_clean">ระบบสะอาดตามการสแกนล่าสุด</string>
     <string name="risk_critical">วิกฤต</string>
@@ -366,18 +365,13 @@
     <string name="uninstall_warning_toggle">แนะนำเซฟโหมดเมื่อการถอนการติดตั้งล้มเหลว</string>
     <string name="unicorn_unsupported">การจำลอง (Unicorn) ไม่พร้อมใช้งานบนอุปกรณ์นี้เนื่องจากข้อบกพร่องที่ทราบในแบ็กเอนด์ ARM64 JIT การสแกนจะดำเนินการตามปกติโดยไม่ผ่านขั้นตอนนี้</string>
     <string name="disable_secure_flag_toggle">อนุญาตการบันทึกหน้าจอ</string>
-    <string name="anti_fp_skip_toggle">Anti-FP Skip — แคชแฮช (MD5 + TLSH) ของรายการ ZIP APK ที่อยู่ในบัญชีขาวเพื่อหลีกเลี่ยงผลบวกลวง</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip เปิด — รายการจากแอปในบัญชีขาวถูกแคชแล้ว</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip ปิด — ล้างแคชแล้ว</string>
-    <string name="anti_fp_tlsh_threshold_btn">เกณฑ์ความคล้ายคลึง TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">เกณฑ์ระยะทาง TLSH (1-200) ค่าต่ำ = เข้มงวดมากขึ้น ค่าสูง = การระงับ FP ที่รุนแรงขึ้น ค่าเริ่มต้น: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">ตั้งค่าเกณฑ์ TLSH เป็น %1$d แล้ว</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — จดจำรายการที่ยืนยันแล้วว่าเป็นอันตราย (MD5 + TLSH) เพื่อตรวจจับตัวแปรที่เปลี่ยนชื่อ/แพ็กใหม่</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — จดจำลายนิ้วมือ TLSH ที่ยืนยันแล้วว่าเป็นอันตราย เพื่อตรวจจับตัวแปรที่เปลี่ยนชื่อ/แพ็กใหม่</string>
     <string name="anti_fn_on_toast">Anti-FN เปิด — การตรวจพบที่ยืนยันแล้วถูกแคชไว้</string>
     <string name="anti_fn_off_toast">Anti-FN ปิด — ล้างแคชแล้ว</string>
-    <string name="anti_fn_tlsh_threshold_btn">เกณฑ์ความคล้ายคลึง TLSH ของ Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">เกณฑ์ความคล้ายคลึง TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">เกณฑ์ระยะทาง TLSH (1-200) ค่าต่ำ = เข้มงวดมากขึ้น ค่าสูง = การอัปเกรดการตรวจจับที่รุนแรงขึ้น ค่าเริ่มต้น: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">ตั้งค่าเกณฑ์ TLSH ของ Anti-FN เป็น %1$d แล้ว</string>
+    <string name="anti_fn_tlsh_threshold_saved">ตั้งค่าเกณฑ์ TLSH เป็น %1$d แล้ว</string>
     <string name="save_auto_rules_toggle">บันทึกกฎที่สร้างอัตโนมัติ</string>
     <string name="save_auto_rules_on_toast">บันทึกกฎอัตโนมัติ เปิด: กฎ YARA ที่เรียนรู้อัตโนมัติจะถูกเขียนลงดิสก์และโหลดใหม่เมื่อเปิดแอปครั้งถัดไป</string>
     <string name="save_auto_rules_off_toast">บันทึกกฎอัตโนมัติ ปิด: กฎยังคงใช้งานในเซสชันนี้แต่จะไม่ถูกเก็บไว้หลังรีสตาร์ท</string>
@@ -415,7 +409,6 @@
     <string name="scan_system_off_toast">ปิดใช้งานการสแกนไฟล์ระบบ — แอประบบจะถูกข้าม</string>
     <string name="clear_scan_cache_btn">ล้างแคชการสแกน</string>
     <string name="cache_session">แคชเซสชัน (ชั่วคราว)</string>
-    <string name="cache_anti_fp">แคช Anti-FP (ผลบวกลวง)</string>
     <string name="cache_anti_fn">แคช Anti-FN (ผลลบลวง)</string>
     <string name="cache_cleared">ล้างแคชที่เลือกแล้ว</string>
     <string name="scan_cancelled">การสแกนถูกยกเลิก</string>

@@ -126,7 +126,6 @@
 🔍 フルスキャン：SDカードを含むストレージ全体を詳細に検査します（時間がかかる場合があります）。</string>
     <string name="btn_full_scan">🔍 フルスキャン</string>
     <string name="btn_quick_scan">🚀 クイックスキャン</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">キャンセル</string>
     <string name="system_clean">前回のスキャンによるとシステムはクリーンです</string>
     <string name="risk_critical">重大</string>
@@ -366,18 +365,13 @@
     <string name="uninstall_warning_toggle">アンインストールに失敗した場合にセーフモードを提案する</string>
     <string name="unicorn_unsupported">エミュレーション（Unicorn）は、ARM64 JITバックエンドの既知のバグにより、このデバイスでは利用できません。スキャンはこのパスなしで通常通り続行されます。</string>
     <string name="disable_secure_flag_toggle">画面録画を許可する</string>
-    <string name="anti_fp_skip_toggle">Anti-FPスキップ — 誤検出を防ぐため、ホワイトリスト登録されたAPKのZIPエントリのハッシュ（MD5 + TLSH）をキャッシュ</string>
-    <string name="anti_fp_skip_on_toast">Anti-FPスキップ オン — ホワイトリスト登録されたアプリのエントリがキャッシュされます</string>
-    <string name="anti_fp_skip_off_toast">Anti-FPスキップ オフ — キャッシュをクリアしました</string>
-    <string name="anti_fp_tlsh_threshold_btn">TLSH類似度しきい値</string>
-    <string name="anti_fp_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的にFPを抑制。デフォルト: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">TLSHしきい値を%1$dに設定しました</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — 確認済みのマルウェアエントリ（MD5 + TLSH）を記憶し、リネームや再パッケージされた亜種を検出</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — 確認済みのマルウェアTLSHフィンガープリントを記憶し、リネームや再パッケージされた亜種を検出</string>
     <string name="anti_fn_on_toast">Anti-FN オン — 確認済みの検出結果がキャッシュされます</string>
     <string name="anti_fn_off_toast">Anti-FN オフ — キャッシュをクリアしました</string>
-    <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH類似度しきい値</string>
+    <string name="anti_fn_tlsh_threshold_btn">TLSH類似度しきい値</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的に検出精度を引き上げ。デフォルト: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Anti-FN TLSHしきい値を%1$dに設定しました</string>
+    <string name="anti_fn_tlsh_threshold_saved">TLSHしきい値を%1$dに設定しました</string>
     <string name="save_auto_rules_toggle">自動生成ルールを保存</string>
     <string name="save_auto_rules_on_toast">自動生成ルール保存 ON：自動学習された YARA ルールがディスクに書き込まれ、次回起動時に再読み込みされます</string>
     <string name="save_auto_rules_off_toast">自動生成ルール保存 OFF：ルールはこのセッションでは引き続き使用されますが、再起動後は保持されません</string>
@@ -415,7 +409,6 @@
     <string name="scan_system_off_toast">システムファイルスキャン無効 — システムアプリはスキップされます</string>
     <string name="clear_scan_cache_btn">スキャンキャッシュをクリア</string>
     <string name="cache_session">セッションキャッシュ（一時）</string>
-    <string name="cache_anti_fp">Anti-FPキャッシュ（誤検知）</string>
     <string name="cache_anti_fn">Anti-FNキャッシュ（見逃し）</string>
     <string name="cache_cleared">選択したキャッシュをクリアしました</string>
     <string name="scan_cancelled">スキャンがキャンセルされました</string>

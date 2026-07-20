@@ -126,7 +126,6 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
 🔍 QUÉT ĐẦY ĐỦ: Kiểm tra sâu toàn bộ bộ nhớ bao gồm cả Thẻ SD (có thể mất nhiều thời gian).</string>
     <string name="btn_full_scan">🔍 QUÉT ĐẦY ĐỦ</string>
     <string name="btn_quick_scan">🚀 QUÉT NHANH</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Hủy</string>
     <string name="system_clean">Hệ thống Sạch Theo Lần Quét Gần Nhất</string>
     <string name="risk_critical">NGHIÊM TRỌNG</string>
@@ -366,18 +365,13 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="uninstall_warning_toggle">Đề xuất chế độ an toàn khi gỡ cài đặt không thành công</string>
     <string name="unicorn_unsupported">Trình giả lập (Unicorn) không khả dụng trên thiết bị này do lỗi đã biết trong backend ARM64 JIT. Quá trình quét tiếp tục bình thường mà không có bước này.</string>
     <string name="disable_secure_flag_toggle">Cho phép quay màn hình</string>
-    <string name="anti_fp_skip_toggle">Anti-FP Skip — lưu vào bộ nhớ đệm các hash (MD5 + TLSH) của mục ZIP APK trong danh sách cho phép để tránh dương tính giả</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip BẬT — các mục từ ứng dụng trong danh sách cho phép được lưu vào bộ nhớ đệm</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip TẮT — đã xóa bộ nhớ đệm</string>
-    <string name="anti_fp_tlsh_threshold_btn">Ngưỡng Tương tự TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">Ngưỡng khoảng cách TLSH (1-200). Thấp hơn = nghiêm ngặt hơn, cao hơn = triệt tiêu FP mạnh mẽ hơn. Mặc định: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">Đã đặt ngưỡng TLSH thành %1$d</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — ghi nhớ các mục đã xác nhận độc hại (MD5 + TLSH) để phát hiện các biến thể đổi tên/đóng gói lại</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — ghi nhớ các dấu vân tay TLSH đã xác nhận độc hại để phát hiện các biến thể đổi tên/đóng gói lại</string>
     <string name="anti_fn_on_toast">Anti-FN BẬT — các phát hiện đã xác nhận được lưu vào bộ nhớ đệm</string>
     <string name="anti_fn_off_toast">Anti-FN TẮT — đã xóa bộ nhớ đệm</string>
-    <string name="anti_fn_tlsh_threshold_btn">Ngưỡng Tương tự TLSH của Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">Ngưỡng Tương tự TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">Ngưỡng khoảng cách TLSH (1-200). Thấp hơn = nghiêm ngặt hơn, cao hơn = nâng cấp phát hiện mạnh mẽ hơn. Mặc định: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Đã đặt ngưỡng TLSH của Anti-FN thành %1$d</string>
+    <string name="anti_fn_tlsh_threshold_saved">Đã đặt ngưỡng TLSH thành %1$d</string>
     <string name="save_auto_rules_toggle">Luu quy tac duoc tao tu dong</string>
     <string name="save_auto_rules_on_toast">Luu quy tac tu dong BAT: cac quy tac YARA tu hoc se duoc ghi vao dia va tai lai khi khoi dong ung dung lan sau</string>
     <string name="save_auto_rules_off_toast">Luu quy tac tu dong TAT: quy tac van duoc su dung trong phien nay nhung se KHONG duoc giu lai sau khi khoi dong lai</string>
@@ -415,7 +409,6 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="scan_system_off_toast">Đã tắt quét tệp hệ thống — các ứng dụng hệ thống sẽ bị bỏ qua</string>
     <string name="clear_scan_cache_btn">Xóa Bộ Nhớ Đệm Quét</string>
     <string name="cache_session">Bộ Nhớ Đệm Phiên (tạm thời)</string>
-    <string name="cache_anti_fp">Bộ Nhớ Đệm Anti-FP (dương tính giả)</string>
     <string name="cache_anti_fn">Bộ Nhớ Đệm Anti-FN (âm tính giả)</string>
     <string name="cache_cleared">Đã xóa các bộ nhớ đệm đã chọn</string>
     <string name="scan_cancelled">Đã hủy quét</string>

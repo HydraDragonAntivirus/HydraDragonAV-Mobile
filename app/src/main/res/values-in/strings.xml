@@ -126,7 +126,6 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
 🔍 PEMINDAIAN LENGKAP: Memeriksa seluruh penyimpanan secara mendalam termasuk Kartu SD (mungkin memakan waktu lama).</string>
     <string name="btn_full_scan">🔍 PEMINDAIAN LENGKAP</string>
     <string name="btn_quick_scan">🚀 PEMINDAIAN CEPAT</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Batal</string>
     <string name="system_clean">Sistem Bersih Berdasarkan Pemindaian Terakhir</string>
     <string name="risk_critical">KRITIS</string>
@@ -366,18 +365,13 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="uninstall_warning_toggle">Sarankan mode aman saat pencopotan pemasangan gagal</string>
     <string name="unicorn_unsupported">Emulasi (Unicorn) tidak tersedia di perangkat ini karena bug backend ARM64 JIT yang diketahui. Pemindaian berjalan normal tanpa proses ini.</string>
     <string name="disable_secure_flag_toggle">Izinkan perekaman layar</string>
-    <string name="anti_fp_skip_toggle">Anti-FP Skip — cache hash (MD5 + TLSH) entri ZIP APK yang masuk daftar putih untuk menghindari positif palsu</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip AKTIF — entri dari aplikasi di daftar putih di-cache</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip NONAKTIF — cache dibersihkan</string>
-    <string name="anti_fp_tlsh_threshold_btn">Ambang Kemiripan TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">Ambang jarak TLSH (1-200). Lebih rendah = lebih ketat, lebih tinggi = penekanan FP lebih agresif. Default: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">Ambang TLSH diatur ke %1$d</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — mengingat entri yang terkonfirmasi berbahaya (MD5 + TLSH) untuk menangkap varian yang berganti nama/dikemas ulang</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — mengingat sidik jari TLSH yang terkonfirmasi berbahaya untuk menangkap varian yang berganti nama/dikemas ulang</string>
     <string name="anti_fn_on_toast">Anti-FN AKTIF — deteksi yang terkonfirmasi di-cache</string>
     <string name="anti_fn_off_toast">Anti-FN NONAKTIF — cache dibersihkan</string>
-    <string name="anti_fn_tlsh_threshold_btn">Ambang Kemiripan TLSH Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">Ambang Kemiripan TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">Ambang jarak TLSH (1-200). Lebih rendah = lebih ketat, lebih tinggi = peningkatan deteksi lebih agresif. Default: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Ambang TLSH Anti-FN diatur ke %1$d</string>
+    <string name="anti_fn_tlsh_threshold_saved">Ambang TLSH diatur ke %1$d</string>
     <string name="save_auto_rules_toggle">Simpan Aturan yang Dibuat Otomatis</string>
     <string name="save_auto_rules_on_toast">Simpan Aturan Otomatis AKTIF: aturan YARA yang dipelajari otomatis akan ditulis ke disk dan dimuat ulang saat peluncuran aplikasi berikutnya</string>
     <string name="save_auto_rules_off_toast">Simpan Aturan Otomatis NONAKTIF: aturan masih digunakan sesi ini tetapi tidak akan disimpan setelah restart</string>
@@ -415,7 +409,6 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="scan_system_off_toast">Pemindaian file sistem dinonaktifkan — aplikasi sistem akan dilewati</string>
     <string name="clear_scan_cache_btn">Hapus Cache Pindai</string>
     <string name="cache_session">Cache Sesi (sementara)</string>
-    <string name="cache_anti_fp">Cache Anti-FP (positif palsu)</string>
     <string name="cache_anti_fn">Cache Anti-FN (negatif palsu)</string>
     <string name="cache_cleared">Cache yang dipilih telah dibersihkan</string>
     <string name="scan_cancelled">Pemindaian dibatalkan</string>

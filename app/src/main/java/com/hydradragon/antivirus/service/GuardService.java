@@ -319,14 +319,6 @@ public class GuardService extends Service {
             engineLoading = false;
             Log.i(TAG, "engineLoading=false (engines ready)");
             updateNotification(getString(R.string.guard_protecting_status), true);
-            // Startup anti-FP scan on the BACKGROUND engine (separate
-            // instance → never blocks user-initiated scans).
-            try {
-                backgroundScanEngine.setBackgroundScan(true);
-                backgroundScanEngine.scanAllAppsAntiFp();
-            } catch (Throwable t) {
-                Log.e(TAG, "Initial Anti-FP scan failed", t);
-            }
             startServiceMonitors();
             startPeriodicScans();
             startDownloadMonitor();

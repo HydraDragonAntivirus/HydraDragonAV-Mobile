@@ -126,7 +126,6 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
 🔍 VOLLSTÄNDIGER SCAN: Durchsucht den gesamten Speicher gründlich, einschließlich SD-Karte (kann lange dauern).</string>
     <string name="btn_full_scan">🔍 VOLLSTÄNDIGER SCAN</string>
     <string name="btn_quick_scan">🚀 SCHNELLSCAN</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Abbrechen</string>
     <string name="system_clean">System laut letztem Scan sauber</string>
     <string name="risk_critical">KRITISCH</string>
@@ -366,18 +365,13 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="uninstall_warning_toggle">Abgesicherten Modus vorschlagen, wenn die Deinstallation fehlschlägt</string>
     <string name="unicorn_unsupported">Emulation (Unicorn) ist auf diesem Gerät aufgrund eines bekannten ARM64-JIT-Backend-Fehlers nicht verfügbar. Der Scan läuft ohne diesen Durchlauf normal weiter.</string>
     <string name="disable_secure_flag_toggle">Bildschirmaufnahme zulassen</string>
-    <string name="anti_fp_skip_toggle">Anti-FP-Skip — Hashwerte (MD5 + TLSH) von APK-Zip-Einträgen aus der Whitelist zwischenspeichern, um Fehlalarme zu vermeiden</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP-Skip EIN — Einträge von Apps auf der Whitelist werden zwischengespeichert</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP-Skip AUS — Cache geleert</string>
-    <string name="anti_fp_tlsh_threshold_btn">TLSH-Ähnlichkeitsschwellwert</string>
-    <string name="anti_fp_tlsh_threshold_hint">TLSH-Distanzschwellwert (1-200). Niedriger = strenger, höher = aggressiver bei der FP-Unterdrückung. Standard: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">TLSH-Schwellwert auf %1$d gesetzt</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — bestätigt bösartige Einträge (MD5 + TLSH) merken, um umbenannte/neu gepackte Varianten zu erkennen</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — bestätigt bösartige TLSH-Fingerabdrücke merken, um umbenannte/neu gepackte Varianten zu erkennen</string>
     <string name="anti_fn_on_toast">Anti-FN AN — bestätigte Erkennungen werden zwischengespeichert</string>
     <string name="anti_fn_off_toast">Anti-FN AUS — Cache geleert</string>
-    <string name="anti_fn_tlsh_threshold_btn">Anti-FN TLSH-Ähnlichkeitsschwelle</string>
+    <string name="anti_fn_tlsh_threshold_btn">TLSH-Ähnlichkeitsschwelle</string>
     <string name="anti_fn_tlsh_threshold_hint">TLSH-Distanzschwellwert (1-200). Niedriger = strenger, höher = aggressivere Erkennungs-Hochstufung. Standard: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Anti-FN-TLSH-Schwellwert auf %1$d gesetzt</string>
+    <string name="anti_fn_tlsh_threshold_saved">TLSH-Schwellwert auf %1$d gesetzt</string>
     <string name="save_auto_rules_toggle">Autogenerierte Regeln speichern</string>
     <string name="save_auto_rules_on_toast">Autogenerierte Regeln SPEICHERN EIN: automatisch erlernte YARA-Regeln werden auf die Festplatte geschrieben und beim naechsten App-Start neu geladen</string>
     <string name="save_auto_rules_off_toast">Autogenerierte Regeln SPEICHERN AUS: Regeln werden in dieser Sitzung noch verwendet, aber nach einem Neustart nicht behalten</string>
@@ -415,7 +409,6 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="scan_system_off_toast">Systemdateiscan deaktiviert — System-Apps werden übersprungen</string>
     <string name="clear_scan_cache_btn">Scan-Cache leeren</string>
     <string name="cache_session">Sitzungscache (temporär)</string>
-    <string name="cache_anti_fp">Anti-FP-Cache (Fehlalarme)</string>
     <string name="cache_anti_fn">Anti-FN-Cache (falsch Negative)</string>
     <string name="cache_cleared">Ausgewählte Caches gelöscht</string>
     <string name="scan_cancelled">Scan abgebrochen</string>

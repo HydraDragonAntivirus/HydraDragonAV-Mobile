@@ -126,7 +126,6 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
 🔍 PEŁNE SKANOWANIE: Dokładnie sprawdza całą pamięć, w tym kartę SD (może potrwać długo).</string>
     <string name="btn_full_scan">🔍 PEŁNE SKANOWANIE</string>
     <string name="btn_quick_scan">🚀 SZYBKIE SKANOWANIE</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">Anuluj</string>
     <string name="system_clean">System czysty według ostatniego skanowania</string>
     <string name="risk_critical">KRYTYCZNE</string>
@@ -366,18 +365,13 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="uninstall_warning_toggle">Sugeruj tryb awaryjny, gdy odinstalowanie się nie powiedzie</string>
     <string name="unicorn_unsupported">Emulacja (Unicorn) jest niedostępna na tym urządzeniu z powodu znanego błędu w backendzie ARM64 JIT. Skanowanie przebiega normalnie bez tego przebiegu.</string>
     <string name="disable_secure_flag_toggle">Zezwól na nagrywanie ekranu</string>
-    <string name="anti_fp_skip_toggle">Anti-FP Skip — buforuj hasze (MD5 + TLSH) wpisów ZIP APK z białej listy, aby uniknąć fałszywie pozytywnych wyników</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip WŁ. — wpisy z aplikacji z białej listy są buforowane</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip WYŁ. — pamięć podręczna wyczyszczona</string>
-    <string name="anti_fp_tlsh_threshold_btn">Próg Podobieństwa TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">Próg odległości TLSH (1-200). Niższy = bardziej rygorystyczny, wyższy = bardziej agresywne tłumienie FP. Domyślnie: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">Próg TLSH ustawiony na %1$d</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — zapamiętuj potwierdzone złośliwe wpisy (MD5 + TLSH), aby wykrywać zmienione/przepakowane warianty</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — zapamiętuj potwierdzone złośliwe odciski TLSH, aby wykrywać zmienione/przepakowane warianty</string>
     <string name="anti_fn_on_toast">Anti-FN WŁ. — potwierdzone wykrycia są buforowane</string>
     <string name="anti_fn_off_toast">Anti-FN WYŁ. — pamięć podręczna wyczyszczona</string>
-    <string name="anti_fn_tlsh_threshold_btn">Próg Podobieństwa TLSH Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">Próg Podobieństwa TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">Próg odległości TLSH (1-200). Niższy = bardziej rygorystyczny, wyższy = bardziej agresywne podniesienie wykrywalności. Domyślnie: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">Próg TLSH Anti-FN ustawiony na %1$d</string>
+    <string name="anti_fn_tlsh_threshold_saved">Próg TLSH ustawiony na %1$d</string>
     <string name="save_auto_rules_toggle">Zapisz automatycznie generowane reguly</string>
     <string name="save_auto_rules_on_toast">Zapisywanie automatycznych regul WLACZONE: automatycznie uczone reguly YARA beda zapisywane na dysku i przeladowywane przy nastepnym uruchomieniu aplikacji</string>
     <string name="save_auto_rules_off_toast">Zapisywanie automatycznych regul WYLACZONE: reguly sa nadal uzywane w tej sesji, ale NIE zostana zachowane po restarcie</string>
@@ -415,7 +409,6 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="scan_system_off_toast">Skanowanie plików systemowych wyłączone — aplikacje systemowe zostaną pominięte</string>
     <string name="clear_scan_cache_btn">Wyczyść Pamięć Podręczną Skanowania</string>
     <string name="cache_session">Pamięć Podręczna Sesji (tymczasowa)</string>
-    <string name="cache_anti_fp">Pamięć Podręczna Anti-FP (fałszywe pozytywy)</string>
     <string name="cache_anti_fn">Pamięć Podręczna Anti-FN (fałszywe negatywy)</string>
     <string name="cache_cleared">Wybrane pamięci podręczne wyczyszczone</string>
     <string name="scan_cancelled">Skanowanie anulowane</string>

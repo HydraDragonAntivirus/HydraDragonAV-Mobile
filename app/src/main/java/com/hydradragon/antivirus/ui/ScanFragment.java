@@ -532,7 +532,6 @@ public class ScanFragment extends Fragment {
         String[] options = {
             getString(R.string.btn_quick_scan),
             getString(R.string.btn_full_scan),
-            getString(R.string.btn_anti_fp_scan),
             getString(R.string.scan_custom),
             getString(R.string.scan_custom_folder)
         };
@@ -541,9 +540,8 @@ public class ScanFragment extends Fragment {
             .setItems(options, (dialog, which) -> {
                 if (which == 0) startScan(false);
                 else if (which == 1) startScan(true);
-                else if (which == 2) startScanAntiFp();
-                else if (which == 3) pickFileLauncher.launch("*/*");
-                else if (which == 4) pickFolderLauncher.launch(null);
+                else if (which == 2) pickFileLauncher.launch("*/*");
+                else if (which == 3) pickFolderLauncher.launch(null);
             })
             .show();
     }
@@ -591,30 +589,6 @@ public class ScanFragment extends Fragment {
     /** Start an Anti-FP scan: runs a full scan WITH anti-FP cache population
      *  and detection suppression. This is the only scan type that uses the
      *  anti-FP cache. */
-    private void startScanAntiFp() {
-        Log.d(TAG, "startScanAntiFp");
-        if (!serviceBound || guardService == null) { Log.w(TAG, "startScanAntiFp: service not bound"); return; }
-        if (guardService.isEngineLoading()) {
-            Toast.makeText(getContext(), getString(R.string.engine_loading_warning), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        resetScanUI();
-        attachScanCallback();
-        Log.d(TAG, "startScanAntiFp: calling scanAllAppsAntiFp");
-        if (guardService.getScanEngine() == null || !guardService.getScanEngine().scanAllAppsAntiFp()) {
-            Log.w(TAG, "startScanAntiFp: scanAllAppsAntiFp returned false (race lost)");
-            isScanning = false;
-            stopScannerAnimation();
-            btnScan.setText(getString(R.string.rescan));
-            btnPauseResume.setVisibility(View.INVISIBLE);
-            Toast.makeText(getContext(), getString(R.string.scan_already_running), Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String engineStatus = com.hydradragon.antivirus.engine.NativeScanner.status();
-        Log.d(TAG, "Anti-FP scan started. Engine status: " + engineStatus);
-    }
-
     /** Stop button: request the engine to abort. The in-flight scan ends at its
      *  next file/app boundary and fires onScanComplete with what was found. */
     private void stopScan() {

@@ -126,7 +126,6 @@
 🔍 اسکن کامل: کل حافظه از جمله کارت SD را به‌طور کامل بررسی می‌کند (ممکن است زمان‌بر باشد).</string>
     <string name="btn_full_scan">🔍 اسکن کامل</string>
     <string name="btn_quick_scan">🚀 اسکن سریع</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">لغو</string>
     <string name="system_clean">طبق آخرین اسکن، سیستم پاک است</string>
     <string name="risk_critical">بحرانی</string>
@@ -366,18 +365,13 @@
     <string name="uninstall_warning_toggle">پیشنهاد حالت ایمن هنگام شکست حذف نصب</string>
     <string name="unicorn_unsupported">شبیه‌سازی (Unicorn) به دلیل یک باگ شناخته شده در بک‌اند ARM64 JIT در این دستگاه در دسترس نیست. اسکن بدون این مرحله به طور عادی ادامه می‌یابد.</string>
     <string name="disable_secure_flag_toggle">اجازه ضبط صفحه‌نمایش</string>
-    <string name="anti_fp_skip_toggle">رد شدن از FP (Anti-FP) — ذخیره‌سازی هش (MD5 + TLSH) ورودی‌های ZIP APK لیست سفید برای جلوگیری از نتایج مثبت کاذب</string>
-    <string name="anti_fp_skip_on_toast">Anti-FP Skip روشن — ورودی‌های برنامه‌های لیست سفید ذخیره می‌شوند</string>
-    <string name="anti_fp_skip_off_toast">Anti-FP Skip خاموش — حافظه موقت پاک شد</string>
-    <string name="anti_fp_tlsh_threshold_btn">آستانه تشابه TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">آستانه فاصله TLSH (1-200). کمتر = سخت‌گیرانه‌تر، بیشتر = سرکوب تهاجمی‌تر نتایج مثبت کاذب. پیش‌فرض: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">آستانه TLSH روی %1$d تنظیم شد</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — به خاطر سپردن ورودی‌های تأییدشده مخرب (MD5 + TLSH) برای شناسایی نسخه‌های تغییرنام‌یافته/بازبسته‌بندی‌شده</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — به خاطر سپردن ورودی‌های تأییدشده مخرب TLSH برای شناسایی نسخه‌های تغییرنام‌یافته/بازبسته‌بندی‌شده</string>
     <string name="anti_fn_on_toast">Anti-FN روشن — تشخیص‌های تأییدشده ذخیره می‌شوند</string>
     <string name="anti_fn_off_toast">Anti-FN خاموش — حافظه موقت پاک شد</string>
-    <string name="anti_fn_tlsh_threshold_btn">آستانه تشابه TLSH برای Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">آستانه تشابه TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">آستانه فاصله TLSH (1-200). کمتر = سخت‌گیرانه‌تر، بیشتر = ارتقای تهاجمی‌تر تشخیص. پیش‌فرض: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">آستانه TLSH برای Anti-FN روی %1$d تنظیم شد</string>
+    <string name="anti_fn_tlsh_threshold_saved">آستانه TLSH روی %1$d تنظیم شد</string>
     <string name="save_auto_rules_toggle">ذخیره قوانین تولیدشده خودکار</string>
     <string name="save_auto_rules_on_toast">ذخیره قوانین خودکار فعال: قوانین YARA یادگرفته‌شده خودکار روی دیسک نوشته می‌شوند و در راه‌اندازی بعدی بارگذاری می‌شوند</string>
     <string name="save_auto_rules_off_toast">ذخیره قوانین خودکار غیرفعال: قوانین در این جلسه هنوز استفاده می‌شوند اما پس از راه‌اندازی مجدد حفظ نخواهند شد</string>
@@ -415,7 +409,6 @@
     <string name="scan_system_off_toast">اسکن فایل‌های سیستم غیرفعال شد — برنامه‌های سیستمی رد خواهند شد</string>
     <string name="clear_scan_cache_btn">پاک کردن حافظه نهان اسکن</string>
     <string name="cache_session">حافظه نهان جلسه (موقت)</string>
-    <string name="cache_anti_fp">حافظه نهان Anti-FP (مثبت کاذب)</string>
     <string name="cache_anti_fn">حافظه نهان Anti-FN (منفی کاذب)</string>
     <string name="cache_cleared">حافظه‌های نهان انتخاب شده پاک شدند</string>
     <string name="scan_cancelled">اسکن لغو شد</string>

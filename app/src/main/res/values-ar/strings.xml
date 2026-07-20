@@ -126,7 +126,6 @@
 🔍 فحص كامل: يفحص بعمق كامل مساحة التخزين بما في ذلك بطاقة SD (قد يستغرق وقتاً طويلاً).</string>
     <string name="btn_full_scan">🔍 فحص كامل</string>
     <string name="btn_quick_scan">🚀 فحص سريع</string>
-    <string name="btn_anti_fp_scan">🧬 ANTI-FP SCAN</string>
     <string name="btn_cancel">إلغاء</string>
     <string name="system_clean">النظام نظيف وفقًا لآخر فحص</string>
     <string name="risk_critical">حرج</string>
@@ -366,18 +365,13 @@
     <string name="uninstall_warning_toggle">اقترح الوضع الآمن عند فشل إلغاء التثبيت</string>
     <string name="unicorn_unsupported">المحاكاة (Unicorn) غير متوفرة على هذا الجهاز بسبب خطأ معروف في المحرك الخلفي ARM64 JIT. يستمر المسح بشكل طبيعي بدون هذه المرحلة.</string>
     <string name="disable_secure_flag_toggle">السماح بتسجيل الشاشة</string>
-    <string name="anti_fp_skip_toggle">تخطي النتائج الإيجابية الكاذبة (Anti-FP) — تخزين تجزئات (MD5 + TLSH) لإدخالات APK المضغوطة في القائمة البيضاء مؤقتًا لتجنب النتائج الإيجابية الكاذبة</string>
-    <string name="anti_fp_skip_on_toast">تم تشغيل Anti-FP Skip — يتم تخزين إدخالات التطبيقات في القائمة البيضاء مؤقتًا</string>
-    <string name="anti_fp_skip_off_toast">تم إيقاف Anti-FP Skip — تم مسح الذاكرة المخبأة</string>
-    <string name="anti_fp_tlsh_threshold_btn">حد تشابه TLSH</string>
-    <string name="anti_fp_tlsh_threshold_hint">حد مسافة TLSH (1-200). القيمة الأقل = أكثر صرامة، القيمة الأعلى = قمع أكثر عدوانية للإيجابيات الكاذبة. الافتراضي: 40</string>
-    <string name="anti_fp_tlsh_threshold_saved">تم تعيين حد TLSH إلى %1$d</string>
-    <string name="anti_fn_enabled_toggle">Anti-FN — تذكر الإدخالات المؤكدة كخبيثة (MD5 + TLSH) لاكتشاف المتغيرات المعاد تسميتها/إعادة تعبئتها</string>
+
+    <string name="anti_fn_enabled_toggle">Anti-FN — تذكر الإدخالات المؤكدة كخبيثة TLSH لاكتشاف المتغيرات المعاد تسميتها/إعادة تعبئتها</string>
     <string name="anti_fn_on_toast">تم تشغيل Anti-FN — يتم تخزين الاكتشافات المؤكدة مؤقتًا</string>
     <string name="anti_fn_off_toast">تم إيقاف Anti-FN — تم مسح الذاكرة المخبأة</string>
-    <string name="anti_fn_tlsh_threshold_btn">حد تشابه TLSH لـ Anti-FN</string>
+    <string name="anti_fn_tlsh_threshold_btn">حد تشابه TLSH</string>
     <string name="anti_fn_tlsh_threshold_hint">حد مسافة TLSH (1-200). القيمة الأقل = أكثر صرامة، القيمة الأعلى = ترقية اكتشاف أكثر عدوانية. الافتراضي: 40</string>
-    <string name="anti_fn_tlsh_threshold_saved">تم تعيين حد TLSH لـ Anti-FN إلى %1$d</string>
+    <string name="anti_fn_tlsh_threshold_saved">تم تعيين حد TLSH إلى %1$d</string>
     <string name="save_auto_rules_toggle">حفظ القواعد المُنشأة تلقائيًا</string>
     <string name="save_auto_rules_on_toast">حفظ القواعد التلقائية مُفعَّل: سيتم كتابة قواعد YARA المُتعلَّمة تلقائيًا على القرص وإعادة تحميلها عند التشغيل التالي</string>
     <string name="save_auto_rules_off_toast">حفظ القواعد التلقائية مُعطَّل: لا تزال القواعد مُستخدَمة في هذه الجلسة لكنها لن تُحفظ بعد إعادة التشغيل</string>
@@ -415,7 +409,6 @@
     <string name="scan_system_off_toast">تم تعطيل مسح ملفات النظام — سيتم تخطي تطبيقات النظام</string>
     <string name="clear_scan_cache_btn">مسح ذاكرة التخزين المؤقت للفحص</string>
     <string name="cache_session">ذاكرة تخزين مؤقت للجلسة (مؤقتة)</string>
-    <string name="cache_anti_fp">ذاكرة تخزين مؤقت لمضادة FP (إيجابيات كاذبة)</string>
     <string name="cache_anti_fn">ذاكرة تخزين مؤقت لمضادة FN (سلبيات كاذبة)</string>
     <string name="cache_cleared">تم مسح ذاكرات التخزين المؤقت المحددة</string>
     <string name="scan_cancelled">تم إلغاء الفحص</string>

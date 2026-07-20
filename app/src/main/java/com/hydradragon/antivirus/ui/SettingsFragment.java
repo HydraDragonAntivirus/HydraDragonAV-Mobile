@@ -329,24 +329,6 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.detect_zip_bomb_off_toast), Toast.LENGTH_SHORT).show();
         });
 
-        boolean antiFp = prefs().getBoolean("anti_fp_skip_enabled", true);
-        addToggle(getString(R.string.anti_fp_skip_toggle), antiFp, (btn, on) -> {
-            prefs().edit().putBoolean("anti_fp_skip_enabled", on).apply();
-            if (!on) {
-                // Clear the cache when disabled
-                com.hydradragon.antivirus.engine.AntiFpCache cache =
-                    new com.hydradragon.antivirus.engine.AntiFpCache(requireContext());
-                cache.clear();
-            }
-            Toast.makeText(getContext(), on
-                ? getString(R.string.anti_fp_skip_on_toast)
-                : getString(R.string.anti_fp_skip_off_toast), Toast.LENGTH_SHORT).show();
-        });
-
-        int tlshThresh = prefs().getInt("anti_fp_tlsh_threshold", 40);
-        addBtn("🔀 " + getString(R.string.anti_fp_tlsh_threshold_btn) + " (" + tlshThresh + ")", color(R.color.bg_secondary),
-            v -> showTlshThresholdDialog());
-
         boolean systemScan = prefs().getBoolean("scan_system_files_enabled", false);
         addToggle(getString(R.string.scan_system_toggle), systemScan, (btn, on) -> {
             prefs().edit().putBoolean("scan_system_files_enabled", on).apply();
@@ -554,8 +536,7 @@ public class SettingsFragment extends Fragment {
         new ResetCategory(R.string.reset_cat_privacy, KEY_SHIELD, "web_shield_decided", KEY_SCREEN_OCR,
             "silent_mode", com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH,
             "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "scan_relevant_only_enabled",
-            "anti_fp_skip_enabled", "anti_fp_tlsh_threshold", "anti_fp_match_mode",
-            "anti_fn_enabled", "anti_fn_tlsh_threshold", "anti_fn_match_mode"),
+            "anti_fn_enabled", "anti_fn_tlsh_threshold"),
         new ResetCategory(R.string.reset_cat_premium, "zero_trust_mode", "auto_rule_generation",
             "ask_signature_on_remove", "auto_delete_malware_enabled"),
         new ResetCategory(R.string.reset_cat_whitelists, "ignored_signatures", "website_whitelist"),
@@ -1082,46 +1063,7 @@ public class SettingsFragment extends Fragment {
     /** TLSH similarity threshold for the Anti-FP cache (1-200, default 40).
      *  Lower = stricter (only very close matches are suppressed); higher =
      *  more aggressive (more similar-looking entries are treated as known-good). */
-    private void showTlshThresholdDialog() {
-        LinearLayout box = new LinearLayout(requireContext());
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(48, 24, 48, 0);
-
-        TextView label = new TextView(requireContext());
-        label.setText(getString(R.string.anti_fp_tlsh_threshold_hint));
-        label.setTextColor(color(R.color.text_primary));
-        label.setPadding(0, 0, 0, 16);
-        box.addView(label);
-        android.widget.EditText input = new android.widget.EditText(requireContext());
-        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setText(String.valueOf(prefs().getInt("anti_fp_tlsh_threshold", 40)));
-        box.addView(input);
-
-        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(getString(R.string.anti_fp_tlsh_threshold_btn))
-            .setView(box)
-            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
-                int val;
-                try {
-                    val = Integer.parseInt(input.getText().toString().trim());
-                } catch (Exception e) {
-                    val = 40;
-                }
-                val = Math.max(1, Math.min(200, val));
-                prefs().edit().putInt("anti_fp_tlsh_threshold", val).apply();
-                com.hydradragon.antivirus.engine.NativeScanner.setTlshThreshold(val);
-                Toast.makeText(getContext(),
-                    getString(R.string.anti_fp_tlsh_threshold_saved, val),
-                    Toast.LENGTH_SHORT).show();
-                buildUI();
-            })
-            .setNegativeButton(getString(R.string.btn_cancel), null)
-            .show();
-    }
-
-    /** TLSH similarity threshold for the Anti-FN cache (1-200, default 40).
-     *  Lower = stricter (only very close matches upgrade to malicious); higher =
-     *  more aggressive (more similar-looking entries are treated as known-bad). */
+    /** TLSH similarity threshold for the Anti-FN cache and native scanner (1-200, default 40). */
     private void showAntiFnTlshThresholdDialog() {
         LinearLayout box = new LinearLayout(requireContext());
         box.setOrientation(LinearLayout.VERTICAL);
@@ -1149,6 +1091,7 @@ public class SettingsFragment extends Fragment {
                 }
                 val = Math.max(1, Math.min(200, val));
                 prefs().edit().putInt("anti_fn_tlsh_threshold", val).apply();
+                com.hydradragon.antivirus.engine.NativeScanner.setTlshThreshold(val);
                 Toast.makeText(getContext(),
                     getString(R.string.anti_fn_tlsh_threshold_saved, val),
                     Toast.LENGTH_SHORT).show();
@@ -1197,16 +1140,12 @@ public class SettingsFragment extends Fragment {
             .show();
     }
 
-    /** Shows a multi-check dialog letting the user choose which scan caches
-     *  to clear. Session cache (in-memory, resets on app restart), Anti-FP
-     *  cache (persistent SQLite), and Anti-FN cache (persistent SQLite). */
     private void showClearCacheDialog() {
         String[] items = {
             getString(R.string.cache_session),
-            getString(R.string.cache_anti_fp),
             getString(R.string.cache_anti_fn),
         };
-        boolean[] checked = {true, true, true};
+        boolean[] checked = {true, true};
         new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(getString(R.string.clear_scan_cache_btn))
             .setMultiChoiceItems(items, checked, (d, which, isChecked) -> checked[which] = isChecked)
@@ -1217,11 +1156,6 @@ public class SettingsFragment extends Fragment {
                     any = true;
                 }
                 if (checked[1]) {
-                    try { new com.hydradragon.antivirus.engine.AntiFpCache(requireContext()).clear(); }
-                    catch (Exception ignore) {}
-                    any = true;
-                }
-                if (checked[2]) {
                     try { new com.hydradragon.antivirus.engine.AntiFnCache(requireContext()).clear(); }
                     catch (Exception ignore) {}
                     any = true;
