@@ -480,20 +480,23 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
             let tlsh_elf_handle = s.spawn(move || {
                 let t = std::time::Instant::now();
                 let db = load_tlsh_file(files.get(TLSH_DB_ELF).map(|v| &v[..]));
+                let n = db.len();
                 let ms = t.elapsed().as_millis();
-                (db, format!(" tlsh_elf={}({ms}ms)", db.len()))
+                (db, format!(" tlsh_elf={n}({ms}ms)"))
             });
             let tlsh_apk_handle = s.spawn(move || {
                 let t = std::time::Instant::now();
                 let db = load_tlsh_file(files.get(TLSH_DB_APK).map(|v| &v[..]));
+                let n = db.len();
                 let ms = t.elapsed().as_millis();
-                (db, format!(" tlsh_apk={}({ms}ms)", db.len()))
+                (db, format!(" tlsh_apk={n}({ms}ms)"))
             });
             let tlsh_dex_handle = s.spawn(move || {
                 let t = std::time::Instant::now();
                 let db = load_tlsh_file(files.get(TLSH_DB_DEX).map(|v| &v[..]));
+                let n = db.len();
                 let ms = t.elapsed().as_millis();
-                (db, format!(" tlsh_dex={}({ms}ms)", db.len()))
+                (db, format!(" tlsh_dex={n}({ms}ms)"))
             });
 
             let whitelist_handle = s.spawn(move || {
