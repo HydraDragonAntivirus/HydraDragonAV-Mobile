@@ -1341,8 +1341,15 @@ public class ScanEngine {
             }
             if (mlMalicious) {
                 String near = v.nearest != null ? "  ~" + v.nearest : "";
+                String src = "";
+                for (Verdict.Detection d : v.detections) {
+                    if ("ML".equals(d.name)) {
+                        src = " in " + d.objectPath;
+                        break;
+                    }
+                }
                 reasons.add(String.format(java.util.Locale.US,
-                    "🤖 [ML] probability=%.2f%s", v.probability, near));
+                    "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
             }
             if (v.md5 != null && !v.md5.isEmpty()) {
                 reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
@@ -1928,8 +1935,15 @@ public class ScanEngine {
                         }
                         if (mlMalicious) {
                             String near = v.nearest != null ? "  ~" + v.nearest : "";
+                            String src = "";
+                            for (Verdict.Detection d : v.detections) {
+                                if ("ML".equals(d.name)) {
+                                    src = " in " + d.objectPath;
+                                    break;
+                                }
+                            }
                             reasons.add(String.format(java.util.Locale.US,
-                                "🤖 [ML] probability=%.2f%s", v.probability, near));
+                                "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
                         }
                     } else if (v.isError()) {
                         Log.w(TAG, "native scan error: " + v.error);
@@ -2259,8 +2273,15 @@ public class ScanEngine {
                 }
                 if (mlMalicious) {
                     String near = v.nearest != null ? "  ~" + v.nearest : "";
+                    String src = "";
+                    for (Verdict.Detection d : v.detections) {
+                        if ("ML".equals(d.name)) {
+                            src = " in " + d.objectPath;
+                            break;
+                        }
+                    }
                     reasons.add(String.format(java.util.Locale.US,
-                        "🤖 [ML] probability=%.2f%s", v.probability, near));
+                        "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
                 }
             } else if (v.isError()) {
                 Log.w(TAG, "native scan error: " + v.error);
@@ -2420,8 +2441,15 @@ public class ScanEngine {
         }
         if (mlMalicious) {
             String near = v.nearest != null ? "  ~" + v.nearest : "";
+            String src = "";
+            for (Verdict.Detection d : v.detections) {
+                if ("ML".equals(d.name)) {
+                    src = " in " + d.objectPath;
+                    break;
+                }
+            }
             reasons.add(String.format(java.util.Locale.US,
-                "🤖 [ML] probability=%.2f%s", v.probability, near));
+                "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
         }
         if (v.md5 != null && !v.md5.isEmpty()) {
             reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
