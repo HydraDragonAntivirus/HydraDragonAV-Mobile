@@ -138,39 +138,31 @@ public class ScanEngine {
         orchestrationExecutor.execute(task);
     }
 
-    private static final java.util.concurrent.ConcurrentHashMap<String, ThreatResult> photonCache = new java.util.concurrent.ConcurrentHashMap<>();
     /**
-     * MD5-keyed scan-result cache for generic storage files (and APKs on disk).
-     * If a file's MD5 was already fully scanned this session the whole scan —
-     * including every nested zip entry — is skipped entirely.  Keyed by the
-     * lowercase hex MD5 of the outer file.  A null value means "scanned and
-     * found clean" (no ThreatResult to return); a non-null value is the cached
-     * threat to re-report.  Populated by scanGenericFile and the APK branch of
-     * scanDirectoryForApks.  Static so it survives across ScanEngine instances.
+     * Persistent scan cache backed by SQLite + in-memory HashMap.
+     * Replaces the old transient ConcurrentHashMap so cached results survive
+     * device reboots.  Each ScanEngine instance shares the same DB file
+     * (via getNoBackupFilesDir) but keeps its own in-memory snapshot loaded
+     * at construction time.
      */
-    private static final java.util.concurrent.ConcurrentHashMap<String, java.util.Optional<ThreatResult>> fileScanCache =
-        new java.util.concurrent.ConcurrentHashMap<>();
+    private static ScanCache scanCache;
     private final java.util.concurrent.ConcurrentHashMap<String, DeferredScanState> deferredScans = new java.util.concurrent.ConcurrentHashMap<>();
     private volatile boolean isBatchMode = false;
 
     /** Drop a cached scan result so the package is re-scanned fresh (e.g. after
      *  uninstall/update — otherwise a removed virus keeps "coming back"). */
     public static void invalidateCache(String packageName) {
-        if (packageName != null) photonCache.remove(packageName);
+        if (packageName != null && scanCache != null) scanCache.removePhotonCache(packageName);
     }
 
+    /** Clear all scan caches (in-memory + SQLite) and the anti-FN cache. */
     public static void clearCache() {
-        photonCache.clear();
-        fileScanCache.clear();
+        if (scanCache != null) scanCache.clearAll();
     }
 
-    /**
-     * Clear all transient caches (photonCache, fileScanCache) and also drop/clear
-     * the persistent SQLite caches (antiFnCache) if context is provided.
-     */
+    /** Clear all scan caches plus the persistent SQLite anti-FN cache. */
     public static void clearCache(Context context) {
-        photonCache.clear();
-        fileScanCache.clear();
+        if (scanCache != null) scanCache.clearAll();
         if (context != null) {
             try {
                 new AntiFnCache(context).clear();
@@ -393,6 +385,7 @@ public class ScanEngine {
         this.aiEngine = aiEngine;
         this.codeAnalyzer = new CodeAnalyzer(context);
         this.antiFnCache = new AntiFnCache(context);
+        if (scanCache == null) scanCache = new ScanCache(context);
         loadPackageWhitelist();
         // Load YARA-X rulesets + ML model into the native engine (non-fatal).
         try { NativeScanner.init(context); } catch (Throwable t) { /* degrade gracefully */ }
@@ -1005,7 +998,7 @@ public class ScanEngine {
                 String apkMd5 = computeFileMd5(file);
                 if (apkMd5 != null && photonCacheEnabled()) {
                     // 1. Check session fileScanCache
-                    java.util.Optional<ThreatResult> cachedApk = fileScanCache.get(apkMd5);
+                    java.util.Optional<ThreatResult> cachedApk = scanCache != null ? scanCache.getFileCache(apkMd5) : null;
                     if (cachedApk != null) {
                         Log.i(TAG, "File-MD5 cache hit APK (" + apkMd5 + "): " + file.getAbsolutePath());
                         if (cachedApk.isPresent()) {
@@ -1024,7 +1017,7 @@ public class ScanEngine {
                     // Check native NSRL Whitelist (MD5 clean)
                     if (isHashWhitelisted(apkMd5)) {
                         Log.i(TAG, "NSRL Whitelist hit APK (MD5 clean): " + file.getAbsolutePath());
-                        fileScanCache.put(apkMd5, java.util.Optional.empty());
+                        if (scanCache != null) scanCache.putFileCache(apkMd5, java.util.Optional.empty());
                         if (!cancelRequested) reportFileScanned(file, "NSRL whitelist - clean", 0, false);
                         continue;
                     }
@@ -1046,8 +1039,8 @@ public class ScanEngine {
                         if (callback != null) callback.onThreatFound(result);
                     }
                     // Cache by MD5 so the same APK bytes are never re-analysed.
-                    if (apkMd5 != null && photonCacheEnabled() && !cancelRequested) {
-                        fileScanCache.put(apkMd5, (result != null && result.isThreat())
+                    if (apkMd5 != null && photonCacheEnabled() && !cancelRequested && scanCache != null) {
+                        scanCache.putFileCache(apkMd5, (result != null && result.isThreat())
                             ? java.util.Optional.of(result)
                             : java.util.Optional.empty());
                     }
@@ -1200,7 +1193,7 @@ public class ScanEngine {
             String fileMd5 = computeFileMd5(file);
             if (fileMd5 != null && photonCacheEnabled()) {
                 // 1. Check session fileScanCache
-                java.util.Optional<ThreatResult> cached = fileScanCache.get(fileMd5);
+                java.util.Optional<ThreatResult> cached = scanCache != null ? scanCache.getFileCache(fileMd5) : null;
                 if (cached != null) {
                     Log.i(TAG, "File-MD5 cache hit (" + fileMd5 + "): " + file.getAbsolutePath());
                     if (cached.isPresent()) {
@@ -1217,7 +1210,7 @@ public class ScanEngine {
                 //    (must be ZIP/APK) before the xor-filter lookup.
                 if (isFileHashWhitelisted(file.getAbsolutePath(), fileMd5)) {
                     Log.i(TAG, "NSRL Whitelist hit (MD5 clean): " + file.getAbsolutePath());
-                    fileScanCache.put(fileMd5, java.util.Optional.empty());
+                    if (scanCache != null) scanCache.putFileCache(fileMd5, java.util.Optional.empty());
                     return true;
                 }
             }
@@ -1364,8 +1357,8 @@ public class ScanEngine {
                 if (callback != null) callback.onThreatFound(r);
             }
             // Store result in MD5 cache so an identical file is never re-scanned.
-            if (fileMd5 != null && photonCacheEnabled() && !cancelRequested) {
-                fileScanCache.put(fileMd5, r.isThreat()
+            if (fileMd5 != null && photonCacheEnabled() && !cancelRequested && scanCache != null) {
+                scanCache.putFileCache(fileMd5, r.isThreat()
                     ? java.util.Optional.of(r)
                     : java.util.Optional.empty());
             }
@@ -1444,7 +1437,7 @@ public class ScanEngine {
                         || app.sourceDir.startsWith("/product/") || app.sourceDir.startsWith("/apex/")) continue;
                 if (app.packageName != null && (app.packageName.equals(context.getPackageName())
                         || seen.contains(app.packageName)
-                        || photonCache.containsKey(app.packageName)
+                        || (scanCache != null && scanCache.containsPhotonCache(app.packageName))
                         || whitelistedDuringScan.contains(app.packageName))) continue;
                 if (!MaxScanFileSize.isWithinLimit(context, new java.io.File(app.sourceDir))) {
                     Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + app.packageName);
@@ -1595,10 +1588,10 @@ public class ScanEngine {
     }
 
     public ThreatResult analyzeApp(ApplicationInfo app, PackageManager pm, boolean isApkFile) {
-        if (app.packageName != null && photonCache.containsKey(app.packageName)
-                && photonCacheEnabled()) {
+        if (app.packageName != null && photonCacheEnabled() && scanCache != null
+                && scanCache.containsPhotonCache(app.packageName)) {
             Log.i(TAG, "Photon Cache Hit: " + app.packageName);
-            return photonCache.get(app.packageName);
+            return scanCache.getPhotonCache(app.packageName);
         }
 
         ThreatResult.Builder builder = new ThreatResult.Builder(app.packageName);
@@ -2055,7 +2048,7 @@ public class ScanEngine {
         builder.setApkPath(app.sourceDir);
         
         ThreatResult finalRes = builder.build();
-        if (!cancelRequested && app.packageName != null) photonCache.put(app.packageName, finalRes);
+        if (!cancelRequested && app.packageName != null && scanCache != null) scanCache.putPhotonCache(app.packageName, finalRes);
         return finalRes;
     }
 
@@ -2372,7 +2365,7 @@ public class ScanEngine {
         builder.setApkPath(app.sourceDir);
         
         ThreatResult finalRes = builder.build();
-        if (!cancelRequested && app.packageName != null) photonCache.put(app.packageName, finalRes);
+        if (!cancelRequested && app.packageName != null && scanCache != null) scanCache.putPhotonCache(app.packageName, finalRes);
         return finalRes;
     }
 
