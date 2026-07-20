@@ -1335,7 +1335,7 @@ public class ScanEngine {
             if (mlMalicious) {
                 String near = v.nearest != null ? "  ~" + v.nearest : "";
                 String src = "";
-                for (Verdict.Detection d : v.detections) {
+                for (NativeScanner.Verdict.Detection d : v.detections) {
                     if ("ML".equals(d.name)) {
                         src = " in " + d.objectPath;
                         break;
@@ -1929,7 +1929,7 @@ public class ScanEngine {
                         if (mlMalicious) {
                             String near = v.nearest != null ? "  ~" + v.nearest : "";
                             String src = "";
-                            for (Verdict.Detection d : v.detections) {
+                            for (NativeScanner.Verdict.Detection d : v.detections) {
                                 if ("ML".equals(d.name)) {
                                     src = " in " + d.objectPath;
                                     break;
@@ -2435,19 +2435,17 @@ public class ScanEngine {
         if (mlMalicious) {
             String near = v.nearest != null ? "  ~" + v.nearest : "";
             String src = "";
-            for (Verdict.Detection d : v.detections) {
-                if ("ML".equals(d.name)) {
-                    src = " in " + d.objectPath;
-                    break;
+                    for (NativeScanner.Verdict.Detection d : v.detections) {
+                        if ("ML".equals(d.name)) {
+                            src = " in " + d.objectPath;
+                            break;
+                        }
+                    }
+                    reasons.add(String.format(java.util.Locale.US,
+                        "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
                 }
             }
-            reasons.add(String.format(java.util.Locale.US,
-                "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
-        }
-        if (v.md5 != null && !v.md5.isEmpty()) {
-            reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
-        }
-        b.setRiskScore(riskScore);
+            b.setRiskScore(riskScore);
         b.setReasons(reasons);
         b.setAppName(file.getName() + " (FILE)");
         b.setApkPath(path);
