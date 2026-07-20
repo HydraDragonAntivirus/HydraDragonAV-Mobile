@@ -2288,21 +2288,24 @@ fn run_scan(
     // vice-versa), and `err` names WHICH engine + the panic location so the root
     // cause is pinpointed, not just swallowed.
     let mut err: Option<String> = None;
-    let t_extract = std::time::Instant::now();
-    // Phase 1: extract ALL buffers first (no scanning during extraction).
-    // Whitelist data is collected next, and heavy scans (ClamAV, DEX, emulation,
-    // ML, TLSH) only run on buffers not covered by any whitelist.
-    // Zip-bomb detections are returned alongside buffers so they are always
-    // surfaced even though scanning is deferred.
-    let (buffers, bomb_dets) = collect_buffers(bytes, file_md5, path);
-    let extract_ms = t_extract.elapsed().as_millis();
-
-    // MD5 of the whole top-level file (its "main hash") — Java builds a
-    // VirusTotal lookup link from this (VT accepts md5). Reuses Java's md5.
+    // MD5 of the whole top-level file — computed early so we can skip
+    // extraction when the file is whitelisted.
     let file_hash = match file_md5 {
         Some(md5) => md5.to_string(),
         None => md5_hex(bytes),
     };
+    // If the top-level file is hash-whitelisted, skip extraction entirely.
+    let whitelisted = engine.whitelist.as_ref().is_some_and(|wl| wl.contains(&file_hash));
+    if whitelisted {
+        android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
+    }
+    let t_extract = std::time::Instant::now();
+    let (buffers, bomb_dets) = if whitelisted {
+        (Vec::new(), Vec::new())
+    } else {
+        collect_buffers(bytes, file_md5, path)
+    };
+    let extract_ms = t_extract.elapsed().as_millis();
 
     let max_dets = 64;
     // Phase 2: collect all whitelist data, build skip_heavy, run fast passes
