@@ -1723,7 +1723,7 @@ fn run_deferred_item(
     let (ml_malicious, ml_probability, _, ml_nearest, ml_lineages) = match &engine.model {
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                run_ml_on_buffers(model, buffers, path)
+                run_ml_on_buffers(model, &buffers, path)
             })) {
                 Ok(res) => res,
                 Err(_) => {
@@ -2591,7 +2591,7 @@ fn run_scan(
     let (ml_malicious, ml_probability, _, ml_nearest, ml_lineages) = match &engine.model {
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                run_ml_on_buffers(model, buffers, path)
+                run_ml_on_buffers(model, &buffers, path)
             })) {
                 Ok(t) => t,
                 Err(_) => {
