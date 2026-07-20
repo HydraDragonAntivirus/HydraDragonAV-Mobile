@@ -1013,30 +1013,7 @@ public class ScanEngine {
                         continue; // skip analyzeApp entirely
                     }
 
-                    // 2. Check persistent antiFnCache (known MD5 threat)
-                    if (antiFnCache != null && antiFnCache.isEnabled() && antiFnCache.isKnownMd5(apkMd5)) {
-                        Log.i(TAG, "Anti-FN cache hit APK (known MD5 threat): " + file.getAbsolutePath());
-                        ThreatResult.Builder b = new ThreatResult.Builder(file.getName());
-                        b.setStandaloneFile(true);
-                        b.setRiskScore(100);
-                        b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                        b.setAppName(file.getName() + " (SD CARD)");
-                        b.setApkPath(file.getAbsolutePath());
-                        b.setReasons(java.util.Arrays.asList(
-                            "AntiFN.Suspected: known sample",
-                            "MD5: " + apkMd5,
-                            "🔍 VirusTotal: https://www.virustotal.com/gui/file/" + apkMd5));
-                        ThreatResult r = b.build();
-                        if (!threats.contains(r)) {
-                            threats.add(r);
-                            if (callback != null) callback.onThreatFound(r);
-                        }
-                        fileScanCache.put(apkMd5, java.util.Optional.of(r));
-                        if (!cancelRequested) reportFileScanned(file, "Anti-FN cache hit - threat", 100, true);
-                        continue;
-                    }
-
-                    // 4. Check native NSRL Whitelist (MD5 clean)
+                    // Check native NSRL Whitelist (MD5 clean)
                     if (isHashWhitelisted(apkMd5)) {
                         Log.i(TAG, "NSRL Whitelist hit APK (MD5 clean): " + file.getAbsolutePath());
                         fileScanCache.put(apkMd5, java.util.Optional.empty());
@@ -1225,29 +1202,7 @@ public class ScanEngine {
                     return true; // fully handled — skip native scan
                 }
 
-                // 2. Check persistent antiFnCache (known MD5 threat)
-                if (antiFnCache != null && antiFnCache.isEnabled() && antiFnCache.isKnownMd5(fileMd5)) {
-                    Log.i(TAG, "Anti-FN cache hit (known MD5 threat): " + file.getAbsolutePath());
-                    ThreatResult.Builder b = new ThreatResult.Builder(file.getAbsolutePath());
-                    b.setStandaloneFile(true);
-                    b.setRiskScore(100);
-                    b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                    b.setAppName(file.getName() + " (FILE)");
-                    b.setApkPath(file.getAbsolutePath());
-                    b.setReasons(java.util.Arrays.asList(
-                        "AntiFN.Suspected: known sample",
-                        "MD5: " + fileMd5,
-                        "🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileMd5));
-                    ThreatResult r = b.build();
-                    if (!threats.contains(r)) {
-                        threats.add(r);
-                        if (callback != null) callback.onThreatFound(r);
-                    }
-                    fileScanCache.put(fileMd5, java.util.Optional.of(r));
-                    return true;
-                }
-
-                // 4. Check native NSRL Whitelist (MD5 clean) — Rust validates file header
+                // Check native NSRL Whitelist (MD5 clean) — Rust validates file header
                 //    (must be ZIP/APK) before the xor-filter lookup.
                 if (isFileHashWhitelisted(file.getAbsolutePath(), fileMd5)) {
                     Log.i(TAG, "NSRL Whitelist hit (MD5 clean): " + file.getAbsolutePath());
