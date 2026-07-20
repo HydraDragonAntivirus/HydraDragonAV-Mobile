@@ -2,15 +2,15 @@
 //!
 //! Exposes native methods on `com.hydradragon.antivirus.engine.NativeScanner`.
 //!
-//! Static YARA rules (loaded at init):
+//! YARA rules loaded at init:
 //!   - clean_rules_filtered_verified.yrc
 //!   - valhalla-rules_filtered_verified.yrc
 //!   - machine_learning_apk.yrc
 //!   - androguard.yrc
 //!   - hips_rules_filtered_verified.yrc
 //!
-//! Dynamic YARA rules (lazy-loaded on first VPN scan):
-//!   - emerging-all.yrc  (network-threat rules requiring VPN packet data)
+//! YARA rules loaded on-demand when VPN starts:
+//!   - emerging-all.yrc (13 MB network-threat rules, nativeEnableVpnScan)
 //!
 //! ML model:
 //!   - model.onnx
@@ -78,7 +78,8 @@ macro_rules! rust_timing_log {
     };
 }
 
-/// Asset file names expected inside the init directory (loaded at init).
+/// All compiled YARA rule files loaded at init (everything except the
+/// 13 MB emerging-all.yrc which is loaded on-demand when VPN starts).
 const YRC_FILES: &[&str] = &[
     "clean_rules_filtered_verified.yrc",
     "valhalla-rules_filtered_verified.yrc",
@@ -86,10 +87,9 @@ const YRC_FILES: &[&str] = &[
     "androguard.yrc",
     "hips_rules_filtered_verified.yrc",
 ];
-/// Network-threat rules — loaded lazily on first VPN packet scan so they
-/// don't consume 13 MB of memory at startup. Requires VPN-captured packet
-/// payloads passed as `hydradragon.network.packets` module metadata.
-const DYNAMIC_YRC_FILES: &[&str] = &[
+/// Network-threat YARA rules — loaded lazily only when VPN scan is enabled
+/// (nativeEnableVpnScan(true)). Avoids 13 MB of memory at startup.
+const VPN_YRC_FILES: &[&str] = &[
     "emerging-all.yrc",
 ];
 const MODEL_ONNX: &str = "model.onnx";
@@ -170,25 +170,29 @@ static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
 static SCAN_RELEVANT_ONLY: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(true);
 
-/// Whether DYNAMIC_YRC_FILES (emerging-all.yrc) have been loaded into the
-/// live engine (lazy, first VPN packet scan). Avoids re-loading on every scan.
-static DYNAMIC_RULES_LOADED: std::sync::atomic::AtomicBool =
+/// Whether VPN_YRC_FILES have been loaded into the live engine (set once
+/// on first nativeEnableVpnScan(true) call).
+static VPN_RULES_LOADED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
-/// Base directory path, set once during do_init(), so lazy dynamic-rule loading
-/// knows where to find the .yrc files without threading a reference through
-/// every read-lock acquisition.
+/// Whether VPN packet scanning is active. When false, nativeScanPackets is
+/// a no-op even if VPN rules happen to be loaded.
+static VPN_SCAN_ENABLED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Every bundled asset file read at init time, kept for lazy loading of
+/// VPN_YRC_FILES when VPN starts (avoids filesystem access).
+static ASSET_FILES: OnceLock<std::collections::HashMap<String, Vec<u8>>> =
+    OnceLock::new();
+
+/// Base directory path, set once during do_init(), so generated_rule loading
+/// knows where to find the writable rules directory.
 static INIT_DIR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
 /// Guards against duplicate calls to `nativeInit` while the first async
 /// background thread is still loading the engine (~70 s).
 static INIT_STARTED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
-
-/// Every bundled asset file read at init time, kept for lazy loading of
-/// DYNAMIC_YRC_FILES (emerging-all.yrc) so no filesystem access is needed.
-static ASSET_FILES: OnceLock<std::collections::HashMap<String, Vec<u8>>> =
-    OnceLock::new();
 
 /// Last panic's "message @ file:line", captured by our hook so we can report
 /// WHY a scan panicked (root cause) instead of just swallowing it.
@@ -1222,17 +1226,17 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }).resolve::<LogErrorAndDefault>()
 }
 
-/// Lazy-load network-threat YARA rules (emerging-all.yrc) into the live engine
-/// if not already loaded. Called on first VPN packet scan.
-fn load_dynamic_rules() {
-    if DYNAMIC_RULES_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
+/// Load VPN network-threat YARA rules (emerging-all.yrc) into the live
+/// engine. Called once from nativeEnableVpnScan(true). Thread-safe.
+fn load_vpn_rules() {
+    if VPN_RULES_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
         return;
     }
     let Some(lock) = ENGINE.get() else { return };
     let Ok(mut guard) = lock.write() else { return };
     let Some(clamav) = &mut guard.clamav else { return };
     let Some(asset_files) = ASSET_FILES.get() else { return };
-    for name in DYNAMIC_YRC_FILES {
+    for name in VPN_YRC_FILES {
         let bytes = match asset_files.get(*name) {
             Some(b) => b.clone(),
             None => continue,
@@ -1244,7 +1248,7 @@ fn load_dynamic_rules() {
             }
         }));
     }
-    DYNAMIC_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
+    VPN_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
 fn scan_hips(hips_json: &str) -> String {
@@ -1310,6 +1314,79 @@ fn scan_text(text: &str) -> String {
     }))
     .unwrap_or_default();
     names.join(",")
+}
+
+/// `void nativeEnableVpnScan(boolean enable)` — when true, lazily load VPN
+/// YARA rules (emerging-all.yrc) and enable packet scanning. When false,
+/// disable packet scanning (rules stay loaded but are unused).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeEnableVpnScan(
+    _env: EnvUnowned,
+    _class: JClass,
+    enable: jboolean,
+) {
+    if enable == JNI_TRUE {
+        load_vpn_rules();
+        VPN_SCAN_ENABLED.store(true, std::sync::atomic::Ordering::Relaxed);
+    } else {
+        VPN_SCAN_ENABLED.store(false, std::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+/// `String nativeScanPackets(String packetsJson)` — scan VPN-captured packets
+/// against emerging-all.yrc (hydradragon module). Returns a JSON verdict:
+/// `{"malicious":true/false,"matches":[...]}`. No-op if VPN scan disabled.
+fn scan_packets(packets_json: &str) -> String {
+    if !VPN_SCAN_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
+        return r#"{"malicious":false}"#.to_string();
+    }
+    if packets_json.is_empty() {
+        return r#"{"malicious":false}"#.to_string();
+    }
+    if serde_json::from_str::<serde_json::Value>(packets_json).is_err() {
+        return r#"{"error":"invalid JSON"}"#.to_string();
+    }
+    let Some(guard) = ENGINE.get().and_then(|l| l.read().ok()) else {
+        return r#"{"error":"not initialised"}"#.to_string();
+    };
+    let Some(clamav) = &guard.clamav else {
+        return r#"{"error":"engine not ready"}"#.to_string();
+    };
+    // Build the full hydradragon module metadata with network packets.
+    let hydradragon_json = format!(r#"{{"network":{{"packets":{}}}}}"#, packets_json);
+    let module_meta: Vec<(&str, &[u8])> = vec![("hydradragon", hydradragon_json.as_bytes())];
+    let opts = ScanOptions::default();
+    let detections = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        clamav
+            .scan_bytes_named(packets_json.as_bytes(), "vpn_traffic", opts, &module_meta)
+            .into_iter()
+            .map(|m| m.name)
+            .collect::<Vec<_>>()
+    }))
+    .unwrap_or_default();
+    let malicious = !detections.is_empty();
+    let hits_json = detections
+        .iter()
+        .map(|h| format!("\"{}\"", json_escape(h)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(r#"{{"malicious":{},"matches":[{}]}}"#, malicious, hits_json)
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeScanPackets<'local>(
+    mut env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    packets_json: JString<'local>,
+) -> jstring {
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let json: String = match packets_json.try_to_string(env) {
+            Ok(s) => s,
+            Err(_) => return Ok(std::ptr::null_mut()),
+        };
+        let result = scan_packets(&json);
+        env.new_string(&result).map(|s| s.into_raw())
+    }).resolve::<LogErrorAndDefault>()
 }
 
 /// `String nativeScanApk(String path, String hydradragonJson, String fileMd5,

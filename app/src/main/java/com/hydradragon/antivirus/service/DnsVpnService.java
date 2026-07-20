@@ -9,6 +9,7 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import com.hydradragon.antivirus.R;
+import com.hydradragon.antivirus.engine.NativeScanner;
 import com.hydradragon.antivirus.engine.UrlThreatScanner;
 
 import java.io.FileInputStream;
@@ -63,6 +64,8 @@ public class DnsVpnService extends VpnService {
     private FileOutputStream tunOut;
     /** CIDR blacklist for resolved-IP sinkholing (loaded once). */
     private com.hydradragon.antivirus.engine.CidrBlacklist cidr;
+    /** Timestamp (System.nanoTime) of last VPN packet scan, for throttling. */
+    private long lastVpnScanNs;
 
     // ── Full-traffic capture mode (Suricata-style payload matching) ──────────
     /** When true, route ALL traffic through the tunnel and capture payloads. */
@@ -144,6 +147,10 @@ public class DnsVpnService extends VpnService {
         }
         if (running) return START_NOT_STICKY;
         startForegroundShield();
+        if (fullCapture) {
+            NativeScanner.enableVpnScan(true);
+            lastVpnScanNs = System.nanoTime();
+        }
         cidr = com.hydradragon.antivirus.engine.CidrBlacklist.get(this);
         // Bounded, not cached: a cached pool spins up a brand-new OS thread for
         // every single forwarded DNS query (see forward calls below) with no
@@ -166,6 +173,9 @@ public class DnsVpnService extends VpnService {
 
     /** Stop the tunnel: end the read loop, close the interface, drop foreground. */
     private void teardown() {
+        if (fullCapture) {
+            NativeScanner.enableVpnScan(false);
+        }
         running = false;
         if (worker != null) { worker.interrupt(); worker = null; }
         if (forwarders != null) { forwarders.shutdownNow(); forwarders = null; }
@@ -220,9 +230,40 @@ public class DnsVpnService extends VpnService {
                 byte[] copy = new byte[len];
                 System.arraycopy(packet, 0, copy, 0, len);
                 handlePacket(copy, len);
+                // Throttled periodic scan of captured packets (every 5 s).
+                if (fullCapture) {
+                    long now = System.nanoTime();
+                    if (now - lastVpnScanNs > 5_000_000_000L) {
+                        lastVpnScanNs = now;
+                        scanCapturedPackets();
+                    }
+                }
             }
         } catch (Exception e) {
             if (running) Log.w(TAG, "loop ended: " + e.getMessage());
+        }
+    }
+
+    /** Scan currently captured packets against emerging-all.yrc. */
+    private void scanCapturedPackets() {
+        String packetsJson;
+        synchronized (capturedPackets) {
+            if (capturedPackets.isEmpty()) return;
+            packetsJson = getCapturedPacketsJson();
+        }
+        if (packetsJson == null || packetsJson.isEmpty()) return;
+        try {
+            String result = NativeScanner.scanPackets(packetsJson);
+            if (result != null) {
+                boolean malicious = result.contains("\"malicious\":true");
+                if (malicious) {
+                    Log.w(TAG, "VPN packet match: " + result);
+                    com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent("vpn", 0, "ALL",
+                        true, "emerging-all match: " + result);
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "scanCapturedPackets error: " + t.getMessage());
         }
     }
 

@@ -200,6 +200,30 @@ public final class NativeScanner {
 
     private static native int nativeTlshDiff(String tlsh1, String tlsh2);
 
+    // ── VPN packet scan ─────────────────────────────────────────────────
+
+    private static native void nativeEnableVpnScan(boolean enable);
+
+    private static native String nativeScanPackets(String packetsJson);
+
+    /** Enable VPN packet scanning. Loads emerging-all.yrc rules lazily.
+     *  Call from VpnService.onStart(). */
+    public static void enableVpnScan(boolean enable) {
+        if (!LIB_LOADED) return;
+        try { nativeEnableVpnScan(enable); } catch (Throwable ignore) { }
+    }
+
+    /** Scan captured VPN packets against emerging-all.yrc (hydradragon
+     *  network-threat rules). Returns null if VPN scan is disabled or
+     *  engine not ready. */
+    public static String scanPackets(String packetsJson) {
+        if (!isReady() || packetsJson == null || packetsJson.isEmpty()) return null;
+        try {
+            String r = nativeScanPackets(packetsJson);
+            return (r == null || r.isEmpty()) ? null : r;
+        } catch (Throwable t) { return null; }
+    }
+
     /** Push the user's TLSH similarity threshold into the native engine so the
      *  `tlsh_nearest` malware-similarity pass uses it immediately. Clamped
      *  1-200 natively. */
