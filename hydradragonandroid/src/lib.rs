@@ -1,15 +1,19 @@
 //! JNI bridge for the Android app.
 //!
-//! Exposes two native methods on `com.hydradragon.antivirus.engine.NativeScanner`:
-//!   * `nativeInit(String dir)`     — load the compiled `.yrc` rulesets and the
-//!                                    ML model from a directory (the app copies
-//!                                    its bundled assets there at first launch).
-//!   * `nativeScanApk(String path)` — scan one APK, return a JSON verdict string.
+//! Exposes native methods on `com.hydradragon.antivirus.engine.NativeScanner`.
 //!
-//! Detection combines three signals; an APK is flagged if ANY fires:
-//!   1. clean_rules_filtered_verified.yrc  (generic Android/Linux malware)
-//!   2. valhalla-rules_filtered_verified.yrc
-//!   3. the ONNX malware/benign binary classifier model (model.onnx)
+//! Static YARA rules (loaded at init):
+//!   - clean_rules_filtered_verified.yrc
+//!   - valhalla-rules_filtered_verified.yrc
+//!   - machine_learning_apk.yrc
+//!   - androguard.yrc
+//!   - hips_rules_filtered_verified.yrc
+//!
+//! Dynamic YARA rules (lazy-loaded on first VPN scan):
+//!   - emerging-all.yrc  (network-threat rules requiring VPN packet data)
+//!
+//! ML model:
+//!   - model.onnx
 
 use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
@@ -1218,8 +1222,8 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }).resolve::<LogErrorAndDefault>()
 }
 
-/// Lazy-load HIPS / dynamic YARA rules into the live engine if not already
-/// loaded. Called by both scan_hips and scan_text.
+/// Lazy-load network-threat YARA rules (emerging-all.yrc) into the live engine
+/// if not already loaded. Called on first VPN packet scan.
 fn load_dynamic_rules() {
     if DYNAMIC_RULES_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
         return;
@@ -1251,8 +1255,6 @@ fn scan_hips(hips_json: &str) -> String {
     if serde_json::from_str::<serde_json::Value>(hips_json).is_err() {
         return r#"{"error":"invalid JSON"}"#.to_string();
     }
-    // Lazily load DYNAMIC_YRC_FILES on first HIPS/screen-text scan.
-    load_dynamic_rules();
     let Some(guard) = ENGINE.get().and_then(|l| l.read().ok()) else {
         return r#"{"error":"not initialised"}"#.to_string();
     };
@@ -1288,7 +1290,6 @@ fn scan_text(text: &str) -> String {
     if text.is_empty() {
         return String::new();
     }
-    load_dynamic_rules();
     let Some(guard) = ENGINE.get().and_then(|l| l.read().ok()) else {
         return String::new();
     };
