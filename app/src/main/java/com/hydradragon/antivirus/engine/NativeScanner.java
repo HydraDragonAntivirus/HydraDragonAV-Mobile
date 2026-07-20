@@ -462,7 +462,7 @@ public final class NativeScanner {
      *
      * @return JSON verdict, e.g.
          *         {@code {"malicious":true,"yara":["YARA.Foo"],
-     *         "ml":{"malicious":false,"jaccard":0.61,"anomaly":0.42,"nearest":"..."}}}
+     *         "ml":{"malicious":false,"probability":0.61,"nearest":"..."}}}
      *         or {@code {"error":"..."}} on failure.
      */
     public static String scanApk(String apkPath) {
@@ -499,8 +499,7 @@ public final class NativeScanner {
         public final List<String> matches = new ArrayList<>();
         /** ML one-class model sub-result. */
         public boolean mlMalicious;
-        public double jaccard;
-        public double anomaly;
+        public double probability;
         /** Closest known-malware sample (nullable). */
         public String nearest;
         /** Distinct dangerous permissions found in the (in-memory) manifest bytes. */
@@ -700,8 +699,7 @@ public final class NativeScanner {
             JSONObject ml = o.optJSONObject("ml");
             if (ml != null) {
                 v.mlMalicious = ml.optBoolean("malicious", false);
-                v.jaccard = ml.optDouble("jaccard", 0.0);
-                v.anomaly = ml.optDouble("anomaly", 0.0);
+                v.probability = ml.optDouble("probability", 0.0);
                 if (ml.has("nearest") && !ml.isNull("nearest")) {
                     v.nearest = ml.optString("nearest", null);
                 }

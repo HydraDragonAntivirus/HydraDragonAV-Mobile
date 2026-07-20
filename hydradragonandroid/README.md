@@ -27,7 +27,7 @@ Verdict JSON:
 ```json
 {"malicious":true,
  "yara":["AndroidOS_filtered.yrc::YARA.Some_Rule"],
- "ml":{"malicious":true,"jaccard":0.87,"anomaly":0.87,"nearest":null}}
+ "ml":{"malicious":true,"jaccard":0.87,"nearest":null}}
 ```
 
 ## Prerequisites

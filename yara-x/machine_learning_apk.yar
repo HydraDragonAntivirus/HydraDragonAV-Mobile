@@ -6318,27 +6318,6 @@ rule _58cc948bd809292143e604c3e03735c9517f94b37dd35299ca5e81d7b902d62_41 {
       ) or ( all of them )
 }
 
-rule _110cf99f4e796065b71aaf966e749ad6a0913919ec58cfc628b86aae84e24be_42 {
-   meta:
-      description = "16-07-2026-14.49 - from files 110cf99f4e796065b71aaf966e749ad6a0913919ec58cfc628b86aae84e24be4.apk, 364959964532e51ae14aa9e7b9e3f48594ac6343a2423e49ed27daafdbaf7753.apk, 580b39589c457f66e1feaa1f5e41830d1dc2091f31ec61dd393ca121bf3bed2e.apk, d0a15d8c5c2ea81c9d47e2553346e1713bfdb007f41d7c5d35a38d06d8611921.apk"
-      author = "HydraDragonAntivirus"
-      reference = "https://github.com/HydraDragonAntivirus"
-      date = "2026-07-17"
-      hash1 = "110cf99f4e796065b71aaf966e749ad6a0913919ec58cfc628b86aae84e24be4"
-      hash2 = "364959964532e51ae14aa9e7b9e3f48594ac6343a2423e49ed27daafdbaf7753"
-      hash3 = "580b39589c457f66e1feaa1f5e41830d1dc2091f31ec61dd393ca121bf3bed2e"
-      hash4 = "d0a15d8c5c2ea81c9d47e2553346e1713bfdb007f41d7c5d35a38d06d8611921"
-   strings:
-      $s1 = "Media view" fullword ascii
-      $s2 = "  Open ad when you're back online." fullword ascii
-      $s3 = "Media View" fullword ascii
-      $s4 = "$$Allow app to send you notifications?" fullword ascii
-      $s5 = "AAWe'll send you a notification with a link to the advertiser site." fullword ascii
-   condition:
-      ( uint16(0) == 0x4b50 and ( all of them )
-      ) or ( all of them )
-}
-
 rule _02437104c17dda825ba58e363f3eb11668b068f0fb66f31925c1a867899d127_44 {
    meta:
       description = "16-07-2026-14.49 - from files 02437104c17dda825ba58e363f3eb11668b068f0fb66f31925c1a867899d1271.apk, 34670aa23c3e50240fab2f820652f3f5d6eabf7177c6d6d4bba6c39a7b11aff9.apk"

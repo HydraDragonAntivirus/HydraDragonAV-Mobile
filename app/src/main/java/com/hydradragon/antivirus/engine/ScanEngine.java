@@ -987,6 +987,10 @@ public class ScanEngine {
             // outright. It'll get scanned under its real name once the
             // download finishes and the system renames it away from this.
             if (file.getName().startsWith(".pending-")) continue;
+            // Generic: skip 0-byte files (metadata markers like .nomedia,
+            // .database_uuid, .staging, temp locks, etc.) that have zero
+            // scannable content but cost 46-99ms each in native engine overhead.
+            if (!file.isDirectory() && file.length() == 0) continue;
             if (cancelRequested) return;
             if (file.isDirectory()) {
                 scanDirectoryForApks(file, pm, threats, fullScan, skipPackages, scannedFiles);
@@ -1284,7 +1288,7 @@ public class ScanEngine {
             for (NativeScanner.Verdict.Detection d : live) {
                 if ("ML".equals(d.name)) {
                     if (DetectionCategories.isEnabled(context, DetectionCategories.ML)
-                            && v.jaccard >= 0.55 && v.anomaly >= 0.33) {
+                            && v.probability >= 0.90) {
                         mlMalicious = true;
                         hasRealThreat = true;
                     }
@@ -1334,7 +1338,7 @@ public class ScanEngine {
             if (mlMalicious) {
                 String near = v.nearest != null ? "  ~" + v.nearest : "";
                 reasons.add(String.format(java.util.Locale.US,
-                    "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
+                    "🤖 [ML] probability=%.2f%s", v.probability, near));
             }
             if (v.md5 != null && !v.md5.isEmpty()) {
                 reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
@@ -1816,7 +1820,7 @@ public class ScanEngine {
                         + "ms slowest=" + slowestHere);
                     Log.d(TAG, "NATIVE-RESULT " + app.packageName + " verdict="
                         + (v == null ? "NULL(cancelled/error)" : ("detections=" + v.detections.size()
-                            + " permissions=" + v.permissions + " jaccard=" + v.jaccard + " anomaly=" + v.anomaly
+                            + " permissions=" + v.permissions + " probability=" + v.probability
                             + " error=" + v.error)));
                     if (v == null) return null;
                     if (isBatchMode && v.deferred) {
@@ -1843,7 +1847,7 @@ public class ScanEngine {
                     nativeHashes.addAll(v.hashes);
                     dangerousPermCount = v.permissions;
                     mlSummary = String.format(java.util.Locale.US,
-                        "jaccard=%.2f anomaly=%.4f nearest=%s", v.jaccard, v.anomaly,
+                        "probability=%.2f nearest=%s", v.probability,
                         v.nearest != null ? v.nearest : "none");
                     // Per-detection whitelist suppression (hit inside a whitelisted
                     // APK = FP; non-APK virus alongside it survives).
@@ -1861,7 +1865,7 @@ public class ScanEngine {
                         for (NativeScanner.Verdict.Detection d : live) {
                             if ("ML".equals(d.name)) {
                                 if (DetectionCategories.isEnabled(context, DetectionCategories.ML)
-                                        && v.jaccard >= 0.55 && v.anomaly >= 0.33) {
+                                        && v.probability >= 0.90) {
                                     mlMalicious = true; hasRealThreat = true;
                                 }
                                 continue;
@@ -1921,7 +1925,7 @@ public class ScanEngine {
                         if (mlMalicious) {
                             String near = v.nearest != null ? "  ~" + v.nearest : "";
                             reasons.add(String.format(java.util.Locale.US,
-                                "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
+                                "🤖 [ML] probability=%.2f%s", v.probability, near));
                         }
                     } else if (v.isError()) {
                         Log.w(TAG, "native scan error: " + v.error);
@@ -2200,7 +2204,7 @@ public class ScanEngine {
             nativeHashes.addAll(v.hashes);
             dangerousPermCount = v.permissions;
             mlSummary = String.format(java.util.Locale.US,
-                "jaccard=%.2f anomaly=%.4f nearest=%s", v.jaccard, v.anomaly,
+                "probability=%.2f nearest=%s", v.probability,
                 v.nearest != null ? v.nearest : "none");
             List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
             updateAntiFnCache(v, live);
@@ -2212,7 +2216,7 @@ public class ScanEngine {
                 for (NativeScanner.Verdict.Detection d : live) {
                     if ("ML".equals(d.name)) {
                         if (DetectionCategories.isEnabled(context, DetectionCategories.ML)
-                                && v.jaccard >= 0.55 && v.anomaly >= 0.33) {
+                                && v.probability >= 0.90) {
                             mlMalicious = true; hasRealThreat = true;
                         }
                         continue;
@@ -2252,7 +2256,7 @@ public class ScanEngine {
                 if (mlMalicious) {
                     String near = v.nearest != null ? "  ~" + v.nearest : "";
                     reasons.add(String.format(java.util.Locale.US,
-                        "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
+                        "🤖 [ML] probability=%.2f%s", v.probability, near));
                 }
             } else if (v.isError()) {
                 Log.w(TAG, "native scan error: " + v.error);
@@ -2367,7 +2371,7 @@ public class ScanEngine {
         for (NativeScanner.Verdict.Detection d : live) {
             if ("ML".equals(d.name)) {
                 if (DetectionCategories.isEnabled(context, DetectionCategories.ML)
-                        && v.jaccard >= 0.55 && v.anomaly >= 0.33) {
+                        && v.probability >= 0.90) {
                     mlMalicious = true;
                     hasRealThreat = true;
                 }
@@ -2413,7 +2417,7 @@ public class ScanEngine {
         if (mlMalicious) {
             String near = v.nearest != null ? "  ~" + v.nearest : "";
             reasons.add(String.format(java.util.Locale.US,
-                "🤖 [ML] jaccard=%.2f anomaly=%.4f%s", v.jaccard, v.anomaly, near));
+                "🤖 [ML] probability=%.2f%s", v.probability, near));
         }
         if (v.md5 != null && !v.md5.isEmpty()) {
             reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);

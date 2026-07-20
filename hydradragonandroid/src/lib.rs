@@ -1675,7 +1675,7 @@ fn run_deferred_item(
     let yara_total_ms = (yara_agg.values().sum::<u128>() / 1_000_000) as u128;
 
     let t_ml = std::time::Instant::now();
-    let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest, ml_lineages) = match &engine.model {
+    let (ml_malicious, ml_probability, _, ml_nearest, ml_lineages) = match &engine.model {
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let mut malicious = false;
@@ -1708,7 +1708,7 @@ fn run_deferred_item(
                         }
                     }
                 }
-                (malicious, best_confidence, best_confidence as f64, nearest, lineages)
+                (malicious, best_confidence, 0.0, nearest, lineages)
             })) {
                 Ok(res) => res,
                 Err(_) => {
@@ -1914,8 +1914,8 @@ fn run_deferred_item(
     let hits_json = "";
 
     format!(
-        r#"{{"path":"{}","malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}}}"#,
-        json_escape(path), malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json
+        r#"{{"path":"{}","malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}}}"#,
+        json_escape(path), malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json
     )
 }
 
@@ -2559,7 +2559,7 @@ fn run_scan(
         let hs: Vec<String> = hashes.iter().map(|h| format!("\"{}\"", h)).collect();
         let malicious = !bomb_dets.is_empty();
         return format!(
-            r#"{{"malicious":{},"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"jaccard":0.0,"anomaly":0.0,"nearest":null}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
+            r#"{{"malicious":{},"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0,"nearest":null}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
             if malicious { "true" } else { "false" },
             bomb_dets_json.join(","),
             perm_count,
@@ -2573,7 +2573,7 @@ fn run_scan(
     // Phase 3: ML runs on all buffers. No per-buffer whitelist skipping —
     // either every buffer was whitelisted (caught above) or none are.
     let t_ml = std::time::Instant::now();
-    let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest, ml_lineages) = match &engine.model {
+    let (ml_malicious, ml_probability, _, ml_nearest, ml_lineages) = match &engine.model {
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let mut malicious = false;
@@ -2606,7 +2606,7 @@ fn run_scan(
                         }
                     }
                 }
-                (malicious, best_confidence, best_confidence as f64, nearest, lineages)
+                (malicious, best_confidence, 0.0, nearest, lineages)
             })) {
                 Ok(t) => t,
                 Err(_) => {
@@ -2876,8 +2876,8 @@ fn run_scan(
     };
 
     format!(
-        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"jaccard":{:.4},"anomaly":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
-        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_jaccard, ml_anomaly, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
+        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
+        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
     )
 }
 
