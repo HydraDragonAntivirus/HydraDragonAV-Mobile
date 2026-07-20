@@ -18,5 +18,5 @@ pub use database::{
     ContainerSignature, ContainerType, Database, FileTypeMagic, LoadError, LoadReport, NumSpec,
     UnsupportedRecord,
 };
-pub use scanner::{Engine, ScanMatch, ScanOptions, ScanView, SignatureKind};
+pub use scanner::{Engine, is_text_like, ScanMatch, ScanOptions, ScanView, SignatureKind};
 pub use yara_scan::YaraEngine;

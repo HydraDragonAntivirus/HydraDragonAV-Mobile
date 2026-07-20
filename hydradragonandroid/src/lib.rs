@@ -18,7 +18,7 @@
 use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
 
-use hydradragonclamav::{Engine as ClamavEngine, ScanOptions};
+use hydradragonclamav::{Engine as ClamavEngine, is_text_like, ScanOptions};
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 use base64::Engine as Base64Engine;
@@ -739,43 +739,6 @@ fn tlsh_relevant(buf: &[u8]) -> bool {
 /// Whether the first 256 bytes look like human-readable text (ASCII or UTF-8).
 /// Returns true when ≥90% of the sample bytes are either ASCII printable,
 /// whitespace, or valid UTF-8 multi-byte sequence bytes.
-fn is_text_like(data: &[u8]) -> bool {
-    let sample = if data.len() > 256 { &data[..256] } else { data };
-    let mut text_bytes: usize = 0;
-    let mut i = 0;
-    while i < sample.len() {
-        let b = sample[i];
-        if b.is_ascii_graphic() || b.is_ascii_whitespace() {
-            text_bytes += 1;
-            i += 1;
-        } else if b >= 0x80 {
-            // Try to consume a valid UTF-8 multi-byte sequence
-            let rem = sample.len() - i;
-            if b & 0xE0 == 0xC0 && rem >= 2 && sample[i + 1] & 0xC0 == 0x80 {
-                text_bytes += 2;
-                i += 2;
-            } else if b & 0xF0 == 0xE0 && rem >= 3 && sample[i + 1] & 0xC0 == 0x80 && sample[i + 2] & 0xC0 == 0x80 {
-                text_bytes += 3;
-                i += 3;
-            } else if b & 0xF8 == 0xF0 && rem >= 4
-                && sample[i + 1] & 0xC0 == 0x80
-                && sample[i + 2] & 0xC0 == 0x80
-                && sample[i + 3] & 0xC0 == 0x80
-            {
-                text_bytes += 4;
-                i += 4;
-            } else {
-                // Invalid UTF-8 leader byte → not text
-                i += 1;
-            }
-        } else {
-            // Non-printable ASCII control char (e.g. null, escape) → not text
-            i += 1;
-        }
-    }
-    text_bytes > sample.len() * 9 / 10
-}
-
 fn is_obfuscated_xml(data: &[u8]) -> bool {
     let sample = if data.len() > 1024 { &data[..1024] } else { data };
     let non_ascii = sample.iter().filter(|&&b| !b.is_ascii()).count();

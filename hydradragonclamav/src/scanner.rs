@@ -402,7 +402,9 @@ impl Engine {
         // Java, …) are skipped outright — this avoids paying for the whole-buffer
         // atom prefilter only to have `target_matches` reject every candidate.
         let confident_target = detected_target.or_else(|| detect_builtin_target(&ctx));
-        if confident_target.is_some() && clamav_target_allowed(confident_target) {
+        if confident_target.is_some() && clamav_target_allowed(confident_target)
+            || confident_target.is_none() && is_text_like(ctx.data)
+        {
             // Time ClamAV scan_context
             let t_clamav = timing.as_ref().map(|_| Instant::now());
             self.scan_context(&ctx, &mut state.matches);
@@ -1060,6 +1062,38 @@ fn clamav_type_to_target(clamav_type: &str) -> Option<u32> {
         "CL_TYPE_DEX" => 16,
         _ => return None,
     })
+}
+
+/// Whether the first 256 bytes look like human-readable text (ASCII or UTF-8).
+pub fn is_text_like(data: &[u8]) -> bool {
+    let sample = if data.len() > 256 { &data[..256] } else { data };
+    let mut text_bytes: usize = 0;
+    let mut i = 0;
+    while i < sample.len() {
+        let b = sample[i];
+        if b.is_ascii_graphic() || b.is_ascii_whitespace() {
+            text_bytes += 1;
+            i += 1;
+        } else if b >= 0x80 {
+            let rem = sample.len() - i;
+            if b & 0xE0 == 0xC0 && rem >= 2 && sample[i + 1] & 0xC0 == 0x80 {
+                text_bytes += 2; i += 2;
+            } else if b & 0xF0 == 0xE0 && rem >= 3 && sample[i + 1] & 0xC0 == 0x80 && sample[i + 2] & 0xC0 == 0x80 {
+                text_bytes += 3; i += 3;
+            } else if b & 0xF8 == 0xF0 && rem >= 4
+                && sample[i + 1] & 0xC0 == 0x80
+                && sample[i + 2] & 0xC0 == 0x80
+                && sample[i + 3] & 0xC0 == 0x80
+            {
+                text_bytes += 4; i += 4;
+            } else {
+                i += 1;
+            }
+        } else {
+            i += 1;
+        }
+    }
+    text_bytes > sample.len() * 9 / 10
 }
 
 fn looks_like_ascii_text(data: &[u8]) -> bool {
