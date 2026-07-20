@@ -74,18 +74,19 @@ macro_rules! rust_timing_log {
     };
 }
 
-/// Asset file names expected inside the init directory (static scanner).
+/// Asset file names expected inside the init directory (loaded at init).
 const YRC_FILES: &[&str] = &[
     "clean_rules_filtered_verified.yrc",
     "valhalla-rules_filtered_verified.yrc",
     "machine_learning_apk.yrc",
+    "androguard.yrc",
+    "hips_rules_filtered_verified.yrc",
 ];
-/// HIPS / dynamic-analysis rules — loaded lazily on first nativeScanHips call
-/// so they don't slow down the static scanner init or consume memory for rules
-/// that only match on behavioral/HIPS metadata.
+/// Network-threat rules — loaded lazily on first VPN packet scan so they
+/// don't consume 13 MB of memory at startup. Requires VPN-captured packet
+/// payloads passed as `hydradragon.network.packets` module metadata.
 const DYNAMIC_YRC_FILES: &[&str] = &[
     "emerging-all.yrc",
-    "hips_rules_filtered_verified.yrc",
 ];
 const MODEL_ONNX: &str = "model.onnx";
 /// Malware TLSH similarity database (one T1 digest per line), built from the
@@ -165,14 +166,14 @@ static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
 static SCAN_RELEVANT_ONLY: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(true);
 
-/// Whether the DYNAMIC_YRC_FILES have been loaded into the live engine (lazy,
-/// first nativeScanHips call). Avoids re-loading them on every HIPS scan tick.
+/// Whether DYNAMIC_YRC_FILES (emerging-all.yrc) have been loaded into the
+/// live engine (lazy, first VPN packet scan). Avoids re-loading on every scan.
 static DYNAMIC_RULES_LOADED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
 /// Base directory path, set once during do_init(), so lazy dynamic-rule loading
-/// in scan_hips() knows where to find the .yrc files without threading a
-/// reference through every read-lock acquisition.
+/// knows where to find the .yrc files without threading a reference through
+/// every read-lock acquisition.
 static INIT_DIR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
 /// Guards against duplicate calls to `nativeInit` while the first async
@@ -181,8 +182,7 @@ static INIT_STARTED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
 /// Every bundled asset file read at init time, kept for lazy loading of
-/// DYNAMIC_YRC_FILES (HIPS rules) that are read on first scan_hips call
-/// rather than at init — no filesystem access needed.
+/// DYNAMIC_YRC_FILES (emerging-all.yrc) so no filesystem access is needed.
 static ASSET_FILES: OnceLock<std::collections::HashMap<String, Vec<u8>>> =
     OnceLock::new();
 
