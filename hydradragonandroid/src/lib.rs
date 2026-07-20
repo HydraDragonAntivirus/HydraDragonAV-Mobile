@@ -662,16 +662,6 @@ fn skip_by_size(buf: &[u8]) -> bool {
     buf.len() <= 12 || buf.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024
 }
 
-/// True when `data` is a ZIP whose entry list contains `AndroidManifest.xml` —
-/// the defining characteristic of a real APK. This is a content check (not
-/// extension-based), so it correctly rejects XAPK containers, JARs, AARs,
-/// and non-empty thumbnail/metadata files while still catching split APKs.
-fn is_apk_zip(data: &[u8]) -> bool {
-    hydradragonextractor::zip_list_entries(data)
-        .map(|entries| entries.iter().any(|e| e.name == "AndroidManifest.xml"))
-        .unwrap_or(false)
-}
-
 /// Shared ML-scan loop: run the ONNX model on every APK buffer, collecting
 /// malicious lineages and tracking the highest confidence score. Used by both
 /// `run_scan` and `run_deferred_item` (callers wrap it in `catch_unwind`).
@@ -691,9 +681,10 @@ fn run_ml_on_buffers(
         if hydradragonextractor::detect_format(&b.data) != Some("zip") {
             continue;
         }
-        if !is_apk_zip(&b.data) {
-            continue;
-        }
+        // features::extract() inside model.scan() returns None for non-APK
+        // content (no AndroidManifest.xml, DEX, resources.arsc, or META-INF
+        // with printable strings), so the model never scores entry-name-only
+        // ZIPs like XAPK containers, JARs, or metadata files.
         if let Some(r) = model.scan(&b.data) {
             if r.malicious {
                 malicious = true;

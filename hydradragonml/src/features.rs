@@ -52,12 +52,17 @@ fn token(prefix: &str, s: &[u8]) -> u64 {
     h
 }
 
-/// Extract features from raw APK bytes. Returns `None` only if the bytes are
-/// not a readable ZIP at all.
+/// Extract features from raw APK bytes. Returns `None` if the bytes are not a
+/// readable ZIP, or if the ZIP contains no APK-identifying content entries
+/// (AndroidManifest.xml, resources.arsc, classes.dex, or META-INF with
+/// printable strings).  Entry-name–only ZIPS (XAPK containers, JARs, AARs,
+/// empty metadata files) produce `None` so the ONNX model never scores
+/// non-APK content.
 pub fn extract(apk: &[u8]) -> Option<ApkFeatures> {
     let mut tokens: HashSet<u64> = HashSet::new();
     let reader = Cursor::new(apk);
     let mut archive = zip::ZipArchive::new(reader).ok()?;
+    let mut has_content_entry = false;
 
     for i in 0..archive.len() {
         if tokens.len() >= MAX_TOKENS {
@@ -79,6 +84,7 @@ pub fn extract(apk: &[u8]) -> Option<ApkFeatures> {
         if !scan_contents {
             continue;
         }
+        has_content_entry = true;
 
         let mut buf = Vec::new();
         if entry
@@ -100,7 +106,7 @@ pub fn extract(apk: &[u8]) -> Option<ApkFeatures> {
         harvest_strings(&buf, prefix, &mut tokens);
     }
 
-    if tokens.is_empty() {
+    if !has_content_entry || tokens.is_empty() {
         return None;
     }
 
