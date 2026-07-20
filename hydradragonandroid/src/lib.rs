@@ -669,10 +669,9 @@ fn run_ml_on_buffers(
     model: &Model,
     buffers: &[Buf],
     path: &str,
-) -> (bool, f32, f32, Option<String>, Vec<(String, Vec<String>)>) {
+) -> (bool, f32, Vec<(String, Vec<String>)>) {
     let mut malicious = false;
     let mut best_confidence = 0.0_f32;
-    let mut nearest: Option<String> = None;
     let mut lineages: Vec<(String, Vec<String>)> = Vec::new();
     for (i, b) in buffers.iter().enumerate() {
         if skip_by_size(&b.data) {
@@ -681,10 +680,6 @@ fn run_ml_on_buffers(
         if hydradragonextractor::detect_format(&b.data) != Some("zip") {
             continue;
         }
-        // features::extract() inside model.scan() returns None for non-APK
-        // content (no AndroidManifest.xml, DEX, resources.arsc, or META-INF
-        // with printable strings), so the model never scores entry-name-only
-        // ZIPs like XAPK containers, JARs, or metadata files.
         if let Some(r) = model.scan(&b.data) {
             if r.malicious {
                 malicious = true;
@@ -700,11 +695,10 @@ fn run_ml_on_buffers(
             }
             if r.confidence > best_confidence {
                 best_confidence = r.confidence;
-                nearest = r.nearest;
             }
         }
     }
-    (malicious, best_confidence, 0.0, nearest, lineages)
+    (malicious, best_confidence, lineages)
 }
 
 /// Parse a TLSH database file (one T1 digest per line) into a Vec of digests.
@@ -1683,7 +1677,7 @@ fn run_deferred_item(
     let yara_total_ms = (yara_agg.values().sum::<u128>() / 1_000_000) as u128;
 
     let t_ml = std::time::Instant::now();
-    let (ml_malicious, ml_probability, _, ml_nearest, ml_lineages) = match &engine.model {
+    let (ml_malicious, ml_probability, ml_lineages) = match &engine.model {
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 run_ml_on_buffers(model, &buffers, path)
@@ -1691,11 +1685,11 @@ fn run_deferred_item(
                 Ok(res) => res,
                 Err(_) => {
                     android_log(&format!("run_scan: ML model scan PANIC on {path}"));
-                    (false, 0.0, 0.0, None, Vec::new())
+                    (false, 0.0, Vec::new())
                 }
             }
         }
-        None => (false, 0.0, 0.0, None, Vec::new()),
+        None => (false, 0.0, Vec::new()),
     };
     let ml_ms = t_ml.elapsed().as_millis();
 
@@ -1829,10 +1823,6 @@ fn run_deferred_item(
         })
         .collect::<Vec<_>>()
         .join(",");
-    let nearest_json = match ml_nearest {
-        Some(n) => format!("\"{}\"", json_escape(&n)),
-        None => "null".to_string(),
-    };
     let packages_json = packages
         .iter()
         .map(|p| format!("\"{}\"", json_escape(p)))
@@ -1892,8 +1882,8 @@ fn run_deferred_item(
     let hits_json = "";
 
     format!(
-        r#"{{"path":"{}","malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}}}"#,
-        json_escape(path), malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json
+        r#"{{"path":"{}","malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}}}"#,
+        json_escape(path), malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, generated_rule_json, entry_md5s_json, entry_tlshs_json
     )
 }
 
@@ -2540,7 +2530,7 @@ fn run_scan(
         let hs: Vec<String> = hashes.iter().map(|h| format!("\"{}\"", h)).collect();
         let malicious = !bomb_dets.is_empty();
         return format!(
-            r#"{{"malicious":{},"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0,"nearest":null}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
+            r#"{{"malicious":{},"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
             if malicious { "true" } else { "false" },
             bomb_dets_json.join(","),
             perm_count,
@@ -2554,7 +2544,7 @@ fn run_scan(
     // Phase 3: ML runs on all buffers. No per-buffer whitelist skipping —
     // either every buffer was whitelisted (caught above) or none are.
     let t_ml = std::time::Instant::now();
-    let (ml_malicious, ml_probability, _, ml_nearest, ml_lineages) = match &engine.model {
+    let (ml_malicious, ml_probability, ml_lineages) = match &engine.model {
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 run_ml_on_buffers(model, &buffers, path)
@@ -2564,11 +2554,11 @@ fn run_scan(
                     if err.is_none() {
                         err = Some(format!("ml: {}", last_panic()));
                     }
-                    (false, 0.0, 0.0, None, Vec::new())
+                    (false, 0.0, Vec::new())
                 }
             }
         }
-        None => (false, 0.0, 0.0, None, Vec::new()),
+        None => (false, 0.0, Vec::new()),
     };
     let ml_ms = t_ml.elapsed().as_millis();
 
@@ -2755,10 +2745,6 @@ fn run_scan(
         })
         .collect::<Vec<_>>()
         .join(",");
-    let nearest_json = match ml_nearest {
-        Some(n) => format!("\"{}\"", json_escape(&n)),
-        None => "null".to_string(),
-    };
     let packages_json = packages
         .iter()
         .map(|p| format!("\"{}\"", json_escape(p)))
@@ -2827,8 +2813,8 @@ fn run_scan(
     };
 
     format!(
-        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4},"nearest":{}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
-        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, nearest_json, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
+        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
+        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
     )
 }
 
@@ -4156,12 +4142,17 @@ fn collect_buffers(
                             }
                         }
 
-                        if let Ok(mut og) = out.lock() {
-                            og.push(Buf {
-                                data: item.buf,
-                                apk_lineage: lineage,
-                                entry_name: item.entry_name,
-                            });
+                        let relevant = !SCAN_RELEVANT_ONLY.load(Ordering::Relaxed)
+                            || item.entry_name.is_none()
+                            || is_relevant_buffer(item.entry_name.as_deref(), &item.buf);
+                        if relevant {
+                            if let Ok(mut og) = out.lock() {
+                                og.push(Buf {
+                                    data: item.buf,
+                                    apk_lineage: lineage,
+                                    entry_name: item.entry_name,
+                                });
+                            }
                         }
 
                         outstanding.fetch_sub(1, AtomOrdering::AcqRel);

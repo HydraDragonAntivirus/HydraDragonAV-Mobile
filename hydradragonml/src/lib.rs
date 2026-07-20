@@ -21,8 +21,6 @@ pub struct ScanResult {
     pub suspicious: bool,
     /// Malware confidence 0.0 (benign) – 1.0 (malware).
     pub confidence: f32,
-    /// Optional label (not used in tract mode, kept for ScanResult compatibility).
-    pub nearest: Option<String>,
 }
 
 impl Model {
@@ -89,7 +87,6 @@ impl Model {
             malicious,
             suspicious,
             confidence,
-            nearest: None,
         }
     }
 }

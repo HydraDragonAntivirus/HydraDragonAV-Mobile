@@ -1333,7 +1333,6 @@ public class ScanEngine {
                 }
             }
             if (mlMalicious) {
-                String near = v.nearest != null ? "  ~" + v.nearest : "";
                 String src = "";
                 for (NativeScanner.Verdict.Detection d : v.detections) {
                     if ("ML".equals(d.name)) {
@@ -1342,7 +1341,7 @@ public class ScanEngine {
                     }
                 }
                 reasons.add(String.format(java.util.Locale.US,
-                    "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
+                    "🤖 [ML] probability=%.2f%s", v.probability, src));
             }
             if (v.md5 != null && !v.md5.isEmpty()) {
                 reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
@@ -1851,8 +1850,7 @@ public class ScanEngine {
                     nativeHashes.addAll(v.hashes);
                     dangerousPermCount = v.permissions;
                     mlSummary = String.format(java.util.Locale.US,
-                        "probability=%.2f nearest=%s", v.probability,
-                        v.nearest != null ? v.nearest : "none");
+                        "probability=%.2f", v.probability);
                     // Per-detection whitelist suppression (hit inside a whitelisted
                     // APK = FP; non-APK virus alongside it survives).
                     List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
@@ -1927,7 +1925,6 @@ public class ScanEngine {
                             builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
                         }
                         if (mlMalicious) {
-                            String near = v.nearest != null ? "  ~" + v.nearest : "";
                             String src = "";
                             for (NativeScanner.Verdict.Detection d : v.detections) {
                                 if ("ML".equals(d.name)) {
@@ -1936,7 +1933,7 @@ public class ScanEngine {
                                 }
                             }
                             reasons.add(String.format(java.util.Locale.US,
-                                "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
+                                "🤖 [ML] probability=%.2f%s", v.probability, src));
                         }
                     } else if (v.isError()) {
                         Log.w(TAG, "native scan error: " + v.error);
@@ -2215,8 +2212,7 @@ public class ScanEngine {
             nativeHashes.addAll(v.hashes);
             dangerousPermCount = v.permissions;
             mlSummary = String.format(java.util.Locale.US,
-                "probability=%.2f nearest=%s", v.probability,
-                v.nearest != null ? v.nearest : "none");
+                "probability=%.2f", v.probability);
             List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
             updateAntiFnCache(v, live);
             boolean mlMalicious = false;
@@ -2265,7 +2261,6 @@ public class ScanEngine {
                     builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
                 }
                 if (mlMalicious) {
-                    String near = v.nearest != null ? "  ~" + v.nearest : "";
                     String src = "";
                     for (NativeScanner.Verdict.Detection d : v.detections) {
                         if ("ML".equals(d.name)) {
@@ -2274,7 +2269,7 @@ public class ScanEngine {
                         }
                     }
                     reasons.add(String.format(java.util.Locale.US,
-                        "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
+                        "🤖 [ML] probability=%.2f%s", v.probability, src));
                 }
             } else if (v.isError()) {
                 Log.w(TAG, "native scan error: " + v.error);
@@ -2433,7 +2428,6 @@ public class ScanEngine {
             }
         }
         if (mlMalicious) {
-            String near = v.nearest != null ? "  ~" + v.nearest : "";
             String src = "";
                     for (NativeScanner.Verdict.Detection d : v.detections) {
                         if ("ML".equals(d.name)) {
@@ -2442,7 +2436,7 @@ public class ScanEngine {
                         }
                     }
                     reasons.add(String.format(java.util.Locale.US,
-                        "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
+                        "🤖 [ML] probability=%.2f%s", v.probability, src));
             }
             b.setRiskScore(riskScore);
         b.setReasons(reasons);
