@@ -2417,16 +2417,36 @@ fn run_scan(
         );
     }
 
-    // Phase 3: ML runs FIRST on all non-whitelisted buffers. If ML is
-    // confident benign, heavy scans (ClamAV/YARA/TLSH) are skipped for
-    // that buffer — saves time on known-clean code.
-    //
-    // skip_heavy[i] is START as the NSRL/package whitelist:
-    // true → skip everything (ML + ClamAV + YARA + TLSH + emulation).
-    // After ML, buffers where ML is confident benign are ALSO marked
-    // skip for the remaining passes.
-    const ML_BENIGN_SKIP_CONFIDENCE: f32 = 0.20;
-    let mut skip_clamav = skip_heavy.clone();
+    // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
+    // (ML, ClamAV, YARA, TLSH) and return clean immediately.
+    if skip_heavy.iter().all(|&s| s) {
+        let bomb_dets_json: Vec<String> = bomb_dets.iter().map(|(n, op, lin)| {
+            let hs: Vec<String> = lin.iter().map(|h| format!("\"{}\"", h)).collect();
+            format!(r#"{{"name":"{}","object_path":"{}","hashes":[{}]}}"#,
+                json_escape(n), json_escape(op), hs.join(","))
+        }).collect();
+        let file_tlsh = tlsh_rs::hash_bytes(bytes)
+            .ok()
+            .map(|d| d.to_string())
+            .unwrap_or_default();
+        let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
+        let pkgs: Vec<String> = packages.iter().map(|p| format!("\"{}\"", json_escape(p))).collect();
+        let hs: Vec<String> = hashes.iter().map(|h| format!("\"{}\"", h)).collect();
+        let malicious = !bomb_dets.is_empty();
+        return format!(
+            r#"{{"malicious":{},"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"jaccard":0.0,"anomaly":0.0,"nearest":null}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
+            if malicious { "true" } else { "false" },
+            bomb_dets_json.join(","),
+            perm_count,
+            pkgs.join(","),
+            hs.join(","),
+            file_hash,
+            file_tlsh_json,
+        );
+    }
+
+    // Phase 3: ML runs on all buffers. No per-buffer whitelist skipping —
+    // either every buffer was whitelisted (caught above) or none are.
     let t_ml = std::time::Instant::now();
     let (ml_malicious, ml_jaccard, ml_anomaly, ml_nearest, ml_lineages) = match &engine.model {
         Some(model) => {
@@ -2436,9 +2456,6 @@ fn run_scan(
                 let mut nearest: Option<String> = None;
                 let mut lineages: Vec<(String, Vec<String>)> = Vec::new();
                 for (i, b) in buffers.iter().enumerate() {
-                    if skip_heavy[i] {
-                        continue;
-                    }
                     if skip_by_size(&b.data) {
                         continue;
                     }
@@ -2446,10 +2463,6 @@ fn run_scan(
                         continue;
                     }
                     if let Some(r) = model.scan(&b.data) {
-                        // ML confident benign → skip heavy scans for this buffer
-                        if !r.malicious && r.confidence < ML_BENIGN_SKIP_CONFIDENCE {
-                            skip_clamav[i] = true;
-                        }
                         if r.malicious {
                             malicious = true;
                             let obj_path = if i == 0 {
@@ -2483,16 +2496,17 @@ fn run_scan(
     };
     let ml_ms = t_ml.elapsed().as_millis();
 
-    // ClamAV + YARA — only on buffers not skipped by whitelist OR ML.
+    // ClamAV + YARA — on all buffers (no per-buffer skipping).
     let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     let mut yara_dets: Vec<(String, String, Vec<String>)> = match &engine.clamav {
         Some(clamav) => {
             let opts = ScanOptions::default();
+            let no_skip = vec![false; buffers.len()];
             rescan_buffers_parallel(
                 clamav,
                 engine,
                 &buffers,
-                &skip_clamav,
+                &no_skip,
                 &dex_scans,
                 &emulated,
                 &emulated_strings,
@@ -2545,9 +2559,6 @@ fn run_scan(
     let tlsh_ms = {
         let t_tlsh = std::time::Instant::now();
         for (i, b) in buffers.iter().enumerate() {
-            if skip_clamav[i] {
-                continue;
-            }
             if skip_by_size(&b.data) {
                 continue;
             }
