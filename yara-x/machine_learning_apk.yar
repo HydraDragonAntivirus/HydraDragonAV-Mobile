@@ -5383,36 +5383,6 @@ rule _21b6b9c7262fe39d2f2ce49115c9c22f50d3e5b0b083a0f8c1ddd776c369ffd_15 {
       ) or ( all of them )
 }
 
-rule _6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422_16 {
-   meta:
-      description = "16-07-2026-14.49 - from files 6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422e.apk, cdcdef6cdfab4abbcf83265b1975fdecefbad68ab65931a74f4b930e5e22b29c.apk"
-      author = "HydraDragonAntivirus"
-      reference = "https://github.com/HydraDragonAntivirus"
-      date = "2026-07-17"
-      hash1 = "6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422e"
-      hash2 = "cdcdef6cdfab4abbcf83265b1975fdecefbad68ab65931a74f4b930e5e22b29c"
-   strings:
-      $s1 = ".version\" android:value=\"@integer/google_play_services_version\" />" fullword ascii
-      $s2 = "R requires Google Play services, but they're missing when getting application info." fullword ascii
-      $s3 = "application> element:     <meta-data android:name=\"com.google.android.gms.version\" android:value=\"@integer/google_play_servic" ascii
-      $s4 = "A required meta-data tag in your app's AndroidManifest.xml does not exist.  You must have the following declaration within the <" ascii
-      $s5 = "]The meta-data tag in your app's AndroidManifest.xml does not have the right value.  Expected " fullword ascii
-      $s6 = "Z requires Google Play Store, but its signature doesn't match that of Google Play services." fullword ascii
-      $s7 = "? requires Google Play services, but their signature is invalid." fullword ascii
-      $s8 = "A required meta-data tag in your app's AndroidManifest.xml does not exist.  You must have the following declaration within the <" ascii
-      $s9 = ".  You must have the following declaration within the <application> element:     <meta-data android:name=\"com.google.android.gm" ascii
-      $s10 = "5 requires Google Play services, but they are missing." fullword ascii
-      $s11 = "null reference" fullword ascii
-      $s12 = "3 requires the Google Play Store, but it is missing." fullword ascii
-      $s13 = "This should never happen." fullword ascii
-      $s14 = ": requires Google Play Store, but its signature is invalid." fullword ascii
-      $s15 = "Method not available in SDK." fullword ascii
-      $s16 = ".  You must have the following declaration within the <application> element:     <meta-data android:name=\"com.google.android.gm" ascii
-   condition:
-      ( uint16(0) == 0x4b50 and ( 8 of them )
-      ) or ( all of them )
-}
-
 rule _02944967154e515f87bb411641edd9931ea6b4a4088ab73efe87cbe7b9d5b59_17 {
    meta:
       description = "16-07-2026-14.49 - from files 02944967154e515f87bb411641edd9931ea6b4a4088ab73efe87cbe7b9d5b592.apk, 15839ac050341de16481e5e425f5f1a791547651d4aeda398217f823f0f321f9.apk, 272248f64722ef49413a6f3c339aecb78785546c1c65b9c2897e3915bd91be28.apk, 3dc24332f897ef758c38e4959624606236a3c63a1ba2e0b3d268ed6ce40b5c1a.apk, 97936d7873348f905d119dd9399261374aae494296e1b5fb3df521ef3cc76405.apk, ab1363201d0897ab7c55dceb1f8664a58ac65fe4aee3c9600c5d7659f8ae58a9.apk, b38d466dbb28feb20f4f8cc9d9a3b2204bf38e487e7cc5f057a756dd5f40b7c6.apk"
@@ -5682,76 +5652,6 @@ rule _498b9dc568e47cd06099fbedb479e78556a7cd30a8cad589b003a77e09de2c5_24 {
       $s18 = "!!Enter Youtube lite encryption key" fullword ascii
       $s19 = "Youtube lite encryption key" fullword ascii
       $s20 = "When Youtube lite log back into Youtube lite account, Youtube lite must enter the Youtube lite Youtube lite created when Youtube" ascii
-   condition:
-      ( uint16(0) == 0x4b50 and ( 8 of them )
-      ) or ( all of them )
-}
-
-rule _01dcbe196953883b1da0d43f890892b77ae53adc74ebdca41d4b0a8b4ede44c_25 {
-   meta:
-      description = "16-07-2026-14.49 - from files 01dcbe196953883b1da0d43f890892b77ae53adc74ebdca41d4b0a8b4ede44c0.apk, 0a7892513f7ed540529df130d9f51a8e39ddd562b08ec462d6bf07b89eca6169.apk, 0e69f3d10ba88974c47a9ce83a095a29e9ac3de66b0441db60624fbe0772f6c3.apk, 11f5c91d24c9d1eee16dacacfb9160e299544c1a854af92f79daf88364cea0b6.apk, 134327faf84fd493b16d027af9958fa93fc1129b6053c5eb0f372ea518691138.apk, 17fc5d1c8bd8b10471131282e42ec289bb1e1ee107ca676f369bb42fc3643af3.apk, 2fcdab3bfac7be6c6e3698c7f0d5cf15e32f4cfb0ac2e3e889a8a58ceba7ab76.apk, 3502fa570ada49eaeeaa4785bb1897ed91dfadaa76c5e8626c5b8e944d8f5f01.apk, 39ff96df1f5894bc094b1efca76a8418d264022f049ad473a3adffcaa3ceb84e.apk, 4569a94e001a046d0751226d5bfc16333b7b5478272b43f055d00d5b88e98d09.apk, 53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13cee.apk, 5494db78d03c9b3061c780520fc6713fa16cc8469c18ec9acb3d8eddff91964a.apk, 57940c5eee8641e02f49d1122528665a0ddfbf5b6b0d4b910b5287e15542591d.apk, 5f897f545d8826862fdfc4cf6cff38c43ce1e13da27d48f276aa497e64959be8.apk, 6376bcd8faa57aac7437116b184967a588025e2bf96318272cdcf51ff2f8dfdd.apk, 6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422e.apk, 6eb525100f54b9a830cd2d0f1169b053edb55332b2be73dd29a8b165b9ccdbf5.apk, 6f58b07b5ddabc29c9c7e7165349edbd2bee923446514044d67040de2f36664a.apk, 7593b0f4bc4c52cb359196f35868636b319641b01c8db9f662076285739a0505.apk, 8a954aaaeaa2abc16c8a562a6108f569d38fbd62ae8974f29131df0e4df4e096.apk, 8c93845d33f36a96a72deb5d0a07a9be93589461dd3bce8c87293d82d18459af.apk, 8da70cdcaf30bedd3040f03b71e8bc4362f13c12f38582dc71d796ba089cf93e.apk, a6ea793e52823218041ededc61900c6ea273b50ec64d32c4d2a3ce722450705b.apk, a6ed100ae42e4fdabfd1b4c992762152bc4a11cc8e521b647b444c75bb7a9782.apk, ad1ff400fc41f8c697a449bff1ec725211085f6874ebc714b01b80fef863c790.apk, b1c3a8818024ee86480bb83ea405ba2d9f96ea279e5cf9df19b3d3cb934ec42d.apk, b420b96e0d76702f51ba0e3364da881aaf766e00538059e58fec6b7676a68e6c.apk, b495f9491cd98dd5d5db6658458d576a44cf41afea9ada30a526ee7fa1771b84.apk, b99d175cbe06d4569a18449da044f326c68a56315ccc0da9cfa6f2c33bfd0939.apk, bbd6c516a908658a0cd636856341db09e3f2e67a5a9be9fd1e121992c51da0c7.apk, bca5b499b92f972143e80526296890538afafc70a5251dce3d36da1692ff21c0.apk, c54861f54bcf72de5f16611ef0eec32c5c5f937bf3fdb5d6e611b2a2f9acdf2a.apk, c6f2553734e73ffbafab7acba0194ad545cdce3364e60e2014f37b0e49e1ab64.apk, d0d4ef735a8bf076d81a6f3651d6bcfd8c69285049add2e6b6bee1276a99c37c.apk, eda7b5698cc90a97e44fa863f16d19526a830b57769a9f89097659df88e985fa.apk, ef16cc8137d29356d0ef23b61ddb9cfd5e2784578fa818d54fe670bfa1e6ef73.apk, fc075a04586519306868d0089966425e7824be432fc74a1d9e8fa1a5358a1bc7.apk, fc63ee556571cc26cf5a1d7ba1daee536a85438847d0f21886006fff3731124e.apk"
-      author = "HydraDragonAntivirus"
-      reference = "https://github.com/HydraDragonAntivirus"
-      date = "2026-07-17"
-      hash1 = "01dcbe196953883b1da0d43f890892b77ae53adc74ebdca41d4b0a8b4ede44c0"
-      hash2 = "0a7892513f7ed540529df130d9f51a8e39ddd562b08ec462d6bf07b89eca6169"
-      hash3 = "0e69f3d10ba88974c47a9ce83a095a29e9ac3de66b0441db60624fbe0772f6c3"
-      hash4 = "11f5c91d24c9d1eee16dacacfb9160e299544c1a854af92f79daf88364cea0b6"
-      hash5 = "134327faf84fd493b16d027af9958fa93fc1129b6053c5eb0f372ea518691138"
-      hash6 = "17fc5d1c8bd8b10471131282e42ec289bb1e1ee107ca676f369bb42fc3643af3"
-      hash7 = "2fcdab3bfac7be6c6e3698c7f0d5cf15e32f4cfb0ac2e3e889a8a58ceba7ab76"
-      hash8 = "3502fa570ada49eaeeaa4785bb1897ed91dfadaa76c5e8626c5b8e944d8f5f01"
-      hash9 = "39ff96df1f5894bc094b1efca76a8418d264022f049ad473a3adffcaa3ceb84e"
-      hash10 = "4569a94e001a046d0751226d5bfc16333b7b5478272b43f055d00d5b88e98d09"
-      hash11 = "53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13cee"
-      hash12 = "5494db78d03c9b3061c780520fc6713fa16cc8469c18ec9acb3d8eddff91964a"
-      hash13 = "57940c5eee8641e02f49d1122528665a0ddfbf5b6b0d4b910b5287e15542591d"
-      hash14 = "5f897f545d8826862fdfc4cf6cff38c43ce1e13da27d48f276aa497e64959be8"
-      hash15 = "6376bcd8faa57aac7437116b184967a588025e2bf96318272cdcf51ff2f8dfdd"
-      hash16 = "6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422e"
-      hash17 = "6eb525100f54b9a830cd2d0f1169b053edb55332b2be73dd29a8b165b9ccdbf5"
-      hash18 = "6f58b07b5ddabc29c9c7e7165349edbd2bee923446514044d67040de2f36664a"
-      hash19 = "7593b0f4bc4c52cb359196f35868636b319641b01c8db9f662076285739a0505"
-      hash20 = "8a954aaaeaa2abc16c8a562a6108f569d38fbd62ae8974f29131df0e4df4e096"
-      hash21 = "8c93845d33f36a96a72deb5d0a07a9be93589461dd3bce8c87293d82d18459af"
-      hash22 = "8da70cdcaf30bedd3040f03b71e8bc4362f13c12f38582dc71d796ba089cf93e"
-      hash23 = "a6ea793e52823218041ededc61900c6ea273b50ec64d32c4d2a3ce722450705b"
-      hash24 = "a6ed100ae42e4fdabfd1b4c992762152bc4a11cc8e521b647b444c75bb7a9782"
-      hash25 = "ad1ff400fc41f8c697a449bff1ec725211085f6874ebc714b01b80fef863c790"
-      hash26 = "b1c3a8818024ee86480bb83ea405ba2d9f96ea279e5cf9df19b3d3cb934ec42d"
-      hash27 = "b420b96e0d76702f51ba0e3364da881aaf766e00538059e58fec6b7676a68e6c"
-      hash28 = "b495f9491cd98dd5d5db6658458d576a44cf41afea9ada30a526ee7fa1771b84"
-      hash29 = "b99d175cbe06d4569a18449da044f326c68a56315ccc0da9cfa6f2c33bfd0939"
-      hash30 = "bbd6c516a908658a0cd636856341db09e3f2e67a5a9be9fd1e121992c51da0c7"
-      hash31 = "bca5b499b92f972143e80526296890538afafc70a5251dce3d36da1692ff21c0"
-      hash32 = "c54861f54bcf72de5f16611ef0eec32c5c5f937bf3fdb5d6e611b2a2f9acdf2a"
-      hash33 = "c6f2553734e73ffbafab7acba0194ad545cdce3364e60e2014f37b0e49e1ab64"
-      hash34 = "d0d4ef735a8bf076d81a6f3651d6bcfd8c69285049add2e6b6bee1276a99c37c"
-      hash35 = "eda7b5698cc90a97e44fa863f16d19526a830b57769a9f89097659df88e985fa"
-      hash36 = "ef16cc8137d29356d0ef23b61ddb9cfd5e2784578fa818d54fe670bfa1e6ef73"
-      hash37 = "fc075a04586519306868d0089966425e7824be432fc74a1d9e8fa1a5358a1bc7"
-      hash38 = "fc63ee556571cc26cf5a1d7ba1daee536a85438847d0f21886006fff3731124e"
-   strings:
-      $s1 = "ab%1$s no es pot executar sense Serveis de Google Play, que no " fullword ascii
-      $s2 = "<A%1$s getur ekki keyrt nema " fullword ascii
-      $s3 = "Error de Google Play Services" fullword ascii
-      $s4 = "ilLa nouvelle version des services Google Play est n" fullword ascii
-      $s5 = " version i ri i sh" fullword ascii
-      $s6 = "Virhe Google Play -palveluissa" fullword ascii
-      $s7 = " sen os servizos de Google Play, que non son compatibles co teu dispositivo." fullword ascii
-      $s8 = " les services Google Play." fullword ascii
-      $s9 = ".Google Play Services-" fullword ascii
-      $s10 = " des services Google Play" fullword ascii
-      $s11 = "YZ%1$s ne fonctionnera pas sans les services Google Play, qui sont actuellement mis " fullword ascii
-      $s12 = "RTEn ny version av Google Play-tj" fullword ascii
-      $s13 = "Google Play Services-fout" fullword ascii
-      $s14 = "$$Error sa Mga Serbisyo ng Google Play" fullword ascii
-      $s15 = "#=Google Play Services-" fullword ascii
-      $s16 = "  Activer les services Google Play" fullword ascii
-      $s17 = "iiHindi gagana ang %1$s nang wala ang mga serbisyo ng Google Play, na hindi nasusuportahan ng iyong device." fullword ascii
-      $s18 = " jour les services Google Play" fullword ascii
-      $s19 = "\"\"Installer les services Google Play" fullword ascii
-      $s20 = "s compatible amb el teu dispositiu." fullword ascii
    condition:
       ( uint16(0) == 0x4b50 and ( 8 of them )
       ) or ( all of them )
@@ -6439,79 +6339,6 @@ rule _110cf99f4e796065b71aaf966e749ad6a0913919ec58cfc628b86aae84e24be_42 {
       ) or ( all of them )
 }
 
-rule _01dcbe196953883b1da0d43f890892b77ae53adc74ebdca41d4b0a8b4ede44c_43 {
-   meta:
-      description = "16-07-2026-14.49 - from files 01dcbe196953883b1da0d43f890892b77ae53adc74ebdca41d4b0a8b4ede44c0.apk, 0a7892513f7ed540529df130d9f51a8e39ddd562b08ec462d6bf07b89eca6169.apk, 0e69f3d10ba88974c47a9ce83a095a29e9ac3de66b0441db60624fbe0772f6c3.apk, 11f5c91d24c9d1eee16dacacfb9160e299544c1a854af92f79daf88364cea0b6.apk, 134327faf84fd493b16d027af9958fa93fc1129b6053c5eb0f372ea518691138.apk, 17fc5d1c8bd8b10471131282e42ec289bb1e1ee107ca676f369bb42fc3643af3.apk, 2fcdab3bfac7be6c6e3698c7f0d5cf15e32f4cfb0ac2e3e889a8a58ceba7ab76.apk, 3502fa570ada49eaeeaa4785bb1897ed91dfadaa76c5e8626c5b8e944d8f5f01.apk, 39ff96df1f5894bc094b1efca76a8418d264022f049ad473a3adffcaa3ceb84e.apk, 41a9c5a298128b8c000227443ed3c1bf4e6ea17c4c8b91496ca7674ca62b08d7.apk, 4569a94e001a046d0751226d5bfc16333b7b5478272b43f055d00d5b88e98d09.apk, 53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13cee.apk, 5494db78d03c9b3061c780520fc6713fa16cc8469c18ec9acb3d8eddff91964a.apk, 57940c5eee8641e02f49d1122528665a0ddfbf5b6b0d4b910b5287e15542591d.apk, 5f897f545d8826862fdfc4cf6cff38c43ce1e13da27d48f276aa497e64959be8.apk, 6376bcd8faa57aac7437116b184967a588025e2bf96318272cdcf51ff2f8dfdd.apk, 6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422e.apk, 6eb525100f54b9a830cd2d0f1169b053edb55332b2be73dd29a8b165b9ccdbf5.apk, 6f58b07b5ddabc29c9c7e7165349edbd2bee923446514044d67040de2f36664a.apk, 7593b0f4bc4c52cb359196f35868636b319641b01c8db9f662076285739a0505.apk, 7c8d8eaa543c4e9bb54e8f7da36a1ccf343042dc61ed9b60d586cf21e6b8f891.apk, 8a954aaaeaa2abc16c8a562a6108f569d38fbd62ae8974f29131df0e4df4e096.apk, 8c93845d33f36a96a72deb5d0a07a9be93589461dd3bce8c87293d82d18459af.apk, 8da70cdcaf30bedd3040f03b71e8bc4362f13c12f38582dc71d796ba089cf93e.apk, a6ea793e52823218041ededc61900c6ea273b50ec64d32c4d2a3ce722450705b.apk, a6ed100ae42e4fdabfd1b4c992762152bc4a11cc8e521b647b444c75bb7a9782.apk, ad1ff400fc41f8c697a449bff1ec725211085f6874ebc714b01b80fef863c790.apk, b1c3a8818024ee86480bb83ea405ba2d9f96ea279e5cf9df19b3d3cb934ec42d.apk, b420b96e0d76702f51ba0e3364da881aaf766e00538059e58fec6b7676a68e6c.apk, b495f9491cd98dd5d5db6658458d576a44cf41afea9ada30a526ee7fa1771b84.apk, b99d175cbe06d4569a18449da044f326c68a56315ccc0da9cfa6f2c33bfd0939.apk, bbd6c516a908658a0cd636856341db09e3f2e67a5a9be9fd1e121992c51da0c7.apk, bca5b499b92f972143e80526296890538afafc70a5251dce3d36da1692ff21c0.apk, c54861f54bcf72de5f16611ef0eec32c5c5f937bf3fdb5d6e611b2a2f9acdf2a.apk, c6f2553734e73ffbafab7acba0194ad545cdce3364e60e2014f37b0e49e1ab64.apk, cdcdef6cdfab4abbcf83265b1975fdecefbad68ab65931a74f4b930e5e22b29c.apk, d0d4ef735a8bf076d81a6f3651d6bcfd8c69285049add2e6b6bee1276a99c37c.apk, eda7b5698cc90a97e44fa863f16d19526a830b57769a9f89097659df88e985fa.apk, ef16cc8137d29356d0ef23b61ddb9cfd5e2784578fa818d54fe670bfa1e6ef73.apk, fc075a04586519306868d0089966425e7824be432fc74a1d9e8fa1a5358a1bc7.apk, fc63ee556571cc26cf5a1d7ba1daee536a85438847d0f21886006fff3731124e.apk"
-      author = "HydraDragonAntivirus"
-      reference = "https://github.com/HydraDragonAntivirus"
-      date = "2026-07-17"
-      hash1 = "01dcbe196953883b1da0d43f890892b77ae53adc74ebdca41d4b0a8b4ede44c0"
-      hash2 = "0a7892513f7ed540529df130d9f51a8e39ddd562b08ec462d6bf07b89eca6169"
-      hash3 = "0e69f3d10ba88974c47a9ce83a095a29e9ac3de66b0441db60624fbe0772f6c3"
-      hash4 = "11f5c91d24c9d1eee16dacacfb9160e299544c1a854af92f79daf88364cea0b6"
-      hash5 = "134327faf84fd493b16d027af9958fa93fc1129b6053c5eb0f372ea518691138"
-      hash6 = "17fc5d1c8bd8b10471131282e42ec289bb1e1ee107ca676f369bb42fc3643af3"
-      hash7 = "2fcdab3bfac7be6c6e3698c7f0d5cf15e32f4cfb0ac2e3e889a8a58ceba7ab76"
-      hash8 = "3502fa570ada49eaeeaa4785bb1897ed91dfadaa76c5e8626c5b8e944d8f5f01"
-      hash9 = "39ff96df1f5894bc094b1efca76a8418d264022f049ad473a3adffcaa3ceb84e"
-      hash10 = "41a9c5a298128b8c000227443ed3c1bf4e6ea17c4c8b91496ca7674ca62b08d7"
-      hash11 = "4569a94e001a046d0751226d5bfc16333b7b5478272b43f055d00d5b88e98d09"
-      hash12 = "53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13cee"
-      hash13 = "5494db78d03c9b3061c780520fc6713fa16cc8469c18ec9acb3d8eddff91964a"
-      hash14 = "57940c5eee8641e02f49d1122528665a0ddfbf5b6b0d4b910b5287e15542591d"
-      hash15 = "5f897f545d8826862fdfc4cf6cff38c43ce1e13da27d48f276aa497e64959be8"
-      hash16 = "6376bcd8faa57aac7437116b184967a588025e2bf96318272cdcf51ff2f8dfdd"
-      hash17 = "6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422e"
-      hash18 = "6eb525100f54b9a830cd2d0f1169b053edb55332b2be73dd29a8b165b9ccdbf5"
-      hash19 = "6f58b07b5ddabc29c9c7e7165349edbd2bee923446514044d67040de2f36664a"
-      hash20 = "7593b0f4bc4c52cb359196f35868636b319641b01c8db9f662076285739a0505"
-      hash21 = "7c8d8eaa543c4e9bb54e8f7da36a1ccf343042dc61ed9b60d586cf21e6b8f891"
-      hash22 = "8a954aaaeaa2abc16c8a562a6108f569d38fbd62ae8974f29131df0e4df4e096"
-      hash23 = "8c93845d33f36a96a72deb5d0a07a9be93589461dd3bce8c87293d82d18459af"
-      hash24 = "8da70cdcaf30bedd3040f03b71e8bc4362f13c12f38582dc71d796ba089cf93e"
-      hash25 = "a6ea793e52823218041ededc61900c6ea273b50ec64d32c4d2a3ce722450705b"
-      hash26 = "a6ed100ae42e4fdabfd1b4c992762152bc4a11cc8e521b647b444c75bb7a9782"
-      hash27 = "ad1ff400fc41f8c697a449bff1ec725211085f6874ebc714b01b80fef863c790"
-      hash28 = "b1c3a8818024ee86480bb83ea405ba2d9f96ea279e5cf9df19b3d3cb934ec42d"
-      hash29 = "b420b96e0d76702f51ba0e3364da881aaf766e00538059e58fec6b7676a68e6c"
-      hash30 = "b495f9491cd98dd5d5db6658458d576a44cf41afea9ada30a526ee7fa1771b84"
-      hash31 = "b99d175cbe06d4569a18449da044f326c68a56315ccc0da9cfa6f2c33bfd0939"
-      hash32 = "bbd6c516a908658a0cd636856341db09e3f2e67a5a9be9fd1e121992c51da0c7"
-      hash33 = "bca5b499b92f972143e80526296890538afafc70a5251dce3d36da1692ff21c0"
-      hash34 = "c54861f54bcf72de5f16611ef0eec32c5c5f937bf3fdb5d6e611b2a2f9acdf2a"
-      hash35 = "c6f2553734e73ffbafab7acba0194ad545cdce3364e60e2014f37b0e49e1ab64"
-      hash36 = "cdcdef6cdfab4abbcf83265b1975fdecefbad68ab65931a74f4b930e5e22b29c"
-      hash37 = "d0d4ef735a8bf076d81a6f3651d6bcfd8c69285049add2e6b6bee1276a99c37c"
-      hash38 = "eda7b5698cc90a97e44fa863f16d19526a830b57769a9f89097659df88e985fa"
-      hash39 = "ef16cc8137d29356d0ef23b61ddb9cfd5e2784578fa818d54fe670bfa1e6ef73"
-      hash40 = "fc075a04586519306868d0089966425e7824be432fc74a1d9e8fa1a5358a1bc7"
-      hash41 = "fc63ee556571cc26cf5a1d7ba1daee536a85438847d0f21886006fff3731124e"
-   strings:
-      $s1 = " Google Play services " fullword ascii
-      $s2 = "HH%1$s ondervind probleme met Google Play Dienste. Probeer asseblief weer." fullword ascii
-      $s3 = "EERakendusel %1$s on probleeme Google Play teenustega. Proovige uuesti." fullword ascii
-      $s4 = " problemes amb Serveis de Google Play. Torna-ho a provar." fullword ascii
-      $s5 = "rbimet e Google Play. Provo s" fullword ascii
-      $s6 = "FGAplikacija %1$s ima problema s Google Play uslugama. Poku" fullword ascii
-      $s7 = "KK%1$s menghadapi masalah berhubung perkhidmatan Google Play. Sila cuba lagi." fullword ascii
-      $s8 = " Google Play xidm" fullword ascii
-      $s9 = "OPSovelluksella %1$s on ongelmia Google Play Palveluiden kanssa. Yrit" fullword ascii
-      $s10 = "?@%1$s ten problemas cos servizos de Google Play. T" fullword ascii
-      $s11 = "a s uslugama Google Playa. Poku" fullword ascii
-      $s12 = "nda problem var. Daha sonra yenid" fullword ascii
-      $s13 = "os do Google Play. Tente novamente." fullword ascii
-      $s14 = ";;%1$s ima problema sa Google Play uslugama. Probajte ponovo." fullword ascii
-      $s15 = "ma ar Google Play pakalpojumu darb" fullword ascii
-      $s16 = " probleme privind serviciile Google Play. " fullword ascii
-      $s17 = "KK%1$s inakumbwa na hitilafu ya huduma za Google Play. Tafadhali jaribu tena." fullword ascii
-      $s18 = "nustu Google Play. Reyndu aftur." fullword ascii
-      $s19 = "==%1$s inenkinga ngamasevisi e-Google Play. Sicela uzame futhi." fullword ascii
-      $s20 = "%1$s Google Play " fullword ascii
-   condition:
-      ( uint16(0) == 0x4b50 and ( 8 of them )
-      ) or ( all of them )
-}
-
 rule _02437104c17dda825ba58e363f3eb11668b068f0fb66f31925c1a867899d127_44 {
    meta:
       description = "16-07-2026-14.49 - from files 02437104c17dda825ba58e363f3eb11668b068f0fb66f31925c1a867899d1271.apk, 34670aa23c3e50240fab2f820652f3f5d6eabf7177c6d6d4bba6c39a7b11aff9.apk"
@@ -6535,75 +6362,6 @@ rule _02437104c17dda825ba58e363f3eb11668b068f0fb66f31925c1a867899d127_44 {
       $s12 = " Group admins control who can change this setting. <a href=\"learn-more\">Learn" fullword ascii
       $s13 = "<<Delete broadcast list?" fullword ascii
       $s14 = " control who can change this setting. <a href=\"learn-more\">Learn" fullword ascii
-   condition:
-      ( uint16(0) == 0x4b50 and ( 8 of them )
-      ) or ( all of them )
-}
-
-rule _01dcbe196953883b1da0d43f890892b77ae53adc74ebdca41d4b0a8b4ede44c_45 {
-   meta:
-      description = "16-07-2026-14.49 - from files 01dcbe196953883b1da0d43f890892b77ae53adc74ebdca41d4b0a8b4ede44c0.apk, 0a7892513f7ed540529df130d9f51a8e39ddd562b08ec462d6bf07b89eca6169.apk, 0e69f3d10ba88974c47a9ce83a095a29e9ac3de66b0441db60624fbe0772f6c3.apk, 11f5c91d24c9d1eee16dacacfb9160e299544c1a854af92f79daf88364cea0b6.apk, 134327faf84fd493b16d027af9958fa93fc1129b6053c5eb0f372ea518691138.apk, 17fc5d1c8bd8b10471131282e42ec289bb1e1ee107ca676f369bb42fc3643af3.apk, 2fcdab3bfac7be6c6e3698c7f0d5cf15e32f4cfb0ac2e3e889a8a58ceba7ab76.apk, 3502fa570ada49eaeeaa4785bb1897ed91dfadaa76c5e8626c5b8e944d8f5f01.apk, 39ff96df1f5894bc094b1efca76a8418d264022f049ad473a3adffcaa3ceb84e.apk, 41a9c5a298128b8c000227443ed3c1bf4e6ea17c4c8b91496ca7674ca62b08d7.apk, 4569a94e001a046d0751226d5bfc16333b7b5478272b43f055d00d5b88e98d09.apk, 53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13cee.apk, 5494db78d03c9b3061c780520fc6713fa16cc8469c18ec9acb3d8eddff91964a.apk, 57940c5eee8641e02f49d1122528665a0ddfbf5b6b0d4b910b5287e15542591d.apk, 5f897f545d8826862fdfc4cf6cff38c43ce1e13da27d48f276aa497e64959be8.apk, 6376bcd8faa57aac7437116b184967a588025e2bf96318272cdcf51ff2f8dfdd.apk, 6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422e.apk, 6eb525100f54b9a830cd2d0f1169b053edb55332b2be73dd29a8b165b9ccdbf5.apk, 6f58b07b5ddabc29c9c7e7165349edbd2bee923446514044d67040de2f36664a.apk, 7593b0f4bc4c52cb359196f35868636b319641b01c8db9f662076285739a0505.apk, 7c8d8eaa543c4e9bb54e8f7da36a1ccf343042dc61ed9b60d586cf21e6b8f891.apk, 8a954aaaeaa2abc16c8a562a6108f569d38fbd62ae8974f29131df0e4df4e096.apk, 8c93845d33f36a96a72deb5d0a07a9be93589461dd3bce8c87293d82d18459af.apk, 8da70cdcaf30bedd3040f03b71e8bc4362f13c12f38582dc71d796ba089cf93e.apk, a2f827bcb3acc7ccfc45f202a0e8adae2cd6439ae46d0d4d401a418846761a2e.apk, a6ea793e52823218041ededc61900c6ea273b50ec64d32c4d2a3ce722450705b.apk, a6ed100ae42e4fdabfd1b4c992762152bc4a11cc8e521b647b444c75bb7a9782.apk, ad1ff400fc41f8c697a449bff1ec725211085f6874ebc714b01b80fef863c790.apk, b1c3a8818024ee86480bb83ea405ba2d9f96ea279e5cf9df19b3d3cb934ec42d.apk, b420b96e0d76702f51ba0e3364da881aaf766e00538059e58fec6b7676a68e6c.apk, b495f9491cd98dd5d5db6658458d576a44cf41afea9ada30a526ee7fa1771b84.apk, b99d175cbe06d4569a18449da044f326c68a56315ccc0da9cfa6f2c33bfd0939.apk, bbd6c516a908658a0cd636856341db09e3f2e67a5a9be9fd1e121992c51da0c7.apk, bca5b499b92f972143e80526296890538afafc70a5251dce3d36da1692ff21c0.apk, c54861f54bcf72de5f16611ef0eec32c5c5f937bf3fdb5d6e611b2a2f9acdf2a.apk, c6f2553734e73ffbafab7acba0194ad545cdce3364e60e2014f37b0e49e1ab64.apk, cdcdef6cdfab4abbcf83265b1975fdecefbad68ab65931a74f4b930e5e22b29c.apk, d0d4ef735a8bf076d81a6f3651d6bcfd8c69285049add2e6b6bee1276a99c37c.apk, eda7b5698cc90a97e44fa863f16d19526a830b57769a9f89097659df88e985fa.apk, ef16cc8137d29356d0ef23b61ddb9cfd5e2784578fa818d54fe670bfa1e6ef73.apk, fc075a04586519306868d0089966425e7824be432fc74a1d9e8fa1a5358a1bc7.apk, fc63ee556571cc26cf5a1d7ba1daee536a85438847d0f21886006fff3731124e.apk"
-      author = "HydraDragonAntivirus"
-      reference = "https://github.com/HydraDragonAntivirus"
-      date = "2026-07-17"
-      hash1 = "01dcbe196953883b1da0d43f890892b77ae53adc74ebdca41d4b0a8b4ede44c0"
-      hash2 = "0a7892513f7ed540529df130d9f51a8e39ddd562b08ec462d6bf07b89eca6169"
-      hash3 = "0e69f3d10ba88974c47a9ce83a095a29e9ac3de66b0441db60624fbe0772f6c3"
-      hash4 = "11f5c91d24c9d1eee16dacacfb9160e299544c1a854af92f79daf88364cea0b6"
-      hash5 = "134327faf84fd493b16d027af9958fa93fc1129b6053c5eb0f372ea518691138"
-      hash6 = "17fc5d1c8bd8b10471131282e42ec289bb1e1ee107ca676f369bb42fc3643af3"
-      hash7 = "2fcdab3bfac7be6c6e3698c7f0d5cf15e32f4cfb0ac2e3e889a8a58ceba7ab76"
-      hash8 = "3502fa570ada49eaeeaa4785bb1897ed91dfadaa76c5e8626c5b8e944d8f5f01"
-      hash9 = "39ff96df1f5894bc094b1efca76a8418d264022f049ad473a3adffcaa3ceb84e"
-      hash10 = "41a9c5a298128b8c000227443ed3c1bf4e6ea17c4c8b91496ca7674ca62b08d7"
-      hash11 = "4569a94e001a046d0751226d5bfc16333b7b5478272b43f055d00d5b88e98d09"
-      hash12 = "53ff2c9e5a5c52c2c2b0b77383d61dd33d522dd9f087388d2251bd9a5fa13cee"
-      hash13 = "5494db78d03c9b3061c780520fc6713fa16cc8469c18ec9acb3d8eddff91964a"
-      hash14 = "57940c5eee8641e02f49d1122528665a0ddfbf5b6b0d4b910b5287e15542591d"
-      hash15 = "5f897f545d8826862fdfc4cf6cff38c43ce1e13da27d48f276aa497e64959be8"
-      hash16 = "6376bcd8faa57aac7437116b184967a588025e2bf96318272cdcf51ff2f8dfdd"
-      hash17 = "6a41be0be47457c93f9639921e5199c3cb89ba117dcc6f05e86441414384422e"
-      hash18 = "6eb525100f54b9a830cd2d0f1169b053edb55332b2be73dd29a8b165b9ccdbf5"
-      hash19 = "6f58b07b5ddabc29c9c7e7165349edbd2bee923446514044d67040de2f36664a"
-      hash20 = "7593b0f4bc4c52cb359196f35868636b319641b01c8db9f662076285739a0505"
-      hash21 = "7c8d8eaa543c4e9bb54e8f7da36a1ccf343042dc61ed9b60d586cf21e6b8f891"
-      hash22 = "8a954aaaeaa2abc16c8a562a6108f569d38fbd62ae8974f29131df0e4df4e096"
-      hash23 = "8c93845d33f36a96a72deb5d0a07a9be93589461dd3bce8c87293d82d18459af"
-      hash24 = "8da70cdcaf30bedd3040f03b71e8bc4362f13c12f38582dc71d796ba089cf93e"
-      hash25 = "a2f827bcb3acc7ccfc45f202a0e8adae2cd6439ae46d0d4d401a418846761a2e"
-      hash26 = "a6ea793e52823218041ededc61900c6ea273b50ec64d32c4d2a3ce722450705b"
-      hash27 = "a6ed100ae42e4fdabfd1b4c992762152bc4a11cc8e521b647b444c75bb7a9782"
-      hash28 = "ad1ff400fc41f8c697a449bff1ec725211085f6874ebc714b01b80fef863c790"
-      hash29 = "b1c3a8818024ee86480bb83ea405ba2d9f96ea279e5cf9df19b3d3cb934ec42d"
-      hash30 = "b420b96e0d76702f51ba0e3364da881aaf766e00538059e58fec6b7676a68e6c"
-      hash31 = "b495f9491cd98dd5d5db6658458d576a44cf41afea9ada30a526ee7fa1771b84"
-      hash32 = "b99d175cbe06d4569a18449da044f326c68a56315ccc0da9cfa6f2c33bfd0939"
-      hash33 = "bbd6c516a908658a0cd636856341db09e3f2e67a5a9be9fd1e121992c51da0c7"
-      hash34 = "bca5b499b92f972143e80526296890538afafc70a5251dce3d36da1692ff21c0"
-      hash35 = "c54861f54bcf72de5f16611ef0eec32c5c5f937bf3fdb5d6e611b2a2f9acdf2a"
-      hash36 = "c6f2553734e73ffbafab7acba0194ad545cdce3364e60e2014f37b0e49e1ab64"
-      hash37 = "cdcdef6cdfab4abbcf83265b1975fdecefbad68ab65931a74f4b930e5e22b29c"
-      hash38 = "d0d4ef735a8bf076d81a6f3651d6bcfd8c69285049add2e6b6bee1276a99c37c"
-      hash39 = "eda7b5698cc90a97e44fa863f16d19526a830b57769a9f89097659df88e985fa"
-      hash40 = "ef16cc8137d29356d0ef23b61ddb9cfd5e2784578fa818d54fe670bfa1e6ef73"
-      hash41 = "fc075a04586519306868d0089966425e7824be432fc74a1d9e8fa1a5358a1bc7"
-      hash42 = "fc63ee556571cc26cf5a1d7ba1daee536a85438847d0f21886006fff3731124e"
-   strings:
-      $s1 = " com problemas com o Google Play Services. Tente novamente." fullword ascii
-      $s2 = "AA%1$s sta riscontrando problemi con Google Play Services. Riprova." fullword ascii
-      $s3 = "HH%1$s ondervindt problemen met Google Play-services. Probeer het opnieuw." fullword ascii
-      $s4 = "LO%1$s, Google Play hizmetleriyle ilgili sorun ya" fullword ascii
-      $s5 = "==%1$s mengalami masalah dengan layanan Google Play. Coba lagi." fullword ascii
-      $s6 = " kilo problem" fullword ascii
-      $s7 = "bami Google Play. Zkuste to pros" fullword ascii
-      $s8 = "ug Google Play. Spr" fullword ascii
-      $s9 = "ave s storitvami Google Play. Poskusite znova." fullword ascii
-      $s10 = "Play. Veuillez r" fullword ascii
-      $s11 = "OS%1$s ilovasini Google Play xizmatlariga ulab bo" fullword ascii
-      $s12 = "bami Google Play. Sk" fullword ascii
-      $s13 = "XeNaudojant program" fullword ascii
-      $s14 = "EH%1$s ma problem z dost" fullword ascii
-      $s15 = "]`L'application %1$s rencontre des probl" fullword ascii
    condition:
       ( uint16(0) == 0x4b50 and ( 8 of them )
       ) or ( all of them )
@@ -7039,26 +6797,6 @@ rule _2e9007b0de5fbb7050ac84bbba29a883e8a142b8c64beffbe20a3910180cbfc_56 {
       ) or ( all of them )
 }
 
-rule _110cf99f4e796065b71aaf966e749ad6a0913919ec58cfc628b86aae84e24be_57 {
-   meta:
-      description = "16-07-2026-14.49 - from files 110cf99f4e796065b71aaf966e749ad6a0913919ec58cfc628b86aae84e24be4.apk, 580b39589c457f66e1feaa1f5e41830d1dc2091f31ec61dd393ca121bf3bed2e.apk, d0a15d8c5c2ea81c9d47e2553346e1713bfdb007f41d7c5d35a38d06d8611921.apk"
-      author = "HydraDragonAntivirus"
-      reference = "https://github.com/HydraDragonAntivirus"
-      date = "2026-07-17"
-      hash1 = "110cf99f4e796065b71aaf966e749ad6a0913919ec58cfc628b86aae84e24be4"
-      hash2 = "580b39589c457f66e1feaa1f5e41830d1dc2091f31ec61dd393ca121bf3bed2e"
-      hash3 = "d0a15d8c5c2ea81c9d47e2553346e1713bfdb007f41d7c5d35a38d06d8611921"
-   strings:
-      $s1 = "We will share more once you're back online." fullword ascii
-      $s2 = "//You are back online! Continue learning about %s" fullword ascii
-      $s3 = "44You are back online! Let's pick up where we left off" fullword ascii
-      $s4 = "HHThank you for your interest." fullword ascii
-      $s5 = "EEThanks for your interest." fullword ascii
-   condition:
-      ( uint16(0) == 0x4b50 and ( all of them )
-      ) or ( all of them )
-}
-
 rule _23468bb2042bb18d50f25d04d3a4d3a793e039a52a8dea9559e15289a95468e_58 {
    meta:
       description = "16-07-2026-14.49 - from files 23468bb2042bb18d50f25d04d3a4d3a793e039a52a8dea9559e15289a95468ec.apk, 2e51daa305891ae8c03beb20f3b77b40727d24ad9f51e9899606ee7c1e76ead2.apk, 3493d2bc0e7a1b2ccbeca6e1dd2fbcef8109cc50289596816c89e154e4f2edde.apk, 3eaa49a1229343c1885b08f13ecdc2638875f66fd851b7b2baa534894e56921d.apk, 41474b00b02b03fca4fa0e6765d690d540b9a19b11478006acdd865d845ebe9a.apk, 4a9c611455192a91d9289f6c318773d4bdd339edc04a359be4905e4f6e4a4a54.apk, 56ac9eb8ca22f4b05b1d64872d4209440fc97413c1225141f268e22ae93d1edd.apk, 6828dcb4d6526999c531a4cb47a78fa1f2c16902256f0d309b051208410c1270.apk, 76cdbbbd920cdc8a2b3ccbc33b39cdcfa344fb9bae0222b5ff376fa78d29b735.apk, 8b07fca15e1a89b27c6d2ac8508b36315ac56683555bf962e793a6131ab97e4e.apk, 9afa8c36ee47fbbe6e14472385f86b0984f082ed3247be26b57dae59dd62718b.apk, ae87e247ec3b1fb23412297b90473a1641fb4ce0d5142b92da4b07283996ed88.apk"
@@ -7270,4 +7008,3 @@ rule _0e69f3d10ba88974c47a9ce83a095a29e9ac3de66b0441db60624fbe0772f6c_62 {
       ( uint16(0) == 0x4b50 and ( all of them )
       ) or ( all of them )
 }
-

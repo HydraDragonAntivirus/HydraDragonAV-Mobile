@@ -425,7 +425,7 @@ public final class NativeScanner {
             setDetectZipBomb(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("detect_zip_bomb_enabled", true));
             setScanRelevantOnly(context.getSharedPreferences("hydra_prefs", 0)
-                .getBoolean("scan_relevant_only_enabled", false));
+                .getBoolean("scan_relevant_only_enabled", true));
             setTlshThreshold(context.getSharedPreferences("hydra_prefs", 0)
                 .getInt("anti_fn_tlsh_threshold", 40));
         }

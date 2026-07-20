@@ -160,9 +160,10 @@ static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
 
 /// User-configurable toggle: when true, only scan extracted buffers that are
 /// DEX files, ELF native libs, or AndroidManifest.xml — skip all other assets
-/// (images, layouts, resources.arsc, etc.). Default false (scan everything).
+/// (images, layouts, resources.arsc, etc.). Default true (skip irrelevant
+/// assets inside archives for performance; top-level file always scanned).
 static SCAN_RELEVANT_ONLY: std::sync::atomic::AtomicBool =
-    std::sync::atomic::AtomicBool::new(false);
+    std::sync::atomic::AtomicBool::new(true);
 
 /// Whether the DYNAMIC_YRC_FILES have been loaded into the live engine (lazy,
 /// first nativeScanHips call). Avoids re-loading them on every HIPS scan tick.

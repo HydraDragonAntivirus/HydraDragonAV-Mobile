@@ -356,7 +356,7 @@ public class SettingsFragment extends Fragment {
             v -> showAntiFnTlshThresholdDialog());
 
 
-        boolean relevantOnly = prefs().getBoolean("scan_relevant_only_enabled", false);
+        boolean relevantOnly = prefs().getBoolean("scan_relevant_only_enabled", true);
         addToggle(getString(R.string.scan_relevant_only_toggle), relevantOnly, (btn, on) -> {
             prefs().edit().putBoolean("scan_relevant_only_enabled", on).apply();
             com.hydradragon.antivirus.engine.NativeScanner.setScanRelevantOnly(on);
