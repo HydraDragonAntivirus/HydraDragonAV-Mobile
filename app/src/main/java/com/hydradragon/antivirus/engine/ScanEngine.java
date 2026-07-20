@@ -2267,7 +2267,7 @@ public class ScanEngine {
                 if (mlMalicious) {
                     String near = v.nearest != null ? "  ~" + v.nearest : "";
                     String src = "";
-                    for (Verdict.Detection d : v.detections) {
+                    for (NativeScanner.Verdict.Detection d : v.detections) {
                         if ("ML".equals(d.name)) {
                             src = " in " + d.objectPath;
                             break;
@@ -2443,7 +2443,6 @@ public class ScanEngine {
                     }
                     reasons.add(String.format(java.util.Locale.US,
                         "🤖 [ML] probability=%.2f%s%s", v.probability, near, src));
-                }
             }
             b.setRiskScore(riskScore);
         b.setReasons(reasons);
