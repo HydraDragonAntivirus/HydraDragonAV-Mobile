@@ -651,7 +651,8 @@ public class ScanEngine {
         for (java.util.Map.Entry<String, String> e : v.entryTlshs.entrySet()) {
             String entryName = e.getKey();
             if (covered.contains(entryName)) continue;
-            String matched = antiFnCache.findSimilarTlsh(e.getValue(), tlshThreshold);
+            String fileType = AntiFnCache.detectFileType(entryName);
+            String matched = antiFnCache.findSimilarTlsh(e.getValue(), tlshThreshold, fileType);
             if (matched != null) {
                 Log.d(TAG, "DETECTION-UPSELLED[anti-FN] entry=" + entryName + " matched=" + matched);
                 out.add(new NativeScanner.Verdict.Detection(
@@ -659,7 +660,8 @@ public class ScanEngine {
             }
         }
         if (!topLevelCovered) {
-            String matched = antiFnCache.findSimilarTlsh(v.fileTlsh, tlshThreshold);
+            String fileType = "apk";
+            String matched = antiFnCache.findSimilarTlsh(v.fileTlsh, tlshThreshold, fileType);
             if (matched != null) {
                 Log.d(TAG, "DETECTION-UPSELLED[anti-FN] top-level matched=" + matched);
                 out.add(new NativeScanner.Verdict.Detection(
@@ -685,7 +687,8 @@ public class ScanEngine {
                 tlsh = v.fileTlsh;
             }
             if (tlsh != null && !tlsh.isEmpty()) {
-                antiFnCache.addEntry(tlsh, d.name);
+                String fileType = AntiFnCache.detectFileType(entryName.isEmpty() ? null : entryName);
+                antiFnCache.addEntry(tlsh, d.name, fileType);
             }
         }
     }

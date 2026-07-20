@@ -15,9 +15,11 @@ public final class AntiFnCache {
 
     private static final String SQL_CREATE = "CREATE TABLE IF NOT EXISTS "
         + TABLE + "("
-        + "tlsh TEXT PRIMARY KEY,"
+        + "tlsh TEXT NOT NULL,"
+        + "file_type TEXT NOT NULL,"
         + "detection_name TEXT NOT NULL DEFAULT '',"
-        + "added_at INTEGER NOT NULL"
+        + "added_at INTEGER NOT NULL,"
+        + "PRIMARY KEY(tlsh, file_type)"
         + ")";
 
     private final SQLiteDatabase db;
@@ -31,6 +33,15 @@ public final class AntiFnCache {
         try {
             d = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
             d.execSQL("PRAGMA cache_size=-2000");
+            // Migrate from old schema (tlsh TEXT PRIMARY KEY) to new
+            // (PRIMARY KEY(tlsh, file_type)). Drop old table if exists.
+            try {
+                Cursor c = d.rawQuery("SELECT file_type FROM " + TABLE + " LIMIT 1", null);
+                c.close();
+            } catch (Exception e) {
+                // column does not exist -> old schema, drop and recreate
+                d.execSQL("DROP TABLE IF EXISTS " + TABLE);
+            }
             d.execSQL(SQL_CREATE);
         } catch (Exception e) {
             Log.w(TAG, "Failed to open anti-FN cache DB", e);
@@ -43,13 +54,15 @@ public final class AntiFnCache {
         return enabled && db != null;
     }
 
-    public void addEntry(String tlsh, String detectionName) {
+    public void addEntry(String tlsh, String detectionName, String fileType) {
         if (!isEnabled() || tlsh == null || tlsh.isEmpty()) return;
+        if (fileType == null || fileType.isEmpty()) fileType = "apk";
         try {
             db.execSQL("INSERT OR IGNORE INTO " + TABLE
-                    + "(tlsh,detection_name,added_at) VALUES(?,?,?)",
+                    + "(tlsh,file_type,detection_name,added_at) VALUES(?,?,?,?)",
                 new Object[]{
                     tlsh,
+                    fileType,
                     detectionName == null ? "" : detectionName,
                     System.currentTimeMillis()
                 });
@@ -58,10 +71,12 @@ public final class AntiFnCache {
         }
     }
 
-    public String findSimilarTlsh(String tlsh, int threshold) {
+    public String findSimilarTlsh(String tlsh, int threshold, String fileType) {
         if (!isEnabled() || tlsh == null || tlsh.isEmpty() || threshold <= 0) return null;
+        if (fileType == null || fileType.isEmpty()) fileType = "apk";
         try (Cursor c = db.rawQuery("SELECT tlsh, detection_name FROM " + TABLE
-                + " WHERE tlsh IS NOT NULL AND tlsh != ''", null)) {
+                + " WHERE file_type = ? AND tlsh IS NOT NULL AND tlsh != ''",
+                new String[]{fileType})) {
             while (c.moveToNext()) {
                 String cached = c.getString(0);
                 if (cached == null || cached.isEmpty()) continue;
@@ -75,6 +90,20 @@ public final class AntiFnCache {
             return null;
         }
         return null;
+    }
+
+    /** Infer file type from entry name for per-type TLSH matching. */
+    public static String detectFileType(String entryName) {
+        if (entryName == null || entryName.isEmpty()) return "apk";
+        String lower = entryName.toLowerCase();
+        if (lower.endsWith(".dex") || lower.endsWith(".vdex") || lower.endsWith(".odex")) {
+            return "dex";
+        }
+        if (lower.endsWith(".so")) {
+            return "elf";
+        }
+        // .apk, .zip, or top-level file (no extension) → apk
+        return "apk";
     }
 
     public static int getTlshThreshold(Context context) {

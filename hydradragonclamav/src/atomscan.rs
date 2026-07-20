@@ -17,7 +17,7 @@
 //! subsigs are "present" for their triggers.
 
 use crate::atomfilter::{AtomBucket, AtomFilterDb, ExtSlot, SlotDef, SlotId, SubsigSlot};
-use crate::atomfilter_hash::{hash_window, hash_window_fold, leading_coeff, read_byte, ATOM_LENGTHS};
+use crate::atomfilter_hash::{hash_window, hash_window_fold, leading_coeff, ATOM_LENGTHS};
 
 /// Per-slot hit counts (and last-seen window offset) for one buffer, indexed
 /// by [`SlotId`]. The offset is captured incidentally while sweeping for
@@ -82,71 +82,96 @@ fn sweep_buckets(
     fold: bool,
     counts: &mut SlotCounts,
 ) {
-    // Collect active (non-None) bucket indices — max 5, so a small fixed array.
-    let mut active: [usize; ATOM_LENGTHS.len()] = [0; ATOM_LENGTHS.len()];
-    let mut n = 0usize;
-    for (i, b) in buckets.iter().enumerate() {
-        if b.is_some() {
-            active[n] = i;
-            n += 1;
+    if fold {
+        for (i, b) in buckets.iter().enumerate() {
+            if let Some(ref bucket) = *b {
+                sweep_one_bucket_fold(bucket, ATOM_LENGTHS[i], data, counts);
+            }
+        }
+    } else {
+        for (i, b) in buckets.iter().enumerate() {
+            if let Some(ref bucket) = *b {
+                sweep_one_bucket(bucket, ATOM_LENGTHS[i], data, counts);
+            }
         }
     }
-    if n == 0 { return; }
+}
 
-    let min_len = ATOM_LENGTHS[active[0]];
-    if data.len() < min_len { return; }
+fn sweep_one_bucket(
+    bucket: &AtomBucket,
+    len: usize,
+    data: &[u8],
+    counts: &mut SlotCounts,
+) {
+    if data.len() < len { return; }
+    let max_pos = data.len() - len;
+    let data_ptr = data.as_ptr();
+    let coeff = leading_coeff(len);
 
-    // Pre-compute initial hashes and leading coefficients for each length.
-    let mut h: [u64; 5] = [0; 5];
-    let mut coeff: [u64; 5] = [0; 5];
-    for j in 0..n {
-        let len = ATOM_LENGTHS[active[j]];
-        if data.len() >= len {
-            h[j] = if fold {
-                hash_window_fold(&data[..len])
-            } else {
-                hash_window(&data[..len])
-            };
-            coeff[j] = leading_coeff(len);
+    // Initial hash at position 0.
+    let mut h = hash_window(&data[..len]);
+    if let Some(slots) = bucket.resolve(h) {
+        for &slot_id in slots {
+            let si = slot_id as usize;
+            counts.counts[si] = 1;
+            counts.last_offset[si] = 0;
         }
     }
 
-    // Position 0: check every active bucket with its initial hash.
-    for j in 0..n {
-        if let Some(slots) = buckets[active[j]].as_ref().unwrap().resolve(h[j]) {
+    // Sweep remaining positions with rolling hash.
+    for s in 0..max_pos {
+        let leaving = unsafe { *data_ptr.add(s) as u64 };
+        let entering = unsafe { *data_ptr.add(s + len) as u64 };
+        h = h
+            .wrapping_sub(leaving.wrapping_mul(coeff))
+            .wrapping_mul(crate::atomfilter_hash::ROLL_BASE)
+            .wrapping_add(entering);
+        if let Some(slots) = bucket.resolve(h) {
+            let next_start = (s + 1) as u32;
             for &slot_id in slots {
                 let si = slot_id as usize;
                 counts.counts[si] = counts.counts[si].saturating_add(1);
-                counts.last_offset[si] = 0;
+                counts.last_offset[si] = next_start;
             }
         }
     }
+}
 
-    // Single pass over ALL valid window positions (0 .. data.len() - 2).
-    // At each position, update the rolling hash for every active length and
-    // check the corresponding bucket — but only for lengths whose current
-    // window is still fully inside `data`. This reads `data[s]` once and
-    // `data[s + len_j]` once per active length, instead of doing separate
-    // per-length sweeps. `fold` lowercases the read bytes for nocase buckets.
-    let max_pos = data.len() - min_len;
+fn sweep_one_bucket_fold(
+    bucket: &AtomBucket,
+    len: usize,
+    data: &[u8],
+    counts: &mut SlotCounts,
+) {
+    if data.len() < len { return; }
+    let max_pos = data.len() - len;
+    let data_ptr = data.as_ptr();
+    let coeff = leading_coeff(len);
+
+    // Initial hash at position 0 (folded).
+    let mut h = hash_window_fold(&data[..len]);
+    if let Some(slots) = bucket.resolve(h) {
+        for &slot_id in slots {
+            let si = slot_id as usize;
+            counts.counts[si] = 1;
+            counts.last_offset[si] = 0;
+        }
+    }
+
+    // Sweep remaining positions with rolling hash (folded byte reads).
     for s in 0..max_pos {
-        let leaving = read_byte(data, s, fold);
-        for j in 0..n {
-            let len = ATOM_LENGTHS[active[j]];
-            let next_start = s + 1;
-            if next_start + len > data.len() {
-                continue;
-            }
-            h[j] = h[j]
-                .wrapping_sub(leaving.wrapping_mul(coeff[j]))
-                .wrapping_mul(crate::atomfilter_hash::ROLL_BASE)
-                .wrapping_add(read_byte(data, s + len, fold));
-            if let Some(slots) = buckets[active[j]].as_ref().unwrap().resolve(h[j]) {
-                for &slot_id in slots {
-                    let si = slot_id as usize;
-                    counts.counts[si] = counts.counts[si].saturating_add(1);
-                    counts.last_offset[si] = next_start as u32;
-                }
+        let leaving = unsafe { (data_ptr.add(s).read().to_ascii_lowercase()) as u64 };
+        let entering = unsafe { (data_ptr.add(s + len).read().to_ascii_lowercase()) as u64 };
+        h = h
+            .wrapping_sub(leaving.wrapping_mul(coeff))
+            .wrapping_mul(crate::atomfilter_hash::ROLL_BASE)
+            .wrapping_add(entering);
+        if let Some(slots) = bucket.resolve(h) {
+            let next_start = (s + 1) as u32;
+            for &slot_id in slots {
+                let si = slot_id as usize;
+                counts.counts[si] = counts.counts[si].saturating_add(1);
+                counts.last_offset[si] = next_start;
             }
         }
     }

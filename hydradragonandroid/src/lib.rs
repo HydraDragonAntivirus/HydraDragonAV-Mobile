@@ -93,9 +93,14 @@ const VPN_YRC_FILES: &[&str] = &[
     "emerging-all.yrc",
 ];
 const MODEL_ONNX: &str = "model.onnx";
-/// Malware TLSH similarity database (one T1 digest per line), built from the
-/// MalwareBazaar dump filtered to apk/elf/so/dex (`gen_tlsh_db.py`).
-const TLSH_DB: &str = "malware_tlsh.txt";
+/// Per-type malware TLSH similarity databases (one T1 digest per line), built
+/// from the MalwareBazaar dump separated by file type (`gen_tlsh_db.py`).
+/// Each type is stored in its own file so the scanner only compares a buffer
+/// against digests of the same type (ELF vs ELF, APK vs APK, DEX vs DEX),
+/// avoiding cross-type false matches and reducing per-buffer scan time.
+const TLSH_DB_ELF: &str = "malware_tlsh_elf.txt";
+const TLSH_DB_APK: &str = "malware_tlsh_apk.txt";
+const TLSH_DB_DEX: &str = "malware_tlsh_dex.txt";
 /// NSRL known-good SHA-256 whitelist as a serialized Binary-Fuse (xor) filter
 /// (built offline by `xorfilter_writer`). Decoded once at init into an owned
 /// buffer on the native heap; binary-fuse encodings are far smaller than the
@@ -126,8 +131,12 @@ struct Engine {
     /// all in one pass. `None` if no clamav DB was bundled.
     clamav: Option<ClamavEngine>,
     model: Option<Model>,
-    /// Known-malware TLSH digests (apk/elf/so/dex) for fuzzy-similarity detection.
-    tlsh_db: Vec<tlsh_rs::TlshDigest>,
+    /// Known-malware TLSH digests for ELF (.so) files.
+    tlsh_db_elf: Vec<tlsh_rs::TlshDigest>,
+    /// Known-malware TLSH digests for APK (ZIP) files.
+    tlsh_db_apk: Vec<tlsh_rs::TlshDigest>,
+    /// Known-malware TLSH digests for DEX files.
+    tlsh_db_dex: Vec<tlsh_rs::TlshDigest>,
     /// NSRL known-good SHA-256 whitelist (Binary-Fuse xor filter).
     whitelist: Option<XorFilter>,
     /// NSRL known-good package -> md5 map, read from whitelist_packages.db.
@@ -348,7 +357,7 @@ fn set_status(s: String) {
 fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_auto_rules: bool) -> Engine {
     let t0 = std::time::Instant::now();
 
-    let (clamav_out, model_out, tlsh_out, whitelist_out, pkg_out, url_out, ip_out, benign_out) =
+    let (clamav_out, model_out, tlsh_elf_out, tlsh_apk_out, tlsh_dex_out, whitelist_out, pkg_out, url_out, ip_out, benign_out) =
         std::thread::scope(|s| {
             let clamav_handle = s.spawn(move || {
                 let t_db = std::time::Instant::now();
@@ -468,26 +477,23 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 (model, report)
             });
 
-            let tlsh_handle = s.spawn(move || {
-                let t_tlsh = std::time::Instant::now();
-                let tlsh_db = match files.get(TLSH_DB) {
-                    Some(bytes) => {
-                        let text = String::from_utf8_lossy(bytes);
-                        let mut out = Vec::new();
-                        for line in text.lines() {
-                            let line = line.trim();
-                            if line.is_empty() { continue; }
-                            if let Ok(d) = line.parse::<tlsh_rs::TlshDigest>() {
-                                out.push(d);
-                            }
-                        }
-                        out
-                    }
-                    None => Vec::new(),
-                };
-                let tlsh_ms = t_tlsh.elapsed().as_millis();
-                let report = format!(" tlsh={}({tlsh_ms}ms)", tlsh_db.len());
-                (tlsh_db, report)
+            let tlsh_elf_handle = s.spawn(move || {
+                let t = std::time::Instant::now();
+                let db = load_tlsh_file(files.get(TLSH_DB_ELF));
+                let ms = t.elapsed().as_millis();
+                (db, format!(" tlsh_elf={}({ms}ms)", db.len()))
+            });
+            let tlsh_apk_handle = s.spawn(move || {
+                let t = std::time::Instant::now();
+                let db = load_tlsh_file(files.get(TLSH_DB_APK));
+                let ms = t.elapsed().as_millis();
+                (db, format!(" tlsh_apk={}({ms}ms)", db.len()))
+            });
+            let tlsh_dex_handle = s.spawn(move || {
+                let t = std::time::Instant::now();
+                let db = load_tlsh_file(files.get(TLSH_DB_DEX));
+                let ms = t.elapsed().as_millis();
+                (db, format!(" tlsh_dex={}({ms}ms)", db.len()))
             });
 
             let whitelist_handle = s.spawn(move || {
@@ -552,8 +558,14 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 model_handle.join().unwrap_or_else(|_| {
                     (None, format!(" model=PANIC({})", last_panic()))
                 }),
-                tlsh_handle.join().unwrap_or_else(|_| {
-                    (Vec::new(), format!(" tlsh=PANIC({})", last_panic()))
+                tlsh_elf_handle.join().unwrap_or_else(|_| {
+                    (Vec::new(), format!(" tlsh_elf=PANIC({})", last_panic()))
+                }),
+                tlsh_apk_handle.join().unwrap_or_else(|_| {
+                    (Vec::new(), format!(" tlsh_apk=PANIC({})", last_panic()))
+                }),
+                tlsh_dex_handle.join().unwrap_or_else(|_| {
+                    (Vec::new(), format!(" tlsh_dex=PANIC({})", last_panic()))
                 }),
                 whitelist_handle.join().unwrap_or_else(|_| {
                     (None, format!(" whitelist=PANIC({})", last_panic()))
@@ -575,7 +587,9 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
 
     let (clamav, clamav_report) = clamav_out;
     let (model, model_report) = model_out;
-    let (tlsh_db, tlsh_report) = tlsh_out;
+    let (tlsh_db_elf, tlsh_elf_report) = tlsh_elf_out;
+    let (tlsh_db_apk, tlsh_apk_report) = tlsh_apk_out;
+    let (tlsh_db_dex, tlsh_dex_report) = tlsh_dex_out;
     let (whitelist, whitelist_report) = whitelist_out;
     let (package_whitelist, pkg_report) = pkg_out;
     let (url_scanner, url_report) = url_out;
@@ -583,7 +597,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
     let (benign_db, benign_report) = benign_out;
 
     let report = format!(
-        "{clamav_report}{model_report}{tlsh_report}{whitelist_report}{pkg_report}{url_report}{ip_report}{benign_report}"
+        "{clamav_report}{model_report}{tlsh_elf_report}{tlsh_apk_report}{tlsh_dex_report}{whitelist_report}{pkg_report}{url_report}{ip_report}{benign_report}"
     );
 
     let total_ms = t0.elapsed().as_millis();
@@ -592,7 +606,9 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
     Engine {
         clamav,
         model,
-        tlsh_db,
+        tlsh_db_elf,
+        tlsh_db_apk,
+        tlsh_db_dex,
         whitelist,
         package_whitelist,
         benign_db,
@@ -643,8 +659,29 @@ fn skip_by_size(buf: &[u8]) -> bool {
     buf.len() <= 12 || buf.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024
 }
 
-/// Whether `buf` is a file type we have TLSH malware digests for (apk/zip, ELF,
-/// or DEX) — so we only fuzzy-compare relevant buffers, not every PNG/XML.
+/// Parse a TLSH database file (one T1 digest per line) into a Vec of digests.
+/// Returns an empty Vec if `bytes` is None (file not found).
+fn load_tlsh_file(bytes: Option<&[u8]>) -> Vec<tlsh_rs::TlshDigest> {
+    match bytes {
+        Some(bytes) => {
+            let text = String::from_utf8_lossy(bytes);
+            let mut out = Vec::new();
+            for line in text.lines() {
+                let line = line.trim();
+                if line.is_empty() { continue; }
+                if let Ok(d) = line.parse::<tlsh_rs::TlshDigest>() {
+                    out.push(d);
+                }
+            }
+            out
+        }
+        None => Vec::new(),
+    }
+}
+
+/// Whether `buf` is a file type we have a per-type TLSH malware database for
+/// (ELF .so, APK/ZIP, or DEX) — so we only fuzzy-compare relevant buffers,
+/// not every PNG/XML resource in an APK.
 fn tlsh_relevant(buf: &[u8]) -> bool {
     hydradragonextractor::detect_format(buf) == Some("zip")
         || buf.starts_with(b"\x7fELF")
@@ -802,15 +839,15 @@ fn has_embedded_data(data: &[u8]) -> bool {
     printable > sample.len() / 4
 }
 
-/// Smallest TLSH distance from `buf` to any known-malware digest, or None when
+/// Smallest TLSH distance from `buf` to any digest in `db`, or None when
 /// `buf` is too small/low-variance to hash or nothing is close enough.
-fn tlsh_nearest(engine: &Engine, buf: &[u8]) -> Option<i32> {
-    if engine.tlsh_db.is_empty() {
+fn tlsh_nearest(db: &[tlsh_rs::TlshDigest], buf: &[u8]) -> Option<i32> {
+    if db.is_empty() {
         return None;
     }
     let digest = tlsh_rs::hash_bytes(buf).ok()?;
     let mut best = i32::MAX;
-    for known in &engine.tlsh_db {
+    for known in db {
         let d = digest.diff(known);
         if d < best {
             best = d;
@@ -1712,7 +1749,14 @@ fn run_deferred_item(
                 continue;
             }
             if tlsh_relevant(&b.data) {
-                if let Some(dist) = tlsh_nearest(engine, &b.data) {
+                let db = if b.data.starts_with(b"\x7fELF") {
+                    &engine.tlsh_db_elf
+                } else if b.data.starts_with(b"dex\n") {
+                    &engine.tlsh_db_dex
+                } else {
+                    &engine.tlsh_db_apk
+                };
+                if let Some(dist) = tlsh_nearest(db, &b.data) {
                     let obj_path = if i == 0 {
                         path.to_string()
                     } else {
@@ -2641,7 +2685,14 @@ fn run_scan(
                 continue;
             }
             if tlsh_relevant(&b.data) {
-                if let Some(dist) = tlsh_nearest(engine, &b.data) {
+                let db = if b.data.starts_with(b"\x7fELF") {
+                    &engine.tlsh_db_elf
+                } else if b.data.starts_with(b"dex\n") {
+                    &engine.tlsh_db_dex
+                } else {
+                    &engine.tlsh_db_apk
+                };
+                if let Some(dist) = tlsh_nearest(db, &b.data) {
                     let obj_path = if i == 0 {
                         path.to_string()
                     } else {
