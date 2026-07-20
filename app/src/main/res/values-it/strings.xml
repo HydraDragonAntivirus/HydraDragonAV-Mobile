@@ -408,7 +408,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="scan_system_on_toast">Scansione file di sistema attivata — potrebbe contrassegnare app di sistema legittime</string>
     <string name="scan_system_off_toast">Scansione file di sistema disattivata — le app di sistema verranno saltate</string>
     <string name="clear_scan_cache_btn">Pulisci Cache di Scansione</string>
-    <string name="cache_session">Cache di Sessione (temporanea)</string>
+    <string name="cache_session">Cache di Scansione</string>
     <string name="cache_anti_fn">Cache Anti-FN (falsi negativi)</string>
     <string name="cache_cleared">Cache selezionate pulite</string>
     <string name="scan_cancelled">Scansione annullata</string>

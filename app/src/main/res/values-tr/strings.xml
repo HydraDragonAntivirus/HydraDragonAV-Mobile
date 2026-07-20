@@ -408,7 +408,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="scan_system_on_toast">Sistem dosyası taraması etkin — meşru sistem uygulamalarını işaretleyebilir</string>
     <string name="scan_system_off_toast">Sistem dosyası taraması devre dışı — sistem uygulamaları atlanacak</string>
     <string name="clear_scan_cache_btn">Tarama Önbelleğini Temizle</string>
-    <string name="cache_session">Oturum Önbelleği (geçici)</string>
+    <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Anti-YN Önbelleği (yanlış negatifler)</string>
     <string name="cache_cleared">Seçilen önbellekler temizlendi</string>
     <string name="scan_cancelled">Tarama iptal edildi</string>

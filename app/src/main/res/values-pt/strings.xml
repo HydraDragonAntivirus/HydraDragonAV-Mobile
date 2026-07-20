@@ -408,7 +408,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="scan_system_on_toast">Digitalização de arquivos do sistema ativada — pode sinalizar aplicativos legítimos do sistema</string>
     <string name="scan_system_off_toast">Digitalização de arquivos do sistema desativada — aplicativos do sistema serão ignorados</string>
     <string name="clear_scan_cache_btn">Limpar Cache de Digitalização</string>
-    <string name="cache_session">Cache de Sessão (temporário)</string>
+    <string name="cache_session">Cache de Digitalização</string>
     <string name="cache_anti_fn">Cache Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Caches selecionados limpos</string>
     <string name="scan_cancelled">Verificação cancelada</string>

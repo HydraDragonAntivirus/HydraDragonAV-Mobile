@@ -408,7 +408,7 @@
     <string name="scan_system_on_toast">Сканування системних файлів увімкнено — може позначати легітимні системні додатки</string>
     <string name="scan_system_off_toast">Сканування системних файлів вимкнено — системні додатки пропускатимуться</string>
     <string name="clear_scan_cache_btn">Очистити кеш сканування</string>
-    <string name="cache_session">Кеш сеансу (тимчасовий)</string>
+    <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Кеш Anti-FN (хибні негативні)</string>
     <string name="cache_cleared">Вибрані кеші очищено</string>
     <string name="scan_cancelled">Сканування скасовано</string>

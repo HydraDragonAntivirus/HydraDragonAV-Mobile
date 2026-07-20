@@ -408,7 +408,7 @@ Puntuación de riesgo: %2$d/100
     <string name="scan_system_on_toast">Escaneo de archivos del sistema activado — puede marcar aplicaciones legítimas del sistema</string>
     <string name="scan_system_off_toast">Escaneo de archivos del sistema desactivado — se omitirán las aplicaciones del sistema</string>
     <string name="clear_scan_cache_btn">Limpiar Caché de Escaneo</string>
-    <string name="cache_session">Caché de Sesión (temporal)</string>
+    <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Caché Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Cachés seleccionadas limpiadas</string>
     <string name="scan_cancelled">Escaneo cancelado</string>

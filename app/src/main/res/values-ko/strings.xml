@@ -408,7 +408,7 @@
     <string name="scan_system_on_toast">시스템 파일 검사 활성화 — 합법적인 시스템 앱에 플래그가 지정될 수 있음</string>
     <string name="scan_system_off_toast">시스템 파일 검사 비활성화 — 시스템 앱이 건너뛰어집니다</string>
     <string name="clear_scan_cache_btn">검사 캐시 지우기</string>
-    <string name="cache_session">세션 캐시 (임시)</string>
+    <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Anti-FN 캐시 (미탐)</string>
     <string name="cache_cleared">선택한 캐시가 지워졌습니다</string>
     <string name="scan_cancelled">검사가 취소되었습니다</string>
