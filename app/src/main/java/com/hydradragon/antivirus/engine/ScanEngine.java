@@ -987,10 +987,11 @@ public class ScanEngine {
             // outright. It'll get scanned under its real name once the
             // download finishes and the system renames it away from this.
             if (file.getName().startsWith(".pending-")) continue;
-            // Generic: skip 0-byte files (metadata markers like .nomedia,
-            // .database_uuid, .staging, temp locks, etc.) that have zero
-            // scannable content but cost 46-99ms each in native engine overhead.
-            if (!file.isDirectory() && file.length() == 0) continue;
+            // Generic: skip tiny files (metadata markers like .nomedia,
+            // .database_uuid, .staging, temp locks, etc.) that have zero or
+            // near-zero scannable content but cost 46-99ms each in native
+            // engine overhead.
+            if (!file.isDirectory() && file.length() <= 12) continue;
             if (cancelRequested) return;
             if (file.isDirectory()) {
                 scanDirectoryForApks(file, pm, threats, fullScan, skipPackages, scannedFiles);
@@ -1168,6 +1169,9 @@ public class ScanEngine {
      * model on every extracted buffer.
      */
     private boolean scanGenericFile(java.io.File file, List<ThreatResult> threats) {
+        // Skip tiny metadata markers (.nomedia, .database_uuid, .staging,
+        // temp locks, etc.) no matter which caller routed here.
+        if (!file.isDirectory() && file.length() <= 12) return true;
         try {
             if (!NativeScanner.isReady()) {
                 // Engine may still be loading its signature DBs in the

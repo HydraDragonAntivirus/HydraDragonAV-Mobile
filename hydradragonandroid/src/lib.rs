@@ -3130,7 +3130,7 @@ fn max_dangerous_perms(buffers: &[Buf]) -> usize {
     let mut max = 0usize;
     for b in buffers {
         let buf = &b.data;
-        if buf.len() > MAX_MANIFEST_SCAN {
+        if skip_by_size(buf) || buf.len() > MAX_MANIFEST_SCAN {
             continue;
         }
         let mut count = 0usize;
@@ -3566,6 +3566,7 @@ fn collect_urls(buffers: &[Buf]) -> Vec<String> {
     let mut seen = std::collections::HashSet::new();
     for b in buffers {
         let data = &b.data;
+        if skip_by_size(data) { continue; }
         let n = data.len();
         let mut i = 0;
         while i + 7 < n {
@@ -3973,6 +3974,7 @@ fn md5_hex(data: &[u8]) -> String {
 fn collect_apk_hashes(buffers: &[Buf], top_md5: Option<&str>) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for (i, b) in buffers.iter().enumerate() {
+        if skip_by_size(&b.data) { continue; }
         if hydradragonextractor::detect_format(&b.data) != Some("zip") {
             continue; // only APK/zip containers
         }
@@ -3996,6 +3998,7 @@ fn collect_apk_hashes(buffers: &[Buf], top_md5: Option<&str>) -> Vec<String> {
 fn collect_packages(buffers: &[Buf]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for b in buffers {
+        if skip_by_size(&b.data) { continue; }
         if let Some(p) = axml_package(&b.data) {
             if !p.is_empty() && !out.contains(&p) {
                 out.push(p);
