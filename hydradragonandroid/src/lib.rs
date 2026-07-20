@@ -479,19 +479,19 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
 
             let tlsh_elf_handle = s.spawn(move || {
                 let t = std::time::Instant::now();
-                let db = load_tlsh_file(files.get(TLSH_DB_ELF));
+                let db = load_tlsh_file(files.get(TLSH_DB_ELF).map(|v| &v[..]));
                 let ms = t.elapsed().as_millis();
                 (db, format!(" tlsh_elf={}({ms}ms)", db.len()))
             });
             let tlsh_apk_handle = s.spawn(move || {
                 let t = std::time::Instant::now();
-                let db = load_tlsh_file(files.get(TLSH_DB_APK));
+                let db = load_tlsh_file(files.get(TLSH_DB_APK).map(|v| &v[..]));
                 let ms = t.elapsed().as_millis();
                 (db, format!(" tlsh_apk={}({ms}ms)", db.len()))
             });
             let tlsh_dex_handle = s.spawn(move || {
                 let t = std::time::Instant::now();
-                let db = load_tlsh_file(files.get(TLSH_DB_DEX));
+                let db = load_tlsh_file(files.get(TLSH_DB_DEX).map(|v| &v[..]));
                 let ms = t.elapsed().as_millis();
                 (db, format!(" tlsh_dex={}({ms}ms)", db.len()))
             });
