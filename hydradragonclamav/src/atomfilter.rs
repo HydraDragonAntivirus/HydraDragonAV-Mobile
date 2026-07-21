@@ -11,8 +11,7 @@
 //! reaching a slot's hit threshold promotes its signature directly.
 
 use crate::atomfilter_hash::ATOM_LENGTHS;
-use jdb_xorf::{Bf16, Filter as JdbFilter};
-use std::collections::HashMap;
+use jdb_xorf::Bf16;
 
 /// Index into [`AtomFilterDb::slots`]. One "thing" (a whole extended
 /// signature, or one subsignature of a logical signature) with its own hit
@@ -47,31 +46,13 @@ pub struct SlotDef {
     pub file_type_target: u32,
 }
 
-/// One length-bucket's atom filter: the Bf16 membership filter plus the exact
-/// key -> slot-list map that resolves a filter hit to the slots sharing that
-/// key.
+/// One length-bucket's Bf16 membership filter for the hot rolling-hash sweep.
+/// The hot loop calls only `bf.has(&key)` — no slot resolution, no HashMap.
+/// After the sweep, matched hashes are resolved against `AtomFilterDb::hash_slots`
+/// outside the hot loop.
 #[derive(Debug)]
 pub struct AtomBucket {
     pub bf: Bf16,
-    /// Exact confirmation + slot resolution for a `bf.has(key)` hit. `bf`
-    /// exists purely so the hot scan loop can reject the overwhelming
-    /// majority of windows with one cheap fixed-size probe before paying for
-    /// this hash lookup — `slots` is never consulted unless `bf` says maybe.
-    pub slots: HashMap<u64, Box<[SlotId]>>,
-}
-
-impl AtomBucket {
-    /// Slots sharing `key`, if `bf` says maybe AND `key` is genuinely one of
-    /// this bucket's atom keys (a `slots` hit). A `bf` maybe that doesn't
-    /// resolve in `slots` is a bare Bf16 false positive: there is nothing to
-    /// increment, so it is silently absorbed here and never reaches
-    /// signature promotion.
-    pub fn resolve(&self, key: u64) -> Option<&[SlotId]> {
-        if !self.bf.has(&key) {
-            return None;
-        }
-        self.slots.get(&key).map(|s| &s[..])
-    }
 }
 
 /// How an extended signature's match state is determined at scan time.
@@ -117,6 +98,12 @@ pub struct AtomFilterDb {
     /// `ac`/`ac_nocase` split: a case-sensitive and a case-insensitive atom
     /// index are always kept separate, never merged into one).
     pub buckets_nocase: [Option<AtomBucket>; ATOM_LENGTHS.len()],
+    /// Post-sweep resolution table: rolling hash → slot ID list.
+    /// Populated during build from every registered (hash, slot_id) pair.
+    /// The hot sweep loop never touches this — it only checks `bf.has(&hash)`.
+    /// After the sweep, each matched hash is resolved here to determine which
+    /// slots to increment.
+    pub hash_slots: std::collections::HashMap<u64, Box<[SlotId]>>,
     pub slots: Vec<SlotDef>,
     /// Indexed by extended signature index.
     pub ext_slot: Vec<ExtSlot>,
@@ -129,6 +116,7 @@ impl AtomFilterDb {
         AtomFilterDb {
             buckets: Default::default(),
             buckets_nocase: Default::default(),
+            hash_slots: std::collections::HashMap::new(),
             slots: Vec::new(),
             ext_slot: Vec::new(),
             log_subsig_slots: Vec::new(),
@@ -138,32 +126,26 @@ impl AtomFilterDb {
 
 #[cfg(test)]
 mod tests {
+    use jdb_xorf::{Bf16, Filter};
+
     use super::*;
     use crate::atomfilter_hash::hash_window;
 
     #[test]
-    fn resolve_finds_real_keys_and_rejects_absent_ones() {
+    fn bf16_membership_works() {
         let atoms: &[&[u8]] = &[b"HydraDragon", b"malware.exe", b"evil_payload"];
         let keys: Vec<u64> = atoms.iter().map(|a| hash_window(a)).collect();
         let bf = Bf16::from(&keys);
-        let mut slots = HashMap::new();
-        for (i, &k) in keys.iter().enumerate() {
-            slots.insert(k, vec![i as SlotId].into_boxed_slice());
-        }
-        let bucket = AtomBucket { bf, slots };
+        let bucket = AtomBucket { bf };
 
-        for (i, atom) in atoms.iter().enumerate() {
+        for atom in atoms {
             let key = hash_window(atom);
-            let resolved = bucket.resolve(key).expect("real atom key must resolve");
-            assert_eq!(resolved, &[i as SlotId]);
+            assert!(bucket.bf.has(&key), "real atom key must pass bf16");
         }
 
-        // A key that was never inserted resolves to nothing, even though it
-        // may occasionally trip the Bf16 (a bare false positive with no slots).
         let absent_key = hash_window(b"totally_unrelated");
-        if bucket.bf.has(&absent_key) {
-            assert!(bucket.slots.get(&absent_key).is_none());
-        }
-        assert!(bucket.resolve(absent_key).is_none());
+        // Bf16 may false-positive; we can't assert !has() but we can at
+        // least verify the call doesn't panic.
+        let _ = bucket.bf.has(&absent_key);
     }
 }

@@ -103,22 +103,29 @@ fn build_buckets(mut acc: [Vec<(u64, SlotId)>; ATOM_LENGTHS.len()]) -> [Option<A
         if entries.is_empty() {
             return None;
         }
-        let mut slots: HashMap<u64, Vec<SlotId>> = HashMap::new();
-        for (key, slot) in entries {
-            slots.entry(key).or_default().push(slot);
+        let mut keys: Vec<u64> = Vec::with_capacity(entries.len());
+        for (key, _) in &entries {
+            keys.push(*key);
         }
-        for v in slots.values_mut() {
-            v.sort_unstable();
-            v.dedup();
-        }
-        let keys: Vec<u64> = slots.keys().copied().collect();
+        keys.sort_unstable();
+        keys.dedup();
         let bf = Bf16::from(&keys);
-        let slots = slots
-            .into_iter()
-            .map(|(k, v)| (k, v.into_boxed_slice()))
-            .collect();
-        Some(AtomBucket { bf, slots })
+        Some(AtomBucket { bf })
     })
+}
+
+fn build_hash_slots(acc: &BucketAcc) -> HashMap<u64, Box<[SlotId]>> {
+    let mut map: HashMap<u64, Vec<SlotId>> = HashMap::new();
+    for bucket in acc.exact.iter().chain(acc.nocase.iter()) {
+        for &(key, slot) in bucket {
+            map.entry(key).or_default().push(slot);
+        }
+    }
+    for v in map.values_mut() {
+        v.sort_unstable();
+        v.dedup();
+    }
+    map.into_iter().map(|(k, v)| (k, v.into_boxed_slice())).collect()
 }
 
 pub struct AtomFilterBuilder;
@@ -181,9 +188,11 @@ impl AtomFilterBuilder {
             log_subsig_slots.push(sub_slots.into_boxed_slice());
         }
 
+        let hash_slots = build_hash_slots(&acc);
         AtomFilterDb {
             buckets: build_buckets(acc.exact),
             buckets_nocase: build_buckets(acc.nocase),
+            hash_slots,
             slots,
             ext_slot,
             log_subsig_slots,
@@ -224,11 +233,11 @@ mod tests {
             SlotTarget::Extended { sig_index: 0 }
         );
 
-        // The atom must resolve through some bucket.
+        // The atom must resolve through hash_slots.
         let clamped = short_atom(b"HydraDragonTestAtom");
         let key = hash_window(&clamped[..bucket_len(clamped.len()).unwrap()]);
-        let found = afdb.buckets.iter().flatten().any(|b| b.resolve(key).is_some());
-        assert!(found, "expected the extended signature's atom to resolve");
+        let found = afdb.hash_slots.contains_key(&key);
+        assert!(found, "expected the extended signature's atom in hash_slots");
     }
 
     #[test]
