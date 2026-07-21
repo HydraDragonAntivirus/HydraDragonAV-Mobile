@@ -509,7 +509,9 @@ impl Engine {
         use std::time::Instant;
         let t0 = Instant::now();
         let scanner = crate::atomscan::AtomFilterScanner::new(&self.atomfilter_db);
-        let file_type_target = ctx.detected_target.unwrap_or(0);
+        let file_type_target = ctx.detected_target
+            .or_else(|| detect_builtin_target(ctx))
+            .unwrap_or(0);
         let slot_counts = scanner.scan(ctx.data, file_type_target);
         let t1 = Instant::now();
         self.scan_extended(ctx, matches, &slot_counts);
@@ -1288,10 +1290,16 @@ mod tests {
         let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
         let engine = Engine { database, atomfilter_db, yara: Vec::new() };
         // "SIZE" then 2 LE bytes = 5 (>0) -> match.
-        let found = engine.scan_bytes(b"SIZE\x05\x00tail", ScanOptions::default());
+        // Pad to 260+ bytes so first-256 sample stays 99% text (>90% for gate).
+        let mut data = vec![b'X'; 260];
+        data[..4].copy_from_slice(b"SIZE");
+        data[4] = 5; data[5] = 0;
+        data[6..10].copy_from_slice(b"tail");
+        let found = engine.scan_bytes(&data, ScanOptions::default());
         assert!(found.iter().any(|m| m.name == "Test.Bc"));
         // 2 LE bytes = 0 -> byte-compare fails.
-        let none = engine.scan_bytes(b"SIZE\x00\x00tail", ScanOptions::default());
+        data[4] = 0; data[5] = 0;
+        let none = engine.scan_bytes(&data, ScanOptions::default());
         assert!(none.is_empty());
     }
 
