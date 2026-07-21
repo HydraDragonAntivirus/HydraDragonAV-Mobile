@@ -571,7 +571,10 @@ impl Engine {
         let t_ext = std::time::Instant::now();
         let mut count = 0usize;
         for pattern in &signature.patterns {
-            count += pattern.count_all(ctx.data, &ranges, usize::MAX).0;
+            // Extended-signature callers only need to know whether a pattern
+            // matched at least once. Counting every occurrence makes repetitive
+            // large buffers unnecessarily expensive without changing the verdict.
+            count += pattern.count_all(ctx.data, &ranges, 1).0;
         }
         let ms = t_ext.elapsed().as_millis();
         if ms >= 20 {
@@ -802,6 +805,14 @@ impl Engine {
             }
             counts[i] = hits;
             last_offsets[i] = last;
+            // Short-circuit: if the expression can no longer match after this
+            // subsig's result, skip remaining subsigs.  Body subsigs are already
+            // marked evaluated (set before the loop), and `can_still_match`
+            // never prunes through a Compare node (returns true) — so this is
+            // always sound.
+            if !signature.expression.can_still_match(counts, evaluated) {
+                return;
+            }
         }
 
         let t_debug = std::time::Instant::now();
