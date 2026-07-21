@@ -1250,7 +1250,7 @@ mod tests {
     #[test]
     fn scans_pcre_logical_signature() {
         let (sig, warnings) = crate::logical::parse_logical_signature(
-            "Test.Pcre;Target:0;0&1;4141;0/world/",
+            "Test.Pcre;Target:0;0&1;414141;0/world/",
             SourceLocation {
                 path: std::sync::Arc::from(std::path::Path::new("t.ldb")),
                 line: 1,
@@ -1264,10 +1264,10 @@ mod tests {
         };
         let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
         let engine = Engine { database, atomfilter_db, yara: Vec::new() };
-        // Body "AA" present and regex "world" present -> match.
-        let found = engine.scan_bytes(b"AA hello world", ScanOptions::default());
+        // Body "AAA" present and regex "world" present -> match.
+        let found = engine.scan_bytes(b"AAA hello world", ScanOptions::default());
         assert!(found.iter().any(|m| m.name == "Test.Pcre"));
-        // Body trigger "AA" absent -> PCRE not evaluated -> no match.
+        // Body trigger "AAA" absent -> PCRE not evaluated -> no match.
         let none = engine.scan_bytes(b"hello world", ScanOptions::default());
         assert!(none.is_empty());
     }

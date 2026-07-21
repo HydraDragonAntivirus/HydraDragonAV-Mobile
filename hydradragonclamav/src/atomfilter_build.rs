@@ -26,6 +26,22 @@ fn short_atom(a: &[u8]) -> Vec<u8> {
     a[..a.len().min(MAX_ATOM)].to_vec()
 }
 
+/// Compute a per-atom promotion threshold. 2-byte atoms where both bytes are
+/// the same (e.g. `00 00`, `AA AA`) need many hits — they match prolifically
+/// on padding bytes in real buffers. Atoms with 3+ bytes, or 2 different bytes,
+/// are selective enough for threshold 1.
+fn atom_threshold(a: &Atom) -> u32 {
+    let bytes = match a {
+        Atom::Exact(b) => b.as_slice(),
+        Atom::Nocase(b) => b.as_slice(),
+    };
+    if bytes.len() <= 2 && (bytes.len() <= 1 || bytes[0] == bytes[1]) {
+        8
+    } else {
+        1
+    }
+}
+
 enum Atom {
     Exact(Vec<u8>),
     Nocase(Vec<u8>),
@@ -131,9 +147,10 @@ impl AtomFilterBuilder {
             match all_pattern_atoms(&sig.patterns) {
                 Some(atoms) => {
                     let slot_id = slots.len() as SlotId;
+                    let threshold = atoms.iter().map(atom_threshold).max().unwrap_or(1);
                     slots.push(SlotDef {
                         target: crate::atomfilter::SlotTarget::Extended { sig_index: si as u32 },
-                        threshold: 1,
+                        threshold,
                         file_type_target: sig.target.unwrap_or(0),
                     });
                     for a in &atoms {
@@ -158,12 +175,13 @@ impl AtomFilterBuilder {
                         let slot_id = slots.len() as SlotId;
                         let sig_index = log_subsig_slots.len() as u32;
                         let subsig_index = sub_slots.len() as u32;
+                        let threshold = atoms.iter().map(atom_threshold).max().unwrap_or(1);
                         slots.push(SlotDef {
                             target: crate::atomfilter::SlotTarget::LogicalSubsig {
                                 sig_index,
                                 subsig_index,
                             },
-                            threshold: 1,
+                            threshold,
                             file_type_target: sig.target.unwrap_or(0),
                         });
                         for a in &atoms {
