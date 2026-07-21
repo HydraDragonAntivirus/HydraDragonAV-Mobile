@@ -175,6 +175,10 @@ public class ScanEngine {
             .getBoolean("scan_cache_enabled", true);
     }
 
+    private boolean isSystemFileScanningEnabled() {
+        return context.getSharedPreferences("hydra_prefs", 0)
+            .getBoolean("scan_system_files_enabled", false);
+    }
     private ScanCallback callback;
     // Per-engine cumulative timing (ms) for the current/last scan — used to
     // find the slowest engine. Reset at the start of each scanAllApps() run.
@@ -948,6 +952,43 @@ public class ScanEngine {
         }
     }
 
+    /**
+     * Skip only low-value metadata while system-file scanning is disabled.
+     * If system-file scanning is enabled, every file reaches the scanner.
+     */
+    private boolean shouldSkipNonSystemMetadata(java.io.File file) {
+        if (file == null || file.isDirectory()) return false;
+        return !isSystemFileScanningEnabled()
+                && (file.length() <= 12 || isSafeMetadataMarker(file));
+    }
+
+    /**
+     * A filename alone is not trusted. A .database_uuid file is safe to skip
+     * only when its complete contents are a UUID (optionally followed by one
+     * line ending); .nomedia is safe only when empty.
+     */
+    private static boolean isSafeMetadataMarker(java.io.File file) {
+        if (file == null || file.isDirectory()) return false;
+        String name = file.getName();
+        if (".nomedia".equals(name)) return file.length() == 0;
+        if (!".database_uuid".equals(name)) return false;
+
+        long length = file.length();
+        if (length < 32 || length > 40) return false;
+        try (java.io.FileInputStream input = new java.io.FileInputStream(file)) {
+            byte[] bytes = new byte[(int) length];
+            int offset = 0;
+            while (offset < bytes.length) {
+                int read = input.read(bytes, offset, bytes.length - offset);
+                if (read < 0) return false;
+                offset += read;
+            }
+            String contents = new String(bytes, java.nio.charset.StandardCharsets.US_ASCII);
+            return contents.matches("(?i)([0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\\r?\\n?");
+        } catch (java.io.IOException e) {
+            return false;
+        }
+    }
     /** @param skipPackages installed-package names already analyzed by the main
      *  full-scan pass (scanAllApps's installed-apps loop) — a standalone APK file
      *  found on disk (e.g. sitting in Downloads) whose package name is already in
@@ -984,7 +1025,7 @@ public class ScanEngine {
             // .database_uuid, .staging, temp locks, etc.) that have zero or
             // near-zero scannable content but cost 46-99ms each in native
             // engine overhead.
-            if (!file.isDirectory() && file.length() <= 12) continue;
+            if (shouldSkipNonSystemMetadata(file)) continue;
             if (cancelRequested) return;
             if (file.isDirectory()) {
                 scanDirectoryForApks(file, pm, threats, fullScan, skipPackages, scannedFiles);
@@ -1168,7 +1209,7 @@ public class ScanEngine {
     private boolean scanGenericFile(java.io.File file, List<ThreatResult> threats) {
         // Skip tiny metadata markers (.nomedia, .database_uuid, .staging,
         // temp locks, etc.) no matter which caller routed here.
-        if (!file.isDirectory() && file.length() <= 12) return true;
+        if (shouldSkipNonSystemMetadata(file)) return true;
         try {
             if (!NativeScanner.isReady()) {
                 // Engine may still be loading its signature DBs in the
