@@ -151,20 +151,11 @@ impl AtomFilterBuilder {
             }
         }
 
-        // --- Logical signatures: one slot per atom-indexable Body
-        // subsignature. Non-Body subsigs (Pcre/ByteCompare/Fuzzy/Unsupported)
-        // have no atom concept and are left `External` for the scanner's own
-        // exact-evaluation path. A Body subsig with no usable atom in some
-        // variant has no way to gate on atoms at all — per the accepted
-        // no-verification design, it is simply always counted as matched. ---
-        let mut log_always_scan: Vec<u32> = Vec::new();
-        for (si, sig) in db.logical.iter().enumerate() {
+        for sig in db.logical.iter() {
             let mut sub_slots: Vec<SubsigSlot> = Vec::with_capacity(sig.subsignatures.len());
-            let mut always = false;
             for subsig in sig.subsignatures.iter() {
                 let Subsignature::Body { patterns, .. } = subsig else {
                     sub_slots.push(SubsigSlot::External);
-                    always = true;
                     continue;
                 };
                 match all_pattern_atoms(patterns) {
@@ -184,12 +175,8 @@ impl AtomFilterBuilder {
                     }
                     None => {
                         sub_slots.push(SubsigSlot::AutoMatch);
-                        always = true;
                     }
                 }
-            }
-            if always {
-                log_always_scan.push(si as u32);
             }
             log_subsig_slots.push(sub_slots.into_boxed_slice());
         }
@@ -200,7 +187,6 @@ impl AtomFilterBuilder {
             slots,
             ext_slot,
             log_subsig_slots,
-            log_always_scan,
         }
     }
 }

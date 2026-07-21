@@ -174,11 +174,10 @@ struct LogicalScanBufs {
     /// decides the signature was slow enough to be worth the detail.
     detail: Vec<SubsigDetail>,
     /// Reusable bitmap, one bit per logical signature, marking the signatures
-    /// whose atom slot(s) reached threshold this buffer (the hit-driven
-    /// candidates). `scan_logical` sets bits from threshold slots, then visits
-    /// the set bits plus `log_always_scan`; cleared (filled false) at the start
-    /// of each buffer. Resized once and reused across buffers, so no per-buffer
-    /// allocation.
+    /// whose atom slot(s) reached threshold this buffer. Only these are
+    /// evaluated — signatures without indexable atoms are never visited.
+    /// Cleared (filled false) at the start of each buffer. Resized once and
+    /// reused across buffers, so no per-buffer allocation.
     candidate_set: Vec<bool>,
 }
 
@@ -605,16 +604,12 @@ impl Engine {
             detail: Vec::new(),
             candidate_set: Vec::new(),
         };
-        // Hit-driven candidate selection: instead of running the per-sig
-        // "is any subsig slot above threshold?" pre-check across every loaded
-        // logical signature on every buffer, derive the candidate set straight
+        // Hit-driven candidate selection: derive the candidate set straight
         // from the slots that actually reached threshold. A slot whose target
         // is a logical subsig marks that signature as a candidate; extended-sig
         // slots are skipped here (they belong to `scan_extended`). Signatures
-        // with an External/AutoMatch subsig (`log_always_scan`) can't be gated
-        // by atoms and are visited unconditionally. The union is then walked
-        // exactly once per candidate, so the loop scales with the number of
-        // signatures that might match rather than the total loaded.
+        // without indexable atoms are never visited — only atom-gated
+        // signatures can become candidates.
         let n_log = self.database.logical.len();
         bufs.candidate_set.clear();
         bufs.candidate_set.resize(n_log, false);
