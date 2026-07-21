@@ -2120,4 +2120,5 @@ mod tests {
         data[3001] = 0x42;
         assert!(pat.is_match(&data));
     }
+
 }

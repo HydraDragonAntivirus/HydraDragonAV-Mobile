@@ -1,16 +1,14 @@
-use std::collections::HashMap;
+//! Daachorse-based atom prefilter scanner.
+//!
+//! Replaces the per-length Bf16 rolling-hash sweeps with a single Aho-Corasick
+//! pass per automaton (exact + nocase). One daachorse `find_overlapping_iter`
+//! pass matches every atom simultaneously, avoiding the 5× multiplier from
+//! the per-bucket-length rolling-hash sweeps.
 
-use jdb_xorf::Filter;
+use crate::atomfilter::{AtomFilterDb, SlotId, SubsigSlot};
+use crate::atomfilter::{ExtSlot, SlotDef};
 
-use crate::atomfilter::{AtomFilterDb, ExtSlot, SlotDef, SlotId, SubsigSlot};
-use crate::atomfilter_hash::{hash_window, hash_window_fold, leading_coeff, ATOM_LENGTHS};
-
-/// Per-slot hit counts (and last-seen window offset) for one buffer, indexed
-/// by [`SlotId`]. The offset is captured incidentally while sweeping for
-/// counts — not a separate verification pass — so `ByteCompare` subsigs (which
-/// anchor on their trigger's match position, mirroring `scanner.rs`'s
-/// `last_offsets`) have something to read from despite no pattern ever being
-/// byte-verified.
+/// Per-slot hit counts (and last-seen match start offset) for one buffer.
 pub struct SlotCounts {
     counts: Vec<u32>,
     last_offset: Vec<u32>,
@@ -42,94 +40,63 @@ impl<'a> AtomFilterScanner<'a> {
             last_offset: vec![u32::MAX; self.db.slots.len()],
         };
 
-        let mut tracker: HashMap<u64, (u32, u32)> = HashMap::new();
-
-        // ── Hot sweep: Bf16 + hash_slots gate ──────────────────────────────
-        for (i, bucket) in self.db.buckets.iter().enumerate() {
-            if let Some(ref b) = bucket {
-                sweep_one(b, ATOM_LENGTHS[i], data, &self.db.hash_slots, &mut tracker);
-            }
-        }
-
-        if self.db.buckets_nocase.iter().any(Option::is_some) {
-            for (i, bucket) in self.db.buckets_nocase.iter().enumerate() {
-                if let Some(ref b) = bucket {
-                    sweep_one_fold(b, ATOM_LENGTHS[i], data, &self.db.hash_slots, &mut tracker);
+        // ── Exact automaton pass ──────────────────────────────────────────
+        if let Some(ref pma) = self.db.exact {
+            for m in pma.find_overlapping_iter(data) {
+                let end = m.end();
+                let value = m.value();
+                let vi = value as usize;
+                if vi >= self.db.atom_to_slots.len() {
+                    continue;
+                }
+                let start = end - self.db.pattern_lens[vi];
+                for &slot_id in self.db.atom_to_slots[vi].iter() {
+                    let st = slot_id as usize;
+                    if st >= counts.counts.len() {
+                        continue;
+                    }
+                    let ft = self.db.slots[st].file_type_target;
+                    if ft != 0 && ft != file_type_target {
+                        continue;
+                    }
+                    counts.counts[st] = counts.counts[st].saturating_add(1);
+                    counts.last_offset[st] = counts.last_offset[st].max(start as u32);
                 }
             }
         }
 
-        // ── Post-sweep resolution: hash → slot IDs ─────────────────────────
-        let accept_target = |st: u32| st == 0 || st == file_type_target;
-        for (h, (cnt, last_off)) in &tracker {
-            if let Some(slot_ids) = self.db.hash_slots.get(h) {
-                for &slot_id in slot_ids.iter() {
-                    if accept_target(self.db.slots[slot_id as usize].file_type_target) {
-                        let si = slot_id as usize;
-                        counts.counts[si] = counts.counts[si].saturating_add(*cnt);
-                        counts.last_offset[si] = counts.last_offset[si].max(*last_off);
+        // ── Nocase automaton pass ─────────────────────────────────────────
+        if let Some(ref pma) = self.db.nocase {
+            // Lowercase the data in-place to avoid a separate allocation
+            // for the nocase scan.
+            let mut lowered: Vec<u8> = data.to_vec();
+            for b in &mut lowered {
+                *b = b.to_ascii_lowercase();
+            }
+            for m in pma.find_overlapping_iter(&lowered) {
+                let end = m.end();
+                let value = m.value();
+                let vi = value as usize;
+                if vi >= self.db.atom_to_slots.len() {
+                    continue;
+                }
+                let start = end - self.db.pattern_lens[vi];
+                for &slot_id in self.db.atom_to_slots[vi].iter() {
+                    let st = slot_id as usize;
+                    if st >= counts.counts.len() {
+                        continue;
                     }
+                    let ft = self.db.slots[st].file_type_target;
+                    if ft != 0 && ft != file_type_target {
+                        continue;
+                    }
+                    counts.counts[st] = counts.counts[st].saturating_add(1);
+                    counts.last_offset[st] = counts.last_offset[st].max(start as u32);
                 }
             }
         }
 
         counts
-    }
-}
-
-fn sweep_one(bucket: &crate::atomfilter::AtomBucket, len: usize, data: &[u8], hash_slots: &HashMap<u64, Box<[SlotId]>>, tracker: &mut HashMap<u64, (u32, u32)>) {
-    if data.len() < len { return; }
-    let max_pos = data.len() - len;
-    let data_ptr = data.as_ptr();
-    let coeff = leading_coeff(len);
-
-    let mut h = hash_window(&data[..len]);
-    if bucket.bf.has(&h) && hash_slots.contains_key(&h) {
-        let e = tracker.entry(h).or_insert((0, 0));
-        e.0 = e.0.saturating_add(1);
-        e.1 = 0;
-    }
-
-    for s in 0..max_pos {
-        let leaving = unsafe { *data_ptr.add(s) as u64 };
-        let entering = unsafe { *data_ptr.add(s + len) as u64 };
-        h = h
-            .wrapping_sub(leaving.wrapping_mul(coeff))
-            .wrapping_mul(crate::atomfilter_hash::ROLL_BASE)
-            .wrapping_add(entering);
-        if bucket.bf.has(&h) && hash_slots.contains_key(&h) {
-            let e = tracker.entry(h).or_insert((0, 0));
-            e.0 = e.0.saturating_add(1);
-            e.1 = (s + 1) as u32;
-        }
-    }
-}
-
-fn sweep_one_fold(bucket: &crate::atomfilter::AtomBucket, len: usize, data: &[u8], hash_slots: &HashMap<u64, Box<[SlotId]>>, tracker: &mut HashMap<u64, (u32, u32)>) {
-    if data.len() < len { return; }
-    let max_pos = data.len() - len;
-    let data_ptr = data.as_ptr();
-    let coeff = leading_coeff(len);
-
-    let mut h = hash_window_fold(&data[..len]);
-    if bucket.bf.has(&h) && hash_slots.contains_key(&h) {
-        let e = tracker.entry(h).or_insert((0, 0));
-        e.0 = e.0.saturating_add(1);
-        e.1 = 0;
-    }
-
-    for s in 0..max_pos {
-        let leaving = unsafe { (data_ptr.add(s).read().to_ascii_lowercase()) as u64 };
-        let entering = unsafe { (data_ptr.add(s + len).read().to_ascii_lowercase()) as u64 };
-        h = h
-            .wrapping_sub(leaving.wrapping_mul(coeff))
-            .wrapping_mul(crate::atomfilter_hash::ROLL_BASE)
-            .wrapping_add(entering);
-        if bucket.bf.has(&h) && hash_slots.contains_key(&h) {
-            let e = tracker.entry(h).or_insert((0, 0));
-            e.0 = e.0.saturating_add(1);
-            e.1 = (s + 1) as u32;
-        }
     }
 }
 
@@ -151,7 +118,11 @@ pub fn logical_initial_counts_into(
         out[i] = match *s {
             SubsigSlot::Atom(id) => {
                 let hits = counts.get(id);
-                if hits >= slots[id as usize].threshold { hits as usize } else { 0 }
+                if hits >= slots[id as usize].threshold {
+                    hits as usize
+                } else {
+                    0
+                }
             }
             SubsigSlot::AutoMatch => 1,
             SubsigSlot::External => 0,
@@ -160,7 +131,11 @@ pub fn logical_initial_counts_into(
     n
 }
 
-pub fn logical_initial_counts(sub_slots: &[SubsigSlot], slots: &[SlotDef], counts: &SlotCounts) -> Vec<usize> {
+pub fn logical_initial_counts(
+    sub_slots: &[SubsigSlot],
+    slots: &[SlotDef],
+    counts: &SlotCounts,
+) -> Vec<usize> {
     let mut out = vec![0; sub_slots.len()];
     logical_initial_counts_into(&mut out, sub_slots, slots, counts);
     out
@@ -236,6 +211,7 @@ mod tests {
         let afdb = AtomFilterBuilder::build(&db);
         let scanner = AtomFilterScanner::new(&afdb);
 
+        // The signature is exact (no ::i), so wrong case must NOT match.
         let wrong_case = scanner.scan(b"...casesensitiveatom...", 0);
         assert!(!ext_matched(afdb.ext_slot[0], &afdb.slots, &wrong_case));
     }

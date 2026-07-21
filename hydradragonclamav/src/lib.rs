@@ -1,6 +1,5 @@
 pub mod atomfilter;
 pub mod atomfilter_build;
-pub mod atomfilter_hash;
 pub mod atomscan;
 pub mod bytecode;
 pub mod bytecode_vm;

@@ -1,7 +1,7 @@
 [package]
 name = "hydradragonclamav"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "Pure-Rust ClamAV-compatible non-hash signature loader and scanner for HydraDragon"
 license = "GPL-2.0-or-later"
 
@@ -18,13 +18,13 @@ yara-x = { git = "https://github.com/HydraDragonAntivirus/yara-x", features = ["
 # PCRE subsignatures and .cdb/.ftm regex fields (linear-time, no catastrophic backtracking)
 regex = "1"
 
-# gzip decompression for ClamAV .cvd/.cld bytecode containers (old V7 tar inside)
-
 # SIMD substring search for the per-pattern literal pre-check (pure Rust).
 memchr = "2"
-# Binary-Fuse16 atom membership filters for the atom/counter/threshold
-# prefilter (same crate hydradragonxorfilter builds .xf blobs with).
-jdb_xorf = { version = "0.13", features = ["bitcode"] }
+
+# Aho-Corasick automaton for the atom prefilter — one pass over the buffer,
+# matching every atom simultaneously. Replaced the multi-sweep rolling-hash /
+# Bf16 approach which needed 5 separate passes (one per atom length).
+daachorse = "3.0.3"
 
 # Image decoding for `fuzzy_img#` logical subsignatures (ClamAV's image fuzzy
 # hash). Same crates ClamAV's libclamav_rust uses, so the perceptual hash is

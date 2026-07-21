@@ -356,7 +356,7 @@ fn print_report(report: &LoadReport) {
 fn trim_working_set() {
     #[cfg(windows)]
     unsafe {
-        extern "system" {
+        unsafe extern "system" {
             fn GetCurrentProcess() -> isize;
             fn K32EmptyWorkingSet(process: isize) -> i32;
         }
@@ -382,7 +382,7 @@ fn process_working_set_mb() -> f64 {
             pagefile_usage: usize,
             peak_pagefile_usage: usize,
         }
-        extern "system" {
+        unsafe extern "system" {
             fn GetCurrentProcess() -> isize;
             fn K32GetProcessMemoryInfo(
                 process: isize,
