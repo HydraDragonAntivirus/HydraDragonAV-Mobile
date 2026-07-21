@@ -626,6 +626,18 @@ impl Engine {
                 }
             }
         }
+        // Signatures where every subsig has no indexable atom (all
+        // AutoMatch/External) are never visited by the slot loop — their subsigs
+        // return unconditional counts (AutoMatch=1, External=0).  Mark them as
+        // candidates so they are still evaluated.
+        for (si, sub_slots) in self.atomfilter_db.log_subsig_slots.iter().enumerate() {
+            if bufs.candidate_set[si] {
+                continue;
+            }
+            if sub_slots.iter().any(|s| matches!(s, crate::atomfilter::SubsigSlot::AutoMatch)) {
+                bufs.candidate_set[si] = true;
+            }
+        }
 
         for si in 0..n_log {
             if !bufs.candidate_set[si] {

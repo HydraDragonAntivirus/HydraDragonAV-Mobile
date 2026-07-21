@@ -55,6 +55,9 @@ impl<'a> AtomFilterScanner<'a> {
                     if st >= counts.counts.len() {
                         continue;
                     }
+                    if counts.counts[st] >= self.db.slots[st].threshold {
+                        continue;
+                    }
                     let ft = self.db.slots[st].file_type_target;
                     if ft != 0 && ft != file_type_target {
                         continue;
@@ -86,6 +89,9 @@ impl<'a> AtomFilterScanner<'a> {
                     if st >= counts.counts.len() {
                         continue;
                     }
+                    if counts.counts[st] >= self.db.slots[st].threshold {
+                        continue;
+                    }
                     let ft = self.db.slots[st].file_type_target;
                     if ft != 0 && ft != file_type_target {
                         continue;
@@ -102,7 +108,7 @@ impl<'a> AtomFilterScanner<'a> {
 
 pub fn ext_matched(ext_slot: ExtSlot, slots: &[SlotDef], counts: &SlotCounts) -> bool {
     match ext_slot {
-        ExtSlot::AutoMatch => false,
+        ExtSlot::AutoMatch => true,
         ExtSlot::Atom(id) => counts.get(id) >= slots[id as usize].threshold,
     }
 }

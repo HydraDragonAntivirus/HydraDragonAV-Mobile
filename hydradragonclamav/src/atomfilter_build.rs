@@ -12,7 +12,10 @@ use crate::logical::Subsignature;
 use crate::pattern::Pattern;
 
 /// Shortest literal usable as an atom.
-const MIN_DEPTH: usize = 2;
+/// 2-byte atoms occur too often in real-world buffers (e.g. every PE section
+/// with padding bytes) and nearly always promote, wasting the prefilter.
+/// Requiring ≥3 bytes keeps the automaton smaller and the candidate list thin.
+const MIN_DEPTH: usize = 3;
 /// Longest atom indexed per signature.
 const MAX_ATOM: usize = 16;
 
@@ -26,20 +29,12 @@ fn short_atom(a: &[u8]) -> Vec<u8> {
     a[..a.len().min(MAX_ATOM)].to_vec()
 }
 
-/// Compute a per-atom promotion threshold. 2-byte atoms where both bytes are
-/// the same (e.g. `00 00`, `AA AA`) need many hits — they match prolifically
-/// on padding bytes in real buffers. Atoms with 3+ bytes, or 2 different bytes,
-/// are selective enough for threshold 1.
+/// Compute a per-atom promotion threshold.
+///   3+ bytes  → threshold 1  (selective enough — ~5% match rate for 4-byte in 20 MB)
+///   (2-byte atoms are excluded at MIN_DEPTH=3, so the repeated-byte rule is moot)
 fn atom_threshold(a: &Atom) -> u32 {
-    let bytes = match a {
-        Atom::Exact(b) => b.as_slice(),
-        Atom::Nocase(b) => b.as_slice(),
-    };
-    if bytes.len() <= 2 && (bytes.len() <= 1 || bytes[0] == bytes[1]) {
-        8
-    } else {
-        1
-    }
+    let _ = a;
+    1
 }
 
 enum Atom {
