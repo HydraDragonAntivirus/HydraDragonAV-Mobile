@@ -37,6 +37,14 @@ pub struct SlotDef {
     /// 1 (a single atom occurrence is enough) — kept general so a signature
     /// requiring several distinct atoms can demand more than one.
     pub threshold: u32,
+    /// ClamAV file-type target this slot's signature belongs to:
+    ///   `0` = generic (any file type).
+    /// Set during database build from the owning signature's target field.
+    /// At scan time, only slots whose `file_type_target` matches (or is 0)
+    /// are incremented, preventing unrelated signatures from contributing to
+    /// a file type's hit counters (reduces both scan time and false-positive
+    /// candidate noise).
+    pub file_type_target: u32,
 }
 
 /// One length-bucket's atom filter: the Bf16 membership filter plus the exact

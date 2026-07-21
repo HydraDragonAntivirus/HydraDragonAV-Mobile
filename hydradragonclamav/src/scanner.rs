@@ -510,7 +510,8 @@ impl Engine {
         use std::time::Instant;
         let t0 = Instant::now();
         let scanner = crate::atomscan::AtomFilterScanner::new(&self.atomfilter_db);
-        let slot_counts = scanner.scan(ctx.data);
+        let file_type_target = ctx.detected_target.unwrap_or(0);
+        let slot_counts = scanner.scan(ctx.data, file_type_target);
         let t1 = Instant::now();
         self.scan_extended(ctx, matches, &slot_counts);
         let t2 = Instant::now();

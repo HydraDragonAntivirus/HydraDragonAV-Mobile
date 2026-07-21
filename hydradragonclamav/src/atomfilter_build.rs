@@ -140,6 +140,7 @@ impl AtomFilterBuilder {
                     slots.push(SlotDef {
                         target: SlotTarget::Extended { sig_index: si as u32 },
                         threshold: 1,
+                        file_type_target: sig.target.unwrap_or(0),
                     });
                     for a in &atoms {
                         acc.register(a, slot_id);
@@ -174,6 +175,7 @@ impl AtomFilterBuilder {
                         slots.push(SlotDef {
                             target: SlotTarget::LogicalSubsig { sig_index, subsig_index },
                             threshold: 1,
+                            file_type_target: sig.target.unwrap_or(0),
                         });
                         for a in &atoms {
                             acc.register(a, slot_id);

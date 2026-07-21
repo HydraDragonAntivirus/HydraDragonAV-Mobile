@@ -55,12 +55,18 @@ impl<'a> AtomFilterScanner<'a> {
     /// Sweep `data` once per bucket length (case-sensitive, then — only if
     /// any nocase atom exists — case-folded) and return the resulting
     /// per-slot hit counts.
-    pub fn scan(&self, data: &[u8]) -> SlotCounts {
+    ///
+    /// `file_type_target` is the ClamAV file-type target detected for this
+    /// buffer (0 = unknown/generic). Only slots whose `file_type_target`
+    /// matches (or is 0/generic) are incremented — this prevents atoms
+    /// from unrelated signature types (e.g. PE-specific patterns in a text
+    /// file) from wasting scan time or creating false-positive candidates.
+    pub fn scan(&self, data: &[u8], file_type_target: u32) -> SlotCounts {
         let mut counts = SlotCounts {
             counts: vec![0u32; self.db.slots.len()],
             last_offset: vec![u32::MAX; self.db.slots.len()],
         };
-        sweep_buckets(&self.db.buckets, data, false, &mut counts);
+        sweep_buckets(&self.db.buckets, data, false, &mut counts, &self.db.slots, file_type_target);
 
         // Nocase atoms were case-folded at build time (lowercased keys), so
         // they match a lowercased view of the buffer. Instead of allocating a
@@ -69,7 +75,7 @@ impl<'a> AtomFilterScanner<'a> {
         // fly, producing the same hash the copied-buffer sweep would have.
         // Skipped entirely when there are no nocase buckets.
         if self.db.buckets_nocase.iter().any(Option::is_some) {
-            sweep_buckets(&self.db.buckets_nocase, data, true, &mut counts);
+            sweep_buckets(&self.db.buckets_nocase, data, true, &mut counts, &self.db.slots, file_type_target);
         }
 
         counts
@@ -81,17 +87,19 @@ fn sweep_buckets(
     data: &[u8],
     fold: bool,
     counts: &mut SlotCounts,
+    slots: &[SlotDef],
+    file_type_target: u32,
 ) {
     if fold {
         for (i, b) in buckets.iter().enumerate() {
             if let Some(ref bucket) = *b {
-                sweep_one_bucket_fold(bucket, ATOM_LENGTHS[i], data, counts);
+                sweep_one_bucket_fold(bucket, ATOM_LENGTHS[i], data, counts, slots, file_type_target);
             }
         }
     } else {
         for (i, b) in buckets.iter().enumerate() {
             if let Some(ref bucket) = *b {
-                sweep_one_bucket(bucket, ATOM_LENGTHS[i], data, counts);
+                sweep_one_bucket(bucket, ATOM_LENGTHS[i], data, counts, slots, file_type_target);
             }
         }
     }
@@ -102,19 +110,25 @@ fn sweep_one_bucket(
     len: usize,
     data: &[u8],
     counts: &mut SlotCounts,
+    slots: &[SlotDef],
+    file_type_target: u32,
 ) {
     if data.len() < len { return; }
     let max_pos = data.len() - len;
     let data_ptr = data.as_ptr();
     let coeff = leading_coeff(len);
 
+    let accept_target = |st: u32| st == 0 || st == file_type_target;
+
     // Initial hash at position 0.
     let mut h = hash_window(&data[..len]);
-    if let Some(slots) = bucket.resolve(h) {
-        for &slot_id in slots {
-            let si = slot_id as usize;
-            counts.counts[si] = 1;
-            counts.last_offset[si] = 0;
+    if let Some(slot_ids) = bucket.resolve(h) {
+        for &slot_id in slot_ids {
+            if accept_target(slots[slot_id as usize].file_type_target) {
+                let si = slot_id as usize;
+                counts.counts[si] = 1;
+                counts.last_offset[si] = 0;
+            }
         }
     }
 
@@ -126,12 +140,14 @@ fn sweep_one_bucket(
             .wrapping_sub(leaving.wrapping_mul(coeff))
             .wrapping_mul(crate::atomfilter_hash::ROLL_BASE)
             .wrapping_add(entering);
-        if let Some(slots) = bucket.resolve(h) {
+        if let Some(slot_ids) = bucket.resolve(h) {
             let next_start = (s + 1) as u32;
-            for &slot_id in slots {
-                let si = slot_id as usize;
-                counts.counts[si] = counts.counts[si].saturating_add(1);
-                counts.last_offset[si] = next_start;
+            for &slot_id in slot_ids {
+                if accept_target(slots[slot_id as usize].file_type_target) {
+                    let si = slot_id as usize;
+                    counts.counts[si] = counts.counts[si].saturating_add(1);
+                    counts.last_offset[si] = next_start;
+                }
             }
         }
     }
@@ -142,19 +158,25 @@ fn sweep_one_bucket_fold(
     len: usize,
     data: &[u8],
     counts: &mut SlotCounts,
+    slots: &[SlotDef],
+    file_type_target: u32,
 ) {
     if data.len() < len { return; }
     let max_pos = data.len() - len;
     let data_ptr = data.as_ptr();
     let coeff = leading_coeff(len);
 
+    let accept_target = |st: u32| st == 0 || st == file_type_target;
+
     // Initial hash at position 0 (folded).
     let mut h = hash_window_fold(&data[..len]);
-    if let Some(slots) = bucket.resolve(h) {
-        for &slot_id in slots {
-            let si = slot_id as usize;
-            counts.counts[si] = 1;
-            counts.last_offset[si] = 0;
+    if let Some(slot_ids) = bucket.resolve(h) {
+        for &slot_id in slot_ids {
+            if accept_target(slots[slot_id as usize].file_type_target) {
+                let si = slot_id as usize;
+                counts.counts[si] = 1;
+                counts.last_offset[si] = 0;
+            }
         }
     }
 
@@ -166,12 +188,14 @@ fn sweep_one_bucket_fold(
             .wrapping_sub(leaving.wrapping_mul(coeff))
             .wrapping_mul(crate::atomfilter_hash::ROLL_BASE)
             .wrapping_add(entering);
-        if let Some(slots) = bucket.resolve(h) {
+        if let Some(slot_ids) = bucket.resolve(h) {
             let next_start = (s + 1) as u32;
-            for &slot_id in slots {
-                let si = slot_id as usize;
-                counts.counts[si] = counts.counts[si].saturating_add(1);
-                counts.last_offset[si] = next_start;
+            for &slot_id in slot_ids {
+                if accept_target(slots[slot_id as usize].file_type_target) {
+                    let si = slot_id as usize;
+                    counts.counts[si] = counts.counts[si].saturating_add(1);
+                    counts.last_offset[si] = next_start;
+                }
             }
         }
     }
@@ -257,10 +281,10 @@ mod tests {
         let afdb = AtomFilterBuilder::build(&db);
         let scanner = AtomFilterScanner::new(&afdb);
 
-        let present = scanner.scan(b"junk...HydraDragonTestAtom...junk");
+        let present = scanner.scan(b"junk...HydraDragonTestAtom...junk", 0);
         assert!(ext_matched(afdb.ext_slot[0], &afdb.slots, &present));
 
-        let absent = scanner.scan(b"nothing interesting here at all");
+        let absent = scanner.scan(b"nothing interesting here at all", 0);
         assert!(!ext_matched(afdb.ext_slot[0], &afdb.slots, &absent));
     }
 
@@ -277,15 +301,15 @@ mod tests {
         let sub_slots = &afdb.log_subsig_slots[0];
         let expr = &db.logical[0].expression;
 
-        let both = scanner.scan(b"...AtomAlphaLiteral...AtomBravoLiteral...");
+        let both = scanner.scan(b"...AtomAlphaLiteral...AtomBravoLiteral...", 0);
         let counts = logical_initial_counts(sub_slots, &afdb.slots, &both);
         assert!(expr.eval(&counts).matched);
 
-        let only_a = scanner.scan(b"...AtomAlphaLiteral only...");
+        let only_a = scanner.scan(b"...AtomAlphaLiteral only...", 0);
         let counts = logical_initial_counts(sub_slots, &afdb.slots, &only_a);
         assert!(!expr.eval(&counts).matched);
 
-        let neither = scanner.scan(b"...nothing relevant...");
+        let neither = scanner.scan(b"...nothing relevant...", 0);
         let counts = logical_initial_counts(sub_slots, &afdb.slots, &neither);
         assert!(!expr.eval(&counts).matched);
     }
@@ -303,7 +327,7 @@ mod tests {
         let afdb = AtomFilterBuilder::build(&db);
         let scanner = AtomFilterScanner::new(&afdb);
 
-        let wrong_case = scanner.scan(b"...casesensitiveatom...");
+        let wrong_case = scanner.scan(b"...casesensitiveatom...", 0);
         assert!(!ext_matched(afdb.ext_slot[0], &afdb.slots, &wrong_case));
     }
 }
