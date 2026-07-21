@@ -1230,6 +1230,27 @@ public class ScanEngine {
                 return true;
             }
 
+            String fileMd5 = computeFileMd5(file);
+            if (fileMd5 != null && photonCacheEnabled()) {
+                java.util.Optional<ThreatResult> cached = scanCache != null ? scanCache.getFileCache(fileMd5) : null;
+                if (cached != null) {
+                    Log.i(TAG, "File-MD5 cache hit (" + fileMd5 + "): " + file.getAbsolutePath());
+                    if (cached.isPresent()) {
+                        ThreatResult r = cached.get();
+                        if (!threats.contains(r)) {
+                            threats.add(r);
+                            if (callback != null) callback.onThreatFound(r);
+                        }
+                    }
+                    return true;
+                }
+                if (isFileHashWhitelisted(file.getAbsolutePath(), fileMd5)) {
+                    Log.i(TAG, "NSRL Whitelist hit (MD5 clean): " + file.getAbsolutePath());
+                    if (scanCache != null) scanCache.putFileCache(fileMd5, java.util.Optional.empty());
+                    return true;
+                }
+            }
+
             if (callback != null) {
                 // Show WHICH file is being native-scanned without resetting the
                 // running count. In a full scan this runs mid storage-walk where
@@ -1252,7 +1273,7 @@ public class ScanEngine {
             String path = file.getAbsolutePath();
             long nativeT0 = android.os.SystemClock.elapsedRealtime();
             NativeScanner.Verdict v = runNativeInterruptible(() ->
-                NativeScanner.scan(path, null, null, ZeroTrustMode.isEnabled(context)));
+                NativeScanner.scan(path, null, fileMd5, ZeroTrustMode.isEnabled(context)));
             long nativeMs = android.os.SystemClock.elapsedRealtime() - nativeT0;
             addTiming("NativeScanner", nativeMs);
             Log.i(TAG, "FILE_ENGINE_TIMING " + file.getName()
@@ -1366,13 +1387,10 @@ public class ScanEngine {
                 threats.add(r);
                 if (callback != null) callback.onThreatFound(r);
             }
-            // Lazily cache matched file by MD5 so an identical file is flagged
-            // immediately next time.  Clean files skip MD5 — no need to read
-            // the whole file twice when 99% of files are benign.
-            if (r.isThreat() && photonCacheEnabled() && !cancelRequested && scanCache != null) {
-                String cacheMd5 = computeFileMd5(file);
-                if (cacheMd5 != null)
-                    scanCache.putFileCache(cacheMd5, java.util.Optional.of(r));
+            if (fileMd5 != null && photonCacheEnabled() && !cancelRequested && scanCache != null) {
+                scanCache.putFileCache(fileMd5, r.isThreat()
+                    ? java.util.Optional.of(r)
+                    : java.util.Optional.empty());
             }
             return true;
         } catch (Throwable t) {
@@ -2455,7 +2473,13 @@ public class ScanEngine {
         b.setReasons(reasons);
         b.setAppName(file.getName() + " (FILE)");
         b.setApkPath(path);
-        return b.build();
+        ThreatResult genericRes = b.build();
+        if (v.md5 != null && photonCacheEnabled() && scanCache != null) {
+            scanCache.putFileCache(v.md5, genericRes.isThreat()
+                ? java.util.Optional.of(genericRes)
+                : java.util.Optional.empty());
+        }
+        return genericRes;
     }
 
     private ThreatResult processFinalVerdictDeep(DeferredScanState state, NativeScanner.Verdict v) {
@@ -2513,6 +2537,10 @@ public class ScanEngine {
         CharSequence label = pm.getApplicationLabel(app);
         b.setAppName((label != null ? label.toString() : app.packageName) + " (DEEP)");
         b.setApkPath(sourceDir);
-        return b.build();
+        ThreatResult deepRes = b.build();
+        if (app.packageName != null && photonCacheEnabled() && scanCache != null) {
+            scanCache.putPhotonCache(app.packageName, deepRes);
+        }
+        return deepRes;
     }
 }
