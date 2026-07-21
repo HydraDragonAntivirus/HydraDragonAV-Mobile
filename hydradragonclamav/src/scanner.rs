@@ -534,12 +534,14 @@ impl Engine {
         matches: &mut Vec<ScanMatch>,
         slot_counts: &crate::atomscan::SlotCounts,
     ) {
-        // Iterate all extended signatures; each has a slot assignment that
-        // already reflects whether its atoms appeared in this buffer.
         for (si, ext_slot) in self.atomfilter_db.ext_slot.iter().enumerate() {
-            if crate::atomscan::ext_matched(*ext_slot, &self.atomfilter_db.slots, slot_counts) {
-                self.scan_one_extended(si, ctx, matches);
+            if !crate::atomscan::ext_matched(*ext_slot, &self.atomfilter_db.slots, slot_counts) {
+                continue;
             }
+            if !target_matches(self.database.extended[si].target, ctx) {
+                continue;
+            }
+            self.scan_one_extended(si, ctx, matches);
         }
     }
 
@@ -631,9 +633,11 @@ impl Engine {
         // Visit the union of always-scan and hit-driven candidates without
         // double-processing a signature that is in both: fold the always-scan
         // list into the same bitmap, then walk the set bits in order.
+        // Pre-filter by target to avoid evaluating non-atomic signatures
+        // (PCRE, ByteCompare, Fuzzy) on irrelevant file types.
         for &si in &self.atomfilter_db.log_always_scan {
             let si = si as usize;
-            if si < n_log {
+            if si < n_log && target_matches(self.database.logical[si].target, ctx) {
                 bufs.candidate_set[si] = true;
             }
         }
