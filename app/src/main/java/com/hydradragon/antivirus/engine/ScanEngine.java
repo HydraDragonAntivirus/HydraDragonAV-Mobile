@@ -989,48 +989,53 @@ public class ScanEngine {
             if (file.isDirectory()) {
                 scanDirectoryForApks(file, pm, threats, fullScan, skipPackages, scannedFiles);
             } else if (file.getName().toLowerCase().endsWith(".apk")) {
-                // runPkgInfoInterruptible handles Vivo ROM hangs/timeouts internally
-                // and sets apkPkgAnalyzerBroken.
-                // ── MD5 scan-cache check for storage APKs ───────────────────
-                // If this exact APK bytes (same MD5) were already fully scanned
-                // this session, reuse the cached verdict instead of re-running
-                // the full analyzeApp pipeline (and its inner zip scanning).
-                String apkMd5 = computeFileMd5(file);
-                if (apkMd5 != null && photonCacheEnabled()) {
-                    // 1. Check session fileScanCache
-                    java.util.Optional<ThreatResult> cachedApk = scanCache != null ? scanCache.getFileCache(apkMd5) : null;
-                    if (cachedApk != null) {
-                        Log.i(TAG, "File-MD5 cache hit APK (" + apkMd5 + "): " + file.getAbsolutePath());
-                        if (cachedApk.isPresent()) {
-                            ThreatResult cr = cachedApk.get();
-                            if (!threats.contains(cr)) {
-                                threats.add(cr);
-                                if (callback != null) callback.onThreatFound(cr);
-                            }
-                        }
-                        if (!cancelRequested) reportFileScanned(file,
-                            cachedApk.isPresent() ? "Cache hit - known threat" : "Cache hit - clean",
-                            cachedApk.isPresent() ? 100 : 0, cachedApk.isPresent());
-                        continue; // skip analyzeApp entirely
-                    }
-
-                    // Check native NSRL Whitelist (MD5 clean)
-                    if (isHashWhitelisted(apkMd5)) {
-                        Log.i(TAG, "NSRL Whitelist hit APK (MD5 clean): " + file.getAbsolutePath());
-                        if (scanCache != null) scanCache.putFileCache(apkMd5, java.util.Optional.empty());
-                        if (!cancelRequested) reportFileScanned(file, "NSRL whitelist - clean", 0, false);
-                        continue;
-                    }
-                }
-                // ─────────────────────────────────────────────────────────────
+                // Check if it's a system APK first (getPackageArchiveInfo is
+                // lightweight — reads manifest only).  System APKs are already
+                // checked by the installed-apps pass — skip MD5 + analyzeApp.
                 PackageInfo pkgInfo = runPkgInfoInterruptible(() ->
                     pm.getPackageArchiveInfo(file.getAbsolutePath(),
                         PackageManager.GET_PERMISSIONS));
                 if (pkgInfo != null) {
                     String pkgName = pkgInfo.applicationInfo.packageName;
                     if (skipPackages != null && pkgName != null && skipPackages.contains(pkgName)) {
+                        if (!cancelRequested) reportFileScanned(file);
                         continue;
                     }
+                    // Skip system APKs entirely — no MD5, no analyzeApp.
+                    if ((pkgInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0
+                            || (pkgInfo.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0) {
+                        if (!cancelRequested) reportFileScanned(file);
+                        continue;
+                    }
+
+                    // ── MD5 scan-cache check for non-system APKs ──────────
+                    // Cache hit avoids the expensive analyzeApp pipeline.
+                    String apkMd5 = computeFileMd5(file);
+                    if (apkMd5 != null && photonCacheEnabled()) {
+                        java.util.Optional<ThreatResult> cachedApk = scanCache != null ? scanCache.getFileCache(apkMd5) : null;
+                        if (cachedApk != null) {
+                            Log.i(TAG, "File-MD5 cache hit APK (" + apkMd5 + "): " + file.getAbsolutePath());
+                            if (cachedApk.isPresent()) {
+                                ThreatResult cr = cachedApk.get();
+                                if (!threats.contains(cr)) {
+                                    threats.add(cr);
+                                    if (callback != null) callback.onThreatFound(cr);
+                                }
+                            }
+                            if (!cancelRequested) reportFileScanned(file,
+                                cachedApk.isPresent() ? "Cache hit - known threat" : "Cache hit - clean",
+                                cachedApk.isPresent() ? 100 : 0, cachedApk.isPresent());
+                            continue;
+                        }
+
+                        if (isHashWhitelisted(apkMd5)) {
+                            Log.i(TAG, "NSRL Whitelist hit APK (MD5 clean): " + file.getAbsolutePath());
+                            if (scanCache != null) scanCache.putFileCache(apkMd5, java.util.Optional.empty());
+                            if (!cancelRequested) reportFileScanned(file, "NSRL whitelist - clean", 0, false);
+                            continue;
+                        }
+                    }
+
                     pkgInfo.applicationInfo.sourceDir = file.getAbsolutePath();
                     pkgInfo.applicationInfo.publicSourceDir = file.getAbsolutePath();
                     ThreatResult result = analyzeApp(pkgInfo.applicationInfo, pm, true);
@@ -1038,7 +1043,6 @@ public class ScanEngine {
                         threats.add(result);
                         if (callback != null) callback.onThreatFound(result);
                     }
-                    // Cache by MD5 so the same APK bytes are never re-analysed.
                     if (apkMd5 != null && photonCacheEnabled() && !cancelRequested && scanCache != null) {
                         scanCache.putFileCache(apkMd5, (result != null && result.isThreat())
                             ? java.util.Optional.of(result)
@@ -1185,37 +1189,6 @@ public class ScanEngine {
                 return true;
             }
 
-            // ── MD5 scan-cache check ─────────────────────────────────────────
-            // Compute the file's MD5 BEFORE doing any native work.  If we've
-            // already fully scanned an identical file this session (same bytes
-            // → same MD5), skip the whole scan — including every nested zip
-            // entry — and reuse the cached verdict instead.
-            String fileMd5 = computeFileMd5(file);
-            if (fileMd5 != null && photonCacheEnabled()) {
-                // 1. Check session fileScanCache
-                java.util.Optional<ThreatResult> cached = scanCache != null ? scanCache.getFileCache(fileMd5) : null;
-                if (cached != null) {
-                    Log.i(TAG, "File-MD5 cache hit (" + fileMd5 + "): " + file.getAbsolutePath());
-                    if (cached.isPresent()) {
-                        ThreatResult r = cached.get();
-                        if (!threats.contains(r)) {
-                            threats.add(r);
-                            if (callback != null) callback.onThreatFound(r);
-                        }
-                    }
-                    return true; // fully handled — skip native scan
-                }
-
-                // Check native NSRL Whitelist (MD5 clean) — Rust validates file header
-                //    (must be ZIP/APK) before the xor-filter lookup.
-                if (isFileHashWhitelisted(file.getAbsolutePath(), fileMd5)) {
-                    Log.i(TAG, "NSRL Whitelist hit (MD5 clean): " + file.getAbsolutePath());
-                    if (scanCache != null) scanCache.putFileCache(fileMd5, java.util.Optional.empty());
-                    return true;
-                }
-            }
-            // ────────────────────────────────────────────────────────────────
-
             if (callback != null) {
                 // Show WHICH file is being native-scanned without resetting the
                 // running count. In a full scan this runs mid storage-walk where
@@ -1237,11 +1210,8 @@ public class ScanEngine {
             }
             String path = file.getAbsolutePath();
             long nativeT0 = android.os.SystemClock.elapsedRealtime();
-            // Pass the already-computed MD5 to the native side so it does NOT
-            // hash the whole file a second time.
-            final String md5ForNative = fileMd5;
             NativeScanner.Verdict v = runNativeInterruptible(() ->
-                NativeScanner.scan(path, null, md5ForNative, ZeroTrustMode.isEnabled(context)));
+                NativeScanner.scan(path, null, null, ZeroTrustMode.isEnabled(context)));
             long nativeMs = android.os.SystemClock.elapsedRealtime() - nativeT0;
             addTiming("NativeScanner", nativeMs);
             Log.i(TAG, "FILE_ENGINE_TIMING " + file.getName()
@@ -1355,11 +1325,13 @@ public class ScanEngine {
                 threats.add(r);
                 if (callback != null) callback.onThreatFound(r);
             }
-            // Store result in MD5 cache so an identical file is never re-scanned.
-            if (fileMd5 != null && photonCacheEnabled() && !cancelRequested && scanCache != null) {
-                scanCache.putFileCache(fileMd5, r.isThreat()
-                    ? java.util.Optional.of(r)
-                    : java.util.Optional.empty());
+            // Lazily cache matched file by MD5 so an identical file is flagged
+            // immediately next time.  Clean files skip MD5 — no need to read
+            // the whole file twice when 99% of files are benign.
+            if (r.isThreat() && photonCacheEnabled() && !cancelRequested && scanCache != null) {
+                String cacheMd5 = computeFileMd5(file);
+                if (cacheMd5 != null)
+                    scanCache.putFileCache(cacheMd5, java.util.Optional.of(r));
             }
             return true;
         } catch (Throwable t) {
