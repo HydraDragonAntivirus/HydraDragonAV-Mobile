@@ -25,6 +25,40 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp"/>
 
+        <!-- First-scan reminder banner (yellow) -->
+        <LinearLayout
+            android:id="@+id/layout_scan_reminder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_card"
+            android:padding="14dp"
+            android:layout_marginBottom="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/scan_reminder"
+                android:textColor="@color/warning_orange"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:gravity="center_vertical"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textColor="@color/warning_orange"
+                android:textSize="16sp"
+                android:fontFamily="monospace"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+
         <!-- Ana Güvenlik Kartı -->
         <LinearLayout
             android:layout_width="match_parent"

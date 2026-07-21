@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ جهاز ذو صلاحية روت (ROOT)</string>
@@ -102,6 +102,7 @@
     <string name="network_disconnected">غير متصل</string>
     <string name="apk_scanner">فاحص APK</string>
     <string name="scan_prompt">اضغط زر الفحص لبدء الفحص</string>
+    <string name="scan_reminder">⚠ لم يتم فحص جهازك بعد! اضغط للفحص.</string>
     <string name="scan_system">فحص النظام</string>
     <string name="rescan">إعادة الفحص</string>
     <string name="scanning">جارٍ الفحص...</string>

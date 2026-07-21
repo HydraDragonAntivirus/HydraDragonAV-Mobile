@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -675,6 +676,10 @@ public class ScanFragment extends Fragment {
                 foundThreats.clear();
                 foundThreats.addAll(result.getThreats());
                 isScanning = false;
+                if (getActivity() != null) {
+                    getActivity().getSharedPreferences("hydra_prefs", 0)
+                        .edit().putBoolean("first_scan_completed", true).apply();
+                }
                 if (!isAdded()) {
                     lastScanStatus = result.isClean() ? "System clean" : foundThreats.size() + " threats";
                     if (wasCancelled) lastScanStatus = "Scan stopped";

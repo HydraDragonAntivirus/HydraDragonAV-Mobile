@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ GEROOTED APPARAAT</string>
@@ -102,6 +102,7 @@
     <string name="network_disconnected">Niet verbonden</string>
     <string name="apk_scanner">APK-SCANNER</string>
     <string name="scan_prompt">Druk op SCAN om te beginnen met scannen</string>
+    <string name="scan_reminder">⚠ Uw apparaat is nog niet gescand! Tik om te scannen.</string>
     <string name="scan_system">SYSTEEM SCANNEN</string>
     <string name="rescan">OPNIEUW SCANNEN</string>
     <string name="scanning">BEZIG MET SCANNEN...</string>

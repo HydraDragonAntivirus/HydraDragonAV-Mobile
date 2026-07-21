@@ -102,6 +102,7 @@
     <string name="network_disconnected">Déconnecté</string>
     <string name="apk_scanner">SCANNER D\'APK</string>
     <string name="scan_prompt">Appuyez sur SCANNER pour commencer l\'analyse</string>
+    <string name="scan_reminder">⚠ Votre appareil n\'a pas encore été analysé ! Appuyez pour analyser.</string>
     <string name="scan_system">ANALYSER LE SYSTÈME</string>
     <string name="rescan">RÉANALYSER</string>
     <string name="scanning">ANALYSE EN COURS...</string>

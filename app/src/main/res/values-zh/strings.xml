@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ 已 ROOT 设备</string>
@@ -102,6 +102,7 @@
     <string name="network_disconnected">已断开</string>
     <string name="apk_scanner">APK扫描器</string>
     <string name="scan_prompt">按下扫描按钮开始扫描</string>
+    <string name="scan_reminder">⚠ 您的设备尚未扫描！点击开始扫描。</string>
     <string name="scan_system">扫描系统</string>
     <string name="rescan">重新扫描</string>
     <string name="scanning">扫描中...</string>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ DISPOSITIVO ROOT</string>
@@ -102,6 +102,7 @@
     <string name="network_disconnected">Disconnesso</string>
     <string name="apk_scanner">SCANNER APK</string>
     <string name="scan_prompt">Premi il pulsante SCAN per iniziare la scansione</string>
+    <string name="scan_reminder">⚠ Il tuo dispositivo non è stato ancora scansionato! Tocca per scansionare.</string>
     <string name="scan_system">SCANSIONA SISTEMA</string>
     <string name="rescan">RISCANSIONA</string>
     <string name="scanning">SCANSIONE IN CORSO...</string>

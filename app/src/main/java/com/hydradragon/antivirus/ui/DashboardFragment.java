@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -18,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.hydradragon.antivirus.R;
 import com.hydradragon.antivirus.engine.NetworkMonitor;
 import com.hydradragon.antivirus.model.ProcessInfo;
@@ -51,6 +53,7 @@ public class DashboardFragment extends Fragment {
     private View threatIntelPanel;
     private TextView tvThreatFeed;
     private TextView tvEngineStatus;
+    private View layoutScanReminder;
 
     private GuardService guardService;
     private boolean serviceBound = false;
@@ -124,6 +127,20 @@ public class DashboardFragment extends Fragment {
         tvLiveActivityRate = view.findViewById(R.id.tv_live_rate);
         tvThreatFeed = view.findViewById(R.id.tv_threat_feed);
         tvEngineStatus = view.findViewById(R.id.tv_engine_status);
+        layoutScanReminder = view.findViewById(R.id.layout_scan_reminder);
+
+        // First-scan reminder banner
+        SharedPreferences prefs = requireContext().getSharedPreferences("hydra_prefs", 0);
+        boolean firstScanCompleted = prefs.getBoolean("first_scan_completed", false);
+        if (!firstScanCompleted) {
+            layoutScanReminder.setVisibility(View.VISIBLE);
+            layoutScanReminder.setOnClickListener(v -> {
+                if (getActivity() != null) {
+                    BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
+                    if (nav != null) nav.setSelectedItemId(R.id.nav_scan);
+                }
+            });
+        }
 
         // Initial state
         setSecureState();

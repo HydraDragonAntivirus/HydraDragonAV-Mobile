@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirüs</string>
     <string name="root_warning_title">⚠ KÖKLÜ (ROOT) CİHAZ</string>
@@ -114,6 +114,7 @@
     <string name="network_disconnected">Bağlı Değil</string>
     <string name="apk_scanner">APK TARAYICI</string>
     <string name="scan_prompt">Taramayı başlatmak için TARA butonuna basın</string>
+    <string name="scan_reminder">⚠ Cihazınız henüz taranmadı! Taramak için dokunun.</string>
     <string name="scan_system">SİSTEMİ TARA</string>
     <string name="rescan">YENİDEN TARA</string>
     <string name="scanning">TARANIYOR...</string>
