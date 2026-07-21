@@ -205,7 +205,7 @@ fn sweep_one_bucket_fold(
 /// unconditional `AutoMatch`, for signatures with no atom-indexable pattern).
 pub fn ext_matched(ext_slot: ExtSlot, slots: &[SlotDef], counts: &SlotCounts) -> bool {
     match ext_slot {
-        ExtSlot::AutoMatch => true,
+        ExtSlot::AutoMatch => false,
         ExtSlot::Atom(id) => counts.get(id) >= slots[id as usize].threshold,
     }
 }

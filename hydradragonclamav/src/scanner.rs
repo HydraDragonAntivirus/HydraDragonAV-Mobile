@@ -630,18 +630,6 @@ impl Engine {
             }
         }
 
-        // Visit the union of always-scan and hit-driven candidates without
-        // double-processing a signature that is in both: fold the always-scan
-        // list into the same bitmap, then walk the set bits in order.
-        // Pre-filter by target to avoid evaluating non-atomic signatures
-        // (PCRE, ByteCompare, Fuzzy) on irrelevant file types.
-        for &si in &self.atomfilter_db.log_always_scan {
-            let si = si as usize;
-            if si < n_log && target_matches(self.database.logical[si].target, ctx) {
-                bufs.candidate_set[si] = true;
-            }
-        }
-
         for si in 0..n_log {
             if !bufs.candidate_set[si] {
                 continue;
