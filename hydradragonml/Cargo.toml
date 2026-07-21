@@ -1,7 +1,7 @@
 [package]
 name = "hydradragonml"
 version = "0.2.0"
-edition = "2021"
+edition = "2024"
 description = "HydraDragon ML inference engine: tract-based ONNX malware/benign binary classifier."
 license = "GPL-2.0-or-later"
 

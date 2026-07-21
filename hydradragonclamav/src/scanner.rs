@@ -92,9 +92,20 @@ fn android_log(msg: &str) {
 }
 
 /// Writes a timing/diagnostic logcat line.
+///
+/// On Android this formats the message and writes it to logcat. On every
+/// other target `android_log` is a no-op, so the previous version still paid
+/// for building the `String` via `format!()` on every call (including the
+/// unconditional per-scan summary in `scan_context`) only to throw it away.
+/// Gating at the macro level means the format arguments are never evaluated
+/// off-Android — `#[cfg(...)]` on the statement compiles the non-Android
+/// branch out entirely.
 macro_rules! rust_timing_log {
     ($($arg:tt)*) => {
-        android_log(&format!($($arg)*))
+        #[cfg(target_os = "android")]
+        {
+            android_log(&format!($($arg)*));
+        }
     };
 }
 
@@ -371,6 +382,17 @@ impl Engine {
             return;
         }
 
+        // Skip raw scan for archives we cannot extract — scanning compressed
+        // random bytes against 500k+ signatures triggers pathological backtracking
+        // in the gap-matching loop. The actual unpacker in hydradragonextractor
+        // handles only gz/zip/xz/lzma/tar/7z; anything else is skipped here.
+        // Checked BEFORE type detection: no point running the file-type magic
+        // scan (linear over every loaded `.ftm` pattern) on bytes we're about
+        // to reject outright.
+        if is_unsupported_archive(data) {
+            return;
+        }
+
         let detected_target = if !self.database.file_type_magic.is_empty()
         {
             self.detect_clamav_type(data).and_then(clamav_type_to_target)
@@ -387,17 +409,9 @@ impl Engine {
             image_fuzzy_hash: Default::default(),
         };
 
-        // Skip raw scan for archives we cannot extract — scanning compressed
-        // random bytes against 500k+ signatures triggers pathological backtracking
-        // in the gap-matching loop. The actual unpacker in hydradragonextractor
-        // handles only gz/zip/xz/lzma/tar/7z; anything else is skipped here.
-        if is_unsupported_archive(data) {
-            return;
-        }
-
         // Run the ClamAV engine (prefilter + extended + logical) on files
         // whose type is either unknown or positively identified as a supported
-        // type.  Known-but-unsupported targets (PE, OLE2, Mail, Mach-O, SWF,
+        // type.  Known-but-unsupported desktop targets (OLE2, Mail, Mach-O,
         // Java, …) are skipped outright — this avoids paying for the whole-buffer
         // atom prefilter only to have `target_matches` reject every candidate.
         let confident_target = detected_target.or_else(|| detect_builtin_target(&ctx));
@@ -569,13 +583,19 @@ impl Engine {
             return;
         }
         let t_ext = std::time::Instant::now();
-        let mut count = 0usize;
+        // Extended-signature callers only need to know whether a pattern
+        // matched at least once — `count_all` used to tally every occurrence
+        // across the whole buffer, which is unnecessarily expensive on
+        // repetitive/padded data. `find_all(.., 1)` stops at the first hit,
+        // and we break out of the outer loop as soon as any pattern matches.
+        let mut matched = false;
         for pattern in &signature.patterns {
-            // Extended-signature callers only need to know whether a pattern
-            // matched at least once. Counting every occurrence makes repetitive
-            // large buffers unnecessarily expensive without changing the verdict.
-            count += pattern.count_all(ctx.data, &ranges, 1).0;
+            if !pattern.find_all(ctx.data, &ranges, 1).is_empty() {
+                matched = true;
+                break;
+            }
         }
+        let count = usize::from(matched);
         let ms = t_ext.elapsed().as_millis();
         if ms >= 20 {
             rust_timing_log!(
@@ -721,6 +741,12 @@ impl Engine {
                 return;
             }
         }
+        // NumberOfSections, EntryPoint, and IconGroup are PE(Windows-executable)
+        // -only TDB fields — this scanner never parses PE headers (PE isn't an
+        // Android-relevant format and isn't in `CLAMAV_ALLOWED_TARGETS`), so
+        // there's no way to evaluate these constraints. Skip rather than fire
+        // unconditionally: firing without the constraint would turn a
+        // PE-specific signature into a false positive on non-PE content.
         if signature.nos.is_some() || signature.ep.is_some()
             || signature.icongrp1.is_some() || signature.icongrp2.is_some()
         {
@@ -1001,7 +1027,7 @@ fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>) -> bool {
     }
     // Concrete magic-based typing. ClamAV always types the file and only runs a
     // signature whose Target matches; without this, a type-specific signature
-    // (e.g. a SWF `Target:11` exploit rule) fires on unrelated files (a PE DLL
+    // (e.g. a SWF `Target:11` exploit rule) fires on unrelated files (an APK
     // that merely contains the same strings) — a real false positive. So if the
     // file is a KNOWN type different from the signature's target, reject it. This
     // gate applies even in non-strict mode; it only rejects clear cross-type
@@ -1063,8 +1089,12 @@ fn detect_builtin_target(ctx: &ScanContext<'_>) -> Option<u32> {
 }
 
 fn clamav_type_to_target(clamav_type: &str) -> Option<u32> {
+    // No PE (CL_TYPE_MSEXE) or OLE2/MSOLE2 arms here: neither Windows PE
+    // executables nor legacy MS Office/OLE2 documents are Android-relevant
+    // formats — target 1 (PE) isn't produced by this function and target 2
+    // (OLE2) isn't in `CLAMAV_ALLOWED_TARGETS`, so mapping to either would
+    // just be dead weight that never reaches the scan path.
     Some(match clamav_type {
-        "CL_TYPE_OLE2" | "CL_TYPE_MSOLE2" => 2,
         "CL_TYPE_HTML" => 3,
         "CL_TYPE_GRAPHICS" | "CL_TYPE_GIF" | "CL_TYPE_PNG" | "CL_TYPE_JPEG" => 5,
         "CL_TYPE_ELF" => 6,
@@ -1367,8 +1397,8 @@ mod tests {
                 anchor: OffsetAnchor::Absolute(0),
                 max_shift: None,
             },
-            patterns: compile_pattern_variants("4d5a", Modifiers::default()).unwrap().into(),
-            clamav_type: "CL_TYPE_MSEXE".into(),
+            patterns: compile_pattern_variants("52494646", Modifiers::default()).unwrap().into(),
+            clamav_type: "CL_TYPE_RIFF".into(),
             source: SourceLocation {
                 path: std::sync::Arc::from(std::path::Path::new("t.ftm")),
                 line: 1,
@@ -1393,8 +1423,13 @@ mod tests {
         };
         let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
         let engine = Engine { database, atomfilter_db, yara: Vec::new() };
-        // "MZAB": .ftm types it MSEXE (target 1); the sig's target 3 -> filtered by target_matches.
-        assert!(engine.scan_bytes(b"MZAB", ScanOptions::default()).is_empty());
+        // "RIFFAB": .ftm types it as a RIFF container (no target mapping, so
+        // detected_target stays None); the sig's target 3 (HTML) still gets
+        // filtered — either the .ftm type maps to a non-3 target, or (as here)
+        // the `detect_builtin_target`/text-heuristic fallback in `target_matches`
+        // rejects the mismatch. Confirms strict typing filters unrelated targets
+        // without relying on any PE/Windows-executable-specific type.
+        assert!(engine.scan_bytes(b"RIFFAB", ScanOptions::default()).is_empty());
     }
 
     // --- Offset-threading equivalence: the built prefilter (threaded verify +
