@@ -1665,6 +1665,7 @@ fn run_deferred_item(
                 opts,
                 max_dets,
                 &mut scan_timing,
+                false, // No streaming ClamAV in batch deferred mode
             )
         }
         None => Vec::new(),
@@ -2044,6 +2045,13 @@ fn extract_decode_base64_urls(data: &[u8], scanner: &url_scan::UrlScanner) -> Ve
 /// Results and timing are accumulated per-worker and merged once at the end
 /// so there's no lock contention on the hot path, only at merge time.
 #[allow(clippy::too_many_arguments)]
+/// Re-scan all buffers with YARA-x (and optionally ClamAV).
+///
+/// When `yara_only` is `true`, the main buffer content scan uses
+/// `scan_yara_only_with_breakdown` (ClamAV already ran during streaming
+/// extraction).  DEX strings and emulated strings are *always* scanned with
+/// full ClamAV+YARA since these are new data produced by Phase 2 that was
+/// never seen during the streaming pass.
 fn rescan_buffers_parallel(
     clamav: &ClamavEngine,
     engine: &Engine,
@@ -2057,6 +2065,7 @@ fn rescan_buffers_parallel(
     opts: ScanOptions,
     max_dets: usize,
     scan_timing: &mut hydradragonclamav::scanner::TimingBreakdown,
+    yara_only: bool,
 ) -> Vec<(String, String, Vec<String>)> {
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering as AtomOrdering};
     use std::sync::Mutex;
@@ -2120,7 +2129,11 @@ fn rescan_buffers_parallel(
                         // remaining queue.
                         let mut has_b64_url_rule = false;
                         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            clamav.scan_bytes_named_with_breakdown(&b.data, &name, opts, module_meta)
+                            if yara_only {
+                                clamav.scan_yara_only_with_breakdown(&b.data, &name, module_meta)
+                            } else {
+                                clamav.scan_bytes_named_with_breakdown(&b.data, &name, opts, module_meta)
+                            }
                         })) {
                             Ok((matches, bt)) => {
                                 for m in &matches {
@@ -2290,10 +2303,10 @@ fn run_scan(
         android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
     }
     let t_extract = std::time::Instant::now();
-    let (buffers, bomb_dets) = if whitelisted {
-        (Vec::new(), Vec::new())
+    let (buffers, bomb_dets, mut streaming_dets, mut streaming_timing) = if whitelisted {
+        (Vec::new(), Vec::new(), Vec::new(), hydradragonclamav::scanner::TimingBreakdown::default())
     } else {
-        collect_buffers(bytes, file_md5, path)
+        collect_buffers(bytes, file_md5, path, engine.clamav.as_ref())
     };
     let extract_ms = t_extract.elapsed().as_millis();
 
@@ -2541,6 +2554,48 @@ fn run_scan(
         );
     }
 
+    // Filter streaming detections from whitelisted buffers: during extraction
+    // we scanned every buffer (whitelist wasn't known yet), but whitelisted
+    // buffers should never contribute detections.
+    if skip_heavy.iter().any(|&sk| sk) && !streaming_dets.is_empty() {
+        // Build a set of object_paths for whitelisted buffers.  Buffers with
+        // entry_name are matched exactly; for top-level (idx 0) it's `path`;
+        // for unnamed archive children the streaming and Vec indices may
+        // differ when SCAN_RELEVANT_ONLY skips buffers — we handle this by
+        // checking both the Vec-index and emitted-index forms.
+        let mut whitelisted_paths: std::collections::HashSet<String> =
+            std::collections::HashSet::new();
+        // Also collect unnamed whitelisted buffers' lineages for fallback
+        // matching when index formats diverge.
+        let mut unnamed_whitelisted_lineages: Vec<Vec<String>> = Vec::new();
+        for (i, sk) in skip_heavy.iter().enumerate() {
+            if !sk { continue; }
+            if i == 0 {
+                whitelisted_paths.insert(path.to_string());
+            } else if let Some(entry) = &buffers[i].entry_name {
+                whitelisted_paths.insert(format!("{path}!/{entry}"));
+            } else {
+                unnamed_whitelisted_lineages.push(buffers[i].apk_lineage.clone());
+            }
+        }
+        streaming_dets.retain(|(_, obj_path, lineage)| {
+            if whitelisted_paths.contains(obj_path) { return false; }
+            // For unnamed archive children: match by lineage when the index
+            // forms diverge (e.g. streaming used #extract[5] but Vec index
+            // would be #extract[3] due to skipped non-relevant buffers).
+            if !unnamed_whitelisted_lineages.is_empty()
+                && obj_path.contains("#extract[")
+                && unnamed_whitelisted_lineages.iter().any(|wl| wl == lineage)
+            {
+                return false;
+            }
+            true
+        });
+        // Timing contributions from whitelisted buffers are left in
+        // streaming_timing — separating per-buffer timing would require
+        // per-bucket accounting, and the data is diagnostic-only.
+    }
+
     // Phase 3: ML runs on all buffers. No per-buffer whitelist skipping —
     // either every buffer was whitelisted (caught above) or none are.
     let t_ml = std::time::Instant::now();
@@ -2562,13 +2617,15 @@ fn run_scan(
     };
     let ml_ms = t_ml.elapsed().as_millis();
 
-    // ClamAV + YARA — on all buffers (no per-buffer skipping).
+    // YARA-only rescan (Phase 3): ClamAV already ran during streaming
+    // extraction.  DEX/emulated strings are always full-scanned since they
+    // are new data produced by Phase 2.
     let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     let mut yara_dets: Vec<(String, String, Vec<String>)> = match &engine.clamav {
         Some(clamav) => {
             let opts = ScanOptions::default();
             let no_skip = vec![false; buffers.len()];
-            rescan_buffers_parallel(
+            let dets = rescan_buffers_parallel(
                 clamav,
                 engine,
                 &buffers,
@@ -2581,10 +2638,18 @@ fn run_scan(
                 opts,
                 max_dets,
                 &mut scan_timing,
-            )
+                true,
+            );
+            // Merge streaming ClamAV+YARA detections from extraction.
+            // streaming_timing is merged below.
+            streaming_timing.accumulate(scan_timing);
+            scan_timing = streaming_timing;
+            dets
         }
         None => Vec::new(),
     };
+    // Prepend streaming detections so they appear first in the output.
+    yara_dets.splice(0..0, streaming_dets);
     let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
     let mut yara_agg: std::collections::HashMap<String, u128> = std::collections::HashMap::new();
     for (name, ns) in &scan_timing.yara_per_engine {
@@ -3985,24 +4050,36 @@ struct Buf {
     entry_name: Option<String>,
 }
 
-/// Phase 1 of the scan pipeline: extract ALL buffers from the file without
-/// scanning them. `top_md5` is Java's already-computed MD5 of the whole scanned
-/// file, reused for the top-level (depth 0) buffer so the largest buffer isn't
-/// hashed twice.
+/// Phase 1 of the scan pipeline: extract ALL buffers from the file, running
+/// ClamAV/YARA inline as each buffer is decompressed (streaming extract+scan).
+/// `top_md5` is Java's already-computed MD5 of the whole scanned file, reused
+/// for the top-level (depth 0) buffer so the largest buffer isn't hashed twice.
 ///
 /// Zip-bomb guard: stops extraction when total decompressed bytes exceed ~2 GB
 /// or when the number of extracted buffers exceeds 4096. Any bomb errors are
 /// returned as detections in the second tuple element so they are never lost.
 ///
-/// After this returns, `run_scan` builds the whitelist (`skip_heavy`) then runs
-/// heavy passes (ClamAV/YARA, DEX, emulation, ML, TLSH) only on non-whitelisted
-/// buffers — so whitelisted APKs and their contents are never fed to any
-/// expensive scanner.
+/// Returns (buffers, bomb_dets, streaming_dets, streaming_timing).
+/// - `buffers`: every extracted buffer (used by Phase 2 and YARA-only rescan).
+/// - `bomb_dets`: zip-bomb detection errors.
+/// - `streaming_dets`: ClamAV + YARA detections from the streaming pass
+///   (module_meta is empty during streaming, so module-dependent YARA rules
+///   won't match here; they are caught by `rescan_buffers_parallel`'s
+///   yara-only rescan in Phase 3).
+/// - `streaming_timing`: timing breakdown for the streaming scan pass.
+///
+/// When `clamav` is `None`, streaming scan is skipped (returns empty detections).
 fn collect_buffers(
     data: &[u8],
     top_md5: Option<&str>,
     path: &str,
-) -> (Vec<Buf>, Vec<(String, String, Vec<String>)>) {
+    clamav: Option<&ClamavEngine>,
+) -> (
+    Vec<Buf>,
+    Vec<(String, String, Vec<String>)>,
+    Vec<(String, String, Vec<String>)>,
+    hydradragonclamav::scanner::TimingBreakdown,
+) {
     use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering as AtomOrdering};
     use std::sync::Mutex;
 
@@ -4040,6 +4117,12 @@ fn collect_buffers(
     // Set once the buffer/byte cap is hit; every worker checks it and winds
     // down rather than pulling more work, even if `outstanding` is nonzero.
     let capped = std::sync::atomic::AtomicBool::new(false);
+    // Streaming ClamAV+YARA detections and timing, accumulated per-buffer as
+    // extraction proceeds. These are merged into the final result in Phase 3;
+    // module_meta is empty during streaming, so module-dependent YARA rules
+    // are caught by the yara-only rescan in `rescan_buffers_parallel`.
+    let streaming_dets: Mutex<Vec<(String, String, Vec<String>)>> = Mutex::new(Vec::new());
+    let streaming_timing: Mutex<hydradragonclamav::scanner::TimingBreakdown> = Mutex::new(Default::default());
 
     // Small, capped pool — collect_buffers already runs inside run_scan's
     // SCAN_SERIAL lock (one file at a time), so it's safe to actually spend
@@ -4145,6 +4228,49 @@ fn collect_buffers(
                         let relevant = !SCAN_RELEVANT_ONLY.load(Ordering::Relaxed)
                             || item.entry_name.is_none()
                             || is_relevant_buffer(item.entry_name.as_deref(), &item.buf);
+
+                        // Streaming ClamAV+YARA scan: run before item.buf is moved
+                        // into `out`.  Uses empty module_meta (androguard/hydradragon
+                        // not yet built); module-dependent YARA rules get a second
+                        // yara-only pass in Phase 3.
+                        if let Some(clamav_engine) = clamav {
+                            if relevant && !skip_by_size(&item.buf) {
+                                let obj_path = if idx == 0 {
+                                    path.to_string()
+                                } else {
+                                    match &item.entry_name {
+                                        Some(entry) => format!("{path}!/{entry}"),
+                                        None => format!("{}#extract[{}]", path, idx),
+                                    }
+                                };
+                                match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                    clamav_engine.scan_bytes_named_with_breakdown(
+                                        &item.buf,
+                                        &obj_path,
+                                        hydradragonclamav::ScanOptions::default(),
+                                        &[],
+                                    )
+                                })) {
+                                    Ok((matches, bt)) => {
+                                        if let Ok(mut sd) = streaming_dets.lock() {
+                                            for m in matches {
+                                                sd.push((m.name, m.object_path, lineage.clone()));
+                                            }
+                                        }
+                                        if let Ok(mut st) = streaming_timing.lock() {
+                                            st.accumulate(bt);
+                                        }
+                                    }
+                                    Err(_) => {
+                                        android_log(&format!(
+                                            "collect_buffers: streaming scan PANIC on {obj_path}, skipping this buffer: {}",
+                                            last_panic()
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+
                         if relevant {
                             if let Ok(mut og) = out.lock() {
                                 og.push(Buf {
@@ -4175,14 +4301,17 @@ fn collect_buffers(
 
     let out = out.into_inner().unwrap_or_default();
     let bomb_dets = bomb_dets.into_inner().unwrap_or_default();
+    let streaming_dets = streaming_dets.into_inner().unwrap_or_default();
+    let streaming_timing = streaming_timing.into_inner().unwrap_or_default();
     rust_timing_log!(
-        "collect_buffers :: extracted {} buffers ({} workers), total {} MB",
+        "collect_buffers :: extracted {} buffers ({} workers), total {} MB, streaming {} detections",
         out.len(),
         workers,
-        total_bytes.load(AtomOrdering::Relaxed) / 1_000_000
+        total_bytes.load(AtomOrdering::Relaxed) / 1_000_000,
+        streaming_dets.len(),
     );
 
-    (out, bomb_dets)
+    (out, bomb_dets, streaming_dets, streaming_timing)
 }
 
 /// The last captured panic ("message @ file:line"), for diagnostics.

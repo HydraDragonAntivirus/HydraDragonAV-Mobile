@@ -346,7 +346,7 @@ impl Engine {
         let mut state = ScanState {
             matches: Vec::new(),
         };
-        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut None);
+        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut None, false);
         state.matches
     }
 
@@ -363,7 +363,26 @@ impl Engine {
             matches: Vec::new(),
         };
         let mut breakdown = TimingBreakdown::default();
-        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown));
+        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown), false);
+        (state.matches, breakdown)
+    }
+
+    /// Run only YARA-x rules (skip ClamAV signatures + phishing heuristic).
+    /// Used by the streaming extract+scan pipeline where ClamAV was already
+    /// run per-buffer during extraction, and only module_meta-dependent YARA
+    /// rules need a second pass after Phase 2 builds androguard/hydradragon
+    /// module metadata.
+    pub fn scan_yara_only_with_breakdown(
+        &self,
+        data: &[u8],
+        object_path: &str,
+        module_meta: &[(&str, &[u8])],
+    ) -> (Vec<ScanMatch>, TimingBreakdown) {
+        let mut state = ScanState {
+            matches: Vec::new(),
+        };
+        let mut breakdown = TimingBreakdown::default();
+        self.scan_object(data, object_path, None, 0, ScanOptions::default(), module_meta, &mut state, &mut Some(&mut breakdown), true);
         (state.matches, breakdown)
     }
 
@@ -377,6 +396,7 @@ impl Engine {
         module_meta: &[(&str, &[u8])],
         state: &mut ScanState,
         timing: &mut Option<&mut TimingBreakdown>,
+        skip_clamav: bool,
     ) {
         if data.len() > options.max_child_size {
             return;
@@ -389,7 +409,8 @@ impl Engine {
         // Checked BEFORE type detection: no point running the file-type magic
         // scan (linear over every loaded `.ftm` pattern) on bytes we're about
         // to reject outright.
-        if is_unsupported_archive(data) {
+        // YARA-only scan doesn't have this backtracking issue, so skip the check.
+        if !skip_clamav && is_unsupported_archive(data) {
             return;
         }
 
@@ -409,20 +430,32 @@ impl Engine {
             image_fuzzy_hash: Default::default(),
         };
 
+        let confident_target = detected_target.or_else(|| detect_builtin_target(&ctx));
+
         // Run the ClamAV engine (prefilter + extended + logical) on files
         // whose type is either unknown or positively identified as a supported
         // type.  Known-but-unsupported desktop targets (OLE2, Mail, Mach-O,
         // Java, …) are skipped outright — this avoids paying for the whole-buffer
         // atom prefilter only to have `target_matches` reject every candidate.
-        let confident_target = detected_target.or_else(|| detect_builtin_target(&ctx));
-        if confident_target.is_some() && clamav_target_allowed(confident_target)
-            || confident_target.is_none() && is_text_like(ctx.data)
-        {
-            // Time ClamAV scan_context
-            let t_clamav = timing.as_ref().map(|_| Instant::now());
-            self.scan_context(&ctx, &mut state.matches);
-            if let (Some(t), Some(bt)) = (t_clamav, timing.as_mut()) {
-                bt.clamav_ns = bt.clamav_ns.saturating_add(t.elapsed().as_nanos());
+        if !skip_clamav {
+            if confident_target.is_some() && clamav_target_allowed(confident_target)
+                || confident_target.is_none() && is_text_like(ctx.data)
+            {
+                // Time ClamAV scan_context
+                let t_clamav = timing.as_ref().map(|_| Instant::now());
+                self.scan_context(&ctx, &mut state.matches);
+                if let (Some(t), Some(bt)) = (t_clamav, timing.as_mut()) {
+                    bt.clamav_ns = bt.clamav_ns.saturating_add(t.elapsed().as_nanos());
+                }
+            }
+
+            // Phishing heuristic: harvest `<a href>` link pairs from HTML/email and
+            // flag spoofed protected domains (.pdb/.gdb gated by .wdb allow list).
+            // Only meaningful for HTML, and only when a protected-domain DB is loaded.
+            if !self.database.phishing.protected.is_empty()
+                && looks_like_html(data)
+            {
+                self.scan_phishing(data, object_path, &mut state.matches);
             }
         }
 
@@ -440,17 +473,6 @@ impl Engine {
                     bt.yara_per_engine.push((yara.name.clone(), t.elapsed().as_nanos()));
                 }
             }
-        }
-
-
-
-        // Phishing heuristic: harvest `<a href>` link pairs from HTML/email and
-        // flag spoofed protected domains (.pdb/.gdb gated by .wdb allow list).
-        // Only meaningful for HTML, and only when a protected-domain DB is loaded.
-        if !self.database.phishing.protected.is_empty()
-            && looks_like_html(data)
-        {
-            self.scan_phishing(data, object_path, &mut state.matches);
         }
 
         // NOTE: ZIP member extraction is deliberately NOT done here anymore.
@@ -1843,6 +1865,7 @@ mod tests {
             &[],
             &mut state,
             &mut None,
+            false,
         );
         assert!(state.matches.iter().any(|m| m.name == "Test.InZip"));
     }
