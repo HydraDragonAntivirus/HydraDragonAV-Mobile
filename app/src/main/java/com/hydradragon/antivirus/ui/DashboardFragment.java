@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -128,10 +129,14 @@ public class DashboardFragment extends Fragment {
         tvThreatFeed = view.findViewById(R.id.tv_threat_feed);
         tvEngineStatus = view.findViewById(R.id.tv_engine_status);
         layoutScanReminder = view.findViewById(R.id.layout_scan_reminder);
+        Log.d("HydraDragon-Dash", "layoutScanReminder=" + layoutScanReminder);
 
         // First-scan reminder banner
         SharedPreferences prefs = requireContext().getSharedPreferences("hydra_prefs", 0);
-        if (!prefs.getBoolean("first_scan_completed", false)) {
+        boolean firstScanCompleted = prefs.getBoolean("first_scan_completed", false);
+        Log.d("HydraDragon-Dash", "firstScanCompleted=" + firstScanCompleted);
+        if (!firstScanCompleted) {
+            Log.d("HydraDragon-Dash", "showing scan reminder banner");
             layoutScanReminder.setVisibility(View.VISIBLE);
             layoutScanReminder.setOnClickListener(v -> {
                 if (getActivity() != null) {
