@@ -139,8 +139,6 @@ public class DashboardFragment extends Fragment {
                     if (nav != null) nav.setSelectedItemId(R.id.nav_scan);
                 }
             });
-        } else {
-            layoutScanReminder.setVisibility(View.GONE);
         }
 
         // Initial state
