@@ -1803,7 +1803,7 @@ fn run_scan(
         } else {
             buffers.iter().map(|_| emulate::EmulationResult::default()).collect()
         };
-        emulated_strings = emulated
+        _emulated_strings = _emulated
             .iter()
             .map(|r| {
                 if r.strings.is_empty() {
