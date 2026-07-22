@@ -1645,9 +1645,15 @@ fn run_scan(
     let perm_count;
     let packages;
     let hashes;
+    let androguard_json;
     let skip_heavy: Vec<bool>;
     let dex_scans: Vec<Option<dex_scan::DexScan>>;
     let dex_ms;
+    let hydradragon_meta;
+    let _module_meta: Vec<(&str, &[u8])>;
+    let _emulated: Vec<emulate::EmulationResult>;
+    let _emulated_strings: Vec<Option<Vec<u8>>>;
+    let emulate_ms;
     {
         // Dangerous-permission count from the (in-memory) manifest bytes.
         perm_count = max_dangerous_perms(&buffers);
@@ -1655,6 +1661,8 @@ fn run_scan(
         packages = collect_packages(&buffers);
         // MD5 of each APK/zip buffer for the hash-keyed whitelist.
         hashes = collect_apk_hashes(&buffers, file_md5);
+        // androguard JSON report (manifest + URL sweep).
+        androguard_json = build_androguard_json(&buffers);
 
         // Per-buffer whitelist check.
         let mut apk_md5_to_pkg = std::collections::HashMap::new();
