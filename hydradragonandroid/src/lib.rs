@@ -3468,6 +3468,12 @@ fn collect_buffers(
         /// In-archive path within its immediate parent, `None` for the seed
         /// (top-level) item.
         entry_name: Option<String>,
+        /// Parent archive container type (e.g. `"zip"`), `None` for top-level.
+        container_type: Option<&'static str>,
+        /// Decompressed (real) size of this entry in the parent archive.
+        container_size_real: Option<u64>,
+        /// Byte offset of this entry within the parent archive.
+        container_file_pos: Option<u64>,
     }
 
     let stack: Mutex<Vec<WorkItem>> = Mutex::new(vec![WorkItem {
@@ -3475,6 +3481,9 @@ fn collect_buffers(
         depth: 0,
         lineage: Vec::new(),
         entry_name: None,
+        container_type: None,
+        container_size_real: None,
+        container_file_pos: None,
     }]);
     // Termination detection for the shared work stack: counts items that are
     // either sitting in `stack` or actively being processed by some worker.
@@ -3579,6 +3588,9 @@ fn collect_buffers(
                                                 depth: item.depth + 1,
                                                 lineage: lineage.clone(),
                                                 entry_name,
+                                                container_type: fmt,
+                                                container_size_real: None,
+                                                container_file_pos: None,
                                             });
                                         }
                                     }
@@ -3622,11 +3634,15 @@ fn collect_buffers(
                                     }
                                 };
                                 match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                    clamav_engine.scan_bytes_named_with_breakdown(
+                                    clamav_engine.scan_bytes_named_with_container(
                                         &item.buf,
                                         &obj_path,
                                         hydradragonclamav::ScanOptions::default(),
                                         &[],
+                                        item.container_type,
+                                        item.container_size_real,
+                                        item.container_file_pos,
+                                        item.entry_name.clone(),
                                     )
                                 })) {
                                     Ok((matches, bt)) => {

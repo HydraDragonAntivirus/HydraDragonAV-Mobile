@@ -389,6 +389,29 @@ impl Engine {
         (state.matches, breakdown)
     }
 
+    /// Same as `scan_bytes_named_with_breakdown` but accepts container metadata
+    /// for `.cdb` container-signature matching. Use when scanning an extracted
+    /// child buffer whose parent archive metadata (container type, compressed
+    /// size, file offset, entry name) is known.
+    pub fn scan_bytes_named_with_container(
+        &self,
+        data: &[u8],
+        object_path: &str,
+        options: ScanOptions,
+        module_meta: &[(&str, &[u8])],
+        container_type: Option<&'static str>,
+        container_size_real: Option<u64>,
+        container_file_pos: Option<u64>,
+        container_entry_name: Option<String>,
+    ) -> (Vec<ScanMatch>, TimingBreakdown) {
+        let mut state = ScanState {
+            matches: Vec::new(),
+        };
+        let mut breakdown = TimingBreakdown::default();
+        self.scan_object(data, object_path, container_type, container_size_real, container_file_pos, container_entry_name, 0, options, module_meta, &mut state, &mut Some(&mut breakdown), false);
+        (state.matches, breakdown)
+    }
+
     /// Run only YARA-x rules (skip ClamAV signatures + phishing heuristic).
     /// Used by the streaming extract+scan pipeline where ClamAV was already
     /// run per-buffer during extraction, and only module_meta-dependent YARA
