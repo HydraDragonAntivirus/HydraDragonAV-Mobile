@@ -84,6 +84,10 @@ const YRC_FILES: &[&str] = &[
     "clean_rules_filtered_verified.yrc",
     "valhalla-rules_filtered_verified.yrc",
     "machine_learning_apk.yrc",
+];
+/// YARA rulesets that depend on Phase 2 module metadata (androguard, hydradragon).
+/// These are rescanned once module_meta is available.
+const MODULE_DEPENDENT_YRC: &[&str] = &[
     "androguard.yrc",
     "hips_rules_filtered_verified.yrc",
 ];
@@ -327,8 +331,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                             u128,
                             Option<hydradragonclamav::yara_scan::YaraEngine>,
                         )> = std::thread::scope(|s2| {
-                            YRC_FILES
-                                .iter()
+                            YRC_FILES.iter().chain(MODULE_DEPENDENT_YRC.iter())
                                 .map(|name| {
                                     let name_str = name.to_string();
                                     let bytes = files.get(*name).cloned();
@@ -1907,9 +1910,62 @@ fn run_scan(
     };
     let ml_ms = t_ml.elapsed().as_millis();
 
-    // Use streaming ClamAV+YARA detections directly — no Phase 3 rescan.
-    let scan_timing = streaming_timing;
+    let mut scan_timing = streaming_timing;
     let mut yara_dets = streaming_dets;
+
+    // Phase 3 YARA-only rescan with full module_meta for module-dependent rules.
+    // Re-scans buffer data, DEX string pools, and emulated strings.
+    let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
+    if let Some(clamav) = &engine.clamav {
+        if !_module_meta.is_empty() {
+            for yengine in &clamav.yara {
+                if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
+                    continue;
+                }
+                for (i, b) in buffers.iter().enumerate() {
+                    let base_path = if i == 0 {
+                        path.to_string()
+                    } else {
+                        match &b.entry_name {
+                            Some(entry) => format!("{path}!/{entry}"),
+                            None => format!("{path}#extract[{i}]"),
+                        }
+                    };
+                    // Buffer data
+                    let t0 = std::time::Instant::now();
+                    let matches = yengine.scan(&b.data, &base_path, &_module_meta);
+                    let ns = t0.elapsed().as_nanos();
+                    rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
+                    for m in matches {
+                        yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
+                    }
+                    // DEX string pool
+                    if let Some(ds) = &dex_scans[i] {
+                        let dname = format!("{base_path}#dex");
+                        let t0 = std::time::Instant::now();
+                        let matches = yengine.scan(ds.text.as_bytes(), &dname, &_module_meta);
+                        let ns = t0.elapsed().as_nanos();
+                        rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
+                        for m in matches {
+                            yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
+                        }
+                    }
+                    // Emulated strings
+                    if let Some(decoded) = &_emulated_strings[i] {
+                        let ename = format!("{base_path}#emulated");
+                        let t0 = std::time::Instant::now();
+                        let matches = yengine.scan(decoded, &ename, &_module_meta);
+                        let ns = t0.elapsed().as_nanos();
+                        rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
+                        for m in matches {
+                            yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    scan_timing.accumulate(rescan_timing);
     let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
     let mut yara_agg: std::collections::HashMap<String, u128> = std::collections::HashMap::new();
     for (name, ns) in &scan_timing.yara_per_engine {
