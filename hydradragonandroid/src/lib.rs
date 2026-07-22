@@ -1964,6 +1964,18 @@ fn run_scan(
                             yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
                         }
                     }
+                    // Behavioral signal from emulation.
+                    let mut seen_apis = std::collections::HashSet::new();
+                    for call in &emulated[i].api_calls {
+                        if !seen_apis.insert(call.name.clone()) {
+                            continue;
+                        }
+                        yara_dets.push((
+                            format!("Behavior.Native: {}", call.name),
+                            base_path.clone(),
+                            b.apk_lineage.clone(),
+                        ));
+                    }
                 }
             }
         }
