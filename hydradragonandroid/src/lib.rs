@@ -1654,8 +1654,8 @@ fn run_scan(
     let dex_ms;
     let hydradragon_meta;
     let mut module_meta: Vec<(&str, &[u8])>;
-    let _emulated: Vec<emulate::EmulationResult>;
-    let _emulated_strings: Vec<Option<Vec<u8>>>;
+    let emulated: Vec<emulate::EmulationResult>;
+    let emulated_strings: Vec<Option<Vec<u8>>>;
     let emulate_ms;
     {
         // Dangerous-permission count from the (in-memory) manifest bytes.
@@ -1775,7 +1775,7 @@ fn run_scan(
         // a game engine bundling 4 ABIs) can't blow the scan time budget.
         const MAX_EMULATED_BUFFERS: usize = 8;
         let t_emulate = std::time::Instant::now();
-        _emulated = if NATIVE_EMULATION_ENABLED
+        emulated = if NATIVE_EMULATION_ENABLED
             .load(std::sync::atomic::Ordering::Relaxed)
         {
             let mut seen_hashes: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -1806,7 +1806,7 @@ fn run_scan(
         } else {
             buffers.iter().map(|_| emulate::EmulationResult::default()).collect()
         };
-        _emulated_strings = _emulated
+        emulated_strings = emulated
             .iter()
             .map(|r| {
                 if r.strings.is_empty() {
@@ -1951,7 +1951,7 @@ fn run_scan(
                         }
                     }
                     // Emulated strings
-                    if let Some(decoded) = &_emulated_strings[i] {
+                    if let Some(decoded) = &emulated_strings[i] {
                         let ename = format!("{base_path}#emulated");
                         let t0 = std::time::Instant::now();
                         let matches = yengine.scan(decoded, &ename, &module_meta);
@@ -2007,7 +2007,7 @@ fn run_scan(
             }
         }
         if url_limit < 16 {
-            for em in _emulated_strings.iter().flatten() {
+            for em in emulated_strings.iter().flatten() {
                 for url_det in extract_and_scan_urls(engine, em) {
                     detections.push((url_det, path.to_string(), Vec::new()));
                     url_limit += 1; if url_limit >= 16 { break; }
