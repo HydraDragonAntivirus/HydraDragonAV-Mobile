@@ -403,8 +403,6 @@
     <string name="net_event_detail_action">🔹 การดำเนินการ:</string>
     <string name="net_event_detail_reason">📋 เหตุผล:</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
-    <string name="scan_view_threats">⚠ ภัยคุกคาม</string>
-    <string name="scan_view_all_files">📄 ไฟล์ทั้งหมด</string>
     <string name="scan_system_toggle">สแกนไฟล์ระบบ — ไม่แนะนำเว้นแต่อุปกรณ์จะรูทแล้ว</string>
     <string name="scan_system_on_toast">เปิดใช้งานการสแกนไฟล์ระบบ — อาจแจ้งเตือนแอประบบที่ถูกต้อง</string>
     <string name="scan_system_off_toast">ปิดใช้งานการสแกนไฟล์ระบบ — แอประบบจะถูกข้าม</string>

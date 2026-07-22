@@ -403,8 +403,6 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="net_event_detail_action">🔹 Ação:</string>
     <string name="net_event_detail_reason">📋 Motivo:</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
-    <string name="scan_view_threats">⚠ Ameaças</string>
-    <string name="scan_view_all_files">📄 Todos os arquivos</string>
     <string name="scan_system_toggle">Digitalizar arquivos do sistema — não recomendado a menos que o dispositivo esteja rooteado</string>
     <string name="scan_system_on_toast">Digitalização de arquivos do sistema ativada — pode sinalizar aplicativos legítimos do sistema</string>
     <string name="scan_system_off_toast">Digitalização de arquivos do sistema desativada — aplicativos do sistema serão ignorados</string>

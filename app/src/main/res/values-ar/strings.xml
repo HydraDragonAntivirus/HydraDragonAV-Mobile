@@ -403,8 +403,6 @@
     <string name="net_event_detail_action">🔹 الإجراء:</string>
     <string name="net_event_detail_reason">📋 السبب:</string>
     <string name="net_event_detail_pid">🔢 المعرف:</string>
-    <string name="scan_view_threats">⚠ تهديدات</string>
-    <string name="scan_view_all_files">📄 جميع الملفات</string>
     <string name="scan_system_toggle">مسح ملفات النظام — غير موصى به ما لم يكن الجهاز مجذر</string>
     <string name="scan_system_on_toast">تم تفعيل مسح ملفات النظام — قد يتم وضع علامة على تطبيقات النظام المشروعة</string>
     <string name="scan_system_off_toast">تم تعطيل مسح ملفات النظام — سيتم تخطي تطبيقات النظام</string>

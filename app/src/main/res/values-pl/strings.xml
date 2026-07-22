@@ -403,8 +403,6 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="net_event_detail_action">🔹 Akcja:</string>
     <string name="net_event_detail_reason">📋 Powód:</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
-    <string name="scan_view_threats">⚠ Zagrożenia</string>
-    <string name="scan_view_all_files">📄 Wszystkie pliki</string>
     <string name="scan_system_toggle">Skanuj pliki systemowe — niezalecane, chyba że urządzenie jest zrootowane</string>
     <string name="scan_system_on_toast">Skanowanie plików systemowych włączone — może oznaczać legalne aplikacje systemowe</string>
     <string name="scan_system_off_toast">Skanowanie plików systemowych wyłączone — aplikacje systemowe zostaną pominięte</string>

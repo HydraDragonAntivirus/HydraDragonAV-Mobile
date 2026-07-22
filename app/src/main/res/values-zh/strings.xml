@@ -403,8 +403,6 @@
     <string name="net_event_detail_action">🔹 操作:</string>
     <string name="net_event_detail_reason">📋 Reason:</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
-    <string name="scan_view_threats">⚠ Threats</string>
-    <string name="scan_view_all_files">📄 All Files</string>
     <string name="scan_system_toggle">扫描系统文件 — 除非设备已 root，否则不推荐</string>
     <string name="scan_system_on_toast">系统文件扫描已启用 — 可能会标记合法的系统应用</string>
     <string name="scan_system_off_toast">系统文件扫描已禁用 — 系统应用将被跳过</string>

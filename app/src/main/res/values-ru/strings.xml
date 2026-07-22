@@ -403,8 +403,6 @@
     <string name="net_event_detail_action">🔹 Действие:</string>
     <string name="net_event_detail_reason">📋 Причина:</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
-    <string name="scan_view_threats">⚠ Угрозы</string>
-    <string name="scan_view_all_files">📄 Все файлы</string>
     <string name="scan_system_toggle">Сканировать системные файлы — не рекомендуется, если устройство не рутировано</string>
     <string name="scan_system_on_toast">Сканирование системных файлов включено — может помечать легитимные системные приложения</string>
     <string name="scan_system_off_toast">Сканирование системных файлов отключено — системные приложения будут пропущены</string>

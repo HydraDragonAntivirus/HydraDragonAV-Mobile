@@ -403,8 +403,6 @@ Puntuación de riesgo: %2$d/100
     <string name="net_event_detail_action">🔹 Acción:</string>
     <string name="net_event_detail_reason">📋 Razón:</string>
     <string name="net_event_detail_pid">🔢 PID:</string>
-    <string name="scan_view_threats">⚠ Amenazas</string>
-    <string name="scan_view_all_files">📄 Todos los archivos</string>
     <string name="scan_system_toggle">Escanear archivos del sistema — no recomendado a menos que el dispositivo tenga root</string>
     <string name="scan_system_on_toast">Escaneo de archivos del sistema activado — puede marcar aplicaciones legítimas del sistema</string>
     <string name="scan_system_off_toast">Escaneo de archivos del sistema desactivado — se omitirán las aplicaciones del sistema</string>
