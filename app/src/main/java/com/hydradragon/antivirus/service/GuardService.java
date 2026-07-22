@@ -353,7 +353,6 @@ public class GuardService extends Service {
                 }
             }
             @Override public void onScanComplete(com.hydradragon.antivirus.model.ScanResult r) { }
-            @Override public void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo i) { }
             @Override public void onError(String e) { }
         });
         networkMonitor = new NetworkMonitor(this);
@@ -419,13 +418,6 @@ public class GuardService extends Service {
                 }
                 ScanEngine.ScanCallback ui = uiScanCallback;
                 if (ui != null) ui.onScanComplete(result);
-            }
-
-            @Override
-            public void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo info) {
-                if (scanEngine.isBackgroundScan()) return;
-                ScanEngine.ScanCallback ui = uiScanCallback;
-                if (ui != null) ui.onFileScanned(info);
             }
 
             @Override

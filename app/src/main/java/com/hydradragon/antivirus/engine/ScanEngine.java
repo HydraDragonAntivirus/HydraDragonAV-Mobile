@@ -373,7 +373,6 @@ public class ScanEngine {
         void onThreatFound(ThreatResult threat);
         void onScanComplete(ScanResult result);
         void onError(String error);
-        void onFileScanned(com.hydradragon.antivirus.model.ScannedFileInfo info);
     }
 
     public ScanEngine(Context context, AIEngine aiEngine) {
@@ -774,7 +773,6 @@ public class ScanEngine {
             PackageManager pm = context.getPackageManager();
             List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
             List<ThreatResult> threats = new ArrayList<>();
-            List<com.hydradragon.antivirus.model.ScannedFileInfo> scannedFiles = new ArrayList<>();
             int total = apps.size();
             appsScannedBase = total;
 
@@ -800,13 +798,6 @@ public class ScanEngine {
                     String reason = isThreat
                         ? String.join("; ", result.getReasons() != null ? result.getReasons() : java.util.Collections.emptyList())
                         : "Clean";
-                    com.hydradragon.antivirus.model.ScannedFileInfo fi =
-                        new com.hydradragon.antivirus.model.ScannedFileInfo(
-                            app.sourceDir, app.packageName, appName,
-                            result != null ? result.getRiskScore() : 0, "", System.currentTimeMillis(),
-                            isThreat, reason);
-                    scannedFiles.add(fi);
-                    if (!isBackgroundScan && callback != null) callback.onFileScanned(fi);
                 } catch (Exception e) { }
             }
 
@@ -841,7 +832,7 @@ public class ScanEngine {
             long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
             int scannedTotal = total + filesScannedCount.get() + threats.size();
             if (!isBackgroundScan && callback != null)
-                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, scannedFiles, elapsedMs));
+                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, java.util.Collections.emptyList(), elapsedMs));
           } finally {
               isBackgroundScan = false;
               runningScanType = SCAN_TYPE_NONE;
@@ -880,14 +871,13 @@ public class ScanEngine {
             long scanStartMs = android.os.SystemClock.elapsedRealtime();
             PackageManager pm = context.getPackageManager();
             List<ThreatResult> threats = new ArrayList<>();
-            List<com.hydradragon.antivirus.model.ScannedFileInfo> scannedFiles = new ArrayList<>();
-            scanDirectoryForApks(dir, pm, threats, true, scannedFiles);
+            scanDirectoryForApks(dir, pm, threats, true);
 
             logEngineTimings();
             long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
             int scannedTotal = filesScannedCount.get() + threats.size();
             if (callback != null)
-                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, scannedFiles, elapsedMs));
+                callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, java.util.Collections.emptyList(), elapsedMs));
           } finally {
               scanRunning.set(false);
               releaseScanWakeLock();
@@ -899,12 +889,6 @@ public class ScanEngine {
     private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
                                       List<ThreatResult> threats, boolean fullScan) {
         scanDirectoryForApks(dir, pm, threats, fullScan, (java.util.Set<String>) null);
-    }
-
-    private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
-                                      List<ThreatResult> threats, boolean fullScan,
-                                      List<com.hydradragon.antivirus.model.ScannedFileInfo> scannedFiles) {
-        scanDirectoryForApks(dir, pm, threats, fullScan, null, scannedFiles);
     }
 
     /** Bump the storage-file counter and push a live progress update so a full
@@ -922,9 +906,6 @@ public class ScanEngine {
         int n = appsScannedBase + filesScannedCount.incrementAndGet();
         if (callback != null) {
             callback.onProgress(n, n, file.getName());
-            callback.onFileScanned(new com.hydradragon.antivirus.model.ScannedFileInfo(
-                file.getAbsolutePath(), "", file.getName(),
-                riskScore, "", System.currentTimeMillis(), isThreat, reason));
         }
     }
 
@@ -973,13 +954,6 @@ public class ScanEngine {
     private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
                                       List<ThreatResult> threats, boolean fullScan,
                                       java.util.Set<String> skipPackages) {
-        scanDirectoryForApks(dir, pm, threats, fullScan, skipPackages, null);
-    }
-
-    private void scanDirectoryForApks(java.io.File dir, PackageManager pm,
-                                      List<ThreatResult> threats, boolean fullScan,
-                                      java.util.Set<String> skipPackages,
-                                      List<com.hydradragon.antivirus.model.ScannedFileInfo> scannedFiles) {
         if (dir == null || !dir.exists() || !dir.isDirectory()) return;
         java.io.File[] files = dir.listFiles();
         if (files == null) return;
@@ -1004,7 +978,7 @@ public class ScanEngine {
             if (shouldSkipNonSystemMetadata(file)) continue;
             if (cancelRequested) return;
             if (file.isDirectory()) {
-                scanDirectoryForApks(file, pm, threats, fullScan, skipPackages, scannedFiles);
+                scanDirectoryForApks(file, pm, threats, fullScan, skipPackages);
             } else if (file.getName().toLowerCase().endsWith(".apk")) {
                 // Check if it's a system APK first (getPackageArchiveInfo is
                 // lightweight — reads manifest only).  System APKs are already
