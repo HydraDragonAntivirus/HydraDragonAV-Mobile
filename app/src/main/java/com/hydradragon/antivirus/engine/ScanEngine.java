@@ -1636,7 +1636,6 @@ public class ScanEngine {
         List<String> reasons = new ArrayList<>();
         String fileMd5Vt = null;   // top-level file MD5 from the native scan (for the VirusTotal link)
         String companyName = "Unknown Developer";
-        String signatureHash = "NONE";
         // Captured for the Zero Trust "full known details" dump below — only
         // used when NOTHING else flagged this app (riskScore stays 0).
         List<String> requestedPermissions = new ArrayList<>();
@@ -1679,12 +1678,6 @@ public class ScanEngine {
                 String subject = cert.getSubjectDN().getName();
                 for (String part : subject.split(","))
                     if (part.trim().startsWith("O=")) { companyName = part.trim().substring(2); break; }
-
-                MessageDigest md = MessageDigest.getInstance("SHA-256");
-                byte[] digest = md.digest(sig.toByteArray());
-                StringBuilder sb = new StringBuilder();
-                for (byte b : digest) { String h = Integer.toHexString(0xff & b); if (h.length()==1) sb.append('0'); sb.append(h); }
-                signatureHash = sb.toString().toUpperCase().substring(0, 16) + "...";
 
                 for (String trusted : TRUSTED_COMPANIES)
                     if (companyName.toLowerCase().contains(trusted)) {
@@ -1938,7 +1931,6 @@ public class ScanEngine {
 
         if (riskScore > 0 && !isWhitelisted) {
             reasons.add("✍️ Signature: " + companyName);
-            reasons.add("🔐 SHA-256: " + signatureHash);
             if (fileMd5Vt != null && !fileMd5Vt.isEmpty()) {
                 reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileMd5Vt);
             }
@@ -1955,7 +1947,6 @@ public class ScanEngine {
             reasons.add("⚠️ ZERO TRUST: no detector matched this app — verdict is UNKNOWN, "
                 + "not confirmed clean (not recommended: expect false positives on ordinary apps)");
             reasons.add("✍️ Signature: " + companyName);
-            reasons.add("🔐 SHA-256: " + signatureHash);
             reasons.add("🔐 Dangerous permissions matched: "
                 + (dangerousPermCount >= 0 ? dangerousPermCount + "/36" : "not scanned"));
             if (!requestedPermissions.isEmpty()) {
