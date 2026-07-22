@@ -157,6 +157,10 @@ pub(crate) struct ScanContext<'a> {
     /// evaluate logical signatures' `Container:` TDB constraint, mirroring
     /// ClamAV's `cli_recursion_stack_get_type(ctx, -2)`.
     pub container_type: Option<&'static str>,
+    /// Container metadata for `.cdb` signature matching.
+    pub container_size_real: Option<u64>,
+    pub container_file_pos: Option<u64>,
+    pub container_entry_name: Option<String>,
     /// The file's image fuzzy hash (perceptual pHash), computed lazily once and
     /// only when a `fuzzy_img#` subsignature is actually evaluated. `None` inside
     /// the cell means "computed, not a decodable image".
@@ -364,7 +368,7 @@ impl Engine {
         let mut state = ScanState {
             matches: Vec::new(),
         };
-        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut None, false);
+        self.scan_object(data, object_path, None, None, None, None, 0, options, module_meta, &mut state, &mut None, false);
         state.matches
     }
 
@@ -381,7 +385,7 @@ impl Engine {
             matches: Vec::new(),
         };
         let mut breakdown = TimingBreakdown::default();
-        self.scan_object(data, object_path, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown), false);
+        self.scan_object(data, object_path, None, None, None, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown), false);
         (state.matches, breakdown)
     }
 
@@ -400,7 +404,7 @@ impl Engine {
             matches: Vec::new(),
         };
         let mut breakdown = TimingBreakdown::default();
-        self.scan_object(data, object_path, None, 0, ScanOptions::default(), module_meta, &mut state, &mut Some(&mut breakdown), true);
+        self.scan_object(data, object_path, None, None, None, None, 0, ScanOptions::default(), module_meta, &mut state, &mut Some(&mut breakdown), true);
         (state.matches, breakdown)
     }
 
@@ -409,6 +413,9 @@ impl Engine {
         data: &[u8],
         object_path: &str,
         container_type: Option<&'static str>,
+        container_size_real: Option<u64>,
+        container_file_pos: Option<u64>,
+        container_entry_name: Option<String>,
         _depth: usize,
         options: ScanOptions,
         module_meta: &[(&str, &[u8])],
@@ -446,6 +453,9 @@ impl Engine {
             object_path,
             view: ScanView::Raw,
             container_type,
+            container_size_real,
+            container_file_pos,
+            container_entry_name,
             image_fuzzy_hash: Default::default(),
         };
 
@@ -581,6 +591,31 @@ impl Engine {
             (t2 - t1).as_millis(),
             (t3 - t2).as_millis(),
         );
+
+        // ── Container metadata signatures (.cdb) ──────────────────────────
+        if let (Some(sr), Some(fp)) = (ctx.container_size_real, ctx.container_file_pos) {
+            for sig in &self.database.container {
+                if sig.has_filename && ctx.container_entry_name.is_none() {
+                    continue;
+                }
+                if !sig.container_type.matches_container(ctx.container_type) {
+                    continue;
+                }
+                if !sig.size_real.matches(sr) {
+                    continue;
+                }
+                if !sig.file_pos.matches(fp) {
+                    continue;
+                }
+                matches.push(ScanMatch {
+                    name: sig.name.to_string(),
+                    kind: SignatureKind::Container,
+                    source: sig.source.clone(),
+                    object_path: ctx.object_path.to_string(),
+                    view: ctx.view,
+                });
+            }
+        }
     }
 
 
@@ -1454,16 +1489,12 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "container `.cdb` metadata matching (file_pos/size_real/filename) needs the \
-                child's in-container metadata, which only `hydradragonandroid`'s `collect_buffers` \
-                knows at extraction time; `scan_object` has no container-metadata evaluation path. \
-                Re-enable once container metadata is evaluated in the extraction/calling layer."]
     fn scans_container_metadata_signature() {
         let container = ContainerSignature {
             name: "Test.Cdb".into(),
             container_type: ContainerType::Format("zip"),
             container_size: NumSpec::Any,
-            has_filename: false,
+            has_filename: true,
             size_in_container: NumSpec::Any,
             size_real: NumSpec::Exact(7),
             encrypted: None,
@@ -1479,10 +1510,25 @@ mod tests {
         };
         let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
         let engine = Engine { database, atomfilter_db, yara: Vec::new() };
-        // Member "MALWARE" is 7 bytes at position 1 inside a zip.
-        let found =
-            engine.scan_bytes(&stored_zip("child.bin", b"MALWARE"), ScanOptions::default());
-        assert!(found
+        // Container signatures match extracted children.
+        // Drive the extraction-layer path directly via scan_object.
+        let mut state = ScanState { matches: Vec::new() };
+        engine.scan_object(
+            b"MALWARE",
+            "root#archive[0]",
+            Some("zip"),
+            Some(7),
+            Some(1),
+            Some("child.bin".into()),
+            1,
+            ScanOptions::default(),
+            &[],
+            &mut state,
+            &mut None,
+            false,
+        );
+        assert!(state
+            .matches
             .iter()
             .any(|m| m.name == "Test.Cdb" && m.kind == SignatureKind::Container));
     }
@@ -1553,6 +1599,9 @@ mod tests {
             view: ScanView::Raw,
             object_path: "root",
             container_type: None,
+            container_size_real: None,
+            container_file_pos: None,
+            container_entry_name: None,
             image_fuzzy_hash: std::cell::OnceCell::new(),
         };
         // Naive extended scan
@@ -1891,6 +1940,9 @@ mod tests {
             b"xxMALWAREyy",
             "root#archive[0]",
             Some("CL_TYPE_ZIP"),
+            None,
+            None,
+            None,
             1,
             ScanOptions::default(),
             &[],

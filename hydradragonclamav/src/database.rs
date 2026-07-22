@@ -121,6 +121,18 @@ pub enum ContainerType {
     Unsupported,
 }
 
+impl ContainerType {
+    /// Returns `true` if this container type matches the given `container_type`
+    /// string from the extraction layer (e.g. `Some("zip")`).
+    pub fn matches_container(&self, observed: Option<&'static str>) -> bool {
+        match self {
+            ContainerType::Any => true,
+            ContainerType::Format(fmt) => observed == Some(fmt),
+            ContainerType::Unsupported => false,
+        }
+    }
+}
+
 /// A numeric field constraint: `*`, exact, or a `x-y` / `x-` / `-y` range.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NumSpec {
