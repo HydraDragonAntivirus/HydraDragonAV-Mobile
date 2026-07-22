@@ -2003,6 +2003,5 @@ public class ScanEngine {
         if (!cancelRequested && app.packageName != null && scanCache != null) scanCache.putPhotonCache(app.packageName, finalRes);
         return finalRes;
     }
-
-
+}
 
