@@ -54,6 +54,10 @@ pub struct AtomFilterDb {
     /// same array (a nocase atom and an exact atom that happen to share the
     /// same value index are resolved independently via different automata).
     pub atom_to_slots: Vec<Box<[SlotId]>>,
+    /// Reverse mapping: for each SlotId, the list of value indices whose
+    /// `atom_to_slots[vi]` contains this slot. Built at init so the scanner
+    /// can decrement per-value remaining counters when a slot saturates.
+    pub slot_to_values: Vec<Box<[u32]>>,
     /// Pattern length for each value index, so the scanner can compute
     /// the start offset from daachorse's end offset.
     pub pattern_lens: Vec<usize>,
@@ -82,6 +86,7 @@ impl AtomFilterDb {
             exact: None,
             nocase: None,
             atom_to_slots: Vec::new(),
+            slot_to_values: Vec::new(),
             pattern_lens: Vec::new(),
             slots: Vec::new(),
             ext_slot: Vec::new(),

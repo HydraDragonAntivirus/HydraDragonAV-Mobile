@@ -209,10 +209,22 @@ impl AtomFilterBuilder {
         atom_to_slots.extend(nocase_atom_to_slots);
         pattern_lens.extend(nocase_lens);
 
+        // Build reverse mapping: for each SlotId, list of value indices that
+        // reference it.  Used by the scanner to decrement per-value remaining
+        // counters when a slot becomes saturated.
+        let n_slots = slots.len();
+        let mut slot_to_values: Vec<Vec<u32>> = vec![Vec::new(); n_slots];
+        for (vi, slot_ids) in atom_to_slots.iter().enumerate() {
+            for &sid in slot_ids.iter() {
+                slot_to_values[sid as usize].push(vi as u32);
+            }
+        }
+
         AtomFilterDb {
             exact,
             nocase,
             atom_to_slots,
+            slot_to_values: slot_to_values.into_iter().map(|v| v.into_boxed_slice()).collect(),
             pattern_lens,
             slots,
             ext_slot,

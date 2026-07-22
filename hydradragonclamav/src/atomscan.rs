@@ -27,79 +27,135 @@ impl SlotCounts {
 
 pub struct AtomFilterScanner<'a> {
     db: &'a AtomFilterDb,
+    lowered_buf: Vec<u8>,
+    /// Per-value count of remaining (not-yet-saturated) slots.
+    value_remaining: Vec<u32>,
+    /// Saturated slot bitset: one bit per slot, 1 = already at threshold.
+    saturated: Vec<u64>,
 }
 
 impl<'a> AtomFilterScanner<'a> {
     pub fn new(db: &'a AtomFilterDb) -> Self {
-        AtomFilterScanner { db }
+        let n_slots = db.slots.len();
+        let n_values = db.atom_to_slots.len();
+        let mut value_remaining = Vec::with_capacity(n_values);
+        for slots in db.atom_to_slots.iter() {
+            value_remaining.push(slots.len() as u32);
+        }
+        AtomFilterScanner {
+            db,
+            lowered_buf: Vec::new(),
+            value_remaining,
+            saturated: vec![0u64; (n_slots + 63) / 64],
+        }
     }
 
-    pub fn scan(&self, data: &[u8], file_type_target: u32) -> SlotCounts {
+    #[allow(clippy::too_many_arguments)]
+    fn run_automaton(
+        atom_to_slots: &[Box<[SlotId]>],
+        pattern_lens: &[usize],
+        slots: &[SlotDef],
+        slot_to_values: &[Box<[u32]>],
+        saturated: &mut [u64],
+        value_remaining: &mut [u32],
+        pma: &daachorse::DoubleArrayAhoCorasick<u32>,
+        hay: &[u8],
+        file_type_target: u32,
+        counts: &mut [u32],
+        last_offset: &mut [u32],
+    ) {
+
+        for m in pma.find_overlapping_iter(hay) {
+            let end = m.end();
+            let vi = m.value() as usize;
+            if vi >= atom_to_slots.len() {
+                continue;
+            }
+            if value_remaining[vi] == 0 {
+                continue;
+            }
+            let start = end - pattern_lens[vi];
+            for &slot_id in atom_to_slots[vi].iter() {
+                let st = slot_id as usize;
+                if (saturated[st >> 6] >> (st & 63)) & 1 == 1 {
+                    continue;
+                }
+                let ft = slots[st].file_type_target;
+                if ft != 0 && ft != file_type_target {
+                    continue;
+                }
+                if counts[st] >= slots[st].threshold {
+                    saturated[st >> 6] |= 1 << (st & 63);
+                    for &ref_vi in slot_to_values[st].iter() {
+                        let rvi = ref_vi as usize;
+                        if rvi < value_remaining.len() {
+                            value_remaining[rvi] = value_remaining[rvi].saturating_sub(1);
+                        }
+                    }
+                    continue;
+                }
+                counts[st] = counts[st].saturating_add(1);
+                last_offset[st] = last_offset[st].max(start as u32);
+            }
+        }
+    }
+
+    pub fn scan(&mut self, data: &[u8], file_type_target: u32) -> SlotCounts {
+        let n_slots = self.db.slots.len();
         let mut counts = SlotCounts {
-            counts: vec![0u32; self.db.slots.len()],
-            last_offset: vec![u32::MAX; self.db.slots.len()],
+            counts: vec![0u32; n_slots],
+            last_offset: vec![u32::MAX; n_slots],
         };
+
+        // Reset per-scanner state.
+        for w in &mut self.saturated {
+            *w = 0;
+        }
+        for (vi, slots) in self.db.atom_to_slots.iter().enumerate() {
+            self.value_remaining[vi] = slots.len() as u32;
+        }
 
         // ── Exact automaton pass ──────────────────────────────────────────
         if let Some(ref pma) = self.db.exact {
-            for m in pma.find_overlapping_iter(data) {
-                let end = m.end();
-                let value = m.value();
-                let vi = value as usize;
-                if vi >= self.db.atom_to_slots.len() {
-                    continue;
-                }
-                let start = end - self.db.pattern_lens[vi];
-                for &slot_id in self.db.atom_to_slots[vi].iter() {
-                    let st = slot_id as usize;
-                    if st >= counts.counts.len() {
-                        continue;
-                    }
-                    if counts.counts[st] >= self.db.slots[st].threshold {
-                        continue;
-                    }
-                    let ft = self.db.slots[st].file_type_target;
-                    if ft != 0 && ft != file_type_target {
-                        continue;
-                    }
-                    counts.counts[st] = counts.counts[st].saturating_add(1);
-                    counts.last_offset[st] = counts.last_offset[st].max(start as u32);
-                }
-            }
+            Self::run_automaton(
+                &self.db.atom_to_slots,
+                &self.db.pattern_lens,
+                &self.db.slots,
+                &self.db.slot_to_values,
+                &mut self.saturated,
+                &mut self.value_remaining,
+                pma,
+                data,
+                file_type_target,
+                &mut counts.counts,
+                &mut counts.last_offset,
+            );
         }
 
         // ── Nocase automaton pass ─────────────────────────────────────────
         if let Some(ref pma) = self.db.nocase {
-            // Lowercase the data in-place to avoid a separate allocation
-            // for the nocase scan.
-            let mut lowered: Vec<u8> = data.to_vec();
-            for b in &mut lowered {
-                *b = b.to_ascii_lowercase();
+            // Separate lowered buffer to avoid &mut self conflict with saturated/value_remaining.
+            let mut lowered = std::mem::take(&mut self.lowered_buf);
+            if data.len() > lowered.len() {
+                lowered.resize(data.len(), 0);
             }
-            for m in pma.find_overlapping_iter(&lowered) {
-                let end = m.end();
-                let value = m.value();
-                let vi = value as usize;
-                if vi >= self.db.atom_to_slots.len() {
-                    continue;
-                }
-                let start = end - self.db.pattern_lens[vi];
-                for &slot_id in self.db.atom_to_slots[vi].iter() {
-                    let st = slot_id as usize;
-                    if st >= counts.counts.len() {
-                        continue;
-                    }
-                    if counts.counts[st] >= self.db.slots[st].threshold {
-                        continue;
-                    }
-                    let ft = self.db.slots[st].file_type_target;
-                    if ft != 0 && ft != file_type_target {
-                        continue;
-                    }
-                    counts.counts[st] = counts.counts[st].saturating_add(1);
-                    counts.last_offset[st] = counts.last_offset[st].max(start as u32);
-                }
+            for (i, &b) in data.iter().enumerate() {
+                lowered[i] = b.to_ascii_lowercase();
             }
+            Self::run_automaton(
+                &self.db.atom_to_slots,
+                &self.db.pattern_lens,
+                &self.db.slots,
+                &self.db.slot_to_values,
+                &mut self.saturated,
+                &mut self.value_remaining,
+                pma,
+                &lowered[..data.len()],
+                file_type_target,
+                &mut counts.counts,
+                &mut counts.last_offset,
+            );
+            self.lowered_buf = lowered;
         }
 
         counts
@@ -175,7 +231,7 @@ mod tests {
         let hex = hex_of(b"HydraDragonTestAtom");
         let db = load_str("test.ndb", &format!("Test.Ndb.Sig:0:*:{hex}\n"));
         let afdb = AtomFilterBuilder::build(&db);
-        let scanner = AtomFilterScanner::new(&afdb);
+        let mut scanner = AtomFilterScanner::new(&afdb);
 
         let present = scanner.scan(b"junk...HydraDragonTestAtom...junk", 0);
         assert!(ext_matched(afdb.ext_slot[0], &afdb.slots, &present));
@@ -193,7 +249,7 @@ mod tests {
             &format!("Test.Ldb.Sig;Target:0;0&1;{hex_a};{hex_b}\n"),
         );
         let afdb = AtomFilterBuilder::build(&db);
-        let scanner = AtomFilterScanner::new(&afdb);
+        let mut scanner = AtomFilterScanner::new(&afdb);
         let sub_slots = &afdb.log_subsig_slots[0];
         let expr = &db.logical[0].expression;
 
@@ -215,7 +271,7 @@ mod tests {
         let hex = hex_of(b"CaseSensitiveAtom");
         let db = load_str("test.ndb", &format!("Test.Ndb.Sig:0:*:{hex}\n"));
         let afdb = AtomFilterBuilder::build(&db);
-        let scanner = AtomFilterScanner::new(&afdb);
+        let mut scanner = AtomFilterScanner::new(&afdb);
 
         // The signature is exact (no ::i), so wrong case must NOT match.
         let wrong_case = scanner.scan(b"...casesensitiveatom...", 0);

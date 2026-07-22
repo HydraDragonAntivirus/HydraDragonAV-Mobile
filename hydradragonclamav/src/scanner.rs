@@ -538,7 +538,7 @@ impl Engine {
         // One rolling-hash sweep builds per-slot hit counts for this buffer;
         // both phases then promote slots that reached their threshold.
         let t0 = Instant::now();
-        let scanner = crate::atomscan::AtomFilterScanner::new(&self.atomfilter_db);
+        let mut scanner = crate::atomscan::AtomFilterScanner::new(&self.atomfilter_db);
         let file_type_target = ctx.detected_target
             .or_else(|| detect_builtin_target(ctx))
             .unwrap_or(0);
