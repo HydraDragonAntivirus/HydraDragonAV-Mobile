@@ -1522,7 +1522,7 @@ fn extract_and_scan_urls(engine: &Engine, decoded: &[u8]) -> Vec<String> {
         if !(s.starts_with("http://") || s.starts_with("https://")) {
             continue;
         }
-        if let Some(cat) = scanner.scan(s) {
+        if let Some(cat) = scanner.scan_url_only(s) {
             out.push(format!("URL.{cat}: {s}"));
             if out.len() >= 16 {
                 break;
@@ -1578,10 +1578,10 @@ fn extract_decode_base64_urls(data: &[u8], scanner: &url_scan::UrlScanner) -> Ve
         let b64_slice = &data[begin..end];
         // Try to decode
         if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(b64_slice) {
-            if let Ok(s) = String::from_utf8(decoded) {
-                let s = s.trim();
-                if s.starts_with("http://") || s.starts_with("https://") {
-                    if let Some(cat) = scanner.scan(s) {
+                if let Ok(s) = String::from_utf8(decoded) {
+                    let s = s.trim();
+                    if s.starts_with("http://") || s.starts_with("https://") {
+                        if let Some(cat) = scanner.scan_url_only(s) {
                         out.push(format!("URL.{cat}: {s}"));
                         if out.len() >= 16 {
                             return out;
@@ -2021,7 +2021,7 @@ fn run_scan(
     if let Some(scanner) = &engine.url_scanner {
         let mut url_limit = 0u32;
         for raw_url in collect_urls(&buffers) {
-            if let Some(cat) = scanner.scan(&raw_url) {
+            if let Some(cat) = scanner.scan_url_only(&raw_url) {
                 detections.push((format!("URL.{cat}: {raw_url} (in {path})"), path.to_string(), Vec::new()));
                 url_limit += 1; if url_limit >= 16 { break; }
             }

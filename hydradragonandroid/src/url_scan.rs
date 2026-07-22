@@ -91,8 +91,8 @@ impl UrlScanner {
         }
     }
 
-    /// Look a single URL up. Returns the matching category, or None if clean /
-    /// not an http(s) URL. Mirrors Java `scanUrl`.
+    /// Look a single URL up against all filters (URL + domain). Used by JNI
+    /// direct URL lookups (VPN DNS, SMS links, etc.).
     pub fn scan(&self, url: &str) -> Option<&'static str> {
         let lower = url.trim().to_lowercase();
         let scheme_http = lower.starts_with("http://");
@@ -100,7 +100,6 @@ impl UrlScanner {
         if !scheme_http && !scheme_https {
             return None;
         }
-        // scheme-less host[:port]/path
         let norm = if scheme_https {
             &lower["https://".len()..]
         } else {
@@ -119,16 +118,6 @@ impl UrlScanner {
             host = &host[..colon];
         }
 
-        // Any http(s) URL with a real path => URL scan (URL xor filters, full
-        // scheme-less URL); else domain scan (registrable main domain against
-        // the domain xor filters). `norm` is already scheme-stripped above, so an
-        // http:// and an https:// URL to the same host+path normalize to the
-        // IDENTICAL xor filter lookup key — there is no reason to special-case the
-        // scheme here. This used to require `scheme_http` (plain http://)
-        // specifically, which silently skipped the URL-path xor filters for EVERY
-        // https:// URL (the overwhelming majority of real traffic today) —
-        // falling through to a domain-only check that can't see the specific
-        // malicious/phishing PATH at all, only the bare domain.
         let url_scan = has_path;
         let main = if url_scan { String::new() } else { self.main_domain(host) };
         for f in &self.filters {
@@ -137,6 +126,37 @@ impl UrlScanner {
                     return Some(f.category);
                 }
             } else if !f.is_url && f.filter.contains(main.as_str()) {
+                return Some(f.category);
+            }
+        }
+        None
+    }
+
+    /// Same as [`scan`] but only checks URL-path filters (no domain/ip scan).
+    /// Used during file scanning where only full URLs with paths are relevant.
+    pub fn scan_url_only(&self, url: &str) -> Option<&'static str> {
+        let lower = url.trim().to_lowercase();
+        let scheme_http = lower.starts_with("http://");
+        let scheme_https = lower.starts_with("https://");
+        if !scheme_http && !scheme_https {
+            return None;
+        }
+        let norm = if scheme_https {
+            &lower["https://".len()..]
+        } else {
+            &lower["http://".len()..]
+        };
+        if norm.is_empty() {
+            return None;
+        }
+        let slash = norm.find('/');
+        // Skip bare domains (no path / no real path).
+        let has_path = matches!(slash, Some(s) if s < norm.len() - 1);
+        if !has_path {
+            return None;
+        }
+        for f in &self.filters {
+            if f.is_url && f.filter.contains(norm) {
                 return Some(f.category);
             }
         }
