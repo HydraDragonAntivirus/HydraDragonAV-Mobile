@@ -1929,12 +1929,34 @@ fn run_scan(
         detections.push(("ML".to_string(), obj_path, lin));
     }
 
-    // Scan extracted URLs against Binary Fuse .xf filters.
+    // Scan URLs against Binary Fuse .xf filters:
+    // - Plain URLs from buffer bytes
+    // - Base64-encoded URLs from buffer bytes
+    // - URLs from emulation-decoded strings
     if let Some(scanner) = &engine.url_scanner {
+        let mut url_limit = 0u32;
         for raw_url in collect_urls(&buffers) {
             if let Some(cat) = scanner.scan(&raw_url) {
                 detections.push((format!("URL.{cat}: {raw_url}"), path.to_string(), Vec::new()));
-                if detections.len() >= 4096 { break; }
+                url_limit += 1; if url_limit >= 16 { break; }
+            }
+        }
+        if url_limit < 16 {
+            for b in &buffers {
+                for url_det in extract_decode_base64_urls(&b.data, scanner) {
+                    detections.push((url_det, path.to_string(), Vec::new()));
+                    url_limit += 1; if url_limit >= 16 { break; }
+                }
+                if url_limit >= 16 { break; }
+            }
+        }
+        if url_limit < 16 {
+            for em in _emulated_strings.iter().flatten() {
+                for url_det in extract_and_scan_urls(engine, em) {
+                    detections.push((url_det, path.to_string(), Vec::new()));
+                    url_limit += 1; if url_limit >= 16 { break; }
+                }
+                if url_limit >= 16 { break; }
             }
         }
     }
