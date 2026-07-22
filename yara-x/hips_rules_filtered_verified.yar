@@ -306,7 +306,7 @@ rule HIPS_DEX_Code_Injection
     category = "DEX"
     suggestion = "uninstall"
   condition:
-    hydradragon.dex_finding(/(?i)(reflection|classloader|dynamic_load|dex_class|native_code|code_inject|runtime_exec|dexload|inject|payload)/) >= 1
+    hydradragon.dex_finding(/(?i)(reflection|classloader|dynamic_load|dex_class|native_code|code_inject|runtime_exec|dexload|inject|payload)/) >= 3
 }
 
 rule HIPS_DEX_Privilege_Escalation
