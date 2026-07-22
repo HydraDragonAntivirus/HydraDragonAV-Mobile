@@ -50,6 +50,11 @@ pub struct AtomFilterDb {
     /// Nocase-match automaton: patterns are ASCII-lowercased atom bytes.
     /// Value = index into `atom_to_slots`.
     pub nocase: Option<DoubleArrayAhoCorasick<u32>>,
+    /// ClamAV-style dense transition table for the exact automaton.
+    /// `dense[state * 256 + byte]` = next state (one lookup per byte).
+    pub exact_dense: Vec<u32>,
+    /// ClamAV-style dense transition table for the nocase automaton.
+    pub nocase_dense: Vec<u32>,
     /// Maps daachorse value → slot ID list. Both automata index into this
     /// same array (a nocase atom and an exact atom that happen to share the
     /// same value index are resolved independently via different automata).
@@ -85,6 +90,8 @@ impl AtomFilterDb {
         AtomFilterDb {
             exact: None,
             nocase: None,
+            exact_dense: Vec::new(),
+            nocase_dense: Vec::new(),
             atom_to_slots: Vec::new(),
             slot_to_values: Vec::new(),
             pattern_lens: Vec::new(),
@@ -92,5 +99,11 @@ impl AtomFilterDb {
             ext_slot: Vec::new(),
             log_subsig_slots: Vec::new(),
         }
+    }
+
+    /// Build a ClamAV-style dense transition table from a double-array automaton.
+    /// `dense[state * 256 + byte]` = next state id (failure links pre-resolved).
+    pub fn build_dense(pma: &DoubleArrayAhoCorasick<u32>) -> Vec<u32> {
+        pma.build_dense_table()
     }
 }

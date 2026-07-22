@@ -220,9 +220,15 @@ impl AtomFilterBuilder {
             }
         }
 
+        // Build ClamAV-style dense transition tables (one lookup per byte).
+        let exact_dense = exact.as_ref().map(|pma| pma.build_dense_table()).unwrap_or_default();
+        let nocase_dense = nocase.as_ref().map(|pma| pma.build_dense_table()).unwrap_or_default();
+
         AtomFilterDb {
             exact,
             nocase,
+            exact_dense,
+            nocase_dense,
             atom_to_slots,
             slot_to_values: slot_to_values.into_iter().map(|v| v.into_boxed_slice()).collect(),
             pattern_lens,

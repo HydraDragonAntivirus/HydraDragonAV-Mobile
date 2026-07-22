@@ -28,10 +28,22 @@ impl SlotCounts {
 pub struct AtomFilterScanner<'a> {
     db: &'a AtomFilterDb,
     lowered_buf: Vec<u8>,
-    /// Per-value count of remaining (not-yet-saturated) slots.
     value_remaining: Vec<u32>,
-    /// Saturated slot bitset: one bit per slot, 1 = already at threshold.
     saturated: Vec<u64>,
+}
+
+#[derive(Default)]
+struct AutomatonStats {
+    daachorse_us: u64,
+    daachorse_matches: u64,
+    skipped_live_values: u64,
+    inner_iterations: u64,
+    saturated_skip: u64,
+    ft_skip: u64,
+    saturated_count: u64,
+    saturated_dec: u64,
+    incremented: u64,
+    inner_loop_us: u64,
 }
 
 impl<'a> AtomFilterScanner<'a> {
@@ -50,54 +62,80 @@ impl<'a> AtomFilterScanner<'a> {
         }
     }
 
+    /// ClamAV-style one-lookup-per-byte match over a dense transition table.
+    /// `dense[state * 256 + byte]` = next state (failure links pre-resolved).
     #[allow(clippy::too_many_arguments)]
-    fn run_automaton(
+    fn run_dense_automaton(
+        pma: &daachorse::DoubleArrayAhoCorasick<u32>,
+        dense: &[u32],
         atom_to_slots: &[Box<[SlotId]>],
-        pattern_lens: &[usize],
+        _pattern_lens: &[usize],
         slots: &[SlotDef],
         slot_to_values: &[Box<[u32]>],
         saturated: &mut [u64],
         value_remaining: &mut [u32],
-        pma: &daachorse::DoubleArrayAhoCorasick<u32>,
         hay: &[u8],
         file_type_target: u32,
         counts: &mut [u32],
         last_offset: &mut [u32],
+        _name: &str,
+        out_stats: &mut AutomatonStats,
     ) {
+        let t0 = std::time::Instant::now();
+        let mut inner_us: u64 = 0;
 
-        for m in pma.find_overlapping_iter(hay) {
-            let end = m.end();
-            let vi = m.value() as usize;
-            if vi >= atom_to_slots.len() {
-                continue;
-            }
-            if value_remaining[vi] == 0 {
-                continue;
-            }
-            let start = end - pattern_lens[vi];
-            for &slot_id in atom_to_slots[vi].iter() {
-                let st = slot_id as usize;
-                if (saturated[st >> 6] >> (st & 63)) & 1 == 1 {
-                    continue;
-                }
-                let ft = slots[st].file_type_target;
-                if ft != 0 && ft != file_type_target {
-                    continue;
-                }
-                if counts[st] >= slots[st].threshold {
-                    saturated[st >> 6] |= 1 << (st & 63);
-                    for &ref_vi in slot_to_values[st].iter() {
-                        let rvi = ref_vi as usize;
-                        if rvi < value_remaining.len() {
-                            value_remaining[rvi] = value_remaining[rvi].saturating_sub(1);
+        let mut state: u32 = 0;
+        for (pos, &byte) in hay.iter().enumerate() {
+            state = unsafe {
+                *dense.get_unchecked(state as usize * 256 + byte as usize)
+            };
+
+            // Walk output chain (overlapping patterns ending at same position).
+            let mut opt = pma.state_output_pos(state);
+            while let Some(op) = opt {
+                let (len, value) = pma.output_at(op);
+                out_stats.daachorse_matches += 1;
+                let end = pos + 1;
+                let vi = value as usize;
+                if vi < atom_to_slots.len() && value_remaining[vi] != 0 {
+                    let start = end - len as usize;
+                    let t_inner = std::time::Instant::now();
+                    for &slot_id in atom_to_slots[vi].iter() {
+                        out_stats.inner_iterations += 1;
+                        let st = slot_id as usize;
+                        if (saturated[st >> 6] >> (st & 63)) & 1 == 1 {
+                            out_stats.saturated_skip += 1;
+                            continue;
                         }
+                        let ft = slots[st].file_type_target;
+                        if ft != 0 && ft != file_type_target {
+                            out_stats.ft_skip += 1;
+                            continue;
+                        }
+                        if counts[st] >= slots[st].threshold {
+                            saturated[st >> 6] |= 1 << (st & 63);
+                            out_stats.saturated_count += 1;
+                            for &ref_vi in slot_to_values[st].iter() {
+                                out_stats.saturated_dec += 1;
+                                let rvi = ref_vi as usize;
+                                if rvi < value_remaining.len() {
+                                    value_remaining[rvi] = value_remaining[rvi].saturating_sub(1);
+                                }
+                            }
+                            continue;
+                        }
+                        counts[st] = counts[st].saturating_add(1);
+                        last_offset[st] = last_offset[st].max(start as u32);
+                        out_stats.incremented += 1;
                     }
-                    continue;
+                    inner_us += t_inner.elapsed().as_micros() as u64;
                 }
-                counts[st] = counts[st].saturating_add(1);
-                last_offset[st] = last_offset[st].max(start as u32);
+                opt = pma.output_parent(op);
             }
         }
+
+        out_stats.daachorse_us = t0.elapsed().as_micros() as u64;
+        out_stats.inner_loop_us = inner_us;
     }
 
     pub fn scan(&mut self, data: &[u8], file_type_target: u32) -> SlotCounts {
@@ -115,25 +153,31 @@ impl<'a> AtomFilterScanner<'a> {
             self.value_remaining[vi] = slots.len() as u32;
         }
 
+        let mut exact_stats = AutomatonStats::default();
+        let mut nocase_stats = AutomatonStats::default();
+
         // ── Exact automaton pass ──────────────────────────────────────────
-        if let Some(ref pma) = self.db.exact {
-            Self::run_automaton(
+        if let (Some(ref pma), Some(ref dense)) = (self.db.exact.as_ref(), Some(&self.db.exact_dense[..])) {
+            Self::run_dense_automaton(
+                pma,
+                dense,
                 &self.db.atom_to_slots,
                 &self.db.pattern_lens,
                 &self.db.slots,
                 &self.db.slot_to_values,
                 &mut self.saturated,
                 &mut self.value_remaining,
-                pma,
                 data,
                 file_type_target,
                 &mut counts.counts,
                 &mut counts.last_offset,
+                "exact",
+                &mut exact_stats,
             );
         }
 
         // ── Nocase automaton pass ─────────────────────────────────────────
-        if let Some(ref pma) = self.db.nocase {
+        if let (Some(ref pma), Some(ref dense)) = (self.db.nocase.as_ref(), Some(&self.db.nocase_dense[..])) {
             // Separate lowered buffer to avoid &mut self conflict with saturated/value_remaining.
             let mut lowered = std::mem::take(&mut self.lowered_buf);
             if data.len() > lowered.len() {
@@ -142,20 +186,60 @@ impl<'a> AtomFilterScanner<'a> {
             for (i, &b) in data.iter().enumerate() {
                 lowered[i] = b.to_ascii_lowercase();
             }
-            Self::run_automaton(
+            Self::run_dense_automaton(
+                pma,
+                dense,
                 &self.db.atom_to_slots,
                 &self.db.pattern_lens,
                 &self.db.slots,
                 &self.db.slot_to_values,
                 &mut self.saturated,
                 &mut self.value_remaining,
-                pma,
                 &lowered[..data.len()],
                 file_type_target,
                 &mut counts.counts,
                 &mut counts.last_offset,
+                "nocase",
+                &mut nocase_stats,
             );
             self.lowered_buf = lowered;
+        }
+
+        // Emit detailed timing when slow.
+        let total_us = exact_stats.daachorse_us + nocase_stats.daachorse_us;
+        if total_us > 200_000 {
+            let exact_info = if self.db.exact.is_some() {
+                format!(
+                    "exact(daach={}us inner={}us matches={} iit={} sat_sk={} ft_sk={} dec={} inc={})",
+                    exact_stats.daachorse_us,
+                    exact_stats.inner_loop_us,
+                    exact_stats.daachorse_matches,
+                    exact_stats.inner_iterations,
+                    exact_stats.saturated_skip,
+                    exact_stats.ft_skip,
+                    exact_stats.saturated_dec,
+                    exact_stats.incremented,
+                )
+            } else {
+                String::from("exact(none)")
+            };
+            let nocase_info = if self.db.nocase.is_some() {
+                format!(
+                    "nocase(daach={}us inner={}us matches={} iit={} sat_sk={} ft_sk={} dec={} inc={})",
+                    nocase_stats.daachorse_us,
+                    nocase_stats.inner_loop_us,
+                    nocase_stats.daachorse_matches,
+                    nocase_stats.inner_iterations,
+                    nocase_stats.saturated_skip,
+                    nocase_stats.ft_skip,
+                    nocase_stats.saturated_dec,
+                    nocase_stats.incremented,
+                )
+            } else {
+                String::from("nocase(none)")
+            };
+            eprintln!("[ATOMSCAN] {}KB {} {}",
+                data.len() / 1024, exact_info, nocase_info);
         }
 
         counts

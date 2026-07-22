@@ -515,6 +515,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5614204febbc33cc07a2806aa6440b904ac012b68eecc37f4493ea4a76455a3d"
 
 [[package]]
+name = "daachorse"
+version = "4.0.0"
+source = "git+https://github.com/HydraDragonAntivirus/daachorse.git#aa87b67cef1f0f9fdf1c815d88e6900e1901abf0"
+
+[[package]]
 name = "darling"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -952,7 +957,7 @@ dependencies = [
 name = "hydradragonclamav"
 version = "0.1.0"
 dependencies = [
- "daachorse",
+ "daachorse 4.0.0",
  "image",
  "memchr",
  "regex",
@@ -2747,7 +2752,7 @@ dependencies = [
  "bstr",
  "const-oid",
  "crc32fast",
- "daachorse",
+ "daachorse 3.0.3",
  "der-parser",
  "digest",
  "dsa",
