@@ -100,6 +100,10 @@ macro_rules! rust_timing_log {
         {
             android_log(&format!($($arg)*));
         }
+        #[cfg(not(target_os = "android"))]
+        {
+            eprintln!("{}", format!($($arg)*));
+        }
     };
 }
 
@@ -214,7 +218,6 @@ impl Engine {
         let path = path.as_ref();
         let t0 = Instant::now();
         let (mut database, mut report) = Database::load_dir(path)?;
-        #[cfg(target_os = "android")]
         rust_timing_log!("from_database_dir :: load_dir={}ms files={} ext={} logical={} container={}",
             t0.elapsed().as_millis(), report.files_seen, database.extended.len(), database.logical.len(),
             database.container.len());
@@ -230,7 +233,6 @@ impl Engine {
     ) -> (Self, crate::LoadReport) {
         let t0 = Instant::now();
         let (mut database, mut report) = Database::from_bytes_map(files);
-        #[cfg(target_os = "android")]
         rust_timing_log!("from_bytes_map :: load_dir={}ms files={} ext={} logical={} container={}",
             t0.elapsed().as_millis(), report.files_seen, database.extended.len(), database.logical.len(),
             database.container.len());
@@ -247,7 +249,6 @@ impl Engine {
         bc: crate::bytecode::BytecodeSet,
         t0: std::time::Instant,
     ) -> (Self, crate::LoadReport) {
-        #[cfg(target_os = "android")]
         let t_bc = Instant::now();
         report.bytecodes_loaded = bc.report.loaded;
         for prog in bc.bytecodes {
@@ -276,17 +277,11 @@ impl Engine {
                 database.logical.push(sig);
             }
         }
-        #[cfg(target_os = "android")]
         rust_timing_log!("from_database_dir :: bytecode={}ms loaded={}", t_bc.elapsed().as_millis(), report.bytecodes_loaded);
-        #[cfg(target_os = "android")]
         let t_pf = Instant::now();
         let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(database);
-        #[cfg(target_os = "android")]
         rust_timing_log!("from_database_dir :: atomfilter_build={}ms slots={}", t_pf.elapsed().as_millis(), atomfilter_db.slots.len());
-        #[cfg(target_os = "android")]
         rust_timing_log!("from_database_dir :: TOTAL={}ms", t0.elapsed().as_millis());
-        #[cfg(not(target_os = "android"))]
-        let _ = t0.elapsed();
         let database = std::mem::take(database);
         (Self { database, atomfilter_db, yara: Vec::new() }, std::mem::take(report))
     }
@@ -542,22 +537,17 @@ impl Engine {
 
         // One rolling-hash sweep builds per-slot hit counts for this buffer;
         // both phases then promote slots that reached their threshold.
-        #[cfg(target_os = "android")]
         let t0 = Instant::now();
         let scanner = crate::atomscan::AtomFilterScanner::new(&self.atomfilter_db);
         let file_type_target = ctx.detected_target
             .or_else(|| detect_builtin_target(ctx))
             .unwrap_or(0);
         let slot_counts = scanner.scan(ctx.data, file_type_target);
-        #[cfg(target_os = "android")]
         let t1 = Instant::now();
         self.scan_extended(ctx, matches, &slot_counts);
-        #[cfg(target_os = "android")]
         let t2 = Instant::now();
         self.scan_logical(ctx, matches, &slot_counts);
-        #[cfg(target_os = "android")]
         let t3 = Instant::now();
-        #[cfg(target_os = "android")]
         rust_timing_log!(
             "scan_context :: {}KB view={:?} atomscan={}ms ext_scan={}ms log_scan={}ms",
             ctx.data.len() / 1024,
@@ -867,6 +857,7 @@ impl Engine {
                 }
                 None => vec![(0, ctx.data.len())],
             };
+            let t_body = std::time::Instant::now();
             let mut hits = 0usize;
             let mut last = None;
             for pattern in patterns.iter() {
@@ -880,6 +871,21 @@ impl Engine {
                     last = Some(p);
                 }
             }
+            let body_us = t_body.elapsed().as_micros();
+            let kind = if ranges.len() == 1 && ranges[0] == (0, ctx.data.len()) {
+                "full"
+            } else if ranges.len() < 16 {
+                "restricted"
+            } else {
+                "gate"
+            };
+            bufs.detail.push(SubsigDetail {
+                subsig: i,
+                kind,
+                elapsed_us: body_us,
+                count: hits,
+                ranges: ranges.len(),
+            });
             counts[i] = hits;
             last_offsets[i] = last;
             // Short-circuit: if the expression can no longer match after this
