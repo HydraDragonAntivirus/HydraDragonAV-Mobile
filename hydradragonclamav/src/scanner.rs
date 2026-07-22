@@ -107,6 +107,29 @@ macro_rules! rust_timing_log {
     };
 }
 
+/// RAII guard: logs a warning when the elapsed time exceeds `threshold_ms`
+/// on drop. Wrap at function entry: `let _slow = SlowAlert::new("fn_name", 100);`.
+pub struct SlowAlert {
+    name: &'static str,
+    threshold_ms: u64,
+    start: Instant,
+}
+
+impl SlowAlert {
+    pub fn new(name: &'static str, threshold_ms: u64) -> Self {
+        SlowAlert { name, threshold_ms, start: Instant::now() }
+    }
+}
+
+impl Drop for SlowAlert {
+    fn drop(&mut self) {
+        let ms = self.start.elapsed().as_millis() as u64;
+        if ms > self.threshold_ms {
+            rust_timing_log!("[SLOW-CODE] {} took {}ms (threshold {}ms)", self.name, ms, self.threshold_ms);
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SignatureKind {
     Extended,
@@ -393,6 +416,7 @@ impl Engine {
         timing: &mut Option<&mut TimingBreakdown>,
         skip_clamav: bool,
     ) {
+        let _slow = SlowAlert::new("scan_object", 200);
         if data.len() > options.max_child_size {
             return;
         }
@@ -533,6 +557,7 @@ impl Engine {
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
     ) {
+        let _slow = SlowAlert::new("scan_context", 200);
         if ctx.data.is_empty() { return; }
 
         // One rolling-hash sweep builds per-slot hit counts for this buffer;
