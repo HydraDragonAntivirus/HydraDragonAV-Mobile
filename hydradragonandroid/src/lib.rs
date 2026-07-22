@@ -2327,14 +2327,13 @@ fn run_scan(
         android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
     }
     let t_extract = std::time::Instant::now();
-    let (buffers, bomb_dets, mut streaming_dets, mut streaming_timing) = if whitelisted {
+    let (buffers, bomb_dets, mut streaming_dets, streaming_timing) = if whitelisted {
         (Vec::new(), Vec::new(), Vec::new(), hydradragonclamav::scanner::TimingBreakdown::default())
     } else {
         collect_buffers(bytes, file_md5, path, engine.clamav.as_ref())
     };
     let extract_ms = t_extract.elapsed().as_millis();
 
-    let max_dets = 64;
     // Phase 2: collect all whitelist data, build skip_heavy, run fast passes
     // (DEX, permissions, androguard). Heavy passes (ClamAV, ML, emulation,
     // TLSH) are either run here (non-batch) or queued for batch flush.
@@ -2346,9 +2345,9 @@ fn run_scan(
     let dex_scans: Vec<Option<dex_scan::DexScan>>;
     let dex_ms;
     let hydradragon_meta;
-    let mut module_meta: Vec<(&str, &[u8])>;
-    let emulated: Vec<emulate::EmulationResult>;
-    let emulated_strings: Vec<Option<Vec<u8>>>;
+    let _module_meta: Vec<(&str, &[u8])>;
+    let _emulated: Vec<emulate::EmulationResult>;
+    let _emulated_strings: Vec<Option<Vec<u8>>>;
     let emulate_ms;
     {
         // Dangerous-permission count from the (in-memory) manifest bytes.
@@ -2446,13 +2445,13 @@ fn run_scan(
         hydradragon_meta = merge_dex_findings(hydradragon, &dex_scans);
 
         // Build module metadata.
-        module_meta = Vec::new();
+        _module_meta = Vec::new();
         if let Some(j) = androguard_json.as_deref() {
-            module_meta.push(("androguard", j.as_bytes()));
+            _module_meta.push(("androguard", j.as_bytes()));
         }
         if let Some(h) = hydradragon_meta.as_deref() {
             if !h.is_empty() {
-                module_meta.push(("hydradragon", h));
+                _module_meta.push(("hydradragon", h));
             }
         }
 
@@ -2468,7 +2467,7 @@ fn run_scan(
         // a game engine bundling 4 ABIs) can't blow the scan time budget.
         const MAX_EMULATED_BUFFERS: usize = 8;
         let t_emulate = std::time::Instant::now();
-        emulated = if NATIVE_EMULATION_ENABLED
+        _emulated = if NATIVE_EMULATION_ENABLED
             .load(std::sync::atomic::Ordering::Relaxed)
         {
             let mut seen_hashes: std::collections::HashSet<String> = std::collections::HashSet::new();
