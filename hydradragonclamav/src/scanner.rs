@@ -73,22 +73,16 @@ unsafe extern "C" {
 #[cfg(target_os = "android")]
 const ANDROID_LOG_INFO: std::os::raw::c_int = 4;
 
+#[cfg(target_os = "android")]
 fn android_log(msg: &str) {
-    #[cfg(target_os = "android")]
-    {
-        use std::ffi::CString;
-        let (Ok(tag), Ok(text)) = (
-            CString::new("HydraDragon-RustTiming"),
-            CString::new(msg),
-        ) else {
-            return;
-        };
-        unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
-    }
-    #[cfg(not(target_os = "android"))]
-    {
-        let _ = msg;
-    }
+    use std::ffi::CString;
+    let (Ok(tag), Ok(text)) = (
+        CString::new("HydraDragon-RustTiming"),
+        CString::new(msg),
+    ) else {
+        return;
+    };
+    unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
 }
 
 /// Writes a timing/diagnostic logcat line.
@@ -220,9 +214,10 @@ impl Engine {
         let path = path.as_ref();
         let t0 = Instant::now();
         let (mut database, mut report) = Database::load_dir(path)?;
-        let load_ms = t0.elapsed().as_millis();
-        rust_timing_log!("from_database_dir :: load_dir={load_ms}ms files={} ext={} logical={} container={}",
-            report.files_seen, database.extended.len(), database.logical.len(), database.container.len());
+        #[cfg(target_os = "android")]
+        rust_timing_log!("from_database_dir :: load_dir={}ms files={} ext={} logical={} container={}",
+            t0.elapsed().as_millis(), report.files_seen, database.extended.len(), database.logical.len(),
+            database.container.len());
         let bc = crate::bytecode::BytecodeSet::load_from_dir(path);
         Ok(Self::finish_engine_init(&mut database, &mut report, bc, t0))
     }
@@ -235,9 +230,10 @@ impl Engine {
     ) -> (Self, crate::LoadReport) {
         let t0 = Instant::now();
         let (mut database, mut report) = Database::from_bytes_map(files);
-        let load_ms = t0.elapsed().as_millis();
-        rust_timing_log!("from_bytes_map :: load_dir={load_ms}ms files={} ext={} logical={} container={}",
-            report.files_seen, database.extended.len(), database.logical.len(), database.container.len());
+        #[cfg(target_os = "android")]
+        rust_timing_log!("from_bytes_map :: load_dir={}ms files={} ext={} logical={} container={}",
+            t0.elapsed().as_millis(), report.files_seen, database.extended.len(), database.logical.len(),
+            database.container.len());
         let bc = crate::bytecode::BytecodeSet::from_bytes_map(files);
         let (engine, report) = Self::finish_engine_init(&mut database, &mut report, bc, t0);
         (engine, report)
@@ -251,6 +247,7 @@ impl Engine {
         bc: crate::bytecode::BytecodeSet,
         t0: std::time::Instant,
     ) -> (Self, crate::LoadReport) {
+        #[cfg(target_os = "android")]
         let t_bc = Instant::now();
         report.bytecodes_loaded = bc.report.loaded;
         for prog in bc.bytecodes {
@@ -279,14 +276,17 @@ impl Engine {
                 database.logical.push(sig);
             }
         }
-        let bc_ms = t_bc.elapsed().as_millis();
-        rust_timing_log!("from_database_dir :: bytecode={bc_ms}ms loaded={}", report.bytecodes_loaded);
+        #[cfg(target_os = "android")]
+        rust_timing_log!("from_database_dir :: bytecode={}ms loaded={}", t_bc.elapsed().as_millis(), report.bytecodes_loaded);
+        #[cfg(target_os = "android")]
         let t_pf = Instant::now();
         let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(database);
-        let pf_ms = t_pf.elapsed().as_millis();
-        rust_timing_log!("from_database_dir :: atomfilter_build={pf_ms}ms slots={}", atomfilter_db.slots.len());
-        let total_ms = t0.elapsed().as_millis();
-        rust_timing_log!("from_database_dir :: TOTAL={total_ms}ms");
+        #[cfg(target_os = "android")]
+        rust_timing_log!("from_database_dir :: atomfilter_build={}ms slots={}", t_pf.elapsed().as_millis(), atomfilter_db.slots.len());
+        #[cfg(target_os = "android")]
+        rust_timing_log!("from_database_dir :: TOTAL={}ms", t0.elapsed().as_millis());
+        #[cfg(not(target_os = "android"))]
+        let _ = t0.elapsed();
         let database = std::mem::take(database);
         (Self { database, atomfilter_db, yara: Vec::new() }, std::mem::take(report))
     }
@@ -520,18 +520,22 @@ impl Engine {
 
         // One rolling-hash sweep builds per-slot hit counts for this buffer;
         // both phases then promote slots that reached their threshold.
-        use std::time::Instant;
+        #[cfg(target_os = "android")]
         let t0 = Instant::now();
         let scanner = crate::atomscan::AtomFilterScanner::new(&self.atomfilter_db);
         let file_type_target = ctx.detected_target
             .or_else(|| detect_builtin_target(ctx))
             .unwrap_or(0);
         let slot_counts = scanner.scan(ctx.data, file_type_target);
+        #[cfg(target_os = "android")]
         let t1 = Instant::now();
         self.scan_extended(ctx, matches, &slot_counts);
+        #[cfg(target_os = "android")]
         let t2 = Instant::now();
         self.scan_logical(ctx, matches, &slot_counts);
+        #[cfg(target_os = "android")]
         let t3 = Instant::now();
+        #[cfg(target_os = "android")]
         rust_timing_log!(
             "scan_context :: {}KB view={:?} atomscan={}ms ext_scan={}ms log_scan={}ms",
             ctx.data.len() / 1024,
@@ -866,6 +870,7 @@ impl Engine {
             }
         }
 
+        #[cfg(target_os = "android")]
         let t_debug = std::time::Instant::now();
 
         // Whether the expression can be trusted to short-circuit on an
@@ -876,6 +881,7 @@ impl Engine {
         // can inspect for any subsig regardless of which branch satisfied the boolean
         // expression — breaking early would feed it stale zeros for un-evaluated
         // subsigs that actually matched.
+        #[cfg(target_os = "android")]
         let debug_gate_us = 0u128;
 
         // Body subsigs are already populated from the atom-scan; nothing more
@@ -885,8 +891,10 @@ impl Engine {
             return;
         }
 
+        #[cfg(target_os = "android")]
         let debug_p1_us = 0u128;
 
+        #[cfg(target_os = "android")]
         let t_start_fuzzy = std::time::Instant::now();
 
         // Image fuzzy-hash subsignatures: match when the file's perceptual image
@@ -900,7 +908,9 @@ impl Engine {
             }
         }
 
+        #[cfg(target_os = "android")]
         let t_after_fuzzy = std::time::Instant::now();
+        #[cfg(target_os = "android")]
         let debug_fuzzy_us = t_after_fuzzy.duration_since(t_start_fuzzy).as_micros();
 
         // Phase 2: PCRE and byte-compare subsignatures, whose triggers
@@ -958,13 +968,18 @@ impl Engine {
             }
         }
 
+        #[cfg(target_os = "android")]
         let t_after_p2 = std::time::Instant::now();
+        #[cfg(target_os = "android")]
         let debug_p2_us = t_after_p2.duration_since(t_after_fuzzy).as_micros();
 
         let eval_matched = signature.expression.eval(counts).matched;
+        #[cfg(target_os = "android")]
         let debug_eval_us = std::time::Instant::now().duration_since(t_after_p2).as_micros();
 
+        #[cfg(target_os = "android")]
         let debug_total_us = std::time::Instant::now().duration_since(t_debug).as_micros();
+        #[cfg(target_os = "android")]
         if debug_total_us >= 20_000 {
             rust_timing_log!(
                 "[SCAN-DEBUG] {} gate={}us p1_body={}us fuzzy={}us p2_pcre_bc={}us eval={}us total={}us subsig_sum={}us",
