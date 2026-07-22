@@ -1653,7 +1653,7 @@ fn run_scan(
     let dex_scans: Vec<Option<dex_scan::DexScan>>;
     let dex_ms;
     let hydradragon_meta;
-    let _module_meta: Vec<(&str, &[u8])>;
+    let mut _module_meta: Vec<(&str, &[u8])>;
     let _emulated: Vec<emulate::EmulationResult>;
     let _emulated_strings: Vec<Option<Vec<u8>>>;
     let emulate_ms;
