@@ -1964,23 +1964,37 @@ fn run_scan(
                             yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
                         }
                     }
-                    // Behavioral signal from emulation.
-                    let mut seen_apis = std::collections::HashSet::new();
-                    for call in &emulated[i].api_calls {
-                        if !seen_apis.insert(call.name.clone()) {
-                            continue;
-                        }
-                        yara_dets.push((
-                            format!("Behavior.Native: {}", call.name),
-                            base_path.clone(),
-                            b.apk_lineage.clone(),
-                        ));
-                    }
                 }
             }
         }
     }
     scan_timing.accumulate(rescan_timing);
+
+    // Behavioral signal from emulation — generated unconditionally.
+    for (i, b) in buffers.iter().enumerate() {
+        if emulated[i].api_calls.is_empty() {
+            continue;
+        }
+        let base_path = if i == 0 {
+            path.to_string()
+        } else {
+            match &b.entry_name {
+                Some(entry) => format!("{path}!/{entry}"),
+                None => format!("{path}#extract[{i}]"),
+            }
+        };
+        let mut seen_apis = std::collections::HashSet::new();
+        for call in &emulated[i].api_calls {
+            if !seen_apis.insert(call.name.clone()) {
+                continue;
+            }
+            yara_dets.push((
+                format!("Behavior.Native: {}", call.name),
+                base_path.clone(),
+                b.apk_lineage.clone(),
+            ));
+        }
+    }
     let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
     let mut yara_agg: std::collections::HashMap<String, u128> = std::collections::HashMap::new();
     for (name, ns) in &scan_timing.yara_per_engine {
