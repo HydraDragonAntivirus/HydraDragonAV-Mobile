@@ -1929,6 +1929,16 @@ fn run_scan(
         detections.push(("ML".to_string(), obj_path, lin));
     }
 
+    // Scan extracted URLs against Binary Fuse .xf filters.
+    if let Some(scanner) = &engine.url_scanner {
+        for raw_url in collect_urls(&buffers) {
+            if let Some(cat) = scanner.scan(&raw_url) {
+                detections.push((format!("URL.{cat}: {raw_url}"), path.to_string(), Vec::new()));
+                if detections.len() >= 4096 { break; }
+            }
+        }
+    }
+
     for (i, b) in buffers.iter().enumerate() {
         if let Some(ds) = &dex_scans[i] {
             for f in &ds.findings {
