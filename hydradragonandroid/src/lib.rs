@@ -1809,11 +1809,14 @@ fn run_scan(
         emulated_strings = emulated
             .iter()
             .map(|r| {
-                if r.strings.is_empty() {
-                    None
-                } else {
-                    Some(r.strings.join("\n").into_bytes())
+                let mut parts: Vec<String> = Vec::new();
+                if !r.strings.is_empty() {
+                    parts.push(r.strings.join("\n"));
                 }
+                if !r.api_calls.is_empty() {
+                    parts.push(r.api_calls.iter().map(|a| a.name.clone()).collect::<Vec<_>>().join("\n"));
+                }
+                if parts.is_empty() { None } else { Some(parts.join("\n").into_bytes()) }
             })
             .collect();
         emulate_ms = t_emulate.elapsed().as_millis();
