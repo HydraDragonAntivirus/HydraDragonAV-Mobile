@@ -2047,11 +2047,10 @@ fn extract_decode_base64_urls(data: &[u8], scanner: &url_scan::UrlScanner) -> Ve
 #[allow(clippy::too_many_arguments)]
 /// Re-scan all buffers with YARA-x (and optionally ClamAV).
 ///
-/// When `yara_only` is `true`, the main buffer content scan uses
+/// When `yara_only` is `true`, all scan calls use
 /// `scan_yara_only_with_breakdown` (ClamAV already ran during streaming
-/// extraction).  DEX strings and emulated strings are *always* scanned with
-/// full ClamAV+YARA since these are new data produced by Phase 2 that was
-/// never seen during the streaming pass.
+/// extraction).  DEX strings and emulated strings are text data and are not
+/// ClamAV-signature-relevant binary content, so they skip ClamAV too.
 fn rescan_buffers_parallel(
     clamav: &ClamavEngine,
     engine: &Engine,
@@ -2165,15 +2164,25 @@ fn rescan_buffers_parallel(
 
                         // Also scan the DEX's decoded string pool (method/class
                         // names contiguous, no MUTF-8/length-prefix noise).
+                        // In yara_only mode, skip ClamAV — text strings are
+                        // not ClamAV-signature-relevant binary content.
                         if let Some(ds) = &dex_scans[i] {
                             let dname = format!("{name}#dex");
                             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                clamav.scan_bytes_named_with_breakdown(
-                                    ds.text.as_bytes(),
-                                    &dname,
-                                    opts,
-                                    module_meta,
-                                )
+                                if yara_only {
+                                    clamav.scan_yara_only_with_breakdown(
+                                        ds.text.as_bytes(),
+                                        &dname,
+                                        module_meta,
+                                    )
+                                } else {
+                                    clamav.scan_bytes_named_with_breakdown(
+                                        ds.text.as_bytes(),
+                                        &dname,
+                                        opts,
+                                        module_meta,
+                                    )
+                                }
                             })) {
                                 Ok((matches, bt)) => {
                                     for m in matches {
@@ -2192,10 +2201,25 @@ fn rescan_buffers_parallel(
 
                         // Also scan whatever new strings emulating this ELF
                         // buffer's native code revealed at runtime.
+                        // In yara_only mode, skip ClamAV — text strings are
+                        // not ClamAV-signature-relevant binary content.
                         if let Some(decoded) = &emulated_strings[i] {
                             let ename = format!("{name}#emulated");
                             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                clamav.scan_bytes_named_with_breakdown(decoded, &ename, opts, module_meta)
+                                if yara_only {
+                                    clamav.scan_yara_only_with_breakdown(
+                                        decoded,
+                                        &ename,
+                                        module_meta,
+                                    )
+                                } else {
+                                    clamav.scan_bytes_named_with_breakdown(
+                                        decoded,
+                                        &ename,
+                                        opts,
+                                        module_meta,
+                                    )
+                                }
                             })) {
                                 Ok((matches, bt)) => {
                                     for m in matches {
@@ -2617,39 +2641,9 @@ fn run_scan(
     };
     let ml_ms = t_ml.elapsed().as_millis();
 
-    // YARA-only rescan (Phase 3): ClamAV already ran during streaming
-    // extraction.  DEX/emulated strings are always full-scanned since they
-    // are new data produced by Phase 2.
-    let mut scan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
-    let mut yara_dets: Vec<(String, String, Vec<String>)> = match &engine.clamav {
-        Some(clamav) => {
-            let opts = ScanOptions::default();
-            let no_skip = vec![false; buffers.len()];
-            let dets = rescan_buffers_parallel(
-                clamav,
-                engine,
-                &buffers,
-                &no_skip,
-                &dex_scans,
-                &emulated,
-                &emulated_strings,
-                &module_meta,
-                path,
-                opts,
-                max_dets,
-                &mut scan_timing,
-                true,
-            );
-            // Merge streaming ClamAV+YARA detections from extraction.
-            // streaming_timing is merged below.
-            streaming_timing.accumulate(scan_timing);
-            scan_timing = streaming_timing;
-            dets
-        }
-        None => Vec::new(),
-    };
-    // Prepend streaming detections so they appear first in the output.
-    yara_dets.splice(0..0, streaming_dets);
+    // Use streaming ClamAV+YARA detections directly — no Phase 3 rescan.
+    let scan_timing = streaming_timing;
+    let mut yara_dets = streaming_dets;
     let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
     let mut yara_agg: std::collections::HashMap<String, u128> = std::collections::HashMap::new();
     for (name, ns) in &scan_timing.yara_per_engine {
