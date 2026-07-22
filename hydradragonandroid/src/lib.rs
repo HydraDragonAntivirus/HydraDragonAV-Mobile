@@ -1920,7 +1920,6 @@ fn run_scan(
     let stages = [
         ("extract", extract_ms),
         ("dex", dex_ms),
-        ("emulate", emulate_ms),
         ("clamav", clamav_ms),
         ("yara", yara_total_ms),
         ("ml", ml_ms),
