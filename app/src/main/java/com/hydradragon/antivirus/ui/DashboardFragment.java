@@ -132,15 +132,15 @@ public class DashboardFragment extends Fragment {
         // First-scan reminder banner
         SharedPreferences prefs = requireContext().getSharedPreferences("hydra_prefs", 0);
         if (!prefs.getBoolean("first_scan_completed", false)) {
-            view.post(() -> {
-                layoutScanReminder.setVisibility(View.VISIBLE);
-                layoutScanReminder.setOnClickListener(v -> {
-                    if (getActivity() != null) {
-                        BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
-                        if (nav != null) nav.setSelectedItemId(R.id.nav_scan);
-                    }
-                });
+            layoutScanReminder.setVisibility(View.VISIBLE);
+            layoutScanReminder.setOnClickListener(v -> {
+                if (getActivity() != null) {
+                    BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
+                    if (nav != null) nav.setSelectedItemId(R.id.nav_scan);
+                }
             });
+        } else {
+            layoutScanReminder.setVisibility(View.GONE);
         }
 
         // Initial state
