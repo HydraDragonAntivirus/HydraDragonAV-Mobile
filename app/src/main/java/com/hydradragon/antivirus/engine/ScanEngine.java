@@ -1228,15 +1228,8 @@ public class ScanEngine {
             }
 
             if (callback != null) {
-                // Show WHICH file is being native-scanned without resetting the
-                // running count. In a full scan this runs mid storage-walk where
-                // the counter is already at appsScannedBase + filesScannedCount;
-                // emitting 0/1 here dropped the UI's "scanned" number back to 0
-                // on every generic file (then reportFileScanned bumped it again),
-                // so the count kept flickering to 0 through the whole full scan.
-                // Report current==total==the count-so-far instead; the eventual
-                // increment still happens in reportFileScanned after this returns.
-                callback.onProgress(0, 1, file.getName());
+                int n = appsScannedBase + filesScannedCount.get();
+                callback.onProgress(n, n, file.getName());
             }
             String path = file.getAbsolutePath();
             long nativeT0 = android.os.SystemClock.elapsedRealtime();

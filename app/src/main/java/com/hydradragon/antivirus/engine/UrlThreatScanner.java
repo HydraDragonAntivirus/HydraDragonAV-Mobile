@@ -17,9 +17,11 @@ import java.util.regex.Pattern;
  */
 public final class UrlThreatScanner {
 
-    /** Matches http:// and https:// URLs in arbitrary text. */
+    /** Matches http:// and https:// URLs in arbitrary text. Requires at least
+     *  one path segment after the domain (e.g. https://x.com/y) to avoid FP
+     *  when bare domains like https://asdf.com appear in legitimate text. */
     private static final Pattern URL_RE =
-            Pattern.compile("https?://[^\\s\"'<>\\\\)\\]}]+", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("https?://[^\\s\"'<>\\\\)\\]}]+/[^\\s\"'<>\\\\)\\]}]+", Pattern.CASE_INSENSITIVE);
 
     /**
      * steamcommunity.com phishing typosquats — plain https form only. The REAL
