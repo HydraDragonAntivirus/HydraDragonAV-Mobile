@@ -146,8 +146,6 @@ public class ScanEngine {
      * at construction time.
      */
     private static ScanCache scanCache;
-    private final java.util.concurrent.ConcurrentHashMap<String, DeferredScanState> deferredScans = new java.util.concurrent.ConcurrentHashMap<>();
-    private volatile boolean isBatchMode = false;
 
     /** Drop a cached scan result so the package is re-scanned fresh (e.g. after
      *  uninstall/update — otherwise a removed virus keeps "coming back"). */
@@ -257,12 +255,6 @@ public class ScanEngine {
     public void cancelScan() {
         cancelRequested = true;
         pauseRequested = false; // Cancel overrides pause
-        // Also tell the native side to abandon its deferred Phase 3 flush — that
-        // final flushBatchScans()/endBatchScan() is one long blocking JNI call
-        // with no interruption point of its own, so without this Stop had no
-        // effect once the scan reached that stage (looked frozen until the whole
-        // queue of heavy scans finished).
-        NativeScanner.abortBatchScan();
     }
 
     /** Pause the running scan. Can be resumed with {@link #resumeScan()}. */
@@ -776,10 +768,6 @@ public class ScanEngine {
         scanExecutor.execute(() -> {
           if (backgroundPriority) android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
           try {
-            isBatchMode = true;
-            NativeScanner.beginBatchScan();
-            deferredScans.clear();
-
             checkDefaultLauncher(context);
 
             long scanStartMs = android.os.SystemClock.elapsedRealtime();
@@ -849,9 +837,6 @@ public class ScanEngine {
                 }
             } catch (Exception e) { }
 
-            // Flush all deferred scans and run the heavy Phase 3 scan
-            flushBatchScans(threats);
-
             logEngineTimings();
             long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
             int scannedTotal = total + filesScannedCount.get() + threats.size();
@@ -860,7 +845,6 @@ public class ScanEngine {
           } finally {
               isBackgroundScan = false;
               runningScanType = SCAN_TYPE_NONE;
-              isBatchMode = false;
               scanRunning.set(false);
               releaseScanWakeLock();
           }
@@ -893,18 +877,11 @@ public class ScanEngine {
         scanExecutor.execute(() -> {
           if (backgroundPriority) android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
           try {
-            isBatchMode = true;
-            NativeScanner.beginBatchScan();
-            deferredScans.clear();
-
             long scanStartMs = android.os.SystemClock.elapsedRealtime();
             PackageManager pm = context.getPackageManager();
             List<ThreatResult> threats = new ArrayList<>();
             List<com.hydradragon.antivirus.model.ScannedFileInfo> scannedFiles = new ArrayList<>();
             scanDirectoryForApks(dir, pm, threats, true, scannedFiles);
-
-            // Flush all deferred scans and run the heavy Phase 3 scan
-            flushBatchScans(threats);
 
             logEngineTimings();
             long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
@@ -912,7 +889,6 @@ public class ScanEngine {
             if (callback != null)
                 callback.onScanComplete(new ScanResult(scannedTotal, threats.size(), threats, scannedFiles, elapsedMs));
           } finally {
-              isBatchMode = false;
               scanRunning.set(false);
               releaseScanWakeLock();
           }
@@ -1260,15 +1236,7 @@ public class ScanEngine {
                 // so the count kept flickering to 0 through the whole full scan.
                 // Report current==total==the count-so-far instead; the eventual
                 // increment still happens in reportFileScanned after this returns.
-                // Only in batch mode — a standalone scanSingleFile has no running
-                // total, so it keeps the plain 0/1.
-                if (isBatchMode) {
-                    int n = appsScannedBase + filesScannedCount.get();
-                    if (n < 1) n = 1;
-                    callback.onProgress(n, n, file.getName());
-                } else {
-                    callback.onProgress(0, 1, file.getName());
-                }
+                callback.onProgress(0, 1, file.getName());
             }
             String path = file.getAbsolutePath();
             long nativeT0 = android.os.SystemClock.elapsedRealtime();
@@ -1279,19 +1247,6 @@ public class ScanEngine {
             Log.i(TAG, "FILE_ENGINE_TIMING " + file.getName()
                 + " NativeScanner=" + nativeMs + "ms slowest=NativeScanner");
             if (v == null) return true;
-            if (isBatchMode && v.deferred) {
-                DeferredScanState state = new DeferredScanState();
-                state.path = path;
-                state.file = file;
-                state.isStandalone = false;
-                state.builder = new ThreatResult.Builder(path);
-                state.builder.setStandaloneFile(true);
-                state.reasons = new java.util.ArrayList<>();
-                state.riskScore = 0;
-                state.isWhitelisted = false;
-                deferredScans.put(path, state);
-                return true;
-            }
             if (v.isError()) {
                 Log.w(TAG, "NATIVE-ERROR " + file.getAbsolutePath() + " " + v.error);
                 return true;
@@ -1484,19 +1439,6 @@ public class ScanEngine {
                 Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
                     + " NativeScanner=" + nativeMs + "ms slowest=NativeScanner");
                 if (v == null) continue;
-                if (isBatchMode && v.deferred) {
-                    DeferredScanState state = new DeferredScanState();
-                    state.path = app.sourceDir;
-                    state.app = app;
-                    state.pm = pm;
-                    state.isStandalone = false;
-                    state.isDeepScan = true;
-                    state.builder = new ThreatResult.Builder(
-                        app.packageName != null ? app.packageName : app.sourceDir);
-                    state.reasons = new java.util.ArrayList<>();
-                    deferredScans.put(app.sourceDir, state);
-                    continue;
-                }
                 // Per-detection suppression (a hit inside a whitelisted APK is an
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
                 List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
@@ -1857,24 +1799,6 @@ public class ScanEngine {
                             + " permissions=" + v.permissions + " probability=" + v.probability
                             + " error=" + v.error)));
                     if (v == null) return null;
-                    if (isBatchMode && v.deferred) {
-                        DeferredScanState state = new DeferredScanState();
-                        state.path = apkPath;
-                        state.app = app;
-                        state.pm = pm;
-                        state.isStandalone = isApkFile;
-                        state.builder = builder;
-                        state.riskScore = riskScore;
-                        state.reasons = reasons;
-                        state.codeMs = codeMs;
-                        state.isWhitelisted = isWhitelisted;
-                        state.codeResult = codeResult;
-                        state.companyName = companyName;
-                        state.signatureHash = signatureHash;
-                        state.requestedPermissions = requestedPermissions;
-                        deferredScans.put(apkPath, state);
-                        return null;
-                    }
                     if (!v.isError()) {
                     fileMd5Vt = v.md5;
                     nativePackages.addAll(v.packages);
@@ -2080,467 +2004,5 @@ public class ScanEngine {
         return finalRes;
     }
 
-    private static class DeferredScanState {
-        String path;
-        ApplicationInfo app;
-        java.io.File file;
-        boolean isStandalone;
-        boolean isDeepScan;
-        ThreatResult.Builder builder;
-        int riskScore;
-        List<String> reasons;
-        long codeMs;
-        boolean isWhitelisted;
-        PackageManager pm;
-        
-        // For analyzeApp
-        CodeAnalyzer.AnalysisResult codeResult;
-        String companyName;
-        String signatureHash;
-        List<String> requestedPermissions;
-    }
 
-    private void flushBatchScans(List<ThreatResult> threats) {
-        if (cancelRequested) {
-            NativeScanner.abortBatchScan();
-            reportCancelled();
-            deferredScans.clear();
-            return;
-        }
-        int base = appsScannedBase + filesScannedCount.get();
-        int pending = deferredScans.size();
-        if (callback != null) {
-            callback.onProgress(base, base + pending, firstDeferredName());
-        }
-        // Run endBatchScan on orchestrationExecutor with timeout polling so the
-        // UI doesn't freeze — the native call has no Java-side interruption point
-        // of its own, but abortBatchScan() sets a flag the Rust side polls.
-        java.util.concurrent.Future<String> future = orchestrationExecutor.submit(() -> NativeScanner.endBatchScan());
-        String json = null;
-        int pollCount = 0;
-        while (true) {
-            if (cancelRequested) {
-                NativeScanner.abortBatchScan();
-                reportCancelled();
-                deferredScans.clear();
-                return;
-            }
-            try {
-                json = future.get(200, java.util.concurrent.TimeUnit.MILLISECONDS);
-                break;
-            } catch (java.util.concurrent.TimeoutException te) {
-                pollCount++;
-                if (pollCount % 25 == 0 && callback != null) {
-                    int done = appsScannedBase + filesScannedCount.get();
-                    callback.onProgress(done, done + deferredScans.size(), firstDeferredName());
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "endBatchScan failed", e);
-                deferredScans.clear();
-                return;
-            }
-        }
-        List<NativeScanner.Verdict> verdicts = NativeScanner.parseBatchVerdicts(json);
-        for (NativeScanner.Verdict v : verdicts) {
-            if (v.path == null) continue;
-            DeferredScanState state = deferredScans.remove(v.path);
-            if (state == null) continue;
-            try {
-                ThreatResult r = processFinalVerdict(state, v);
-                if (r != null && r.isThreat()) {
-                    ThreatResult existing = null;
-                    for (ThreatResult t : threats) {
-                        String pkg = t.getPackageName();
-                        if (pkg != null && pkg.equals(r.getPackageName())) {
-                            existing = t; break;
-                        }
-                    }
-                    if (existing != null) {
-                        java.util.List<String> merged = new java.util.ArrayList<>();
-                        merged.addAll(existing.getReasons());
-                        for (String reason : r.getReasons()) {
-                            if (!merged.contains(reason)) merged.add(reason);
-                        }
-                        ThreatResult mergedR = new ThreatResult.Builder(existing.getPackageName())
-                            .setAppName(existing.getAppName())
-                            .setApkPath(existing.getApkPath())
-                            .setRiskScore(Math.max(existing.getRiskScore(), r.getRiskScore()))
-                            .setThreatType(
-                                existing.getRiskScore() >= r.getRiskScore()
-                                    ? existing.getThreatType() : r.getThreatType())
-                            .setReasons(merged)
-                            .setStandaloneFile(existing.isStandaloneFile())
-                            .build();
-                        int idx = threats.indexOf(existing);
-                        if (idx >= 0) {
-                            threats.set(idx, mergedR);
-                            if (callback != null) callback.onThreatFound(mergedR);
-                        }
-                    } else {
-                        threats.add(r);
-                        if (callback != null) callback.onThreatFound(r);
-                    }
-                }
-            } catch (Throwable t) {
-                Log.e(TAG, "Failed to process deferred verdict for " + v.path, t);
-            }
-        }
-        deferredScans.clear();
-    }
 
-    private String firstDeferredName() {
-        for (DeferredScanState s : deferredScans.values()) {
-            if (s.app != null && s.app.packageName != null) return s.app.packageName;
-            if (s.file != null) return s.file.getName();
-            return s.path;
-        }
-        return null;
-    }
-
-    private void reportCancelled() {
-        if (callback == null) return;
-        long now = System.currentTimeMillis();
-        String cancelledLabel = context.getString(R.string.scan_cancelled);
-        for (DeferredScanState s : deferredScans.values()) {
-            String name = s.app != null ? s.app.packageName : (s.file != null ? s.file.getName() : s.path);
-            callback.onFileScanned(new com.hydradragon.antivirus.model.ScannedFileInfo(
-                s.path, name, name, 0, null, now, false, cancelledLabel));
-        }
-    }
-
-    private ThreatResult processFinalVerdict(DeferredScanState state, NativeScanner.Verdict v) {
-        if (state.file != null) {
-            return processFinalVerdictGeneric(state, v);
-        }
-        if (state.isDeepScan) {
-            return processFinalVerdictDeep(state, v);
-        }
-
-        int riskScore = state.riskScore;
-        List<String> reasons = state.reasons;
-        ThreatResult.Builder builder = state.builder;
-        boolean isWhitelisted = state.isWhitelisted;
-        ApplicationInfo app = state.app;
-        PackageManager pm = state.pm;
-        boolean isApkFile = state.isStandalone;
-        String apkPath = state.path;
-        long codeMs = state.codeMs;
-        CodeAnalyzer.AnalysisResult codeResult = state.codeResult;
-        String companyName = state.companyName;
-        String signatureHash = state.signatureHash;
-        List<String> requestedPermissions = state.requestedPermissions;
-
-        String fileMd5Vt = null;
-        List<String> nativePackages = new ArrayList<>();
-        List<String> nativeHashes = new ArrayList<>();
-        int dangerousPermCount = -1;
-        String mlSummary = null;
-        boolean nativeCorroborated = false;
-
-        if (v != null && !v.isError()) {
-            fileMd5Vt = v.md5;
-            nativePackages.addAll(v.packages);
-            nativeHashes.addAll(v.hashes);
-            dangerousPermCount = v.permissions;
-            mlSummary = String.format(java.util.Locale.US,
-                "probability=%.2f", v.probability);
-            List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
-            updateAntiFnCache(v, live);
-            boolean mlMalicious = false;
-            if (!live.isEmpty()) {
-                boolean hasRealThreat = false;
-                boolean hasEicar = false;
-                boolean hasAutoOnly = false;
-                for (NativeScanner.Verdict.Detection d : live) {
-                    if ("ML".equals(d.name)) {
-                        if (DetectionCategories.isEnabled(context, DetectionCategories.ML)
-                                && v.probability >= 0.90) {
-                            mlMalicious = true; hasRealThreat = true;
-                        }
-                        continue;
-                    }
-                    if (isEicarName(d.name)) {
-                        if (DetectionCategories.isEnabled(context, DetectionCategories.EICAR)) {
-                            hasEicar = true; reasons.add("🧪 [TEST] " + d.name + subFileSuffix(apkPath, d.objectPath));
-                        }
-                        continue;
-                    }
-                    if (isDexHeuristicName(d.name)) continue;
-                    boolean isPua = isPuaName(d.name);
-                    boolean isAuto = isAutoGeneratedName(d.name);
-                    String category = isPua ? DetectionCategories.PUA
-                        : isAuto ? DetectionCategories.AUTO_RULES
-                        : DetectionCategories.SIGNATURES;
-                    if (!DetectionCategories.isEnabled(context, category)) continue;
-                    if (isAuto) hasAutoOnly = true;
-                    if (!isPua && !isAuto) hasRealThreat = true;
-                    reasons.add((isPua ? "⚠️ [PUA] " : isAuto ? "❔ [AUTO] " : "🛡️ [SIG] ") + d.name + subFileSuffix(apkPath, d.objectPath));
-                }
-                if (hasRealThreat) {
-                    riskScore = 100;
-                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                    nativeCorroborated = true;
-                    if (AutoRuleGeneration.isEnabled(context)) saveGeneratedRule(v);
-                } else if (hasEicar) {
-                    riskScore = Math.max(riskScore, 50);
-                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.TEST_MALWARE);
-                } else if (hasAutoOnly) {
-                    riskScore = Math.max(riskScore, 30);
-                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
-                } else if (!reasons.isEmpty()) {
-                    riskScore = Math.max(riskScore, 50);
-                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
-                }
-                if (mlMalicious) {
-                    String src = "";
-                    for (NativeScanner.Verdict.Detection d : v.detections) {
-                        if ("ML".equals(d.name)) {
-                            src = " in " + d.objectPath;
-                            break;
-                        }
-                    }
-                    reasons.add(String.format(java.util.Locale.US,
-                        "🤖 [ML] probability=%.2f%s", v.probability, src));
-                }
-            } else if (v.isError()) {
-                Log.w(TAG, "native scan error: " + v.error);
-            }
-
-            if (DetectionCategories.isEnabled(context, DetectionCategories.PERMISSIONS)) {
-                if (v.permissions >= 30) {
-                    riskScore = 100;
-                    builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                    reasons.add("🔐 Virus permissions (" + v.permissions + "/36)");
-                    nativeCorroborated = true;
-                } else if (v.permissions >= 25) {
-                    riskScore = Math.max(riskScore, 40);
-                    if (riskScore < 50) builder.setThreatType(
-                        com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
-                    reasons.add("🔐 Suspicious permissions (" + v.permissions + "/36)");
-                    nativeCorroborated = true;
-                }
-            }
-        }
-
-        if (codeResult.isMalicious && nativeCorroborated) {
-            riskScore = Math.min(100, riskScore + codeResult.riskScore);
-            if (riskScore >= 60) builder.setThreatType(codeResult.threatType);
-            for (String finding : codeResult.findings) {
-                if (!finding.startsWith("✅")) reasons.add("💻 [CODE] " + finding);
-            }
-        }
-
-        if (!isWhitelisted && app.packageName != null) {
-            String behaviour = BehaviorFlags.reasonFor(context, app.packageName);
-            if (behaviour != null) {
-                riskScore = 100;
-                builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                reasons.add("🧠 [BEHAVIOUR] " + behaviour);
-            }
-        }
-
-        if (riskScore > 0 && !isWhitelisted) {
-            reasons.add("✍️ Signature: " + companyName);
-            reasons.add("🔐 SHA-256: " + signatureHash);
-            if (fileMd5Vt != null && !fileMd5Vt.isEmpty()) {
-                reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileMd5Vt);
-            }
-        }
-
-        if (riskScore == 0 && !isWhitelisted && ZeroTrustMode.isEnabled(context)) {
-            riskScore = 30;
-            builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.UNKNOWN);
-            reasons.add("⚠️ ZERO TRUST: no detector matched this app — verdict is UNKNOWN, "
-                + "not confirmed clean (not recommended: expect false positives on ordinary apps)");
-            reasons.add("✍️ Signature: " + companyName);
-            reasons.add("🔐 SHA-256: " + signatureHash);
-            reasons.add("🔐 Dangerous permissions matched: "
-                + (dangerousPermCount >= 0 ? dangerousPermCount + "/36" : "not scanned"));
-            if (!requestedPermissions.isEmpty()) {
-                reasons.add("📋 All requested permissions (" + requestedPermissions.size() + "): "
-                    + String.join(", ", requestedPermissions));
-            }
-            if (!nativePackages.isEmpty()) {
-                reasons.add("📦 Package(s) reached in-memory: " + String.join(", ", nativePackages));
-            }
-            if (!nativeHashes.isEmpty()) {
-                reasons.add("🔍 APK/zip buffer hash(es): " + String.join(", ", nativeHashes));
-            }
-            if (mlSummary != null) {
-                reasons.add("🤖 [ML] " + mlSummary);
-            }
-            if (fileMd5Vt != null && !fileMd5Vt.isEmpty()) {
-                reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + fileMd5Vt);
-            }
-            String netJson = NetworkObservations.buildReportJson(app.packageName);
-            if (!netJson.isEmpty()) {
-                reasons.add("🌐 Observed network/screen activity: " + netJson);
-            }
-        }
-
-        builder.setRiskScore(riskScore);
-        builder.setReasons(reasons);
-        if (riskScore >= 30 && builder.build().getThreatType() == com.hydradragon.antivirus.model.ThreatResult.ThreatType.CLEAN) {
-            builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-        }
-        CharSequence appName = pm.getApplicationLabel(app);
-        if (appName == null || appName.toString().contains("com."))
-            appName = new java.io.File(app.sourceDir).getName();
-        if (isApkFile) appName = appName + " (SD CARD)";
-        builder.setAppName(appName.toString());
-        builder.setApkPath(app.sourceDir);
-        
-        ThreatResult finalRes = builder.build();
-        if (!cancelRequested && app.packageName != null && scanCache != null) scanCache.putPhotonCache(app.packageName, finalRes);
-        return finalRes;
-    }
-
-    private ThreatResult processFinalVerdictGeneric(DeferredScanState state, NativeScanner.Verdict v) {
-        java.io.File file = state.file;
-        String path = state.path;
-        if (v == null || v.isError()) return null;
-        saveGeneratedRule(v);
-        List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
-        updateAntiFnCache(v, live);
-        boolean malicious = !live.isEmpty();
-
-        if (!malicious && v.permissions < 6) return null;
-
-        ThreatResult.Builder b = state.builder;
-        List<String> reasons = state.reasons;
-        int riskScore = 0;
-        boolean mlMalicious = false;
-        boolean hasRealThreat = false;
-        boolean hasEicar = false;
-        for (NativeScanner.Verdict.Detection d : live) {
-            if ("ML".equals(d.name)) {
-                if (DetectionCategories.isEnabled(context, DetectionCategories.ML)
-                        && v.probability >= 0.90) {
-                    mlMalicious = true;
-                    hasRealThreat = true;
-                }
-            } else if (isEicarName(d.name)) {
-                if (DetectionCategories.isEnabled(context, DetectionCategories.EICAR)) {
-                    hasEicar = true;
-                    reasons.add("🧪 [TEST] " + d.name + subFileSuffix(path, d.objectPath));
-                }
-            } else if (!isDexHeuristicName(d.name)) {
-                boolean isPua = isPuaName(d.name);
-                String category = isPua ? DetectionCategories.PUA : DetectionCategories.SIGNATURES;
-                if (DetectionCategories.isEnabled(context, category)) {
-                    if (!isPua) hasRealThreat = true;
-                    reasons.add((isPua ? "⚠️ [PUA] " : "🛡️ [SIG] ") + d.name + subFileSuffix(path, d.objectPath));
-                }
-            }
-        }
-        if (!reasons.isEmpty() || hasRealThreat) {
-            if (hasRealThreat) {
-                riskScore = 100;
-                b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-            } else if (hasEicar) {
-                riskScore = 50;
-                b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.TEST_MALWARE);
-            } else {
-                riskScore = 50;
-                b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
-            }
-        }
-        if (DetectionCategories.isEnabled(context, DetectionCategories.PERMISSIONS)) {
-            if (v.permissions >= 30) {
-                riskScore = 100;
-                b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                reasons.add("🔐 Virus permissions (" + v.permissions + "/36)");
-            } else if (v.permissions >= 25) {
-                riskScore = Math.max(riskScore, 40);
-                if (!hasRealThreat) {
-                    b.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
-                }
-                reasons.add("🔐 Suspicious permissions (" + v.permissions + "/36)");
-            }
-        }
-        if (mlMalicious) {
-            String src = "";
-                    for (NativeScanner.Verdict.Detection d : v.detections) {
-                        if ("ML".equals(d.name)) {
-                            src = " in " + d.objectPath;
-                            break;
-                        }
-                    }
-                    reasons.add(String.format(java.util.Locale.US,
-                        "🤖 [ML] probability=%.2f%s", v.probability, src));
-            }
-            b.setRiskScore(riskScore);
-        b.setReasons(reasons);
-        b.setAppName(file.getName() + " (FILE)");
-        b.setApkPath(path);
-        ThreatResult genericRes = b.build();
-        if (v.md5 != null && photonCacheEnabled() && scanCache != null) {
-            scanCache.putFileCache(v.md5, genericRes.isThreat()
-                ? java.util.Optional.of(genericRes)
-                : java.util.Optional.empty());
-        }
-        return genericRes;
-    }
-
-    private ThreatResult processFinalVerdictDeep(DeferredScanState state, NativeScanner.Verdict v) {
-        ApplicationInfo app = state.app;
-        String sourceDir = state.path;
-        PackageManager pm = state.pm;
-        ThreatResult.Builder b = state.builder;
-        List<String> reasons = state.reasons;
-
-        List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
-        updateAntiFnCache(v, live);
-        if (live.isEmpty()) return null;
-
-        boolean real = false;
-        boolean eicar = false;
-        boolean autoOnly = false;
-        for (NativeScanner.Verdict.Detection d : live) {
-            if ("ML".equals(d.name)) {
-                if (DetectionCategories.isEnabled(context, DetectionCategories.ML)) real = true;
-                continue;
-            }
-            if (isEicarName(d.name)) {
-                if (DetectionCategories.isEnabled(context, DetectionCategories.EICAR)) {
-                    eicar = true; reasons.add("🧪 [TEST] " + d.name + subFileSuffix(sourceDir, d.objectPath));
-                }
-                continue;
-            }
-            if (isDexHeuristicName(d.name)) continue;
-            boolean pua = isPuaName(d.name);
-            boolean auto = isAutoGeneratedName(d.name);
-            String category = pua ? DetectionCategories.PUA
-                : auto ? DetectionCategories.AUTO_RULES
-                : DetectionCategories.SIGNATURES;
-            if (!DetectionCategories.isEnabled(context, category)) continue;
-            if (auto) autoOnly = true;
-            if (!pua && !auto) real = true;
-            reasons.add((pua ? "⚠️ [PUA] " : auto ? "❔ [AUTO] " : "🛡️ [SIG] ") + d.name + subFileSuffix(sourceDir, d.objectPath));
-        }
-        if (real) {
-            if (AutoRuleGeneration.isEnabled(context)) saveGeneratedRule(v);
-        }
-        boolean anyEvidence = real || eicar || autoOnly || !reasons.isEmpty();
-        if (!anyEvidence) return null;
-        b.setThreatType(real
-            ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
-            : eicar
-                ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.TEST_MALWARE
-                : autoOnly
-                    ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS
-                    : com.hydradragon.antivirus.model.ThreatResult.ThreatType.PUA);
-        b.setRiskScore(real ? 100 : autoOnly ? 30 : 50);
-        if (v.md5 != null && !v.md5.isEmpty())
-            reasons.add("🔍 VirusTotal: https://www.virustotal.com/gui/file/" + v.md5);
-        b.setReasons(reasons);
-        CharSequence label = pm.getApplicationLabel(app);
-        b.setAppName((label != null ? label.toString() : app.packageName) + " (DEEP)");
-        b.setApkPath(sourceDir);
-        ThreatResult deepRes = b.build();
-        if (app.packageName != null && photonCacheEnabled() && scanCache != null) {
-            scanCache.putPhotonCache(app.packageName, deepRes);
-        }
-        return deepRes;
-    }
-}

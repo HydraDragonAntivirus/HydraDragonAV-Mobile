@@ -147,27 +147,6 @@ public final class NativeScanner {
     }
 
     private static native String nativeScanApk(String path, String hydradragonJson, String fileMd5, boolean zeroTrust);
-    private static native void nativeBeginBatchScan();
-    private static native String nativeEndBatchScan();
-    private static native void nativeAbortBatchScan();
-
-    public static void beginBatchScan() {
-        if (!LIB_LOADED) return;
-        try { nativeBeginBatchScan(); } catch (Throwable ignore) {}
-    }
-
-    public static String endBatchScan() {
-        if (!LIB_LOADED) return "[]";
-        try { return nativeEndBatchScan(); } catch (Throwable t) { return "[]"; }
-    }
-
-    /** Signal an in-progress endBatchScan() flush to stop early (user pressed
-     *  Stop). Non-blocking — just flips a native flag the flush loop polls, so
-     *  the deferred Phase 3 scan bails out instead of grinding to the end. */
-    public static void abortBatchScan() {
-        if (!LIB_LOADED) return;
-        try { nativeAbortBatchScan(); } catch (Throwable ignore) {}
-    }
 
     /** Diagnostics: what loaded / failed during the last nativeInit. */
     private static native String nativeStatus();
@@ -543,7 +522,6 @@ public final class NativeScanner {
          *  (androguard/hydradragon-aware condition, no whitelist-DB string
          *  filtering), or null for a clean scan / when nothing was extractable. */
         public String generatedRule;
-        public boolean deferred;
         public String path;
 
         public boolean isError() { return error != null; }
@@ -590,32 +568,10 @@ public final class NativeScanner {
         }
     }
 
-    public static List<Verdict> parseBatchVerdicts(String jsonArray) {
-        List<Verdict> list = new ArrayList<>();
-        if (jsonArray == null || jsonArray.isEmpty()) return list;
-        try {
-            JSONArray arr = new JSONArray(jsonArray);
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject o = arr.optJSONObject(i);
-                if (o != null) {
-                    list.add(parseVerdictJson(o));
-                }
-            }
-        } catch (Throwable t) {
-            Log.e("NativeScanner", "parseBatchVerdicts failed", t);
-        }
-        return list;
-    }
-
     public static Verdict parseVerdictJson(JSONObject o) throws Exception {
         Verdict v = new Verdict();
         if (o.has("error")) {
             v.error = o.optString("error", "unknown");
-            return v;
-        }
-        if (o.has("status") && "deferred".equals(o.optString("status"))) {
-            v.deferred = true;
-            v.path = o.optString("path", "");
             return v;
         }
         if (o.has("path")) {
