@@ -36,7 +36,6 @@ pub struct AtomFilterScanner<'a> {
 struct AutomatonStats {
     daachorse_us: u64,
     daachorse_matches: u64,
-    skipped_live_values: u64,
     inner_iterations: u64,
     saturated_skip: u64,
     ft_skip: u64,
