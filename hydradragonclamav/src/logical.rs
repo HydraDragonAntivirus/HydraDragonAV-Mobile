@@ -472,6 +472,22 @@ impl LogicalExpr {
         self.eval_at(self.nodes.len() - 1, counts)
     }
 
+    /// Maximum per-subsignature match count needed to preserve this expression's
+    /// boolean result. Counts above the largest comparison threshold are
+    /// indistinguishable to `=`, `<`, `<=`, `>`, and `>=`; pure boolean
+    /// expressions only need presence/absence.
+    pub fn count_match_limit(&self) -> usize {
+        self.nodes
+            .iter()
+            .filter_map(|node| match node {
+                ExprNode::Compare { hits, .. } => Some(*hits as usize),
+                _ => None,
+            })
+            .max()
+            .map_or(1, |n| n.saturating_add(1))
+            .max(1)
+    }
+
     /// Over-approximate whether the expression can *still* evaluate true, given the
     /// subsignatures evaluated so far. `evaluated[i] == true` means `counts[i]` is
     /// final; an unevaluated subsig is assumed *possibly present* (best case).

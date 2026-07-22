@@ -795,6 +795,27 @@ impl Engine {
         let counts = &mut bufs.counts;
         let last_offsets = &mut bufs.last_offsets;
         let evaluated = &mut bufs.evaluated;
+        let mut expression_count_limit = signature.expression.count_match_limit();
+        for subsig in subsigs.iter() {
+            if let Subsignature::Pcre(pcre) = subsig {
+                expression_count_limit =
+                    expression_count_limit.max(pcre.trigger.count_match_limit());
+            }
+        }
+        let needs_full_counts = signature.bytecode.is_some()
+            || subsigs
+                .iter()
+                .any(|subsig| matches!(subsig, Subsignature::ByteCompare(_)));
+        let body_count_limit = if needs_full_counts {
+            usize::MAX
+        } else {
+            expression_count_limit
+        };
+        let pcre_count_limit = if signature.bytecode.is_some() {
+            usize::MAX
+        } else {
+            expression_count_limit
+        };
 
         // Byte-level confirmation for Body subsigs (ClamAV cli_ac_scanbuff): the
         // atom sweep only says "an atom of this subsig MAY be present" — the atom
@@ -823,7 +844,11 @@ impl Engine {
             let mut hits = 0usize;
             let mut last = None;
             for pattern in patterns.iter() {
-                let (phits, plast) = pattern.count_all(ctx.data, &ranges, usize::MAX);
+                if hits >= body_count_limit {
+                    break;
+                }
+                let remaining = body_count_limit.saturating_sub(hits);
+                let (phits, plast) = pattern.count_all(ctx.data, &ranges, remaining);
                 hits += phits;
                 if let Some(p) = plast {
                     last = Some(p);
@@ -902,7 +927,11 @@ impl Engine {
                         // never fire, so they stay uncompiled and cost no RAM).
                         if let Some(re) = pcre.regex.get() {
                             counts[i] = if pcre.global {
-                                re.find_iter(pcre_needle).count()
+                                if pcre_count_limit == usize::MAX {
+                                    re.find_iter(pcre_needle).count()
+                                } else {
+                                    re.find_iter(pcre_needle).take(pcre_count_limit).count()
+                                }
                             } else {
                                 usize::from(pcre.regex.is_match(pcre_needle))
                             };
