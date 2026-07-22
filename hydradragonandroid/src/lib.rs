@@ -1653,7 +1653,7 @@ fn run_scan(
     let dex_scans: Vec<Option<dex_scan::DexScan>>;
     let dex_ms;
     let hydradragon_meta;
-    let mut _module_meta: Vec<(&str, &[u8])>;
+    let mut module_meta: Vec<(&str, &[u8])>;
     let _emulated: Vec<emulate::EmulationResult>;
     let _emulated_strings: Vec<Option<Vec<u8>>>;
     let emulate_ms;
@@ -1753,13 +1753,13 @@ fn run_scan(
         hydradragon_meta = merge_dex_findings(hydradragon, &dex_scans);
 
         // Build module metadata.
-        _module_meta = Vec::new();
+        module_meta = Vec::new();
         if let Some(j) = androguard_json.as_deref() {
-            _module_meta.push(("androguard", j.as_bytes()));
+            module_meta.push(("androguard", j.as_bytes()));
         }
         if let Some(h) = hydradragon_meta.as_deref() {
             if !h.is_empty() {
-                _module_meta.push(("hydradragon", h));
+                module_meta.push(("hydradragon", h));
             }
         }
 
@@ -1917,7 +1917,7 @@ fn run_scan(
     // Re-scans buffer data, DEX string pools, and emulated strings.
     let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     if let Some(clamav) = &engine.clamav {
-        if !_module_meta.is_empty() {
+        if !module_meta.is_empty() {
             for yengine in &clamav.yara {
                 if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
                     continue;
@@ -1933,7 +1933,7 @@ fn run_scan(
                     };
                     // Buffer data
                     let t0 = std::time::Instant::now();
-                    let matches = yengine.scan(&b.data, &base_path, &_module_meta);
+                    let matches = yengine.scan(&b.data, &base_path, &module_meta);
                     let ns = t0.elapsed().as_nanos();
                     rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
                     for m in matches {
@@ -1943,7 +1943,7 @@ fn run_scan(
                     if let Some(ds) = &dex_scans[i] {
                         let dname = format!("{base_path}#dex");
                         let t0 = std::time::Instant::now();
-                        let matches = yengine.scan(ds.text.as_bytes(), &dname, &_module_meta);
+                        let matches = yengine.scan(ds.text.as_bytes(), &dname, &module_meta);
                         let ns = t0.elapsed().as_nanos();
                         rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
                         for m in matches {
@@ -1954,7 +1954,7 @@ fn run_scan(
                     if let Some(decoded) = &_emulated_strings[i] {
                         let ename = format!("{base_path}#emulated");
                         let t0 = std::time::Instant::now();
-                        let matches = yengine.scan(decoded, &ename, &_module_meta);
+                        let matches = yengine.scan(decoded, &ename, &module_meta);
                         let ns = t0.elapsed().as_nanos();
                         rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
                         for m in matches {
