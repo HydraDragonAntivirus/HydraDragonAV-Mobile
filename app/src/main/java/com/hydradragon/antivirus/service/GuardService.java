@@ -401,7 +401,7 @@ public class GuardService extends Service {
                     if (callback != null) callback.onThreatDetected(threat);
                 }
                 ScanEngine.ScanCallback ui = uiScanCallback;
-                if (ui != null) ui.onThreatFound(threat);
+                if (ui != null && scanEngine.isScanRunning()) ui.onThreatFound(threat);
             }
 
             @Override

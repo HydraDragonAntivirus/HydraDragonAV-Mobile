@@ -231,6 +231,7 @@ public class ScanEngine {
         this.isBackgroundScan = background;
     }
     public boolean isBackgroundScan() { return isBackgroundScan; }
+    public boolean isScanRunning() { return runningScanType != SCAN_TYPE_NONE; }
 
     static final int SCAN_TYPE_NONE = 0;
     static final int SCAN_TYPE_QUICK = 1;
