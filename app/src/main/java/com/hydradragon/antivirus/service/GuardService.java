@@ -95,6 +95,13 @@ public class GuardService extends Service {
                         if (path == null || path.isEmpty()) continue;
                         java.io.File file = new java.io.File(path);
                         if (!file.exists() || !file.isFile()) continue;
+                        // Feed the file event into the rename-burst + memory-pressure
+                        // ransomware detection pipeline.
+                        java.io.File parent = file.getParentFile();
+                        if (parent != null) {
+                            com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.onFileEvent(
+                                this, parent.getAbsolutePath(), file.getName());
+                        }
                         scanDownloadedFile(file);
                     }
                 }
@@ -161,6 +168,11 @@ public class GuardService extends Service {
                             if (path == null || path.isEmpty()) continue;
                             java.io.File file = new java.io.File(path);
                             if (!file.exists() || !file.isFile()) continue;
+                            java.io.File parent = file.getParentFile();
+                            if (parent != null) {
+                                com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.onFileEvent(
+                                    this, parent.getAbsolutePath(), file.getName());
+                            }
                             scanDownloadedFile(file);
                         }
                     }

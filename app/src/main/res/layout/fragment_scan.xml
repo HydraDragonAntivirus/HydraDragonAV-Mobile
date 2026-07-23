@@ -29,12 +29,12 @@
         android:gravity="center"
         android:layout_marginBottom="12dp">
 
-        <!-- Scanner icon (spinning) -->
+        <!-- Gear icon (spinning) -->
         <ImageView
             android:id="@+id/iv_scanner_icon"
             android:layout_width="64dp"
             android:layout_height="64dp"
-            android:src="@drawable/ic_scanner"
+            android:src="@drawable/ic_gear"
             android:layout_marginBottom="16dp"/>
 
         <!-- Status text -->

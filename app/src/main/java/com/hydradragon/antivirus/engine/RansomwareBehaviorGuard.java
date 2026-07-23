@@ -38,9 +38,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  *       burst of them right after a permission grant does).</li>
  * </ol>
  *
- * Both conditions have to line up — a permission grant alone, or occasional
- * unrelated renames alone, are each far too common in legitimate apps (a file
- * manager, a backup tool, a photo editor) to mean anything by themselves.
+ * <h3>Multi-sensor fusion</h3>
+ * Three independent sensors are combined, and the rename-burst threshold
+ * drops as more of them agree:
+ * <ul>
+ *   <li><b>Memory pressure</b> — {@link MemoryMonitor} reads
+ *       {@code /proc/meminfo}; low available RAM during file churn matches
+ *       the profile of holding plaintext + ciphertext in memory during
+ *       encryption (+2 to threshold drop).</li>
+ *   <li><b>File entropy</b> — {@link FileEntropy} computes Shannon entropy
+ *       of the new (presumably encrypted) file; values above 7.5 indicate
+ *       encrypted or compressed content (+1 to threshold drop).</li>
+ *   <li><b>Rename-suffix pattern</b> — always required as the base signal
+ *       (no drop without it).</li>
+ * </ul>
  */
 public final class RansomwareBehaviorGuard {
 
@@ -50,6 +61,9 @@ public final class RansomwareBehaviorGuard {
      *  caused by that grant, rather than unrelated later activity. */
     private static final long GRANT_WINDOW_MS = 15L * 60L * 1000L; // 15 min
     private static final long RENAME_BURST_WINDOW_MS = 60L * 1000L; // 1 min
+    /** Base rename burst threshold.  Lowered dynamically by {@link
+     *  #effectiveThreshold(boolean)} when memory pressure and/or high file
+     *  entropy are observed. */
     private static final int RENAME_BURST_THRESHOLD = 5;
     private static final int MAX_NAMES_PER_DIR = 500;
 
@@ -123,8 +137,39 @@ public final class RansomwareBehaviorGuard {
         return state;
     }
 
+    /** Returns the effective rename-burst threshold for the current memory
+     *  pressure and file-entropy state.
+     *
+     *  <ul>
+     *    <li>High memory pressure alone → {@code RENAME_BURST_THRESHOLD - 2} (3).</li>
+     *    <li>High entropy (encrypted content) alone → {@code RENAME_BURST_THRESHOLD - 1} (4).</li>
+     *    <li>Both → {@code RENAME_BURST_THRESHOLD - 3} (2).</li>
+     *    <li>Neither → {@code RENAME_BURST_THRESHOLD} (5).</li>
+     *  </ul> */
+    private static int effectiveThreshold(boolean highEntropy) {
+        int drop = 0;
+        if (MemoryMonitor.isUnderHighPressure()) drop += 2;
+        if (highEntropy) drop += 1;
+        return Math.max(RENAME_BURST_THRESHOLD - drop, 1);
+    }
+
     /** Called for every file created/finalized in a watched directory (see
-     *  GuardService's Downloads/full-storage FileObservers). */
+     *  GuardService's Downloads/full-storage FileObservers).
+     *
+     *  <p>Three sensors are fused here:
+     *  <ol>
+     *    <li><b>Rename-suffix pattern</b> — a file replaced by one with an
+     *        extra appended extension ({@code .pdf} &rarr; {@code .pdf.xyz}),
+     *        which is the hallmark of in-place encryption.</li>
+     *    <li><b>Memory pressure</b> — low available RAM during file churn
+     *        is consistent with holding plaintext + ciphertext in memory
+     *        during encryption.</li>
+     *    <li><b>File entropy</b> — encrypted content has near-maximum Shannon
+     *        entropy ({@code > 7.5}); plaintext and structured binaries score
+     *        much lower.</li>
+     *  </ol>
+     *  The rename-burst threshold required to trigger an alert drops as more
+     *  sensors agree. */
     public static synchronized void onFileEvent(Context c, String dirPath, String fileName) {
         if (!BehaviorDetectionSettings.isEnabled(c, BehaviorDetectionSettings.RANSOMWARE)) return;
         if (dirPath == null || fileName == null || fileName.isEmpty()) return;
@@ -161,10 +206,10 @@ public final class RansomwareBehaviorGuard {
             return; // no recent on-screen file-access grant to pin this on
         }
         if (BehaviorFlags.isFlagged(c, pkg)) return;
-        if (TrustedPackages.isTrusted(c, pkg)) return; // never flag Google/OEM/system apps
-        if (UserDecisions.isThreatAllowed(c, pkg)) return; // user already said "safe, ignore"
+        if (TrustedPackages.isTrusted(c, pkg)) return;
+        if (UserDecisions.isThreatAllowed(c, pkg)) return;
 
-        String appendedSuffix = fileName.substring(matchedBase.length()); // e.g. ".locked"
+        String appendedSuffix = fileName.substring(matchedBase.length());
         long now = System.currentTimeMillis();
         long[] burst = renameBurst.get(pkg);
         if (burst == null || now - burst[0] > RENAME_BURST_WINDOW_MS) {
@@ -173,13 +218,30 @@ public final class RansomwareBehaviorGuard {
             return;
         }
         burst[1]++;
-        if (burst[1] < RENAME_BURST_THRESHOLD) return;
+
+        // ── Sensor: file entropy ───────────────────────────────────────
+        java.io.File newFile = new java.io.File(dirPath, fileName);
+        double entropy = FileEntropy.entropyOf(newFile);
+        boolean highEntropy = entropy >= 7.5;
+        String entropyLabel = FileEntropy.label(entropy);
+
+        int effective = effectiveThreshold(highEntropy);
+        String memInfo = MemoryMonitor.summary();
+        Log.d(TAG, "rename+" + burst[1] + "/" + effective + " for " + pkg
+            + " suffix=\"" + appendedSuffix + "\" entropy=" + entropyLabel
+            + (entropy >= 0 ? String.format(" %.2f", entropy) : "")
+            + " " + memInfo);
+        if (burst[1] < effective) return;
 
         boolean wasAllFiles = Boolean.TRUE.equals(grantWasAllFiles.get(pkg));
+        String entropyInfo = entropy >= 0
+            ? String.format("entropy=%.2f(%s)", entropy, entropyLabel)
+            : "entropy=unavailable";
         String reason = "Ransomware behaviour: " + burst[1]
             + " files renamed with an appended suffix (\"" + sampleExt.get(pkg)
             + "\") within " + (RENAME_BURST_WINDOW_MS / 1000)
-            + "s of this app being granted " + (wasAllFiles ? "All Files Access" : "file access");
+            + "s of this app being granted " + (wasAllFiles ? "All Files Access" : "file access")
+            + " — " + entropyInfo + " " + memInfo;
         Log.e(TAG, "RANSOMWARE BEHAVIOUR (" + pkg + "): " + reason);
         BehaviorFlags.flag(c, pkg, reason);
         HipsMonitor.reportRansomware(pkg, (int)burst[1], sampleExt.get(pkg),
