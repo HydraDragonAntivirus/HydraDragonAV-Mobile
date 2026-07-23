@@ -287,28 +287,6 @@ rule HIPS_URL_And_Flags
 
 // -- DEX Static Analysis ------------------------------------------------------
 
-rule HIPS_DEX_Multiple_Severe_Findings
-{
-  meta:
-    description = "Detects multiple severe DEX analysis findings"
-    severity = "critical"
-    category = "DEX"
-    suggestion = "uninstall"
-  condition:
-    hydradragon.dex_severe_finding_count() >= 3
-}
-
-rule HIPS_DEX_Privilege_Escalation
-{
-  meta:
-    description = "Detects DEX static findings related to privilege escalation or root exploits"
-    severity = "critical"
-    category = "DEX"
-    suggestion = "uninstall"
-  condition:
-    hydradragon.dex_finding(/(?i)(root|exploit|escalation|\bsu\b|superuser|magisk|setuid|privesc|elevat)/) >= 1
-}
-
 rule HIPS_DEX_And_Behavior
 {
   meta:
