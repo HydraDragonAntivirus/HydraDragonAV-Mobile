@@ -644,7 +644,7 @@ fn run_ml_on_buffers(
                 } else {
                     match &b.entry_name {
                         Some(entry) => format!("{path}!/{entry}"),
-                        None => format!("{path}#extract[{i}]"),
+                        None => format!("{path}!/_entry{i}"),
                     }
                 };
                 lineages.push((obj_path, b.apk_lineage.clone()));
@@ -1861,32 +1861,15 @@ fn run_scan(
         // checking both the Vec-index and emitted-index forms.
         let mut whitelisted_paths: std::collections::HashSet<String> =
             std::collections::HashSet::new();
-        // Also collect unnamed whitelisted buffers' lineages for fallback
-        // matching when index formats diverge.
-        let mut unnamed_whitelisted_lineages: Vec<Vec<String>> = Vec::new();
         for (i, sk) in skip_heavy.iter().enumerate() {
             if !sk { continue; }
             if i == 0 {
                 whitelisted_paths.insert(path.to_string());
             } else if let Some(entry) = &buffers[i].entry_name {
                 whitelisted_paths.insert(format!("{path}!/{entry}"));
-            } else {
-                unnamed_whitelisted_lineages.push(buffers[i].apk_lineage.clone());
             }
         }
-        streaming_dets.retain(|(_, obj_path, lineage)| {
-            if whitelisted_paths.contains(obj_path) { return false; }
-            // For unnamed archive children: match by lineage when the index
-            // forms diverge (e.g. streaming used #extract[5] but Vec index
-            // would be #extract[3] due to skipped non-relevant buffers).
-            if !unnamed_whitelisted_lineages.is_empty()
-                && obj_path.contains("#extract[")
-                && unnamed_whitelisted_lineages.iter().any(|wl| wl == lineage)
-            {
-                return false;
-            }
-            true
-        });
+        streaming_dets.retain(|(_, obj_path, _)| !whitelisted_paths.contains(obj_path));
         // Timing contributions from whitelisted buffers are left in
         // streaming_timing — separating per-buffer timing would require
         // per-bucket accounting, and the data is diagnostic-only.
@@ -1931,7 +1914,7 @@ fn run_scan(
                     } else {
                         match &b.entry_name {
                             Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path}#extract[{i}]"),
+                            None => format!("{path}!/_entry{i}"),
                         }
                     };
                     // Buffer data
@@ -1980,7 +1963,7 @@ fn run_scan(
         } else {
             match &b.entry_name {
                 Some(entry) => format!("{path}!/{entry}"),
-                None => format!("{path}#extract[{i}]"),
+                None => format!("{path}!/_entry{i}"),
             }
         };
         let mut seen_apis = std::collections::HashSet::new();
@@ -2055,7 +2038,7 @@ fn run_scan(
                     } else {
                         match &b.entry_name {
                             Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path}#extract[{i}]"),
+                            None => format!("{path}!/_entry{i}"),
                         }
                     };
                     detections.push((format!("DEX/{:?}: {}", f.severity, f.message), obj_path, b.apk_lineage.clone()));
@@ -2084,7 +2067,7 @@ fn run_scan(
                     } else {
                         match &b.entry_name {
                             Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path}#extract[{i}]"),
+                            None => format!("{path}!/_entry{i}"),
                         }
                     };
                     detections.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
@@ -3497,7 +3480,7 @@ fn collect_buffers(
     let bomb_dets: Mutex<Vec<(String, String, Vec<String>)>> = Mutex::new(Vec::new());
     let total_bytes = AtomicU64::new(0);
     // Count of buffers actually emitted to `out` — used for both the 4096 cap
-    // and as each buffer's naming index (`path#extract[idx]`), without
+    // and as each buffer's naming index, without
     // needing to lock `out` just to read its length.
     let emitted = AtomicUsize::new(0);
     // Set once the buffer/byte cap is hit; every worker checks it and winds
@@ -3601,7 +3584,7 @@ fn collect_buffers(
                                     } else {
                                         match &item.entry_name {
                                             Some(entry) => format!("{path}!/{entry}"),
-                                            None => format!("{}#extract[{}]", path, idx),
+                                            None => format!("{}!/_entry{}", path, idx),
                                         }
                                     };
                                     android_log(&format!(
@@ -3630,7 +3613,7 @@ fn collect_buffers(
                                 } else {
                                     match &item.entry_name {
                                         Some(entry) => format!("{path}!/{entry}"),
-                                        None => format!("{}#extract[{}]", path, idx),
+                                        None => format!("{}!/_entry{}", path, idx),
                                     }
                                 };
                                 match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
