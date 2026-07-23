@@ -517,7 +517,7 @@ checksum = "5614204febbc33cc07a2806aa6440b904ac012b68eecc37f4493ea4a76455a3d"
 [[package]]
 name = "daachorse"
 version = "4.0.0"
-source = "git+https://github.com/HydraDragonAntivirus/daachorse.git#aa87b67cef1f0f9fdf1c815d88e6900e1901abf0"
+source = "git+https://github.com/HydraDragonAntivirus/daachorse.git#1eb804594453533df740d3c2553e0980b6bf9a76"
 
 [[package]]
 name = "darling"

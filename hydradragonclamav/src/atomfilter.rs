@@ -1,10 +1,16 @@
-//! Data model for the daachorse-based atom prefilter.
+//! Data model for the daachorse-based atom prefilter with a Shift-OR
+//! bloom-filter pre-pass (using [`daachorse::ClamavPrefilter`]).
 //!
-//! Replaces the old Binary-Fuse16 / rolling-hash approach with a single
-//! Aho-Corasick automaton (daachorse) that matches every exact and nocase
-//! atom in one pass per automaton. No more 5 separate rolling-hash sweeps.
+//! The two-level architecture:
+//!   1. Lightweight Shift-OR prefilter (128 KB, L2-cache-friendly) runs a
+//!      quick "maybe" over every byte pair.  If it says "no", the dense
+//!      automaton is skipped entirely.
+//!   2. Daachorse dense-table automaton (exact + nocase) — the full atom
+//!      prefilter — only runs when the Shift-OR filter says "maybe".
+//!      When it does run, it starts from the filter's first-match offset
+//!      minus `MAX_ATOM_LEN`, not from byte 0.
 
-use daachorse::DoubleArrayAhoCorasick;
+use daachorse::{ClamavPrefilter, DoubleArrayAhoCorasick};
 
 /// Index into [`AtomFilterDb::slots`]. One "thing" (a whole extended
 /// signature, or one subsignature of a logical signature) with its own hit
@@ -69,6 +75,10 @@ pub struct AtomFilterDb {
     pub slots: Vec<SlotDef>,
     pub ext_slot: Vec<ExtSlot>,
     pub log_subsig_slots: Vec<Box<[SubsigSlot]>>,
+    /// Shift-OR bloom-filter pre-pass.  Run this before the dense automaton;
+    /// if `prefilter.search(data)` returns `None` the dense automaton can be
+    /// skipped entirely.
+    pub prefilter: ClamavPrefilter,
 }
 
 impl std::fmt::Debug for AtomFilterDb {
@@ -98,6 +108,7 @@ impl AtomFilterDb {
             slots: Vec::new(),
             ext_slot: Vec::new(),
             log_subsig_slots: Vec::new(),
+            prefilter: ClamavPrefilter::empty(),
         }
     }
 

@@ -155,10 +155,10 @@ impl<'a> AtomFilterScanner<'a> {
         }
 
         // Reset per-scanner state.
-        for (i, c) in self.counts.iter_mut().enumerate() {
+        for c in self.counts.iter_mut() {
             *c = 0;
         }
-        for (i, o) in self.last_offset.iter_mut().enumerate() {
+        for o in self.last_offset.iter_mut() {
             *o = u32::MAX;
         }
         for w in &mut self.saturated {
@@ -167,6 +167,16 @@ impl<'a> AtomFilterScanner<'a> {
         for (vi, slots) in self.db.atom_to_slots.iter().enumerate() {
             self.value_remaining[vi] = slots.len() as u32;
         }
+
+        // ── Shift-OR prefilter ────────────────────────────────────────────
+        // If the prefilter says no pattern can match, skip both dense passes.
+        let Some(start) = self.db.prefilter.search(data) else {
+            return SlotCounts { counts: &self.counts, last_offset: &self.last_offset };
+        };
+        if start >= data.len() {
+            return SlotCounts { counts: &self.counts, last_offset: &self.last_offset };
+        }
+        let window = &data[start..];
 
         let mut exact_stats = AutomatonStats::default();
         let mut nocase_stats = AutomatonStats::default();
@@ -182,7 +192,7 @@ impl<'a> AtomFilterScanner<'a> {
                 &self.db.slot_to_values,
                 &mut self.saturated,
                 &mut self.value_remaining,
-                data,
+                window,
                 file_type_target,
                 &mut self.counts,
                 &mut self.last_offset,
@@ -195,10 +205,10 @@ impl<'a> AtomFilterScanner<'a> {
         if let (Some(ref pma), Some(ref dense)) = (self.db.nocase.as_ref(), Some(&self.db.nocase_dense[..])) {
             // Separate lowered buffer to avoid &mut self conflict with saturated/value_remaining.
             let mut lowered = std::mem::take(&mut self.lowered_buf);
-            if data.len() > lowered.len() {
-                lowered.resize(data.len(), 0);
+            if window.len() > lowered.len() {
+                lowered.resize(window.len(), 0);
             }
-            for (i, &b) in data.iter().enumerate() {
+            for (i, &b) in window.iter().enumerate() {
                 lowered[i] = b.to_ascii_lowercase();
             }
             Self::run_dense_automaton(
@@ -210,7 +220,7 @@ impl<'a> AtomFilterScanner<'a> {
                 &self.db.slot_to_values,
                 &mut self.saturated,
                 &mut self.value_remaining,
-                &lowered[..data.len()],
+                &lowered[..window.len()],
                 file_type_target,
                 &mut self.counts,
                 &mut self.last_offset,
@@ -218,6 +228,13 @@ impl<'a> AtomFilterScanner<'a> {
                 &mut nocase_stats,
             );
             self.lowered_buf = lowered;
+        }
+
+        // Add `start` back to last_offsets since the automaton ran offset-relative.
+        for o in self.last_offset.iter_mut() {
+            if *o != u32::MAX {
+                *o += start as u32;
+            }
         }
 
         // Emit detailed timing when slow.
@@ -253,8 +270,8 @@ impl<'a> AtomFilterScanner<'a> {
             } else {
                 String::from("nocase(none)")
             };
-            eprintln!("[ATOMSCAN] {}KB {} {}",
-                data.len() / 1024, exact_info, nocase_info);
+            eprintln!("[ATOMSCAN] {}KB {} {}  prefilter_start={}",
+                data.len() / 1024, exact_info, nocase_info, start);
         }
 
         SlotCounts { counts: &self.counts, last_offset: &self.last_offset }
