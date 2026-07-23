@@ -3586,7 +3586,9 @@ fn collect_buffers(
     }
 
     let stack: Mutex<Vec<WorkItem>> = Mutex::new(vec![WorkItem {
-        buf: OwnedBuf::Mmap(data),
+        // Copy eagerly — memory-mapped APK pages on F2FS/compressed
+        // partitions can stall on deferred page faults during Phase 2/3.
+        buf: OwnedBuf::Vec(data.to_vec()),
         depth: 0,
         lineage: Vec::new(),
         entry_name: None,
