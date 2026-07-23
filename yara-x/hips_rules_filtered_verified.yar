@@ -298,17 +298,6 @@ rule HIPS_DEX_Multiple_Severe_Findings
     hydradragon.dex_severe_finding_count() >= 3
 }
 
-rule HIPS_DEX_Code_Injection
-{
-  meta:
-    description = "Detects DEX static findings related to code injection or runtime execution"
-    severity = "critical"
-    category = "DEX"
-    suggestion = "uninstall"
-  condition:
-    hydradragon.dex_finding(/(?i)(reflection|classloader|dynamic_load|dex_class|native_code|code_inject|runtime_exec|dexload|inject|payload)/) >= 3
-}
-
 rule HIPS_DEX_Privilege_Escalation
 {
   meta:
