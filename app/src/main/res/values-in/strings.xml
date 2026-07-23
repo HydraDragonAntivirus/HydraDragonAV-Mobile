@@ -233,6 +233,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="level_low">RISIKO RENDAH</string>
     <string name="level_clean">BERSIH</string>
     <string name="threats_found_count">⚠ %1$d file berbahaya ditemukan! Ketuk untuk menghapus.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ KODE TERSAMARKAN: Pemuatan Dinamis Terdeteksi!</string>
     <string name="threat_ransomware">RANSOMWARE TERDETEKSI: Enkripsi File!</string>
     <string name="threat_spyware">SPYWARE/RAT TERDETEKSI: Pengawasan Latar Belakang!</string>

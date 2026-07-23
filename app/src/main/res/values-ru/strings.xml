@@ -233,6 +233,7 @@
     <string name="level_low">НИЗКИЙ РИСК</string>
     <string name="level_clean">ЧИСТО</string>
     <string name="threats_found_count">⚠ Найдено вредоносных файлов: %1$d! Нажмите, чтобы удалить.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ ОБФУСЦИРОВАННЫЙ КОД: обнаружена динамическая загрузка!</string>
     <string name="threat_ransomware">ОБНАРУЖЕН ВЫМОГАТЕЛЬ: шифрование файлов!</string>
     <string name="threat_spyware">ОБНАРУЖЕН ШПИОНСКИЙ СОФТ/RAT: слежка в фоновом режиме!</string>

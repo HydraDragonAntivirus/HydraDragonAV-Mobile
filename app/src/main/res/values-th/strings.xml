@@ -233,6 +233,7 @@
     <string name="level_low">ความเสี่ยงต่ำ</string>
     <string name="level_clean">สะอาด</string>
     <string name="threats_found_count">⚠ พบไฟล์อันตราย %1$d ไฟล์! แตะเพื่อลบ</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ โค้ดถูกอำพราง: ตรวจพบการโหลดแบบไดนามิก!</string>
     <string name="threat_ransomware">ตรวจพบแรนซัมแวร์: การเข้ารหัสไฟล์!</string>
     <string name="threat_spyware">ตรวจพบสปายแวร์/RAT: การสอดแนมพื้นหลัง!</string>

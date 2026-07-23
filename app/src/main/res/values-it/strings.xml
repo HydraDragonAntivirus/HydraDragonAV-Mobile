@@ -233,6 +233,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="level_low">RISCHIO BASSO</string>
     <string name="level_clean">PULITO</string>
     <string name="threats_found_count">⚠ %1$d file dannoso/i trovato/i! Tocca per eliminare.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ CODICE OFFUSCATO: Caricamento dinamico rilevato!</string>
     <string name="threat_ransomware">RANSOMWARE RILEVATO: Crittografia dei file!</string>
     <string name="threat_spyware">SPYWARE/RAT RILEVATO: Sorveglianza in background!</string>

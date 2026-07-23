@@ -233,6 +233,7 @@ Puntuación de riesgo: %2$d/100
     <string name="level_low">RIESGO BAJO</string>
     <string name="level_clean">LIMPIO</string>
     <string name="threats_found_count">⚠ ¡Se encontraron %1$d archivo(s) malicioso(s)! Toca para eliminar.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ CÓDIGO OFUSCADO: ¡Carga Dinámica Detectada!</string>
     <string name="threat_ransomware">RANSOMWARE DETECTADO: ¡Cifrado de Archivos!</string>
     <string name="threat_spyware">SPYWARE/RAT DETECTADO: ¡Vigilancia en Segundo Plano!</string>

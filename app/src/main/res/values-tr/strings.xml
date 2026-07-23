@@ -248,6 +248,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="level_low">DÜŞÜK RİSK</string>
     <string name="level_clean">TEMİZ</string>
     <string name="threats_found_count">⚠ %1$d kötü amaçlı dosya bulundu! Üzerine tıklayıp yokedin.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ KOD GİZLEME: Dinamik Yükleme Tespit Edildi!</string>
     <string name="threat_ransomware">FİDYE YAZILIMI TESPİTİ: Dosya Şifreleme!</string>
     <string name="threat_spyware">CASUS YAZILIM / RAT TESPİTİ: Arka Plan İzlemesi!</string>

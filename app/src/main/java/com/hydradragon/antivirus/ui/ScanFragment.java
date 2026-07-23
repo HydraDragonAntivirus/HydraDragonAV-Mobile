@@ -60,6 +60,7 @@ public class ScanFragment extends Fragment {
     private static String lastScanStatus = null;
     private static int lastScannedCount = 0;
     private static List<ThreatResult> foundThreats = new ArrayList<>();
+    private static int hiddenThreatCount = 0;
     // Latest onProgress() values — restored in onViewCreated so switching away
     // from this tab mid-scan and back doesn't show a stale/blank progress bar
     // until the NEXT progress tick happens to arrive (could be a noticeable
@@ -69,6 +70,8 @@ public class ScanFragment extends Fragment {
     private static String lastProgressName = "";
 
     private static final String TAG = "HydraDragon-Scan";
+
+    private static final int MAX_DISPLAYED_THREATS = 50;
 
     private ThreatAdapter threatAdapter;
 
@@ -626,15 +629,18 @@ public class ScanFragment extends Fragment {
                 if (getActivity() == null) return;
                 if (!threat.isThreat()) return;
                 getActivity().runOnUiThread(() -> {
-                    if (!foundThreats.contains(threat)) {
+                    if (foundThreats.contains(threat)) return;
+                    if (foundThreats.size() < MAX_DISPLAYED_THREATS) {
                         foundThreats.add(threat);
                         threatAdapter.notifyItemInserted(foundThreats.size() - 1);
-                    tvThreats.setText(String.valueOf(foundThreats.size()));
-                    tvActiveThreats.setText(String.valueOf(foundThreats.size()));
+                    } else {
+                        hiddenThreatCount++;
+                    }
+                    int total = foundThreats.size() + hiddenThreatCount;
+                    tvThreats.setText(String.valueOf(total));
+                    tvActiveThreats.setText(String.valueOf(total));
                     tvThreats.setTextColor(0xFFFF0040);
                     tvThreatLabel.setVisibility(View.VISIBLE);
-                        tvThreatLabel.setVisibility(View.VISIBLE);
-                    }
                 });
             }
 
@@ -650,15 +656,23 @@ public class ScanFragment extends Fragment {
                 long secs = result.getScanDurationMs() / 1000;
                 long millis = result.getScanDurationMs() % 1000;
                 String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
+                java.util.List<ThreatResult> allThreats = result.getThreats();
                 foundThreats.clear();
-                foundThreats.addAll(result.getThreats());
+                hiddenThreatCount = 0;
+                int totalThreats = allThreats.size();
+                if (totalThreats <= MAX_DISPLAYED_THREATS) {
+                    foundThreats.addAll(allThreats);
+                } else {
+                    foundThreats.addAll(allThreats.subList(0, MAX_DISPLAYED_THREATS));
+                    hiddenThreatCount = totalThreats - MAX_DISPLAYED_THREATS;
+                }
                 isScanning = false;
                 if (getActivity() != null) {
                     getActivity().getSharedPreferences("hydra_prefs", 0)
                         .edit().putBoolean("first_scan_completed", true).apply();
                 }
                 if (!isAdded()) {
-                    lastScanStatus = result.isClean() ? "System clean" : foundThreats.size() + " threats";
+                    lastScanStatus = result.isClean() ? "System clean" : totalThreats + " threats";
                     if (wasCancelled) lastScanStatus = "Scan stopped";
                     lastScanStatus += " (" + duration + ")";
                     Log.d(TAG, "onScanComplete: fragment detached, status saved");
@@ -669,7 +683,10 @@ public class ScanFragment extends Fragment {
                 } else if (result.isClean()) {
                     lastScanStatus = getString(R.string.scan_clean_system) + " (" + duration + ")";
                 } else {
-                    lastScanStatus = getString(R.string.threats_found_count, foundThreats.size()) + " (" + duration + ")";
+                    lastScanStatus = getString(R.string.threats_found_count, totalThreats) + " (" + duration + ")";
+                }
+                if (hiddenThreatCount > 0) {
+                    lastScanStatus += " (" + getString(R.string.threats_hidden_count, hiddenThreatCount) + ")";
                 }
                 getActivity().runOnUiThread(() -> {
                     stopScannerAnimation();
@@ -682,8 +699,8 @@ public class ScanFragment extends Fragment {
                     lastProgressTotal = 0;
                     lastProgressName = "";
                     threatAdapter.notifyDataSetChanged();
-                    tvThreats.setText(String.valueOf(foundThreats.size()));
-                    tvActiveThreats.setText(String.valueOf(foundThreats.size()));
+                    tvThreats.setText(String.valueOf(totalThreats));
+                    tvActiveThreats.setText(String.valueOf(totalThreats));
                     tvScanStatus.setText(lastScanStatus);
                     if (wasCancelled) {
                         tvScanStatus.setTextColor(0xFFFFAA00);
@@ -735,6 +752,7 @@ public class ScanFragment extends Fragment {
         isScanning = true;
         hasScanned = true;
         foundThreats.clear();
+        hiddenThreatCount = 0;
         threatAdapter.notifyDataSetChanged();
         lastProgressCurrent = 0;
         lastProgressTotal = 0;

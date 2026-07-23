@@ -233,6 +233,7 @@
     <string name="level_low">خطر منخفض</string>
     <string name="level_clean">نظيف</string>
     <string name="threats_found_count">⚠ تم العثور على %1$d ملف(ات) ضار(ة)! اضغط للتدمير.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ كود مموّه: تم اكتشاف تحميل ديناميكي!</string>
     <string name="threat_ransomware">تم اكتشاف برنامج فدية: تشفير الملفات!</string>
     <string name="threat_spyware">تم اكتشاف برنامج تجسس/RAT: مراقبة في الخلفية!</string>

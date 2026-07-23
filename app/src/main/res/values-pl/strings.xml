@@ -233,6 +233,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="level_low">NISKIE RYZYKO</string>
     <string name="level_clean">CZYSTY</string>
     <string name="threats_found_count">⚠ Znaleziono %1$d szkodliwy(ch) plik(ów)! Dotknij, aby usunąć.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ ZACIEMNIONY KOD: Wykryto dynamiczne ładowanie!</string>
     <string name="threat_ransomware">WYKRYTO RANSOMWARE: Szyfrowanie plików!</string>
     <string name="threat_spyware">WYKRYTO SPYWARE/RAT: Nadzór w tle!</string>

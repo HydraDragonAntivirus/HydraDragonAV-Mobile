@@ -233,6 +233,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="level_low">RISQUE FAIBLE</string>
     <string name="level_clean">PROPRE</string>
     <string name="threats_found_count">⚠ %1$d fichier(s) malveillant(s) trouvé(s) ! Appuyez pour supprimer.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ CODE OBFUSQUÉ : Chargement Dynamique Détecté !</string>
     <string name="threat_ransomware">RANÇONGICIEL DÉTECTÉ : Chiffrement de Fichiers !</string>
     <string name="threat_spyware">LOGICIEL ESPION/RAT DÉTECTÉ : Surveillance en Arrière-plan !</string>

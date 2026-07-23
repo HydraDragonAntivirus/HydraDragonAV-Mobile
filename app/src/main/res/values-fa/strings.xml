@@ -233,6 +233,7 @@
     <string name="level_low">ریسک پایین</string>
     <string name="level_clean">پاک</string>
     <string name="threats_found_count">⚠ %1$d فایل مخرب یافت شد! برای حذف ضربه بزنید.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ کد مبهم‌سازی‌شده: بارگذاری پویا شناسایی شد!</string>
     <string name="threat_ransomware">باج‌افزار شناسایی شد: رمزگذاری فایل!</string>
     <string name="threat_spyware">جاسوس‌افزار/RAT شناسایی شد: نظارت در پس‌زمینه!</string>

@@ -233,6 +233,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="level_low">GERINGES RISIKO</string>
     <string name="level_clean">SAUBER</string>
     <string name="threats_found_count">⚠ %1$d schädliche Datei(en) gefunden! Zum Löschen tippen.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ VERSCHLEIERTER CODE: Dynamisches Laden erkannt!</string>
     <string name="threat_ransomware">RANSOMWARE ERKANNT: Dateiverschlüsselung!</string>
     <string name="threat_spyware">SPYWARE/RAT ERKANNT: Überwachung im Hintergrund!</string>

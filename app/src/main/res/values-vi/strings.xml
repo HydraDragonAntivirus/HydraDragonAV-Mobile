@@ -233,6 +233,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="level_low">RỦI RO THẤP</string>
     <string name="level_clean">SẠCH</string>
     <string name="threats_found_count">⚠ Tìm thấy %1$d tệp độc hại! Nhấn để xóa.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ MÃ NGỤY TRANG: Phát hiện Tải Động!</string>
     <string name="threat_ransomware">PHÁT HIỆN RANSOMWARE: Mã hóa Tệp!</string>
     <string name="threat_spyware">PHÁT HIỆN SPYWARE/RAT: Giám sát Nền!</string>

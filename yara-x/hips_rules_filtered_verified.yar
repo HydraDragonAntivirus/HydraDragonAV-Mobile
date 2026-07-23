@@ -557,6 +557,7 @@ rule Android_Launcher_Hijack_Hidden_Ads : android adware
     $inj_alarm   = "android/app/AlarmManager;->setRepeating"
     $inj_setcomp = "android/content/pm/PackageManager;->setComponentEnabledSetting"
   condition:
+    androguard.package_name(/./) and
     $home and $default_cat and
     (2 of ($net_*) or 2 of ($inj_*))
 }

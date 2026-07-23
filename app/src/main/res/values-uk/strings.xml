@@ -233,6 +233,7 @@
     <string name="level_low">НИЗЬКИЙ РИЗИК</string>
     <string name="level_clean">ЧИСТО</string>
     <string name="threats_found_count">⚠ Знайдено шкідливих файлів: %1$d! Торкніться, щоб видалити.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ ОБФУСКОВАНИЙ КОД: Виявлено динамічне завантаження!</string>
     <string name="threat_ransomware">ВИЯВЛЕНО ВИМАГАЧ: Шифрування файлів!</string>
     <string name="threat_spyware">ВИЯВЛЕНО ШПИГУНСЬКЕ ПЗ/RAT: Фонове стеження!</string>

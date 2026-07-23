@@ -1923,9 +1923,21 @@ fn run_scan(
 
     // Phase 3 YARA-only rescan with full module_meta for module-dependent rules.
     // Re-scans buffer data, DEX string pools, and emulated strings.
+    //
+    // IMPORTANT: DEX-related module metadata (hydradragon DEX findings) must
+    // NOT be passed when scanning non-DEX buffer data — otherwise HIPS rules
+    // that check hydradragon.dex_severe_finding_count() would match on XML,
+    // TXT, PNG, etc. just because the APK's DEX analysis found something.
+    // DEX string pools and emulated strings are always scanned with full meta.
     let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     if let Some(clamav) = &engine.clamav {
         if !module_meta.is_empty() {
+            // Pre-filter: module_meta without hydradragon (for non-DEX buffers).
+            let non_dex_meta: Vec<(&str, &[u8])> = module_meta
+                .iter()
+                .filter(|(k, _)| *k != "hydradragon")
+                .copied()
+                .collect();
             for yengine in &clamav.yara {
                 if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
                     continue;
@@ -1939,15 +1951,20 @@ fn run_scan(
                             None => format!("{path}!/_entry{i}"),
                         }
                     };
-                    // Buffer data
+                    // Buffer data — only hydradragon meta for DEX buffers
+                    let per_buf_meta: &[(&str, &[u8])] = if b.data.starts_with(b"dex\n") {
+                        &module_meta
+                    } else {
+                        &non_dex_meta
+                    };
                     let t0 = std::time::Instant::now();
-                    let matches = yengine.scan(&b.data, &base_path, &module_meta);
+                    let matches = yengine.scan(&b.data, &base_path, per_buf_meta);
                     let ns = t0.elapsed().as_nanos();
                     rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
                     for m in matches {
                         yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
                     }
-                    // DEX string pool
+                    // DEX string pool — always with full module_meta
                     if let Some(ds) = &dex_scans[i] {
                         let dname = format!("{base_path}#dex");
                         let t0 = std::time::Instant::now();
@@ -1958,7 +1975,7 @@ fn run_scan(
                             yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
                         }
                     }
-                    // Emulated strings
+                    // Emulated strings — always with full module_meta
                     if let Some(decoded) = &emulated_strings[i] {
                         let ename = format!("{base_path}#emulated");
                         let t0 = std::time::Instant::now();

@@ -233,6 +233,7 @@
     <string name="level_low">低风险</string>
     <string name="level_clean">清洁</string>
     <string name="threats_found_count">⚠ 发现%1$d个恶意文件！点击以删除。</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ 混淆代码：检测到动态加载！</string>
     <string name="threat_ransomware">检测到勒索软件：文件加密！</string>
     <string name="threat_spyware">检测到间谍软件/RAT：后台监视！</string>

@@ -233,6 +233,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="level_low">RISCO BAIXO</string>
     <string name="level_clean">LIMPO</string>
     <string name="threats_found_count">⚠ %1$d arquivo(s) malicioso(s) encontrado(s)! Toque para destruir.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ CÓDIGO OFUSCADO: Carregamento Dinâmico Detectado!</string>
     <string name="threat_ransomware">RANSOMWARE DETECTADO: Criptografia de Arquivos!</string>
     <string name="threat_spyware">SPYWARE/RAT DETECTADO: Vigilância em Segundo Plano!</string>

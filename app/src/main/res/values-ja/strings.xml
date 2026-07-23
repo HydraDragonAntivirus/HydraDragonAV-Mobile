@@ -233,6 +233,7 @@
     <string name="level_low">低リスク</string>
     <string name="level_clean">クリーン</string>
     <string name="threats_found_count">⚠ %1$d件の悪意のあるファイルが見つかりました！タップして削除してください。</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ 難読化コード：動的ロードを検出しました！</string>
     <string name="threat_ransomware">ランサムウェアを検出：ファイル暗号化！</string>
     <string name="threat_spyware">スパイウェア/RATを検出：バックグラウンド監視！</string>

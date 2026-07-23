@@ -233,6 +233,7 @@
     <string name="level_low">कम जोखिम</string>
     <string name="level_clean">स्वच्छ</string>
     <string name="threats_found_count">⚠ %1$d दुर्भावनापूर्ण फ़ाइल(ें) मिलीं! हटाने के लिए टैप करें।</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ अस्पष्ट कोड: डायनामिक लोडिंग का पता चला!</string>
     <string name="threat_ransomware">रैनसमवेयर मिला: फ़ाइल एन्क्रिप्शन!</string>
     <string name="threat_spyware">स्पाइवेयर/RAT मिला: बैकग्राउंड निगरानी!</string>

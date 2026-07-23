@@ -233,6 +233,7 @@
     <string name="level_low">낮은 위험</string>
     <string name="level_clean">깨끗함</string>
     <string name="threats_found_count">⚠ %1$d개의 악성 파일이 발견되었습니다! 탭하여 삭제하세요.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ 난독화된 코드: 동적 로딩 감지됨!</string>
     <string name="threat_ransomware">랜섬웨어 감지됨: 파일 암호화!</string>
     <string name="threat_spyware">스파이웨어/RAT 감지됨: 백그라운드 감시!</string>

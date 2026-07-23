@@ -233,6 +233,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="level_low">LAAG RISICO</string>
     <string name="level_clean">SCHOON</string>
     <string name="threats_found_count">⚠ %1$d schadelijk(e) bestand(en) gevonden! Tik om te vernietigen.</string>
+    <string name="threats_hidden_count">and %1$d more</string>
     <string name="threat_obfuscation">⚠ GEOBFUSKEERDE CODE: Dynamisch laden gedetecteerd!</string>
     <string name="threat_ransomware">RANSOMWARE GEDETECTEERD: Bestandsversleuteling!</string>
     <string name="threat_spyware">SPYWARE/RAT GEDETECTEERD: Bewaking op de achtergrond!</string>
