@@ -1948,7 +1948,7 @@ fn run_scan(
             format!(r#"{{"name":"{}","object_path":"{}","hashes":[{}]}}"#,
                 json_escape(n), json_escape(op), hs.join(","))
         }).collect();
-        let file_tlsh = tlsh_rs::hash_bytes(bytes)
+        let file_tlsh = tlsh_rs::hash_bytes(&mmap)
             .ok()
             .map(|d| d.to_string())
             .unwrap_or_default();
@@ -2368,7 +2368,7 @@ fn run_scan(
     // above) — lets the Java-side Anti-FN cache match a repackaged/renamed
     // variant of a previously-caught top-level (non-archive) malicious file,
     // not just nested zip entries (which already had entry-level TLSH).
-    let file_tlsh = tlsh_rs::hash_bytes(bytes)
+    let file_tlsh = tlsh_rs::hash_bytes(&mmap)
         .ok()
         .map(|d| d.to_string())
         .unwrap_or_default();
