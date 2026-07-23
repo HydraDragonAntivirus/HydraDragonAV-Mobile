@@ -656,16 +656,7 @@ public class ScanFragment extends Fragment {
                 long secs = result.getScanDurationMs() / 1000;
                 long millis = result.getScanDurationMs() % 1000;
                 String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
-                java.util.List<ThreatResult> allThreats = result.getThreats();
-                foundThreats.clear();
-                hiddenThreatCount = 0;
-                int totalThreats = allThreats.size();
-                if (totalThreats <= MAX_DISPLAYED_THREATS) {
-                    foundThreats.addAll(allThreats);
-                } else {
-                    foundThreats.addAll(allThreats.subList(0, MAX_DISPLAYED_THREATS));
-                    hiddenThreatCount = totalThreats - MAX_DISPLAYED_THREATS;
-                }
+                int totalThreats = result.getThreats().size();
                 isScanning = false;
                 if (getActivity() != null) {
                     getActivity().getSharedPreferences("hydra_prefs", 0)
