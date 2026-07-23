@@ -828,6 +828,7 @@ public class ScanEngine {
             } catch (Exception e) { }
 
             logEngineTimings();
+            NativeScanner.scanAndRespond(context);
             long elapsedMs = android.os.SystemClock.elapsedRealtime() - scanStartMs;
             int scannedTotal = total + filesScannedCount.get() + threats.size();
             if (!isBackgroundScan && callback != null)
