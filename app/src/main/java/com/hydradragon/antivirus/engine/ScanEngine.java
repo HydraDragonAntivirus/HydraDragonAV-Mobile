@@ -695,8 +695,6 @@ public class ScanEngine {
     private final java.util.concurrent.atomic.AtomicBoolean scanRunning =
         new java.util.concurrent.atomic.AtomicBoolean(false);
 
-    public boolean isScanRunning() { return scanRunning.get(); }
-
     /** Check whether the default home/launcher has changed since the last scan.
      *  If so, emit a {@code LAUNCHER_CHANGE} behavioral signal so the
      *  YARA-X hydradragon launcher_change rule can fire. */

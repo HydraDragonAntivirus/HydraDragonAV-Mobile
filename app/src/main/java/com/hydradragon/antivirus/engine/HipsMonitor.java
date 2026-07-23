@@ -154,10 +154,12 @@ public final class HipsMonitor {
         java.util.List<android.content.ComponentName> admins = dpm.getActiveAdmins();
         if (admins == null) return arr;
         for (android.content.ComponentName cn : admins) {
-            JSONObject o = new JSONObject();
-            o.put("package_name", cn.getPackageName());
-            o.put("value", true);
-            arr.put(o);
+            try {
+                JSONObject o = new JSONObject();
+                o.put("package_name", cn.getPackageName());
+                o.put("value", true);
+                arr.put(o);
+            } catch (Exception ignored) {}
         }
         return arr;
     }
