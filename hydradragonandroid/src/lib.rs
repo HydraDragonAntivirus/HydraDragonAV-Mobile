@@ -1745,6 +1745,13 @@ fn run_scan(
     };
     // If the top-level file is hash-whitelisted, skip extraction entirely.
     let whitelisted = engine.whitelist.as_ref().is_some_and(|wl| wl.contains(&file_hash));
+    // TLSH of the whole top-level file — computed early while `mmap` is still
+    // available (before collect_buffers consumes it). Used in the skip_heavy
+    // early-return and in the final result JSON.
+    let file_tlsh = tlsh_rs::hash_bytes(&mmap)
+        .ok()
+        .map(|d| d.to_string())
+        .unwrap_or_default();
     if whitelisted {
         android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
     }
@@ -1948,10 +1955,6 @@ fn run_scan(
             format!(r#"{{"name":"{}","object_path":"{}","hashes":[{}]}}"#,
                 json_escape(n), json_escape(op), hs.join(","))
         }).collect();
-        let file_tlsh = tlsh_rs::hash_bytes(&mmap)
-            .ok()
-            .map(|d| d.to_string())
-            .unwrap_or_default();
         let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
         let pkgs: Vec<String> = packages.iter().map(|p| format!("\"{}\"", json_escape(p))).collect();
         let hs: Vec<String> = hashes.iter().map(|h| format!("\"{}\"", h)).collect();
@@ -2364,14 +2367,8 @@ fn run_scan(
         format!("{{{}}}", entry_tlsh_pairs.join(","))
     };
 
-    // TLSH of the whole top-level file (its "main hash", mirrors `file_hash`
-    // above) — lets the Java-side Anti-FN cache match a repackaged/renamed
-    // variant of a previously-caught top-level (non-archive) malicious file,
-    // not just nested zip entries (which already had entry-level TLSH).
-    let file_tlsh = tlsh_rs::hash_bytes(&mmap)
-        .ok()
-        .map(|d| d.to_string())
-        .unwrap_or_default();
+    // TLSH of the whole top-level file reflects `file_tlsh` computed early
+    // (before collect_buffers consumed mmap).
     let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
 
     let err_json = match err {
