@@ -666,7 +666,7 @@ fn run_ml_on_buffers(
                 } else {
                     match &b.entry_name {
                         Some(entry) => format!("{path}!/{entry}"),
-                        None => format!("{path}!/_entry{i}"),
+                        None => format!("{path} (unnamed_{i})"),
                     }
                 };
                 lineages.push((obj_path, b.apk_lineage.clone()));
@@ -1948,7 +1948,7 @@ fn run_scan(
                     } else {
                         match &b.entry_name {
                             Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path}!/_entry{i}"),
+                            None => format!("{path} (unnamed_{i})"),
                         }
                     };
                     // Buffer data — only hydradragon meta for DEX buffers
@@ -2002,7 +2002,7 @@ fn run_scan(
         } else {
             match &b.entry_name {
                 Some(entry) => format!("{path}!/{entry}"),
-                None => format!("{path}!/_entry{i}"),
+                None => format!("{path} (unnamed_{i})"),
             }
         };
         let mut seen_apis = std::collections::HashSet::new();
@@ -2077,7 +2077,7 @@ fn run_scan(
                     } else {
                         match &b.entry_name {
                             Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path}!/_entry{i}"),
+                            None => format!("{path} (unnamed_{i})"),
                         }
                     };
                     detections.push((format!("DEX/{:?}: {}", f.severity, f.message), obj_path, b.apk_lineage.clone()));
@@ -2106,7 +2106,7 @@ fn run_scan(
                     } else {
                         match &b.entry_name {
                             Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path}!/_entry{i}"),
+                            None => format!("{path} (unnamed_{i})"),
                         }
                     };
                     detections.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
@@ -3601,9 +3601,14 @@ fn collect_buffers(
                                         let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
                                         outstanding.fetch_add(children.len(), AtomOrdering::AcqRel);
                                         for entry in children {
+                                            let child_name = if entry.name.is_empty() {
+                                                format!("unnamed_{}", entry.file_pos)
+                                            } else {
+                                                entry.name.clone()
+                                            };
                                             let entry_name = Some(match &item.entry_name {
-                                                Some(parent) => format!("{parent}!/{}", entry.name),
-                                                None => entry.name,
+                                                Some(parent) => format!("{parent}!/{}", child_name),
+                                                None => child_name,
                                             });
                                             g.push(WorkItem {
                                                 buf: entry.data,
@@ -3623,7 +3628,7 @@ fn collect_buffers(
                                     } else {
                                         match &item.entry_name {
                                             Some(entry) => format!("{path}!/{entry}"),
-                                            None => format!("{}!/_entry{}", path, idx),
+                                            None => format!("{} (unnamed_{})", path, idx),
                                         }
                                     };
                                     android_log(&format!(
@@ -3652,7 +3657,7 @@ fn collect_buffers(
                                 } else {
                                     match &item.entry_name {
                                         Some(entry) => format!("{path}!/{entry}"),
-                                        None => format!("{}!/_entry{}", path, idx),
+                                        None => format!("{} (unnamed_{})", path, idx),
                                     }
                                 };
                                 match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
