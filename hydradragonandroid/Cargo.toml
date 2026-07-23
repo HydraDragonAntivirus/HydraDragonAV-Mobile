@@ -41,6 +41,7 @@ serde_json = "1.0"
 # loading at cold start doesn't starve the UI thread of CPU.
 libc = "0.2"
 base64 = "0.22"
+memmap2 = "0.9.11"
 
 [profile.release]
 opt-level = "z"

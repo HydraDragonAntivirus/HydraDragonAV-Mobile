@@ -22,6 +22,7 @@ use hydradragonclamav::{Engine as ClamavEngine, is_text_like, ScanOptions};
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 use base64::Engine as Base64Engine;
+use memmap2::Mmap;
 
 mod asset_reader;
 mod dex_scan;
@@ -1521,15 +1522,19 @@ fn scan_apk(
     };
 
     let scanned = on_big_stack(move || {
-        let bytes = match std::fs::read(&path) {
-            Ok(b) => b,
+        let file = match std::fs::File::open(&path) {
+            Ok(f) => f,
+            Err(e) => return format!(r#"{{"error":"{}"}}"#, json_escape(&e.to_string())),
+        };
+        let mmap = match unsafe { Mmap::map(&file) } {
+            Ok(m) => m,
             Err(e) => return format!(r#"{{"error":"{}"}}"#, json_escape(&e.to_string())),
         };
         let guard = match engine_lock.read() {
             Ok(g) => g,
             Err(_) => return r#"{"error":"engine lock poisoned"}"#.to_string(),
         };
-        run_scan(&guard, &bytes, &path, hydradragon.as_deref(), file_md5.as_deref(), zero_trust)
+        run_scan(&guard, mmap, &path, hydradragon.as_deref(), file_md5.as_deref(), zero_trust)
     });
     match scanned {
         Ok(s) => s,
@@ -1687,9 +1692,37 @@ fn extract_decode_base64_urls(data: &[u8], scanner: &url_scan::UrlScanner) -> Ve
 }
 
 
+/// Holds either a memory-mapped file or an owned decompressed buffer.
+enum OwnedBuf {
+    Mmap(Mmap),
+    Vec(Vec<u8>),
+}
+
+impl std::ops::Deref for OwnedBuf {
+    type Target = [u8];
+    fn deref(&self) -> &[u8] {
+        match self {
+            OwnedBuf::Mmap(m) => m,
+            OwnedBuf::Vec(v) => v,
+        }
+    }
+}
+
+impl From<Vec<u8>> for OwnedBuf {
+    fn from(v: Vec<u8>) -> Self {
+        OwnedBuf::Vec(v)
+    }
+}
+
+impl From<Mmap> for OwnedBuf {
+    fn from(m: Mmap) -> Self {
+        OwnedBuf::Mmap(m)
+    }
+}
+
 fn run_scan(
     engine: &Engine,
-    bytes: &[u8],
+    mmap: Mmap,
     path: &str,
     hydradragon: Option<&[u8]>,
     file_md5: Option<&str>,
@@ -1718,7 +1751,7 @@ fn run_scan(
     // extraction when the file is whitelisted.
     let file_hash = match file_md5 {
         Some(md5) => md5.to_string(),
-        None => md5_hex(bytes),
+        None => md5_hex(&mmap[..]),
     };
     // If the top-level file is hash-whitelisted, skip extraction entirely.
     let whitelisted = engine.whitelist.as_ref().is_some_and(|wl| wl.contains(&file_hash));
@@ -1729,7 +1762,7 @@ fn run_scan(
     let (buffers, bomb_dets, mut streaming_dets, streaming_timing) = if whitelisted {
         (Vec::new(), Vec::new(), Vec::new(), hydradragonclamav::scanner::TimingBreakdown::default())
     } else {
-        collect_buffers(bytes, file_md5, path, engine.clamav.as_ref())
+        collect_buffers(mmap, file_md5, path, engine.clamav.as_ref())
     };
     let extract_ms = t_extract.elapsed().as_millis();
 
@@ -3525,7 +3558,7 @@ fn collect_packages(buffers: &[Buf]) -> Vec<String> {
 /// from it, while a non-APK file sitting alongside a whitelisted APK (empty or
 /// non-whitelisted lineage) is still flagged.
 struct Buf {
-    data: Vec<u8>,
+    data: OwnedBuf,
     apk_lineage: Vec<String>,
     /// In-archive path of this buffer relative to its immediate parent
     /// archive (e.g. `lib/arm64-v8a/libfoo.so`), or `None` for the top-level
@@ -3553,7 +3586,7 @@ struct Buf {
 ///
 /// When `clamav` is `None`, streaming scan is skipped (returns empty detections).
 fn collect_buffers(
-    data: &[u8],
+    data: Mmap,
     top_md5: Option<&str>,
     path: &str,
     clamav: Option<&ClamavEngine>,
@@ -3568,7 +3601,7 @@ fn collect_buffers(
 
     /// One unit of pending work: a buffer that still needs extracting+scanning.
     struct WorkItem {
-        buf: Vec<u8>,
+        buf: OwnedBuf,
         depth: usize,
         lineage: Vec<String>,
         /// In-archive path within its immediate parent, `None` for the seed
@@ -3583,7 +3616,7 @@ fn collect_buffers(
     }
 
     let stack: Mutex<Vec<WorkItem>> = Mutex::new(vec![WorkItem {
-        buf: data.to_vec(),
+        buf: OwnedBuf::Mmap(data),
         depth: 0,
         lineage: Vec::new(),
         entry_name: None,
@@ -3695,7 +3728,7 @@ fn collect_buffers(
                                                 None => child_name,
                                             });
                                             g.push(WorkItem {
-                                                buf: entry.data,
+                                                buf: OwnedBuf::Vec(entry.data),
                                                 depth: item.depth + 1,
                                                 lineage: lineage.clone(),
                                                 entry_name,
@@ -3786,7 +3819,7 @@ fn collect_buffers(
                         if relevant {
                             if let Ok(mut og) = out.lock() {
                                 og.push(Buf {
-                                    data: item.buf,
+                                    data: item.buf, // OwnedBuf — no copy
                                     apk_lineage: lineage,
                                     entry_name: item.entry_name,
                                 });
