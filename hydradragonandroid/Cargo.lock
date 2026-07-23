@@ -1318,7 +1318,6 @@ dependencies = [
  "libc",
  "md-5 0.11.0",
  "memchr",
- "memmap2",
  "rusqlite",
  "serde_json",
  "tlsh-rs",
