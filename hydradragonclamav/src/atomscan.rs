@@ -9,12 +9,13 @@ use crate::atomfilter::{AtomFilterDb, SlotId, SubsigSlot};
 use crate::atomfilter::{ExtSlot, SlotDef};
 
 /// Per-slot hit counts (and last-seen match start offset) for one buffer.
-pub struct SlotCounts {
-    counts: Vec<u32>,
-    last_offset: Vec<u32>,
+/// Borrows from the scanner's pre-allocated vectors to avoid per-call allocation.
+pub struct SlotCounts<'a> {
+    counts: &'a [u32],
+    last_offset: &'a [u32],
 }
 
-impl SlotCounts {
+impl SlotCounts<'_> {
     pub fn get(&self, slot: SlotId) -> u32 {
         self.counts[slot as usize]
     }
@@ -30,6 +31,11 @@ pub struct AtomFilterScanner<'a> {
     lowered_buf: Vec<u8>,
     value_remaining: Vec<u32>,
     saturated: Vec<u64>,
+    /// Pre-allocated per-slot count vector (reused across scan() calls).
+    /// Kept alive in the struct; scan() returns a borrowing SlotCounts.
+    counts: Vec<u32>,
+    /// Pre-allocated per-slot last-offset vector.
+    last_offset: Vec<u32>,
 }
 
 #[derive(Default)]
@@ -58,6 +64,8 @@ impl<'a> AtomFilterScanner<'a> {
             lowered_buf: Vec::new(),
             value_remaining,
             saturated: vec![0u64; (n_slots + 63) / 64],
+            counts: vec![0u32; n_slots],
+            last_offset: vec![u32::MAX; n_slots],
         }
     }
 
@@ -137,14 +145,22 @@ impl<'a> AtomFilterScanner<'a> {
         out_stats.inner_loop_us = inner_us;
     }
 
-    pub fn scan(&mut self, data: &[u8], file_type_target: u32) -> SlotCounts {
+    pub fn scan(&mut self, data: &[u8], file_type_target: u32) -> SlotCounts<'_> {
         let n_slots = self.db.slots.len();
-        let mut counts = SlotCounts {
-            counts: vec![0u32; n_slots],
-            last_offset: vec![u32::MAX; n_slots],
-        };
+
+        // Ensure pre-allocated vectors are the right size.
+        if self.counts.len() != n_slots {
+            self.counts.resize(n_slots, 0);
+            self.last_offset.resize(n_slots, u32::MAX);
+        }
 
         // Reset per-scanner state.
+        for (i, c) in self.counts.iter_mut().enumerate() {
+            *c = 0;
+        }
+        for (i, o) in self.last_offset.iter_mut().enumerate() {
+            *o = u32::MAX;
+        }
         for w in &mut self.saturated {
             *w = 0;
         }
@@ -168,8 +184,8 @@ impl<'a> AtomFilterScanner<'a> {
                 &mut self.value_remaining,
                 data,
                 file_type_target,
-                &mut counts.counts,
-                &mut counts.last_offset,
+                &mut self.counts,
+                &mut self.last_offset,
                 "exact",
                 &mut exact_stats,
             );
@@ -196,8 +212,8 @@ impl<'a> AtomFilterScanner<'a> {
                 &mut self.value_remaining,
                 &lowered[..data.len()],
                 file_type_target,
-                &mut counts.counts,
-                &mut counts.last_offset,
+                &mut self.counts,
+                &mut self.last_offset,
                 "nocase",
                 &mut nocase_stats,
             );
@@ -241,7 +257,7 @@ impl<'a> AtomFilterScanner<'a> {
                 data.len() / 1024, exact_info, nocase_info);
         }
 
-        counts
+        SlotCounts { counts: &self.counts, last_offset: &self.last_offset }
     }
 }
 
