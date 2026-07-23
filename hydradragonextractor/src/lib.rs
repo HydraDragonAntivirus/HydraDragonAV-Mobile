@@ -24,6 +24,16 @@ pub struct ExtractResult {
     pub output_dir: PathBuf,
 }
 
+#[derive(Debug, Clone)]
+pub struct ExtractedEntry {
+    pub name: String,
+    pub data: Vec<u8>,
+    /// Real (uncompressed) size of this entry.
+    pub size_real: u64,
+    /// Byte offset of this entry's data within the archive.
+    pub file_pos: u64,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum ExtractError {
     #[error("I/O error: {0}")]
@@ -108,7 +118,7 @@ pub fn extract_archive(path: &Path, output_dir: &Path) -> Result<ExtractResult> 
 /// Extract every entry of an archive into memory, paired with its in-archive
 /// name/path (e.g. `lib/arm64-v8a/libfoo.so`) so callers can report detections
 /// against the real member instead of an opaque index.
-pub fn extract_archive_from_bytes(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
+pub fn extract_archive_from_bytes(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     if is_rar(data) {
         return rar::extract_from_bytes(data);
     }
@@ -323,7 +333,7 @@ fn extract_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // Internal: in-memory extraction
 // ---------------------------------------------------------------------------
 
-fn extract_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
+fn extract_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let fmt = ArchiveFormat::from_magic(data);
     match fmt {
         ArchiveFormat::Zip => zip_to_memory(data),
@@ -444,12 +454,17 @@ fn gzip_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
     }
 }
 
-fn gzip_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
+fn gzip_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let d = decompress_gzip(data)?;
     if is_tar(&d) {
         tar_to_memory(&d)
     } else {
-        Ok(vec![("decompressed".to_string(), d)])
+        Ok(vec![ExtractedEntry {
+            name: "decompressed".to_string(),
+            size_real: d.len() as u64,
+            file_pos: 0,
+            data: d,
+        }])
     }
 }
 
@@ -464,12 +479,17 @@ fn xz_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
     }
 }
 
-fn xz_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
+fn xz_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let d = decompress_xz(data)?;
     if is_tar(&d) {
         tar_to_memory(&d)
     } else {
-        Ok(vec![("decompressed".to_string(), d)])
+        Ok(vec![ExtractedEntry {
+            name: "decompressed".to_string(),
+            size_real: d.len() as u64,
+            file_pos: 0,
+            data: d,
+        }])
     }
 }
 
@@ -484,12 +504,17 @@ fn bzip2_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
     }
 }
 
-fn bzip2_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
+fn bzip2_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let d = decompress_bzip2(data)?;
     if is_tar(&d) {
         tar_to_memory(&d)
     } else {
-        Ok(vec![("decompressed".to_string(), d)])
+        Ok(vec![ExtractedEntry {
+            name: "decompressed".to_string(),
+            size_real: d.len() as u64,
+            file_pos: 0,
+            data: d,
+        }])
     }
 }
 
@@ -507,13 +532,13 @@ fn bzip2_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
 /// decompressed into memory before the caller's outer buffer cap ever runs.
 pub(crate) const MAX_ARCHIVE_ENTRIES: usize = 4096;
 
-fn zip_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
+fn zip_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
-    let names: Vec<String> = zip
+    let names: Vec<(String, u64, u64)> = zip
         .entries()
         .iter()
         .filter(|e| !e.name.ends_with('/'))
-        .map(|e| e.name.clone())
+        .map(|e| (e.name.clone(), e.size, e.offset))
         .take(MAX_ARCHIVE_ENTRIES)
         .collect();
     if names.is_empty() {
@@ -526,24 +551,29 @@ fn zip_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
         .unwrap_or(2);
     let chunk_size = (names.len() + n_threads - 1) / n_threads;
 
-    let (tx, rx) = std::sync::mpsc::channel::<Vec<(String, Vec<u8>)>>();
+    let (tx, rx) = std::sync::mpsc::channel::<Vec<ExtractedEntry>>();
     let bomb_found = std::sync::atomic::AtomicBool::new(false);
     let bomb_found_ref = &bomb_found;
     std::thread::scope(|s| {
         for chunk in names.chunks(chunk_size) {
-            let chunk: Vec<String> = chunk.to_vec();
+            let chunk: Vec<(String, u64, u64)> = chunk.to_vec();
             let tx = tx.clone();
             s.spawn(move || {
                 let mut local = Vec::with_capacity(chunk.len());
                 if let Ok(mut z) = ZipReader::new(Cursor::new(data)).map_err(map_err) {
-                    for name in &chunk {
+                    for (name, size_real, file_pos) in &chunk {
                         if let Some(entry) = z.entry_by_name(name) {
                             let cloned = entry.clone();
                             if let Ok(content) = z.extract(&cloned).map_err(map_err) {
                                 if is_decompression_bomb(cloned.compressed_size as usize, content.len()) {
                                     bomb_found_ref.store(true, std::sync::atomic::Ordering::Relaxed);
                                 } else {
-                                    local.push((name.clone(), content));
+                                    local.push(ExtractedEntry {
+                                        name: name.clone(),
+                                        size_real: *size_real,
+                                        file_pos: *file_pos,
+                                        data: content,
+                                    });
                                 }
                             }
                         }
@@ -602,20 +632,25 @@ fn zip_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // TAR
 // ---------------------------------------------------------------------------
 
-fn tar_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
+fn tar_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let mut tar = TarReader::new(Cursor::new(data)).map_err(map_err)?;
     let mut out = Vec::new();
-    let names: Vec<_> = tar
+    let entries: Vec<_> = tar
         .entries()
         .iter()
         .filter(|e| !e.name.ends_with('/'))
-        .map(|e| e.name.clone())
+        .map(|e| (e.name.clone(), e.size, e.offset))
         .take(MAX_ARCHIVE_ENTRIES)
         .collect();
-    for name in names {
+    for (name, size_real, file_pos) in entries {
         let content = tar.extract_by_name(&name).map_err(map_err)?;
         if let Some(d) = content {
-            out.push((name, d));
+            out.push(ExtractedEntry {
+                name,
+                size_real,
+                file_pos,
+                data: d,
+            });
         }
     }
     Ok(out)
@@ -661,7 +696,7 @@ fn tar_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // 7z
 // ---------------------------------------------------------------------------
 
-fn sz_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
+fn sz_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let mut sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
     let entries = sz.entries();
     let count = entries.len().min(MAX_ARCHIVE_ENTRIES);
@@ -671,12 +706,19 @@ fn sz_to_memory(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>> {
             continue;
         }
         let name = entries[i].name.clone();
+        let size_real = entries[i].size;
+        let file_pos = entries[i].offset;
         let content = sz.extract(i).map_err(map_err)?;
         if is_decompression_bomb(data.len(), content.len()) {
             return Err(ExtractError::DecompressionBomb { format: "7z" });
         }
         if !content.is_empty() {
-            out.push((name, content));
+            out.push(ExtractedEntry {
+                name,
+                size_real,
+                file_pos,
+                data: content,
+            });
         }
     }
     Ok(out)

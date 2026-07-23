@@ -3578,19 +3578,19 @@ fn collect_buffers(
                                     if !children.is_empty() {
                                         let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
                                         outstanding.fetch_add(children.len(), AtomOrdering::AcqRel);
-                                        for (child_name, child) in children {
+                                        for entry in children {
                                             let entry_name = Some(match &item.entry_name {
-                                                Some(parent) => format!("{parent}!/{child_name}"),
-                                                None => child_name,
+                                                Some(parent) => format!("{parent}!/{}", entry.name),
+                                                None => entry.name,
                                             });
                                             g.push(WorkItem {
-                                                buf: child,
+                                                buf: entry.data,
                                                 depth: item.depth + 1,
                                                 lineage: lineage.clone(),
                                                 entry_name,
                                                 container_type: fmt,
-                                                container_size_real: None,
-                                                container_file_pos: None,
+                                                container_size_real: Some(entry.size_real),
+                                                container_file_pos: Some(entry.file_pos),
                                             });
                                         }
                                     }
