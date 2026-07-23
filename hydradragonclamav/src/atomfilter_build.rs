@@ -195,7 +195,7 @@ impl AtomFilterBuilder {
         // Build the Shift-OR prefilter before reg is consumed by build_automaton.
         let all_atoms: Vec<Vec<u8>> = reg.exact.iter().chain(&reg.nocase)
             .map(|(bytes, _)| bytes.clone()).collect();
-        let prefilter = daachorse::ClamavPrefilter::from_patterns(&all_atoms);
+        let prefilter = daachorse::ClamavMultilevelPrefilter::from_patterns(&all_atoms);
 
         // Build exact automaton (values start at 0).
         let (exact, exact_atom_to_slots, exact_lens) = build_automaton(reg.exact, 0);

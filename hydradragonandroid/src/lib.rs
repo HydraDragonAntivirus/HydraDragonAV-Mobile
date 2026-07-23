@@ -1650,43 +1650,33 @@ fn is_b64_char(c: u8) -> bool {
 /// Skips binary buffers (non-text) since base64-encoded URLs only appear in
 /// text contexts.
 fn extract_decode_base64_urls(data: &[u8], scanner: &url_scan::UrlScanner) -> Vec<String> {
-    // Skip clearly binary data — base64-encoded URLs are text-only artifacts.
     if !is_text_like(data) { return Vec::new(); }
     let mut out = Vec::new();
-    let mut start = 0;
-    while start + 8 <= data.len() {
-        // Check if current position starts with any known prefix
-        let matched = B64_URL_PREFIXES.iter().any(|p| data[start..].starts_with(p));
-        if !matched {
-            start += 1;
+    let n = data.len();
+    // All prefixes start with byte b'a'.
+    let mut offset = 0;
+    while let Some(hit) = memchr::memchr(b'a', &data[offset..]) {
+        let pos = offset + hit;
+        if pos + 8 > n { break; }
+        if !B64_URL_PREFIXES.iter().any(|p| data[pos..].starts_with(p)) {
+            offset = pos + 1;
             continue;
         }
-        // Found a prefix — extract the full contiguous base64 string
-        let begin = start;
-        let mut end = start + 8;
-        while end < data.len() && is_b64_char(data[end]) {
-            end += 1;
-        }
-        // Include up to 2 trailing '=' padding chars
-        while end < data.len() && data[end] == b'=' && end - begin < 100 {
-            end += 1;
-        }
-        let b64_slice = &data[begin..end];
-        // Try to decode
-        if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(b64_slice) {
-                if let Ok(s) = String::from_utf8(decoded) {
-                    let s = s.trim();
-                    if s.starts_with("http://") || s.starts_with("https://") {
-                        if let Some(cat) = scanner.scan_url_only(s) {
+        let mut end = pos + 8;
+        while end < n && is_b64_char(data[end]) { end += 1; }
+        while end < n && data[end] == b'=' && end - pos < 100 { end += 1; }
+        if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&data[pos..end]) {
+            if let Ok(s) = String::from_utf8(decoded) {
+                let s = s.trim();
+                if s.starts_with("http://") || s.starts_with("https://") {
+                    if let Some(cat) = scanner.scan_url_only(s) {
                         out.push(format!("URL.{cat}: {s}"));
-                        if out.len() >= 16 {
-                            return out;
-                        }
+                        if out.len() >= 16 { return out; }
                     }
                 }
             }
         }
-        start = end;
+        offset = end;
     }
     out
 }
@@ -3096,26 +3086,22 @@ fn collect_urls(buffers: &[Buf]) -> Vec<String> {
     for b in buffers {
         let data = &b.data;
         if skip_by_size(data) { continue; }
-        // Skip buffers that look binary (images, compiled resources, native
-        // libs) — URLs are ASCII text and won't appear in high-entropy binary
-        // data.  This avoids a byte-by-byte walk through every binary buffer.
         if !is_text_like(data) { continue; }
         let n = data.len();
-        let mut i = 0;
-        while i + 7 < n {
+        // memchr: skip to each 'h' position (much faster than byte-by-byte).
+        let mut pos = 0;
+        while let Some(hpos) = memchr::memchr(b'h', &data[pos..]) {
+            let i = pos + hpos;
+            if i + 7 >= n { break; }
             let is_http = &data[i..i + 7] == b"http://";
             let is_https = i + 8 < n && &data[i..i + 8] == b"https://";
             if is_http || is_https {
                 let start = i;
                 let mut j = i;
-                // URL chars until whitespace, quote, or control byte.
                 while j < n {
                     let c = data[j];
                     if c <= 0x20 || c == b'"' || c == b'\'' || c == b'<' || c == b'>'
-                        || c == b'\\' || c == 0x7f || c >= 0x80
-                    {
-                        break;
-                    }
+                        || c == b'\\' || c == 0x7f || c >= 0x80 { break; }
                     j += 1;
                 }
                 if j - start >= 10 && j - start <= 2048 {
@@ -3123,15 +3109,15 @@ fn collect_urls(buffers: &[Buf]) -> Vec<String> {
                         let s = s.to_string();
                         if seen.insert(s.clone()) {
                             out.push(s);
-                            if out.len() >= 4096 {
-                                return out;
-                            }
+                            if out.len() >= 4096 { return out; }
                         }
                     }
                 }
-                i = j;
+                pos = j - hpos; // advance past the URL
+                // If pos didn't advance (empty URL), force +1
+                if pos <= hpos + 1 { pos = hpos + 1; }
             } else {
-                i += 1;
+                pos = hpos + 1;
             }
         }
     }

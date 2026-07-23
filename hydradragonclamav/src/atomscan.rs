@@ -168,73 +168,54 @@ impl<'a> AtomFilterScanner<'a> {
             self.value_remaining[vi] = slots.len() as u32;
         }
 
-        // ── Shift-OR prefilter ────────────────────────────────────────────
-        // If the prefilter says no pattern can match, skip both dense passes.
-        let Some(start) = self.db.prefilter.search(data) else {
-            return SlotCounts { counts: &self.counts, last_offset: &self.last_offset };
-        };
-        if start >= data.len() {
-            return SlotCounts { counts: &self.counts, last_offset: &self.last_offset };
-        }
-        let window = &data[start..];
-
         let mut exact_stats = AutomatonStats::default();
         let mut nocase_stats = AutomatonStats::default();
 
+        // ── Shift-OR prefilter (exact-only hint) ──────────────────────────
+        // The prefilter uses exact-case q-grams only (no lowering).  If it
+        // says "no", the exact automaton pass is skipped.  The nocase
+        // automaton always runs (it lowercases data independently).
+        let (exact_window, exact_offset) = match self.db.prefilter.search(data) {
+            Some(start) if start < data.len() => (&data[start..], start),
+            _ => (&data[0..0], 0), // empty window → exact pass effectively skipped
+        };
+
         // ── Exact automaton pass ──────────────────────────────────────────
         if let (Some(ref pma), Some(ref dense)) = (self.db.exact.as_ref(), Some(&self.db.exact_dense[..])) {
-            Self::run_dense_automaton(
-                pma,
-                dense,
-                &self.db.atom_to_slots,
-                &self.db.pattern_lens,
-                &self.db.slots,
-                &self.db.slot_to_values,
-                &mut self.saturated,
-                &mut self.value_remaining,
-                window,
-                file_type_target,
-                &mut self.counts,
-                &mut self.last_offset,
-                "exact",
-                &mut exact_stats,
-            );
+            if !exact_window.is_empty() {
+                Self::run_dense_automaton(
+                    pma, dense,
+                    &self.db.atom_to_slots, &self.db.pattern_lens,
+                    &self.db.slots, &self.db.slot_to_values,
+                    &mut self.saturated, &mut self.value_remaining,
+                    exact_window, file_type_target,
+                    &mut self.counts, &mut self.last_offset,
+                    "exact", &mut exact_stats,
+                );
+                // Adjust offsets since exact ran on a window slice.
+                if exact_offset > 0 {
+                    for o in self.last_offset.iter_mut() {
+                        if *o != u32::MAX { *o += exact_offset as u32; }
+                    }
+                }
+            }
         }
 
         // ── Nocase automaton pass ─────────────────────────────────────────
         if let (Some(ref pma), Some(ref dense)) = (self.db.nocase.as_ref(), Some(&self.db.nocase_dense[..])) {
-            // Separate lowered buffer to avoid &mut self conflict with saturated/value_remaining.
             let mut lowered = std::mem::take(&mut self.lowered_buf);
-            if window.len() > lowered.len() {
-                lowered.resize(window.len(), 0);
-            }
-            for (i, &b) in window.iter().enumerate() {
-                lowered[i] = b.to_ascii_lowercase();
-            }
+            if data.len() > lowered.len() { lowered.resize(data.len(), 0); }
+            for (i, &b) in data.iter().enumerate() { lowered[i] = b.to_ascii_lowercase(); }
             Self::run_dense_automaton(
-                pma,
-                dense,
-                &self.db.atom_to_slots,
-                &self.db.pattern_lens,
-                &self.db.slots,
-                &self.db.slot_to_values,
-                &mut self.saturated,
-                &mut self.value_remaining,
-                &lowered[..window.len()],
-                file_type_target,
-                &mut self.counts,
-                &mut self.last_offset,
-                "nocase",
-                &mut nocase_stats,
+                pma, dense,
+                &self.db.atom_to_slots, &self.db.pattern_lens,
+                &self.db.slots, &self.db.slot_to_values,
+                &mut self.saturated, &mut self.value_remaining,
+                &lowered[..data.len()], file_type_target,
+                &mut self.counts, &mut self.last_offset,
+                "nocase", &mut nocase_stats,
             );
             self.lowered_buf = lowered;
-        }
-
-        // Add `start` back to last_offsets since the automaton ran offset-relative.
-        for o in self.last_offset.iter_mut() {
-            if *o != u32::MAX {
-                *o += start as u32;
-            }
         }
 
         // Emit detailed timing when slow.
@@ -270,8 +251,8 @@ impl<'a> AtomFilterScanner<'a> {
             } else {
                 String::from("nocase(none)")
             };
-            eprintln!("[ATOMSCAN] {}KB {} {}  prefilter_start={}",
-                data.len() / 1024, exact_info, nocase_info, start);
+            eprintln!("[ATOMSCAN] {}KB {} {}  exact_window={}",
+                data.len() / 1024, exact_info, nocase_info, exact_window.len());
         }
 
         SlotCounts { counts: &self.counts, last_offset: &self.last_offset }

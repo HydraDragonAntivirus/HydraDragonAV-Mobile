@@ -10,7 +10,7 @@
 //!      When it does run, it starts from the filter's first-match offset
 //!      minus `MAX_ATOM_LEN`, not from byte 0.
 
-use daachorse::{ClamavPrefilter, DoubleArrayAhoCorasick};
+use daachorse::{ClamavMultilevelPrefilter, DoubleArrayAhoCorasick};
 
 /// Index into [`AtomFilterDb::slots`]. One "thing" (a whole extended
 /// signature, or one subsignature of a logical signature) with its own hit
@@ -75,10 +75,10 @@ pub struct AtomFilterDb {
     pub slots: Vec<SlotDef>,
     pub ext_slot: Vec<ExtSlot>,
     pub log_subsig_slots: Vec<Box<[SubsigSlot]>>,
-    /// Shift-OR bloom-filter pre-pass.  Run this before the dense automaton;
-    /// if `prefilter.search(data)` returns `None` the dense automaton can be
-    /// skipped entirely.
-    pub prefilter: ClamavPrefilter,
+    /// Multilevel Shift-OR bloom-filter pre-pass.  Run this before the dense
+    /// automaton; if `prefilter.search(data)` returns `None` the dense automaton
+    /// can be skipped entirely.
+    pub prefilter: ClamavMultilevelPrefilter,
 }
 
 impl std::fmt::Debug for AtomFilterDb {
@@ -108,7 +108,7 @@ impl AtomFilterDb {
             slots: Vec::new(),
             ext_slot: Vec::new(),
             log_subsig_slots: Vec::new(),
-            prefilter: ClamavPrefilter::empty(),
+            prefilter: ClamavMultilevelPrefilter::from_patterns(&[]),
         }
     }
 
