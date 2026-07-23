@@ -733,6 +733,71 @@ fn is_resource_path(name: &str) -> bool {
 /// AndroidManifest.xml, and text-like files (ASCII, UTF-8, scripts, EICAR test
 /// strings, etc.). Uses entry name when available, falls back to content check
 /// for renamed/misnamed files.
+/// Returns true when the buffer should receive the full ClamAV scanning pass
+/// (atom prefilter + extended + logical sigs + phishing heuristic).  The
+/// following formats are included:
+///
+///   * **Android-executable** — DEX, ODEX, VDEX, ELF (.so)
+///   * **Archives** — any format `hydradragonextractor::detect_format`
+///     recognises (zip, gz, tar, xz, lzma, 7z, rar, bz2, zst, lz4, br,
+///     snappy, cab, lzh, iso) — container sigs + archive-targeted ClamAV
+///     rules
+///   * **HTML/text** — phishing heuristic (`<a href>` spoof detection)
+///   * **Images** — steganographic payloads / hidden strings (PNG, JPEG, GIF,
+///     BMP, WebP, TIFF, ICO, HEIC, AVIF)
+///
+/// Truly Android-irrelevant desktop formats (PE, Mach-O, OLE2, SWF, etc.) and
+/// unknown binaries skip ClamAV — their signatures never match in practice and
+/// the atom-prefilter overhead on hundreds of APK resource entries is waste.
+fn is_executable_buffer(name: Option<&str>, data: &[u8]) -> bool {
+    // DEX/VDEX/ELF — Android's executable formats
+    if data.starts_with(b"dex\n") || data.starts_with(b"vdex") || data.starts_with(b"\x7fELF") {
+        return true;
+    }
+    // Known archive formats (15 supported by OxiArc via hydradragonextractor)
+    if hydradragonextractor::detect_format(data).is_some() {
+        return true;
+    }
+    match name {
+        Some(n) => {
+            let lower = n.to_ascii_lowercase();
+            if lower.ends_with(".dex") || lower.ends_with(".odex") || lower.ends_with(".vdex") || lower.ends_with(".so") {
+                return true;
+            }
+            // Image extensions
+            if lower.ends_with(".png") || lower.ends_with(".jpg") || lower.ends_with(".jpeg")
+                || lower.ends_with(".gif") || lower.ends_with(".bmp") || lower.ends_with(".webp")
+                || lower.ends_with(".tiff") || lower.ends_with(".tif")
+                || lower.ends_with(".ico") || lower.ends_with(".svg")
+                || lower.ends_with(".heic") || lower.ends_with(".heif")
+                || lower.ends_with(".avif")
+            {
+                return true;
+            }
+        }
+        None => {}
+    }
+    // HTML/text — phishing heuristic (<a href> spoof detection)
+    if is_text_like(data) {
+        return true;
+    }
+    // Image magic bytes — catches renamed/misnamed image files
+    data.len() > 4 && (
+        data.starts_with(&[0x89, 0x50, 0x4E, 0x47])              // PNG
+        || data.starts_with(&[0xFF, 0xD8, 0xFF])                 // JPEG
+        || data.starts_with(b"GIF8")                             // GIF
+        || data.starts_with(b"BM")                               // BMP
+        || (data.starts_with(b"RIFF") && data.len() > 12 && &data[8..12] == b"WEBP") // WebP
+        || data.starts_with(&[0x49, 0x49, 0x2A, 0x00])           // TIFF LE
+        || data.starts_with(&[0x4D, 0x4D, 0x00, 0x2A])           // TIFF BE
+        || data.starts_with(&[0x00, 0x00, 0x01, 0x00])           // ICO
+        || (data.len() > 12 && &data[4..8] == b"ftyp"            // HEIC / HEIF / AVIF
+            && (&data[8..12] == b"heic" || &data[8..12] == b"heif"
+                || &data[8..12] == b"avif" || &data[8..12] == b"mif1"
+                || &data[8..12] == b"msf1"))
+    )
+}
+
 fn is_relevant_buffer(name: Option<&str>, data: &[u8]) -> bool {
     if name.is_none() {
         return true;
@@ -1577,7 +1642,11 @@ fn is_b64_char(c: u8) -> bool {
 /// Scan a byte buffer for Base64-encoded URLs, decode them, and check each
 /// against the threat URL scanner. Returns detection strings like
 /// `"URL.PHISHING: http://..."` for any matches.
+/// Skips binary buffers (non-text) since base64-encoded URLs only appear in
+/// text contexts.
 fn extract_decode_base64_urls(data: &[u8], scanner: &url_scan::UrlScanner) -> Vec<String> {
+    // Skip clearly binary data — base64-encoded URLs are text-only artifacts.
+    if !is_text_like(data) { return Vec::new(); }
     let mut out = Vec::new();
     let mut start = 0;
     while start + 8 <= data.len() {
@@ -1679,6 +1748,10 @@ fn run_scan(
     let emulated: Vec<emulate::EmulationResult>;
     let emulated_strings: Vec<Option<Vec<u8>>>;
     let emulate_ms;
+    // Collect URLs once — used by both build_androguard_json (Phase 2) and
+    // the URL threat scan (Phase 3), avoiding a second full pass through
+    // every buffer's bytes.
+    let urls = collect_urls(&buffers);
     {
         // Dangerous-permission count from the (in-memory) manifest bytes.
         perm_count = max_dangerous_perms(&buffers);
@@ -1687,7 +1760,7 @@ fn run_scan(
         // MD5 of each APK/zip buffer for the hash-keyed whitelist.
         hashes = collect_apk_hashes(&buffers, file_md5);
         // androguard JSON report (manifest + URL sweep).
-        androguard_json = build_androguard_json(&buffers);
+        androguard_json = build_androguard_json(&buffers, &urls);
 
         // Per-buffer whitelist check.
         let mut apk_md5_to_pkg = std::collections::HashMap::new();
@@ -1943,6 +2016,13 @@ fn run_scan(
                     continue;
                 }
                 for (i, b) in buffers.iter().enumerate() {
+                    // Skip desktop formats and unknown binaries — same gate as
+                    // the streaming scan.  Only DEX/ELF/archives/text/images
+                    // get the module-dependent YARA rescan.
+                    let entry_name = b.entry_name.as_deref();
+                    if !is_executable_buffer(entry_name, &b.data) {
+                        continue;
+                    }
                     let base_path = if i == 0 {
                         path.to_string()
                     } else {
@@ -2042,8 +2122,8 @@ fn run_scan(
     // - URLs from emulation-decoded strings
     if let Some(scanner) = &engine.url_scanner {
         let mut url_limit = 0u32;
-        for raw_url in collect_urls(&buffers) {
-            if let Some(cat) = scanner.scan_url_only(&raw_url) {
+        for raw_url in &urls {
+            if let Some(cat) = scanner.scan_url_only(raw_url) {
                 detections.push((format!("URL.{cat}: {raw_url} (in {path})"), path.to_string(), Vec::new()));
                 url_limit += 1; if url_limit >= 16 { break; }
             }
@@ -2983,6 +3063,10 @@ fn collect_urls(buffers: &[Buf]) -> Vec<String> {
     for b in buffers {
         let data = &b.data;
         if skip_by_size(data) { continue; }
+        // Skip buffers that look binary (images, compiled resources, native
+        // libs) — URLs are ASCII text and won't appear in high-entropy binary
+        // data.  This avoids a byte-by-byte walk through every binary buffer.
+        if !is_text_like(data) { continue; }
         let n = data.len();
         let mut i = 0;
         while i + 7 < n {
@@ -3023,9 +3107,9 @@ fn collect_urls(buffers: &[Buf]) -> Vec<String> {
 
 /// Build the androguard JSON report for the scanned APK, or None if no binary
 /// AndroidManifest.xml is reachable in the buffers (not an APK).
-fn build_androguard_json(buffers: &[Buf]) -> Option<String> {
+/// `urls` is pre-collected (cached) so `collect_urls` doesn't run twice.
+fn build_androguard_json(buffers: &[Buf], urls: &[String]) -> Option<String> {
     let manifest = buffers.iter().find_map(|b| parse_manifest(&b.data))?;
-    let urls = collect_urls(buffers);
     let cert = extract_certificate(buffers);
 
     let arr = |items: &[String]| -> String {
@@ -3646,12 +3730,19 @@ fn collect_buffers(
                             || item.entry_name.is_none()
                             || is_relevant_buffer(item.entry_name.as_deref(), &item.buf);
 
-                        // Streaming ClamAV+YARA scan: run before item.buf is moved
-                        // into `out`.  Uses empty module_meta (androguard/hydradragon
-                        // not yet built); module-dependent YARA rules get a second
-                        // yara-only pass in Phase 3.
+                        // Streaming scan: run before item.buf is moved into `out`.
+                        // Uses empty module_meta (androguard/hydradragon not yet
+                        // built); module-dependent YARA rules get a second YARA-only
+                        // pass in Phase 3.
+                        //
+                        // Only known Android-relevant formats (DEX, ELF, archives,
+                        // text, images) get scanned here.  Desktop formats (PE,
+                        // Mach-O, OLE2, SWF, etc.) and unknown binaries are skipped
+                        // entirely — no ClamAV, no YARA.
                         if let Some(clamav_engine) = clamav {
-                            if relevant && !skip_by_size(&item.buf) {
+                            if relevant && !skip_by_size(&item.buf)
+                                && is_executable_buffer(item.entry_name.as_deref(), &item.buf)
+                            {
                                 let obj_path = if idx == 0 {
                                     path.to_string()
                                 } else {
