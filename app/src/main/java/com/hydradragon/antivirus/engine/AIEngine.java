@@ -52,7 +52,7 @@ public class AIEngine {
             }
         }
 
-        double probability = 1.0 / (1.0 + Math.exp(-sum));
+        double probability = activeFeatures == 0 ? 0.0 : 1.0 / (1.0 + Math.exp(-sum));
         int aiScore = (int) (probability * 100);
 
         Log.d(TAG, "AI Probability: " + probability + " (Features: " + activeFeatures + ")");

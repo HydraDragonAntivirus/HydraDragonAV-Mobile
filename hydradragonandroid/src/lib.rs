@@ -641,43 +641,31 @@ fn is_apk_zip(data: &[u8]) -> bool {
 /// Shared ML-scan loop: run the ONNX model on every APK buffer, collecting
 /// malicious lineages and tracking the highest confidence score. Used by both
 /// `run_scan` (callers wrap it in `catch_unwind`).
-fn run_ml_on_buffers(
+fn run_ml_on_mmap(
     model: &Model,
-    buffers: &[Buf],
+    data: &[u8],
     path: &str,
 ) -> (bool, f32, Vec<(String, Vec<String>)>) {
-    let mut malicious = false;
-    let mut best_confidence = 0.0_f32;
-    let mut lineages: Vec<(String, Vec<String>)> = Vec::new();
-    for (i, b) in buffers.iter().enumerate() {
-        if skip_by_size(&b.data) {
-            continue;
-        }
-        if hydradragonextractor::detect_format(&b.data) != Some("zip") {
-            continue;
-        }
-        if !is_apk_zip(&b.data) {
-            continue;
-        }
-        if let Some(r) = model.scan(&b.data) {
-            if r.malicious {
-                malicious = true;
-                let obj_path = if i == 0 {
-                    path.to_string()
-                } else {
-                    match &b.entry_name {
-                        Some(entry) => format!("{path}!/{entry}"),
-                        None => format!("{path} (unnamed_{i})"),
-                    }
-                };
-                lineages.push((obj_path, b.apk_lineage.clone()));
-            }
-            if r.confidence > best_confidence {
-                best_confidence = r.confidence;
-            }
-        }
+    if skip_by_size(data) {
+        return (false, 0.0, Vec::new());
     }
-    (malicious, best_confidence, lineages)
+    if hydradragonextractor::detect_format(data) != Some("zip") {
+        return (false, 0.0, Vec::new());
+    }
+    if !is_apk_zip(data) {
+        return (false, 0.0, Vec::new());
+    }
+    match model.scan(data) {
+        Some(r) => {
+            let lineages = if r.malicious {
+                vec![(path.to_string(), Vec::new())]
+            } else {
+                Vec::new()
+            };
+            (r.malicious, r.confidence, lineages)
+        }
+        None => (false, 0.0, Vec::new()),
+    }
 }
 
 /// Parse a TLSH database file (one T1 digest per line) into a Vec of digests.
@@ -1752,6 +1740,24 @@ fn run_scan(
         .ok()
         .map(|d| d.to_string())
         .unwrap_or_default();
+    // ML inference — run before collect_buffers while &mmap is still live,
+    // so the model scans the memory-mapped bytes directly (no Vec copy).
+    let t_ml = std::time::Instant::now();
+    let (ml_malicious, ml_probability, ml_lineages) = match &engine.model {
+        Some(model) => {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                run_ml_on_mmap(model, &mmap, path)
+            })) {
+                Ok(t) => t,
+                Err(_) => {
+                    let _ = err.get_or_insert_with(|| format!("ml: {}", last_panic()));
+                    (false, 0.0, Vec::new())
+                }
+            }
+        }
+        None => (false, 0.0, Vec::new()),
+    };
+    let ml_ms = t_ml.elapsed().as_millis();
     if whitelisted {
         android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
     }
@@ -1958,9 +1964,9 @@ fn run_scan(
         let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
         let pkgs: Vec<String> = packages.iter().map(|p| format!("\"{}\"", json_escape(p))).collect();
         let hs: Vec<String> = hashes.iter().map(|h| format!("\"{}\"", h)).collect();
-        let malicious = !bomb_dets.is_empty();
+        let malicious = !bomb_dets.is_empty() || ml_malicious;
         return format!(
-            r#"{{"malicious":{},"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
+            r#"{{"malicious":{},"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{}}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
             if malicious { "true" } else { "false" },
             bomb_dets_json.join(","),
             perm_count,
@@ -1968,6 +1974,8 @@ fn run_scan(
             hs.join(","),
             file_hash,
             file_tlsh_json,
+            if ml_malicious { "true" } else { "false" },
+            ml_probability,
         );
     }
 
@@ -1995,27 +2003,6 @@ fn run_scan(
         // streaming_timing — separating per-buffer timing would require
         // per-bucket accounting, and the data is diagnostic-only.
     }
-
-    // Phase 3: ML runs on all buffers. No per-buffer whitelist skipping —
-    // either every buffer was whitelisted (caught above) or none are.
-    let t_ml = std::time::Instant::now();
-    let (ml_malicious, ml_probability, ml_lineages) = match &engine.model {
-        Some(model) => {
-            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                run_ml_on_buffers(model, &buffers, path)
-            })) {
-                Ok(t) => t,
-                Err(_) => {
-                    if err.is_none() {
-                        err = Some(format!("ml: {}", last_panic()));
-                    }
-                    (false, 0.0, Vec::new())
-                }
-            }
-        }
-        None => (false, 0.0, Vec::new()),
-    };
-    let ml_ms = t_ml.elapsed().as_millis();
 
     let mut scan_timing = streaming_timing;
     let mut yara_dets = streaming_dets;
