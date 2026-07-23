@@ -1,5 +1,6 @@
 import "androguard"
 import "hydradragon"
+import "math"
 
 /*
     This Yara ruleset is under the GNU-GPLv2 license (http://www.gnu.org/licenses/gpl-2.0.html) and open to any user or organization, as    long as you use it under this license.
@@ -2426,10 +2427,34 @@ rule VikingBotnet
 rule hidden_icon_rootkit : android rootkit
 {
 	meta:
-		author = "HydraDragonAV"
+		author = "Emirhan Ucan"
 		description = "App has no launcher icon and requests suspicious permissions — stealth-rootkit pattern"
 		reference = "androguard.rootkit_behavior()"
 
 	condition:
+		androguard.rootkit_behavior() == 1
+}
+
+// ── high-entropy packed rootkit (APK scan) ───────────────────────────────────
+//
+// Combines three static signals that together strongly indicate a packed,
+// stealthy, device-admin-abusing payload:
+//   1. math.entropy(0, filesize) > 7.0  — APK is packed/encrypted
+//   2. androguard.device_admin_permission() == 1  — requests device admin
+//   3. androguard.rootkit_behavior() == 1  — no launcher icon + suspicious perms
+//
+// math.entropy is available because this rule runs in the APK scan path where
+// YARA-X scans the actual file bytes (not just HIPS metadata).
+
+rule packed_device_admin_rootkit : android rootkit trojan
+{
+	meta:
+		author = "Emirhan Ucan"
+		description = "High-entropy (packed) APK that requests device admin and hides its launcher icon — stealth-rootkit pattern"
+		reference = "math.entropy() + androguard.device_admin_permission() + androguard.rootkit_behavior()"
+
+	condition:
+		math.entropy(0, filesize) > 7.0 and
+		androguard.device_admin_permission() == 1 and
 		androguard.rootkit_behavior() == 1
 }

@@ -1,5 +1,6 @@
 import "hydradragon"
 import "androguard"
+import "math"
 
 // -- UI Spam ------------------------------------------------------------------
 
@@ -481,8 +482,8 @@ rule HIPS_Adware_Multiple_Ad_Network_Connections
 rule Android_Murder_Back_Look_Win : android adware
 {
   meta:
-    author      = "HydraDragonAV"
-    date        = "2025-07-19"
+    author      = "Emirhan Ucan"
+    date        = "2026-07-23"
     description = "Detects com.murder.back.look.win — aggressive adware that hijacks the Android home screen and displays ads despite claiming otherwise"
     reference   = "https://play.google.com/store/apps/details?id=com.murder.back.look.win"
     severity    = "critical"
@@ -495,8 +496,8 @@ rule Android_Murder_Back_Look_Win : android adware
 rule Android_Aggressive_Adware_Launcher_Hijack : android adware
 {
   meta:
-    author      = "HydraDragonAV"
-    date        = "2025-07-19"
+    author      = "Emirhan Ucan"
+    date        = "2026-07-23"
     description = "Detects APKs that register as an Android HOME screen launcher AND embed ad SDKs — aggressive adware that silently replaces the home screen to inject ads"
     severity    = "critical"
     category    = "adware"
@@ -533,8 +534,8 @@ rule Android_Aggressive_Adware_Launcher_Hijack : android adware
 rule Android_Launcher_Hijack_Hidden_Ads : android adware
 {
   meta:
-    author      = "HydraDragonAV"
-    date        = "2025-07-19"
+    author      = "Emirhan Ucan"
+    date        = "2026-07-23"
     description = "Detects APKs that register as a HOME/DEFAULT launcher and contain ad network domains or overlay-injection code — catches adware that falsely claims 'no ads'"
     severity    = "high"
     category    = "adware"
@@ -560,4 +561,19 @@ rule Android_Launcher_Hijack_Hidden_Ads : android adware
     androguard.package_name(/./) and
     $home and $default_cat and
     (2 of ($net_*) or 2 of ($inj_*))
+}
+
+// ── HIPS: high-entropy device-admin hidden rootkit (behavioral scan) ────────
+
+rule HIPS_Packed_DeviceAdmin_HiddenRootkit
+{
+  meta:
+    description = "Runtime-observed package with high entropy, active device admin, and hidden launcher icon — packed stealth-rootkit"
+    severity = "critical"
+    category = "MALWARE"
+    suggestion = "uninstall"
+  condition:
+    math.entropy(0, filesize) > 7.0 and
+    hydradragon.device_admin(/./) >= 1 and
+    hydradragon.hidden_app(/./) >= 1
 }

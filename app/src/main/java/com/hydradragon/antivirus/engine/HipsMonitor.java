@@ -35,7 +35,9 @@ import java.util.Map;
  *   "removal_resistance_events": [{"package_name":"...","kick_count":3,"screen_kind":"uninstall","time_window_seconds":300,"is_malicious":true}],
  *   "system": {"is_rooted":false,"is_debug_mode":false,"is_self_protection_triggered":false,"package_name":""},
  *   "behavior_flags": [{"package_name":"...","flags":["UI_SPAM","RANSOMWARE"]}],
- *   "behavior_state": {"foreground_package":"...","observed_packages":["..."]}
+ *   "behavior_state": {"foreground_package":"...","observed_packages":["..."]},
+ *   "device_admin_packages": [{"package_name":"...","value":true}],
+ *   "hidden_app_packages": [{"package_name":"...","value":true}]
  * }
  * }</pre>
  */
@@ -141,6 +143,42 @@ public final class HipsMonitor {
     private static final List<String> observedPackages = new ArrayList<>();
 
     private HipsMonitor() {}
+
+    private static JSONArray buildDeviceAdminJson(android.content.Context ctx) {
+        JSONArray arr = new JSONArray();
+        if (ctx == null) return arr;
+        android.app.admin.DevicePolicyManager dpm =
+            (android.app.admin.DevicePolicyManager)
+                ctx.getSystemService(Context.DEVICE_POLICY_SERVICE);
+        if (dpm == null) return arr;
+        java.util.List<android.content.ComponentName> admins = dpm.getActiveAdmins();
+        if (admins == null) return arr;
+        for (android.content.ComponentName cn : admins) {
+            JSONObject o = new JSONObject();
+            o.put("package_name", cn.getPackageName());
+            o.put("value", true);
+            arr.put(o);
+        }
+        return arr;
+    }
+
+    private static JSONArray buildHiddenAppJson(android.content.Context ctx) {
+        JSONArray arr = new JSONArray();
+        if (ctx == null) return arr;
+        android.content.pm.PackageManager pm = ctx.getPackageManager();
+        for (String pkg : observedPackages) {
+            try {
+                android.content.Intent launchIntent =
+                    pm.getLaunchIntentForPackage(pkg);
+                if (launchIntent != null) continue;
+                JSONObject o = new JSONObject();
+                o.put("package_name", pkg);
+                o.put("value", true);
+                arr.put(o);
+            } catch (Exception ignored) {}
+        }
+        return arr;
+    }
 
     public static synchronized void reportUiSpam(String pkg, int clicks, int windows, long windowMs, boolean malicious) {
         if (pkg == null) return;
@@ -278,7 +316,7 @@ public final class HipsMonitor {
      * Build the complete HIPS JSON report for the YARA-X hydradragon module.
      * Clears accumulated events after building (one-shot evaluation).
      */
-    public static synchronized String buildReportJson() {
+    public static synchronized String buildReportJson(android.content.Context ctx) {
         try {
             JSONObject root = new JSONObject();
 
@@ -439,6 +477,11 @@ public final class HipsMonitor {
             for (String p : observedPackages) obsArr.put(p);
             state.put("observed_packages", obsArr);
             root.put("behavior_state", state);
+
+            JSONArray daArr = buildDeviceAdminJson(ctx);
+            if (daArr.length() > 0) root.put("device_admin_packages", daArr);
+            JSONArray haArr = buildHiddenAppJson(ctx);
+            if (haArr.length() > 0) root.put("hidden_app_packages", haArr);
 
             return root.toString();
         } catch (Exception e) {

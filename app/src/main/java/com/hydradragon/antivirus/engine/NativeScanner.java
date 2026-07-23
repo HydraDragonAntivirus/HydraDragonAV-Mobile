@@ -230,11 +230,11 @@ public final class NativeScanner {
 
     /** Scan all behavioral HIPS metadata against the YARA-X hydradragon module
      *  HIPS rules. Returns the verdict including matched rules and suggestion. */
-    public static HipsResult scanHips() {
+    public static HipsResult scanHips(android.content.Context ctx) {
         HipsResult r = new HipsResult();
         if (!isReady()) return r;
         try {
-            String json = HipsMonitor.buildReportJson();
+            String json = HipsMonitor.buildReportJson(ctx);
             if (json == null || json.isEmpty()) return r;
             String result = nativeScanHips(json);
             if (result == null || result.isEmpty()) return r;
@@ -256,7 +256,7 @@ public final class NativeScanner {
     /** Convenience: scan HIPS and auto-trigger uninstall if behavioral malware
      *  is detected with "uninstall" suggestion. */
     public static void scanAndRespond(android.content.Context context) {
-        HipsResult result = scanHips();
+        HipsResult result = scanHips(context);
         if (result.isMalicious() && "uninstall".equals(result.suggestion)) {
             String flaggedPkg = null;
             for (String match : result.matches) {
