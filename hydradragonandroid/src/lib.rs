@@ -22,7 +22,6 @@ use hydradragonclamav::{Engine as ClamavEngine, is_text_like, ScanOptions};
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 use base64::Engine as Base64Engine;
-use memmap2::Mmap;
 
 mod asset_reader;
 mod dex_scan;
@@ -1510,19 +1509,15 @@ fn scan_apk(
     };
 
     let scanned = on_big_stack(move || {
-        let file = match std::fs::File::open(&path) {
-            Ok(f) => f,
-            Err(e) => return format!(r#"{{"error":"{}"}}"#, json_escape(&e.to_string())),
-        };
-        let mmap = match unsafe { Mmap::map(&file) } {
-            Ok(m) => m,
+        let file_bytes = match std::fs::read(&path) {
+            Ok(b) => b,
             Err(e) => return format!(r#"{{"error":"{}"}}"#, json_escape(&e.to_string())),
         };
         let guard = match engine_lock.read() {
             Ok(g) => g,
             Err(_) => return r#"{"error":"engine lock poisoned"}"#.to_string(),
         };
-        run_scan(&guard, mmap, &path, hydradragon.as_deref(), file_md5.as_deref(), zero_trust)
+        run_scan(&guard, file_bytes, &path, hydradragon.as_deref(), file_md5.as_deref(), zero_trust)
     });
     match scanned {
         Ok(s) => s,
@@ -1670,9 +1665,8 @@ fn extract_decode_base64_urls(data: &[u8], scanner: &url_scan::UrlScanner) -> Ve
 }
 
 
-/// Holds either a memory-mapped file or an owned decompressed buffer.
+/// Owned decompressed or read-ahead buffer bytes.
 enum OwnedBuf {
-    Mmap(Mmap),
     Vec(Vec<u8>),
 }
 
@@ -1680,7 +1674,6 @@ impl std::ops::Deref for OwnedBuf {
     type Target = [u8];
     fn deref(&self) -> &[u8] {
         match self {
-            OwnedBuf::Mmap(m) => m,
             OwnedBuf::Vec(v) => v,
         }
     }
@@ -1692,15 +1685,9 @@ impl From<Vec<u8>> for OwnedBuf {
     }
 }
 
-impl From<Mmap> for OwnedBuf {
-    fn from(m: Mmap) -> Self {
-        OwnedBuf::Mmap(m)
-    }
-}
-
 fn run_scan(
     engine: &Engine,
-    mmap: Mmap,
+    apk_bytes: Vec<u8>,
     path: &str,
     hydradragon: Option<&[u8]>,
     file_md5: Option<&str>,
@@ -1729,14 +1716,14 @@ fn run_scan(
     // extraction when the file is whitelisted.
     let file_hash = match file_md5 {
         Some(md5) => md5.to_string(),
-        None => md5_hex(&mmap[..]),
+        None => md5_hex(&apk_bytes),
     };
     // If the top-level file is hash-whitelisted, skip extraction entirely.
     let whitelisted = engine.whitelist.as_ref().is_some_and(|wl| wl.contains(&file_hash));
     // TLSH of the whole top-level file — computed early while `mmap` is still
     // available (before collect_buffers consumes it). Used in the skip_heavy
     // early-return and in the final result JSON.
-    let file_tlsh = tlsh_rs::hash_bytes(&mmap)
+    let file_tlsh = tlsh_rs::hash_bytes(&apk_bytes)
         .ok()
         .map(|d| d.to_string())
         .unwrap_or_default();
@@ -1746,7 +1733,7 @@ fn run_scan(
     let (ml_malicious, ml_probability, ml_lineages) = match &engine.model {
         Some(model) => {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                run_ml_on_mmap(model, &mmap, path)
+                run_ml_on_mmap(model, &apk_bytes, path)
             })) {
                 Ok(t) => t,
                 Err(_) => {
@@ -1765,7 +1752,7 @@ fn run_scan(
     let (buffers, bomb_dets, mut streaming_dets, streaming_timing) = if whitelisted {
         (Vec::new(), Vec::new(), Vec::new(), hydradragonclamav::scanner::TimingBreakdown::default())
     } else {
-        collect_buffers(mmap, file_md5, path, engine.clamav.as_ref())
+        collect_buffers(apk_bytes, file_md5, path, engine.clamav.as_ref())
     };
     let extract_ms = t_extract.elapsed().as_millis();
 
@@ -3556,7 +3543,7 @@ struct Buf {
 ///
 /// When `clamav` is `None`, streaming scan is skipped (returns empty detections).
 fn collect_buffers(
-    data: Mmap,
+    data: Vec<u8>,
     top_md5: Option<&str>,
     path: &str,
     clamav: Option<&ClamavEngine>,
@@ -3586,9 +3573,7 @@ fn collect_buffers(
     }
 
     let stack: Mutex<Vec<WorkItem>> = Mutex::new(vec![WorkItem {
-        // Copy eagerly — memory-mapped APK pages on F2FS/compressed
-        // partitions can stall on deferred page faults during Phase 2/3.
-        buf: OwnedBuf::Vec(data.to_vec()),
+        buf: OwnedBuf::Vec(data),
         depth: 0,
         lineage: Vec::new(),
         entry_name: None,
