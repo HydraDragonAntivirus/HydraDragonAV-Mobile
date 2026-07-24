@@ -2001,7 +2001,7 @@ fn run_scan(
                     } else {
                         match &b.entry_name {
                             Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path} (unnamed_{i})"),
+                            None => format!("{path}!/unnamed_{i}"),
                         }
                     };
                     if !flagged_paths.contains(base_path.as_str()) {
@@ -2057,7 +2057,7 @@ fn run_scan(
         } else {
             match &b.entry_name {
                 Some(entry) => format!("{path}!/{entry}"),
-                None => format!("{path} (unnamed_{i})"),
+                None => format!("{path}!/unnamed_{i}"),
             }
         };
         let mut seen_apis = std::collections::HashSet::new();
@@ -2078,7 +2078,7 @@ fn run_scan(
             if i == 0 { continue; }
             let obj_path = match &b.entry_name {
                 Some(entry) => format!("{path}!/{entry}"),
-                None => format!("{path} (unnamed_{i})"),
+                None => format!("{path}!/unnamed_{i}"),
             };
             let t0 = std::time::Instant::now();
             let (mal, conf, lineages) = match std::panic::catch_unwind(
@@ -2159,7 +2159,7 @@ fn run_scan(
                     } else {
                         match &b.entry_name {
                             Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path} (unnamed_{i})"),
+                            None => format!("{path}!/unnamed_{i}"),
                         }
                     };
                     detections.push((format!("DEX/{:?}: {}", f.severity, f.message), obj_path, b.apk_lineage.clone()));
@@ -2190,7 +2190,7 @@ fn run_scan(
                     } else {
                         match &b.entry_name {
                             Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path} (unnamed_{i})"),
+                            None => format!("{path}!/unnamed_{i}"),
                         }
                     };
                     detections.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
@@ -3659,7 +3659,7 @@ fn collect_buffers(
                                     } else {
                                         match &item.entry_name {
                                             Some(entry) => format!("{path}!/{entry}"),
-                                            None => format!("{} (unnamed_{})", path, idx),
+                                            None => format!("{path}!/unnamed_{idx}"),
                                         }
                                     };
                                     android_log(&format!(
@@ -3695,7 +3695,7 @@ fn collect_buffers(
                                 } else {
                                     match &item.entry_name {
                                         Some(entry) => format!("{path}!/{entry}"),
-                                        None => format!("{} (unnamed_{})", path, idx),
+                                        None => format!("{path}!/unnamed_{idx}"),
                                     }
                                 };
                                 match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {

@@ -1290,7 +1290,7 @@ public class ScanEngine {
                 String src = "";
                 for (NativeScanner.Verdict.Detection d : v.detections) {
                     if ("ML".equals(d.name)) {
-                        src = " in " + d.objectPath;
+                        src = subFileSuffix(path, d.objectPath);
                         break;
                     }
                 }
@@ -1843,7 +1843,7 @@ public class ScanEngine {
                             String src = "";
                             for (NativeScanner.Verdict.Detection d : v.detections) {
                                 if ("ML".equals(d.name)) {
-                                    src = " in " + d.objectPath;
+                                    src = subFileSuffix(apkPath, d.objectPath);
                                     break;
                                 }
                             }
