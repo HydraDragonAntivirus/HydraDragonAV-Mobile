@@ -644,11 +644,13 @@ fn run_ml_on_mmap(
     model: &Model,
     data: &[u8],
     path: &str,
+    fmt: Option<&'static str>,
 ) -> (bool, f32, Vec<(String, Vec<String>)>) {
     if skip_by_size(data) {
         return (false, 0.0, Vec::new());
     }
-    if hydradragonextractor::detect_format(data) != Some("zip") {
+    // Use pre-computed fmt to avoid a redundant detect_format call
+    if fmt != Some("zip") {
         return (false, 0.0, Vec::new());
     }
     if !is_apk_zip(data) {
@@ -731,13 +733,15 @@ fn is_resource_path(name: &str) -> bool {
 /// Truly Android-irrelevant desktop formats (PE, Mach-O, OLE2, SWF, etc.) and
 /// unknown binaries skip ClamAV — their signatures never match in practice and
 /// the atom-prefilter overhead on hundreds of APK resource entries is waste.
-fn is_executable_buffer(name: Option<&str>, data: &[u8]) -> bool {
+/// `fmt` is the already-computed `hydradragonextractor::detect_format` result for `data`
+/// (passed in to avoid calling detect_format twice per buffer in collect_buffers).
+fn is_executable_buffer(name: Option<&str>, data: &[u8], fmt: Option<&'static str>) -> bool {
     // DEX/VDEX/ELF — Android's executable formats
     if data.starts_with(b"dex\n") || data.starts_with(b"vdex") || data.starts_with(b"\x7fELF") {
         return true;
     }
-    // Known archive formats (15 supported by OxiArc via hydradragonextractor)
-    if hydradragonextractor::detect_format(data).is_some() {
+    // Known archive formats — use pre-computed fmt to avoid a second detect_format call
+    if fmt.is_some() {
         return true;
     }
     match name {
@@ -780,77 +784,146 @@ fn is_executable_buffer(name: Option<&str>, data: &[u8]) -> bool {
     )
 }
 
+fn is_harmless_resource_extension(lower: &str) -> bool {
+    lower.ends_with(".png")
+        || lower.ends_with(".jpg")
+        || lower.ends_with(".jpeg")
+        || lower.ends_with(".gif")
+        || lower.ends_with(".bmp")
+        || lower.ends_with(".webp")
+        || lower.ends_with(".tiff")
+        || lower.ends_with(".tif")
+        || lower.ends_with(".ico")
+        || lower.ends_with(".svg")
+        || lower.ends_with(".heic")
+        || lower.ends_with(".heif")
+        || lower.ends_with(".avif")
+        || lower.ends_with(".mp3")
+        || lower.ends_with(".wav")
+        || lower.ends_with(".ogg")
+        || lower.ends_with(".aac")
+        || lower.ends_with(".flac")
+        || lower.ends_with(".m4a")
+        || lower.ends_with(".mp4")
+        || lower.ends_with(".mkv")
+        || lower.ends_with(".webm")
+        || lower.ends_with(".3gp")
+        || lower.ends_with(".ttf")
+        || lower.ends_with(".otf")
+        || lower.ends_with(".woff")
+        || lower.ends_with(".woff2")
+        || lower.ends_with(".arsc")
+}
+
 fn is_relevant_buffer(name: Option<&str>, data: &[u8]) -> bool {
     if name.is_none() {
         return true;
     }
-    let name = name.unwrap();
-    let lower = name.to_ascii_lowercase();
-    if (lower.contains("classes")
-        && (lower.ends_with(".dex") || lower.ends_with(".vdex") || lower.ends_with(".odex")))
-        || lower.ends_with(".so")
-        || lower == "androidmanifest.xml"
+
+    // Always scan executable/archive/bytecode magic headers regardless of filename
+    if data.starts_with(b"dex\n")
+        || data.starts_with(b"vdex")
+        || data.starts_with(b"\x7fELF")
+        || data.starts_with(b"PK\x03\x04")
+        || data.starts_with(b"\xca\xfe\xba\xbe")
     {
         return true;
     }
-    if data.starts_with(b"dex\n") || data.starts_with(b"vdex") || data.starts_with(b"\x7fELF") {
+
+    let name = name.unwrap();
+    let lower = name.to_ascii_lowercase();
+    let filename = lower.split(['/', '!']).last().unwrap_or(&lower);
+
+    // High-value security targets
+    if filename == "androidmanifest.xml"
+        || (lower.contains("classes") && (lower.ends_with(".dex") || lower.ends_with(".vdex") || lower.ends_with(".odex")))
+        || lower.ends_with(".so")
+        || lower.ends_with(".apk")
+        || lower.ends_with(".jar")
+        || lower.ends_with(".class")
+        || lower.ends_with(".sh")
+        || lower.ends_with(".elf")
+        || lower.ends_with(".rsa")
+        || lower.ends_with(".dsa")
+        || lower.ends_with(".ec")
+        || lower.ends_with(".sf")
+        || lower.ends_with(".mf")
+    {
         return true;
     }
+
+    // Drop harmless resource types — but keep them if they contain hidden/polyglot data
+    // (appended data after JPEG FFD9 / PNG IEND, PNG text-chunk payloads,
+    //  JPEG comment/APPn segments, or executable magic at non-zero offsets)
+    if is_harmless_resource_extension(&lower) {
+        return has_polyglot_or_hidden_data(data);
+    }
+
+    // Resource paths (res/...) - scan only if obfuscated XML or contains embedded payload
     if is_resource_path(&lower) {
         let is_xml = data.starts_with(b"<?xml");
-        if (is_xml && is_obfuscated_xml(data))
-            || has_network_indicators(data)
-            || has_base64(data)
-            || has_embedded_data(data)
-        {
-            return true;
-        }
-        return false;
+        return is_xml && (is_obfuscated_xml(data) || has_embedded_data(data));
     }
-    if data.starts_with(b"<?xml") || is_text_like(data) {
-        return true;
-    }
-    has_network_indicators(data)
-}
 
-fn has_network_indicators(data: &[u8]) -> bool {
-    let sample = if data.len() > 4096 { &data[..4096] } else { data };
-    if let Ok(s) = std::str::from_utf8(sample) {
-        if s.contains("http://") || s.contains("https://") || s.contains("www.") {
-            return true;
-        }
-        if sample.windows(7).any(|w| {
-            w.iter().filter(|&&b| b == b'.').count() >= 3
-                && w.iter().filter(|&&b| b.is_ascii_digit() || b == b'.').count() >= 7
-        }) {
-            return true;
-        }
-        if let Ok(text) = std::str::from_utf8(sample) {
-            for part in text.split_whitespace() {
-                let part = part.trim_matches(|c: char| !c.is_ascii_alphanumeric() && c != '.' && c != '-');
-                if let Some(dot) = part.rfind('.') {
-                    let tld = &part[dot + 1..];
-                    if (2..=6).contains(&tld.len()) && tld.bytes().all(|b| b.is_ascii_alphabetic()) {
-                        let domain = &part[..dot];
-                        if domain.len() >= 2 && domain.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-')
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
+    if data.starts_with(b"<?xml") {
+        return is_obfuscated_xml(data) || has_embedded_data(data);
     }
+
     false
 }
 
-fn has_base64(data: &[u8]) -> bool {
+
+
+fn has_embedded_data(data: &[u8]) -> bool {
     let sample = if data.len() > 4096 { &data[..4096] } else { data };
-    let mut run: usize = 0;
-    for &b in sample {
+    let printable = sample
+        .iter()
+        .filter(|&&b| b.is_ascii_graphic() || b.is_ascii_whitespace())
+        .count();
+    printable > sample.len() / 4
+}
+
+// ── Image hidden-data / polyglot detection ────────────────────────────────────
+
+/// True if `slice` contains any executable magic sequence:
+/// ZIP (`PK\x03\x04`), DEX (`dex\n`), ELF (`\x7fELF`), Java class (`\xca\xfe\xba\xbe`).
+///
+/// Only call this on small regions (metadata, post-EOF tail) — not on raw pixel data.
+#[inline]
+fn image_magic_in_slice(data: &[u8]) -> bool {
+    if data.len() < 4 {
+        return false;
+    }
+    data.windows(4).any(|w| {
+        w == b"PK\x03\x04"
+            || w == b"dex\n"
+            || w == b"\x7fELF"
+            || w == b"\xca\xfe\xba\xbe"
+    })
+}
+
+/// Scan a text payload (PNG text chunk, JPEG comment, XMP) for suspicious content:
+/// * Binary data in a declared-text field
+/// * Embedded `http://` / `https://` URLs
+/// * Base64 run of ≥ 40 characters
+#[inline]
+fn image_text_suspicious(data: &[u8]) -> bool {
+    // Binary content in a declared-text field is anomalous
+    if std::str::from_utf8(data).is_err() {
+        return true;
+    }
+    // Embedded URLs
+    if data.windows(7).any(|w| w == b"http://")
+        || data.windows(8).any(|w| w == b"https://")
+    {
+        return true;
+    }
+    // Long base64 run (≥ 40 chars of base64 alphabet)
+    let mut run = 0usize;
+    for &b in data {
         if b.is_ascii_alphanumeric() || b == b'+' || b == b'/' || b == b'=' {
             run += 1;
-            if run >= 60 {
+            if run >= 40 {
                 return true;
             }
         } else {
@@ -860,13 +933,154 @@ fn has_base64(data: &[u8]) -> bool {
     false
 }
 
-fn has_embedded_data(data: &[u8]) -> bool {
-    let sample = if data.len() > 4096 { &data[..4096] } else { data };
-    let printable = sample
-        .iter()
-        .filter(|&&b| b.is_ascii_graphic() || b.is_ascii_whitespace())
-        .count();
-    printable > sample.len() / 4
+/// PNG chunk-aware scanner. Inspects text chunks (`tEXt`, `iTXt`, `zTXt`) and
+/// detects any data appended after the `IEND` marker.  Never touches `IDAT`
+/// (compressed pixel data), so it is fast even on multi-megabyte images.
+fn png_has_hidden(data: &[u8]) -> bool {
+    // PNG signature is 8 bytes
+    let mut pos = 8usize;
+    let limit = data.len();
+
+    while pos + 12 <= limit {
+        // Chunk layout: [4 length][4 type][<length> data][4 CRC]
+        let chunk_len = u32::from_be_bytes([data[pos], data[pos+1], data[pos+2], data[pos+3]]) as usize;
+        let chunk_type = &data[pos+4..pos+8];
+        let payload_start = pos + 8;
+
+        // Sanity cap — individual PNG chunks ≤ 2^31-1; 64 MB is more than enough
+        if chunk_len > 64 * 1024 * 1024 {
+            break;
+        }
+        let next_pos = pos + 8 + chunk_len + 4; // skip payload + CRC
+        if next_pos > limit {
+            break; // truncated chunk
+        }
+
+        match chunk_type {
+            b"IEND" => {
+                // Any byte after IEND is anomalous (common polyglot/stego trick)
+                return next_pos < limit;
+            }
+            b"tEXt" | b"iTXt" | b"zTXt" => {
+                if chunk_len > 0 {
+                    let payload = &data[payload_start..payload_start + chunk_len];
+                    if image_text_suspicious(payload) || image_magic_in_slice(payload) {
+                        return true;
+                    }
+                }
+            }
+            _ => {}
+        }
+        pos = next_pos;
+    }
+    false
+}
+
+/// JPEG segment-aware scanner. Inspects comment (`FF FE`) and APPn (`FF E0`–`FF EF`)
+/// segments for embedded executables or suspicious text, and detects any data
+/// appended after the `FF D9` (EOI) marker.  Skips past the SOS (Start of Scan)
+/// compressed payload without decoding it.
+fn jpeg_has_hidden(data: &[u8]) -> bool {
+    let mut pos = 2usize; // skip FF D8 (SOI)
+    let limit = data.len();
+
+    while pos + 2 <= limit {
+        if data[pos] != 0xFF {
+            break; // not on a marker boundary — malformed
+        }
+        let marker = data[pos + 1];
+
+        // EOI — anything after this is a polyglot/appended payload
+        if marker == 0xD9 {
+            return pos + 2 < limit;
+        }
+
+        // Standalone markers (no length): RST0–RST7, SOI, TEM
+        if matches!(marker, 0xD0..=0xD8 | 0x01) {
+            pos += 2;
+            continue;
+        }
+
+        // All other markers carry a 2-byte length (inclusive)
+        if pos + 4 > limit {
+            break;
+        }
+        let seg_len = u16::from_be_bytes([data[pos + 2], data[pos + 3]]) as usize;
+        if seg_len < 2 {
+            break; // malformed length
+        }
+        let payload_start = pos + 4;
+        let payload_len = seg_len - 2;
+        if payload_start + payload_len > limit {
+            break; // truncated
+        }
+
+        match marker {
+            // Comment (FF FE)
+            0xFE => {
+                let comment = &data[payload_start..payload_start + payload_len];
+                if image_text_suspicious(comment) || image_magic_in_slice(comment) {
+                    return true;
+                }
+            }
+            // APPn segments (FF E0 – FF EF): JFIF, EXIF, XMP, ICC, …
+            0xE0..=0xEF => {
+                let app_data = &data[payload_start..payload_start + payload_len];
+                // Executable magic anywhere in an APPn payload → polyglot
+                if image_magic_in_slice(app_data) {
+                    return true;
+                }
+                // APP1 with Adobe XMP namespace — scan as XML text
+                if marker == 0xE1
+                    && app_data.starts_with(b"http://ns.adobe.com/xap/1.0/")
+                {
+                    let xmp = &app_data[28..];
+                    if image_text_suspicious(xmp) {
+                        return true;
+                    }
+                }
+            }
+            // SOS — compressed image data starts here; we can't reliably parse
+            // it without a full decoder, so jump straight to EOI detection.
+            0xDA => {
+                let rest = &data[pos..];
+                if let Some(eoi_rel) = rest.windows(2).position(|w| w == b"\xFF\xD9") {
+                    // Any data after EOI is suspicious
+                    return pos + eoi_rel + 2 < limit;
+                }
+                break; // no EOI found — truncated / odd file
+            }
+            _ => {}
+        }
+
+        pos += 2 + seg_len;
+    }
+    false
+}
+
+/// Check an image buffer for polyglot/steganographic indicators without
+/// ever scanning raw pixel data (which would be slow and produce false positives).
+///
+/// Covers:
+/// * **PNG** — `tEXt`/`iTXt`/`zTXt` chunk payloads; data appended after `IEND`
+/// * **JPEG** — `FF FE` comment and APPn (`FF E0`–`FF EF`) payloads; data after `FF D9`
+/// * **Other images** (BMP, GIF, WebP, TIFF, ICO, HEIC, AVIF) — executable magic
+///   in the last 4 KB (appended-data heuristic)
+fn has_polyglot_or_hidden_data(data: &[u8]) -> bool {
+    if data.len() < 8 {
+        return false;
+    }
+    // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    if data.starts_with(&[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) {
+        return png_has_hidden(data);
+    }
+    // JPEG signature: FF D8 FF
+    if data.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        return jpeg_has_hidden(data);
+    }
+    // All other image types: scan only the last 4 KB for appended executable magic
+    let tail_start = data.len().saturating_sub(4096);
+    image_magic_in_slice(&data[tail_start..])
 }
 
 /// Smallest TLSH distance from `buf` to any digest in `db`, or None when
@@ -2082,7 +2296,7 @@ fn run_scan(
             };
             let t0 = std::time::Instant::now();
             let (mal, conf, lineages) = match std::panic::catch_unwind(
-                std::panic::AssertUnwindSafe(|| run_ml_on_mmap(model, &b.data, &obj_path)),
+                std::panic::AssertUnwindSafe(|| run_ml_on_mmap(model, &b.data, &obj_path, b.fmt)),
             ) {
                 Ok(r) => r,
                 Err(_) => {
@@ -3422,7 +3636,8 @@ fn collect_apk_hashes(buffers: &[Buf], top_md5: Option<&str>) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for (i, b) in buffers.iter().enumerate() {
         if skip_by_size(&b.data) { continue; }
-        if hydradragonextractor::detect_format(&b.data) != Some("zip") {
+        // Use pre-computed fmt — no second detect_format call
+        if b.fmt != Some("zip") {
             continue; // only APK/zip containers
         }
         // buffers[0] is the top-level file — reuse Java's MD5 for it.
@@ -3478,6 +3693,10 @@ struct Buf {
     /// archive (e.g. `lib/arm64-v8a/libfoo.so`), or `None` for the top-level
     /// scanned file (which already has its own real path/name).
     entry_name: Option<String>,
+    /// Pre-computed `hydradragonextractor::detect_format` result for this buffer.
+    /// Stored here so downstream phases (ML, hash collection, etc.) never
+    /// call `detect_format` a second time on the same bytes.
+    fmt: Option<&'static str>,
 }
 
 /// Phase 1 of the scan pipeline: extract ALL buffers from the file, running
@@ -3626,13 +3845,31 @@ fn collect_buffers(
                         if item.depth < 16 && fmt.is_some() {
                             match hydradragonextractor::extract_archive_from_bytes(&item.buf) {
                                 Ok(children) => {
-                                    if !children.is_empty() {
-                                        let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
-                                        outstanding.fetch_add(children.len(), AtomOrdering::AcqRel);
-                                        for entry in children {
+                                    let valid_children: Vec<_> = children
+                                        .into_iter()
+                                        .filter(|entry| {
                                             if entry.name.trim().is_empty() {
-                                                continue;
+                                                return false;
                                             }
+                                            let child_lower = entry.name.to_ascii_lowercase();
+                                            if is_harmless_resource_extension(&child_lower)
+                                                && !entry.data.starts_with(b"dex\n")
+                                                && !entry.data.starts_with(b"vdex")
+                                                && !entry.data.starts_with(b"\x7fELF")
+                                                && !entry.data.starts_with(b"PK\x03\x04")
+                                                && !entry.data.starts_with(b"\xca\xfe\xba\xbe")
+                                                && !has_polyglot_or_hidden_data(&entry.data)
+                                            {
+                                                return false;
+                                            }
+                                            true
+                                        })
+                                        .collect();
+
+                                    if !valid_children.is_empty() {
+                                        let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
+                                        outstanding.fetch_add(valid_children.len(), AtomOrdering::AcqRel);
+                                        for entry in valid_children {
                                             let child_name = entry.name.clone();
                                             let entry_name = Some(match &item.entry_name {
                                                 Some(parent) => format!("{parent}!/{}", child_name),
@@ -3670,8 +3907,7 @@ fn collect_buffers(
                             }
                         }
 
-                        let relevant = !SCAN_RELEVANT_ONLY.load(Ordering::Relaxed)
-                            || item.entry_name.is_none()
+                        let relevant = item.entry_name.is_none()
                             || is_relevant_buffer(item.entry_name.as_deref(), &item.buf);
 
                         // Streaming scan: run before item.buf is moved into `out`.
@@ -3685,7 +3921,7 @@ fn collect_buffers(
                         // entirely — no ClamAV, no YARA.
                         if let Some(clamav_engine) = clamav {
                             if relevant && !skip_by_size(&item.buf)
-                                && is_executable_buffer(item.entry_name.as_deref(), &item.buf)
+                                && is_executable_buffer(item.entry_name.as_deref(), &item.buf, fmt)
                             {
                                 let obj_path = if idx == 0 {
                                     path.to_string()
@@ -3733,6 +3969,7 @@ fn collect_buffers(
                                     data: item.buf, // OwnedBuf — no copy
                                     apk_lineage: lineage,
                                     entry_name: item.entry_name,
+                                    fmt, // reuse the already-computed detect_format result
                                 });
                             }
                         }
