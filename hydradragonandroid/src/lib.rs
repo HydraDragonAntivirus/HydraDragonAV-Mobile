@@ -2005,12 +2005,6 @@ fn run_scan(
     let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     if let Some(clamav) = &engine.clamav {
         if !module_meta.is_empty() {
-            // Pre-filter: module_meta without hydradragon (for non-DEX buffers).
-            let non_dex_meta: Vec<(&str, &[u8])> = module_meta
-                .iter()
-                .filter(|(k, _)| *k != "hydradragon")
-                .copied()
-                .collect();
             for yengine in &clamav.yara {
                 if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
                     continue;
@@ -2031,11 +2025,14 @@ fn run_scan(
                             None => format!("{path} (unnamed_{i})"),
                         }
                     };
-                    // Buffer data — only hydradragon meta for DEX buffers
+                    // Only DEX buffers get module metadata — otherwise rules
+                    // like packed_device_admin_rootkit (androguard.*) would
+                    // fire on XML/PNG/ELF too, since the APK-level manifest
+                    // properties are the same for every buffer.
                     let per_buf_meta: &[(&str, &[u8])] = if b.data.starts_with(b"dex\n") {
                         &module_meta
                     } else {
-                        &non_dex_meta
+                        &[]
                     };
                     let t0 = std::time::Instant::now();
                     let matches = yengine.scan(&b.data, &base_path, per_buf_meta);
