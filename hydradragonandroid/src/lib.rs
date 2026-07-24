@@ -2005,18 +2005,18 @@ fn run_scan(
     let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     if let Some(clamav) = &engine.clamav {
         if !module_meta.is_empty() {
+            // Build set of object_paths that the streaming scan already flagged.
+            // Phase 3 should only re-scan those specific buffers — otherwise
+            // module-dependent rules that check APK-level properties (like
+            // androguard.device_admin_permission) fire on every buffer even
+            // though only one triggered the initial detection.
+            let flagged_paths: std::collections::HashSet<&str> =
+                yara_dets.iter().map(|(_, op, _)| op.as_str()).collect();
             for yengine in &clamav.yara {
                 if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
                     continue;
                 }
                 for (i, b) in buffers.iter().enumerate() {
-                    // Skip desktop formats and unknown binaries — same gate as
-                    // the streaming scan.  Only DEX/ELF/archives/text/images
-                    // get the module-dependent YARA rescan.
-                    let entry_name = b.entry_name.as_deref();
-                    if !is_executable_buffer(entry_name, &b.data) {
-                        continue;
-                    }
                     let base_path = if i == 0 {
                         path.to_string()
                     } else {
@@ -2025,10 +2025,9 @@ fn run_scan(
                             None => format!("{path} (unnamed_{i})"),
                         }
                     };
-                    // Only DEX buffers get module metadata — otherwise rules
-                    // like packed_device_admin_rootkit (androguard.*) would
-                    // fire on XML/PNG/ELF too, since the APK-level manifest
-                    // properties are the same for every buffer.
+                    if !flagged_paths.contains(base_path.as_str()) {
+                        continue;
+                    }
                     let per_buf_meta: &[(&str, &[u8])] = if b.data.starts_with(b"dex\n") {
                         &module_meta
                     } else {
