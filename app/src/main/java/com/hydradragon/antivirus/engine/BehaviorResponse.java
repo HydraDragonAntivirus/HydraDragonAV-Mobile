@@ -101,6 +101,11 @@ public final class BehaviorResponse {
      *  delete-file prompt) has ALREADY fired by the time this shows; it's the
      *  unmissable backdrop, not a confirmation gate of its own. */
     private static void showMalwareFoundScreen(Context context, ThreatResult threat, boolean isFile) {
+        if (!hasOverlayOrNotifPermission(context)) {
+            Log.i(TAG, "Overlay or Notification permission missing -> redirecting directly to HydraDragon Scan Screen with threat alert");
+            redirectToScanScreen(context, threat);
+            return;
+        }
         try {
             Intent i = new Intent(context, MalwareFoundActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -114,7 +119,36 @@ public final class BehaviorResponse {
             i.putExtra(MalwareFoundActivity.EXTRA_APK_PATH, threat.getApkPath());
             context.startActivity(i);
         } catch (Throwable t) {
-            Log.w(TAG, "showMalwareFoundScreen failed", t);
+            Log.w(TAG, "showMalwareFoundScreen failed -> redirecting to Scan Screen", t);
+            redirectToScanScreen(context, threat);
+        }
+    }
+
+    public static boolean hasOverlayOrNotifPermission(Context context) {
+        boolean hasOverlay = true;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            hasOverlay = android.provider.Settings.canDrawOverlays(context);
+        }
+        boolean hasNotif = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled();
+        return hasOverlay && hasNotif;
+    }
+
+    private static void redirectToScanScreen(Context context, ThreatResult threat) {
+        try {
+            Intent open = new Intent(context, com.hydradragon.antivirus.MainActivity.class);
+            open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            open.putExtra("open_scan_tab", true);
+            if (threat != null) {
+                open.putExtra("alert_threat_name", threat.getAppName());
+                open.putExtra("alert_threat_pkg", threat.getPackageName());
+                open.putExtra("alert_threat_reason", threat.getReasons().isEmpty() ? "-" : threat.getReasons().get(0));
+                open.putExtra("alert_threat_risk", threat.getRiskScore());
+                open.putExtra("alert_threat_is_file", threat.isStandaloneFile());
+                open.putExtra("alert_threat_path", threat.getApkPath());
+            }
+            context.startActivity(open);
+        } catch (Throwable t) {
+            Log.w(TAG, "redirectToScanScreen failed", t);
         }
     }
 

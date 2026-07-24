@@ -522,6 +522,9 @@ public class MainActivity extends AppCompatActivity {
         bottomNav.setVisibility(View.VISIBLE);
         int lastNav = getSharedPreferences("hydra_prefs", MODE_PRIVATE)
             .getInt("last_nav_item", R.id.nav_dashboard);
+        if (getIntent() != null && getIntent().getBooleanExtra("open_scan_tab", false)) {
+            lastNav = R.id.nav_scan;
+        }
         bottomNav.setSelectedItemId(lastNav);
         Fragment f;
         if (lastNav == R.id.nav_scan) f = new ScanFragment();
@@ -530,6 +533,59 @@ public class MainActivity extends AppCompatActivity {
         else if (lastNav == R.id.nav_settings) f = new SettingsFragment();
         else f = new DashboardFragment();
         showFragment(f);
+        checkAndShowThreatDialog(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent != null && intent.getBooleanExtra("open_scan_tab", false)) {
+            if (bottomNav != null) {
+                bottomNav.setSelectedItemId(R.id.nav_scan);
+            }
+        }
+        checkAndShowThreatDialog(intent);
+    }
+
+    private void checkAndShowThreatDialog(Intent intent) {
+        if (intent == null || !intent.hasExtra("alert_threat_name")) return;
+        String name = intent.getStringExtra("alert_threat_name");
+        String pkg = intent.getStringExtra("alert_threat_pkg");
+        String reason = intent.getStringExtra("alert_threat_reason");
+        int risk = intent.getIntExtra("alert_threat_risk", 0);
+        boolean isFile = intent.getBooleanExtra("alert_threat_is_file", false);
+        String path = intent.getStringExtra("alert_threat_path");
+
+        if (name == null || name.isEmpty()) name = pkg != null ? pkg : "Malware";
+        if (reason == null) reason = "-";
+
+        final String finalPkg = pkg;
+        final String finalPath = path;
+
+        new AlertDialog.Builder(this)
+            .setTitle("⚠️ " + getString(R.string.malware_found_heading))
+            .setMessage(name + "\n\n" + getString(R.string.malware_found_risk_score, risk)
+                    + "\nReason: " + reason)
+            .setCancelable(false)
+            .setPositiveButton(isFile ? R.string.btn_delete_file : R.string.btn_uninstall, (d, w) -> {
+                if (isFile) {
+                    if (finalPath != null && !finalPath.isEmpty()) {
+                        java.io.File f = new java.io.File(finalPath);
+                        if (f.exists()) f.delete();
+                    }
+                } else {
+                    if (finalPkg != null && !finalPkg.isEmpty()) {
+                        Intent del = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + finalPkg));
+                        del.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(del);
+                    }
+                }
+            })
+            .setNegativeButton(R.string.btn_dismiss, null)
+            .show();
+
+        intent.removeExtra("alert_threat_name");
     }
 
     @Override

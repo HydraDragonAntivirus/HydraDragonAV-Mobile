@@ -69,6 +69,13 @@ public class InstallReceiver extends BroadcastReceiver {
                     
                     if (result != null && result.isThreat()) {
                         Log.e(TAG, "ON-INSTALL THREAT DETECTED: " + packageName);
+                        if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(context)) {
+                            if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(context)) {
+                                com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(context, result);
+                            } else {
+                                com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(context, result);
+                            }
+                        }
                         NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
                         // Tapping the notification / "Remove" opens the SYSTEM

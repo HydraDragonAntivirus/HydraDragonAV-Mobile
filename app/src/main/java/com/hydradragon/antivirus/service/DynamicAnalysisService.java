@@ -169,6 +169,21 @@ public class DynamicAnalysisService extends AccessibilityService {
                 // screen — see RemovalResistanceGuard.
                 com.hydradragon.antivirus.engine.RemovalResistanceGuard.onWindowSwitch(
                     this, pkg, fgPackage, isInstaller || isSettings);
+
+                if (!trusted && BehaviorFlags.isFlagged(this, pkg)
+                        && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg)) {
+                    Log.e(TAG, "FLAGGED MALWARE OPENED ON SCREEN: " + pkg + " -> kicking to home & showing MalwareFoundActivity");
+                    performGlobalAction(GLOBAL_ACTION_HOME);
+                    String reason = BehaviorFlags.reasonFor(this, pkg);
+                    ThreatResult threat = new ThreatResult.Builder()
+                            .setPackageName(pkg)
+                            .setAppName(pkg)
+                            .setRiskScore(100)
+                            .setThreatType(ThreatResult.ThreatType.MALWARE)
+                            .addReason(reason != null ? reason : "Detected Malware")
+                            .build();
+                    com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, threat);
+                }
             }
 
             fgPackage = pkg;   // remember which app's content we're scanning
@@ -537,6 +552,7 @@ public class DynamicAnalysisService extends AccessibilityService {
             open.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
                     | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
                     | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            open.putExtra("open_scan_tab", true);
             startActivity(open);
         } catch (Throwable ignore) {
         }

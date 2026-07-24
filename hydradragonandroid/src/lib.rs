@@ -3623,8 +3623,6 @@ fn collect_buffers(
                             lineage.push(h);
                         }
 
-
-
                         if item.depth < 16 && fmt.is_some() {
                             match hydradragonextractor::extract_archive_from_bytes(&item.buf) {
                                 Ok(children) => {
@@ -3632,11 +3630,10 @@ fn collect_buffers(
                                         let mut g = stack.lock().unwrap_or_else(|e| e.into_inner());
                                         outstanding.fetch_add(children.len(), AtomOrdering::AcqRel);
                                         for entry in children {
-                                            let child_name = if entry.name.is_empty() {
-                                                format!("unnamed_{}", entry.file_pos)
-                                            } else {
-                                                entry.name.clone()
-                                            };
+                                            if entry.name.trim().is_empty() {
+                                                continue;
+                                            }
+                                            let child_name = entry.name.clone();
                                             let entry_name = Some(match &item.entry_name {
                                                 Some(parent) => format!("{parent}!/{}", child_name),
                                                 None => child_name,
