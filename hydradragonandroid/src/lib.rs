@@ -2010,8 +2010,8 @@ fn run_scan(
             // module-dependent rules that check APK-level properties (like
             // androguard.device_admin_permission) fire on every buffer even
             // though only one triggered the initial detection.
-            let flagged_paths: std::collections::HashSet<&str> =
-                yara_dets.iter().map(|(_, op, _)| op.as_str()).collect();
+            let flagged_paths: std::collections::HashSet<String> =
+                yara_dets.iter().map(|(_, op, _)| op.clone()).collect();
             for yengine in &clamav.yara {
                 if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
                     continue;
