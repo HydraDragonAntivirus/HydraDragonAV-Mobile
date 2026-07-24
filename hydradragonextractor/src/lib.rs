@@ -532,40 +532,74 @@ fn bzip2_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
 /// decompressed into memory before the caller's outer buffer cap ever runs.
 pub(crate) const MAX_ARCHIVE_ENTRIES: usize = 4096;
 
+fn is_harmless_asset_extension(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    lower.ends_with(".png")
+        || lower.ends_with(".jpg")
+        || lower.ends_with(".jpeg")
+        || lower.ends_with(".gif")
+        || lower.ends_with(".bmp")
+        || lower.ends_with(".webp")
+        || lower.ends_with(".tiff")
+        || lower.ends_with(".tif")
+        || lower.ends_with(".ico")
+        || lower.ends_with(".svg")
+        || lower.ends_with(".heic")
+        || lower.ends_with(".heif")
+        || lower.ends_with(".avif")
+        || lower.ends_with(".mp3")
+        || lower.ends_with(".wav")
+        || lower.ends_with(".ogg")
+        || lower.ends_with(".aac")
+        || lower.ends_with(".flac")
+        || lower.ends_with(".m4a")
+        || lower.ends_with(".mp4")
+        || lower.ends_with(".mkv")
+        || lower.ends_with(".webm")
+        || lower.ends_with(".3gp")
+        || lower.ends_with(".ttf")
+        || lower.ends_with(".otf")
+        || lower.ends_with(".woff")
+        || lower.ends_with(".woff2")
+        || lower.ends_with(".css")
+}
+
 fn zip_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
-    let names: Vec<(String, u64, u64)> = zip
+    let entries_to_extract: Vec<(usize, String, u64, u64)> = zip
         .entries()
         .iter()
-        .filter(|e| !e.name.ends_with('/'))
-        .map(|e| (e.name.clone(), e.size, e.offset))
+        .enumerate()
+        .filter(|(_, e)| !e.name.ends_with('/') && !is_harmless_asset_extension(&e.name))
+        .map(|(idx, e)| (idx, e.name.clone(), e.size, e.offset))
         .take(MAX_ARCHIVE_ENTRIES)
         .collect();
-    if names.is_empty() {
+
+    if entries_to_extract.is_empty() {
         return Ok(Vec::new());
     }
-    // Aim for one chunk per available CPU — over‑splitting increases overhead
-    // (each thread re‑parses the central directory), so clamp to 4 chunks max.
+
     let n_threads = std::thread::available_parallelism()
         .map(|n| n.get().min(4))
         .unwrap_or(2);
-    let chunk_size = (names.len() + n_threads - 1) / n_threads;
+    let chunk_size = (entries_to_extract.len() + n_threads - 1) / n_threads;
 
     let (tx, rx) = std::sync::mpsc::channel::<Vec<ExtractedEntry>>();
     let bomb_found = std::sync::atomic::AtomicBool::new(false);
     let bomb_found_ref = &bomb_found;
+
     std::thread::scope(|s| {
-        for chunk in names.chunks(chunk_size) {
-            let chunk: Vec<(String, u64, u64)> = chunk.to_vec();
+        for chunk in entries_to_extract.chunks(chunk_size) {
+            let chunk = chunk.to_vec();
             let tx = tx.clone();
             s.spawn(move || {
                 let mut local = Vec::with_capacity(chunk.len());
                 if let Ok(mut z) = ZipReader::new(Cursor::new(data)).map_err(map_err) {
-                    for (name, size_real, file_pos) in &chunk {
-                        if let Some(entry) = z.entry_by_name(name) {
-                            let cloned = entry.clone();
-                            if let Ok(content) = z.extract(&cloned).map_err(map_err) {
-                                if is_decompression_bomb(cloned.compressed_size as usize, content.len()) {
+                    let z_entries = z.entries().to_vec();
+                    for (idx, name, size_real, file_pos) in &chunk {
+                        if let Some(entry) = z_entries.get(*idx) {
+                            if let Ok(content) = z.extract(entry).map_err(map_err) {
+                                if is_decompression_bomb(entry.compressed_size as usize, content.len()) {
                                     bomb_found_ref.store(true, std::sync::atomic::Ordering::Relaxed);
                                 } else {
                                     local.push(ExtractedEntry {
@@ -589,7 +623,7 @@ fn zip_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
         return Err(ExtractError::DecompressionBomb { format: "zip" });
     }
 
-    let mut out = Vec::with_capacity(names.len());
+    let mut out = Vec::with_capacity(entries_to_extract.len());
     while let Ok(chunk) = rx.recv() {
         out.extend(chunk);
     }
