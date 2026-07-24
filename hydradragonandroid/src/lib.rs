@@ -1755,7 +1755,6 @@ fn run_scan(
         collect_buffers(apk_bytes, file_md5, path, engine.clamav.as_ref())
     };
     let extract_ms = t_extract.elapsed().as_millis();
-    rust_timing_log!("DBG1 :: after collect_buffers, {} buffers", buffers.len());
 
     // Phase 2: collect all whitelist data, build skip_heavy, run fast passes
     // (DEX, permissions, androguard). Heavy passes (ClamAV, ML, emulation,
@@ -1772,11 +1771,7 @@ fn run_scan(
     let emulated: Vec<emulate::EmulationResult>;
     let emulated_strings: Vec<Option<Vec<u8>>>;
     let emulate_ms;
-    // Collect URLs once — used by both build_androguard_json (Phase 2) and
-    // the URL threat scan (Phase 3), avoiding a second full pass through
-    // every buffer's bytes.
-    let urls = collect_urls(&buffers);
-    rust_timing_log!("DBG2 :: after collect_urls");
+
     {
         // Dangerous-permission count from the (in-memory) manifest bytes.
         perm_count = max_dangerous_perms(&buffers);
@@ -1785,7 +1780,7 @@ fn run_scan(
         // MD5 of each APK/zip buffer for the hash-keyed whitelist.
         hashes = collect_apk_hashes(&buffers, file_md5);
         // androguard JSON report (manifest + URL sweep).
-        androguard_json = build_androguard_json(&buffers, &urls);
+        androguard_json = build_androguard_json(&buffers, &[]);
 
         // Per-buffer whitelist check.
         let mut apk_md5_to_pkg = std::collections::HashMap::new();
@@ -1895,7 +1890,6 @@ fn run_scan(
         // a game engine bundling 4 ABIs) can't blow the scan time budget.
         const MAX_EMULATED_BUFFERS: usize = 8;
         let t_emulate = std::time::Instant::now();
-        rust_timing_log!("DBG3 :: before emulation");
         emulated = if NATIVE_EMULATION_ENABLED
             .load(std::sync::atomic::Ordering::Relaxed)
         {
@@ -1941,7 +1935,6 @@ fn run_scan(
             })
             .collect();
         emulate_ms = t_emulate.elapsed().as_millis();
-        rust_timing_log!("DBG4 :: after emulation, {}ms", emulate_ms);
     }
 
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
@@ -2117,20 +2110,23 @@ fn run_scan(
     }
 
     // Scan URLs against Binary Fuse .xf filters:
-    // - Plain URLs from buffer bytes
-    // - Base64-encoded URLs from buffer bytes
-    // - URLs from emulation-decoded strings
+    // - Base64-encoded URLs in buffer bytes
+    // - DEX string pool entries
+    // - Emulation-decoded strings
     if let Some(scanner) = &engine.url_scanner {
         let mut url_limit = 0u32;
-        for raw_url in &urls {
-            if let Some(cat) = scanner.scan_url_only(raw_url) {
-                detections.push((format!("URL.{cat}: {raw_url} (in {path})"), path.to_string(), Vec::new()));
-                url_limit += 1; if url_limit >= 16 { break; }
-            }
-        }
         if url_limit < 16 {
             for b in &buffers {
                 for url_det in extract_decode_base64_urls(&b.data, scanner) {
+                    detections.push((format!("{url_det} (in {path})"), path.to_string(), Vec::new()));
+                    url_limit += 1; if url_limit >= 16 { break; }
+                }
+                if url_limit >= 16 { break; }
+            }
+        }
+        if url_limit < 16 {
+            for ds in dex_scans.iter().flatten() {
+                for url_det in extract_and_scan_urls(engine, ds.text.as_bytes()) {
                     detections.push((format!("{url_det} (in {path})"), path.to_string(), Vec::new()));
                     url_limit += 1; if url_limit >= 16 { break; }
                 }
@@ -3049,55 +3045,8 @@ fn push_component(data: &[u8], strings: &[String], off: usize, out: &mut Vec<Str
     }
 }
 
-/// Sweep decompressed buffers for http(s) URLs (androguard's `urls`). Deduped,
-/// bounded. Scans dex/resources/etc. as raw bytes — URLs are ASCII.
-fn collect_urls(buffers: &[Buf]) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
-    let mut seen = std::collections::HashSet::new();
-    for b in buffers {
-        let data = &b.data;
-        if skip_by_size(data) { continue; }
-        if !is_text_like(data) { continue; }
-        let n = data.len();
-        // memchr: skip to each 'h' position (much faster than byte-by-byte).
-        let mut pos = 0;
-        while let Some(hpos) = memchr::memchr(b'h', &data[pos..]) {
-            let i = pos + hpos;
-            if i + 7 >= n { break; }
-            let is_http = &data[i..i + 7] == b"http://";
-            let is_https = i + 8 < n && &data[i..i + 8] == b"https://";
-            if is_http || is_https {
-                let start = i;
-                let mut j = i;
-                while j < n {
-                    let c = data[j];
-                    if c <= 0x20 || c == b'"' || c == b'\'' || c == b'<' || c == b'>'
-                        || c == b'\\' || c == 0x7f || c >= 0x80 { break; }
-                    j += 1;
-                }
-                if j - start >= 10 && j - start <= 2048 {
-                    if let Ok(s) = std::str::from_utf8(&data[start..j]) {
-                        let s = s.to_string();
-                        if seen.insert(s.clone()) {
-                            out.push(s);
-                            if out.len() >= 4096 { return out; }
-                        }
-                    }
-                }
-                pos = j - hpos; // advance past the URL
-                // If pos didn't advance (empty URL), force +1
-                if pos <= hpos + 1 { pos = hpos + 1; }
-            } else {
-                pos = hpos + 1;
-            }
-        }
-    }
-    out
-}
-
 /// Build the androguard JSON report for the scanned APK, or None if no binary
 /// AndroidManifest.xml is reachable in the buffers (not an APK).
-/// `urls` is pre-collected (cached) so `collect_urls` doesn't run twice.
 fn build_androguard_json(buffers: &[Buf], urls: &[String]) -> Option<String> {
     let manifest = buffers.iter().find_map(|b| parse_manifest(&b.data))?;
     let cert = extract_certificate(buffers);
