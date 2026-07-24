@@ -33,16 +33,17 @@ public final class AntiFnCache {
         try {
             d = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
             d.execSQL("PRAGMA cache_size=-2000");
+            d.execSQL(SQL_CREATE);
             // Migrate from old schema (tlsh TEXT PRIMARY KEY) to new
-            // (PRIMARY KEY(tlsh, file_type)). Drop old table if exists.
+            // (PRIMARY KEY(tlsh, file_type)) if file_type column is missing.
             try {
                 Cursor c = d.rawQuery("SELECT file_type FROM " + TABLE + " LIMIT 1", null);
                 c.close();
             } catch (Exception e) {
                 // column does not exist -> old schema, drop and recreate
                 d.execSQL("DROP TABLE IF EXISTS " + TABLE);
+                d.execSQL(SQL_CREATE);
             }
-            d.execSQL(SQL_CREATE);
         } catch (Exception e) {
             Log.w(TAG, "Failed to open anti-FN cache DB", e);
             d = null;
