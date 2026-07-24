@@ -1755,6 +1755,7 @@ fn run_scan(
         collect_buffers(apk_bytes, file_md5, path, engine.clamav.as_ref())
     };
     let extract_ms = t_extract.elapsed().as_millis();
+    rust_timing_log!("DBG1 :: after collect_buffers, {} buffers", buffers.len());
 
     // Phase 2: collect all whitelist data, build skip_heavy, run fast passes
     // (DEX, permissions, androguard). Heavy passes (ClamAV, ML, emulation,
@@ -1775,6 +1776,7 @@ fn run_scan(
     // the URL threat scan (Phase 3), avoiding a second full pass through
     // every buffer's bytes.
     let urls = collect_urls(&buffers);
+    rust_timing_log!("DBG2 :: after collect_urls");
     {
         // Dangerous-permission count from the (in-memory) manifest bytes.
         perm_count = max_dangerous_perms(&buffers);
@@ -1893,6 +1895,7 @@ fn run_scan(
         // a game engine bundling 4 ABIs) can't blow the scan time budget.
         const MAX_EMULATED_BUFFERS: usize = 8;
         let t_emulate = std::time::Instant::now();
+        rust_timing_log!("DBG3 :: before emulation");
         emulated = if NATIVE_EMULATION_ENABLED
             .load(std::sync::atomic::Ordering::Relaxed)
         {
@@ -1938,6 +1941,7 @@ fn run_scan(
             })
             .collect();
         emulate_ms = t_emulate.elapsed().as_millis();
+        rust_timing_log!("DBG4 :: after emulation, {}ms", emulate_ms);
     }
 
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
