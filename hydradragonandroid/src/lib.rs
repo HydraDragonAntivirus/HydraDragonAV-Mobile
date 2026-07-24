@@ -1727,24 +1727,12 @@ fn run_scan(
         .ok()
         .map(|d| d.to_string())
         .unwrap_or_default();
-    // ML inference — run before collect_buffers while &mmap is still live,
-    // so the model scans the memory-mapped bytes directly (no Vec copy).
-    let t_ml = std::time::Instant::now();
-    let (ml_malicious, ml_probability, ml_lineages) = match &engine.model {
-        Some(model) => {
-            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                run_ml_on_mmap(model, &apk_bytes, path)
-            })) {
-                Ok(t) => t,
-                Err(_) => {
-                    let _ = err.get_or_insert_with(|| format!("ml: {}", last_panic()));
-                    (false, 0.0, Vec::new())
-                }
-            }
-        }
-        None => (false, 0.0, Vec::new()),
-    };
-    let ml_ms = t_ml.elapsed().as_millis();
+    // ML inference — deferred to after collect_buffers so only nested APK
+    // buffers are scored (the outer container is never fed to the model).
+    let mut ml_malicious = false;
+    let mut ml_probability = 0.0f32;
+    let mut ml_lineages = Vec::<(String, Vec<String>)>::new();
+    let mut ml_ms = 0u128;
     if whitelisted {
         android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
     }
@@ -2088,6 +2076,30 @@ fn run_scan(
                 base_path.clone(),
                 b.apk_lineage.clone(),
             ));
+        }
+    }
+    // ML on every nested APK buffer (skip index 0 — the outer container).
+    if let Some(model) = &engine.model {
+        for (i, b) in buffers.iter().enumerate() {
+            if i == 0 { continue; }
+            let obj_path = match &b.entry_name {
+                Some(entry) => format!("{path}!/{entry}"),
+                None => format!("{path} (unnamed_{i})"),
+            };
+            let t0 = std::time::Instant::now();
+            let (mal, conf, lineages) = match std::panic::catch_unwind(
+                std::panic::AssertUnwindSafe(|| run_ml_on_mmap(model, &b.data, &obj_path)),
+            ) {
+                Ok(r) => r,
+                Err(_) => {
+                    let _ = err.get_or_insert_with(|| format!("ml: {}", last_panic()));
+                    (false, 0.0, Vec::new())
+                }
+            };
+            ml_ms += t0.elapsed().as_millis();
+            if mal { ml_malicious = true; }
+            if conf > ml_probability { ml_probability = conf; }
+            ml_lineages.extend(lineages);
         }
     }
     let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
