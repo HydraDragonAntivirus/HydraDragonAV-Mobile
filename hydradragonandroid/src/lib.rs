@@ -690,12 +690,6 @@ fn load_tlsh_file(bytes: Option<&[u8]>) -> Vec<tlsh_rs::TlshDigest> {
 /// Whether `buf` is a file type we have a per-type TLSH malware database for
 /// (ELF .so, APK/ZIP, or DEX) — so we only fuzzy-compare relevant buffers,
 /// not every PNG/XML resource in an APK.
-fn tlsh_relevant(buf: &[u8]) -> bool {
-    hydradragonextractor::detect_format(buf) == Some("zip")
-        || buf.starts_with(b"\x7fELF")
-        || buf.starts_with(b"dex\n")
-}
-
 /// Whether the first 256 bytes look like human-readable text (ASCII or UTF-8).
 /// Returns true when ≥90% of the sample bytes are either ASCII printable,
 /// whitespace, or valid UTF-8 multi-byte sequence bytes.
@@ -2180,14 +2174,16 @@ fn run_scan(
             if skip_by_size(&b.data) {
                 continue;
             }
-            if tlsh_relevant(&b.data) {
-                let db = if b.data.starts_with(b"\x7fELF") {
-                    &engine.tlsh_db_elf
-                } else if b.data.starts_with(b"dex\n") {
-                    &engine.tlsh_db_dex
-                } else {
-                    &engine.tlsh_db_apk
-                };
+            let db = if b.data.starts_with(b"\x7fELF") {
+                Some(&engine.tlsh_db_elf)
+            } else if b.data.starts_with(b"dex\n") {
+                Some(&engine.tlsh_db_dex)
+            } else if is_apk_zip(&b.data) {
+                Some(&engine.tlsh_db_apk)
+            } else {
+                None
+            };
+            if let Some(db) = db {
                 if let Some(dist) = tlsh_nearest(db, &b.data) {
                     let obj_path = if i == 0 {
                         path.to_string()
