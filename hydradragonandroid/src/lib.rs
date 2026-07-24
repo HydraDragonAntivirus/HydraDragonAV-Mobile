@@ -629,8 +629,8 @@ fn is_apk_zip(data: &[u8]) -> bool {
     let scan_size = 1 << 20; // 1 MB
     let head_end = data.len().min(scan_size);
     let tail_start = data.len().saturating_sub(scan_size);
-    let apk_markers = [b"AndroidManifest.xml" as &[u8], b"classes.dex"];
-    let scan = |region: &[u8]| apk_markers.iter().any(|m| region.windows(m.len()).any(|w| w == *m));
+    let marker = b"AndroidManifest.xml";
+    let scan = |region: &[u8]| region.windows(marker.len()).any(|w| w == marker);
     if head_end > 0 && scan(&data[..head_end]) {
         return true;
     }
