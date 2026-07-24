@@ -11,6 +11,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import androidx.core.app.NotificationCompat;
 import com.hydradragon.antivirus.R;
 import com.hydradragon.antivirus.engine.BehaviorFlags;
+import com.hydradragon.antivirus.model.ThreatResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -175,12 +176,11 @@ public class DynamicAnalysisService extends AccessibilityService {
                     Log.e(TAG, "FLAGGED MALWARE OPENED ON SCREEN: " + pkg + " -> kicking to home & showing MalwareFoundActivity");
                     performGlobalAction(GLOBAL_ACTION_HOME);
                     String reason = BehaviorFlags.reasonFor(this, pkg);
-                    ThreatResult threat = new ThreatResult.Builder()
-                            .setPackageName(pkg)
+                    ThreatResult threat = new ThreatResult.Builder(pkg)
                             .setAppName(pkg)
                             .setRiskScore(100)
                             .setThreatType(ThreatResult.ThreatType.MALWARE)
-                            .addReason(reason != null ? reason : "Detected Malware")
+                            .setReasons(java.util.Collections.singletonList(reason != null ? reason : "Detected Malware"))
                             .build();
                     com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, threat);
                 }
