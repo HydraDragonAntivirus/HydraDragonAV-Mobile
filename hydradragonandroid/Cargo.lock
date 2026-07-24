@@ -354,9 +354,9 @@ checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
 
 [[package]]
 name = "cc"
-version = "1.3.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c89588d05638b5b4594a3348a2d6c20277e43a7f5c5202b05cc56888475a47b8"
+checksum = "5add81bb678e6cb321aff7fa0dc7689ad82b112dbc032cea19f91d6b8e3582b9"
 dependencies = [
  "find-msvc-tools",
  "shlex 2.0.1",
@@ -692,14 +692,8 @@ dependencies = [
 
 [[package]]
 name = "daachorse"
-version = "3.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5614204febbc33cc07a2806aa6440b904ac012b68eecc37f4493ea4a76455a3d"
-
-[[package]]
-name = "daachorse"
 version = "4.0.0"
-source = "git+https://github.com/HydraDragonAntivirus/daachorse.git#b4b7682283a280828d7290685f9dafd357c0062d"
+source = "git+https://github.com/HydraDragonAntivirus/daachorse.git#f7fc9cc1251e2349df180f0e11bedd83e0b0f41c"
 
 [[package]]
 name = "darling"
@@ -1328,7 +1322,7 @@ dependencies = [
 name = "hydradragonclamav"
 version = "0.1.0"
 dependencies = [
- "daachorse 4.0.0",
+ "daachorse",
  "image",
  "memchr",
  "regex",
@@ -2441,9 +2435,9 @@ dependencies = [
 
 [[package]]
 name = "psl"
-version = "2.1.220"
+version = "2.1.221"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de177021aa731f88221b3ae411cb89d70f66e51487c26ef9c9f65fc7250c22e8"
+checksum = "131e7bc39f71eb433f96399150b9e6729908dab3640467a3e90d5c5a77831568"
 dependencies = [
  "psl-types",
 ]
@@ -4030,7 +4024,7 @@ checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 [[package]]
 name = "yara-x"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#a87e81d2c194b2032f24fff932539e73c8eeae68"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#e738c4136886adcd11d60d741be5cc77a7cacb1c"
 dependencies = [
  "annotate-snippets",
  "anyhow",
@@ -4042,7 +4036,7 @@ dependencies = [
  "codepage",
  "const-oid 0.9.6",
  "crc32fast",
- "daachorse 3.0.3",
+ "daachorse",
  "der-parser",
  "digest 0.10.7",
  "dsa",
@@ -4101,7 +4095,7 @@ dependencies = [
 [[package]]
 name = "yara-x-macros"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#a87e81d2c194b2032f24fff932539e73c8eeae68"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#e738c4136886adcd11d60d741be5cc77a7cacb1c"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -4112,7 +4106,7 @@ dependencies = [
 [[package]]
 name = "yara-x-parser"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#a87e81d2c194b2032f24fff932539e73c8eeae68"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#e738c4136886adcd11d60d741be5cc77a7cacb1c"
 dependencies = [
  "ascii_tree",
  "bitflags",
@@ -4129,7 +4123,7 @@ dependencies = [
 [[package]]
 name = "yara-x-proto"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#a87e81d2c194b2032f24fff932539e73c8eeae68"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#e738c4136886adcd11d60d741be5cc77a7cacb1c"
 dependencies = [
  "base64",
  "chrono",
