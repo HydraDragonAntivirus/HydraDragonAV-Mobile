@@ -376,7 +376,7 @@
     <string name="anti_fn_on_toast">Anti-FN オン — 確認済みの検出結果がキャッシュされます</string>
     <string name="anti_fn_off_toast">Anti-FN オフ — キャッシュをクリアしました</string>
     <string name="anti_fn_tlsh_threshold_btn">TLSH類似度しきい値</string>
-    <string name="anti_fn_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的に検出精度を引き上げ。デフォルト: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">TLSH距離しきい値（1-200）。低いほど厳格、高いほど積極的に検出精度を引き上げ。デフォルト: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">TLSHしきい値を%1$dに設定しました</string>
     <string name="save_auto_rules_toggle">自動生成ルールを保存</string>
     <string name="save_auto_rules_on_toast">自動生成ルール保存 ON：自動学習された YARA ルールがディスクに書き込まれ、次回起動時に再読み込みされます</string>

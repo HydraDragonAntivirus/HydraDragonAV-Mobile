@@ -109,7 +109,7 @@ public final class AntiFnCache {
 
     public static int getTlshThreshold(Context context) {
         return context.getSharedPreferences("hydra_prefs", 0)
-            .getInt("anti_fn_tlsh_threshold", 40);
+            .getInt("anti_fn_tlsh_threshold", 30);
     }
 
     public void clean(long maxAgeMs) {

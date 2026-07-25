@@ -376,7 +376,7 @@
     <string name="anti_fn_on_toast">Anti-FN चालू — पुष्ट पहचानें कैश की जाती हैं</string>
     <string name="anti_fn_off_toast">Anti-FN बंद — कैश साफ़ किया गया</string>
     <string name="anti_fn_tlsh_threshold_btn">TLSH समानता सीमा</string>
-    <string name="anti_fn_tlsh_threshold_hint">TLSH दूरी सीमा (1-200)। कम = सख्त, अधिक = अधिक आक्रामक पहचान अपग्रेड। डिफ़ॉल्ट: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">TLSH दूरी सीमा (1-200)। कम = सख्त, अधिक = अधिक आक्रामक पहचान अपग्रेड। डिफ़ॉल्ट: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">TLSH सीमा %1$d पर सेट की गई</string>
     <string name="save_auto_rules_toggle">स्वत: उत्पन्न नियम सहेजें</string>
     <string name="save_auto_rules_on_toast">स्वत: उत्पन्न नियम सहेजना चालू: स्वत: सीखे YARA नियम डिस्क पर लिखे जाएंगे और अगली बार ऐप शुरू होने पर फिर से लोड होंगे</string>

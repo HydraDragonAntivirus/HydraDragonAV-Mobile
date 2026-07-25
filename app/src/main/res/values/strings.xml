@@ -377,7 +377,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="anti_fn_on_toast">Anti-FN ON — confirmed detections are cached</string>
     <string name="anti_fn_off_toast">Anti-FN OFF — cache cleared</string>
     <string name="anti_fn_tlsh_threshold_btn">TLSH Similarity Threshold</string>
-    <string name="anti_fn_tlsh_threshold_hint">TLSH distance threshold (1-200). Lower = stricter, higher = more aggressive detection upgrade. Default: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">TLSH distance threshold (1-200). Lower = stricter, higher = more aggressive detection upgrade. Default: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">TLSH threshold set to %1$d</string>
     <string name="save_auto_rules_toggle">Save Auto-Generated Rules</string>
     <string name="save_auto_rules_on_toast">Save Auto-Generated Rules ON: auto-learned YARA rules will be written to disk and reloaded on the next app launch</string>

@@ -376,7 +376,7 @@
     <string name="anti_fn_on_toast">تم تشغيل Anti-FN — يتم تخزين الاكتشافات المؤكدة مؤقتًا</string>
     <string name="anti_fn_off_toast">تم إيقاف Anti-FN — تم مسح الذاكرة المخبأة</string>
     <string name="anti_fn_tlsh_threshold_btn">حد تشابه TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">حد مسافة TLSH (1-200). القيمة الأقل = أكثر صرامة، القيمة الأعلى = ترقية اكتشاف أكثر عدوانية. الافتراضي: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">حد مسافة TLSH (1-200). القيمة الأقل = أكثر صرامة، القيمة الأعلى = ترقية اكتشاف أكثر عدوانية. الافتراضي: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">تم تعيين حد TLSH إلى %1$d</string>
     <string name="save_auto_rules_toggle">حفظ القواعد المُنشأة تلقائيًا</string>
     <string name="save_auto_rules_on_toast">حفظ القواعد التلقائية مُفعَّل: سيتم كتابة قواعد YARA المُتعلَّمة تلقائيًا على القرص وإعادة تحميلها عند التشغيل التالي</string>

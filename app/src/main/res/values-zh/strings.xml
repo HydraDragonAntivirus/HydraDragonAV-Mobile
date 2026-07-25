@@ -376,7 +376,7 @@
     <string name="anti_fn_on_toast">Anti-FN 已开启 — 已确认的检测结果已被缓存</string>
     <string name="anti_fn_off_toast">Anti-FN 已关闭 — 缓存已清空</string>
     <string name="anti_fn_tlsh_threshold_btn">TLSH 相似度阈值</string>
-    <string name="anti_fn_tlsh_threshold_hint">TLSH 距离阈值（1-200）。越低越严格，越高越积极提升检测。默认值：40</string>
+    <string name="anti_fn_tlsh_threshold_hint">TLSH 距离阈值（1-200）。越低越严格，越高越积极提升检测。默认值：30</string>
     <string name="anti_fn_tlsh_threshold_saved">TLSH 阈值已设置为 %1$d</string>
     <string name="save_auto_rules_toggle">保存自动生成的规则</string>
     <string name="save_auto_rules_on_toast">保存自动生成规则 开：自动学习的 YARA 规则将写入磁盘，并在下次启动应用时重新加载</string>

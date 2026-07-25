@@ -430,7 +430,7 @@ public final class NativeScanner {
             setScanRelevantOnly(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("scan_relevant_only_enabled", true));
             setTlshThreshold(context.getSharedPreferences("hydra_prefs", 0)
-                .getInt("anti_fn_tlsh_threshold", 40));
+                .getInt("anti_fn_tlsh_threshold", 30));
         }
         Log.i(TAG, "native init " + (isReady() ? "ok" : "background") + " | " + status());
         return isReady();

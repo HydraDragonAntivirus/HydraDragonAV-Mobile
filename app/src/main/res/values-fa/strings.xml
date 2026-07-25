@@ -376,7 +376,7 @@
     <string name="anti_fn_on_toast">Anti-FN روشن — تشخیص‌های تأییدشده ذخیره می‌شوند</string>
     <string name="anti_fn_off_toast">Anti-FN خاموش — حافظه موقت پاک شد</string>
     <string name="anti_fn_tlsh_threshold_btn">آستانه تشابه TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">آستانه فاصله TLSH (1-200). کمتر = سخت‌گیرانه‌تر، بیشتر = ارتقای تهاجمی‌تر تشخیص. پیش‌فرض: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">آستانه فاصله TLSH (1-200). کمتر = سخت‌گیرانه‌تر، بیشتر = ارتقای تهاجمی‌تر تشخیص. پیش‌فرض: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">آستانه TLSH روی %1$d تنظیم شد</string>
     <string name="save_auto_rules_toggle">ذخیره قوانین تولیدشده خودکار</string>
     <string name="save_auto_rules_on_toast">ذخیره قوانین خودکار فعال: قوانین YARA یادگرفته‌شده خودکار روی دیسک نوشته می‌شوند و در راه‌اندازی بعدی بارگذاری می‌شوند</string>

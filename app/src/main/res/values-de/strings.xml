@@ -376,7 +376,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="anti_fn_on_toast">Anti-FN AN — bestätigte Erkennungen werden zwischengespeichert</string>
     <string name="anti_fn_off_toast">Anti-FN AUS — Cache geleert</string>
     <string name="anti_fn_tlsh_threshold_btn">TLSH-Ähnlichkeitsschwelle</string>
-    <string name="anti_fn_tlsh_threshold_hint">TLSH-Distanzschwellwert (1-200). Niedriger = strenger, höher = aggressivere Erkennungs-Hochstufung. Standard: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">TLSH-Distanzschwellwert (1-200). Niedriger = strenger, höher = aggressivere Erkennungs-Hochstufung. Standard: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">TLSH-Schwellwert auf %1$d gesetzt</string>
     <string name="save_auto_rules_toggle">Autogenerierte Regeln speichern</string>
     <string name="save_auto_rules_on_toast">Autogenerierte Regeln SPEICHERN EIN: automatisch erlernte YARA-Regeln werden auf die Festplatte geschrieben und beim naechsten App-Start neu geladen</string>

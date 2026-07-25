@@ -376,7 +376,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="anti_fn_on_toast">Anti-FN AKTIF — deteksi yang terkonfirmasi di-cache</string>
     <string name="anti_fn_off_toast">Anti-FN NONAKTIF — cache dibersihkan</string>
     <string name="anti_fn_tlsh_threshold_btn">Ambang Kemiripan TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">Ambang jarak TLSH (1-200). Lebih rendah = lebih ketat, lebih tinggi = peningkatan deteksi lebih agresif. Default: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">Ambang jarak TLSH (1-200). Lebih rendah = lebih ketat, lebih tinggi = peningkatan deteksi lebih agresif. Default: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">Ambang TLSH diatur ke %1$d</string>
     <string name="save_auto_rules_toggle">Simpan Aturan yang Dibuat Otomatis</string>
     <string name="save_auto_rules_on_toast">Simpan Aturan Otomatis AKTIF: aturan YARA yang dipelajari otomatis akan ditulis ke disk dan dimuat ulang saat peluncuran aplikasi berikutnya</string>

@@ -351,7 +351,7 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.anti_fn_off_toast), Toast.LENGTH_SHORT).show();
         });
 
-        int antiFnTlshThresh = prefs().getInt("anti_fn_tlsh_threshold", 40);
+        int antiFnTlshThresh = prefs().getInt("anti_fn_tlsh_threshold", 30);
         addBtn("🔀 " + getString(R.string.anti_fn_tlsh_threshold_btn) + " (" + antiFnTlshThresh + ")", color(R.color.bg_secondary),
             v -> showAntiFnTlshThresholdDialog());
 
@@ -1076,7 +1076,7 @@ public class SettingsFragment extends Fragment {
         box.addView(label);
         android.widget.EditText input = new android.widget.EditText(requireContext());
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setText(String.valueOf(prefs().getInt("anti_fn_tlsh_threshold", 40)));
+        input.setText(String.valueOf(prefs().getInt("anti_fn_tlsh_threshold", 30)));
         box.addView(input);
 
         new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)

@@ -376,7 +376,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="anti_fn_on_toast">Anti-FN ATTIVO — le rilevazioni confermate vengono memorizzate nella cache</string>
     <string name="anti_fn_off_toast">Anti-FN DISATTIVO — cache svuotata</string>
     <string name="anti_fn_tlsh_threshold_btn">Soglia di similarità TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">Soglia di distanza TLSH (1-200). Più basso = più severo, più alto = aggiornamento di rilevazione più aggressivo. Predefinito: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">Soglia di distanza TLSH (1-200). Più basso = più severo, più alto = aggiornamento di rilevazione più aggressivo. Predefinito: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">Soglia TLSH impostata a %1$d</string>
     <string name="save_auto_rules_toggle">Salva regole autogenerate</string>
     <string name="save_auto_rules_on_toast">Salva regole autogenerate ATTIVATO: le regole YARA apprese automaticamente verranno scritte su disco e ricaricate al prossimo avvio</string>

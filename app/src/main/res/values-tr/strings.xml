@@ -376,7 +376,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="anti_fn_on_toast">Anti-FN AÇIK — onaylanan tespitler önbelleğe alınır</string>
     <string name="anti_fn_off_toast">Anti-FN KAPALI — önbellek temizlendi</string>
     <string name="anti_fn_tlsh_threshold_btn">TLSH Benzerlik Eşiği</string>
-    <string name="anti_fn_tlsh_threshold_hint">TLSH mesafe eşiği (1-200). Düşük = daha katı, yüksek = daha agresif tespit yükseltmesi. Varsayılan: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">TLSH mesafe eşiği (1-200). Düşük = daha katı, yüksek = daha agresif tespit yükseltmesi. Varsayılan: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">TLSH eşiği %1$d olarak ayarlandı</string>
     <string name="save_auto_rules_toggle">Otomatik Oluşturulan Kuralları Kaydet</string>
     <string name="save_auto_rules_on_toast">Otomatik Oluşturulan Kuralları Kaydet AÇIK: otomatik öğrenilen YARA kuralları diske yazılacak ve sonraki uygulama başlatılmasında yeniden yüklenecek</string>

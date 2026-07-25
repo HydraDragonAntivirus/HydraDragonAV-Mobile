@@ -376,7 +376,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="anti_fn_on_toast">Anti-FN WŁ. — potwierdzone wykrycia są buforowane</string>
     <string name="anti_fn_off_toast">Anti-FN WYŁ. — pamięć podręczna wyczyszczona</string>
     <string name="anti_fn_tlsh_threshold_btn">Próg Podobieństwa TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">Próg odległości TLSH (1-200). Niższy = bardziej rygorystyczny, wyższy = bardziej agresywne podniesienie wykrywalności. Domyślnie: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">Próg odległości TLSH (1-200). Niższy = bardziej rygorystyczny, wyższy = bardziej agresywne podniesienie wykrywalności. Domyślnie: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">Próg TLSH ustawiony na %1$d</string>
     <string name="save_auto_rules_toggle">Zapisz automatycznie generowane reguly</string>
     <string name="save_auto_rules_on_toast">Zapisywanie automatycznych regul WLACZONE: automatycznie uczone reguly YARA beda zapisywane na dysku i przeladowywane przy nastepnym uruchomieniu aplikacji</string>

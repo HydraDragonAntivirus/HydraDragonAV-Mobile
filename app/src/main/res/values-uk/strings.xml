@@ -376,7 +376,7 @@
     <string name="anti_fn_on_toast">Anti-FN УВІМК. — підтверджені виявлення кешуються</string>
     <string name="anti_fn_off_toast">Anti-FN ВИМК. — кеш очищено</string>
     <string name="anti_fn_tlsh_threshold_btn">Поріг схожості TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">Поріг відстані TLSH (1-200). Нижче = суворіше, вище = агресивніше підвищення виявлення. За замовчуванням: 40</string>
+    <string name="anti_fn_tlsh_threshold_hint">Поріг відстані TLSH (1-200). Нижче = суворіше, вище = агресивніше підвищення виявлення. За замовчуванням: 30</string>
     <string name="anti_fn_tlsh_threshold_saved">Поріг TLSH встановлено на %1$d</string>
     <string name="save_auto_rules_toggle">Зберігати автозгенеровані правила</string>
     <string name="save_auto_rules_on_toast">Збереження автоправил УВІМКНЕНО: автоматично вивчені правила YARA будуть записані на диск і перезавантажені при наступному запуску</string>
