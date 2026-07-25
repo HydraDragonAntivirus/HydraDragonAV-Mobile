@@ -1169,7 +1169,7 @@ rule android_tempting_cedar_spyware {
     $string    = "rsdroid.crt"
 
   condition:
-    $PK_HEADER in (0..4) and $MANIFEST and $DEX_FILE and any of ($string*)
+    $PK_HEADER in (0..4) and $MANIFEST and $DEX_FILE and $string
 }
 
 rule single_load_rwe {
@@ -1616,12 +1616,12 @@ rule Rana_Android_resources {
     reference = "https://blog.reversinglabs.com/blog/rana-android-malware"
 
   strings:
-    $res1 = "res/raw/cng.cn" fullword wide ascii
-    $res2 = "res/raw/att.cn" fullword wide ascii
-    $res3 = "res/raw/odr.od" fullword wide ascii
+    $res1 = "res/raw/cng.cn" wide ascii
+    $res2 = "res/raw/att.cn" wide ascii
+    $res3 = "res/raw/odr.od" wide ascii
 
   condition:
-    any of them  /* any string in the rule */
+    any of them
 }
 
 rule head_z_none_of_the_above {
@@ -8710,7 +8710,7 @@ rule trojan_and_keepspy {
     $str07 = "OnePixelActivity" ascii
 
   condition:
-    uint32be(0) == 0x504B0304 and 6 of them
+    uint32be(0) == 0x504B0304 and all of them
     and filesize > 2MB
 }
 
@@ -8866,7 +8866,7 @@ rule marcher_v2 {
     source      = "https://analyst.koodous.com/rulesets/1301"
 
   strings:
-    $a = /assets\/[a-z]{1,12}.datPK/
+    $a = /assets\/[a-z]{1,12}\.datPK/
     $b = "mastercard_img"
     $c = "visa_verifed"
 
