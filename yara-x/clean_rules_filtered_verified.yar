@@ -972,24 +972,6 @@ rule venom_20170125: malware linux {
     all of ($venom_*)
 }
 
-rule adware: ads {
-  meta:
-    author      = "Fernando Denis Ramirez https://twitter.com/fdrg21"
-    reference   = "https://koodous.com/"
-    description = "Adware"
-    sample      = "5a331231f997decca388ba2d73b7dec1554e966a0795b0cb8447a336bdafd71b"
-
-  strings:
-    $string_a = "banner_layout"
-    $string_b = "activity_adpath_sms"
-    $string_c = "adpath_title_one"
-    $string_d = "7291-2ec9362bd699d0cd6f53a5ca6cd"
-
-  condition:
-    all of ($string_*)
-
-}
-
 rule dropperMapin {
   meta:
     author      = "https://twitter.com/plutec_net"
@@ -9214,27 +9196,6 @@ rule elf_rekoobe_b3_06c9 {
     (
       all of them
     )
-}
-
-rule IOC_MIRAI_elf {
-  meta:
-    author     = "Laboratoire Epidemiology & Signal Intelligence"
-    ref_IOC    = "IOC_MIRAI_LAB"
-    date_IOC   = "2023-11-14 06:10:22"
-    info       = "Version 1.0 b"
-    internal   = false
-    score      = 99
-    risk_score = 10
-    threat     = "MIRAI"
-    file_type  = "elf"
-    comment    = "Source : abuse.ch"
-
-  condition:
-    hash.sha256(0, filesize) == "c8112fddbfed0adfa62343a770dc09984c306063cfe01e4989f8a96893fdb908" or
-    hash.sha256(0, filesize) == "0e9ec7fffe192bb53a79d9a71ba74884bc9493cc55c6e363e7ad952c53da25fe" or
-    hash.sha256(0, filesize) == "eec68e0190cb6b7683556b3fde3922936b0b0a70d0efd2062c53c87f2adfdb1f" or
-    hash.sha256(0, filesize) == "0433abed1161da8a9c18a8855f9a65d9dd2ce66392107e989e058e510033f26e" or
-    hash.sha256(0, filesize) == "831abc8d1a70104ae46b5c2c1ce6fce24ef449a03bde0d770a5a67f96ab22e7c"
 }
 
 private rule IRC {
