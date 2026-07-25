@@ -21,19 +21,11 @@ img = img.crop((left, top, left + min_dim, top + min_dim))
 master = img.resize((1024, 1024), Image.LANCZOS)
 
 
-def round_corners(im, radius):
-    circle = Image.new("L", (radius * 2, radius * 2), 0)
-    draw = ImageDraw.Draw(circle)
-    draw.ellipse((0, 0, radius * 2, radius * 2), fill=255)
-    mask = Image.new("L", im.size, 0)
-    w, h = im.size
-    mask.paste(circle.crop((0, 0, radius, radius)), (0, 0))
-    mask.paste(circle.crop((radius, 0, radius * 2, radius)), (w - radius, 0))
-    mask.paste(circle.crop((0, radius, radius, radius * 2)), (0, h - radius))
-    mask.paste(circle.crop((radius, radius, radius * 2, radius * 2)), (w - radius, h - radius))
-    result = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    result.paste(im, mask=mask)
-    return result
+def circular_mask(size):
+    mask = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0, size, size), fill=255)
+    return mask
 
 
 for folder, size in DENSITIES.items():
@@ -44,7 +36,8 @@ for folder, size in DENSITIES.items():
     icon.save(path, "PNG")
     print(f"  {path}")
 
-    round_icon = round_corners(icon, size // 4)
+    round_icon = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    round_icon.paste(icon, mask=circular_mask(size))
     path_r = os.path.join(BASE, folder, "ic_launcher_round.png")
     round_icon.save(path_r, "PNG")
     print(f"  {path_r}")
