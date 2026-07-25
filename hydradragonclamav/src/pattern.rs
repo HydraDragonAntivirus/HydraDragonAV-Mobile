@@ -1162,30 +1162,49 @@ impl Pattern {
     /// `best_anchor()` has no constant-offset run (all fixed bytes are behind a
     /// gap/alternation). Prefers the rarest byte by a simple heuristic.
     fn find_any_fixed_byte(&self) -> Option<(usize, u8, bool)> {
-        let mut best: Option<(usize, u8, bool, u32)> = None; // (off, byte, nocase, weight)
+        // Score each candidate fixed byte by a combination of rarity (byte_weight)
+        // and prefix-range tightness. A byte behind a wide gap like `{2-10000}`
+        // forces a brute-force every-position scan (the `> 4096` guard in
+        // `find_all`). Preferring a slightly less-rare byte with a narrow prefix
+        // range avoids that fallback — memchr-anchored verification over a tight
+        // window is orders of magnitude faster.
+        let mut best: Option<(usize, u8, bool, u64)> = None;
         let mut sidx = 0usize;
+        let mut pre_min: usize = 0;
+        let mut pre_max: usize = 0;
         for i in 0..self.instructions.len() {
             let inst = self.instructions.get_u16(i);
             let meta = inst & CLI_MATCH_METADATA;
             if meta == CLI_MATCH_CHAR || meta == CLI_MATCH_NOCASE {
                 let b = (inst & 0xff) as u8;
                 let nc = meta == CLI_MATCH_NOCASE;
-                let w = byte_weight(b, nc);
-                if best.as_ref().map_or(true, |&(_, _, _, bw)| w < bw) {
-                    best = Some((i, b, nc, w));
+                let range_width = pre_max.saturating_sub(pre_min);
+                let w = byte_weight(b, nc) as u64;
+                let score = w.saturating_mul((range_width as u64).saturating_add(1));
+                if best.as_ref().map_or(true, |&(_, _, _, bs)| score < bs) {
+                    best = Some((i, b, nc, score));
                 }
+                pre_min = pre_min.saturating_add(1);
+                pre_max = pre_max.saturating_add(1);
             } else if meta == CLI_MATCH_SPECIAL {
                 let sp = match self.specials.get(sidx) {
                     Some(sp) => sp,
                     None => break,
                 };
-                // Fixed-width specials don't break the search for a byte anchor
-                // (they consume a known width). Only skip variable-width ones.
-                if sp.fixed_width().is_none() {
-                    sidx += 1;
-                    continue;
+                match sp.fixed_width() {
+                    Some(fw) => {
+                        pre_min = pre_min.saturating_add(fw);
+                        pre_max = pre_max.saturating_add(fw);
+                    }
+                    None => {
+                        pre_min = pre_min.saturating_add(sp.min_width());
+                        pre_max = pre_max.saturating_add(sp.max_width());
+                    }
                 }
                 sidx += 1;
+            } else {
+                pre_min = pre_min.saturating_add(1);
+                pre_max = pre_max.saturating_add(1);
             }
         }
         best.map(|(off, b, nc, _)| (off, b, nc))
