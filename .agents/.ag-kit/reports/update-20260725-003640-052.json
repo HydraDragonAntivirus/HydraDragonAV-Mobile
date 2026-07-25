@@ -1,0 +1,1063 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260725-003640-052",
+  "strategy": "merge",
+  "toolkitVersion": "2026.7.18",
+  "createdAt": "2026-07-25T00:36:42.915Z",
+  "backupDir": "C:\\Users\\semae\\OneDrive\\Belgeler\\GitHub\\HydraDragonAV-Mobile\\.ag-kit-backups\\20260725-003640-052",
+  "summary": {
+    "actions": 209,
+    "conflicts": 0,
+    "preserved": 0,
+    "unchanged": 0
+  },
+  "actions": [
+    {
+      "type": "add",
+      "file": "ARCHITECTURE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "CHANGELOG.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "DEPENDENCY_GRAPH.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "README.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "VERSION",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/backend-specialist.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/code-archaeologist.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/database-architect.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/debugger.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/devops-engineer.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/documentation-writer.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/explorer-agent.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/frontend-specialist.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/game-developer.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/mobile-developer.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/orchestrator.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/penetration-tester.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/performance-optimizer.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/product-manager.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/product-owner.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/project-planner.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/qa-automation-engineer.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/security-auditor.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/seo-specialist.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "agent/test-engineer.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "manifest.json",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "manifest.lock.json",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "mcp_config.json",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "memory/MEMORY.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "memory/feedback-history.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "memory/project-conventions.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "memory/tech-decisions.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "memory/user-preferences.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "rules/code-rules.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "rules/core-protocol.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "rules/design-rules.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "rules/quick-reference.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "rules/request-routing.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "rules/universal-rules.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "schemas/component-frontmatter.schema.json",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "schemas/manifest-lock.schema.json",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "schemas/manifest.schema.json",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "schemas/memory.schema.json",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/README.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/auto_preview.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/checklist.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/component_registry.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/dependency_graph.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/generate_manifest.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/session_manager.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/tests/test_toolkit.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/validate_kit.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/validation_runner.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "scripts/verify_all.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/api-style.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/auth.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/documentation.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/graphql.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/rate-limiting.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/response.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/rest.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/scripts/api_validator.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/security-testing.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/trpc.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/api-patterns/versioning.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/agent-coordination.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/feature-building.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/project-detection.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/scaffolding.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/tech-stack.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/astro-static/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/chrome-extension/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/cli-tool/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/electron-desktop/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/express-api/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/flutter-app/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/monorepo-turborepo/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/nextjs-fullstack/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/nextjs-saas/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/nextjs-static/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/nuxt-app/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/python-fastapi/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/app-builder/templates/react-native-app/TEMPLATE.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/architecture/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/architecture/context-discovery.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/architecture/examples.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/architecture/pattern-selection.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/architecture/patterns-reference.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/architecture/trade-off-analysis.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/bash-linux/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/batch-operations/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/behavioral-modes/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/brainstorming/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/brainstorming/dynamic-questioning.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/clean-code/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/code-review-checklist/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/code-review-graph/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/context-compression/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/coordinator-mode/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/database-design/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/database-design/database-selection.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/database-design/indexing.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/database-design/migrations.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/database-design/optimization.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/database-design/orm-selection.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/database-design/schema-design.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/database-design/scripts/schema_validator.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/deployment-procedures/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/design-spec/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/design-spec/collection.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/documentation-templates/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/frontend-architecture/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/frontend-design/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/frontend-design/redesign.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/frontend-design/scripts/accessibility_checker.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/frontend-design/scripts/ux_audit.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/frontend-design/style-brutalist.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/frontend-design/style-minimalist.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/2d-games/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/3d-games/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/game-art/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/game-audio/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/game-design/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/mobile-games/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/multiplayer/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/pc-games/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/vr-ar/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/game-development/web-games/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/geo-fundamentals/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/geo-fundamentals/scripts/geo_checker.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/i18n-localization/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/i18n-localization/scripts/i18n_checker.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/intelligent-routing/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/lint-and-validate/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/lint-and-validate/scripts/lint_runner.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/lint-and-validate/scripts/type_coverage.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mcp-builder/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/memory-system/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/decision-trees.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/mobile-backend.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/mobile-color-system.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/mobile-debugging.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/mobile-design-thinking.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/mobile-navigation.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/mobile-performance.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/mobile-testing.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/mobile-typography.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/platform-android.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/platform-ios.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/scripts/mobile_audit.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/mobile-design/touch-psychology.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/1-async-eliminating-waterfalls.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/2-bundle-bundle-size-optimization.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/3-server-server-side-performance.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/4-client-client-side-data-fetching.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/5-rerender-re-render-optimization.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/6-rendering-rendering-performance.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/7-js-javascript-performance.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/8-advanced-advanced-patterns.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/9-cache-components.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/scripts/convert_rules.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nextjs-react-expert/scripts/react_performance_checker.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/nodejs-best-practices/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/parallel-agents/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/performance-profiling/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/performance-profiling/scripts/bundle_analyzer.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/performance-profiling/scripts/lighthouse_audit.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/plan-writing/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/powershell-windows/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/python-patterns/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/red-team-tactics/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/rust-pro/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/seo-fundamentals/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/seo-fundamentals/scripts/seo_checker.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/server-management/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/simplify-code/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/skillify/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/systematic-debugging/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/tailwind-patterns/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/tdd-workflow/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/testing-patterns/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/testing-patterns/scripts/test_runner.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/verify-changes/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/vulnerability-scanner/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/vulnerability-scanner/checklists.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/vulnerability-scanner/scripts/dependency_analyzer.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/vulnerability-scanner/scripts/security_scan.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/web-design-guidelines/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/webapp-testing/SKILL.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "skills/webapp-testing/scripts/playwright_runner.py",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/brainstorm.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/coordinate.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/create.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/debug.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/deploy.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/enhance.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/orchestrate.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/plan.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/preview.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/remember.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/status.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/test.md",
+      "reason": "new incoming file on legacy installation"
+    },
+    {
+      "type": "add",
+      "file": "workflows/verify.md",
+      "reason": "new incoming file on legacy installation"
+    }
+  ],
+  "conflicts": [],
+  "preserved": []
+}
