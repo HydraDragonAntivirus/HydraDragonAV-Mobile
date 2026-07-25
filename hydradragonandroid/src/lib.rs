@@ -1994,8 +1994,9 @@ fn run_scan(
             .iter()
             .enumerate()
             .map(|(i, b)| {
+                let is_seed = b.entry_name.is_none();
                 // 1. Check if the buffer's own MD5 is in the NSRL hash whitelist (whitelisted item)
-                let self_md5 = if i == 0 {
+                let self_md5 = if is_seed {
                     file_hash.to_lowercase()
                 } else {
                     md5_hex(&b.data).to_lowercase()
@@ -2020,7 +2021,7 @@ fn run_scan(
 
                 // 3. Check if any ancestor APK in its lineage is whitelisted
                 let mut check_hashes = b.apk_lineage.clone();
-                if i == 0 {
+                if is_seed {
                     check_hashes.push(file_hash.clone());
                 }
 
@@ -2172,7 +2173,7 @@ fn run_scan(
             std::collections::HashSet::new();
         for (i, sk) in skip_heavy.iter().enumerate() {
             if !sk { continue; }
-            if i == 0 {
+            if buffers[i].entry_name.is_none() {
                 whitelisted_paths.insert(path.to_string());
             } else if let Some(entry) = &buffers[i].entry_name {
                 whitelisted_paths.insert(format!("{path}!/{entry}"));
@@ -2210,7 +2211,7 @@ fn run_scan(
                     continue;
                 }
                 for (i, b) in buffers.iter().enumerate() {
-                    let base_path = if i == 0 {
+                    let base_path = if buffers[i].entry_name.is_none() {
                         path.to_string()
                     } else {
                         match &b.entry_name {
@@ -2266,7 +2267,7 @@ fn run_scan(
         if emulated[i].api_calls.is_empty() {
             continue;
         }
-        let base_path = if i == 0 {
+        let base_path = if buffers[i].entry_name.is_none() {
             path.to_string()
         } else {
             match &b.entry_name {
@@ -2289,7 +2290,7 @@ fn run_scan(
     // ML on every nested APK buffer (skip index 0 — the outer container).
     if let Some(model) = &engine.model {
         for (i, b) in buffers.iter().enumerate() {
-            if i == 0 { continue; }
+            if buffers[i].entry_name.is_none() { continue; }
             let obj_path = match &b.entry_name {
                 Some(entry) => format!("{path}!/{entry}"),
                 None => format!("{path}!/unnamed_{i}"),
@@ -2368,7 +2369,7 @@ fn run_scan(
         if let Some(ds) = &dex_scans[i] {
             for f in &ds.findings {
                 if dex_scan::is_severe(f.severity) {
-                    let obj_path = if i == 0 {
+                    let obj_path = if b.entry_name.is_none() {
                         path.to_string()
                     } else {
                         match &b.entry_name {
@@ -2399,7 +2400,7 @@ fn run_scan(
             };
             if let Some(db) = db {
                 if let Some(dist) = tlsh_nearest(db, &b.data) {
-                    let obj_path = if i == 0 {
+                    let obj_path = if b.entry_name.is_none() {
                         path.to_string()
                     } else {
                         match &b.entry_name {
@@ -2526,7 +2527,7 @@ fn run_scan(
     let mut entry_md5_pairs: Vec<String> = Vec::new();
     let mut entry_tlsh_pairs: Vec<String> = Vec::new();
     for (i, b) in buffers.iter().enumerate() {
-        if i == 0 { continue; }
+        if b.entry_name.is_none() { continue; }
         let Some(ref entry) = b.entry_name else { continue };
         if entry.is_empty() { continue; }
         let md5 = md5_hex(&b.data);
