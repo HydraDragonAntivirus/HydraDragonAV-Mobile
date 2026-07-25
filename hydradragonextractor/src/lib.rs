@@ -118,11 +118,11 @@ pub fn extract_archive(path: &Path, output_dir: &Path) -> Result<ExtractResult> 
 /// Extract every entry of an archive into memory, paired with its in-archive
 /// name/path (e.g. `lib/arm64-v8a/libfoo.so`) so callers can report detections
 /// against the real member instead of an opaque index.
-pub fn extract_archive_from_bytes(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
+pub fn extract_archive_from_bytes(data: &[u8], relevant_only: bool) -> Result<Vec<ExtractedEntry>> {
     if is_rar(data) {
         return rar::extract_from_bytes(data);
     }
-    extract_to_memory(data)
+    extract_to_memory(data, relevant_only)
 }
 
 #[derive(Clone, Debug)]
@@ -333,10 +333,10 @@ fn extract_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // Internal: in-memory extraction
 // ---------------------------------------------------------------------------
 
-fn extract_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
+fn extract_to_memory(data: &[u8], relevant_only: bool) -> Result<Vec<ExtractedEntry>> {
     let fmt = ArchiveFormat::from_magic(data);
     match fmt {
-        ArchiveFormat::Zip => zip_to_memory(data),
+        ArchiveFormat::Zip => zip_to_memory(data, relevant_only),
         ArchiveFormat::Tar => tar_to_memory(data),
         ArchiveFormat::Gzip => gzip_to_memory(data),
         ArchiveFormat::Xz => xz_to_memory(data),
@@ -532,6 +532,57 @@ fn bzip2_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
 /// decompressed into memory before the caller's outer buffer cap ever runs.
 pub(crate) const MAX_ARCHIVE_ENTRIES: usize = 4096;
 
+/// Skip full decompression for entries whose name + size make them unlikely
+/// to be relevant — a name-based pre-filter that mirrors the post-decompress
+/// [`is_relevant_buffer`] logic in the caller.  Large files with no executable
+/// or security-relevant extension are almost never worth inflating.
+fn should_extract_by_name(name: &str, uncompressed_size: u64, relevant_only: bool) -> bool {
+    if !relevant_only {
+        return true;
+    }
+
+    let lower = name.to_ascii_lowercase();
+    let filename = lower.split(['/', '!']).last().unwrap_or(&lower);
+
+    // Always extract known executable/archive/security types.
+    if filename == "androidmanifest.xml"
+        || (lower.contains("classes")
+            && (lower.ends_with(".dex")
+                || lower.ends_with(".vdex")
+                || lower.ends_with(".odex")))
+        || lower.ends_with(".so")
+        || lower.ends_with(".apk")
+        || lower.ends_with(".zip")
+        || lower.ends_with(".jar")
+        || lower.ends_with(".class")
+        || lower.ends_with(".sh")
+        || lower.ends_with(".elf")
+        || lower.ends_with(".dex")
+        || lower.ends_with(".vdex")
+        || lower.ends_with(".odex")
+        || lower.ends_with(".rsa")
+        || lower.ends_with(".dsa")
+        || lower.ends_with(".ec")
+        || lower.ends_with(".sf")
+        || lower.ends_with(".mf")
+    {
+        return true;
+    }
+
+    // Files with no '.' in the filename part — potential polyglot / hidden data.
+    if !filename.contains('.') {
+        return true;
+    }
+
+    // Small files of any type might hide polyglot content; decompress them.
+    const SMALL_FILE_THRESHOLD: u64 = 256 * 1024; // 256 KiB
+    if uncompressed_size <= SMALL_FILE_THRESHOLD {
+        return true;
+    }
+
+    false
+}
+
 fn is_harmless_asset_extension(name: &str) -> bool {
     let lower = name.to_ascii_lowercase();
     lower.ends_with(".png")
@@ -564,13 +615,17 @@ fn is_harmless_asset_extension(name: &str) -> bool {
         || lower.ends_with(".css")
 }
 
-fn zip_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
+fn zip_to_memory(data: &[u8], relevant_only: bool) -> Result<Vec<ExtractedEntry>> {
     let zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
     let entries_to_extract: Vec<(usize, String, u64, u64)> = zip
         .entries()
         .iter()
         .enumerate()
-        .filter(|(_, e)| !e.name.ends_with('/') && !is_harmless_asset_extension(&e.name))
+        .filter(|(_, e)| {
+            if e.name.ends_with('/') { return false; }
+            if is_harmless_asset_extension(&e.name) { return false; }
+            should_extract_by_name(&e.name, e.size, relevant_only)
+        })
         .map(|(idx, e)| (idx, e.name.clone(), e.size, e.offset))
         .take(MAX_ARCHIVE_ENTRIES)
         .collect();

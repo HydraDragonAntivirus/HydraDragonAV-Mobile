@@ -3843,7 +3843,8 @@ fn collect_buffers(
                         }
 
                         if item.depth < 16 && fmt.is_some() {
-                            match hydradragonextractor::extract_archive_from_bytes(&item.buf) {
+                            let relevant_only = SCAN_RELEVANT_ONLY.load(Ordering::Relaxed);
+                            match hydradragonextractor::extract_archive_from_bytes(&item.buf, relevant_only) {
                                 Ok(children) => {
                                     let valid_children: Vec<_> = children
                                         .into_iter()
@@ -3908,6 +3909,7 @@ fn collect_buffers(
                         }
 
                         let relevant = item.entry_name.is_none()
+                            || !SCAN_RELEVANT_ONLY.load(Ordering::Relaxed)
                             || is_relevant_buffer(item.entry_name.as_deref(), &item.buf);
 
                         // Streaming scan: run before item.buf is moved into `out`.
