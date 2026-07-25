@@ -3,7 +3,7 @@
 
 ## Discord Community Server: https://discord.gg/7XMCuj5mbP
 
-![HydraDragonAndroid](assets/HydraDragonAndroid.png)
+![HydraDragonAndroid](assets/image.png) (Logo made by discord user called: 1tophbeifong) 
 
 ![Android](https://img.shields.io/badge/Android-8.0%2B(Oreo)-3DDC84?style=for-the-badge&logo=android)
 ![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white)
