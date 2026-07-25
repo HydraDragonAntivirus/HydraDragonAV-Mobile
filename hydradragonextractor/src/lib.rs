@@ -102,11 +102,22 @@ pub fn extract_archive(path: &Path, output_dir: &Path) -> Result<ExtractResult> 
     std::fs::create_dir_all(output_dir)?;
     let data = std::fs::read(path)?;
 
-    let files = if is_rar(&data) {
-        rar::extract_to_dir(path, output_dir)?
+    let entries = if is_rar(&data) {
+        rar::extract_from_bytes(&data)?
     } else {
-        extract_to_dir(&data, output_dir)?
+        extract_to_memory(&data, false)?
     };
+
+    let mut files = Vec::new();
+    for e in entries {
+        if let Some(out_path) = safe_output_path(output_dir, &e.name) {
+            if let Some(parent) = out_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::write(&out_path, e.data)?;
+            files.push(out_path);
+        }
+    }
 
     Ok(ExtractResult {
         files,
@@ -306,36 +317,7 @@ pub fn extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
     })
 }
 
-// ---------------------------------------------------------------------------
-// Internal: disk-based extraction
-// ---------------------------------------------------------------------------
 
-fn extract_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    if data.starts_with(&ZIP_LOCAL_MAGIC) {
-        return zip_to_dir(data, output_dir);
-    }
-    if data.starts_with(&GZIP_MAGIC) {
-        return gzip_to_dir(data, output_dir);
-    }
-    if data.starts_with(&XZ_MAGIC) || data.starts_with(&[0x5d, 0x00]) {
-        return xz_to_dir(data, output_dir);
-    }
-    if data.starts_with(&BZ2_MAGIC) {
-        return bzip2_to_dir(data, output_dir);
-    }
-    if data.starts_with(&SEVENZ_MAGIC) {
-        return sz_to_dir(data, output_dir);
-    }
-    if is_tar(data) {
-        return tar_to_dir(data, output_dir);
-    }
-    if is_iso(data) {
-        return iso_to_dir(data, output_dir);
-    }
-    Err(ExtractError::OperationFailed {
-        reason: "unsupported or unknown archive format".to_string(),
-    })
-}
 
 // ---------------------------------------------------------------------------
 // Internal: in-memory extraction
@@ -456,17 +438,6 @@ fn decompress_bzip2(data: &[u8]) -> Result<Vec<u8>> {
 // Concretely typed GZIP helpers
 // ---------------------------------------------------------------------------
 
-fn gzip_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let d = decompress_gzip(data)?;
-    if is_tar(&d) {
-        tar_to_dir(&d, output_dir)
-    } else {
-        let out = output_dir.join("decompressed");
-        std::fs::write(&out, &d)?;
-        Ok(vec![out])
-    }
-}
-
 fn gzip_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let d = decompress_gzip(data)?;
     if is_tar(&d) {
@@ -481,17 +452,6 @@ fn gzip_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     }
 }
 
-fn xz_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let d = decompress_xz(data)?;
-    if is_tar(&d) {
-        tar_to_dir(&d, output_dir)
-    } else {
-        let out = output_dir.join("decompressed");
-        std::fs::write(&out, &d)?;
-        Ok(vec![out])
-    }
-}
-
 fn xz_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     let d = decompress_xz(data)?;
     if is_tar(&d) {
@@ -503,17 +463,6 @@ fn xz_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
             file_pos: 0,
             data: d,
         }])
-    }
-}
-
-fn bzip2_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let d = decompress_bzip2(data)?;
-    if is_tar(&d) {
-        tar_to_dir(&d, output_dir)
-    } else {
-        let out = output_dir.join("decompressed");
-        std::fs::write(&out, &d)?;
-        Ok(vec![out])
     }
 }
 
@@ -694,27 +643,6 @@ fn zip_to_memory(data: &[u8], relevant_only: bool) -> Result<Vec<ExtractedEntry>
     Ok(out)
 }
 
-fn zip_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let info = ripzip::extract::zip_reader::parse_archive(data)
-        .map_err(map_err)?;
-    let mut files = Vec::new();
-    for entry in &info.entries {
-        if let Some(out_path) = safe_output_path(output_dir, &entry.file_name) {
-            if entry.is_dir {
-                std::fs::create_dir_all(&out_path)?;
-                continue;
-            }
-            if let Some(parent) = out_path.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            let content = extract_ripzip_entry(data, entry)?;
-            std::fs::write(&out_path, content)?;
-            files.push(out_path);
-        }
-    }
-    Ok(files)
-}
-
 // ---------------------------------------------------------------------------
 // TAR
 // ---------------------------------------------------------------------------
@@ -755,21 +683,6 @@ fn tar_entries(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
 
 fn tar_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     tar_entries(data)
-}
-
-fn tar_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let entries = tar_entries(data)?;
-    let mut files = Vec::new();
-    for e in &entries {
-        if let Some(out_path) = safe_output_path(output_dir, &e.name) {
-            if let Some(parent) = out_path.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            std::fs::write(&out_path, &e.data)?;
-            files.push(out_path);
-        }
-    }
-    Ok(files)
 }
 
 // ---------------------------------------------------------------------------
@@ -821,50 +734,6 @@ fn sz_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
         }
     }
     Ok(out)
-}
-
-fn sz_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    use std::io::Write;
-    let dir = tempfile::tempdir().map_err(|e| ExtractError::OperationFailed {
-        reason: format!("temp dir creation failed: {e}"),
-    })?;
-    let input_path = dir.path().join("archive.7z");
-    let out_dir = dir.path().join("out");
-    std::fs::create_dir_all(&out_dir).map_err(|e| ExtractError::OperationFailed {
-        reason: format!("output dir creation failed: {e}"),
-    })?;
-    {
-        let mut f = std::fs::File::create(&input_path).map_err(|e| ExtractError::OperationFailed {
-            reason: format!("temp file creation failed: {e}"),
-        })?;
-        f.write_all(data).map_err(|e| ExtractError::OperationFailed {
-            reason: format!("temp file write failed: {e}"),
-        })?;
-    }
-    sevenz_rust2::decompress_file(&input_path, &out_dir).map_err(|e| ExtractError::OperationFailed {
-        reason: format!("7z decompress failed: {e}"),
-    })?;
-    let mut files = Vec::new();
-    for entry in std::fs::read_dir(&out_dir).map_err(|e| ExtractError::OperationFailed {
-        reason: format!("read output dir failed: {e}"),
-    })? {
-        let entry = entry.map_err(|e| ExtractError::OperationFailed {
-            reason: format!("read dir entry failed: {e}"),
-        })?;
-        let path = entry.path();
-        if path.is_file() {
-            let rel = path.strip_prefix(&out_dir).unwrap_or(&path).to_string_lossy().to_string();
-            if let Some(out_path) = safe_output_path(output_dir, &rel) {
-                if let Some(parent) = out_path.parent() {
-                    std::fs::create_dir_all(parent)?;
-                }
-                std::fs::copy(&path, &out_path)?;
-                files.push(out_path);
-            }
-        }
-    }
-    collect_files(output_dir, &mut files);
-    Ok(files)
 }
 
 fn sz_list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
@@ -928,47 +797,6 @@ fn collect_iso_entries(
 
 fn iso_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
     iso_entries(data)
-}
-
-fn iso_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let mut cursor = Cursor::new(data);
-    let root = isomage::detect_and_parse_filesystem(&mut cursor, "image.iso")
-        .map_err(|e| ExtractError::OperationFailed {
-            reason: format!("ISO parse failed: {e}"),
-        })?;
-    let mut files = Vec::new();
-    extract_iso_node(&mut cursor, &root, output_dir, &mut files, data.len())?;
-    Ok(files)
-}
-
-fn extract_iso_node(
-    reader: &mut (impl Read + Seek),
-    node: &isomage::TreeNode,
-    output_dir: &Path,
-    files: &mut Vec<PathBuf>,
-    compressed_len: usize,
-) -> Result<()> {
-    for child in &node.children {
-        if child.is_directory {
-            extract_iso_node(reader, child, output_dir, files, compressed_len)?;
-        } else {
-            if let Some(out_path) = safe_output_path(output_dir, &child.name) {
-                if let Some(parent) = out_path.parent() {
-                    std::fs::create_dir_all(parent)?;
-                }
-                let mut buf = Vec::new();
-                isomage::cat_node(reader, child, &mut buf).map_err(|e| ExtractError::OperationFailed {
-                    reason: format!("ISO read failed: {e}"),
-                })?;
-                if is_decompression_bomb(compressed_len, buf.len()) {
-                    return Err(ExtractError::DecompressionBomb { format: "iso" });
-                }
-                std::fs::write(&out_path, buf)?;
-                files.push(out_path);
-            }
-        }
-    }
-    Ok(())
 }
 
 fn iso_list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
