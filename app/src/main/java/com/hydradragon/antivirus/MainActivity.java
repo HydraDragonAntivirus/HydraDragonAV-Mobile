@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
         // FLAG_SECURE is intentionally omitted regardless of SCREEN_SECURITY.
         windowGuard = new com.hydradragon.antivirus.security.SecureWindowGuard(this);
         boolean disableSecure = getSharedPreferences("hydra_prefs", 0)
-            .getBoolean("disable_secure_flag", false);
+            .getBoolean("disable_secure_flag", true);
         if (!disableSecure && com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
                 com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY)) {
             windowGuard.applyFlagSecure();

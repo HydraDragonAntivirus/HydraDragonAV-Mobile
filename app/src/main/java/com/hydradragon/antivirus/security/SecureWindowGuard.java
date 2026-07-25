@@ -94,7 +94,7 @@ public final class SecureWindowGuard {
             // If the user intentionally disabled FLAG_SECURE ("Allow screen
             // recording" in settings), this is our own UI — not tampering.
             SharedPreferences prefs = activity.getSharedPreferences("hydra_prefs", 0);
-            if (prefs.getBoolean("disable_secure_flag", false)) {
+            if (prefs.getBoolean("disable_secure_flag", true)) {
                 watching = false; // stop polling, flag was intentionally removed
                 return;
             }

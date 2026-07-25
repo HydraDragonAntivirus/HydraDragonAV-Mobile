@@ -457,7 +457,7 @@ public class SettingsFragment extends Fragment {
 
         // Allow screen recording — removes FLAG_SECURE so other apps
         // (screen recorders, remote-support tools) can see this app's UI.
-        boolean allowRecording = prefs().getBoolean("disable_secure_flag", false);
+        boolean allowRecording = prefs().getBoolean("disable_secure_flag", true);
         addToggle(getString(R.string.disable_secure_flag_toggle), allowRecording, (btn, on) -> {
             prefs().edit().putBoolean("disable_secure_flag", on).apply();
             android.app.Activity a = getActivity();
