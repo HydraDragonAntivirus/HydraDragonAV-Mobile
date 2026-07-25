@@ -313,6 +313,10 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="dashboard_status_alert_desc">• Überwachung aktiv\n• Netzwerkregeln durchgesetzt\n%1$s</string>
     <string name="dashboard_engine_loading">Motor wird geladen</string>
     <string name="dashboard_status_loading_desc">• Überwachung wird geladen\n• Netzwerkregeln werden geladen</string>
+    <string name="wifi_network_secure">Wi-Fi-Netzwerk sicher.</string>
+    <string name="mobile_data_secure">Mobilfunkdaten sicher</string>
+    <string name="no_network_connection">Keine Netzwerkverbindung</string>
+    <string name="network_status_unknown">Netzwerkstatus unbekannt</string>
     <string name="notif_root_exploit_title">🔓 Root-Exploit Erkannt</string>
     <string name="notif_root_exploit_text">Gerät wurde während der Ausführung gerootet</string>
     <string name="dynamic_risk_title">⚠ Verdächtiges Verhalten Erkannt</string>

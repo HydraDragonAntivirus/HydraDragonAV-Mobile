@@ -313,6 +313,10 @@
     <string name="dashboard_status_alert_desc">• 모니터링 활성화됨\n• 네트워크 규칙 적용됨\n%1$s</string>
     <string name="dashboard_engine_loading">엔진 로딩 중</string>
     <string name="dashboard_status_loading_desc">• 모니터링 로딩 중\n• 네트워크 규칙 로딩 중</string>
+    <string name="wifi_network_secure">Wi-Fi 네트워크 안전합니다.</string>
+    <string name="mobile_data_secure">모바일 데이터 안전</string>
+    <string name="no_network_connection">네트워크 연결 없음</string>
+    <string name="network_status_unknown">네트워크 상태 알 수 없음</string>
     <string name="notif_root_exploit_title">🔓 루트 익스플로잇 감지됨</string>
     <string name="notif_root_exploit_text">실행 중 기기가 루팅되었습니다</string>
     <string name="dynamic_risk_title">⚠ 의심스러운 동작 감지됨</string>

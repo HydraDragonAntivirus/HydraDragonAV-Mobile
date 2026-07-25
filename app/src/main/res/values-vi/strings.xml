@@ -313,6 +313,10 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="dashboard_status_alert_desc">• Giám sát đang hoạt động\n• Đã áp dụng quy tắc mạng\n%1$s</string>
     <string name="dashboard_engine_loading">Đang tải công cụ</string>
     <string name="dashboard_status_loading_desc">• Đang tải giám sát\n• Đang tải quy tắc mạng</string>
+    <string name="wifi_network_secure">Mạng Wi-Fi an toàn.</string>
+    <string name="mobile_data_secure">Dữ liệu di động an toàn</string>
+    <string name="no_network_connection">Không có kết nối mạng</string>
+    <string name="network_status_unknown">Trạng thái mạng không xác định</string>
     <string name="notif_root_exploit_title">🔓 Phát hiện Khai thác Root</string>
     <string name="notif_root_exploit_text">Thiết bị đã bị root trong khi đang chạy</string>
     <string name="dynamic_risk_title">⚠ Phát hiện Hành vi Đáng ngờ</string>

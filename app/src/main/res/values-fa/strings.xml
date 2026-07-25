@@ -313,6 +313,10 @@
     <string name="dashboard_status_alert_desc">• پایش فعال است\n• قوانین شبکه اعمال شده است\n%1$s</string>
     <string name="dashboard_engine_loading">در حال بارگذاری موتور</string>
     <string name="dashboard_status_loading_desc">• در حال بارگذاری نظارت\n• در حال بارگذاری قوانین شبکه</string>
+    <string name="wifi_network_secure">شبکه Wi-Fi امن.</string>
+    <string name="mobile_data_secure">داده همراه امن</string>
+    <string name="no_network_connection">بدون اتصال شبکه</string>
+    <string name="network_status_unknown">وضعیت شبکه ناشناخته</string>
     <string name="notif_root_exploit_title">🔓 اکسپلویت روت شناسایی شد</string>
     <string name="notif_root_exploit_text">دستگاه هنگام اجرا روت شد</string>
     <string name="dynamic_risk_title">⚠ رفتار مشکوک شناسایی شد</string>

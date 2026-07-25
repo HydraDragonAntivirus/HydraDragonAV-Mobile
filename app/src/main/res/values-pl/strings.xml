@@ -313,6 +313,10 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="dashboard_status_alert_desc">• Monitorowanie aktywne\n• Reguły sieciowe egzekwowane\n%1$s</string>
     <string name="dashboard_engine_loading">Ładowanie silnika</string>
     <string name="dashboard_status_loading_desc">• Ładowanie monitorowania\n• Ładowanie reguł sieciowych</string>
+    <string name="wifi_network_secure">Sieć Wi-Fi bezpieczna.</string>
+    <string name="mobile_data_secure">Dane mobilne bezpieczne</string>
+    <string name="no_network_connection">Brak połączenia sieciowego</string>
+    <string name="network_status_unknown">Nieznany status sieci</string>
     <string name="notif_root_exploit_title">🔓 Wykryto exploit root</string>
     <string name="notif_root_exploit_text">Urządzenie uzyskało dostęp root podczas działania</string>
     <string name="dynamic_risk_title">⚠ Wykryto podejrzane zachowanie</string>

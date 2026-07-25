@@ -313,6 +313,10 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="dashboard_status_alert_desc">• Pemantauan aktif\n• Aturan jaringan diterapkan\n%1$s</string>
     <string name="dashboard_engine_loading">Memuat Mesin</string>
     <string name="dashboard_status_loading_desc">• Memuat pemantauan\n• Memuat aturan jaringan</string>
+    <string name="wifi_network_secure">Jaringan Wi-Fi aman.</string>
+    <string name="mobile_data_secure">Data seluler aman</string>
+    <string name="no_network_connection">Tidak ada koneksi jaringan</string>
+    <string name="network_status_unknown">Status jaringan tidak diketahui</string>
     <string name="notif_root_exploit_title">🔓 Eksploitasi Root Terdeteksi</string>
     <string name="notif_root_exploit_text">Perangkat menjadi ter-root saat berjalan</string>
     <string name="dynamic_risk_title">⚠ Perilaku Mencurigakan Terdeteksi</string>

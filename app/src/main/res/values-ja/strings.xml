@@ -313,6 +313,10 @@
     <string name="dashboard_status_alert_desc">• 監視は有効です\n• ネットワークルールが適用されています\n%1$s</string>
     <string name="dashboard_engine_loading">エンジン読み込み中</string>
     <string name="dashboard_status_loading_desc">• 監視読み込み中\n• ネットワークルール読み込み中</string>
+    <string name="wifi_network_secure">Wi-Fiネットワークは安全です。</string>
+    <string name="mobile_data_secure">モバイルデータは安全です</string>
+    <string name="no_network_connection">ネットワーク接続がありません</string>
+    <string name="network_status_unknown">ネットワーク状態不明</string>
     <string name="notif_root_exploit_title">🔓 Root化エクスプロイトを検出</string>
     <string name="notif_root_exploit_text">実行中にデバイスがRoot化されました</string>
     <string name="dynamic_risk_title">⚠ 不審な挙動を検出</string>

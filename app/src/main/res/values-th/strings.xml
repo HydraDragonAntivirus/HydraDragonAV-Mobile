@@ -313,6 +313,10 @@
     <string name="dashboard_status_alert_desc">• การตรวจสอบทำงานอยู่\n• ใช้กฎเครือข่ายแล้ว\n%1$s</string>
     <string name="dashboard_engine_loading">กำลังโหลดเอนจิน</string>
     <string name="dashboard_status_loading_desc">• กำลังโหลดการตรวจสอบ\n• กำลังโหลดกฎเครือข่าย</string>
+    <string name="wifi_network_secure">เครือข่าย Wi-Fi ปลอดภัย</string>
+    <string name="mobile_data_secure">ข้อมูลมือถือปลอดภัย</string>
+    <string name="no_network_connection">ไม่มีการเชื่อมต่อเครือข่าย</string>
+    <string name="network_status_unknown">สถานะเครือข่ายไม่ทราบ</string>
     <string name="notif_root_exploit_title">🔓 ตรวจพบการโจมตีแบบรูท</string>
     <string name="notif_root_exploit_text">อุปกรณ์ถูกรูทขณะกำลังทำงาน</string>
     <string name="dynamic_risk_title">⚠ ตรวจพบพฤติกรรมน่าสงสัย</string>

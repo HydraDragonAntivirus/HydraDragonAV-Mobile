@@ -313,6 +313,10 @@
     <string name="dashboard_status_alert_desc">• निगरानी सक्रिय\n• नेटवर्क नियम लागू\n%1$s</string>
     <string name="dashboard_engine_loading">इंजन लोड हो रहा है</string>
     <string name="dashboard_status_loading_desc">• मॉनिटरिंग लोड हो रही है\n• नेटवर्क नियम लोड हो रहे हैं</string>
+    <string name="wifi_network_secure">वाई-फ़ाई नेटवर्क सुरक्षित है।</string>
+    <string name="mobile_data_secure">मोबाइल डेटा सुरक्षित है</string>
+    <string name="no_network_connection">कोई नेटवर्क कनेक्शन नहीं</string>
+    <string name="network_status_unknown">नेटवर्क स्थिति अज्ञात</string>
     <string name="notif_root_exploit_title">🔓 रूट एक्सप्लॉइट का पता चला</string>
     <string name="notif_root_exploit_text">चलते समय डिवाइस रूट हो गया</string>
     <string name="dynamic_risk_title">⚠ संदिग्ध व्यवहार का पता चला</string>

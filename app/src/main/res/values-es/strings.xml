@@ -313,6 +313,10 @@ Puntuación de riesgo: %2$d/100
     <string name="dashboard_status_alert_desc">• Monitoreo activo\n• Reglas de red aplicadas\n%1$s</string>
     <string name="dashboard_engine_loading">Motor cargando</string>
     <string name="dashboard_status_loading_desc">• Cargando monitoreo\n• Cargando reglas de red</string>
+    <string name="wifi_network_secure">Red Wi-Fi segura.</string>
+    <string name="mobile_data_secure">Datos móviles seguros</string>
+    <string name="no_network_connection">Sin conexión de red</string>
+    <string name="network_status_unknown">Estado de red desconocido</string>
     <string name="notif_root_exploit_title">🔓 Exploit de Root Detectado</string>
     <string name="notif_root_exploit_text">El dispositivo obtuvo root mientras se ejecutaba</string>
     <string name="dynamic_risk_title">⚠ Comportamiento Sospechoso Detectado</string>

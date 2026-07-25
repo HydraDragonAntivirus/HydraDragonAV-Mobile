@@ -328,6 +328,10 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="dashboard_status_alert_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n%1$s</string>
     <string name="dashboard_engine_loading">Engine Loading</string>
     <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
+    <string name="wifi_network_secure">Wi-Fi Ağı Güvende.</string>
+    <string name="mobile_data_secure">Mobil Veri Güvende</string>
+    <string name="no_network_connection">Ağ Bağlantısı Yok</string>
+    <string name="network_status_unknown">Ağ Durumu Bilinmiyor</string>
     <string name="notif_root_exploit_title">🔓 Root Exploit Tespit Edildi</string>
     <string name="notif_root_exploit_text">Cihaz çalışırken root\'landı</string>
     <string name="dynamic_risk_title">⚠ Şüpheli Davranış Tespit Edildi</string>

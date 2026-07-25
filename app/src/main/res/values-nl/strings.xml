@@ -313,6 +313,10 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="dashboard_status_alert_desc">• Bewaking actief\n• Netwerkregels afgedwongen\n%1$s</string>
     <string name="dashboard_engine_loading">Motor laden</string>
     <string name="dashboard_status_loading_desc">• Bewaking laden\n• Netwerkregels laden</string>
+    <string name="wifi_network_secure">Wi-Fi-netwerk beveiligd.</string>
+    <string name="mobile_data_secure">Mobiele data beveiligd</string>
+    <string name="no_network_connection">Geen netwerkverbinding</string>
+    <string name="network_status_unknown">Netwerkstatus onbekend</string>
     <string name="notif_root_exploit_title">🔓 Root-exploit gedetecteerd</string>
     <string name="notif_root_exploit_text">Apparaat is geroot tijdens het uitvoeren</string>
     <string name="dynamic_risk_title">⚠ Verdacht Gedrag Gedetecteerd</string>

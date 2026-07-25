@@ -313,6 +313,10 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="dashboard_status_alert_desc">• Monitoraggio attivo\n• Regole di rete applicate\n%1$s</string>
     <string name="dashboard_engine_loading">Caricamento motore</string>
     <string name="dashboard_status_loading_desc">• Caricamento monitoraggio\n• Caricamento regole di rete</string>
+    <string name="wifi_network_secure">Rete Wi-Fi sicura.</string>
+    <string name="mobile_data_secure">Dati mobili sicuri</string>
+    <string name="no_network_connection">Nessuna connessione di rete</string>
+    <string name="network_status_unknown">Stato della rete sconosciuto</string>
     <string name="notif_root_exploit_title">🔓 Exploit di root rilevato</string>
     <string name="notif_root_exploit_text">Il dispositivo è diventato rootato durante l\'esecuzione</string>
     <string name="dynamic_risk_title">⚠ Comportamento Sospetto Rilevato</string>

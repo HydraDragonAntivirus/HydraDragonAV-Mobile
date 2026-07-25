@@ -7,6 +7,8 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
+import com.hydradragon.antivirus.R;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.HashMap;
@@ -51,8 +53,8 @@ public class NetworkSecurityScanner {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm != null) {
             NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-            if (activeNetwork == null || !activeNetwork.isConnected()) return new SecurityReport(true, "No Network Connection", false);
-            if (activeNetwork.getType() != ConnectivityManager.TYPE_WIFI) return new SecurityReport(true, "Mobile Data Secure", false);
+            if (activeNetwork == null || !activeNetwork.isConnected()) return new SecurityReport(true, context.getString(R.string.no_network_connection), false);
+            if (activeNetwork.getType() != ConnectivityManager.TYPE_WIFI) return new SecurityReport(true, context.getString(R.string.mobile_data_secure), false);
         }
 
         WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -69,10 +71,10 @@ public class NetworkSecurityScanner {
 
                 if (isArpSpoofed) return new SecurityReport(false, "CRITICAL: ARP Spoofing (Man-in-the-Middle) Detected!", true);
 
-                return new SecurityReport(true, "Wi-Fi Network Secure.", false);
+                return new SecurityReport(true, context.getString(R.string.wifi_network_secure), false);
             }
         }
-        return new SecurityReport(true, "Network Status Unknown", false);
+        return new SecurityReport(true, context.getString(R.string.network_status_unknown), false);
     }
 
     private boolean checkArpSpoofing() {

@@ -313,6 +313,10 @@
     <string name="dashboard_status_alert_desc">• Мониторинг активен\n• Сетевые правила применены\n%1$s</string>
     <string name="dashboard_engine_loading">Загрузка движка</string>
     <string name="dashboard_status_loading_desc">• Загрузка мониторинга\n• Загрузка сетевых правил</string>
+    <string name="wifi_network_secure">Сеть Wi-Fi защищена.</string>
+    <string name="mobile_data_secure">Мобильные данные защищены</string>
+    <string name="no_network_connection">Нет сетевого подключения</string>
+    <string name="network_status_unknown">Статус сети неизвестен</string>
     <string name="notif_root_exploit_title">🔓 Обнаружен Root-эксплойт</string>
     <string name="notif_root_exploit_text">Устройство получило root-права во время работы</string>
     <string name="dynamic_risk_title">⚠ Обнаружено подозрительное поведение</string>

@@ -313,6 +313,10 @@
     <string name="dashboard_status_alert_desc">• المراقبة نشطة\n• قواعد الشبكة مفعّلة\n%1$s</string>
     <string name="dashboard_engine_loading">تحميل المحرك</string>
     <string name="dashboard_status_loading_desc">• تحميل المراقبة\n• تحميل قواعد الشبكة</string>
+    <string name="wifi_network_secure">شبكة Wi-Fi آمنة.</string>
+    <string name="mobile_data_secure">بيانات الجوّال آمنة</string>
+    <string name="no_network_connection">لا يوجد اتصال بالشبكة</string>
+    <string name="network_status_unknown">حالة الشبكة غير معروفة</string>
     <string name="notif_root_exploit_title">🔓 تم اكتشاف استغلال Root</string>
     <string name="notif_root_exploit_text">أصبح الجهاز مروّتًا (Root) أثناء التشغيل</string>
     <string name="dynamic_risk_title">⚠ تم اكتشاف سلوك مشبوه</string>

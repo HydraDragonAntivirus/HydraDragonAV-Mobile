@@ -328,6 +328,10 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="dashboard_status_secure_desc">• Monitoring active\n• Network rules enforced\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• Monitoring active\n• Network rules enforced\n%1$s</string>
     <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
+    <string name="wifi_network_secure">Wi-Fi Network Secure.</string>
+    <string name="mobile_data_secure">Mobile Data Secure</string>
+    <string name="no_network_connection">No Network Connection</string>
+    <string name="network_status_unknown">Network Status Unknown</string>
     <string name="notif_root_exploit_title">🔓 Root Exploit Detected</string>
     <string name="notif_root_exploit_text">Device became rooted while running</string>
     <string name="dynamic_risk_title">⚠ Suspicious Behaviour Detected</string>

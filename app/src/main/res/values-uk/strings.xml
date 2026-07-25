@@ -313,6 +313,10 @@
     <string name="dashboard_status_alert_desc">• Моніторинг активний\n• Мережеві правила застосовано\n%1$s</string>
     <string name="dashboard_engine_loading">Завантаження двигуна</string>
     <string name="dashboard_status_loading_desc">• Завантаження моніторингу\n• Завантаження мережевих правил</string>
+    <string name="wifi_network_secure">Мережа Wi-Fi захищена.</string>
+    <string name="mobile_data_secure">Мобільні дані захищені</string>
+    <string name="no_network_connection">Немає мережевого підключення</string>
+    <string name="network_status_unknown">Статус мережі невідомий</string>
     <string name="notif_root_exploit_title">🔓 Виявлено root-експлойт</string>
     <string name="notif_root_exploit_text">Пристрій отримав root-доступ під час роботи</string>
     <string name="dynamic_risk_title">⚠ Виявлено підозрілу поведінку</string>
