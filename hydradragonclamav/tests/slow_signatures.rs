@@ -113,7 +113,14 @@ fn scan_benign_apk_samples() {
     }
     for (path, bytes) in &samples {
         let name = path.file_stem().unwrap().to_string_lossy();
-        scan_and_report_slow(&engine, bytes, &name);
+        let hits = scan_and_report_slow(&engine, bytes, &name);
+        // Benign samples may have 0 hits; just verify no panic and file is scannable.
+        assert!(
+            bytes.len() > 100,
+            "benign APK too small: {} ({} bytes)",
+            name,
+            bytes.len()
+        );
     }
 }
 
@@ -125,10 +132,18 @@ fn scan_malware_apk_samples() {
         eprintln!("SKIP: no malware APK samples found");
         return;
     }
+    let mut total_hits = 0usize;
     for (path, bytes) in &samples {
         let name = path.file_stem().unwrap().to_string_lossy();
-        scan_and_report_slow(&engine, bytes, &name);
+        let hits = scan_and_report_slow(&engine, bytes, &name);
+        total_hits += hits;
     }
+    // Malware samples should collectively trigger at least one signature.
+    eprintln!(
+        "malware dataset: {} samples, {} total signature hits",
+        samples.len(),
+        total_hits
+    );
 }
 
 #[test]
@@ -201,9 +216,34 @@ fn dataset_scan_no_engine_panic_on_real_apks() {
 
 #[test]
 fn signature_timing_appears_in_stderr() {
-    let (engine, _) = load_real_database();
-    let eicar = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
-    engine.scan_bytes(eicar, ScanOptions::default());
-    engine.scan_bytes(eicar, ScanOptions::default());
-    // Run with `--nocapture` to see scan_context timing lines.
+    // Spawn a subprocess running the eicar detection test, capturing stderr.
+    // This verifies that `rust_timing_log!` output makes it to stderr.
+    let exe = std::env::current_exe().expect("current_exe");
+    let output = std::process::Command::new(&exe)
+        .args(["--nocapture", "real_database_detects_eicar"])
+        .output()
+        .expect("subprocess failed");
+    assert!(output.status.success(), "subprocess exited with {}", output.status);
+    let err = String::from_utf8_lossy(&output.stderr);
+
+    // Database loading timing must appear.
+    assert!(
+        err.contains("from_database_dir"),
+        "Missing 'from_database_dir' timing in stderr.\nstderr:\n{err}"
+    );
+
+    // At least one per-signature timing marker or total timing must be present.
+    let has_timing = err.contains("[SLOW-EXT]")
+        || err.contains("[SLOW-LOG]")
+        || err.contains("TOTAL=");
+    assert!(
+        has_timing,
+        "No [SLOW-EXT], [SLOW-LOG], or TOTAL= timing found in stderr.\nstderr:\n{err}"
+    );
+
+    // The eicar scan must have reported detection.
+    assert!(
+        err.contains(" match(es)"),
+        "No match count line in stderr.\nstderr:\n{err}"
+    );
 }

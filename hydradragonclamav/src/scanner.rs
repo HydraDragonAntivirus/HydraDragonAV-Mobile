@@ -2061,6 +2061,130 @@ mod tests {
     }
 
     #[test]
+    fn is_unsupported_archive_detects_rar5() {
+        assert!(is_unsupported_archive(&[0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00]));
+    }
+
+    #[test]
+    fn is_unsupported_archive_detects_rar15() {
+        assert!(is_unsupported_archive(&[0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00]));
+    }
+
+    #[test]
+    fn is_unsupported_archive_rejects_zip_and_short() {
+        assert!(!is_unsupported_archive(&[0x50, 0x4b, 0x03, 0x04]));
+        assert!(!is_unsupported_archive(&[0x52]));
+    }
+
+    #[test]
+    fn scan_options_default_scan_archive_true() {
+        assert!(ScanOptions::default().scan_archives);
+        assert_eq!(ScanOptions::default().max_recursion, 16);
+        assert_eq!(ScanOptions::default().max_child_size, 650 * 1024 * 1024);
+    }
+
+    #[test]
+    fn scan_options_disabled_archive_skips_extraction() {
+        let source = SourceLocation {
+            path: std::sync::Arc::from(std::path::Path::new("test.ndb")),
+            line: 1,
+        };
+        let mut name_arena = String::new();
+        let database = Database {
+            extended: vec![ExtendedSignature {
+                name: crate::database::intern_name(&mut name_arena, "Test.NoArchive"),
+                target: Some(0),
+                offset: OffsetSpec::any(),
+                patterns: compile_pattern_variants("414243", Modifiers::default()).unwrap().into(),
+                source,
+            }],
+            name_arena,
+            ..Default::default()
+        };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
+
+        let opts = ScanOptions { scan_archives: false, ..ScanOptions::default() };
+        let found = engine.scan_bytes(b"xxABCyy", opts);
+        assert_eq!(found.len(), 1, "scan_archives=false must still scan raw bytes");
+    }
+
+    #[test]
+    fn extended_signature_nocase_matches_any_case() {
+        let source = SourceLocation {
+            path: std::sync::Arc::from(std::path::Path::new("test.ndb")),
+            line: 1,
+        };
+        let mut name_arena = String::new();
+        let nocase = Modifiers { nocase: true, ..Modifiers::default() };
+        let database = Database {
+            extended: vec![ExtendedSignature {
+                name: crate::database::intern_name(&mut name_arena, "Test.NocaseExt"),
+                target: Some(0),
+                offset: OffsetSpec::any(),
+                patterns: compile_pattern_variants("616263", nocase).unwrap().into(),
+                source,
+            }],
+            name_arena,
+            ..Default::default()
+        };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
+
+        // All these should match "abc" (case-insensitively)
+        assert!(engine.scan_bytes(b"ABC!", ScanOptions::default()).iter().any(|m| m.name == "Test.NocaseExt"));
+        assert!(engine.scan_bytes(b"abc!", ScanOptions::default()).iter().any(|m| m.name == "Test.NocaseExt"));
+        assert!(engine.scan_bytes(b"AbC!", ScanOptions::default()).iter().any(|m| m.name == "Test.NocaseExt"));
+
+        // Should not match when completely absent
+        assert!(engine.scan_bytes(b"xyz!", ScanOptions::default()).is_empty());
+    }
+
+    #[test]
+    fn multiple_extended_signatures_all_match() {
+        let source = SourceLocation {
+            path: std::sync::Arc::from(std::path::Path::new("test.ndb")),
+            line: 1,
+        };
+        let mut name_arena = String::new();
+        let database = Database {
+            extended: vec![
+                ExtendedSignature {
+                    name: crate::database::intern_name(&mut name_arena, "Sig.Alpha"),
+                    target: Some(0),
+                    offset: OffsetSpec::any(),
+                    patterns: compile_pattern_variants("414141", Modifiers::default()).unwrap().into(),
+                    source: source.clone(),
+                },
+                ExtendedSignature {
+                    name: crate::database::intern_name(&mut name_arena, "Sig.Beta"),
+                    target: Some(0),
+                    offset: OffsetSpec::any(),
+                    patterns: compile_pattern_variants("424242", Modifiers::default()).unwrap().into(),
+                    source: source.clone(),
+                },
+                ExtendedSignature {
+                    name: crate::database::intern_name(&mut name_arena, "Sig.Gamma"),
+                    target: Some(0),
+                    offset: OffsetSpec::any(),
+                    patterns: compile_pattern_variants("434343", Modifiers::default()).unwrap().into(),
+                    source,
+                },
+            ],
+            name_arena,
+            ..Default::default()
+        };
+        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(&database);
+        let engine = Engine { database, atomfilter_db, yara: Vec::new() };
+
+        let found = engine.scan_bytes(b"AAABBBCCC", ScanOptions::default());
+        assert_eq!(found.len(), 3);
+        assert!(found.iter().any(|m| m.name == "Sig.Alpha"));
+        assert!(found.iter().any(|m| m.name == "Sig.Beta"));
+        assert!(found.iter().any(|m| m.name == "Sig.Gamma"));
+    }
+
+    #[test]
     fn scans_eicar_test_signature() {
         let source = SourceLocation {
             path: std::sync::Arc::from(std::path::Path::new("test.ndb")),

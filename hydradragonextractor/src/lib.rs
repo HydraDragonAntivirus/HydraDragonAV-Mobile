@@ -861,6 +861,9 @@ pub(crate) fn collect_files(dir: &Path, out: &mut Vec<PathBuf>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
+
+    // ── Format detection ────────────────────────────────────────
 
     #[test]
     fn detects_rar_signature() {
@@ -915,5 +918,201 @@ mod tests {
             detect_format(&[0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c]),
             Some("7z")
         );
+    }
+
+    // ── Gzip roundtrip ──────────────────────────────────────────
+
+    #[test]
+    fn gzip_roundtrip() {
+        let input = b"Hello HydraDragon gzip test\x00\x01\x02\x03";
+        let mut compressed = Vec::new();
+        {
+            let mut enc = flate2::write::GzEncoder::new(&mut compressed, flate2::Compression::fast());
+            enc.write_all(input).unwrap();
+            enc.finish().unwrap();
+        }
+        assert_eq!(detect_format(&compressed), Some("gz"));
+        let entries = extract_to_memory(&compressed, false).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].name, "decompressed");
+        assert_eq!(entries[0].data, input);
+    }
+
+    #[test]
+    fn gzip_tar_roundtrip() {
+        let content = b"nested tar content";
+        let mut tar_bytes = Vec::new();
+        {
+            let mut builder = tar::Builder::new(&mut tar_bytes);
+            let mut header = tar::Header::new_gnu();
+            header.set_path("inner.txt").unwrap();
+            header.set_size(content.len() as u64);
+            header.set_cksum();
+            builder.append(&header, &content[..]).unwrap();
+            builder.finish().unwrap();
+        }
+        let mut gz = Vec::new();
+        {
+            let mut enc = flate2::write::GzEncoder::new(&mut gz, flate2::Compression::fast());
+            enc.write_all(&tar_bytes).unwrap();
+            enc.finish().unwrap();
+        }
+        assert_eq!(detect_format(&gz), Some("gz"));
+        let entries = extract_to_memory(&gz, false).unwrap();
+        assert_eq!(entries.len(), 1, "tar.gz should yield the inner tar entry");
+        assert_eq!(entries[0].name, "inner.txt");
+        assert_eq!(entries[0].data, content);
+    }
+
+    // ── Xz roundtrip ────────────────────────────────────────────
+
+    #[test]
+    fn xz_roundtrip() {
+        let input = b"xz payload data \xf0\xf1\xf2\xf3";
+        let compressed = {
+            let mut buf = Vec::new();
+            let mut enc = lzma_rust2::XzWriter::new(&mut buf, lzma_rust2::XzOptions::default()).unwrap();
+            enc.write_all(input).unwrap();
+            enc.finish().unwrap();
+            buf
+        };
+        assert_eq!(detect_format(&compressed), Some("xz"));
+        let entries = extract_to_memory(&compressed, false).unwrap();
+        assert_eq!(entries[0].data, input);
+    }
+
+    // ── Bzip2 roundtrip ─────────────────────────────────────────
+
+    #[test]
+    fn bzip2_roundtrip() {
+        let input = b"bzip2 roundtrip works! \r\nline2";
+        let compressed = {
+            let mut buf = Vec::new();
+            let mut enc = bzip2::write::BzEncoder::new(&mut buf, bzip2::Compression::fast());
+            enc.write_all(input).unwrap();
+            enc.finish().unwrap();
+            buf
+        };
+        assert_eq!(detect_format(&compressed), Some("bz2"));
+        let entries = extract_to_memory(&compressed, false).unwrap();
+        assert_eq!(entries[0].data, input);
+    }
+
+    // ── Tar roundtrip ───────────────────────────────────────────
+
+    #[test]
+    fn tar_roundtrip() {
+        let content1 = b"first file content";
+        let content2 = b"second file with \x00\xff bytes";
+        let mut tar_bytes = Vec::new();
+        {
+            let mut builder = tar::Builder::new(&mut tar_bytes);
+            let mut h1 = tar::Header::new_gnu();
+            h1.set_path("a.txt").unwrap();
+            h1.set_size(content1.len() as u64);
+            h1.set_cksum();
+            builder.append(&h1, &content1[..]).unwrap();
+
+            let mut h2 = tar::Header::new_gnu();
+            h2.set_path("sub/b.bin").unwrap();
+            h2.set_size(content2.len() as u64);
+            h2.set_cksum();
+            builder.append(&h2, &content2[..]).unwrap();
+            builder.finish().unwrap();
+        }
+        assert_eq!(detect_format(&tar_bytes), Some("tar"));
+
+        let infos = list_entries(&tar_bytes).unwrap();
+        assert_eq!(infos.len(), 2);
+        assert_eq!(infos[0].name, "a.txt");
+        assert_eq!(infos[1].name, "sub/b.bin");
+
+        let extracted = extract_entry(&tar_bytes, "sub/b.bin").unwrap();
+        assert_eq!(extracted, content2);
+
+        let all = extract_to_memory(&tar_bytes, false).unwrap();
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0].name, "a.txt");
+        assert_eq!(all[0].data, content1);
+        assert_eq!(all[1].name, "sub/b.bin");
+        assert_eq!(all[1].data, content2);
+    }
+
+    #[test]
+    fn tar_missing_entry_returns_error() {
+        let mut tar_bytes = Vec::new();
+        {
+            let mut builder = tar::Builder::new(&mut tar_bytes);
+            let mut h = tar::Header::new_gnu();
+            h.set_path("present.txt").unwrap();
+            h.set_size(4);
+            h.set_cksum();
+            builder.append(&h, &b"data"[..]).unwrap();
+            builder.finish().unwrap();
+        }
+        let err = extract_entry(&tar_bytes, "nonexistent.txt").unwrap_err();
+        assert!(err.to_string().contains("not found in tar"));
+    }
+
+    // ── Compression bomb guard ──────────────────────────────────
+
+    fn setup_bomb_detection(enabled: bool) {
+        DETECT_BOMBS.store(enabled, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    #[test]
+    fn bomb_detection_rejects_high_ratio() {
+        setup_bomb_detection(true);
+        let small = vec![0u8; 16];
+        let big = vec![0u8; 16_001_000];
+        assert!(is_decompression_bomb(small.len(), big.len()));
+    }
+
+    #[test]
+    fn bomb_detection_allows_small_ratio() {
+        setup_bomb_detection(true);
+        assert!(!is_decompression_bomb(1000, 500_000));
+    }
+
+    #[test]
+    fn bomb_detection_disabled_allows_anything() {
+        setup_bomb_detection(false);
+        assert!(!is_decompression_bomb(1, MAX_DECOMPRESSED_SIZE + 1));
+        setup_bomb_detection(true);
+    }
+
+    // ── Safe output path ────────────────────────────────────────
+
+    #[test]
+    fn safe_output_path_rejects_absolute() {
+        let base = Path::new("/tmp/out");
+        assert!(safe_output_path(base, "/etc/passwd").is_none());
+    }
+
+    #[test]
+    fn safe_output_path_rejects_parent_escape() {
+        let base = Path::new("/tmp/out");
+        assert!(safe_output_path(base, "../../etc/passwd").is_none());
+    }
+
+    #[test]
+    fn safe_output_path_allows_normal() {
+        let base = Path::new("/tmp/out");
+        let got = safe_output_path(base, "sub/dir/file.txt");
+        assert_eq!(got, Some(PathBuf::from("/tmp/out/sub/dir/file.txt")));
+    }
+
+    // ── Unsupported formats ─────────────────────────────────────
+
+    #[test]
+    fn detect_unknown_format_returns_none() {
+        assert_eq!(detect_format(b"\x00\x01\x02\x03\x04\x05\x06\x07"), None);
+        assert_eq!(detect_format(b""), None);
+        assert_eq!(detect_format(b"hello world"), None);
+    }
+
+    #[test]
+    fn extract_invalid_data_returns_err() {
+        assert!(extract_to_memory(b"not an archive at all", false).is_err());
     }
 }

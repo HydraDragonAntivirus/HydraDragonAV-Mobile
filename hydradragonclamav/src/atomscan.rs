@@ -198,7 +198,7 @@ impl<'a> AtomFilterScanner<'a> {
         }
 
         // ── Nocase automaton pass ────────────────────────────────────
-        {
+        if pt.nocase.is_some() {
             let mut lowered = std::mem::take(&mut self.lowered_buf);
             if data.len() > lowered.len() { lowered.resize(data.len(), 0); }
             for (i, &b) in data.iter().enumerate() { lowered[i] = b.to_ascii_lowercase(); }
