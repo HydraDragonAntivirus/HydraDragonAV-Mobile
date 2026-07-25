@@ -148,6 +148,7 @@ public class ScanFragment extends Fragment {
             tvThreats.setText(String.valueOf(foundThreats.size()));
                     tvActiveThreats.setText(String.valueOf(foundThreats.size()));
             tvScanStatus.setText(lastScanStatus);
+            tvCurrentApp.setText("");
             btnScan.setText(getString(R.string.rescan));
             if (foundThreats.size() > 0) {
                 tvThreats.setTextColor(0xFFFF0040);
@@ -666,6 +667,9 @@ public class ScanFragment extends Fragment {
                     lastScanStatus = result.isClean() ? "System clean" : totalThreats + " threats";
                     if (wasCancelled) lastScanStatus = "Scan stopped";
                     lastScanStatus += " (" + duration + ")";
+                    lastProgressName = "";
+                    lastProgressCurrent = 0;
+                    lastProgressTotal = 0;
                     Log.d(TAG, "onScanComplete: fragment detached, status saved");
                     return;
                 }
