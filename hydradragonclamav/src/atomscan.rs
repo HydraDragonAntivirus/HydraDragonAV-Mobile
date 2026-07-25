@@ -76,14 +76,20 @@ impl<'a> AtomFilterScanner<'a> {
         out_stats: &mut AutomatonStats,
     ) {
         let (pma, dense) = if exact {
-            match (pt.exact.as_ref(), pt.exact_dense.is_empty()) {
-                (Some(pma), false) => (pma, pt.exact_dense.as_slice()),
-                _ => return,
+            match pt.exact.as_ref() {
+                Some(pma) => {
+                    let dense = pt.exact_dense.get_or_init(|| pma.build_dense_table());
+                    (pma, dense.as_slice())
+                }
+                None => return,
             }
         } else {
-            match (pt.nocase.as_ref(), pt.nocase_dense.is_empty()) {
-                (Some(pma), false) => (pma, pt.nocase_dense.as_slice()),
-                _ => return,
+            match pt.nocase.as_ref() {
+                Some(pma) => {
+                    let dense = pt.nocase_dense.get_or_init(|| pma.build_dense_table());
+                    (pma, dense.as_slice())
+                }
+                None => return,
             }
         };
 

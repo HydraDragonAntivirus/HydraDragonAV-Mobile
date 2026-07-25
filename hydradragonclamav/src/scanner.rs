@@ -240,6 +240,11 @@ impl Engine {
         )
     }
 
+    /// Serialized atomfilter cache bytes for reuse on next process start.
+    pub fn atomfilter_cache_bytes(&self) -> Vec<u8> {
+        self.atomfilter_db.to_bytes()
+    }
+
     /// Load from a filesystem directory (original path-based loading).
     pub fn from_database_dir(path: impl AsRef<Path>) -> io::Result<(Self, crate::LoadReport)> {
         let path = path.as_ref();
@@ -249,7 +254,7 @@ impl Engine {
             t0.elapsed().as_millis(), report.files_seen, database.extended.len(), database.logical.len(),
             database.container.len());
         let bc = crate::bytecode::BytecodeSet::load_from_dir(path);
-        Ok(Self::finish_engine_init(&mut database, &mut report, bc, t0))
+        Ok(Self::finish_engine_init(&mut database, &mut report, bc, t0, None))
     }
 
     /// Load from a pre-read map of filename → file contents (AAssetManager path).
@@ -264,7 +269,22 @@ impl Engine {
             t0.elapsed().as_millis(), report.files_seen, database.extended.len(), database.logical.len(),
             database.container.len());
         let bc = crate::bytecode::BytecodeSet::from_bytes_map(files);
-        let (engine, report) = Self::finish_engine_init(&mut database, &mut report, bc, t0);
+        let (engine, report) = Self::finish_engine_init(&mut database, &mut report, bc, t0, None);
+        (engine, report)
+    }
+
+    /// Like `from_bytes_map` but uses a pre-built atomfilter cache.
+    pub fn from_bytes_map_with_atomfilter(
+        files: &std::collections::HashMap<String, Vec<u8>>,
+        atomfilter_cache: crate::atomfilter::AtomFilterDb,
+    ) -> (Self, crate::LoadReport) {
+        let t0 = Instant::now();
+        let (mut database, mut report) = Database::from_bytes_map(files);
+        rust_timing_log!("from_bytes_map :: load_dir={}ms files={} ext={} logical={} container={}",
+            t0.elapsed().as_millis(), report.files_seen, database.extended.len(), database.logical.len(),
+            database.container.len());
+        let bc = crate::bytecode::BytecodeSet::from_bytes_map(files);
+        let (engine, report) = Self::finish_engine_init(&mut database, &mut report, bc, t0, Some(atomfilter_cache));
         (engine, report)
     }
 
@@ -275,6 +295,7 @@ impl Engine {
         report: &mut crate::LoadReport,
         bc: crate::bytecode::BytecodeSet,
         t0: std::time::Instant,
+        atomfilter_cache: Option<crate::atomfilter::AtomFilterDb>,
     ) -> (Self, crate::LoadReport) {
         let t_bc = Instant::now();
         report.bytecodes_loaded = bc.report.loaded;
@@ -306,8 +327,17 @@ impl Engine {
         }
         rust_timing_log!("from_database_dir :: bytecode={}ms loaded={}", t_bc.elapsed().as_millis(), report.bytecodes_loaded);
         let t_pf = Instant::now();
-        let atomfilter_db = crate::atomfilter_build::AtomFilterBuilder::build(database);
-        rust_timing_log!("from_database_dir :: atomfilter_build={}ms slots={}", t_pf.elapsed().as_millis(), atomfilter_db.slots.len());
+        let atomfilter_db = match atomfilter_cache {
+            Some(cache) => {
+                rust_timing_log!("atomfilter_build :: using cache");
+                cache
+            }
+            None => {
+                let db = crate::atomfilter_build::AtomFilterBuilder::build(database);
+                rust_timing_log!("from_database_dir :: atomfilter_build={}ms slots={}", t_pf.elapsed().as_millis(), db.slots.len());
+                db
+            }
+        };
         rust_timing_log!("from_database_dir :: TOTAL={}ms", t0.elapsed().as_millis());
         let database = std::mem::take(database);
         (Self { database, atomfilter_db, yara: Vec::new() }, std::mem::take(report))

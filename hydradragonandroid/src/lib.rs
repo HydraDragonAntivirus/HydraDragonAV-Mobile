@@ -314,13 +314,27 @@ fn set_status(s: String) {
 fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_auto_rules: bool) -> Engine {
     let t0 = std::time::Instant::now();
 
+    let atomfilter_cache = INIT_DIR.get().map(|base| {
+        let path = std::path::Path::new(base).join("atomfilter.cache");
+        std::fs::read(&path).ok().and_then(|bytes| {
+            let t0 = std::time::Instant::now();
+            let result = hydradragonclamav::atomfilter::AtomFilterDb::from_bytes(&bytes);
+            let ms = t0.elapsed().as_millis();
+            rust_timing_log!("init :: atomfilter_cache read={ms}ms ok={}", result.is_some());
+            result
+        })
+    }).flatten();
+
     let (clamav_out, model_out, tlsh_elf_out, tlsh_apk_out, tlsh_dex_out, whitelist_out, pkg_out, url_out, ip_out, benign_out) =
         std::thread::scope(|s| {
             let clamav_handle = s.spawn(move || {
                 let t_db = std::time::Instant::now();
                 let mut report = String::new();
                 let clamav = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    hydradragonclamav::Engine::from_bytes_map(files)
+                    match atomfilter_cache {
+                        Some(cache) => hydradragonclamav::Engine::from_bytes_map_with_atomfilter(files, cache),
+                        None => hydradragonclamav::Engine::from_bytes_map(files),
+                    }
                 })) {
                     Ok((mut eng, _c_report)) => {
                         let db_ms = t_db.elapsed().as_millis();
@@ -398,6 +412,18 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                             }
                         }
                         report.push_str(&format!(" learned={}", learned));
+                        // Write atomfilter cache for next start.
+                        if let Some(base_str) = INIT_DIR.get() {
+                            let cache_path = std::path::Path::new(base_str).join("atomfilter.cache");
+                            let cache_bytes = eng.atomfilter_cache_bytes();
+                            let t_cache = std::time::Instant::now();
+                            if std::fs::write(&cache_path, &cache_bytes).is_ok() {
+                                let cache_ms = t_cache.elapsed().as_millis();
+                                rust_timing_log!("init :: atomfilter_cache wrote={cache_ms}ms size={}", cache_bytes.len());
+                            }
+                            drop(cache_bytes);
+                            drop(cache_path);
+                        }
                         Some(eng)
                     }
                     _ => {

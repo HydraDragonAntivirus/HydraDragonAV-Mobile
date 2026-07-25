@@ -254,16 +254,12 @@ impl AtomFilterBuilder {
                 }
             }
 
-            // Build ClamAV-style dense transition tables.
-            let exact_dense = exact.as_ref().map(|pma| pma.build_dense_table()).unwrap_or_default();
-            let nocase_dense = nocase.as_ref().map(|pma| pma.build_dense_table()).unwrap_or_default();
-
             per_target.push(PerTarget {
                 target,
                 exact,
                 nocase,
-                exact_dense,
-                nocase_dense,
+                exact_dense: std::sync::OnceLock::new(),
+                nocase_dense: std::sync::OnceLock::new(),
                 atom_to_slots,
                 pattern_lens,
                 slot_to_values: slot_to_values.into_iter().map(|v| v.into_boxed_slice()).collect(),

@@ -1,4 +1,4 @@
-use daachorse::{ClamavMultilevelPrefilter, DoubleArrayAhoCorasick};
+use daachorse::{ClamavMultilevelPrefilter, ClamavPrefilter, DoubleArrayAhoCorasick};
 
 pub type SlotId = u32;
 
@@ -33,8 +33,8 @@ pub struct PerTarget {
     pub target: u32,
     pub exact: Option<DoubleArrayAhoCorasick<u32>>,
     pub nocase: Option<DoubleArrayAhoCorasick<u32>>,
-    pub exact_dense: Vec<u32>,
-    pub nocase_dense: Vec<u32>,
+    pub exact_dense: std::sync::OnceLock<Vec<u32>>,
+    pub nocase_dense: std::sync::OnceLock<Vec<u32>>,
     pub atom_to_slots: Vec<Box<[SlotId]>>,
     pub pattern_lens: Vec<usize>,
     pub slot_to_values: Vec<Box<[u32]>>,
@@ -88,4 +88,334 @@ impl AtomFilterDb {
             prefilter: ClamavMultilevelPrefilter::from_patterns(&[]),
         }
     }
+
+    /// Serialise the entire atomfilter into a byte vector.
+    ///
+    /// Format (all integers little-endian):
+    ///   1. version (u8) = 1
+    ///   2. prefilter: 6 × [`ClamavPrefilter`], each 2 × 65536 bytes = 786432 bytes
+    ///   3. per_target count (u32)
+    ///   4. for each per_target:
+    ///        target (u32)
+    ///
+    ///        exact automaton: has (u8) + len (u32) + bytes (daachorse wire format)
+    ///        nocase automaton: has (u8) + len (u32) + bytes
+    ///
+    ///        exact_dense: len (u32) + [u32; len]
+    ///        nocase_dense: len (u32) + [u32; len]
+    ///
+    ///        atom_to_slots count (u32)
+    ///        for each: slot_id count (u32) + [SlotId; count]
+    ///
+    ///        pattern_lens count (u32)
+    ///        for each: u64
+    ///
+    ///        slot_to_values count (u32)
+    ///        for each: u32 count (u32) + [u32; count]
+    ///
+    ///   5. slots count (u32)
+    ///   6. for each slot: target_tag (u32: 0=Extended, 1=LogicalSubsig),
+    ///        sig_index (u32), subsig_index (u32, 0 if Extended),
+    ///        threshold (u32), file_type_target (u32)
+    ///
+    ///   7. ext_slot count (u32)
+    ///   8. for each: u32 (SlotId, or u32::MAX for AutoMatch)
+    ///
+    ///   9. log_subsig_slots count (u32)
+    ///   10. for each: subsig count (u32) + for each: u32
+    ///        (SlotId, u32::MAX for AutoMatch, u32::MAX-1 for External)
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+
+        // 1. version
+        buf.push(1u8);
+
+        // 2. prefilter (6 filters × 65536 bytes per b + 65536 bytes per end)
+        for f in self.prefilter.filters().iter() {
+            buf.extend_from_slice(&f.raw_b()[..]);
+            buf.extend_from_slice(&f.raw_end()[..]);
+        }
+
+        // 3+4. per_target
+        buf.extend_from_slice(&(self.per_target.len() as u32).to_le_bytes());
+        for pt in &self.per_target {
+            buf.extend_from_slice(&pt.target.to_le_bytes());
+
+            // exact automaton
+            write_auto(&mut buf, pt.exact.as_ref());
+            // nocase automaton
+            write_auto(&mut buf, pt.nocase.as_ref());
+
+            // exact_dense (from OnceLock or empty)
+            let ed = pt.exact_dense.get().map(|v| v.as_slice()).unwrap_or(&[]);
+            buf.extend_from_slice(&(ed.len() as u32).to_le_bytes());
+            for &v in ed {
+                buf.extend_from_slice(&v.to_le_bytes());
+            }
+            // nocase_dense
+            let nd = pt.nocase_dense.get().map(|v| v.as_slice()).unwrap_or(&[]);
+            buf.extend_from_slice(&(nd.len() as u32).to_le_bytes());
+            for &v in nd {
+                buf.extend_from_slice(&v.to_le_bytes());
+            }
+
+            // atom_to_slots
+            buf.extend_from_slice(&(pt.atom_to_slots.len() as u32).to_le_bytes());
+            for ids in &pt.atom_to_slots {
+                buf.extend_from_slice(&(ids.len() as u32).to_le_bytes());
+                for &id in ids.iter() {
+                    buf.extend_from_slice(&id.to_le_bytes());
+                }
+            }
+
+            // pattern_lens
+            buf.extend_from_slice(&(pt.pattern_lens.len() as u32).to_le_bytes());
+            for &len in &pt.pattern_lens {
+                buf.extend_from_slice(&(len as u64).to_le_bytes());
+            }
+
+            // slot_to_values
+            buf.extend_from_slice(&(pt.slot_to_values.len() as u32).to_le_bytes());
+            for ids in &pt.slot_to_values {
+                buf.extend_from_slice(&(ids.len() as u32).to_le_bytes());
+                for &id in ids.iter() {
+                    buf.extend_from_slice(&id.to_le_bytes());
+                }
+            }
+        }
+
+        // 5+6. slots
+        buf.extend_from_slice(&(self.slots.len() as u32).to_le_bytes());
+        for s in &self.slots {
+            let (tag, si, ssi) = match s.target {
+                SlotTarget::Extended { sig_index } => (0u32, sig_index, 0u32),
+                SlotTarget::LogicalSubsig { sig_index, subsig_index } => (1u32, sig_index, subsig_index),
+            };
+            buf.extend_from_slice(&tag.to_le_bytes());
+            buf.extend_from_slice(&si.to_le_bytes());
+            buf.extend_from_slice(&ssi.to_le_bytes());
+            buf.extend_from_slice(&s.threshold.to_le_bytes());
+            buf.extend_from_slice(&s.file_type_target.to_le_bytes());
+        }
+
+        // 7+8. ext_slot
+        buf.extend_from_slice(&(self.ext_slot.len() as u32).to_le_bytes());
+        for es in &self.ext_slot {
+            let v: u32 = match es {
+                ExtSlot::Atom(id) => *id,
+                ExtSlot::AutoMatch => u32::MAX,
+            };
+            buf.extend_from_slice(&v.to_le_bytes());
+        }
+
+        // 9+10. log_subsig_slots
+        buf.extend_from_slice(&(self.log_subsig_slots.len() as u32).to_le_bytes());
+        for ss in &self.log_subsig_slots {
+            buf.extend_from_slice(&(ss.len() as u32).to_le_bytes());
+            for slot in ss.iter() {
+                let v: u32 = match slot {
+                    SubsigSlot::Atom(id) => *id,
+                    SubsigSlot::AutoMatch => u32::MAX,
+                    SubsigSlot::External => u32::MAX - 1,
+                };
+                buf.extend_from_slice(&v.to_le_bytes());
+            }
+        }
+
+        buf
+    }
+
+    /// Deserialise from a byte slice produced by [`to_bytes`].
+    /// Returns `None` on any format error.
+    pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
+        let mut pos = 0usize;
+
+        // 1. version
+        if bytes.get(pos).copied()? != 1 { return None; }
+        pos += 1;
+
+        // 2. prefilter
+        let pf_bytes = bytes.get(pos..pos + 786432)?;
+        pos += 786432;
+        let prefilter = read_prefilter(pf_bytes)?;
+
+        // 3. per_target count
+        let pt_count = read_u32(bytes, &mut pos)? as usize;
+
+        // 4. per_target array
+        let mut per_target = Vec::with_capacity(pt_count);
+        for _ in 0..pt_count {
+            let target = read_u32(bytes, &mut pos)?;
+
+            let exact = read_auto(bytes, &mut pos)?;
+            let nocase = read_auto(bytes, &mut pos)?;
+
+            let ed_len = read_u32(bytes, &mut pos)? as usize;
+            let mut exact_dense_vec = Vec::with_capacity(ed_len);
+            for _ in 0..ed_len {
+                exact_dense_vec.push(read_u32(bytes, &mut pos)?);
+            }
+            let exact_dense = std::sync::OnceLock::new();
+            if !exact_dense_vec.is_empty() {
+                let _ = exact_dense.set(exact_dense_vec);
+            }
+
+            let nd_len = read_u32(bytes, &mut pos)? as usize;
+            let mut nocase_dense_vec = Vec::with_capacity(nd_len);
+            for _ in 0..nd_len {
+                nocase_dense_vec.push(read_u32(bytes, &mut pos)?);
+            }
+            let nocase_dense = std::sync::OnceLock::new();
+            if !nocase_dense_vec.is_empty() {
+                let _ = nocase_dense.set(nocase_dense_vec);
+            }
+
+            // atom_to_slots
+            let ats_count = read_u32(bytes, &mut pos)? as usize;
+            let mut atom_to_slots = Vec::with_capacity(ats_count);
+            for _ in 0..ats_count {
+                let ids_count = read_u32(bytes, &mut pos)? as usize;
+                let mut ids = Vec::with_capacity(ids_count);
+                for _ in 0..ids_count {
+                    ids.push(read_u32(bytes, &mut pos)?);
+                }
+                atom_to_slots.push(ids.into_boxed_slice());
+            }
+
+            // pattern_lens
+            let pl_count = read_u32(bytes, &mut pos)? as usize;
+            let mut pattern_lens = Vec::with_capacity(pl_count);
+            for _ in 0..pl_count {
+                pattern_lens.push(read_u64(bytes, &mut pos)? as usize);
+            }
+
+            // slot_to_values
+            let stv_count = read_u32(bytes, &mut pos)? as usize;
+            let mut slot_to_values = Vec::with_capacity(stv_count);
+            for _ in 0..stv_count {
+                let ids_count = read_u32(bytes, &mut pos)? as usize;
+                let mut ids = Vec::with_capacity(ids_count);
+                for _ in 0..ids_count {
+                    ids.push(read_u32(bytes, &mut pos)?);
+                }
+                slot_to_values.push(ids.into_boxed_slice());
+            }
+
+            per_target.push(PerTarget {
+                target,
+                exact,
+                nocase,
+                exact_dense,
+                nocase_dense,
+                atom_to_slots,
+                pattern_lens,
+                slot_to_values,
+            });
+        }
+
+        // 5. slots count
+        let slots_count = read_u32(bytes, &mut pos)? as usize;
+        let mut slots = Vec::with_capacity(slots_count);
+        for _ in 0..slots_count {
+            let tag = read_u32(bytes, &mut pos)?;
+            let si = read_u32(bytes, &mut pos)?;
+            let ssi = read_u32(bytes, &mut pos)?;
+            let threshold = read_u32(bytes, &mut pos)?;
+            let file_type_target = read_u32(bytes, &mut pos)?;
+            let target = match tag {
+                0 => SlotTarget::Extended { sig_index: si },
+                1 => SlotTarget::LogicalSubsig { sig_index: si, subsig_index: ssi },
+                _ => return None,
+            };
+            slots.push(SlotDef { target, threshold, file_type_target });
+        }
+
+        // ext_slot
+        let es_count = read_u32(bytes, &mut pos)? as usize;
+        let mut ext_slot = Vec::with_capacity(es_count);
+        for _ in 0..es_count {
+            let v = read_u32(bytes, &mut pos)?;
+            ext_slot.push(if v == u32::MAX { ExtSlot::AutoMatch } else { ExtSlot::Atom(v) });
+        }
+
+        // log_subsig_slots
+        let lss_count = read_u32(bytes, &mut pos)? as usize;
+        let mut log_subsig_slots = Vec::with_capacity(lss_count);
+        for _ in 0..lss_count {
+            let count = read_u32(bytes, &mut pos)? as usize;
+            let mut ss = Vec::with_capacity(count);
+            for _ in 0..count {
+                let v = read_u32(bytes, &mut pos)?;
+                ss.push(if v == u32::MAX { SubsigSlot::AutoMatch }
+                    else if v == u32::MAX - 1 { SubsigSlot::External }
+                    else { SubsigSlot::Atom(v) });
+            }
+            log_subsig_slots.push(ss.into_boxed_slice());
+        }
+
+        Some(AtomFilterDb { per_target, slots, ext_slot, log_subsig_slots, prefilter })
+    }
+}
+
+// -- helpers --
+
+fn write_auto(buf: &mut Vec<u8>, auto: Option<&DoubleArrayAhoCorasick<u32>>) {
+    match auto {
+        Some(pma) => {
+            let bytes = pma.serialize();
+            buf.push(1u8);
+            buf.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
+            buf.extend_from_slice(&bytes);
+        }
+        None => {
+            buf.push(0u8);
+            buf.extend_from_slice(&0u32.to_le_bytes());
+        }
+    }
+}
+
+fn read_auto(bytes: &[u8], pos: &mut usize) -> Option<Option<DoubleArrayAhoCorasick<u32>>> {
+    let has = bytes.get(*pos).copied()?;
+    *pos += 1;
+    let len = read_u32(bytes, pos)? as usize;
+    if has == 0 {
+        if len != 0 { return None; }
+        return Some(None);
+    }
+    let slice = bytes.get(*pos..*pos + len)?;
+    *pos += len;
+    let (pma, _rest) = DoubleArrayAhoCorasick::<u32>::deserialize(slice).ok()?;
+    Some(Some(pma))
+}
+
+fn read_u32(bytes: &[u8], pos: &mut usize) -> Option<u32> {
+    let slice = bytes.get(*pos..*pos + 4)?;
+    *pos += 4;
+    Some(u32::from_le_bytes([slice[0], slice[1], slice[2], slice[3]]))
+}
+
+fn read_u64(bytes: &[u8], pos: &mut usize) -> Option<u64> {
+    let slice = bytes.get(*pos..*pos + 8)?;
+    *pos += 8;
+    Some(u64::from_le_bytes([slice[0], slice[1], slice[2], slice[3], slice[4], slice[5], slice[6], slice[7]]))
+}
+
+fn read_prefilter(bytes: &[u8]) -> Option<ClamavMultilevelPrefilter> {
+    let mut pos = 0usize;
+    let empty = ClamavPrefilter::empty();
+    let mut filters = [
+        empty.clone(), empty.clone(), empty.clone(),
+        empty.clone(), empty.clone(), empty,
+    ];
+    for f in &mut filters {
+        let b_slice = bytes.get(pos..pos + 65536)?;
+        let end_slice = bytes.get(pos + 65536..pos + 131072)?;
+        let mut b = [0u8; 65536];
+        let mut end = [0u8; 65536];
+        b.copy_from_slice(b_slice);
+        end.copy_from_slice(end_slice);
+        *f = ClamavPrefilter::from_raw(b, end);
+        pos += 131072;
+    }
+    Some(ClamavMultilevelPrefilter::from_filters(filters))
 }
