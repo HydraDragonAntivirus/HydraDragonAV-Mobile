@@ -416,7 +416,7 @@ public class GuardService extends Service {
                                 GuardService.this, threat);
                         } else {
                             com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
-                                GuardService.this, threat);
+                                GuardService.this, threat, true);
                         }
                     } catch (Throwable t) {
                         Log.e(TAG, "auto-kill on threat found failed", t);

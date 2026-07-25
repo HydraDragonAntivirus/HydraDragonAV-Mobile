@@ -85,6 +85,10 @@ public final class BehaviorResponse {
      *  no UI: SYSTEM_ALERT_WINDOW is already declared as the documented
      *  background-activity-start exemption (see AndroidManifest.xml). */
     public static void killAndPromptUninstall(Context context, ThreatResult threat) {
+        killAndPromptUninstall(context, threat, false);
+    }
+
+    public static void killAndPromptUninstall(Context context, ThreatResult threat, boolean isFromScan) {
         if (threat == null) return;
         String pkg = threat.getPackageName();
         boolean installed = pkg != null && !pkg.isEmpty() && isPackageInstalled(context, pkg);
@@ -93,15 +97,18 @@ public final class BehaviorResponse {
         } else {
             promptDeleteFile(context, threat);
         }
-        showMalwareFoundScreen(context, threat, !installed);
+        showMalwareFoundScreen(context, threat, !installed, isFromScan);
     }
 
     /** Full-screen "MALWARE FOUND" warning, launched over whatever app the
      *  user currently has in the foreground — the kill+uninstall (or
      *  delete-file prompt) has ALREADY fired by the time this shows; it's the
      *  unmissable backdrop, not a confirmation gate of its own. */
-    private static void showMalwareFoundScreen(Context context, ThreatResult threat, boolean isFile) {
+    private static void showMalwareFoundScreen(Context context, ThreatResult threat, boolean isFile, boolean isFromScan) {
         if (!hasOverlayOrNotifPermission(context)) {
+            if (isFromScan) {
+                return;
+            }
             Log.i(TAG, "Overlay or Notification permission missing -> redirecting directly to HydraDragon Scan Screen with threat alert");
             redirectToScanScreen(context, threat);
             return;
