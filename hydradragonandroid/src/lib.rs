@@ -1992,8 +1992,7 @@ fn run_scan(
 
         skip_heavy = buffers
             .iter()
-            .enumerate()
-            .map(|(i, b)| {
+            .map(|b| {
                 let is_seed = b.entry_name.is_none();
                 // 1. Check if the buffer's own MD5 is in the NSRL hash whitelist (whitelisted item)
                 let self_md5 = if is_seed {
@@ -2526,7 +2525,7 @@ fn run_scan(
     // used for similarity matching.
     let mut entry_md5_pairs: Vec<String> = Vec::new();
     let mut entry_tlsh_pairs: Vec<String> = Vec::new();
-    for (i, b) in buffers.iter().enumerate() {
+    for b in buffers.iter() {
         if b.entry_name.is_none() { continue; }
         let Some(ref entry) = b.entry_name else { continue };
         if entry.is_empty() { continue; }
