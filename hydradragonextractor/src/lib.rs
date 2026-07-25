@@ -1,21 +1,23 @@
-use std::io::Cursor;
+use std::io::{Cursor, Read, Seek};
 use std::path::{Path, PathBuf};
 
-use oxiarc_archive::detect::ArchiveFormat;
-use oxiarc_archive::bzip2::Bzip2Reader;
-use oxiarc_archive::gzip::GzipReader;
-use oxiarc_archive::sevenz::SevenZReader;
-use oxiarc_archive::tar::reader::TarReader;
-use oxiarc_archive::xz::XzReader;
-use oxiarc_archive::zip::ZipReader;
-
+/// Magic bytes for format detection.
+const GZIP_MAGIC: [u8; 2] = [0x1f, 0x8b];
+const ZIP_LOCAL_MAGIC: [u8; 4] = [0x50, 0x4b, 0x03, 0x04];
+const XZ_MAGIC: [u8; 6] = [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00];
+const BZ2_MAGIC: [u8; 3] = [0x42, 0x5a, 0x68];
+const SEVENZ_MAGIC: [u8; 6] = [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c];
+const ZSTD_MAGIC: [u8; 4] = [0x28, 0xb5, 0x2f, 0xfd];
+/// ISO 9660 has "CD001" at sector 16 offset 1 (byte 32769).
+const ISO_MAGIC_OFFSET: usize = 32769;
+const ISO_MAGIC: [u8; 5] = *b"CD001";
+/// ustar tar has "ustar" at offset 257.
+const TAR_USTAR_OFFSET: usize = 257;
+const TAR_USTAR_MAGIC: [u8; 5] = *b"ustar";
 /// RAR v1.5: `Rar!\x1a\x07\x00`
 const RAR15_MAGIC: [u8; 7] = [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00];
 /// RAR v5: `Rar!\x1a\x07\x01\x00`
 const RAR5_MAGIC: [u8; 8] = [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00];
-/// ustar tar has "ustar" at offset 257.
-const TAR_USTAR_OFFSET: usize = 257;
-const TAR_USTAR_MAGIC: [u8; 5] = *b"ustar";
 
 mod rar;
 
@@ -54,31 +56,27 @@ fn map_err(e: impl ToString) -> ExtractError {
 
 pub fn detect_format(data: &[u8]) -> Option<&'static str> {
     if is_rar(data) {
-        return Some("rar");
-    }
-    match ArchiveFormat::from_magic(data) {
-        ArchiveFormat::Zip => Some("zip"),
-        ArchiveFormat::Gzip => Some("gz"),
-        ArchiveFormat::Xz => Some("xz"),
-        ArchiveFormat::Tar => Some("tar"),
-        ArchiveFormat::SevenZip => Some("7z"),
-        ArchiveFormat::Bzip2 => Some("bz2"),
-        ArchiveFormat::Zstd => Some("zst"),
-        ArchiveFormat::Lz4 => Some("lz4"),
-        ArchiveFormat::Brotli => Some("br"),
-        ArchiveFormat::Snappy => Some("snappy"),
-        ArchiveFormat::Cab => Some("cab"),
-        ArchiveFormat::Lzh => Some("lzh"),
-        ArchiveFormat::Iso9660 => Some("iso"),
-        _ => {
-            if is_tar(data) {
-                Some("tar")
-            } else if is_lzma(data) {
-                Some("lzma")
-            } else {
-                None
-            }
-        }
+        Some("rar")
+    } else if data.starts_with(&GZIP_MAGIC) {
+        Some("gz")
+    } else if data.starts_with(&ZIP_LOCAL_MAGIC) {
+        Some("zip")
+    } else if data.starts_with(&XZ_MAGIC) {
+        Some("xz")
+    } else if data.starts_with(&BZ2_MAGIC) {
+        Some("bz2")
+    } else if data.starts_with(&SEVENZ_MAGIC) {
+        Some("7z")
+    } else if data.starts_with(&ZSTD_MAGIC) {
+        Some("zst")
+    } else if data.starts_with(&[0x5d, 0x00]) {
+        Some("lzma")
+    } else if is_tar(data) {
+        Some("tar")
+    } else if is_iso(data) {
+        Some("iso")
+    } else {
+        None
     }
 }
 
@@ -87,12 +85,13 @@ fn is_tar(data: &[u8]) -> bool {
         && data[TAR_USTAR_OFFSET..TAR_USTAR_OFFSET + 5] == TAR_USTAR_MAGIC
 }
 
-fn is_lzma(data: &[u8]) -> bool {
-    data.starts_with(&[0x5d, 0x00])
-}
-
 fn is_rar(data: &[u8]) -> bool {
     data.starts_with(&RAR5_MAGIC) || data.starts_with(&RAR15_MAGIC)
+}
+
+fn is_iso(data: &[u8]) -> bool {
+    data.len() > ISO_MAGIC_OFFSET + 5
+        && data[ISO_MAGIC_OFFSET..ISO_MAGIC_OFFSET + 5] == ISO_MAGIC
 }
 
 // ---------------------------------------------------------------------------
@@ -135,15 +134,15 @@ pub struct ZipEntryInfo {
 /// List ZIP entry names and sizes without extracting their content.
 /// Enables the caller to filter by name first, then extract only relevant entries.
 pub fn zip_list_entries(data: &[u8]) -> Result<Vec<ZipEntryInfo>> {
-    let zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
-    Ok(zip
-        .entries()
+    let info = ripzip::extract::zip_reader::parse_archive(data)
+        .map_err(map_err)?;
+    Ok(info.entries
         .iter()
-        .filter(|e| !e.name.ends_with('/'))
+        .filter(|e| !e.is_dir)
         .take(MAX_ARCHIVE_ENTRIES)
         .map(|e| ZipEntryInfo {
-            name: e.name.clone(),
-            size: e.size,
+            name: e.file_name.clone(),
+            size: e.uncompressed_size,
             compressed_size: e.compressed_size,
         })
         .collect())
@@ -153,13 +152,81 @@ pub fn zip_list_entries(data: &[u8]) -> Result<Vec<ZipEntryInfo>> {
 /// entries when only a subset is needed — the caller first filters names
 /// from [`zip_list_entries`], then extracts only matching entries.
 pub fn zip_extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
-    let mut zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
-    let entry = zip.entry_by_name(name).ok_or_else(|| ExtractError::OperationFailed {
-        reason: format!("entry not found in zip: {name}"),
-    })?;
-    let cloned = entry.clone();
-    let content = zip.extract(&cloned).map_err(map_err)?;
-    Ok(content)
+    let info = ripzip::extract::zip_reader::parse_archive(data)
+        .map_err(map_err)?;
+    let entry = info.entries.iter()
+        .find(|e| e.file_name == name && !e.is_dir)
+        .ok_or_else(|| ExtractError::OperationFailed {
+            reason: format!("entry not found in zip: {name}"),
+        })?;
+    extract_ripzip_entry(data, entry)
+}
+
+fn extract_ripzip_entry(
+    archive_data: &[u8],
+    entry: &ripzip::extract::zip_reader::ZipEntry,
+) -> Result<Vec<u8>> {
+    let data_offset = ripzip::extract::zip_reader::parse_local_header_data_offset(
+        archive_data, entry.local_header_offset,
+    ).map_err(map_err)?;
+
+    let start = data_offset as usize;
+    let end = start + entry.compressed_size as usize;
+    if end > archive_data.len() {
+        return Err(ExtractError::OperationFailed {
+            reason: format!("entry data for '{}' extends beyond archive", entry.file_name),
+        });
+    }
+    let compressed = &archive_data[start..end];
+
+    match entry.compression_method {
+        ripzip::zip_format::COMPRESSION_STORED => {
+            if entry.uncompressed_size > 0 {
+                let crc = ripzip::zip_format::crc::crc32(compressed);
+                if crc != entry.crc32 {
+                    return Err(ExtractError::OperationFailed {
+                        reason: format!("CRC32 mismatch for '{}'", entry.file_name),
+                    });
+                }
+            }
+            Ok(compressed.to_vec())
+        }
+        ripzip::zip_format::COMPRESSION_DEFLATED => {
+            use std::io::Read;
+            let mut decoder = flate2::read::DeflateDecoder::new(compressed);
+            let mut out = Vec::with_capacity(entry.uncompressed_size as usize);
+            decoder.read_to_end(&mut out).map_err(|e| ExtractError::OperationFailed {
+                reason: format!("deflate decompression failed for '{}': {e}", entry.file_name),
+            })?;
+            let crc = ripzip::zip_format::crc::crc32(&out);
+            if entry.uncompressed_size > 0 && crc != entry.crc32 {
+                return Err(ExtractError::OperationFailed {
+                    reason: format!("CRC32 mismatch for '{}'", entry.file_name),
+                });
+            }
+            Ok(out)
+        }
+        ripzip::zip_format::COMPRESSION_ZSTD => {
+            use std::io::Read;
+            let mut decoder = zstd::Decoder::new(compressed).map_err(|e| ExtractError::OperationFailed {
+                reason: format!("zstd init failed for '{}': {e}", entry.file_name),
+            })?;
+            let mut out = Vec::with_capacity(entry.uncompressed_size as usize);
+            decoder.read_to_end(&mut out).map_err(|e| ExtractError::OperationFailed {
+                reason: format!("zstd decompression failed for '{}': {e}", entry.file_name),
+            })?;
+            let crc = ripzip::zip_format::crc::crc32(&out);
+            if entry.uncompressed_size > 0 && crc != entry.crc32 {
+                return Err(ExtractError::OperationFailed {
+                    reason: format!("CRC32 mismatch for '{}'", entry.file_name),
+                });
+            }
+            Ok(out)
+        }
+        m => Err(ExtractError::OperationFailed {
+            reason: format!("unsupported compression method {m} for '{}'", entry.file_name),
+        }),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -177,39 +244,31 @@ pub fn list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
     if is_rar(data) {
         return rar::list_entries(data);
     }
-    let fmt = ArchiveFormat::from_magic(data);
-    match fmt {
-        ArchiveFormat::Zip => {
-            zip_list_entries(data).map(|v| {
-                v.into_iter()
-                    .map(|e| EntryInfo { name: e.name, size: e.size })
-                    .collect()
-            })
-        }
-        ArchiveFormat::Tar => tar_list_entries(data),
-        ArchiveFormat::SevenZip => sz_list_entries(data),
-        ArchiveFormat::Gzip | ArchiveFormat::Xz | ArchiveFormat::Bzip2 | ArchiveFormat::Zstd
-        | ArchiveFormat::Lz4 | ArchiveFormat::Brotli | ArchiveFormat::Snappy => {
-            Ok(vec![EntryInfo {
-                name: "decompressed".to_string(),
-                size: 0,
-            }])
-        }
-        _ => {
-            if is_tar(data) {
-                tar_list_entries(data)
-            } else if is_lzma(data) {
-                Ok(vec![EntryInfo {
-                    name: "decompressed".to_string(),
-                    size: 0,
-                }])
-            } else {
-                Err(ExtractError::OperationFailed {
-                    reason: "listing not supported for this format".to_string(),
-                })
-            }
-        }
+    if data.starts_with(&ZIP_LOCAL_MAGIC) {
+        return zip_list_entries(data).map(|v| {
+            v.into_iter()
+                .map(|e| EntryInfo { name: e.name, size: e.size })
+                .collect()
+        });
     }
+    if data.starts_with(&SEVENZ_MAGIC) {
+        return sz_list_entries(data);
+    }
+    if is_tar(data) {
+        return Ok(tar_entries(data)?.into_iter().map(|e| EntryInfo { name: e.name, size: e.size_real }).collect());
+    }
+    // Compression formats: report a single "decompressed" entry.
+    if data.starts_with(&GZIP_MAGIC) || data.starts_with(&XZ_MAGIC)
+        || data.starts_with(&BZ2_MAGIC) || data.starts_with(&ZSTD_MAGIC)
+        || data.starts_with(&[0x5d, 0x00]) {
+        return Ok(vec![EntryInfo { name: "decompressed".to_string(), size: 0 }]);
+    }
+    if is_iso(data) {
+        return iso_list_entries(data);
+    }
+    Err(ExtractError::OperationFailed {
+        reason: "listing not supported for this format".to_string(),
+    })
 }
 
 /// Extract a single entry by name from an archive.
@@ -217,81 +276,34 @@ pub fn extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
     if is_rar(data) {
         return rar::extract_entry(data, name);
     }
-    let fmt = ArchiveFormat::from_magic(data);
-    match fmt {
-        ArchiveFormat::Zip => zip_extract_entry(data, name),
-        ArchiveFormat::Tar => tar_extract_entry(data, name),
-        ArchiveFormat::SevenZip => sz_extract_entry(data, name),
-        ArchiveFormat::Gzip => decompress_gzip(data),
-        ArchiveFormat::Xz => decompress_xz(data),
-        ArchiveFormat::Bzip2 => decompress_bzip2(data),
-        ArchiveFormat::Zstd | ArchiveFormat::Lz4 | ArchiveFormat::Brotli | ArchiveFormat::Snappy => {
-            Err(ExtractError::OperationFailed {
-                reason: format!("single-entry extraction not implemented for {:?}", fmt),
-            })
-        }
-        _ => {
-            if is_tar(data) {
-                tar_extract_entry(data, name)
-            } else if is_lzma(data) {
-                decompress_xz(data)
-            } else {
-                Err(ExtractError::OperationFailed {
-                    reason: "extraction not supported for this format".to_string(),
-                })
-            }
-        }
+    if data.starts_with(&ZIP_LOCAL_MAGIC) {
+        return zip_extract_entry(data, name);
     }
-}
-
-fn tar_list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
-    let tar = TarReader::new(Cursor::new(data)).map_err(map_err)?;
-    Ok(tar
-        .entries()
-        .iter()
-        .filter(|e| !e.name.ends_with('/'))
-        .take(MAX_ARCHIVE_ENTRIES)
-        .map(|e| EntryInfo {
-            name: e.name.clone(),
-            size: e.size,
-        })
-        .collect())
-}
-
-fn tar_extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
-    let mut tar = TarReader::new(Cursor::new(data)).map_err(map_err)?;
-    tar.extract_by_name(name)
-        .map_err(map_err)?
-        .ok_or_else(|| ExtractError::OperationFailed {
-            reason: format!("entry not found in tar: {name}"),
-        })
-}
-
-fn sz_list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
-    let sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
-    Ok(sz
-        .entries()
-        .iter()
-        .filter(|e| !e.name.ends_with('/'))
-        .take(MAX_ARCHIVE_ENTRIES)
-        .map(|e| EntryInfo {
-            name: e.name.clone(),
-            size: e.size,
-        })
-        .collect())
-}
-
-fn sz_extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
-    let sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
-    let entries = sz.entries();
-    let idx = entries
-        .iter()
-        .position(|e| e.name == name)
-        .ok_or_else(|| ExtractError::OperationFailed {
-            reason: format!("entry not found in 7z: {name}"),
-        })?;
-    let mut sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
-    sz.extract(idx).map_err(map_err)
+    if data.starts_with(&SEVENZ_MAGIC) {
+        return sz_extract_entry(data, name);
+    }
+    if is_tar(data) {
+        let entries = tar_entries(data)?;
+        return entries.into_iter().find(|e| e.name == name).map(|e| e.data)
+            .ok_or_else(|| ExtractError::OperationFailed {
+                reason: format!("entry not found in tar: {name}"),
+            });
+    }
+    if data.starts_with(&GZIP_MAGIC) {
+        return decompress_gzip(data);
+    }
+    if data.starts_with(&XZ_MAGIC) || data.starts_with(&[0x5d, 0x00]) {
+        return decompress_xz(data);
+    }
+    if data.starts_with(&BZ2_MAGIC) {
+        return decompress_bzip2(data);
+    }
+    if is_iso(data) {
+        return iso_extract_entry(data, name);
+    }
+    Err(ExtractError::OperationFailed {
+        reason: "extraction not supported for this format".to_string(),
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -299,34 +311,30 @@ fn sz_extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
 // ---------------------------------------------------------------------------
 
 fn extract_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let fmt = ArchiveFormat::from_magic(data);
-    match fmt {
-        ArchiveFormat::Zip => zip_to_dir(data, output_dir),
-        ArchiveFormat::Tar => tar_to_dir(data, output_dir),
-        ArchiveFormat::Gzip => gzip_to_dir(data, output_dir),
-        ArchiveFormat::Xz => xz_to_dir(data, output_dir),
-        ArchiveFormat::Bzip2 => bzip2_to_dir(data, output_dir),
-        ArchiveFormat::SevenZip => sz_to_dir(data, output_dir),
-        ArchiveFormat::Cab | ArchiveFormat::Lzh => {
-            Err(ExtractError::OperationFailed {
-                reason: format!(
-                    "{} extraction not yet supported via disk API",
-                    fmt.extension()
-                ),
-            })
-        }
-        _ => {
-            if is_tar(data) {
-                tar_to_dir(data, output_dir)
-            } else if is_lzma(data) {
-                xz_to_dir(data, output_dir)
-            } else {
-                Err(ExtractError::OperationFailed {
-                    reason: "unsupported or unknown archive format".to_string(),
-                })
-            }
-        }
+    if data.starts_with(&ZIP_LOCAL_MAGIC) {
+        return zip_to_dir(data, output_dir);
     }
+    if data.starts_with(&GZIP_MAGIC) {
+        return gzip_to_dir(data, output_dir);
+    }
+    if data.starts_with(&XZ_MAGIC) || data.starts_with(&[0x5d, 0x00]) {
+        return xz_to_dir(data, output_dir);
+    }
+    if data.starts_with(&BZ2_MAGIC) {
+        return bzip2_to_dir(data, output_dir);
+    }
+    if data.starts_with(&SEVENZ_MAGIC) {
+        return sz_to_dir(data, output_dir);
+    }
+    if is_tar(data) {
+        return tar_to_dir(data, output_dir);
+    }
+    if is_iso(data) {
+        return iso_to_dir(data, output_dir);
+    }
+    Err(ExtractError::OperationFailed {
+        reason: "unsupported or unknown archive format".to_string(),
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -334,34 +342,30 @@ fn extract_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // ---------------------------------------------------------------------------
 
 fn extract_to_memory(data: &[u8], relevant_only: bool) -> Result<Vec<ExtractedEntry>> {
-    let fmt = ArchiveFormat::from_magic(data);
-    match fmt {
-        ArchiveFormat::Zip => zip_to_memory(data, relevant_only),
-        ArchiveFormat::Tar => tar_to_memory(data),
-        ArchiveFormat::Gzip => gzip_to_memory(data),
-        ArchiveFormat::Xz => xz_to_memory(data),
-        ArchiveFormat::Bzip2 => bzip2_to_memory(data),
-        ArchiveFormat::SevenZip => sz_to_memory(data),
-        ArchiveFormat::Cab | ArchiveFormat::Lzh => {
-            Err(ExtractError::OperationFailed {
-                reason: format!(
-                    "{} extraction not yet supported via memory API",
-                    fmt.extension()
-                ),
-            })
-        }
-        _ => {
-            if is_tar(data) {
-                tar_to_memory(data)
-            } else if is_lzma(data) {
-                xz_to_memory(data)
-            } else {
-                Err(ExtractError::OperationFailed {
-                    reason: "unsupported or unknown archive format".to_string(),
-                })
-            }
-        }
+    if data.starts_with(&ZIP_LOCAL_MAGIC) {
+        return zip_to_memory(data, relevant_only);
     }
+    if data.starts_with(&GZIP_MAGIC) {
+        return gzip_to_memory(data);
+    }
+    if data.starts_with(&XZ_MAGIC) || data.starts_with(&[0x5d, 0x00]) {
+        return xz_to_memory(data);
+    }
+    if data.starts_with(&BZ2_MAGIC) {
+        return bzip2_to_memory(data);
+    }
+    if data.starts_with(&SEVENZ_MAGIC) {
+        return sz_to_memory(data);
+    }
+    if is_tar(data) {
+        return tar_to_memory(data);
+    }
+    if is_iso(data) {
+        return iso_to_memory(data);
+    }
+    Err(ExtractError::OperationFailed {
+        reason: "unsupported or unknown archive format".to_string(),
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -413,8 +417,11 @@ pub fn is_bomb_error(e: &ExtractError) -> bool {
 }
 
 fn decompress_gzip(data: &[u8]) -> Result<Vec<u8>> {
-    let mut r = GzipReader::new(Cursor::new(data)).map_err(map_err)?;
-    let out = r.decompress().map_err(map_err)?;
+    let mut decoder = flate2::read::GzDecoder::new(data);
+    let mut out = Vec::new();
+    decoder.read_to_end(&mut out).map_err(|e| ExtractError::OperationFailed {
+        reason: format!("gzip decompression failed: {e}"),
+    })?;
     if is_decompression_bomb(data.len(), out.len()) {
         return Err(ExtractError::DecompressionBomb { format: "gzip" });
     }
@@ -422,8 +429,11 @@ fn decompress_gzip(data: &[u8]) -> Result<Vec<u8>> {
 }
 
 fn decompress_xz(data: &[u8]) -> Result<Vec<u8>> {
-    let mut r = XzReader::new(Cursor::new(data)).map_err(map_err)?;
-    let out = r.decompress().map_err(map_err)?;
+    let mut decoder = lzma_rust2::XzReader::new(Cursor::new(data), true);
+    let mut out = Vec::new();
+    decoder.read_to_end(&mut out).map_err(|e| ExtractError::OperationFailed {
+        reason: format!("xz decompression failed: {e}"),
+    })?;
     if is_decompression_bomb(data.len(), out.len()) {
         return Err(ExtractError::DecompressionBomb { format: "xz" });
     }
@@ -431,8 +441,11 @@ fn decompress_xz(data: &[u8]) -> Result<Vec<u8>> {
 }
 
 fn decompress_bzip2(data: &[u8]) -> Result<Vec<u8>> {
-    let mut r = Bzip2Reader::new(Cursor::new(data)).map_err(map_err)?;
-    let out = r.decompress().map_err(map_err)?;
+    let mut decoder = bzip2::read::BzDecoder::new(data);
+    let mut out = Vec::new();
+    decoder.read_to_end(&mut out).map_err(|e| ExtractError::OperationFailed {
+        reason: format!("bzip2 decompression failed: {e}"),
+    })?;
     if is_decompression_bomb(data.len(), out.len()) {
         return Err(ExtractError::DecompressionBomb { format: "bzip2" });
     }
@@ -522,11 +535,10 @@ fn bzip2_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
 // ZIP
 // ---------------------------------------------------------------------------
 
-/// Decompress ZIP entries in parallel using `std::thread::scope`. Each thread
-/// creates its own `ZipReader` from the shared `data` slice (the reader is
-/// stateless after construction, limited to [`entry_by_name`] + [`extract`]).
-/// For a 1000‑entry APK this cuts wall‑clock extraction by ~4× on a 4‑core
-/// device, making the bottleneck I/O rather than decompression.
+/// Decompress ZIP entries in parallel using ripzip for central-directory
+/// parsing + per-entry extraction. The central directory is parsed once
+/// (instead of per-thread), then each thread extracts a contiguous chunk of
+/// entries via `extract_ripzip_entry`.
 /// Hard cap on entries extracted from a single archive in one call — without
 /// this, a zip/tar/7z/rar bomb with an enormous entry count would be fully
 /// decompressed into memory before the caller's outer buffer cap ever runs.
@@ -616,17 +628,18 @@ fn is_harmless_asset_extension(name: &str) -> bool {
 }
 
 fn zip_to_memory(data: &[u8], relevant_only: bool) -> Result<Vec<ExtractedEntry>> {
-    let zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
-    let entries_to_extract: Vec<(usize, String, u64, u64)> = zip
-        .entries()
+    use ripzip::extract::zip_reader::parse_archive;
+
+    let info = parse_archive(data).map_err(map_err)?;
+
+    let entries_to_extract: Vec<(usize, &ripzip::extract::zip_reader::ZipEntry)> = info.entries
         .iter()
         .enumerate()
         .filter(|(_, e)| {
-            if e.name.ends_with('/') { return false; }
-            if is_harmless_asset_extension(&e.name) { return false; }
-            should_extract_by_name(&e.name, e.size, relevant_only)
+            if e.is_dir { return false; }
+            if is_harmless_asset_extension(&e.file_name) { return false; }
+            should_extract_by_name(&e.file_name, e.uncompressed_size, relevant_only)
         })
-        .map(|(idx, e)| (idx, e.name.clone(), e.size, e.offset))
         .take(MAX_ARCHIVE_ENTRIES)
         .collect();
 
@@ -645,27 +658,23 @@ fn zip_to_memory(data: &[u8], relevant_only: bool) -> Result<Vec<ExtractedEntry>
 
     std::thread::scope(|s| {
         for chunk in entries_to_extract.chunks(chunk_size) {
-            let chunk = chunk.to_vec();
             let tx = tx.clone();
             s.spawn(move || {
                 let mut local = Vec::with_capacity(chunk.len());
-                if let Ok(mut z) = ZipReader::new(Cursor::new(data)).map_err(map_err) {
-                    let z_entries = z.entries().to_vec();
-                    for (idx, name, size_real, file_pos) in &chunk {
-                        if let Some(entry) = z_entries.get(*idx) {
-                            if let Ok(content) = z.extract(entry).map_err(map_err) {
-                                if is_decompression_bomb(entry.compressed_size as usize, content.len()) {
-                                    bomb_found_ref.store(true, std::sync::atomic::Ordering::Relaxed);
-                                } else {
-                                    local.push(ExtractedEntry {
-                                        name: name.clone(),
-                                        size_real: *size_real,
-                                        file_pos: *file_pos,
-                                        data: content,
-                                    });
-                                }
-                            }
-                        }
+                for (_, entry) in chunk {
+                    let content = match extract_ripzip_entry(data, entry) {
+                        Ok(c) => c,
+                        Err(_) => continue,
+                    };
+                    if is_decompression_bomb(entry.compressed_size as usize, content.len()) {
+                        bomb_found_ref.store(true, std::sync::atomic::Ordering::Relaxed);
+                    } else {
+                        local.push(ExtractedEntry {
+                            name: entry.file_name.clone(),
+                            size_real: entry.uncompressed_size,
+                            file_pos: entry.local_header_offset,
+                            data: content,
+                        });
                     }
                 }
                 let _ = tx.send(local);
@@ -686,30 +695,19 @@ fn zip_to_memory(data: &[u8], relevant_only: bool) -> Result<Vec<ExtractedEntry>
 }
 
 fn zip_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let mut zip = ZipReader::new(Cursor::new(data)).map_err(map_err)?;
+    let info = ripzip::extract::zip_reader::parse_archive(data)
+        .map_err(map_err)?;
     let mut files = Vec::new();
-    let names: Vec<_> = zip
-        .entries()
-        .iter()
-        .map(|e| e.name.clone())
-        .collect();
-    for name in &names {
-        let is_dir = name.ends_with('/');
-        if let Some(out_path) = safe_output_path(output_dir, name) {
-            if is_dir {
+    for entry in &info.entries {
+        if let Some(out_path) = safe_output_path(output_dir, &entry.file_name) {
+            if entry.is_dir {
                 std::fs::create_dir_all(&out_path)?;
                 continue;
             }
             if let Some(parent) = out_path.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            let entry = zip.entry_by_name(name).ok_or_else(|| {
-                ExtractError::OperationFailed {
-                    reason: format!("entry not found: {name}"),
-                }
-            })?;
-            let cloned = entry.clone();
-            let content = zip.extract(&cloned).map_err(map_err)?;
+            let content = extract_ripzip_entry(data, entry)?;
             std::fs::write(&out_path, content)?;
             files.push(out_path);
         }
@@ -721,61 +719,54 @@ fn zip_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // TAR
 // ---------------------------------------------------------------------------
 
-fn tar_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
-    let mut tar = TarReader::new(Cursor::new(data)).map_err(map_err)?;
+fn tar_entries(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
+    let mut archive = tar::Archive::new(data);
     let mut out = Vec::new();
-    let entries: Vec<_> = tar
-        .entries()
-        .iter()
-        .filter(|e| !e.name.ends_with('/'))
-        .map(|e| (e.name.clone(), e.size, e.offset))
-        .take(MAX_ARCHIVE_ENTRIES)
-        .collect();
-    for (name, size_real, file_pos) in entries {
-        let content = tar.extract_by_name(&name).map_err(map_err)?;
-        if let Some(d) = content {
-            out.push(ExtractedEntry {
-                name,
-                size_real,
-                file_pos,
-                data: d,
-            });
+    for entry in archive.entries().map_err(|e| ExtractError::OperationFailed {
+        reason: format!("tar entries failed: {e}"),
+    })? {
+        let mut entry = entry.map_err(|e| ExtractError::OperationFailed {
+            reason: format!("tar entry read failed: {e}"),
+        })?;
+        let path = entry.path().map_err(|e| ExtractError::OperationFailed {
+            reason: format!("tar entry path failed: {e}"),
+        })?;
+        let name = path.to_string_lossy().to_string();
+        if name.ends_with('/') {
+            continue;
+        }
+        let size_real = entry.size();
+        let mut data_buf = Vec::new();
+        entry.read_to_end(&mut data_buf).map_err(|e| ExtractError::OperationFailed {
+            reason: format!("tar entry data read failed: {e}"),
+        })?;
+        out.push(ExtractedEntry {
+            name,
+            size_real,
+            file_pos: 0,
+            data: data_buf,
+        });
+        if out.len() >= MAX_ARCHIVE_ENTRIES {
+            break;
         }
     }
     Ok(out)
 }
 
+fn tar_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
+    tar_entries(data)
+}
+
 fn tar_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let mut tar = TarReader::new(Cursor::new(data)).map_err(map_err)?;
+    let entries = tar_entries(data)?;
     let mut files = Vec::new();
-    let names: Vec<_> = tar
-        .entries()
-        .iter()
-        .map(|e| e.name.clone())
-        .collect();
-
-    // Create directories first
-    for name in &names {
-        if name.ends_with('/') {
-            if let Some(dir) = safe_output_path(output_dir, name) {
-                let _ = std::fs::create_dir_all(&dir);
-            }
-        }
-    }
-
-    for name in &names {
-        if name.ends_with('/') {
-            continue;
-        }
-        if let Some(out_path) = safe_output_path(output_dir, name) {
+    for e in &entries {
+        if let Some(out_path) = safe_output_path(output_dir, &e.name) {
             if let Some(parent) = out_path.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            let content = tar.extract_by_name(name).map_err(map_err)?;
-            if let Some(d) = content {
-                std::fs::write(&out_path, d)?;
-                files.push(out_path);
-            }
+            std::fs::write(&out_path, &e.data)?;
+            files.push(out_path);
         }
     }
     Ok(files)
@@ -786,56 +777,219 @@ fn tar_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
 // ---------------------------------------------------------------------------
 
 fn sz_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
-    let mut sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
-    let entries = sz.entries();
-    let count = entries.len().min(MAX_ARCHIVE_ENTRIES);
+    use std::io::Write;
+    let dir = tempfile::tempdir().map_err(|e| ExtractError::OperationFailed {
+        reason: format!("temp dir creation failed: {e}"),
+    })?;
+    let input_path = dir.path().join("archive.7z");
+    let out_dir = dir.path().join("out");
+    std::fs::create_dir_all(&out_dir).map_err(|e| ExtractError::OperationFailed {
+        reason: format!("output dir creation failed: {e}"),
+    })?;
+    {
+        let mut f = std::fs::File::create(&input_path).map_err(|e| ExtractError::OperationFailed {
+            reason: format!("temp file creation failed: {e}"),
+        })?;
+        f.write_all(data).map_err(|e| ExtractError::OperationFailed {
+            reason: format!("temp file write failed: {e}"),
+        })?;
+    }
+    sevenz_rust2::decompress_file(&input_path, &out_dir).map_err(|e| ExtractError::OperationFailed {
+        reason: format!("7z decompress failed: {e}"),
+    })?;
+    let mut file_paths = Vec::new();
+    collect_files(&out_dir, &mut file_paths);
     let mut out = Vec::new();
-    for i in 0..count {
-        if entries[i].name.ends_with('/') {
-            continue;
-        }
-        let name = entries[i].name.clone();
-        let size_real = entries[i].size;
-        let file_pos = entries[i].offset;
-        let content = sz.extract(i).map_err(map_err)?;
+    for p in file_paths {
+        let rel = p.strip_prefix(&out_dir).unwrap_or(&p).to_string_lossy().to_string();
+        let content = std::fs::read(&p).map_err(|e| ExtractError::OperationFailed {
+            reason: format!("7z entry read failed: {e}"),
+        })?;
         if is_decompression_bomb(data.len(), content.len()) {
             return Err(ExtractError::DecompressionBomb { format: "7z" });
         }
         if !content.is_empty() {
             out.push(ExtractedEntry {
-                name,
-                size_real,
-                file_pos,
+                name: rel,
+                size_real: content.len() as u64,
+                file_pos: 0,
                 data: content,
             });
+        }
+        if out.len() >= MAX_ARCHIVE_ENTRIES {
+            break;
         }
     }
     Ok(out)
 }
 
 fn sz_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
-    let mut sz = SevenZReader::new(Cursor::new(data)).map_err(map_err)?;
-    let entries = sz.entries();
-    let count = entries.len();
+    use std::io::Write;
+    let dir = tempfile::tempdir().map_err(|e| ExtractError::OperationFailed {
+        reason: format!("temp dir creation failed: {e}"),
+    })?;
+    let input_path = dir.path().join("archive.7z");
+    let out_dir = dir.path().join("out");
+    std::fs::create_dir_all(&out_dir).map_err(|e| ExtractError::OperationFailed {
+        reason: format!("output dir creation failed: {e}"),
+    })?;
+    {
+        let mut f = std::fs::File::create(&input_path).map_err(|e| ExtractError::OperationFailed {
+            reason: format!("temp file creation failed: {e}"),
+        })?;
+        f.write_all(data).map_err(|e| ExtractError::OperationFailed {
+            reason: format!("temp file write failed: {e}"),
+        })?;
+    }
+    sevenz_rust2::decompress_file(&input_path, &out_dir).map_err(|e| ExtractError::OperationFailed {
+        reason: format!("7z decompress failed: {e}"),
+    })?;
     let mut files = Vec::new();
-
-    for i in 0..count {
-        let name = &entries[i].name;
-        let is_dir = name.ends_with('/');
-        if let Some(out_path) = safe_output_path(output_dir, name) {
-            if is_dir {
-                std::fs::create_dir_all(&out_path)?;
-            } else if let Some(parent) = out_path.parent() {
-                std::fs::create_dir_all(parent)?;
-                let content = sz.extract(i).map_err(map_err)?;
-                if !content.is_empty() {
-                    std::fs::write(&out_path, content)?;
-                    files.push(out_path);
+    for entry in std::fs::read_dir(&out_dir).map_err(|e| ExtractError::OperationFailed {
+        reason: format!("read output dir failed: {e}"),
+    })? {
+        let entry = entry.map_err(|e| ExtractError::OperationFailed {
+            reason: format!("read dir entry failed: {e}"),
+        })?;
+        let path = entry.path();
+        if path.is_file() {
+            let rel = path.strip_prefix(&out_dir).unwrap_or(&path).to_string_lossy().to_string();
+            if let Some(out_path) = safe_output_path(output_dir, &rel) {
+                if let Some(parent) = out_path.parent() {
+                    std::fs::create_dir_all(parent)?;
                 }
+                std::fs::copy(&path, &out_path)?;
+                files.push(out_path);
             }
         }
     }
+    collect_files(output_dir, &mut files);
     Ok(files)
+}
+
+fn sz_list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
+    let entries = sz_to_memory(data)?;
+    Ok(entries.into_iter().map(|e| EntryInfo { name: e.name, size: e.size_real }).collect())
+}
+
+fn sz_extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
+    let entries = sz_to_memory(data)?;
+    entries.into_iter().find(|e| e.name == name).map(|e| e.data)
+        .ok_or_else(|| ExtractError::OperationFailed {
+            reason: format!("entry not found in 7z: {name}"),
+        })
+}
+
+// ---------------------------------------------------------------------------
+// ISO
+// ---------------------------------------------------------------------------
+
+fn iso_entries(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
+    let mut cursor = Cursor::new(data);
+    let root = isomage::detect_and_parse_filesystem(&mut cursor, "image.iso")
+        .map_err(|e| ExtractError::OperationFailed {
+            reason: format!("ISO parse failed: {e}"),
+        })?;
+    let mut out = Vec::new();
+    collect_iso_entries(&mut cursor, &root, &mut out, data.len())?;
+    Ok(out)
+}
+
+fn collect_iso_entries(
+    reader: &mut (impl Read + Seek),
+    node: &isomage::TreeNode,
+    entries: &mut Vec<ExtractedEntry>,
+    compressed_len: usize,
+) -> Result<()> {
+    for child in &node.children {
+        if entries.len() >= MAX_ARCHIVE_ENTRIES {
+            break;
+        }
+        if child.is_directory {
+            collect_iso_entries(reader, child, entries, compressed_len)?;
+        } else {
+            let mut buf = Vec::new();
+            isomage::cat_node(reader, child, &mut buf).map_err(|e| ExtractError::OperationFailed {
+                reason: format!("ISO read failed: {e}"),
+            })?;
+            if is_decompression_bomb(compressed_len, buf.len()) {
+                return Err(ExtractError::DecompressionBomb { format: "iso" });
+            }
+            entries.push(ExtractedEntry {
+                name: child.name.clone(),
+                size_real: child.size,
+                file_pos: 0,
+                data: buf,
+            });
+        }
+    }
+    Ok(())
+}
+
+fn iso_to_memory(data: &[u8]) -> Result<Vec<ExtractedEntry>> {
+    iso_entries(data)
+}
+
+fn iso_to_dir(data: &[u8], output_dir: &Path) -> Result<Vec<PathBuf>> {
+    let mut cursor = Cursor::new(data);
+    let root = isomage::detect_and_parse_filesystem(&mut cursor, "image.iso")
+        .map_err(|e| ExtractError::OperationFailed {
+            reason: format!("ISO parse failed: {e}"),
+        })?;
+    let mut files = Vec::new();
+    extract_iso_node(&mut cursor, &root, output_dir, &mut files, data.len())?;
+    Ok(files)
+}
+
+fn extract_iso_node(
+    reader: &mut (impl Read + Seek),
+    node: &isomage::TreeNode,
+    output_dir: &Path,
+    files: &mut Vec<PathBuf>,
+    compressed_len: usize,
+) -> Result<()> {
+    for child in &node.children {
+        if child.is_directory {
+            extract_iso_node(reader, child, output_dir, files, compressed_len)?;
+        } else {
+            if let Some(out_path) = safe_output_path(output_dir, &child.name) {
+                if let Some(parent) = out_path.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                let mut buf = Vec::new();
+                isomage::cat_node(reader, child, &mut buf).map_err(|e| ExtractError::OperationFailed {
+                    reason: format!("ISO read failed: {e}"),
+                })?;
+                if is_decompression_bomb(compressed_len, buf.len()) {
+                    return Err(ExtractError::DecompressionBomb { format: "iso" });
+                }
+                std::fs::write(&out_path, buf)?;
+                files.push(out_path);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn iso_list_entries(data: &[u8]) -> Result<Vec<EntryInfo>> {
+    let entries = iso_entries(data)?;
+    Ok(entries.into_iter().map(|e| EntryInfo { name: e.name, size: e.size_real }).collect())
+}
+
+fn iso_extract_entry(data: &[u8], name: &str) -> Result<Vec<u8>> {
+    let mut cursor = Cursor::new(data);
+    let root = isomage::detect_and_parse_filesystem(&mut cursor, "image.iso")
+        .map_err(|e| ExtractError::OperationFailed {
+            reason: format!("ISO parse failed: {e}"),
+        })?;
+    let node = root.find_node(name).ok_or_else(|| ExtractError::OperationFailed {
+        reason: format!("entry not found in ISO: {name}"),
+    })?;
+    let mut buf = Vec::new();
+    isomage::cat_node(&mut cursor, node, &mut buf).map_err(|e| ExtractError::OperationFailed {
+        reason: format!("ISO read failed: {e}"),
+    })?;
+    Ok(buf)
 }
 
 // ---------------------------------------------------------------------------
@@ -918,6 +1072,13 @@ mod tests {
     #[test]
     fn detects_lzma() {
         assert_eq!(detect_format(&[0x5d, 0x00]), Some("lzma"));
+    }
+
+    #[test]
+    fn detects_iso() {
+        let mut iso = vec![0u8; ISO_MAGIC_OFFSET + 10];
+        iso[ISO_MAGIC_OFFSET..ISO_MAGIC_OFFSET + 5].copy_from_slice(b"CD001");
+        assert_eq!(detect_format(&iso), Some("iso"));
     }
 
     #[test]

@@ -2,10 +2,18 @@
 name = "hydradragonextractor"
 version = "0.1.0"
 edition = "2024"
-description = "Archive extractor powered by OxiArc — ZIP, TAR, GZIP, XZ, 7z, RAR, and more"
+description = "Archive extractor — ZIP via ripzip, TAR/GZIP/XZ/7z via native Rust crates, RAR via unrar-ng"
 license = "GPL-2.0-or-later"
 
 [dependencies]
-oxiarc-archive = "0.3"
+ripzip = "0.1"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+tar = "0.4"
+lzma-rust2 = "0.16"
+sevenz-rust2 = { version = "0.20", features = ["brotli", "deflate", "lz4", "zstd"] }
+bzip2 = "0.5"
+zstd = "0.13"
 unrar = { package = "unrar-ng", git = "https://github.com/HydraDragonAntivirus/unrar.rs" }
 thiserror = "2"
+tempfile = "3"
+isomage = "2"
