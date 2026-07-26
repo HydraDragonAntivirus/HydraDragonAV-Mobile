@@ -435,5 +435,28 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="behavior_wiper">Wiper tespiti (hızlı dosya silme + bellek)</string>
     <string name="behavior_detail">Davranış Detayları</string>
     <string name="btn_behavior_graph">Davranış Grafiği</string>
+    <string name="graph_ui_spam">UI Spam Events</string>
+    <string name="graph_notification_spam">Notification Spam</string>
+    <string name="graph_clickjack">Clickjack Events</string>
+    <string name="graph_ransomware">Ransomware Events</string>
+    <string name="graph_network">Network Connections</string>
+    <string name="graph_file_read">File Read Estimates</string>
+    <string name="graph_file_read_high">High Confidence Reads</string>
+    <string name="graph_file_created">File Creates</string>
+    <string name="graph_file_copy">File Copy Correlations</string>
+    <string name="graph_miner_memory">Miner Memory</string>
+    <string name="graph_behavior_flags">Behavior Flags</string>
+    <string name="graph_strandhogg">StrandHogg</string>
+    <string name="graph_removal_resistance">Removal Resistance</string>
+    <string name="graph_launcher_change">Launcher Change</string>
+    <string name="graph_canary">Canary Triggered</string>
+    <string name="graph_device_admin">Device Admin</string>
+    <string name="graph_hidden_app">Hidden App</string>
+    <string name="graph_observed_files">Observed Files</string>
+    <string name="graph_deleted_files">Deleted Files</string>
+    <string name="graph_wiper">Wiper Detected</string>
+    <string name="graph_rooted">Rooted</string>
+    <string name="graph_debug">Debug Mode</string>
 </resources>
+
 
