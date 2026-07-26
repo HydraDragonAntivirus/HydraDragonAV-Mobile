@@ -334,6 +334,88 @@ public final class HipsMonitor {
         return false;
     }
 
+    static synchronized BehaviorGraphData collectBehaviorData(String pkg, android.content.Context ctx) {
+        if (pkg == null) pkg = "";
+        int ui = 0, notif = 0, cj = 0, rw = 0, net = 0, minerMem = 0, flags = 0;
+        int fileRead = 0, fileReadHigh = 0;
+        boolean sh = false, rr = false, lc = false, canary = false;
+
+        for (UiSpamEvent e : uiSpamEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) ui += e.clickCount;
+        }
+        for (NotificationSpamEvent e : notificationSpamEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) notif += e.notificationCount;
+        }
+        for (ClickjackEvent e : clickjackEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) cj += e.rapidClicks;
+        }
+        for (RansomwareEvent e : ransomwareEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) rw += e.renameCount;
+        }
+        for (NetworkEvent e : networkEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) net += e.connectionCount;
+        }
+        for (MinerEvent e : minerEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) {
+                minerMem = Math.max(minerMem, (int) e.memoryMb);
+            }
+        }
+        for (StrandHoggEvent e : strandhoggEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) sh = true;
+        }
+        for (RemovalResistanceEvent e : removalResistanceEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) rr = true;
+        }
+        for (LauncherChangeEvent e : launcherChangeEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) lc = true;
+        }
+        for (CanaryEvent e : canaryEvents) {
+            if (pkg.isEmpty() || pkg.equals(e.packageName)) canary = true;
+        }
+
+        BehaviorFlagEntry flagEntry = pkg.isEmpty() ? null : behaviorFlags.get(pkg);
+        if (flagEntry != null) {
+            flags = flagEntry.flags.size();
+            for (String f : flagEntry.flags) {
+                if (f.startsWith("FILE_READ")) {
+                    fileRead++;
+                    if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) {
+                        fileReadHigh++;
+                    }
+                }
+            }
+        }
+
+        int created = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countTotalObservedFiles();
+        int deleted = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countRecentDeletions();
+        boolean hasWiper = false;
+        if (flagEntry != null) {
+            for (String f : flagEntry.flags) {
+                if (f.startsWith("WIPER")) { hasWiper = true; break; }
+            }
+        }
+
+        boolean da = false, ha = false;
+        if (ctx != null && !pkg.isEmpty()) {
+            try {
+                android.app.admin.DevicePolicyManager dpm =
+                    (android.app.admin.DevicePolicyManager) ctx.getSystemService(android.content.Context.DEVICE_POLICY_SERVICE);
+                if (dpm != null) {
+                    for (android.content.ComponentName cn : dpm.getActiveAdmins()) {
+                        if (pkg.equals(cn.getPackageName())) { da = true; break; }
+                    }
+                }
+                try {
+                    ha = ctx.getPackageManager().getLaunchIntentForPackage(pkg) == null;
+                } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {}
+        }
+        return new BehaviorGraphData(
+            pkg, ui, notif, cj, rw, net, minerMem, fileRead, fileReadHigh, flags,
+            sh, rr, lc, canary, da, ha, isRooted, isDebugMode,
+            created, deleted, hasWiper);
+    }
+
     public static synchronized boolean hasBehaviorFlag(String pkg, String flag) {
         BehaviorFlagEntry entry = behaviorFlags.get(pkg);
         return entry != null && entry.flags.contains(flag);

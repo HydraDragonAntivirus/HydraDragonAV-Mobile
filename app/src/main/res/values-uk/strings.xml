@@ -432,5 +432,8 @@
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">Виявлення криптомайнерів (профілювання CPU/пам\'яті)</string>
     <string name="behavior_file_read_estimator">Оцінка читання файлу (профілювання введення-виведення побічного каналу)</string>
+    <string name="behavior_wiper">Виявлення вайпера (швидке видалення + пам\'ять)</string>
+    <string name="behavior_detail">Деталі поведінки</string>
+    <string name="btn_behavior_graph">Графік поведінки</string>
 </resources>
 

@@ -432,5 +432,8 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">Wykrywanie kopaczy kryptowalut (profilowanie CPU/pamięci)</string>
     <string name="behavior_file_read_estimator">Szacowanie odczytu pliku (profilowanie I/O kanałem bocznym)</string>
+    <string name="behavior_wiper">Wykrywanie wipera (szybkie usuwanie + pamięć)</string>
+    <string name="behavior_detail">Szczegóły zachowania</string>
+    <string name="btn_behavior_graph">Wykres zachowania</string>
 </resources>
 

@@ -568,6 +568,11 @@ public class GuardService extends Service {
             try { com.hydradragon.antivirus.engine.FileReadEstimator.scan(GuardService.this); }
             catch (Throwable t) { Log.e(TAG, "FileReadEstimator failed", t); }
         }, 60, 30, TimeUnit.SECONDS);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            try { com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.checkDeletions(GuardService.this); }
+            catch (Throwable t) { Log.e(TAG, "Wiper check failed", t); }
+        }, 90, 30, TimeUnit.SECONDS);
     }
 
     private void checkRootTransition() {

@@ -150,6 +150,18 @@
                 android:background="@color/bg_secondary"/>
         </LinearLayout>
 
+        <Button
+            android:id="@+id/btn_behavior_graph"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_behavior_graph"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:background="@drawable/bg_card"
+            android:textColor="@color/neon_cyan"
+            android:padding="10dp"
+            android:layout_marginBottom="12dp"/>
+
         <!-- İstatistik Kartları -->
         <LinearLayout
             android:layout_width="match_parent"

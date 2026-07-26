@@ -129,6 +129,16 @@ public class DashboardFragment extends Fragment {
         tvThreatFeed = view.findViewById(R.id.tv_threat_feed);
         tvEngineStatus = view.findViewById(R.id.tv_engine_status);
         layoutScanReminder = view.findViewById(R.id.layout_scan_reminder);
+
+        View btnGraph = view.findViewById(R.id.btn_behavior_graph);
+        if (btnGraph != null) {
+            btnGraph.setOnClickListener(v -> {
+                if (getActivity() instanceof com.hydradragon.antivirus.MainActivity) {
+                    ((com.hydradragon.antivirus.MainActivity) getActivity())
+                        .showFragment(new BehaviorGraphFragment());
+                }
+            });
+        }
         Log.d("HydraDragon-Dash", "layoutScanReminder=" + layoutScanReminder);
 
         // First-scan reminder banner

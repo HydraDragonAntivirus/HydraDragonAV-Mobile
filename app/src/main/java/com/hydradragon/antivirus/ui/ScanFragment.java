@@ -265,6 +265,8 @@ public class ScanFragment extends Fragment {
 
             @Override
             public void onThreatClick(ThreatResult threat) {
+                String pkg = (threat.getPackageName() != null && !threat.getPackageName().isEmpty())
+                    ? threat.getPackageName() : threat.getApkPath();
                 StringBuilder msg = new StringBuilder();
                 msg.append(getString(R.string.threat_found_dialog_msg, threat.getAppName(), threat.getRiskScore()));
                 if (!threat.getReasons().isEmpty()) {
@@ -273,32 +275,53 @@ public class ScanFragment extends Fragment {
                         msg.append("▸ ").append(r).append("\n");
                     }
                 }
+                android.widget.LinearLayout dialogLayout = new android.widget.LinearLayout(getContext());
+                dialogLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
+                dialogLayout.setPadding(48, 24, 48, 24);
+
                 android.widget.TextView tv = new android.widget.TextView(getContext());
                 tv.setText(msg.toString().trim());
                 tv.setTextSize(14);
-                tv.setPadding(48, 24, 48, 24);
                 tv.setAutoLinkMask(android.text.util.Linkify.WEB_URLS);
                 tv.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
                 tv.setTextColor(0xFFE6EDF3);
-            new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                .setTitle(getString(R.string.threat_found_dialog_title))
-                .setView(tv)
-                .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> destroyThreat(threat))
-                .setNegativeButton(getString(R.string.btn_ignore), (dialog, which) -> {
-                    // Whitelist this package/file so it is never flagged again.
-                    String id = (threat.getPackageName() != null && !threat.getPackageName().isEmpty())
-                        ? threat.getPackageName() : threat.getApkPath();
-                    com.hydradragon.antivirus.engine.UserDecisions.allowThreat(getContext(), id);
-                    ThreatLogger.logThreat(getContext(), threat, "WHITELISTED (ignored)");
-                    foundThreats.remove(threat);
-                    threatAdapter.notifyDataSetChanged();
-                    tvThreats.setText(String.valueOf(foundThreats.size()));
-                    tvActiveThreats.setText(String.valueOf(foundThreats.size()));
-                    if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
-                })
-                .setNeutralButton(getString(R.string.btn_ignore_signature), (dialog, which) ->
-                    showIgnoreSignatureDialog(threat))
-                .show();
+                dialogLayout.addView(tv);
+
+                android.widget.Button graphBtn = new android.widget.Button(getContext());
+                graphBtn.setText(R.string.btn_behavior_graph);
+                graphBtn.setTextSize(12);
+                graphBtn.setOnClickListener(v -> {
+                    if (getActivity() instanceof com.hydradragon.antivirus.MainActivity) {
+                        ((com.hydradragon.antivirus.MainActivity) getActivity())
+                            .runOnUiThread(() -> ((com.hydradragon.antivirus.MainActivity) getActivity())
+                                .showFragment(BehaviorGraphFragment.newInstance(pkg)));
+                    }
+                });
+                android.widget.LinearLayout.LayoutParams lp = new android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+                lp.setMargins(0, 16, 0, 0);
+                graphBtn.setLayoutParams(lp);
+                dialogLayout.addView(graphBtn);
+
+                new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(getString(R.string.threat_found_dialog_title))
+                    .setView(dialogLayout)
+                    .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> destroyThreat(threat))
+                    .setNegativeButton(getString(R.string.btn_ignore), (dialog, which) -> {
+                        String id = pkg;
+                        com.hydradragon.antivirus.engine.UserDecisions.allowThreat(getContext(), id);
+                        ThreatLogger.logThreat(getContext(), threat, "WHITELISTED (ignored)");
+                        foundThreats.remove(threat);
+                        threatAdapter.notifyDataSetChanged();
+                        tvThreats.setText(String.valueOf(foundThreats.size()));
+                        tvActiveThreats.setText(String.valueOf(foundThreats.size()));
+                        if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
+                    })
+                    .setNeutralButton(getString(R.string.btn_ignore_signature), (dialog, which) ->
+                        showIgnoreSignatureDialog(threat))
+                    .show();
+                }
             }
         });
 

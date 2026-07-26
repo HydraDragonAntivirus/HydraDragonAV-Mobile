@@ -432,5 +432,8 @@ Puntuación de riesgo: %2$d/100
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">Detección de criptomineros (perfil de CPU/memoria)</string>
     <string name="behavior_file_read_estimator">Estimación de lectura de archivos (perfil de E/S de canal lateral)</string>
+    <string name="behavior_wiper">Detección de wiper (eliminación rápida + memoria)</string>
+    <string name="behavior_detail">Detalles de comportamiento</string>
+    <string name="btn_behavior_graph">Gráfico de comportamiento</string>
 </resources>
 

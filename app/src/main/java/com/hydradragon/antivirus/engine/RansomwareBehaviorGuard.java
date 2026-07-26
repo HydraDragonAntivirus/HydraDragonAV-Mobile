@@ -84,6 +84,15 @@ public final class RansomwareBehaviorGuard {
     /** package -> [windowStartMs, renameCount]. */
     private static final Map<String, long[]> renameBurst = new HashMap<>();
     private static final Map<String, String> sampleExt = new HashMap<>();
+
+    // ── Wiper detection ──────────────────────────────────────────────────
+    private static final long DELETION_WINDOW_MS = 60_000L;
+    private static final int DELETION_BURST_THRESHOLD = 10;
+    /** dir path -> last snapshot of filenames (for deletion detection). */
+    private static final Map<String, java.util.HashSet<String>> dirSnapshots = new HashMap<>();
+    /** dir path -> [windowStartMs, deleteCount, lastFlaggedPkg]. */
+    private static final Map<String, Object[]> deletionBurst = new HashMap<>();
+
     private static final AtomicInteger notifId = new AtomicInteger(0x8A17_000);
 
     private RansomwareBehaviorGuard() {}
@@ -195,13 +204,21 @@ public final class RansomwareBehaviorGuard {
             }
         }
 
-        if (!known.containsKey(fileName)) {
+        boolean isNew = !known.containsKey(fileName);
+        if (isNew) {
             if (known.size() >= MAX_NAMES_PER_DIR) {
                 Iterator<String> it = known.keySet().iterator();
                 if (it.hasNext()) { it.next(); it.remove(); }
             }
             known.put(fileName, System.currentTimeMillis());
         }
+        // Update directory snapshot for deletion tracking
+        java.util.HashSet<String> snapshot = dirSnapshots.get(dirPath);
+        if (snapshot == null) {
+            snapshot = new java.util.HashSet<>();
+            dirSnapshots.put(dirPath, snapshot);
+        }
+        if (isNew) snapshot.add(fileName);
         if (matchedBase == null) return;
 
         String pkg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
@@ -294,5 +311,115 @@ public final class RansomwareBehaviorGuard {
             .addAction(0, context.getString(com.hydradragon.antivirus.R.string.btn_ignore), ignorePi)
             .build();
         nm.notify(id, n);
+    }
+
+    // ── Public accessors for behavior graph ──────────────────────────────
+
+    /** Total unique files observed across all directories. */
+    public static synchronized int countTotalObservedFiles() {
+        int total = 0;
+        for (LinkedHashMap<String, Long> names : knownNamesByDir.values()) {
+            total += names.size();
+        }
+        return total;
+    }
+
+    /** Count files that have disappeared since the last snapshot. */
+    public static synchronized int countRecentDeletions() {
+        int deletions = 0;
+        long now = System.currentTimeMillis();
+        for (Map.Entry<String, java.util.HashSet<String>> entry : dirSnapshots.entrySet()) {
+            String dirPath = entry.getKey();
+            java.util.HashSet<String> snapshot = entry.getValue();
+            java.io.File dir = new java.io.File(dirPath);
+            if (!dir.isDirectory()) {
+                deletions += snapshot.size();
+                snapshot.clear();
+                continue;
+            }
+            java.util.Set<String> current = new java.util.HashSet<>();
+            java.io.File[] files = dir.listFiles();
+            if (files != null) {
+                for (java.io.File f : files) {
+                    if (f.isFile()) current.add(f.getName());
+                }
+            }
+            for (String name : snapshot) {
+                if (!current.contains(name)) {
+                    deletions++;
+                }
+            }
+            snapshot.retainAll(current);
+        }
+        return deletions;
+    }
+
+    // ── Wiper detection ─────────────────────────────────────────────────
+
+    /** Called periodically (e.g. every 30s) from GuardService to detect rapid
+     *  file deletion combined with high per-process memory (wiper pattern). */
+    public static synchronized void checkDeletions(Context ctx) {
+        if (ctx == null) return;
+        if (!BehaviorDetectionSettings.isEnabled(ctx, BehaviorDetectionSettings.WIPER)) return;
+        String pkg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+        if (pkg == null || pkg.isEmpty()) return;
+        if (BehaviorFlags.isFlagged(ctx, pkg)) return;
+        if (TrustedPackages.isTrusted(ctx, pkg)) return;
+        if (UserDecisions.isThreatAllowed(ctx, pkg)) return;
+
+        long now = System.currentTimeMillis();
+        int recentDeletions = 0;
+
+        // Count recent deletions across all watched dirs
+        for (Map.Entry<String, LinkedHashMap<String, Long>> dirEntry : knownNamesByDir.entrySet()) {
+            String dirPath = dirEntry.getKey();
+            java.io.File dir = new java.io.File(dirPath);
+            if (!dir.isDirectory()) continue;
+            java.util.Set<String> currentNames = new java.util.HashSet<>();
+            java.io.File[] files = dir.listFiles();
+            if (files != null) {
+                for (java.io.File f : files) {
+                    if (f.isFile()) currentNames.add(f.getName());
+                }
+            }
+            for (String knownName : dirEntry.getValue().keySet()) {
+                if (!currentNames.contains(knownName)) {
+                    recentDeletions++;
+                }
+            }
+        }
+
+        if (recentDeletions < DELETION_BURST_THRESHOLD) return;
+
+        // Track deletion burst window
+        Object[] burst = deletionBurst.get(pkg);
+        if (burst == null || now - (Long) burst[0] > DELETION_WINDOW_MS) {
+            deletionBurst.put(pkg, new Object[]{now, 1, pkg});
+            return;
+        }
+        burst[1] = (Integer) burst[1] + 1;
+        int burstCount = (Integer) burst[1];
+
+        // Check per-process memory
+        boolean highMem = HipsMonitor.packageHasMinerMemory(pkg, 64);
+
+        Log.d(TAG, "deletion burst=" + burstCount + "/" + DELETION_BURST_THRESHOLD
+            + " for " + pkg + " mem=" + highMem);
+
+        if (burstCount < DELETION_BURST_THRESHOLD) return;
+
+        String flag = "WIPER:DELETED=" + recentDeletions + ":BURST=" + burstCount + ":MEM=" + highMem;
+        HipsMonitor.addBehaviorFlag(pkg, flag);
+
+        if (highMem) {
+            String reason = "Wiper behaviour: " + recentDeletions
+                + " files deleted in " + (DELETION_WINDOW_MS / 1000)
+                + "s with high process memory (>64MB)";
+            Log.e(TAG, "WIPER BEHAVIOUR (" + pkg + "): " + reason);
+            BehaviorFlags.flag(ctx, pkg, reason);
+            com.hydradragon.antivirus.service.ThreatLogger.logThreat(ctx, pkg, pkg, reason);
+            HipsMonitor.addBehaviorFlag(pkg, "WIPER_CONFIRMED");
+            BehaviorResponse.killAndPromptUninstall(ctx, pkg);
+        }
     }
 }

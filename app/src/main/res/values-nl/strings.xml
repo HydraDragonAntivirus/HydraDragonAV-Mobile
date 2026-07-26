@@ -432,5 +432,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">Crypto-miner detectie (CPU/geheugen profilering)</string>
     <string name="behavior_file_read_estimator">Schatting bestandslezing (zij-kanaal I/O-profilering)</string>
+    <string name="behavior_wiper">Wiper-detectie (snelle bestandsverwijdering + geheugen)</string>
+    <string name="behavior_detail">Gedragsdetails</string>
+    <string name="btn_behavior_graph">Gedragsgrafiek</string>
 </resources>
 

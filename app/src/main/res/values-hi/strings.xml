@@ -432,5 +432,8 @@
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">क्रिप्टो माइनर का पता लगाना (CPU/मेमोरी प्रोफ़ाइल)</string>
     <string name="behavior_file_read_estimator">फ़ाइल पढ़ने का अनुमान (साइड-चैनल I/O प्रोफ़ाइलिंग)</string>
+    <string name="behavior_wiper">वाइपर का पता लगाना (त्वरित फ़ाइल हटाना + मेमोरी)</string>
+    <string name="behavior_detail">व्यवहार विवरण</string>
+    <string name="btn_behavior_graph">व्यवहार ग्राफ़</string>
 </resources>
 

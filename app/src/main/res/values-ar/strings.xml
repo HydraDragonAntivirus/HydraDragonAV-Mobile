@@ -432,5 +432,8 @@
     <string name="notif_process_alert_text">المعرف: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">اكتشاف تعدين العملات الرقمية (مراقبة المعالج/الذاكرة)</string>
     <string name="behavior_file_read_estimator">تقدير قراءة الملف (مراقبة الإدخال/الإخراج الجانبية)</string>
+    <string name="behavior_wiper">اكتشاف الماسح (حذف سريع للملفات + ذاكرة)</string>
+    <string name="behavior_detail">تفاصيل السلوك</string>
+    <string name="btn_behavior_graph">الرسم البياني للسلوك</string>
 </resources>
 

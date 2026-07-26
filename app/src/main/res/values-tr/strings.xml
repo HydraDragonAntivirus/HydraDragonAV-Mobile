@@ -432,5 +432,8 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">Kripto madencisi tespiti (CPU/bellek profili)</string>
     <string name="behavior_file_read_estimator">Dosya okuma tahmini (yan kanal G/Ç profili)</string>
+    <string name="behavior_wiper">Wiper tespiti (hızlı dosya silme + bellek)</string>
+    <string name="behavior_detail">Davranış Detayları</string>
+    <string name="btn_behavior_graph">Davranış Grafiği</string>
 </resources>
 

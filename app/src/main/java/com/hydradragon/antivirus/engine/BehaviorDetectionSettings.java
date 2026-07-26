@@ -35,6 +35,8 @@ public final class BehaviorDetectionSettings {
     public static final String CRYPTO_MINER = "crypto_miner";
     /** File read estimation via /proc/<pid>/io side-channel (FileReadEstimator). */
     public static final String FILE_READ_ESTIMATOR = "file_read_estimator";
+    /** Wiper detection via rapid file deletion + memory profiling. */
+    public static final String WIPER = "wiper";
 
     private BehaviorDetectionSettings() {}
 

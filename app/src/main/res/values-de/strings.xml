@@ -432,5 +432,8 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">Crypto-Miner-Erkennung (CPU-/Speicher-Profil)</string>
     <string name="behavior_file_read_estimator">Dateileseschätzung (Seitenkanal-I/O-Profilierung)</string>
+    <string name="behavior_wiper">Wiper-Erkennung (schnelle Dateilöschung + Speicher)</string>
+    <string name="behavior_detail">Verhaltensdetails</string>
+    <string name="btn_behavior_graph">Verhaltensgrafik</string>
 </resources>
 

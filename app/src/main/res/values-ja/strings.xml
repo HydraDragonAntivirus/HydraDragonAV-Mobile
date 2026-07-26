@@ -432,5 +432,8 @@
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">暗号通貨マイナーの検出（CPU/メモリプロファイリング）</string>
     <string name="behavior_file_read_estimator">ファイル読み取り推定（サイドチャネルI/Oプロファイリング）</string>
+    <string name="behavior_wiper">ワイパー検出（高速ファイル削除＋メモリ）</string>
+    <string name="behavior_detail">動作の詳細</string>
+    <string name="btn_behavior_graph">動作グラフ</string>
 </resources>
 

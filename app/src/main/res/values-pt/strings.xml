@@ -432,5 +432,8 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">Detecção de criptominerador (perfil de CPU/memória)</string>
     <string name="behavior_file_read_estimator">Estimativa de leitura de arquivo (perfil de E/S de canal lateral)</string>
+    <string name="behavior_wiper">Detecção de wiper (exclusão rápida + memória)</string>
+    <string name="behavior_detail">Detalhes do comportamento</string>
+    <string name="btn_behavior_graph">Gráfico de comportamento</string>
 </resources>
 

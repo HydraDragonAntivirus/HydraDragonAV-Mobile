@@ -432,5 +432,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">Phát hiện đào tiền mã hóa (hồ sơ CPU/bộ nhớ)</string>
     <string name="behavior_file_read_estimator">Ước tính đọc tệp (hồ sơ I/O kênh phụ)</string>
+    <string name="behavior_wiper">Phát hiện wiper (xóa tệp nhanh + bộ nhớ)</string>
+    <string name="behavior_detail">Chi tiết hành vi</string>
+    <string name="btn_behavior_graph">Biểu đồ hành vi</string>
 </resources>
 

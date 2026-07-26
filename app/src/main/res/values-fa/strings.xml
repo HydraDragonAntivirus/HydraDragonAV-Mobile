@@ -432,5 +432,8 @@
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">تشخیص استخراج ارز دیجیتال (پروفایل CPU/حافظه)</string>
     <string name="behavior_file_read_estimator">تخمین خواندن فایل (پروفایل I/O کانال جانبی)</string>
+    <string name="behavior_wiper">تشخیص پاک‌کننده (حذف سریع فایل‌ها + حافظه)</string>
+    <string name="behavior_detail">جزئیات رفتار</string>
+    <string name="btn_behavior_graph">نمودار رفتار</string>
 </resources>
 

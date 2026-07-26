@@ -432,5 +432,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">Deteksi penambang kripto (profil CPU/memori)</string>
     <string name="behavior_file_read_estimator">Perkiraan pembacaan file (profil I/O saluran samping)</string>
+    <string name="behavior_wiper">Deteksi wiper (penghapusan file cepat + memori)</string>
+    <string name="behavior_detail">Detail Perilaku</string>
+    <string name="btn_behavior_graph">Grafik Perilaku</string>
 </resources>
 

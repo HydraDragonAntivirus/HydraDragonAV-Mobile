@@ -432,5 +432,8 @@
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">암호화폐 채굴기 탐지 (CPU/메모리 프로파일링)</string>
     <string name="behavior_file_read_estimator">파일 읽기 추정 (사이드 채널 I/O 프로파일링)</string>
+    <string name="behavior_wiper">와이퍼 탐지 (빠른 파일 삭제 + 메모리)</string>
+    <string name="behavior_detail">행동 세부정보</string>
+    <string name="btn_behavior_graph">행동 그래프</string>
 </resources>
 
