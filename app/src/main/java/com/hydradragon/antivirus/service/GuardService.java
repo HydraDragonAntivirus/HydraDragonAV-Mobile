@@ -286,10 +286,23 @@ public class GuardService extends Service {
      *  notifications/logging the moment the user ever opened the Scan tab. */
     private volatile ScanEngine.ScanCallback uiScanCallback;
 
+    /** Holds the last onScanComplete result when the UI fragment is detached
+     *  (screen off). Consumed by ScanFragment on reconnect. */
+    private volatile com.hydradragon.antivirus.model.ScanResult pendingUiScanResult;
+
     /** Called by ScanFragment instead of touching ScanEngine's callback
      *  directly. Pass {@code null} when the fragment goes away (onStop) so a
      *  stale reference isn't held past the fragment's lifecycle. */
     public void setUiScanCallback(ScanEngine.ScanCallback cb) { this.uiScanCallback = cb; }
+
+    /** Returns the last scan result that completed while no UI was attached,
+     *  then clears it. Used by ScanFragment on reconnect to detect scans that
+     *  finished while the screen was off. */
+    public com.hydradragon.antivirus.model.ScanResult consumePendingUiScanResult() {
+        com.hydradragon.antivirus.model.ScanResult r = pendingUiScanResult;
+        pendingUiScanResult = null;
+        return r;
+    }
 
     public interface GuardCallback {
         void onThreatDetected(ThreatResult threat);
@@ -428,14 +441,19 @@ public class GuardService extends Service {
                 } catch (Throwable t) {
                     Log.e(TAG, "onScanComplete notification/status update failed", t);
                 }
+                pendingUiScanResult = result;
                 ScanEngine.ScanCallback ui = uiScanCallback;
-                if (ui != null) ui.onScanComplete(result);
+                if (ui != null) {
+                    ui.onScanComplete(result);
+                    pendingUiScanResult = null;
+                }
             }
 
             @Override
             public void onError(String error) {
                 if (scanEngine.isBackgroundScan()) return;
                 Log.e(TAG, "Scan error: " + error);
+                pendingUiScanResult = null;
                 ScanEngine.ScanCallback ui = uiScanCallback;
                 if (ui != null) ui.onError(error);
             }

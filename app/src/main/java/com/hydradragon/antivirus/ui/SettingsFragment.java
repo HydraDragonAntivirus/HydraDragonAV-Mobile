@@ -251,8 +251,8 @@ public class SettingsFragment extends Fragment {
             com.hydradragon.antivirus.engine.NativeScanner.setEmulationEnabled(checked);
         });
 
-        boolean testKeyOn = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
-            requireContext(), com.hydradragon.antivirus.engine.DetectionCategories.RISKWARE_TESTKEY);
+        boolean testKeyOn = requireContext().getSharedPreferences("hydra_prefs", 0)
+            .getBoolean(com.hydradragon.antivirus.engine.DetectionCategories.RISKWARE_TESTKEY, false);
         addToggle(getString(R.string.detect_cat_riskware_testkey), testKeyOn, (btn, checked) -> {
             com.hydradragon.antivirus.engine.DetectionCategories.setEnabled(requireContext(),
                 com.hydradragon.antivirus.engine.DetectionCategories.RISKWARE_TESTKEY, checked);

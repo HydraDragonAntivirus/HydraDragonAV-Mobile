@@ -85,17 +85,34 @@ public class ScanFragment extends Fragment {
             // right when the service connects, not 2s later on the next poll.
             statusPollCheck.run();
             if (isScanning && pendingCustomScanUri == null && pendingCustomScanDir == null) {
-                startScanTimer();
-                attachScanCallback();
-                // Sync pause button with engine state — view is recreated
-                // fresh after rotation, static fields don't cover pause.
-                if (guardService != null && guardService.getScanEngine() != null) {
-                    btnPauseResume.setVisibility(View.VISIBLE);
-                    if (guardService.getScanEngine().isPaused()) {
-                        btnPauseResume.setText("▶");
-                        tvCurrentApp.setText(getString(R.string.scan_paused));
-                    } else {
-                        btnPauseResume.setText("⏸");
+                // Scan may have finished while UI was detached (screen off).
+                // Check for a pending result before re-attaching callbacks.
+                com.hydradragon.antivirus.model.ScanResult pending = guardService.consumePendingUiScanResult();
+                if (pending != null) {
+                    handleScanComplete(pending);
+                } else if (guardService.getScanEngine() != null
+                        && !guardService.getScanEngine().isScanRunning()) {
+                    // Scan finished without a pending result — recover state.
+                    isScanning = false;
+                    hasScanned = true;
+                    stopScanTimer();
+                    stopScannerAnimation();
+                    btnScan.setText(getString(R.string.rescan));
+                    btnPauseResume.setVisibility(View.INVISIBLE);
+                    tvCurrentApp.setText("");
+                } else {
+                    startScanTimer();
+                    attachScanCallback();
+                    // Sync pause button with engine state — view is recreated
+                    // fresh after rotation, static fields don't cover pause.
+                    if (guardService != null && guardService.getScanEngine() != null) {
+                        btnPauseResume.setVisibility(View.VISIBLE);
+                        if (guardService.getScanEngine().isPaused()) {
+                            btnPauseResume.setText("▶");
+                            tvCurrentApp.setText(getString(R.string.scan_paused));
+                        } else {
+                            btnPauseResume.setText("⏸");
+                        }
                     }
                 }
             }
@@ -648,69 +665,7 @@ public class ScanFragment extends Fragment {
 
             @Override
             public void onScanComplete(ScanResult result) {
-                stopScanTimer();
-                Log.d(TAG, "onScanComplete: totalScanned=" + result.getTotalScanned()
-                    + " threatsFound=" + result.getThreatsFound()
-                    + " durationMs=" + result.getScanDurationMs()
-                    + " clean=" + result.isClean());
-                boolean wasCancelled = serviceBound && guardService != null
-                    && guardService.getScanEngine().isCancelled();
-                Log.d(TAG, "onScanComplete: wasCancelled=" + wasCancelled);
-                long secs = result.getScanDurationMs() / 1000;
-                long millis = result.getScanDurationMs() % 1000;
-                String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
-                int totalThreats = result.getThreats().size();
-                isScanning = false;
-                if (getActivity() != null) {
-                    getActivity().getSharedPreferences("hydra_prefs", 0)
-                        .edit().putBoolean("first_scan_completed", true).apply();
-                }
-                if (!isAdded()) {
-                    lastScanStatus = result.isClean() ? "System clean" : totalThreats + " threats";
-                    if (wasCancelled) lastScanStatus = "Scan stopped";
-                    lastScanStatus += " (" + duration + ")";
-                    lastProgressName = "";
-                    lastProgressCurrent = 0;
-                    lastProgressTotal = 0;
-                    Log.d(TAG, "onScanComplete: fragment detached, status saved");
-                    return;
-                }
-                if (wasCancelled) {
-                    lastScanStatus = getString(R.string.scan_stopped) + " (" + duration + ")";
-                } else if (result.isClean()) {
-                    lastScanStatus = getString(R.string.scan_clean_system) + " (" + duration + ")";
-                } else {
-                    lastScanStatus = getString(R.string.threats_found_count, totalThreats) + " (" + duration + ")";
-                }
-                if (hiddenThreatCount > 0) {
-                    lastScanStatus += " (" + getString(R.string.threats_hidden_count, hiddenThreatCount) + ")";
-                }
-                getActivity().runOnUiThread(() -> {
-                    stopScannerAnimation();
-                    btnScan.setText(getString(R.string.rescan));
-                    btnScan.setEnabled(true);
-                    btnPauseResume.setVisibility(View.INVISIBLE);
-                    tvCurrentApp.setText("");
-                    if (progressBar.getMax() > 0) progressBar.setProgress(progressBar.getMax());
-                    lastProgressCurrent = 0;
-                    lastProgressTotal = 0;
-                    lastProgressName = "";
-                    threatAdapter.notifyDataSetChanged();
-                    tvThreats.setText(String.valueOf(totalThreats));
-                    tvActiveThreats.setText(String.valueOf(totalThreats));
-                    tvScanStatus.setText(lastScanStatus);
-                    if (wasCancelled) {
-                        tvScanStatus.setTextColor(0xFFFFAA00);
-                        tvCurrentApp.setText(lastScanStatus);
-                        tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
-                    } else if (result.isClean()) {
-                        tvScanStatus.setTextColor(0xFF00FF88);
-                        tvThreatLabel.setVisibility(View.GONE);
-                    } else {
-                        tvScanStatus.setTextColor(0xFFFF0040);
-                        tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
-                    }
-                });
+                handleScanComplete(result);
             }
 
             @Override
@@ -745,6 +700,74 @@ public class ScanFragment extends Fragment {
 
     private void stopScannerAnimation() { ivScannerIcon.clearAnimation(); }
 
+    /** Shared scan-completion logic — called from the live callback AND from
+     *  onServiceConnected when a scan finished while the UI was detached. */
+    private void handleScanComplete(ScanResult result) {
+        stopScanTimer();
+        Log.d(TAG, "onScanComplete: totalScanned=" + result.getTotalScanned()
+            + " threatsFound=" + result.getThreatsFound()
+            + " durationMs=" + result.getScanDurationMs()
+            + " clean=" + result.isClean());
+        boolean wasCancelled = serviceBound && guardService != null
+            && guardService.getScanEngine().isCancelled();
+        Log.d(TAG, "onScanComplete: wasCancelled=" + wasCancelled);
+        long secs = result.getScanDurationMs() / 1000;
+        long millis = result.getScanDurationMs() % 1000;
+        String duration = String.format(java.util.Locale.US, "%d.%03ds", secs, millis);
+        int totalThreats = result.getThreats().size();
+        isScanning = false;
+        if (getActivity() != null) {
+            getActivity().getSharedPreferences("hydra_prefs", 0)
+                .edit().putBoolean("first_scan_completed", true).apply();
+        }
+        if (!isAdded()) {
+            lastScanStatus = result.isClean() ? "System clean" : totalThreats + " threats";
+            if (wasCancelled) lastScanStatus = "Scan stopped";
+            lastScanStatus += " (" + duration + ")";
+            lastProgressName = "";
+            lastProgressCurrent = 0;
+            lastProgressTotal = 0;
+            Log.d(TAG, "onScanComplete: fragment detached, status saved");
+            return;
+        }
+        if (wasCancelled) {
+            lastScanStatus = getString(R.string.scan_stopped) + " (" + duration + ")";
+        } else if (result.isClean()) {
+            lastScanStatus = getString(R.string.scan_clean_system) + " (" + duration + ")";
+        } else {
+            lastScanStatus = getString(R.string.threats_found_count, totalThreats) + " (" + duration + ")";
+        }
+        if (hiddenThreatCount > 0) {
+            lastScanStatus += " (" + getString(R.string.threats_hidden_count, hiddenThreatCount) + ")";
+        }
+        getActivity().runOnUiThread(() -> {
+            stopScannerAnimation();
+            btnScan.setText(getString(R.string.rescan));
+            btnScan.setEnabled(true);
+            btnPauseResume.setVisibility(View.INVISIBLE);
+            tvCurrentApp.setText("");
+            if (progressBar.getMax() > 0) progressBar.setProgress(progressBar.getMax());
+            lastProgressCurrent = 0;
+            lastProgressTotal = 0;
+            lastProgressName = "";
+            threatAdapter.notifyDataSetChanged();
+            tvThreats.setText(String.valueOf(totalThreats));
+            tvActiveThreats.setText(String.valueOf(totalThreats));
+            tvScanStatus.setText(lastScanStatus);
+            if (wasCancelled) {
+                tvScanStatus.setTextColor(0xFFFFAA00);
+                tvCurrentApp.setText(lastScanStatus);
+                tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
+            } else if (result.isClean()) {
+                tvScanStatus.setTextColor(0xFF00FF88);
+                tvThreatLabel.setVisibility(View.GONE);
+            } else {
+                tvScanStatus.setTextColor(0xFFFF0040);
+                tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
+            }
+        });
+    }
+
     /** Clears all scan result UI so a new scan starts from a blank state. */
     private void resetScanUI() {
         isScanning = true;
@@ -761,6 +784,7 @@ public class ScanFragment extends Fragment {
         btnScan.setEnabled(true);
         btnPauseResume.setVisibility(View.VISIBLE);
         btnPauseResume.setText("⏸");
+        scanStartTime = 0;
         startScannerAnimation();
         startScanTimer();
 
@@ -798,7 +822,8 @@ public class ScanFragment extends Fragment {
     }
 
     // Live scan timer: updates status text every second with elapsed time.
-    private long scanStartTime = 0;
+    // Static so it survives fragment destruction/recreation (tab switch, screen off).
+    private static long scanStartTime = 0;
     private final android.os.Handler scanTimerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable scanTimerTick = new Runnable() {
         @Override
@@ -815,7 +840,7 @@ public class ScanFragment extends Fragment {
     };
 
     private void startScanTimer() {
-        scanStartTime = System.currentTimeMillis();
+        if (scanStartTime == 0) scanStartTime = System.currentTimeMillis();
         scanTimerHandler.removeCallbacks(scanTimerTick);
         scanTimerHandler.post(scanTimerTick);
     }
