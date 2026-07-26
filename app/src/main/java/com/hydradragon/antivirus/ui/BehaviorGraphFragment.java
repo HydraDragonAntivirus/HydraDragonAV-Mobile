@@ -61,25 +61,28 @@ public class BehaviorGraphFragment extends Fragment {
         radarChart.setData(axes);
 
         detailList.removeAllViews();
-        addDetailItem("UI Spam Events", String.valueOf(data.uiSpamCount));
-        addDetailItem("Notification Spam", String.valueOf(data.notificationSpamCount));
-        addDetailItem("Ransomware Events", String.valueOf(data.ransomwareCount));
-        addDetailItem("Network Connections", String.valueOf(data.networkConnectionCount));
-        addDetailItem("File Read Estimates", String.valueOf(data.fileReadCount));
-        addDetailItem("High Confidence Reads", String.valueOf(data.fileReadHighConfCount));
-        addDetailItem("Miner Memory", data.minerMemoryMb + " MB");
-        addDetailItem("Behavior Flags", String.valueOf(data.flagCount));
-        addDetailItem("StrandHogg", boolStr(data.hasStrandHogg));
-        addDetailItem("Removal Resistance", boolStr(data.hasRemovalResistance));
-        addDetailItem("Launcher Change", boolStr(data.hasLauncherChange));
-        addDetailItem("Canary Triggered", boolStr(data.hasCanaryTrigger));
-        addDetailItem("Device Admin", boolStr(data.isDeviceAdmin));
-        addDetailItem("Hidden App", boolStr(data.isHiddenApp));
-        addDetailItem("Observed Files", String.valueOf(data.createdFiles));
-        addDetailItem("Deleted Files", String.valueOf(data.deletedFiles));
-        addDetailItem("Wiper Detected", boolStr(data.hasWiper));
-        addDetailItem("Rooted", boolStr(data.isRooted));
-        addDetailItem("Debug Mode", boolStr(data.isDebug));
+        addDetailItem(getString(R.string.graph_ui_spam), String.valueOf(data.uiSpamCount));
+        addDetailItem(getString(R.string.graph_notification_spam), String.valueOf(data.notificationSpamCount));
+        addDetailItem(getString(R.string.graph_clickjack), String.valueOf(data.clickjackCount));
+        addDetailItem(getString(R.string.graph_ransomware), String.valueOf(data.ransomwareCount));
+        addDetailItem(getString(R.string.graph_network), String.valueOf(data.networkConnectionCount));
+        addDetailItem(getString(R.string.graph_file_read), String.valueOf(data.fileReadCount));
+        addDetailItem(getString(R.string.graph_file_read_high), String.valueOf(data.fileReadHighConfCount));
+        addDetailItem(getString(R.string.graph_file_created), String.valueOf(data.fileCreatedCount));
+        addDetailItem(getString(R.string.graph_file_copy), String.valueOf(data.fileCopyCount));
+        addDetailItem(getString(R.string.graph_miner_memory), data.minerMemoryMb + " MB");
+        addDetailItem(getString(R.string.graph_behavior_flags), String.valueOf(data.flagCount));
+        addDetailItem(getString(R.string.graph_strandhogg), boolStr(data.hasStrandHogg));
+        addDetailItem(getString(R.string.graph_removal_resistance), boolStr(data.hasRemovalResistance));
+        addDetailItem(getString(R.string.graph_launcher_change), boolStr(data.hasLauncherChange));
+        addDetailItem(getString(R.string.graph_canary), boolStr(data.hasCanaryTrigger));
+        addDetailItem(getString(R.string.graph_device_admin), boolStr(data.isDeviceAdmin));
+        addDetailItem(getString(R.string.graph_hidden_app), boolStr(data.isHiddenApp));
+        addDetailItem(getString(R.string.graph_observed_files), String.valueOf(data.createdFiles));
+        addDetailItem(getString(R.string.graph_deleted_files), String.valueOf(data.deletedFiles));
+        addDetailItem(getString(R.string.graph_wiper), boolStr(data.hasWiper));
+        addDetailItem(getString(R.string.graph_rooted), boolStr(data.isRooted));
+        addDetailItem(getString(R.string.graph_debug), boolStr(data.isDebug));
     }
 
     private void addDetailItem(String label, String value) {

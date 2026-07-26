@@ -14,6 +14,8 @@ public final class BehaviorGraphData {
     public final int minerMemoryMb;
     public final int fileReadCount;
     public final int fileReadHighConfCount;
+    public final int fileCreatedCount;
+    public final int fileCopyCount;
     public final int flagCount;
     public final boolean hasStrandHogg;
     public final boolean hasRemovalResistance;
@@ -30,6 +32,7 @@ public final class BehaviorGraphData {
     BehaviorGraphData(String packageName, int uiSpamCount, int notificationSpamCount,
                       int clickjackCount, int ransomwareCount, int networkConnectionCount,
                       int minerMemoryMb, int fileReadCount, int fileReadHighConfCount,
+                      int fileCreatedCount, int fileCopyCount,
                       int flagCount, boolean hasStrandHogg, boolean hasRemovalResistance,
                       boolean hasLauncherChange, boolean hasCanaryTrigger,
                       boolean isDeviceAdmin, boolean isHiddenApp,
@@ -44,6 +47,8 @@ public final class BehaviorGraphData {
         this.minerMemoryMb = minerMemoryMb;
         this.fileReadCount = fileReadCount;
         this.fileReadHighConfCount = fileReadHighConfCount;
+        this.fileCreatedCount = fileCreatedCount;
+        this.fileCopyCount = fileCopyCount;
         this.flagCount = flagCount;
         this.hasStrandHogg = hasStrandHogg;
         this.hasRemovalResistance = hasRemovalResistance;

@@ -338,6 +338,7 @@ public final class HipsMonitor {
         if (pkg == null) pkg = "";
         int ui = 0, notif = 0, cj = 0, rw = 0, net = 0, minerMem = 0, flags = 0;
         int fileRead = 0, fileReadHigh = 0;
+        int fileCreated = 0, fileCopy = 0;
         boolean sh = false, rr = false, lc = false, canary = false;
 
         for (UiSpamEvent e : uiSpamEvents) {
@@ -382,6 +383,10 @@ public final class HipsMonitor {
                     if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) {
                         fileReadHigh++;
                     }
+                } else if (f.startsWith("FILE_CREATED")) {
+                    fileCreated++;
+                } else if (f.startsWith("FILE_COPY")) {
+                    fileCopy++;
                 }
             }
         }
@@ -411,8 +416,9 @@ public final class HipsMonitor {
             } catch (Throwable ignored) {}
         }
         return new BehaviorGraphData(
-            pkg, ui, notif, cj, rw, net, minerMem, fileRead, fileReadHigh, flags,
-            sh, rr, lc, canary, da, ha, isRooted, isDebugMode,
+            pkg, ui, notif, cj, rw, net, minerMem, fileRead, fileReadHigh,
+            fileCreated, fileCopy, flags,
+            sh, rr, lc, canary, da, ha, isRooted, isDebug,
             created, deleted, hasWiper);
     }
 
