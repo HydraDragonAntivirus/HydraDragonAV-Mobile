@@ -184,6 +184,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="detect_cat_url_strings">Stringhe URL dannose/di phishing nei file</string>
     <string name="detect_cat_native_emulation">Emulazione codice nativo (rivela stringhe nascoste/decodificate)</string>
     <string name="detect_cat_rootkit">Comportamento simile a rootkit (app nascosta + permessi sospetti)</string>
+    <string name="detect_cat_riskware_testkey">App firmate con testkey (Riskware.TestKey)</string>
     <string name="behavior_detection_header">Rilevamento comportamentale</string>
     <string name="behavior_ui_spam">Rilevamento spam UI/notifiche</string>
     <string name="behavior_root_exploit">Rilevamento exploit di root</string>

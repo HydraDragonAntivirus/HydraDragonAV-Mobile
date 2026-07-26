@@ -177,7 +177,8 @@ public class DnsVpnService extends VpnService {
         if (running) return START_NOT_STICKY;
         startForegroundShield();
         if (fullCapture) {
-            NativeScanner.enableVpnScan(true);
+            boolean vpnOk = NativeScanner.enableVpnScan(true);
+            if (!vpnOk) Log.w(TAG, "Suricata rule engine failed to initialise — scans will return null");
             lastVpnScanNs = System.nanoTime();
         }
         cidr = com.hydradragon.antivirus.engine.CidrBlacklist.get(this);
@@ -286,8 +287,9 @@ public class DnsVpnService extends VpnService {
         try {
             String result = NativeScanner.scanPackets(packetsJson);
             if (result != null) {
-                boolean malicious = result.contains("\"malicious\":true");
-                if (malicious) {
+                if (result.contains("\"error\"")) {
+                    Log.w(TAG, "Suricata scan error: " + result);
+                } else if (result.contains("\"malicious\":true")) {
                     Log.w(TAG, "VPN packet match: " + result);
                     com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent("vpn", 0, "ALL",
                         true, "emerging-all match: " + result);
@@ -359,6 +361,14 @@ public class DnsVpnService extends VpnService {
             String protoName;
             if (proto == 6) protoName = "TCP";
             else if (proto == 17) protoName = "UDP";
+            else if (proto == 1) protoName = "ICMP";
+            else if (proto == 2) protoName = "IGMP";
+            else if (proto == 47) protoName = "GRE";
+            else if (proto == 50) protoName = "ESP";
+            else if (proto == 51) protoName = "AH";
+            else if (proto == 58) protoName = "ICMPV6";
+            else if (proto == 89) protoName = "OSPF";
+            else if (proto == 132) protoName = "SCTP";
             else protoName = "IP_" + proto;
             int payloadOff = ipHdr;
             if (proto == 6) {

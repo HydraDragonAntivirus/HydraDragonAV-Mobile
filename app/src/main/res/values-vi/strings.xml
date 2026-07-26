@@ -184,6 +184,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="detect_cat_url_strings">Chuỗi URL độc hại/lừa đảo trong tệp</string>
     <string name="detect_cat_native_emulation">Giả lập mã gốc (tiết lộ chuỗi ẩn/đã giải mã)</string>
     <string name="detect_cat_rootkit">Hành vi giống rootkit (ứng dụng ẩn + quyền hạn đáng ngờ)</string>
+    <string name="detect_cat_riskware_testkey">Ứng dụng ký testkey (Riskware.TestKey)</string>
     <string name="behavior_detection_header">Phát hiện hành vi</string>
     <string name="behavior_ui_spam">Phát hiện spam giao diện/thông báo</string>
     <string name="behavior_root_exploit">Phát hiện khai thác root</string>

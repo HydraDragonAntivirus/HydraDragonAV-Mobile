@@ -184,6 +184,7 @@
     <string name="detect_cat_url_strings">سلاسل روابط URL ضارة/تصيدية في الملفات</string>
     <string name="detect_cat_native_emulation">محاكاة الكود الأصلي (كشف السلاسل النصية المخفية/المفكوكة التشفير)</string>
     <string name="detect_cat_rootkit">سلوك شبيه بالروتكيت (تطبيق مخفي + أذونات مشبوهة)</string>
+    <string name="detect_cat_riskware_testkey">التطبيقات الموقعة بمفتاح اختبار (Riskware.TestKey)</string>
     <string name="behavior_detection_header">اكتشاف السلوك</string>
     <string name="behavior_ui_spam">اكتشاف إغراق الواجهة/الإشعارات</string>
     <string name="behavior_root_exploit">اكتشاف استغلال Root</string>

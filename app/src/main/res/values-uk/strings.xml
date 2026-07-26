@@ -184,6 +184,7 @@
     <string name="detect_cat_url_strings">Шкідливі/фішингові URL-рядки у файлах</string>
     <string name="detect_cat_native_emulation">Емуляція нативного коду (виявляє приховані/декодовані рядки)</string>
     <string name="detect_cat_rootkit">Поведінка, схожа на руткіт (прихований застосунок + підозрілі дозволи)</string>
+    <string name="detect_cat_riskware_testkey">Застосунки з тестовим підписом (Riskware.TestKey)</string>
     <string name="behavior_detection_header">Виявлення поведінки</string>
     <string name="behavior_ui_spam">Виявлення спаму інтерфейсу/сповіщень</string>
     <string name="behavior_root_exploit">Виявлення root-експлойтів</string>

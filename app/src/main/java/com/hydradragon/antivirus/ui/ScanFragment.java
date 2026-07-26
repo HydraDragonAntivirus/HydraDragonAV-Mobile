@@ -85,6 +85,7 @@ public class ScanFragment extends Fragment {
             // right when the service connects, not 2s later on the next poll.
             statusPollCheck.run();
             if (isScanning && pendingCustomScanUri == null && pendingCustomScanDir == null) {
+                startScanTimer();
                 attachScanCallback();
                 // Sync pause button with engine state — view is recreated
                 // fresh after rotation, static fields don't cover pause.
@@ -647,6 +648,7 @@ public class ScanFragment extends Fragment {
 
             @Override
             public void onScanComplete(ScanResult result) {
+                stopScanTimer();
                 Log.d(TAG, "onScanComplete: totalScanned=" + result.getTotalScanned()
                     + " threatsFound=" + result.getThreatsFound()
                     + " durationMs=" + result.getScanDurationMs()
@@ -713,6 +715,7 @@ public class ScanFragment extends Fragment {
 
             @Override
             public void onError(String error) {
+                stopScanTimer();
                 Log.e(TAG, "onError: " + error);
                 // Same fix as onScanComplete just above: clear the static flag
                 // even if the fragment is gone, or a background/engine error
@@ -759,6 +762,7 @@ public class ScanFragment extends Fragment {
         btnPauseResume.setVisibility(View.VISIBLE);
         btnPauseResume.setText("⏸");
         startScannerAnimation();
+        startScanTimer();
 
         lastScanStatus = getString(R.string.scan_scanning_btn);
         tvScanStatus.setText(lastScanStatus);
@@ -791,6 +795,33 @@ public class ScanFragment extends Fragment {
                 }
             }
         }
+    }
+
+    // Live scan timer: updates status text every second with elapsed time.
+    private long scanStartTime = 0;
+    private final android.os.Handler scanTimerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable scanTimerTick = new Runnable() {
+        @Override
+        public void run() {
+            if (!isAdded() || !isScanning) return;
+            long elapsed = System.currentTimeMillis() - scanStartTime;
+            long secs = elapsed / 1000;
+            long mins = secs / 60;
+            secs %= 60;
+            String timeStr = String.format(java.util.Locale.US, "%02d:%02d", mins, secs);
+            tvScanStatus.setText(getString(R.string.scan_scanning_btn) + " " + timeStr);
+            scanTimerHandler.postDelayed(this, 1000);
+        }
+    };
+
+    private void startScanTimer() {
+        scanStartTime = System.currentTimeMillis();
+        scanTimerHandler.removeCallbacks(scanTimerTick);
+        scanTimerHandler.post(scanTimerTick);
+    }
+
+    private void stopScanTimer() {
+        scanTimerHandler.removeCallbacks(scanTimerTick);
     }
 
     // Single poller that checks engine loading state only.
@@ -831,6 +862,7 @@ public class ScanFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
+        stopScanTimer();
         statusPoller.removeCallbacks(statusPollCheck);
         if (serviceBound) {
             // GuardService keeps scanning/notifying/logging on its own even

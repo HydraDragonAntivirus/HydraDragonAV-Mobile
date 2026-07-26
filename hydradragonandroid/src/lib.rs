@@ -23,14 +23,21 @@ use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 use base64::Engine as Base64Engine;
 
+#[cfg(target_os = "android")]
 mod asset_reader;
 mod dex_scan;
 mod elf;
+#[cfg(target_os = "android")]
+#[path = "emulate.rs"]
+mod emulate;
+#[cfg(not(target_os = "android"))]
+#[path = "emulate_stub.rs"]
 mod emulate;
 mod ip_scan;
 mod suricata_scan;
 mod url_scan;
 mod benign_db;
+mod riskware;
 
 use jni::errors::LogErrorAndDefault;
 use jni::objects::{JClass, JObject, JString};
@@ -39,12 +46,7 @@ use jni::EnvUnowned;
 use std::fmt::Write;
 
 // Direct FFI into Android's liblog.so (always present in an app process,
-// unlike the desktop-only `HDA_PROF`/eprintln! profiling in
-// hydradragonclamav's scanner.rs — an env var and stderr writes are both
-// invisible on a real device, which is exactly why "which Rust engine is
-// slowest" never showed up in logcat before this). No extra crate needed:
-// this .so already links against liblog transitively via the NDK toolchain,
-// same as every other Android native library.
+#[cfg(target_os = "android")]
 #[link(name = "log")]
 unsafe extern "C" {
     fn __android_log_write(
@@ -55,20 +57,21 @@ unsafe extern "C" {
 }
 const ANDROID_LOG_INFO: std::os::raw::c_int = 4;
 
-/// Writes one line to logcat under the tag `HydraDragon-RustTiming` — filter
-/// with `adb logcat -s HydraDragon-RustTiming` to see which internal stage
-/// (dex scan, clamav/YARA, ML model, native-code emulation, ...) is actually
-/// slow for a given file, not just "NativeScanner" as one lump sum the way
-/// the Java-side FILE_ENGINE_TIMING/SLOWEST_ENGINE logs already do.
+/// Writes one line to logcat, or prints to stderr on host builds.
 pub(crate) fn android_log(msg: &str) {
-    use std::ffi::CString;
-    let (Ok(tag), Ok(text)) = (
-        CString::new("HydraDragon-RustTiming"),
-        CString::new(msg),
-    ) else {
-        return;
-    };
-    unsafe { __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr()) };
+    #[cfg(target_os = "android")]
+    unsafe {
+        use std::ffi::CString;
+        let (Ok(tag), Ok(text)) = (
+            CString::new("HydraDragon-RustTiming"),
+            CString::new(msg),
+        ) else {
+            return;
+        };
+        __android_log_write(ANDROID_LOG_INFO, tag.as_ptr(), text.as_ptr());
+    }
+    #[cfg(not(target_os = "android"))]
+    eprintln!("[HydraDragon-RustTiming] {msg}");
 }
 
 /// Writes a `HydraDragon-RustTiming` performance/diagnostic line to logcat
@@ -193,6 +196,12 @@ static VPN_RULES_LOADED: std::sync::atomic::AtomicBool =
 /// Whether VPN packet scanning is active. When false, nativeScanPackets is
 /// a no-op even if VPN rules happen to be loaded.
 static VPN_SCAN_ENABLED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Whether the Suricata rule engine was successfully initialised.
+/// Separate from VPN_SCAN_ENABLED so scan_packets can return a distinct
+/// error when the rules failed to load vs. when scanning is intentionally off.
+static VPN_RULES_READY: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
 /// Every bundled asset file read at init time, kept for lazy loading
@@ -1190,14 +1199,16 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
             Err(_) => return Ok(JNI_FALSE),
         };
 
-        // Convert Java AssetManager → native AAssetManager* so the background
-        // thread can read files without holding a JNI env reference.
-        let mgr = asset_reader::from_java(
-            env.get_raw() as *mut std::ffi::c_void,
-            asset_manager.into_raw() as *mut std::ffi::c_void,
-        );
-        // *mut c_void is !Send; cast to usize for thread safety.
-        let mgr_addr = mgr as usize;
+        #[cfg(target_os = "android")]
+        let mgr_addr = {
+            let mgr = asset_reader::from_java(
+                env.get_raw() as *mut std::ffi::c_void,
+                asset_manager.into_raw() as *mut std::ffi::c_void,
+            );
+            mgr as usize
+        };
+        #[cfg(not(target_os = "android"))]
+        let mgr_addr = 0;
         INIT_STARTED.store(true, std::sync::atomic::Ordering::Release);
 
         std::thread::Builder::new()
@@ -1216,10 +1227,14 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
                 unsafe {
                     libc::setpriority(libc::PRIO_PROCESS, libc::gettid() as libc::id_t, 10);
                 }
-                let mgr = mgr_addr as *mut std::ffi::c_void;
-                // Read every bundled asset file into memory via AAssetManager
-                asset_reader::init(mgr);
-                let files = asset_reader::read_all_assets(&asset_dir);
+                #[cfg(target_os = "android")]
+                let files = {
+                    let mgr = mgr_addr as *mut std::ffi::c_void;
+                    asset_reader::init(mgr);
+                    asset_reader::read_all_assets(&asset_dir)
+                };
+                #[cfg(not(target_os = "android"))]
+                let files = std::collections::HashMap::new();
                 if files.is_empty() {
                     android_log("native-init FAILED — no assets read");
                     return;
@@ -1272,6 +1287,19 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     enabled: jboolean,
 ) {
     NATIVE_EMULATION_ENABLED.store(enabled != JNI_FALSE, Ordering::Relaxed);
+}
+
+/// `void nativeSetRiskwareTestKeyEnabled(boolean enabled)` — Settings toggle
+/// for the Riskware.TestKey detection (APKs signed with Android test/debug
+/// certificates). Disabled by default because many legitimate dev builds use
+/// testkey signing — only enable if you specifically want to flag them.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetRiskwareTestKeyEnabled(
+    _env: EnvUnowned,
+    _class: JClass,
+    enabled: jboolean,
+) {
+    riskware::set_testkey_detection_enabled(enabled != JNI_FALSE);
 }
 
 /// `boolean nativeIsEmulationAvailable()` — probes Unicorn once per
@@ -1538,17 +1566,25 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 /// Initialise the Suricata-format rule engine (parses emerging-all.rules
 /// from assets and builds a daachorse automaton). Called once from
 /// nativeEnableVpnScan(true). Thread-safe.
-fn load_vpn_rules() {
+fn load_vpn_rules() -> bool {
     if VPN_RULES_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
-        return;
+        return VPN_RULES_READY.load(std::sync::atomic::Ordering::Relaxed);
     }
-    let Some(asset_files) = ASSET_FILES.get() else { return };
-    if let Some(rules_bytes) = asset_files.get("emerging-all.rules") {
-        suricata_scan::RuleEngine::init(rules_bytes);
-    } else {
-        rust_timing_log!("SuricataEngine: emerging-all.rules not found in assets");
-    }
+    let Some(asset_files) = ASSET_FILES.get() else {
+        rust_timing_log!("SuricataEngine: assets not loaded yet");
+        VPN_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
+        return false;
+    };
+    let ok = match asset_files.get("emerging-all.rules") {
+        Some(rules_bytes) => suricata_scan::RuleEngine::init(rules_bytes),
+        None => {
+            rust_timing_log!("SuricataEngine: emerging-all.rules not found in assets");
+            false
+        }
+    };
+    VPN_RULES_READY.store(ok, std::sync::atomic::Ordering::Relaxed);
     VPN_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
+    ok
 }
 
 fn scan_hips(hips_json: &str) -> String {
@@ -1616,20 +1652,23 @@ fn scan_text(text: &str) -> String {
     names.join(",")
 }
 
-/// `void nativeEnableVpnScan(boolean enable)` — when true, lazily load VPN
-/// Suricata rules (emerging-all.rules) and enable packet scanning. When false,
-/// disable packet scanning (rules stay loaded but are unused).
+/// `boolean nativeEnableVpnScan(boolean enable)` — when true, lazily load VPN
+/// Suricata rules (emerging-all.rules) and enable packet scanning. Returns
+/// true if the engine was successfully initialised (or was already ready).
+/// When false, disable packet scanning (rules stay loaded but are unused).
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeEnableVpnScan(
     _env: EnvUnowned,
     _class: JClass,
     enable: jboolean,
-) {
+) -> jboolean {
     if enable == JNI_TRUE {
-        load_vpn_rules();
+        let ok = load_vpn_rules();
         VPN_SCAN_ENABLED.store(true, std::sync::atomic::Ordering::Relaxed);
+        if ok { JNI_TRUE } else { JNI_FALSE }
     } else {
         VPN_SCAN_ENABLED.store(false, std::sync::atomic::Ordering::Relaxed);
+        JNI_TRUE
     }
 }
 
@@ -1641,11 +1680,17 @@ fn scan_packets(packets_json: &str) -> String {
     if !VPN_SCAN_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
         return r#"{"malicious":false}"#.to_string();
     }
+    if !VPN_RULES_READY.load(std::sync::atomic::Ordering::Relaxed) {
+        return r#"{"malicious":false,"error":"engine not initialised"}"#.to_string();
+    }
     if packets_json.is_empty() {
         return r#"{"malicious":false}"#.to_string();
     }
     let engine = suricata_scan::RuleEngine::get();
     let result = engine.scan(packets_json);
+    if let Some(ref err) = result.error {
+        rust_timing_log!("SuricataScan: {}", err);
+    }
     serde_json::to_string(&result).unwrap_or_else(|_| r#"{"error":"serialisation failed"}"#.to_string())
 }
 
@@ -2355,6 +2400,14 @@ fn run_scan(
                     url_limit += 1; if url_limit >= 16 { break; }
                 }
                 if url_limit >= 16 { break; }
+            }
+        }
+    }
+
+    if riskware::is_testkey_detection_enabled() {
+        if let Some(cert) = extract_certificate(&buffers) {
+            if riskware::check_testkey(&cert.sha1) {
+                detections.push(("Riskware.TestKey".to_string(), path.to_string(), Vec::new()));
             }
         }
     }

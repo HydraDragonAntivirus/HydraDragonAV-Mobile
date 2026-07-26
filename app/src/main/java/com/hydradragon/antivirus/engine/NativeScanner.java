@@ -88,6 +88,17 @@ public final class NativeScanner {
 
     private static native void nativeSetScanRelevantOnly(boolean on);
 
+    private static native void nativeSetRiskwareTestKeyEnabled(boolean enabled);
+
+    /** Riskware.TestKey — flags APKs signed with publicly-known Android
+     *  test/debug certificates (testkey, platform, shared, media). Disabled
+     *  by default because legitimate dev/test builds are also testkey-signed.
+     *  Applied immediately; no engine reinit needed. */
+    public static void setRiskwareTestKeyEnabled(boolean enabled) {
+        if (!LIB_LOADED) return;
+        try { nativeSetRiskwareTestKeyEnabled(enabled); } catch (Throwable ignore) { }
+    }
+
     /** Settings toggle for the Unicorn-based native-code emulation pass (runs
      *  every embedded .so's JNI_OnLoad/entry point in a bounded, syscall-free
      *  sandbox to reveal strings — e.g. a C2 URL — a decode routine only
@@ -181,22 +192,31 @@ public final class NativeScanner {
 
     // ── VPN packet scan ─────────────────────────────────────────────────
 
-    private static native void nativeEnableVpnScan(boolean enable);
+    private static native boolean nativeEnableVpnScan(boolean enable);
 
     private static native String nativeScanPackets(String packetsJson);
 
+    private static volatile boolean vpnRulesReady = false;
+
     /** Enable VPN packet scanning. Loads emerging-all.rules lazily.
-     *  Call from VpnService.onStart(). */
-    public static void enableVpnScan(boolean enable) {
-        if (!LIB_LOADED) return;
-        try { nativeEnableVpnScan(enable); } catch (Throwable ignore) { }
+     *  Call from VpnService.onStart(). Returns true if the Suricata
+     *  rule engine was initialised successfully. */
+    public static boolean enableVpnScan(boolean enable) {
+        if (!LIB_LOADED) return false;
+        try {
+            vpnRulesReady = nativeEnableVpnScan(enable);
+            return vpnRulesReady;
+        } catch (Throwable t) {
+            vpnRulesReady = false;
+            return false;
+        }
     }
 
     /** Scan captured VPN packets against emerging-all.rules (hydradragon
      *  network-threat rules). Returns null if VPN scan is disabled or
      *  engine not ready. */
     public static String scanPackets(String packetsJson) {
-        if (!isReady() || packetsJson == null || packetsJson.isEmpty()) return null;
+        if (!isReady() || !vpnRulesReady || packetsJson == null || packetsJson.isEmpty()) return null;
         try {
             String r = nativeScanPackets(packetsJson);
             return (r == null || r.isEmpty()) ? null : r;

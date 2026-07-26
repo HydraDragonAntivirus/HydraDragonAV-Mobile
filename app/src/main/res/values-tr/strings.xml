@@ -196,6 +196,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="detect_cat_url_strings">Dosyalarda kötü amaçlı/kimlik avı URL dizeleri</string>
     <string name="detect_cat_native_emulation">Yerel kod emülasyonu (gizli/çözülmüş dizeleri ortaya çıkarır)</string>
     <string name="detect_cat_rootkit">Rootkit benzeri davranış (gizli uygulama + şüpheli izinler)</string>
+    <string name="detect_cat_riskware_testkey">Testkey imzalı uygulamalar (Riskware.TestKey)</string>
     <string name="behavior_detection_header">Davranış Tespiti</string>
     <string name="behavior_ui_spam">UI/bildirim spamı tespiti</string>
     <string name="behavior_root_exploit">Root exploit tespiti</string>

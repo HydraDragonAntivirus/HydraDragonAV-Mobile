@@ -34,7 +34,6 @@ dex-analysis = { git = "https://github.com/FossRust/dex-parser-analyzer", branch
 # rescanning what Java's whitelist already vouches for. "bundled" statically
 # links sqlite3 (no cross-compiled system dependency needed for the .so).
 rusqlite = { version = "0.40", features = ["bundled"] }
-unicorn-engine = { git = "https://github.com/HydraDragonAntivirus/unicorn-engine-rs", default-features = false, features = ["arch_arm", "arch_aarch64", "arch_x86"] }
 serde_json = "1.0"
 # Lets the native-init worker thread lower its own scheduling priority (see
 # ANDROID_PRIORITY_BACKGROUND usage in lib.rs) so ~8s of ClamAV/YARA/ML/TLSH
@@ -45,6 +44,9 @@ memchr = "2"
 regex = "1"
 daachorse = { git = "https://github.com/HydraDragonAntivirus/daachorse" }
 serde = { version = "1.0", features = ["derive"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+unicorn-engine = { git = "https://github.com/HydraDragonAntivirus/unicorn-engine-rs", default-features = false, features = ["arch_arm", "arch_aarch64", "arch_x86"] }
 
 [profile.release]
 opt-level = "z"

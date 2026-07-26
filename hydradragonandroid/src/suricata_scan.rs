@@ -33,9 +33,11 @@ impl FlowConstraints {
     }
 
     fn check(&self, flow_dir: FlowDir) -> bool {
-        if self.to_server && flow_dir != FlowDir::ToServer { return false; }
-        if self.from_server && flow_dir != FlowDir::FromServer { return false; }
-        true
+        match (self.to_server, self.from_server) {
+            (true, false) => flow_dir == FlowDir::ToServer,
+            (false, true) => flow_dir == FlowDir::FromServer,
+            _ => true,
+        }
     }
 }
 
@@ -85,6 +87,8 @@ pub struct MatchInfo {
 pub struct ScanResult {
     pub malicious: bool,
     pub matches: Vec<MatchInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }
 
 fn hex_decode(s: &str) -> Vec<u8> {
@@ -266,7 +270,12 @@ fn check_port(rule_port: &Option<String>, pkt_port: u16) -> bool {
         return true;
     }
     if s.starts_with('$') {
-        if s.contains("HTTP") { return matches!(pkt_port, 80 | 443 | 8080 | 8443 | 8000 | 8008); }
+        if s.contains("HTTP") {
+            return matches!(pkt_port, 80 | 81 | 311 | 443 | 591 | 593 | 631 | 901 | 1220 | 1414 | 1741
+                | 1830 | 2301 | 2381 | 2809 | 3128 | 3702 | 4343 | 4848 | 5250 | 6984
+                | 7907 | 8080 | 8088 | 8118 | 8137 | 8232 | 8245 | 8280 | 8696 | 8880
+                | 8888 | 9443 | 9990 | 9999 | 11371 | 14441 | 34443 | 34444 | 41080 | 50002 | 55555);
+        }
         return true;
     }
     true
@@ -352,7 +361,6 @@ fn parse_rules(raw: &[u8]) -> (Vec<Rule>, Vec<(Vec<u8>, u32)>) {
         let mut cur_depth: Option<u32> = None;
         let mut cur_distance: Option<u32> = None;
         let mut cur_within: Option<u32> = None;
-        let mut pending_nocase = false;
         let mut has_content = false;
 
         let mut pos = 0usize;
@@ -369,8 +377,29 @@ fn parse_rules(raw: &[u8]) -> (Vec<Rule>, Vec<(Vec<u8>, u32)>) {
             while pos < olen && bs[pos] != b':' && bs[pos] != b' ' && bs[pos] != b';' {
                 pos += 1;
             }
-            if pos >= olen || bs[pos] != b':' { continue; }
             let key = &opts[key_start..pos];
+            if pos >= olen || bs[pos] != b':' {
+                // value-less keyword (e.g. nocase, http_uri)
+                match key {
+                    "nocase" => {
+                        has_content = true;
+                        if let Some(last) = raw_pats.last() {
+                            if last.bytes.iter().any(|b| b.is_ascii_alphabetic()) {
+                                let lower = last.bytes.to_ascii_lowercase();
+                                if lower != last.bytes {
+                                    raw_pats.push(RawPattern {
+                                        bytes: lower,
+                                        offset: None, depth: None,
+                                        distance: None, within: None,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+                continue;
+            }
             pos += 1;
 
             while pos < olen && (bs[pos] == b' ' || bs[pos] == b'\t') {
@@ -408,25 +437,8 @@ fn parse_rules(raw: &[u8]) -> (Vec<Rule>, Vec<(Vec<u8>, u32)>) {
                         distance: cur_distance.take(),
                         within: cur_within.take(),
                     });
-                    if pending_nocase {
-                        if bytes.iter().any(|b| b.is_ascii_alphabetic()) {
-                            let lower = bytes.to_ascii_lowercase();
-                            if lower != bytes {
-                                raw_pats.push(RawPattern {
-                                    bytes: lower,
-                                    offset: None, depth: None,
-                                    distance: None, within: None,
-                                });
-                            }
-                        }
-                        pending_nocase = false;
-                    }
                     cur_distance = None;
                     cur_within = None;
-                }
-                "nocase" => {
-                    pending_nocase = true;
-                    skip_value(bs, &mut pos);
                 }
                 "offset" => {
                     cur_offset = read_unquoted(opts, bs, &mut pos).parse().ok();
@@ -509,21 +521,38 @@ impl RuleEngine {
         })
     }
 
-    pub fn init(rules_bytes: &[u8]) {
+    pub fn init(rules_bytes: &[u8]) -> bool {
         let (rules, pat_entries) = parse_rules(rules_bytes);
         if rules.is_empty() {
             rust_timing_log!("SuricataEngine: parse_rules returned 0 rules (maybe not loaded yet)");
-            return;
+            return false;
+        }
+        if pat_entries.is_empty() {
+            rust_timing_log!("SuricataEngine: 0 patterns extracted from {} rules", rules.len());
+            return false;
         }
         let patvals: Vec<(&[u8], u32)> = pat_entries.iter().map(|(p, v)| (p.as_slice(), *v)).collect();
-        let ac = DoubleArrayAhoCorasick::with_values(patvals)
-            .expect("daachorse build failed");
+        let ac = match DoubleArrayAhoCorasick::with_values(patvals) {
+            Ok(a) => a,
+            Err(e) => {
+                rust_timing_log!("SuricataEngine: daachorse build failed: {}", e);
+                return false;
+            }
+        };
         let pattern_count = pat_entries.len();
         let engine = RuleEngine { rules, ac, pattern_count };
-        let _ = RULE_ENGINE.set(engine);
-        rust_timing_log!("SuricataEngine: {} rules, {} patterns initialised",
-            RULE_ENGINE.get().map(|e| e.rules.len()).unwrap_or(0),
-            RULE_ENGINE.get().map(|e| e.pattern_count).unwrap_or(0));
+        match RULE_ENGINE.set(engine) {
+            Ok(_) => {
+                rust_timing_log!("SuricataEngine: {} rules, {} patterns initialised",
+                    RULE_ENGINE.get().map(|e| e.rules.len()).unwrap_or(0),
+                    RULE_ENGINE.get().map(|e| e.pattern_count).unwrap_or(0));
+                true
+            }
+            Err(_) => {
+                rust_timing_log!("SuricataEngine: already initialised (skipping re-init)");
+                true
+            }
+        }
     }
 
     fn check_rule(&self, rule: &Rule, matches_by_id: &[Vec<(usize, usize)>], combined: &[u8], pkt: &PacketData) -> bool {
@@ -592,39 +621,78 @@ impl RuleEngine {
     pub fn scan(&self, packets_json: &str) -> ScanResult {
         let packets = parse_packets_json(packets_json);
         if packets.is_empty() {
-            return ScanResult { malicious: false, matches: Vec::new() };
+            if !packets_json.trim().is_empty() {
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(packets_json) {
+                    if val.is_array() || val.is_object() {
+                        return ScanResult {
+                            malicious: false,
+                            matches: Vec::new(),
+                            error: Some("no packets parsed — expected payload_hex fields with non-empty hex data".into()),
+                        };
+                    }
+                }
+            }
+            return ScanResult { malicious: false, matches: Vec::new(), error: None };
+        }
+
+        // Single concatenated buffer + per-packet boundaries + metadata
+        let mut combined = Vec::new();
+        let mut packet_ranges: Vec<(usize, usize, usize)> = Vec::new(); // (start, end, pkt_idx)
+        for (idx, pkt) in packets.iter().enumerate() {
+            if pkt.payload.is_empty() { continue; }
+            let start = combined.len();
+            combined.extend_from_slice(&pkt.payload);
+            packet_ranges.push((start, combined.len(), idx));
+        }
+        if combined.is_empty() {
+            return ScanResult { malicious: false, matches: Vec::new(), error: None };
+        }
+
+        // Single AC pass on the combined buffer
+        let mut matches_by_id: Vec<Vec<(usize, usize)>> = vec![Vec::new(); self.pattern_count];
+        for mat in self.ac.find_overlapping_iter(&combined) {
+            let pid = mat.value() as usize;
+            if pid < self.pattern_count {
+                matches_by_id[pid].push((mat.start(), mat.end()));
+            }
+        }
+
+        // Pre-filter matches per packet so each packet gets its own local-position view
+        let mut per_packet_matches: Vec<Vec<Vec<(usize, usize)>>> = Vec::with_capacity(packet_ranges.len());
+        for &(pkt_start, pkt_end, _) in &packet_ranges {
+            let mut filtered = vec![Vec::new(); self.pattern_count];
+            for (pid, global_matches) in matches_by_id.iter().enumerate() {
+                let local: Vec<(usize, usize)> = global_matches.iter()
+                    .filter(|&&(s, e)| s >= pkt_start && e <= pkt_end)
+                    .map(|&(s, e)| (s - pkt_start, e - pkt_start))
+                    .collect();
+                if !local.is_empty() {
+                    filtered[pid] = local;
+                }
+            }
+            per_packet_matches.push(filtered);
         }
 
         let mut matches = Vec::new();
 
-        for pkt in &packets {
-            let combined = &pkt.payload;
-            if combined.is_empty() { continue; }
-
-            let mut matches_by_id: Vec<Vec<(usize, usize)>> = vec![Vec::new(); self.pattern_count];
-            for mat in self.ac.find_overlapping_iter(combined) {
-                let pid = mat.value() as usize;
-                if pid < self.pattern_count {
-                    matches_by_id[pid].push((mat.start(), mat.end()));
-                }
-            }
-
-            for rule in &self.rules {
-                if matches.iter().any(|m: &MatchInfo| m.sid == rule.sid) {
-                    continue;
-                }
-                if self.check_rule(rule, &matches_by_id, combined, pkt) {
+        for rule in &self.rules {
+            if matches.iter().any(|m: &MatchInfo| m.sid == rule.sid) { continue; }
+            for (range_idx, &(pkt_start, pkt_end, pkt_idx)) in packet_ranges.iter().enumerate() {
+                let pkt_combined = &combined[pkt_start..pkt_end];
+                let pkt_matches = &per_packet_matches[range_idx];
+                if self.check_rule(rule, pkt_matches, pkt_combined, &packets[pkt_idx]) {
                     matches.push(MatchInfo {
                         name: rule.msg.clone(),
                         sid: rule.sid,
                         classtype: rule.classtype.clone(),
                         description: rule.msg.clone(),
                     });
+                    break;
                 }
             }
         }
 
-        ScanResult { malicious: !matches.is_empty(), matches }
+        ScanResult { malicious: !matches.is_empty(), matches, error: None }
     }
 }
 

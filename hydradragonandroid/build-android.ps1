@@ -100,6 +100,16 @@ if (-not (Get-Command "cargo-ndk" -ErrorAction SilentlyContinue)) {
 # ANDROID_ABI so cmake-rs cross-compiles correctly with the NDK
 # toolchain (CMAKE_TOOLCHAIN_FILE set above). No manual unicorn
 # C-source build or pkg-config bypass needed.
+# Workaround: qemu/configure generates an empty config-host.h when
+# cross-compiling from Windows → Android, leaving CONFIG_POSIX undefined.
+# Without it, osdep.h skips #include "sys/mman.h" and osdep.c fails on
+# mprotect/PROT_*.  Push the define through CFLAGS so the cmake-built C
+# code sees it regardless of the empty config-host.h.  cargo-ndk sets
+# CFLAGS_<target> only when absent, so our values take precedence.
+${env:CFLAGS_aarch64-linux-android}  = "--target=aarch64-linux-android21 -DCONFIG_POSIX"
+${env:CFLAGS_armv7-linux-androideabi} = "--target=armv7a-linux-androideabi21 -DCONFIG_POSIX"
+${env:CFLAGS_x86_64-linux-android}   = "--target=x86_64-linux-android21 -DCONFIG_POSIX"
+${env:CFLAGS_i686-linux-android}      = "--target=i686-linux-android21 -DCONFIG_POSIX"
 $env:PKG_CONFIG_ALLOW_CROSS = "1"
 
 # ---------- Test mode (single ABI, skip APK copy) ----------

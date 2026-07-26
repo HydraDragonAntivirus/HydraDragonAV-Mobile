@@ -251,6 +251,14 @@ public class SettingsFragment extends Fragment {
             com.hydradragon.antivirus.engine.NativeScanner.setEmulationEnabled(checked);
         });
 
+        boolean testKeyOn = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
+            requireContext(), com.hydradragon.antivirus.engine.DetectionCategories.RISKWARE_TESTKEY);
+        addToggle(getString(R.string.detect_cat_riskware_testkey), testKeyOn, (btn, checked) -> {
+            com.hydradragon.antivirus.engine.DetectionCategories.setEnabled(requireContext(),
+                com.hydradragon.antivirus.engine.DetectionCategories.RISKWARE_TESTKEY, checked);
+            com.hydradragon.antivirus.engine.NativeScanner.setRiskwareTestKeyEnabled(checked);
+        });
+
         addHeader(getString(R.string.behavior_detection_header));
         addBehaviorToggle(R.string.behavior_ui_spam, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.UI_SPAM);
         addBehaviorToggle(R.string.behavior_root_exploit, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.ROOT_EXPLOIT);
@@ -538,7 +546,8 @@ public class SettingsFragment extends Fragment {
             "max_scan_file_size_mb"),
         new ResetCategory(R.string.reset_cat_detection, "detect_cat_signatures", "detect_cat_ml",
             "detect_cat_pua", "detect_cat_auto_rules", "detect_cat_permissions", "detect_cat_eicar",
-            "detect_cat_url_strings", "detect_cat_rootkit", "detect_cat_native_emulation"),
+            "detect_cat_url_strings", "detect_cat_rootkit", "detect_cat_native_emulation",
+            "detect_cat_riskware_testkey"),
         new ResetCategory(R.string.reset_cat_behavior, "ui_spam", "root_exploit", "dynamic_risk",
             "ransomware", "task_hijack", "screen_security", "file_canary"),
         new ResetCategory(R.string.reset_cat_privacy, KEY_SHIELD, "web_shield_decided", KEY_SCREEN_OCR,

@@ -32,6 +32,10 @@ public final class DetectionCategories {
      *  Applied to the native engine immediately on toggle, actually skipping
      *  the emulation cost when off — not just suppressing its results. */
     public static final String NATIVE_EMULATION = "detect_cat_native_emulation";
+    /** Riskware.TestKey — flags APKs signed with publicly-known Android
+     *  test/debug certificates (testkey, platform, shared, media). Disabled
+     *  by default; see riskware.rs. */
+    public static final String RISKWARE_TESTKEY = "detect_cat_riskware_testkey";
     /** Self-hiding app (no launcher icon / launcher activity disabled)
      *  combined with a suspicious permission set — see ScanEngine's
      *  {@code checkRootkitBehavior()} for the exact combo. */
