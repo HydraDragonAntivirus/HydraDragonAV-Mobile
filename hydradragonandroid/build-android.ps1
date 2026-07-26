@@ -8,6 +8,8 @@ param(
     # once and just run build-android.cmd with no args from then on.
     [ValidateSet("release", "debug")]
     [string]$Configuration = $(if ($env:HYDRADRAGON_BUILD_CONFIGURATION) { $env:HYDRADRAGON_BUILD_CONFIGURATION } else { "release" }),
+    [Alias("t")]
+    [switch]$Test,
     [Alias("h", "?")]
     [switch]$Help
 )
@@ -41,6 +43,15 @@ EXAMPLES:
 }
 
 $ErrorActionPreference = "Stop"
+
+# ---------- Test mode (skips NDK build) ----------
+if ($Test) {
+    Push-Location $PSScriptRoot
+    cargo test --lib suricata_scan 2>&1
+    $ok = $LASTEXITCODE
+    Pop-Location
+    exit $ok
+}
 
 # ---------- NDK ----------
 $sdkRoot = "${env:LOCALAPPDATA}\Android\Sdk"

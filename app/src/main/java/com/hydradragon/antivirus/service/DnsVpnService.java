@@ -244,7 +244,7 @@ public class DnsVpnService extends VpnService {
         }
     }
 
-    /** Scan currently captured packets against emerging-all.yrc. */
+    /** Scan currently captured packets against emerging-all.rules. */
     private void scanCapturedPackets() {
         String packetsJson;
         synchronized (capturedPackets) {

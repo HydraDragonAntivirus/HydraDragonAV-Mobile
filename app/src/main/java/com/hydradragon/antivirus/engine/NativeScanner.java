@@ -185,14 +185,14 @@ public final class NativeScanner {
 
     private static native String nativeScanPackets(String packetsJson);
 
-    /** Enable VPN packet scanning. Loads emerging-all.yrc rules lazily.
+    /** Enable VPN packet scanning. Loads emerging-all.rules lazily.
      *  Call from VpnService.onStart(). */
     public static void enableVpnScan(boolean enable) {
         if (!LIB_LOADED) return;
         try { nativeEnableVpnScan(enable); } catch (Throwable ignore) { }
     }
 
-    /** Scan captured VPN packets against emerging-all.yrc (hydradragon
+    /** Scan captured VPN packets against emerging-all.rules (hydradragon
      *  network-threat rules). Returns null if VPN scan is disabled or
      *  engine not ready. */
     public static String scanPackets(String packetsJson) {

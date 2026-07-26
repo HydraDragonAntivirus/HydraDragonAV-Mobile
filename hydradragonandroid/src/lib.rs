@@ -9,8 +9,8 @@
 //!   - androguard.yrc
 //!   - hips_rules_filtered_verified.yrc
 //!
-//! YARA rules loaded on-demand when VPN starts:
-//!   - emerging-all.yrc (13 MB network-threat rules, nativeEnableVpnScan)
+//! Suricata-format rule engine initialised on-demand when VPN starts:
+//!   - emerging-all.rules parsed at runtime via suricata_scan::RuleEngine
 //!
 //! ML model:
 //!   - model.onnx
@@ -28,6 +28,7 @@ mod dex_scan;
 mod elf;
 mod emulate;
 mod ip_scan;
+mod suricata_scan;
 mod url_scan;
 mod benign_db;
 
@@ -79,7 +80,7 @@ macro_rules! rust_timing_log {
 }
 
 /// All compiled YARA rule files loaded at init (everything except the
-/// 13 MB emerging-all.yrc which is loaded on-demand when VPN starts).
+/// 45 MB emerging-all.rules loaded on-demand when VPN starts).
 const YRC_FILES: &[&str] = &[
     "clean_rules_filtered_verified.yrc",
     "valhalla-rules_filtered_verified.yrc",
@@ -91,11 +92,10 @@ const MODULE_DEPENDENT_YRC: &[&str] = &[
     "androguard.yrc",
     "hips_rules_filtered_verified.yrc",
 ];
-/// Network-threat YARA rules — loaded lazily only when VPN scan is enabled
-/// (nativeEnableVpnScan(true)). Avoids 13 MB of memory at startup.
-const VPN_YRC_FILES: &[&str] = &[
-    "emerging-all.yrc",
-];
+/// Suricata-format rule engine for VPN packet scan — loaded lazily via
+/// suricata_scan::RuleEngine::get() when nativeEnableVpnScan(true) is called.
+/// Parses emerging-all.rules at runtime and builds a daachorse double-array
+/// automaton for hex-pattern matching.
 const MODEL_ONNX: &str = "model.onnx";
 /// Per-type malware TLSH similarity databases (one T1 digest per line), built
 /// from the MalwareBazaar dump separated by file type (`gen_tlsh_db.py`).
@@ -183,8 +183,9 @@ static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
 static SCAN_RELEVANT_ONLY: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(true);
 
-/// Whether VPN_YRC_FILES have been loaded into the live engine (set once
-/// on first nativeEnableVpnScan(true) call).
+/// Whether the Suricata rule engine has been initialised (set once on first
+/// nativeEnableVpnScan(true) call). The suricata_scan::RuleEngine uses its
+/// own OnceLock internally; this flag avoids re-triggering it on every call.
 static VPN_RULES_LOADED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
@@ -193,8 +194,8 @@ static VPN_RULES_LOADED: std::sync::atomic::AtomicBool =
 static VPN_SCAN_ENABLED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
-/// Every bundled asset file read at init time, kept for lazy loading of
-/// VPN_YRC_FILES when VPN starts (avoids filesystem access).
+/// Every bundled asset file read at init time, kept for lazy loading
+/// (avoids filesystem access).
 static ASSET_FILES: OnceLock<std::collections::HashMap<String, Vec<u8>>> =
     OnceLock::new();
 
@@ -1533,27 +1534,18 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }).resolve::<LogErrorAndDefault>()
 }
 
-/// Load VPN network-threat YARA rules (emerging-all.yrc) into the live
-/// engine. Called once from nativeEnableVpnScan(true). Thread-safe.
+/// Initialise the Suricata-format rule engine (parses emerging-all.rules
+/// from assets and builds a daachorse automaton). Called once from
+/// nativeEnableVpnScan(true). Thread-safe.
 fn load_vpn_rules() {
     if VPN_RULES_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
         return;
     }
-    let Some(lock) = ENGINE.get() else { return };
-    let Ok(mut guard) = lock.write() else { return };
-    let Some(clamav) = &mut guard.clamav else { return };
     let Some(asset_files) = ASSET_FILES.get() else { return };
-    for name in VPN_YRC_FILES {
-        let bytes = match asset_files.get(*name) {
-            Some(b) => b.clone(),
-            None => continue,
-        };
-        let name_str = name.to_string();
-        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            if let Some(engine) = hydradragonclamav::yara_scan::YaraEngine::from_compiled(&bytes, name_str) {
-                clamav.add_compiled_yara(engine);
-            }
-        }));
+    if let Some(rules_bytes) = asset_files.get("emerging-all.rules") {
+        suricata_scan::RuleEngine::init(rules_bytes);
+    } else {
+        rust_timing_log!("SuricataEngine: emerging-all.rules not found in assets");
     }
     VPN_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
 }
@@ -1624,7 +1616,7 @@ fn scan_text(text: &str) -> String {
 }
 
 /// `void nativeEnableVpnScan(boolean enable)` — when true, lazily load VPN
-/// YARA rules (emerging-all.yrc) and enable packet scanning. When false,
+/// Suricata rules (emerging-all.rules) and enable packet scanning. When false,
 /// disable packet scanning (rules stay loaded but are unused).
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeEnableVpnScan(
@@ -1641,8 +1633,9 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 }
 
 /// `String nativeScanPackets(String packetsJson)` — scan VPN-captured packets
-/// against emerging-all.yrc (hydradragon module). Returns a JSON verdict:
-/// `{"malicious":true/false,"matches":[...]}`. No-op if VPN scan disabled.
+/// against the Suricata-format rule engine (emerging-all.rules patterns).
+/// Returns a JSON verdict: `{"malicious":true/false,"matches":[...]}`.
+/// No-op if VPN scan disabled.
 fn scan_packets(packets_json: &str) -> String {
     if !VPN_SCAN_ENABLED.load(std::sync::atomic::Ordering::Relaxed) {
         return r#"{"malicious":false}"#.to_string();
@@ -1650,34 +1643,9 @@ fn scan_packets(packets_json: &str) -> String {
     if packets_json.is_empty() {
         return r#"{"malicious":false}"#.to_string();
     }
-    if serde_json::from_str::<serde_json::Value>(packets_json).is_err() {
-        return r#"{"error":"invalid JSON"}"#.to_string();
-    }
-    let Some(guard) = ENGINE.get().and_then(|l| l.read().ok()) else {
-        return r#"{"error":"not initialised"}"#.to_string();
-    };
-    let Some(clamav) = &guard.clamav else {
-        return r#"{"error":"engine not ready"}"#.to_string();
-    };
-    // Build the full hydradragon module metadata with network packets.
-    let hydradragon_json = format!(r#"{{"network":{{"packets":{}}}}}"#, packets_json);
-    let module_meta: Vec<(&str, &[u8])> = vec![("hydradragon", hydradragon_json.as_bytes())];
-    let opts = ScanOptions::default();
-    let detections = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        clamav
-            .scan_bytes_named(packets_json.as_bytes(), "vpn_traffic", opts, &module_meta)
-            .into_iter()
-            .map(|m| m.name)
-            .collect::<Vec<_>>()
-    }))
-    .unwrap_or_default();
-    let malicious = !detections.is_empty();
-    let hits_json = detections
-        .iter()
-        .map(|h| format!("\"{}\"", json_escape(h)))
-        .collect::<Vec<_>>()
-        .join(",");
-    format!(r#"{{"malicious":{},"matches":[{}]}}"#, malicious, hits_json)
+    let engine = suricata_scan::RuleEngine::get();
+    let result = engine.scan(packets_json);
+    serde_json::to_string(&result).unwrap_or_else(|_| r#"{"error":"serialisation failed"}"#.to_string())
 }
 
 #[unsafe(no_mangle)]
