@@ -75,6 +75,13 @@ public final class RansomwareBehaviorGuard {
     private static final int FLAG_READ_WRITE = 1;
     private static final int FLAG_ALL_FILES = 2;
 
+    // ── File creation / copy detection ─────────────────────────────────────
+    private static final long FILE_CREATE_WINDOW_MS = 60_000L;
+    private static final int FILE_CREATE_BURST_THRESHOLD = 5;
+    /** package -> [windowStartMs, createCount]. */
+    private static final Map<String, long[]> fileCreateBurst = new HashMap<>();
+    private static final long COPY_SIZE_TOLERANCE = 0.15; // 15% size tolerance for copy correlation
+
     /** package -> last-observed state bitmask. Absent = never observed yet. */
     private static final Map<String, Integer> lastStorageState = new HashMap<>();
     private static final Map<String, Long> grantedAt = new HashMap<>();
@@ -211,6 +218,45 @@ public final class RansomwareBehaviorGuard {
                 if (it.hasNext()) { it.next(); it.remove(); }
             }
             known.put(fileName, System.currentTimeMillis());
+
+            // ── FILE_CREATED burst tracking ────────────────────────────────
+            String fgPkg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+            if (fgPkg != null && !fgPkg.isEmpty()) {
+                long now = System.currentTimeMillis();
+                long[] burst = fileCreateBurst.get(fgPkg);
+                int createCount;
+                if (burst == null || now - burst[0] > FILE_CREATE_WINDOW_MS) {
+                    fileCreateBurst.put(fgPkg, new long[]{now, 1});
+                    createCount = 1;
+                } else {
+                    burst[1]++;
+                    createCount = (int) burst[1];
+                }
+                if (createCount >= FILE_CREATE_BURST_THRESHOLD) {
+                    HipsMonitor.addBehaviorFlag(fgPkg, "FILE_CREATED_BURST:" + createCount);
+                }
+                // Always track individual creates for the detail list
+                HipsMonitor.addBehaviorFlag(fgPkg,
+                    String.format("FILE_CREATED:path=%s:size=%d",
+                        fileName, new java.io.File(dirPath, fileName).length()));
+
+                // ── FILE_COPY correlation ──────────────────────────────────
+                java.util.List<FileReadEstimator.RecentRead> reads =
+                    FileReadEstimator.getRecentReadsByPackage(fgPkg);
+                java.io.File newFile = new java.io.File(dirPath, fileName);
+                long newSize = newFile.exists() ? newFile.length() : 0;
+                for (FileReadEstimator.RecentRead rr : reads) {
+                    if (newSize <= 0) continue;
+                    long diff = Math.abs(rr.sizeBytes - newSize);
+                    double ratio = (double) diff / (double) Math.max(rr.sizeBytes, newSize);
+                    if (ratio <= COPY_SIZE_TOLERANCE) {
+                        HipsMonitor.addBehaviorFlag(fgPkg,
+                            String.format("FILE_COPY:size=%d:src_size=%d:src=%s:conf=%.0f",
+                                newSize, rr.sizeBytes, rr.filePath, rr.confidence * 100));
+                        break;
+                    }
+                }
+            }
         }
         // Update directory snapshot for deletion tracking
         java.util.HashSet<String> snapshot = dirSnapshots.get(dirPath);

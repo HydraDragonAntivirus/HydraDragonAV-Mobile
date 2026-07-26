@@ -673,7 +673,7 @@ rule HIPS_Ransomware_All_Sensors
 // cache ratio + timing + memory to estimate which file a process read.
 // This is an estimation, not a certainty — see FileReadEstimator.java.
 
-rule HIPS_FileRead_Detected
+private rule HIPS_FileRead_Detected
 {
   meta:
     description = "Detects behavioural file-read estimation — a process was observed reading a file whose size matches a known file on disk (estimation, see FileReadEstimator.java)"
@@ -684,7 +684,7 @@ rule HIPS_FileRead_Detected
     hydradragon.behavior_flagged(/FILE_READ/) >= 1
 }
 
-rule HIPS_FileRead_HighConfidence
+private rule HIPS_FileRead_HighConfidence
 {
   meta:
     description = "Detects high-confidence file-read estimation (≥80% confidence) — the I/O delta closely matches a known file size and was recently modified"
@@ -718,6 +718,87 @@ rule HIPS_FileRead_WithNetwork
     hydradragon.behavior_flagged(/FILE_READ/) >= 1 and
     (
       hydradragon.network_connections(/./) >= 5 or
+      hydradragon.behavior_flagged(/NETWORK/) >= 1
+    )
+}
+
+// ── File Created Detection ────────────────────────────────────────────────────
+// Tracks new file creation bursts via MediaStore observations.
+// Individual file creates are flagged as FILE_CREATED:path=...:size=...
+// Bursts of 5+ creates within 60s are flagged as FILE_CREATED_BURST:N.
+
+private rule HIPS_FileCreated
+{
+  meta:
+    description = "Detects new file creation events observed via MediaStore scanning"
+    severity = "low"
+    category = "FILE_CREATED"
+    suggestion = "none"
+  condition:
+    hydradragon.behavior_flagged(/FILE_CREATED/) >= 1
+}
+
+private rule HIPS_FileCreated_Burst
+{
+  meta:
+    description = "Detects a burst of 5+ file creation events within a 60s window — bulk file drop or unpacking pattern"
+    severity = "medium"
+    category = "FILE_CREATED"
+    suggestion = "warn"
+  condition:
+    hydradragon.behavior_flagged(/FILE_CREATED_BURST/) >= 1
+}
+
+private rule HIPS_FileCreated_WithNetwork
+{
+  meta:
+    description = "Detects file creation events combined with network connections — downloaded content being staged or unpacked"
+    severity = "high"
+    category = "FILE_CREATED"
+    suggestion = "warn"
+  condition:
+    hydradragon.behavior_flagged(/FILE_CREATED/) >= 1 and
+    hydradragon.network_connections(/./) >= 5
+}
+
+// ── File Copy Detection (correlated read + create) ───────────────────────────
+// When FileReadEstimator detects a process reading a file AND a new file of
+// similar size appears shortly after, it is flagged as a copy operation.
+// FILE_COPY:size=N:src_size=N:src=PATH:conf=% flags carry the estimated source.
+
+private rule HIPS_FileCopy
+{
+  meta:
+    description = "Detects correlated file read + create — a process read a file and a similarly-sized file appeared (copy operation)"
+    severity = "low"
+    category = "FILE_COPY"
+    suggestion = "none"
+  condition:
+    hydradragon.behavior_flagged(/FILE_COPY/) >= 1
+}
+
+private rule HIPS_FileCopy_HighConfidence
+{
+  meta:
+    description = "Detects high-confidence file copy estimates (≥80% confidence in the read correlation)"
+    severity = "medium"
+    category = "FILE_COPY"
+    suggestion = "warn"
+  condition:
+    hydradragon.behavior_flagged(/FILE_COPY.*conf=(8[0-9]|9[0-9]|100)/) >= 1
+}
+
+private rule HIPS_FileCopy_WithNetwork
+{
+  meta:
+    description = "Detects file copy operations combined with network activity — potential exfiltration of copied data"
+    severity = "high"
+    category = "FILE_COPY"
+    suggestion = "warn"
+  condition:
+    hydradragon.behavior_flagged(/FILE_COPY/) >= 1 and
+    (
+      hydradragon.network_connections(/./) >= 3 or
       hydradragon.behavior_flagged(/NETWORK/) >= 1
     )
 }

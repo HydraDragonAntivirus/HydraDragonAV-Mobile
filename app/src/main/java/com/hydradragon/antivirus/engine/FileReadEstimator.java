@@ -18,11 +18,50 @@ public final class FileReadEstimator {
     private static final double SIZE_TOLERANCE = 0.10;
     private static final int MIN_BYTES_FOR_ESTIMATE = 4096;
     private static final float CONFIDENCE_REPORT_THRESHOLD = 0.60f;
+    private static final long COPY_CORRELATION_WINDOW_MS = 30_000;
+    private static final int MAX_RECENT_READS = 256;
 
     private static final Map<String, FileEntry> knownFiles = new HashMap<>();
     private static final Map<Integer, ProcIoBaseline> procBaselines = new HashMap<>();
 
+    private static final List<RecentRead> recentReads = new ArrayList<>();
+
     private FileReadEstimator() {}
+
+    /** Recent read estimate (for FILE_COPY correlation). */
+    public static final class RecentRead {
+        public final String packageName;
+        public final long sizeBytes;
+        public final String filePath;
+        public final float confidence;
+        public final long timestamp;
+
+        RecentRead(String packageName, long sizeBytes, String filePath, float confidence) {
+            this.packageName = packageName;
+            this.sizeBytes = sizeBytes;
+            this.filePath = filePath;
+            this.confidence = confidence;
+            this.timestamp = System.currentTimeMillis();
+        }
+    }
+
+    /** Returns recent reads by the given package within the correlation window. */
+    public static synchronized java.util.List<RecentRead> getRecentReadsByPackage(String pkg) {
+        if (pkg == null) return java.util.Collections.emptyList();
+        long now = System.currentTimeMillis();
+        java.util.List<RecentRead> result = new ArrayList<>();
+        for (RecentRead r : recentReads) {
+            if (pkg.equals(r.packageName) && now - r.timestamp <= COPY_CORRELATION_WINDOW_MS) {
+                result.add(r);
+            }
+        }
+        return result;
+    }
+
+    /** Returns the total number of recent reads stored. */
+    public static synchronized int getRecentReadCount() {
+        return recentReads.size();
+    }
 
     public static synchronized void observeFile(android.content.Context ctx, String path, long sizeBytes) {
         if (ctx != null && !BehaviorDetectionSettings.isEnabled(ctx, BehaviorDetectionSettings.FILE_READ_ESTIMATOR)) {
@@ -144,6 +183,9 @@ public final class FileReadEstimator {
         String flag = String.format("FILE_READ:pid=%d:size=%d:file=%s:conf=%.0f:cache=%.0f",
             pid, deltaRead, best.path, best.confidence * 100, cacheRatio * 100);
         HipsMonitor.addBehaviorFlag(pkg, flag);
+
+        recentReads.add(new RecentRead(pkg, deltaRead, best.path, best.confidence));
+        if (recentReads.size() > MAX_RECENT_READS) recentReads.remove(0);
 
         Log.d(TAG, "estimated read pid=" + pid + " pkg=" + pkg
             + " delta=" + deltaRead + "B file=" + best.path
