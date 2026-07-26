@@ -184,7 +184,7 @@
     <string name="detect_cat_url_strings">ファイル内の悪意のある/フィッシングURL文字列</string>
     <string name="detect_cat_native_emulation">ネイティブコードエミュレーション（隠された/復号された文字列を検出）</string>
     <string name="detect_cat_rootkit">ルートキット的な動作（隠れたアプリ + 不審な権限）</string>
-    <string name="detect_cat_riskware_testkey">テストキー署名アプリ (Riskware.TestKey)</string>
+    <string name="detect_cat_riskware_testkey">テストキー署名アプリ (Andr.Riskware.TestKey)</string>
     <string name="behavior_detection_header">動作検出</string>
     <string name="behavior_ui_spam">UI/通知スパム検出</string>
     <string name="behavior_root_exploit">Root化エクスプロイト検出</string>
@@ -419,7 +419,8 @@
     <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Anti-FNキャッシュ（見逃し）</string>
     <string name="cache_cleared">選択したキャッシュをクリアしました</string>
-    <string name="scan_cancelled">スキャンがキャンセルされました</string>
+    <string name="scan_cancelled">スキャンがキャンセルされました</string>
+
     <string name="scan_relevant_only_toggle">関連ファイルのみスキャン (DEX/ELF/テキスト)</string>
 </resources>
 

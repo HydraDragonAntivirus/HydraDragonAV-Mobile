@@ -184,7 +184,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="detect_cat_url_strings">Chuỗi URL độc hại/lừa đảo trong tệp</string>
     <string name="detect_cat_native_emulation">Giả lập mã gốc (tiết lộ chuỗi ẩn/đã giải mã)</string>
     <string name="detect_cat_rootkit">Hành vi giống rootkit (ứng dụng ẩn + quyền hạn đáng ngờ)</string>
-    <string name="detect_cat_riskware_testkey">Ứng dụng ký testkey (Riskware.TestKey)</string>
+    <string name="detect_cat_riskware_testkey">Ứng dụng ký testkey (Andr.Riskware.TestKey)</string>
     <string name="behavior_detection_header">Phát hiện hành vi</string>
     <string name="behavior_ui_spam">Phát hiện spam giao diện/thông báo</string>
     <string name="behavior_root_exploit">Phát hiện khai thác root</string>
@@ -419,7 +419,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Bộ Nhớ Đệm Anti-FN (âm tính giả)</string>
     <string name="cache_cleared">Đã xóa các bộ nhớ đệm đã chọn</string>
-    <string name="scan_cancelled">Đã hủy quét</string>
+    <string name="scan_cancelled">Đã hủy quét</string>
+
     <string name="scan_relevant_only_toggle">Chỉ quét tệp liên quan (DEX/ELF/văn bản)</string>
 </resources>
 

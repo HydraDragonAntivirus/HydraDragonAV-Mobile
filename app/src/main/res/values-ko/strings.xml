@@ -184,7 +184,7 @@
     <string name="detect_cat_url_strings">파일 내 악성/피싱 URL 문자열</string>
     <string name="detect_cat_native_emulation">네이티브 코드 에뮬레이션(숨겨진/디코딩된 문자열 노출)</string>
     <string name="detect_cat_rootkit">루트킷 유사 동작 (숨겨진 앱 + 의심스러운 권한)</string>
-    <string name="detect_cat_riskware_testkey">테스트키 서명 앱 (Riskware.TestKey)</string>
+    <string name="detect_cat_riskware_testkey">테스트키 서명 앱 (Andr.Riskware.TestKey)</string>
     <string name="behavior_detection_header">행위 탐지</string>
     <string name="behavior_ui_spam">UI/알림 스팸 탐지</string>
     <string name="behavior_root_exploit">루트 익스플로잇 탐지</string>
@@ -419,7 +419,8 @@
     <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Anti-FN 캐시 (미탐)</string>
     <string name="cache_cleared">선택한 캐시가 지워졌습니다</string>
-    <string name="scan_cancelled">검사가 취소되었습니다</string>
+    <string name="scan_cancelled">검사가 취소되었습니다</string>
+
     <string name="scan_relevant_only_toggle">관련 파일만 검사 (DEX/ELF/텍스트)</string>
 </resources>
 

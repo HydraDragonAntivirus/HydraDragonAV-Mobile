@@ -184,7 +184,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="detect_cat_url_strings">Strings de URL maliciosas/de phishing em arquivos</string>
     <string name="detect_cat_native_emulation">Emulação de código nativo (revela strings ocultas/decodificadas)</string>
     <string name="detect_cat_rootkit">Comportamento de rootkit (aplicativo oculto + permissões suspeitas)</string>
-    <string name="detect_cat_riskware_testkey">Apps assinadas com testkey (Riskware.TestKey)</string>
+    <string name="detect_cat_riskware_testkey">Apps assinadas com testkey (Andr.Riskware.TestKey)</string>
     <string name="behavior_detection_header">Detecção de Comportamento</string>
     <string name="behavior_ui_spam">Detecção de spam de UI/notificações</string>
     <string name="behavior_root_exploit">Detecção de exploit de root</string>
@@ -419,7 +419,8 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="cache_session">Cache de Digitalização</string>
     <string name="cache_anti_fn">Cache Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Caches selecionados limpos</string>
-    <string name="scan_cancelled">Verificação cancelada</string>
+    <string name="scan_cancelled">Verificação cancelada</string>
+
     <string name="scan_relevant_only_toggle">Digitalizar apenas relevantes (DEX/ELF/texto)</string>
 </resources>
 

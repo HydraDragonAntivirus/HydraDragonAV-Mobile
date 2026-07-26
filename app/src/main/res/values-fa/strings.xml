@@ -184,7 +184,7 @@
     <string name="detect_cat_url_strings">رشته‌های URL مخرب/فیشینگ در فایل‌ها</string>
     <string name="detect_cat_native_emulation">شبیه‌سازی کد بومی (آشکارسازی رشته‌های پنهان/رمزگشایی‌شده)</string>
     <string name="detect_cat_rootkit">رفتار شبیه به روت‌کیت (برنامه پنهان + مجوزهای مشکوک)</string>
-    <string name="detect_cat_riskware_testkey">برنامه‌های امضا شده با کلید آزمایشی (Riskware.TestKey)</string>
+    <string name="detect_cat_riskware_testkey">برنامه‌های امضا شده با کلید آزمایشی (Andr.Riskware.TestKey)</string>
     <string name="behavior_detection_header">تشخیص رفتار</string>
     <string name="behavior_ui_spam">تشخیص هرزنامه رابط کاربری/اعلان</string>
     <string name="behavior_root_exploit">تشخیص اکسپلویت روت</string>
@@ -419,7 +419,8 @@
     <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">حافظه نهان Anti-FN (منفی کاذب)</string>
     <string name="cache_cleared">حافظه‌های نهان انتخاب شده پاک شدند</string>
-    <string name="scan_cancelled">اسکن لغو شد</string>
+    <string name="scan_cancelled">اسکن لغو شد</string>
+
     <string name="scan_relevant_only_toggle">فقط اسکن مرتبط (DEX/ELF/متن)</string>
 </resources>
 

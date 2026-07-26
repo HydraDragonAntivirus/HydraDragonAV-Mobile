@@ -184,7 +184,7 @@
     <string name="detect_cat_url_strings">Вредоносные/фишинговые URL-строки в файлах</string>
     <string name="detect_cat_native_emulation">Эмуляция машинного кода (выявляет скрытые/декодированные строки)</string>
     <string name="detect_cat_rootkit">Поведение, похожее на руткит (скрытое приложение + подозрительные разрешения)</string>
-    <string name="detect_cat_riskware_testkey">Приложения с тестовой подписью (Riskware.TestKey)</string>
+    <string name="detect_cat_riskware_testkey">Приложения с тестовой подписью (Andr.Riskware.TestKey)</string>
     <string name="behavior_detection_header">Обнаружение поведения</string>
     <string name="behavior_ui_spam">Обнаружение спама интерфейса/уведомлений</string>
     <string name="behavior_root_exploit">Обнаружение root-эксплойтов</string>
@@ -419,7 +419,8 @@
     <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Кэш Anti-FN (ложные отрицания)</string>
     <string name="cache_cleared">Выбранные кэши очищены</string>
-    <string name="scan_cancelled">Сканирование отменено</string>
+    <string name="scan_cancelled">Сканирование отменено</string>
+
     <string name="scan_relevant_only_toggle">Сканировать только релевантные (DEX/ELF/текст)</string>
 </resources>
 

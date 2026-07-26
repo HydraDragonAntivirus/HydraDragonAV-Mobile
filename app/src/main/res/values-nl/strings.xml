@@ -184,7 +184,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="detect_cat_url_strings">Schadelijke/phishing-URL-strings in bestanden</string>
     <string name="detect_cat_native_emulation">Native code-emulatie (onthult verborgen/gedecodeerde strings)</string>
     <string name="detect_cat_rootkit">Rootkit-achtig gedrag (verborgen app + verdachte machtigingen)</string>
-    <string name="detect_cat_riskware_testkey">Testkey-ondertekende apps (Riskware.TestKey)</string>
+    <string name="detect_cat_riskware_testkey">Testkey-ondertekende apps (Andr.Riskware.TestKey)</string>
     <string name="behavior_detection_header">Gedragsdetectie</string>
     <string name="behavior_ui_spam">Detectie van UI-/meldingsspam</string>
     <string name="behavior_root_exploit">Detectie van root-exploits</string>
@@ -419,7 +419,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Anti-FN-Cache (valse negatieven)</string>
     <string name="cache_cleared">Geselecteerde caches gewist</string>
-    <string name="scan_cancelled">Scan geannuleerd</string>
+    <string name="scan_cancelled">Scan geannuleerd</string>
+
     <string name="scan_relevant_only_toggle">Alleen relevante scannen (DEX/ELF/tekst)</string>
 </resources>
 

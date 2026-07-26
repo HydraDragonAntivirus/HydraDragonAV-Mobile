@@ -184,7 +184,7 @@ Puntuación de riesgo: %2$d/100
     <string name="detect_cat_url_strings">Cadenas de URL maliciosas/de phishing en archivos</string>
     <string name="detect_cat_native_emulation">Emulación de código nativo (revela cadenas ocultas/decodificadas)</string>
     <string name="detect_cat_rootkit">Comportamiento de rootkit (app oculta + permisos sospechosos)</string>
-    <string name="detect_cat_riskware_testkey">Apps firmadas con testkey (Riskware.TestKey)</string>
+    <string name="detect_cat_riskware_testkey">Apps firmadas con testkey (Andr.Riskware.TestKey)</string>
     <string name="behavior_detection_header">Detección de Comportamiento</string>
     <string name="behavior_ui_spam">Detección de spam de interfaz/notificaciones</string>
     <string name="behavior_root_exploit">Detección de exploits de root</string>
@@ -419,7 +419,8 @@ Puntuación de riesgo: %2$d/100
     <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Caché Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Cachés seleccionadas limpiadas</string>
-    <string name="scan_cancelled">Escaneo cancelado</string>
+    <string name="scan_cancelled">Escaneo cancelado</string>
+
     <string name="scan_relevant_only_toggle">Escanear solo relevantes (DEX/ELF/texto)</string>
 </resources>
 

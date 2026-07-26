@@ -90,7 +90,7 @@ public final class NativeScanner {
 
     private static native void nativeSetRiskwareTestKeyEnabled(boolean enabled);
 
-    /** Riskware.TestKey — flags APKs signed with publicly-known Android
+    /** Andr.Riskware.TestKey — flags APKs signed with publicly-known Android
      *  test/debug certificates (testkey, platform, shared, media). Disabled
      *  by default because legitimate dev/test builds are also testkey-signed.
      *  Applied immediately; no engine reinit needed. */

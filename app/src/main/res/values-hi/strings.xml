@@ -184,7 +184,7 @@
     <string name="detect_cat_url_strings">फ़ाइलों में दुर्भावनापूर्ण/फ़िशिंग URL स्ट्रिंग्स</string>
     <string name="detect_cat_native_emulation">नेटिव कोड एमुलेशन (छिपी/डिकोड की गई स्ट्रिंग्स उजागर करें)</string>
     <string name="detect_cat_rootkit">रूटकिट जैसा व्यवहार (छिपा हुआ ऐप + संदिग्ध अनुमतियाँ)</string>
-    <string name="detect_cat_riskware_testkey">टेस्टकी-हस्ताक्षरित ऐप्स (Riskware.TestKey)</string>
+    <string name="detect_cat_riskware_testkey">टेस्टकी-हस्ताक्षरित ऐप्स (Andr.Riskware.TestKey)</string>
     <string name="behavior_detection_header">व्यवहार पहचान</string>
     <string name="behavior_ui_spam">UI/नोटिफिकेशन स्पैम पहचान</string>
     <string name="behavior_root_exploit">रूट एक्सप्लॉइट पहचान</string>
@@ -419,7 +419,8 @@
     <string name="cache_session">Scan Cache</string>
     <string name="cache_anti_fn">Anti-FN कैश (गलत नकारात्मक)</string>
     <string name="cache_cleared">चयनित कैश साफ़ हो गए</string>
-    <string name="scan_cancelled">स्कैन रद्द कर दिया गया</string>
+    <string name="scan_cancelled">स्कैन रद्द कर दिया गया</string>
+
     <string name="scan_relevant_only_toggle">केवल प्रासंगिक स्कैन करें (DEX/ELF/टेक्स्ट)</string>
 </resources>
 

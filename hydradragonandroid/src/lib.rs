@@ -1290,7 +1290,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 }
 
 /// `void nativeSetRiskwareTestKeyEnabled(boolean enabled)` — Settings toggle
-/// for the Riskware.TestKey detection (APKs signed with Android test/debug
+/// for the Andr.Riskware.TestKey detection (APKs signed with Android test/debug
 /// certificates). Disabled by default because many legitimate dev builds use
 /// testkey signing — only enable if you specifically want to flag them.
 #[unsafe(no_mangle)]
@@ -2407,7 +2407,7 @@ fn run_scan(
     if riskware::is_testkey_detection_enabled() {
         if let Some(cert) = extract_certificate(&buffers) {
             if riskware::check_testkey(&cert.sha1) {
-                detections.push(("Riskware.TestKey".to_string(), path.to_string(), Vec::new()));
+                detections.push(("Andr.Riskware.TestKey".to_string(), path.to_string(), Vec::new()));
             }
         }
     }
