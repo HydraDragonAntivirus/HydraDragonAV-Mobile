@@ -40,7 +40,7 @@ serde_json = "1.0"
 # ANDROID_PRIORITY_BACKGROUND usage in lib.rs) so ~8s of ClamAV/YARA/ML/TLSH
 # loading at cold start doesn't starve the UI thread of CPU.
 libc = "0.2"
-base64 = "0.22"
+base64 = "0.23"
 memchr = "2"
 regex = "1"
 daachorse = { git = "https://github.com/HydraDragonAntivirus/daachorse" }
