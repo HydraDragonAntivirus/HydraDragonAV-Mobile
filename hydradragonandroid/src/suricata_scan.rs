@@ -4,6 +4,49 @@ use crate::rust_timing_log;
 
 static RULE_ENGINE: OnceLock<RuleEngine> = OnceLock::new();
 
+#[derive(Clone, Copy, PartialEq)]
+enum FlowDir {
+    ToServer,
+    FromServer,
+}
+
+struct FlowConstraints {
+    to_server: bool,
+    from_server: bool,
+    established: bool,
+    stateless: bool,
+}
+
+impl FlowConstraints {
+    fn parse(s: &str) -> Self {
+        let mut c = FlowConstraints { to_server: false, from_server: false, established: false, stateless: false };
+        for part in s.split(',') {
+            match part.trim() {
+                "to_server" => c.to_server = true,
+                "from_server" | "to_client" => c.from_server = true,
+                "established" => c.established = true,
+                "stateless" => c.stateless = true,
+                _ => {}
+            }
+        }
+        c
+    }
+
+    fn check(&self, flow_dir: FlowDir) -> bool {
+        if self.to_server && flow_dir != FlowDir::ToServer { return false; }
+        if self.from_server && flow_dir != FlowDir::FromServer { return false; }
+        true
+    }
+}
+
+struct PacketData {
+    payload: Vec<u8>,
+    protocol: Option<String>,
+    src_port: u16,
+    dst_port: u16,
+    flow_dir: FlowDir,
+}
+
 struct ContentPattern {
     pat_id: u32,
     offset: Option<u32>,
@@ -17,8 +60,11 @@ struct Rule {
     sid: u32,
     classtype: String,
     patterns: Vec<ContentPattern>,
-    flow: Option<String>,
+    flow_constraints: Option<FlowConstraints>,
     pcre: Option<regex::Regex>,
+    protocol: Option<String>,
+    src_port: Option<String>,
+    dst_port: Option<String>,
 }
 
 pub struct RuleEngine {
@@ -181,6 +227,91 @@ struct RawPattern {
     within: Option<u32>,
 }
 
+fn parse_header(header: &str) -> (Option<String>, Option<String>, Option<String>) {
+    let arrow_pos = header.find("->").or_else(|| header.find("<>"));
+    let Some(dp) = arrow_pos else { return (None, None, None) };
+    let left = header[..dp].trim();
+    let right = header[dp + 2..].trim();
+    let lt: Vec<&str> = left.split_whitespace().collect();
+    let rt: Vec<&str> = right.split_whitespace().collect();
+    (lt.get(1).map(|s| s.to_string()), lt.get(3).map(|s| s.to_string()), rt.get(1).map(|s| s.to_string()))
+}
+
+fn check_port(rule_port: &Option<String>, pkt_port: u16) -> bool {
+    let Some(s) = rule_port else { return true };
+    if s == "any" { return true; }
+    if pkt_port == 0 { return true; }
+    if let Ok(n) = s.parse::<u16>() { return pkt_port == n; }
+    if s.contains(',') {
+        for part in s.split(',') {
+            let part = part.trim();
+            if let Ok(n) = part.parse::<u16>() { if pkt_port == n { return true; } }
+            if part.contains(':') {
+                if let Some((lo, hi)) = part.split_once(':') {
+                    if let (Ok(l), Ok(h)) = (lo.trim().parse::<u16>(), hi.trim().parse::<u16>()) {
+                        if pkt_port >= l && pkt_port <= h { return true; }
+                    }
+                }
+            }
+            if part.starts_with('$') { return true; }
+        }
+        return false;
+    }
+    if s.contains(':') {
+        if let Some((lo, hi)) = s.split_once(':') {
+            if let (Ok(l), Ok(h)) = (lo.trim().parse::<u16>(), hi.trim().parse::<u16>()) {
+                return pkt_port >= l && pkt_port <= h;
+            }
+        }
+        return true;
+    }
+    if s.starts_with('$') {
+        if s.contains("HTTP") { return matches!(pkt_port, 80 | 443 | 8080 | 8443 | 8000 | 8008); }
+        return true;
+    }
+    true
+}
+
+fn check_protocol(rule_proto: &Option<String>, pkt_proto: &Option<String>) -> bool {
+    let Some(s) = rule_proto else { return true };
+    if s == "ip" { return true; }
+    let Some(p) = pkt_proto else { return true };
+    p.eq_ignore_ascii_case(s)
+}
+
+fn parse_packets_json(json: &str) -> Vec<PacketData> {
+    if let Ok(arr) = serde_json::from_str::<Vec<serde_json::Value>>(json) {
+        let mut packets = Vec::new();
+        for val in &arr {
+            if let Some(obj) = val.as_object() {
+                let payload_hex = obj.get("payload_hex").and_then(|v| v.as_str()).unwrap_or("");
+                let protocol = obj.get("protocol").and_then(|v| v.as_str()).map(|s| s.to_string());
+                let src_port = obj.get("src_port").and_then(|v| v.as_u64()).unwrap_or(0) as u16;
+                let dst_port = obj.get("dst_port").and_then(|v| v.as_u64()).unwrap_or(0) as u16;
+                let flow_dir = match obj.get("flow_dir").and_then(|v| v.as_str()) {
+                    Some("from_server") => FlowDir::FromServer,
+                    _ => FlowDir::ToServer,
+                };
+                let payload = hex_decode(payload_hex);
+                if !payload.is_empty() {
+                    packets.push(PacketData { payload, protocol, src_port, dst_port, flow_dir });
+                }
+            }
+        }
+        if !packets.is_empty() { return packets; }
+    }
+    if let Ok(hex_strings) = serde_json::from_str::<Vec<String>>(json) {
+        return hex_strings.into_iter().map(|s| PacketData {
+            payload: hex_decode(&s),
+            protocol: None,
+            src_port: 0,
+            dst_port: 0,
+            flow_dir: FlowDir::ToServer,
+        }).filter(|p| !p.payload.is_empty()).collect();
+    }
+    Vec::new()
+}
+
 fn parse_rules(raw: &[u8]) -> (Vec<Rule>, Vec<(Vec<u8>, u32)>) {
     let text = match std::str::from_utf8(raw) {
         Ok(t) => t,
@@ -208,11 +339,12 @@ fn parse_rules(raw: &[u8]) -> (Vec<Rule>, Vec<(Vec<u8>, u32)>) {
             continue;
         }
 
+        let (protocol, src_port, dst_port) = parse_header(trimmed[..opt_start].trim());
         let opts = &trimmed[opt_start + 1..opt_end];
         let mut sid = 0u32;
         let mut msg = String::new();
         let mut classtype = String::new();
-        let mut flow: Option<String> = None;
+        let mut flow_constraints: Option<FlowConstraints> = None;
         let mut pcre_str: Option<String> = None;
 
         let mut raw_pats: Vec<RawPattern> = Vec::new();
@@ -310,8 +442,8 @@ fn parse_rules(raw: &[u8]) -> (Vec<Rule>, Vec<(Vec<u8>, u32)>) {
                 }
                 "flow" => {
                     let v = read_unquoted(opts, bs, &mut pos).to_string();
-                    if flow.is_none() {
-                        flow = Some(v);
+                    if flow_constraints.is_none() {
+                        flow_constraints = Some(FlowConstraints::parse(&v));
                     }
                 }
                 "pcre" => {
@@ -358,8 +490,11 @@ fn parse_rules(raw: &[u8]) -> (Vec<Rule>, Vec<(Vec<u8>, u32)>) {
             sid,
             classtype,
             patterns,
-            flow,
+            flow_constraints,
             pcre,
+            protocol,
+            src_port,
+            dst_port,
         });
     }
 
@@ -391,7 +526,13 @@ impl RuleEngine {
             RULE_ENGINE.get().map(|e| e.pattern_count).unwrap_or(0));
     }
 
-    fn check_rule(&self, rule: &Rule, matches_by_id: &[Vec<(usize, usize)>], combined: &[u8]) -> bool {
+    fn check_rule(&self, rule: &Rule, matches_by_id: &[Vec<(usize, usize)>], combined: &[u8], pkt: &PacketData) -> bool {
+        if !check_protocol(&rule.protocol, &pkt.protocol) { return false; }
+        if !check_port(&rule.src_port, pkt.src_port) { return false; }
+        if !check_port(&rule.dst_port, pkt.dst_port) { return false; }
+        if let Some(ref fc) = rule.flow_constraints {
+            if !fc.check(pkt.flow_dir) { return false; }
+        }
         if rule.patterns.is_empty() {
             return false;
         }
@@ -449,46 +590,37 @@ impl RuleEngine {
     }
 
     pub fn scan(&self, packets_json: &str) -> ScanResult {
-        let payloads: Vec<String> = match serde_json::from_str(packets_json) {
-            Ok(v) => v,
-            Err(_) => match serde_json::from_str::<serde_json::Value>(packets_json) {
-                Ok(serde_json::Value::Array(arr)) => {
-                    arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect()
-                }
-                Ok(serde_json::Value::Object(obj)) => {
-                    obj.get("packets").and_then(|v| v.as_array())
-                        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
-                        .unwrap_or_default()
-                }
-                _ => return ScanResult { malicious: false, matches: Vec::new() },
-            },
-        };
-
-        let mut combined = Vec::new();
-        for p in &payloads {
-            combined.extend_from_slice(&hex_decode(p));
-        }
-        if combined.is_empty() {
+        let packets = parse_packets_json(packets_json);
+        if packets.is_empty() {
             return ScanResult { malicious: false, matches: Vec::new() };
         }
 
-        let mut matches_by_id: Vec<Vec<(usize, usize)>> = vec![Vec::new(); self.pattern_count];
-        for mat in self.ac.find_overlapping_iter(&combined) {
-            let pid = mat.value() as usize;
-            if pid < self.pattern_count {
-                matches_by_id[pid].push((mat.start(), mat.end()));
-            }
-        }
-
         let mut matches = Vec::new();
-        for rule in &self.rules {
-            if self.check_rule(rule, &matches_by_id, &combined) {
-                matches.push(MatchInfo {
-                    name: rule.msg.clone(),
-                    sid: rule.sid,
-                    classtype: rule.classtype.clone(),
-                    description: rule.msg.clone(),
-                });
+
+        for pkt in &packets {
+            let combined = &pkt.payload;
+            if combined.is_empty() { continue; }
+
+            let mut matches_by_id: Vec<Vec<(usize, usize)>> = vec![Vec::new(); self.pattern_count];
+            for mat in self.ac.find_overlapping_iter(combined) {
+                let pid = mat.value() as usize;
+                if pid < self.pattern_count {
+                    matches_by_id[pid].push((mat.start(), mat.end()));
+                }
+            }
+
+            for rule in &self.rules {
+                if matches.iter().any(|m: &MatchInfo| m.sid == rule.sid) {
+                    continue;
+                }
+                if self.check_rule(rule, &matches_by_id, combined, pkt) {
+                    matches.push(MatchInfo {
+                        name: rule.msg.clone(),
+                        sid: rule.sid,
+                        classtype: rule.classtype.clone(),
+                        description: rule.msg.clone(),
+                    });
+                }
             }
         }
 
@@ -516,6 +648,10 @@ mod tests {
         assert_eq!(rules[0].sid, 2009001);
         assert_eq!(rules[0].msg, "ET TEST RULE");
         assert_eq!(rules[0].classtype, "bad-unknown");
+        assert_eq!(rules[0].protocol.as_deref(), Some("udp"));
+        assert_eq!(rules[0].src_port.as_deref(), Some("any"));
+        assert_eq!(rules[0].dst_port.as_deref(), Some("any"));
+        assert!(rules[0].flow_constraints.is_none());
         assert_eq!(pat_entries.len(), 1);
         assert_eq!(pat_entries[0].0, vec![0xFF, 0xD0, 0x66, 0x68]);
     }
@@ -573,6 +709,14 @@ mod tests {
         assert_eq!(rules[0].sid, 2009007);
         assert_eq!(rules[0].msg, "ET FULL RULE");
         assert_eq!(rules[0].classtype, "trojan-activity");
+        assert_eq!(rules[0].protocol.as_deref(), Some("tcp"));
+        assert_eq!(rules[0].src_port.as_deref(), Some("any"));
+        assert_eq!(rules[0].dst_port.as_deref(), Some("$HTTP_PORTS"));
+        let fc = rules[0].flow_constraints.as_ref().unwrap();
+        assert!(fc.to_server);
+        assert!(fc.established);
+        assert!(!fc.from_server);
+        assert!(!fc.stateless);
     }
 
     #[test]
@@ -684,5 +828,134 @@ mod tests {
         let (rules, pat_entries) = parse_rules(rules_text);
         assert_eq!(rules.len(), 0);
         assert_eq!(pat_entries.len(), 0);
+    }
+
+    #[test]
+    fn test_flow_constraints_parse() {
+        let fc = FlowConstraints::parse("to_server,established");
+        assert!(fc.to_server);
+        assert!(fc.established);
+        assert!(!fc.from_server);
+        assert!(!fc.stateless);
+
+        let fc2 = FlowConstraints::parse("from_server");
+        assert!(fc2.from_server);
+        assert!(!fc2.to_server);
+
+        let fc3 = FlowConstraints::parse("to_client");
+        assert!(fc3.from_server);
+
+        let fc4 = FlowConstraints::parse("stateless");
+        assert!(fc4.stateless);
+    }
+
+    #[test]
+    fn test_flow_constraints_check() {
+        let to_srv = FlowConstraints::parse("to_server");
+        assert!(to_srv.check(FlowDir::ToServer));
+        assert!(!to_srv.check(FlowDir::FromServer));
+
+        let from_srv = FlowConstraints::parse("from_server");
+        assert!(from_srv.check(FlowDir::FromServer));
+        assert!(!from_srv.check(FlowDir::ToServer));
+
+        let both = FlowConstraints::parse("to_server,from_server");
+        assert!(both.check(FlowDir::ToServer));
+        assert!(both.check(FlowDir::FromServer));
+    }
+
+    #[test]
+    fn test_check_port() {
+        assert!(check_port(&Some("any".to_string()), 80));
+        assert!(check_port(&Some("80".to_string()), 80));
+        assert!(!check_port(&Some("80".to_string()), 443));
+        assert!(check_port(&Some("80,443".to_string()), 80));
+        assert!(check_port(&Some("80,443".to_string()), 443));
+        assert!(!check_port(&Some("80,443".to_string()), 22));
+        assert!(check_port(&Some("1024:65535".to_string()), 8080));
+        assert!(check_port(&Some("1024:65535".to_string()), 1024));
+        assert!(!check_port(&Some("1024:65535".to_string()), 80));
+        assert!(check_port(&Some("$HTTP_PORTS".to_string()), 80));
+        assert!(check_port(&Some("$HTTP_PORTS".to_string()), 443));
+        assert!(check_port(&Some("$HTTP_PORTS".to_string()), 8080));
+        assert!(!check_port(&Some("$HTTP_PORTS".to_string()), 22));
+        assert!(check_port(&None, 80));
+    }
+
+    #[test]
+    fn test_check_protocol() {
+        assert!(check_protocol(&None, &None));
+        assert!(check_protocol(&Some("ip".to_string()), &None));
+        assert!(check_protocol(&Some("tcp".to_string()), &Some("TCP".to_string())));
+        assert!(check_protocol(&Some("udp".to_string()), &Some("UDP".to_string())));
+        assert!(!check_protocol(&Some("tcp".to_string()), &Some("UDP".to_string())));
+        assert!(check_protocol(&Some("icmp".to_string()), &Some("ICMP".to_string())));
+    }
+
+    #[test]
+    fn test_scan_with_packet_objects() {
+        let rules_bytes = b"alert tcp any any -> any any (msg:\"ET TCP MATCH\"; content:\"|DE AD|\"; classtype:unknown; sid:2009020; rev:1;)";
+        let (rules, pat_entries) = parse_rules(rules_bytes);
+        let patvals: Vec<(&[u8], u32)> = pat_entries.iter().map(|(p, v)| (p.as_slice(), *v)).collect();
+        let ac = DoubleArrayAhoCorasick::with_values(patvals).unwrap();
+        let pattern_count = pat_entries.len();
+        let engine = RuleEngine { rules, ac, pattern_count };
+
+        let json = r#"[{"src_ip":"192.168.1.1","dst_ip":"1.2.3.4","src_port":12345,"dst_port":80,"protocol":"TCP","payload_hex":"deadbeef","flow_dir":"to_server"}]"#;
+        let result = engine.scan(json);
+        assert!(result.malicious);
+        assert_eq!(result.matches[0].sid, 2009020);
+
+        let json2 = r#"[{"src_ip":"1.2.3.4","dst_ip":"192.168.1.1","src_port":80,"dst_port":12345,"protocol":"UDP","payload_hex":"deadbeef","flow_dir":"from_server"}]"#;
+        let result2 = engine.scan(json2);
+        assert!(!result2.malicious);
+    }
+
+    #[test]
+    fn test_scan_filters_by_protocol() {
+        let rules_bytes = b"alert tcp any any -> any any (msg:\"TCP ONLY\"; content:\"|DE AD|\"; classtype:unknown; sid:2009021; rev:1;)";
+        let (rules, pat_entries) = parse_rules(rules_bytes);
+        let patvals: Vec<(&[u8], u32)> = pat_entries.iter().map(|(p, v)| (p.as_slice(), *v)).collect();
+        let ac = DoubleArrayAhoCorasick::with_values(patvals).unwrap();
+        let pattern_count = pat_entries.len();
+        let engine = RuleEngine { rules, ac, pattern_count };
+
+        let json_tcp = r#"[{"payload_hex":"deadbeef","protocol":"TCP","src_port":80,"dst_port":80,"flow_dir":"to_server"}]"#;
+        assert!(engine.scan(json_tcp).malicious);
+
+        let json_udp = r#"[{"payload_hex":"deadbeef","protocol":"UDP","src_port":80,"dst_port":80,"flow_dir":"to_server"}]"#;
+        assert!(!engine.scan(json_udp).malicious);
+    }
+
+    #[test]
+    fn test_scan_filters_by_flow() {
+        let rules_bytes = b"alert tcp any any -> any any (msg:\"TO SERVER ONLY\"; flow:to_server; content:\"|DE AD|\"; classtype:unknown; sid:2009022; rev:1;)";
+        let (rules, pat_entries) = parse_rules(rules_bytes);
+        let patvals: Vec<(&[u8], u32)> = pat_entries.iter().map(|(p, v)| (p.as_slice(), *v)).collect();
+        let ac = DoubleArrayAhoCorasick::with_values(patvals).unwrap();
+        let pattern_count = pat_entries.len();
+        let engine = RuleEngine { rules, ac, pattern_count };
+
+        let json_to = r#"[{"payload_hex":"deadbeef","protocol":"TCP","src_port":80,"dst_port":80,"flow_dir":"to_server"}]"#;
+        assert!(engine.scan(json_to).malicious);
+
+        let json_from = r#"[{"payload_hex":"deadbeef","protocol":"TCP","src_port":80,"dst_port":80,"flow_dir":"from_server"}]"#;
+        assert!(!engine.scan(json_from).malicious);
+    }
+
+    #[test]
+    fn test_parse_header() {
+        let (proto, srcp, dstp) = parse_header("alert tcp any any -> any any");
+        assert_eq!(proto.as_deref(), Some("tcp"));
+        assert_eq!(srcp.as_deref(), Some("any"));
+        assert_eq!(dstp.as_deref(), Some("any"));
+
+        let (proto2, srcp2, dstp2) = parse_header("alert udp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS");
+        assert_eq!(proto2.as_deref(), Some("udp"));
+        assert_eq!(srcp2.as_deref(), Some("any"));
+        assert_eq!(dstp2.as_deref(), Some("$HTTP_PORTS"));
+
+        let (proto3, _, _) = parse_header("alert ip any any <> any any");
+        assert_eq!(proto3.as_deref(), Some("ip"));
     }
 }

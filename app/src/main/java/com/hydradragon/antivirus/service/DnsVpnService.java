@@ -21,7 +21,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -84,8 +83,7 @@ public class DnsVpnService extends VpnService {
         public final int srcPort;
         public final int dstPort;
         public final String protocol;
-        public final byte[] payload;
-        public final String payloadB64;
+        public final String payloadHex;
         CapturedPacket(String srcIp, String dstIp, int srcPort, int dstPort,
                        String protocol, byte[] payload) {
             this.srcIp = srcIp;
@@ -93,11 +91,10 @@ public class DnsVpnService extends VpnService {
             this.srcPort = srcPort;
             this.dstPort = dstPort;
             this.protocol = protocol;
-            this.payload = payload;
             int capLen = Math.min(payload.length, MAX_PAYLOAD_CAPTURE);
             byte[] cap = new byte[capLen];
             System.arraycopy(payload, 0, cap, 0, capLen);
-            this.payloadB64 = Base64.getEncoder().encodeToString(cap);
+            this.payloadHex = hexEncode(cap);
         }
     }
 
@@ -121,8 +118,9 @@ public class DnsVpnService extends VpnService {
               .append("\",\"dst_ip\":\"").append(jsonEscape(p.dstIp))
               .append("\",\"src_port\":").append(p.srcPort)
               .append(",\"dst_port\":").append(p.dstPort)
-              .append(",\"protocol\":\"").append(jsonEscape(p.protocol))
-              .append("\",\"payload_b64\":\"").append(p.payloadB64).append("\"}");
+              .append(",\"protocol\":\"").append(p.protocol)
+              .append("\",\"payload_hex\":\"").append(p.payloadHex)
+              .append("\",\"flow_dir\":\"").append(flowDir(p.srcIp, p.dstIp)).append("\"}");
         }
         sb.append("]");
         return sb.toString();
@@ -133,6 +131,36 @@ public class DnsVpnService extends VpnService {
         return s.replace("\\", "\\\\").replace("\"", "\\\"")
                 .replace("\n", "\\n").replace("\r", "\\r")
                 .replace("\t", "\\t");
+    }
+
+    private static String hexEncode(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b & 0xFF));
+        }
+        return sb.toString();
+    }
+
+    private static boolean isPrivateIp(String ip) {
+        if (ip == null) return false;
+        try {
+            if (ip.startsWith("10.")) return true;
+            if (ip.startsWith("172.")) {
+                int second = Integer.parseInt(ip.split("\\.")[1]);
+                if (second >= 16 && second <= 31) return true;
+            }
+            if (ip.startsWith("192.168.")) return true;
+            if (ip.startsWith("127.")) return true;
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    private static String flowDir(String srcIp, String dstIp) {
+        boolean srcPrivate = isPrivateIp(srcIp);
+        boolean dstPrivate = isPrivateIp(dstIp);
+        if (srcPrivate && !dstPrivate) return "to_server";
+        if (dstPrivate && !srcPrivate) return "from_server";
+        return "to_server";
     }
 
     @Override
