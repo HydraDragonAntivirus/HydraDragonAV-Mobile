@@ -373,7 +373,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="malware_has_admin_msg">%1$s hat sich selbst zum Geräteadministrator gemacht, was eine direkte Deinstallation verhindert — ein gängiger Trick von Malware, um einer Entfernung zu widerstehen. Deaktiviere es auf dem sich öffnenden Bildschirm (finde %1$s und tippe auf Deaktivieren), dann öffnet sich die Deinstallationsaufforderung automatisch.</string>
     <string name="malware_has_admin_open_settings">GERÄTEADMINISTRATOR-EINSTELLUNGEN ÖFFNEN</string>
     <string name="uninstall_warning_toggle">Abgesicherten Modus vorschlagen, wenn die Deinstallation fehlschlägt</string>
-    <string name="unicorn_unsupported">Emulation (Unicorn) ist auf diesem Gerät aufgrund eines bekannten ARM64-JIT-Backend-Fehlers nicht verfügbar. Der Scan läuft ohne diesen Durchlauf normal weiter.</string>
+
     <string name="disable_secure_flag_toggle">Bildschirmaufnahme zulassen</string>
 
     <string name="anti_fn_enabled_toggle">Anti-FN — bestätigt bösartige TLSH-Fingerabdrücke merken, um umbenannte/neu gepackte Varianten zu erkennen</string>

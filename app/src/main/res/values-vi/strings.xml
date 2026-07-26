@@ -373,7 +373,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="malware_has_admin_msg">%1$s đã tự đặt mình làm Quản trị viên thiết bị, điều này ngăn việc gỡ cài đặt trực tiếp — đây là một thủ thuật phổ biến mà phần mềm độc hại dùng để chống lại việc bị gỡ bỏ. Hãy vô hiệu hóa nó trong màn hình sẽ mở ra (tìm %1$s và nhấn Vô hiệu hóa), sau đó lời nhắc gỡ cài đặt sẽ tự động mở ra.</string>
     <string name="malware_has_admin_open_settings">MỞ CÀI ĐẶT QUẢN TRỊ THIẾT BỊ</string>
     <string name="uninstall_warning_toggle">Đề xuất chế độ an toàn khi gỡ cài đặt không thành công</string>
-    <string name="unicorn_unsupported">Trình giả lập (Unicorn) không khả dụng trên thiết bị này do lỗi đã biết trong backend ARM64 JIT. Quá trình quét tiếp tục bình thường mà không có bước này.</string>
+
     <string name="disable_secure_flag_toggle">Cho phép quay màn hình</string>
 
     <string name="anti_fn_enabled_toggle">Anti-FN — ghi nhớ các dấu vân tay TLSH đã xác nhận độc hại để phát hiện các biến thể đổi tên/đóng gói lại</string>

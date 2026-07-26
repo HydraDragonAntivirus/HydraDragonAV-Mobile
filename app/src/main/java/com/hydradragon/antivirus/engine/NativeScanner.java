@@ -112,7 +112,7 @@ public final class NativeScanner {
 
     /** Called by Rust when the startup probe detects Unicorn's ARM64 JIT
      *  backend is broken on this device.  The app shows a one-time warning
-     *  via {@link R.string.unicorn_unsupported}. */
+     *  via a dedicated error message. */
     public static void onEmulationUnavailable(String reason) {
         Log.w(TAG, "Emulation unavailable: " + reason);
     }

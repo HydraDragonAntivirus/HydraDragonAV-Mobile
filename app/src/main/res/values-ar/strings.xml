@@ -373,7 +373,7 @@
     <string name="malware_has_admin_msg">جعل %1$s نفسه مسؤول جهاز، مما يمنع إلغاء تثبيته مباشرة — وهي حيلة شائعة تستخدمها البرمجيات الخبيثة لمقاومة الإزالة. عطّله في الشاشة التي ستفتح (ابحث عن %1$s واضغط إلغاء التفعيل)، ثم ستفتح رسالة إلغاء التثبيت تلقائيًا.</string>
     <string name="malware_has_admin_open_settings">افتح إعدادات مسؤول الجهاز</string>
     <string name="uninstall_warning_toggle">اقترح الوضع الآمن عند فشل إلغاء التثبيت</string>
-    <string name="unicorn_unsupported">المحاكاة (Unicorn) غير متوفرة على هذا الجهاز بسبب خطأ معروف في المحرك الخلفي ARM64 JIT. يستمر المسح بشكل طبيعي بدون هذه المرحلة.</string>
+
     <string name="disable_secure_flag_toggle">السماح بتسجيل الشاشة</string>
 
     <string name="anti_fn_enabled_toggle">Anti-FN — تذكر الإدخالات المؤكدة كخبيثة TLSH لاكتشاف المتغيرات المعاد تسميتها/إعادة تعبئتها</string>

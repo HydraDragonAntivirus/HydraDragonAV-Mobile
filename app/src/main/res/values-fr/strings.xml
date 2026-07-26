@@ -373,7 +373,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="malware_has_admin_msg">%1$s s\'est fait Administrateur de l\'appareil, ce qui empêche sa désinstallation directe — une astuce courante utilisée par les malwares pour résister à la suppression. Désactivez-le sur l\'écran qui s\'ouvre (trouvez %1$s et appuyez sur Désactiver), puis l\'invite de désinstallation s\'ouvrira automatiquement.</string>
     <string name="malware_has_admin_open_settings">OUVRIR LES PARAMÈTRES D\'ADMINISTRATEUR DE L\'APPAREIL</string>
     <string name="uninstall_warning_toggle">Suggérer le mode sans échec en cas d\'échec de la désinstallation</string>
-    <string name="unicorn_unsupported">L\'émulation (Unicorn) n\'est pas disponible sur cet appareil en raison d\'un bogue connu du backend ARM64 JIT. L\'analyse continue normalement sans cette passe.</string>
+
     <string name="disable_secure_flag_toggle">Autoriser l\'enregistrement d\'écran</string>
 
     <string name="anti_fn_enabled_toggle">Anti-FN — mémorise les empreintes TLSH confirmées malveillantes pour détecter les variantes renommées/repackagées</string>

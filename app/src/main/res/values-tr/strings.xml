@@ -373,7 +373,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="net_event_allowed">İZİN VERİLDİ</string>
     <string name="risk_score_format">Risk: %1$d/100</string>
     <string name="uninstall_warning_toggle">Kaldırma başarısız olduğunda Güvenli Mod\'u öner</string>
-    <string name="unicorn_unsupported">Öykünme (Unicorn), ARM64 JIT arka ucundaki bilinen bir hata nedeniyle bu cihazda kullanılamıyor. Tarama bu adım olmadan normal şekilde devam eder.</string>
+
     <string name="disable_secure_flag_toggle">Ekran kaydına izin ver</string>
 
     <string name="anti_fn_enabled_toggle">Anti-FN — yeniden adlandırılmış/yeniden paketlenmiş varyantları yakalamak için onaylanmış kötü amaçlı TLSH parmak izlerini hatırla</string>
