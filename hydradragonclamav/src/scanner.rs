@@ -1243,12 +1243,42 @@ pub fn is_apk_zip(data: &[u8]) -> bool {
     let scan_size = 1 << 20;
     let head_end = data.len().min(scan_size);
     let tail_start = data.len().saturating_sub(scan_size);
-    let marker = b"AndroidManifest.xml";
-    let scan = |region: &[u8]| region.windows(marker.len()).any(|w| w == marker);
-    if head_end > 0 && scan(&data[..head_end]) {
-        return true;
-    }
-    tail_start > 0 && scan(&data[tail_start..])
+    let head = &data[..head_end];
+    let tail = &data[tail_start..];
+
+    let has = |region: &[u8], pat: &[u8]| region.windows(pat.len()).any(|w| w == pat);
+
+    let has_dex = |region: &[u8]| {
+        if has(region, b"classes.dex") {
+            return true;
+        }
+        for w in region.windows(8) {
+            if w.starts_with(b"classes") && w[7].is_ascii_digit() {
+                return true;
+            }
+        }
+        false
+    };
+
+    let has_lib_so = |region: &[u8]| {
+        let mut i = 0;
+        while let Some(pos) = region[i..].windows(3).position(|w| w == b".so") {
+            let p = i + pos;
+            if p >= 4 && region[p - 4..p] == [b'l', b'i', b'b', b'/'] {
+                return true;
+            }
+            i = p + 1;
+        }
+        false
+    };
+
+    let has_apk_content = |region: &[u8]| has_dex(region) || has_lib_so(region);
+
+    let manifest_in_head = head_end > 0 && has(head, b"AndroidManifest.xml");
+    let manifest_in_tail = tail_start > 0 && has(tail, b"AndroidManifest.xml");
+
+    (manifest_in_head && (has_apk_content(head) || has_apk_content(tail)))
+        || (manifest_in_tail && (has_apk_content(head) || has_apk_content(tail)))
 }
 
 /// Best-effort concrete file-type detection by magic → ClamAV target number.

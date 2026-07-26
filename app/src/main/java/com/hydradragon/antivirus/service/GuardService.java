@@ -290,6 +290,11 @@ public class GuardService extends Service {
      *  (screen off). Consumed by ScanFragment on reconnect. */
     private volatile com.hydradragon.antivirus.model.ScanResult pendingUiScanResult;
 
+    /** Threats found while the UI fragment was detached. Drained by
+     *  ScanFragment on reconnect so no detections are lost when the user
+     *  navigates away from the scan screen mid-scan. */
+    private final java.util.List<ThreatResult> pendingUiThreats = new java.util.ArrayList<>();
+
     /** Called by ScanFragment instead of touching ScanEngine's callback
      *  directly. Pass {@code null} when the fragment goes away (onStop) so a
      *  stale reference isn't held past the fragment's lifecycle. */
@@ -302,6 +307,18 @@ public class GuardService extends Service {
         com.hydradragon.antivirus.model.ScanResult r = pendingUiScanResult;
         pendingUiScanResult = null;
         return r;
+    }
+
+    /** Returns all threats found while the UI fragment was detached, then
+     *  clears the queue. Used by ScanFragment on reconnect so threats found
+     *  while the user was on another tab are not lost. */
+    public java.util.List<ThreatResult> consumePendingUiThreats() {
+        synchronized (pendingUiThreats) {
+            if (pendingUiThreats.isEmpty()) return java.util.Collections.emptyList();
+            java.util.List<ThreatResult> drained = new java.util.ArrayList<>(pendingUiThreats);
+            pendingUiThreats.clear();
+            return drained;
+        }
     }
 
     public interface GuardCallback {
@@ -426,7 +443,18 @@ public class GuardService extends Service {
                     if (callback != null) callback.onThreatDetected(threat);
                 }
                 ScanEngine.ScanCallback ui = uiScanCallback;
-                if (ui != null && scanEngine.isScanRunning()) ui.onThreatFound(threat);
+                // Always queue — survives UI detachment mid-scan.
+                synchronized (pendingUiThreats) {
+                    pendingUiThreats.add(threat);
+                }
+                if (ui != null && scanEngine.isScanRunning()) {
+                    // Drain queued threats into UI (including this one) so the
+                    // fragment receives any threats found while it was away.
+                    java.util.List<ThreatResult> batch = consumePendingUiThreats();
+                    for (ThreatResult t : batch) {
+                        ui.onThreatFound(t);
+                    }
+                }
             }
 
             @Override
@@ -580,11 +608,11 @@ public class GuardService extends Service {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_threat)
             .setContentTitle(getString(R.string.malware_found_title))
-            .setContentText(threat.getAppName() + " - Risk: " + threat.getRiskScore() + "/100")
+            .setContentText(getString(R.string.notif_threat_risk_text, threat.getAppName(), threat.getRiskScore()))
             .setStyle(new NotificationCompat.BigTextStyle()
                 .bigText(threat.getAppName() + "\n"
-                    + "Risk Seviyesi: " + threat.getThreatLevel() + "\n"
-                    + "Sebep: " + (threat.getReasons().isEmpty() ? "-" : threat.getReasons().get(0))))
+                    + getString(R.string.notif_threat_risk_big, threat.getThreatLevel(),
+                        threat.getReasons().isEmpty() ? "-" : threat.getReasons().get(0))))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setColor(0xFF0040);
@@ -603,7 +631,7 @@ public class GuardService extends Service {
                     android.app.PendingIntent.FLAG_IMMUTABLE
                             | android.app.PendingIntent.FLAG_UPDATE_CURRENT);
             builder.setContentIntent(pi)
-                   .addAction(R.drawable.ic_threat, "Remove", pi);
+                   .addAction(R.drawable.ic_threat, getString(R.string.notif_action_remove), pi);
         }
 
         nm.notify(alertNotificationId++, builder.build());
@@ -614,7 +642,7 @@ public class GuardService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_network_alert)
             .setContentTitle(getString(R.string.notif_suspicious_network_title))
-            .setContentText(event.destIp + ":" + event.destPort + " → " + event.reason)
+            .setContentText(getString(R.string.notif_network_alert_text, event.destIp, event.destPort, event.reason))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setColor(0xFF6600)
@@ -627,7 +655,7 @@ public class GuardService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_process_alert)
             .setContentTitle(getString(R.string.notif_suspicious_process_title))
-            .setContentText("PID:" + process.getPid() + " - " + process.getProcessName())
+            .setContentText(getString(R.string.notif_process_alert_text, process.getPid(), process.getProcessName()))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setColor(0xFF0040)

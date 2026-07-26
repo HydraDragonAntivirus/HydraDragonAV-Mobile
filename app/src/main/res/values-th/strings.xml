@@ -426,5 +426,9 @@
     <string name="scan_cancelled">การสแกนถูกยกเลิก</string>
 
     <string name="scan_relevant_only_toggle">สแกนเฉพาะไฟล์ที่เกี่ยวข้อง (DEX/ELF/ข้อความ)</string>
+    <string name="notif_threat_risk_text">%1$s — ความเสี่ยง: %2$d/100</string>
+    <string name="notif_threat_risk_big">ระดับ: %1$s\nเหตุผล: %2$s</string>
+    <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
+    <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
 </resources>
 

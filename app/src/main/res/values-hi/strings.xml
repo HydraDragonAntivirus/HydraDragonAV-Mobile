@@ -426,5 +426,9 @@
     <string name="scan_cancelled">स्कैन रद्द कर दिया गया</string>
 
     <string name="scan_relevant_only_toggle">केवल प्रासंगिक स्कैन करें (DEX/ELF/टेक्स्ट)</string>
+    <string name="notif_threat_risk_text">%1$s — जोखिम: %2$d/100</string>
+    <string name="notif_threat_risk_big">स्तर: %1$s\nकारण: %2$s</string>
+    <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
+    <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
 </resources>
 
