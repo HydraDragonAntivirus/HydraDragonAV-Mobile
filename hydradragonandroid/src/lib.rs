@@ -2406,7 +2406,7 @@ fn run_scan(
 
     if riskware::is_testkey_detection_enabled() {
         if let Some(cert) = extract_certificate(&buffers) {
-            if riskware::check_testkey(&cert.sha1) {
+            if riskware::check_testkey(&cert.sha1, &cert.subject, &cert.issuer) {
                 detections.push(("Andr.Riskware.TestKey".to_string(), path.to_string(), Vec::new()));
             }
         }
