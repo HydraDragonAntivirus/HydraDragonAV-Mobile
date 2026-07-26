@@ -191,26 +191,17 @@ public final class RansomwareBehaviorGuard {
      *  The rename-burst threshold required to trigger an alert drops as more
      *  sensors agree. */
     public static synchronized void onFileEvent(Context c, String dirPath, String fileName) {
-        if (!BehaviorDetectionSettings.isEnabled(c, BehaviorDetectionSettings.RANSOMWARE)) return;
         if (dirPath == null || fileName == null || fileName.isEmpty()) return;
 
+        // ── FILE_CREATED / FILE_COPY tracking (always runs, no RANSOMWARE gate) ──
+        String pkg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+
+        // Check whether the observed dir is already known
         LinkedHashMap<String, Long> known = knownNamesByDir.get(dirPath);
         if (known == null) {
             known = new LinkedHashMap<>();
             knownNamesByDir.put(dirPath, known);
         }
-
-        // Is this new name just an EARLIER known file with something appended
-        // to the end of it? ("report.pdf" -> "report.pdf.xyz") — the shape of
-        // mass in-place file encryption, whatever the appended text actually is.
-        String matchedBase = null;
-        for (String existing : known.keySet()) {
-            if (!existing.equals(fileName) && fileName.startsWith(existing + ".")) {
-                matchedBase = existing;
-                break;
-            }
-        }
-
         boolean isNew = !known.containsKey(fileName);
         if (isNew) {
             if (known.size() >= MAX_NAMES_PER_DIR) {
@@ -219,30 +210,26 @@ public final class RansomwareBehaviorGuard {
             }
             known.put(fileName, System.currentTimeMillis());
 
-            // ── FILE_CREATED burst tracking ────────────────────────────────
-            String fgPkg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
-            if (fgPkg != null && !fgPkg.isEmpty()) {
+            if (pkg != null && !pkg.isEmpty()) {
                 long now = System.currentTimeMillis();
-                long[] burst = fileCreateBurst.get(fgPkg);
+                long[] burst = fileCreateBurst.get(pkg);
                 int createCount;
                 if (burst == null || now - burst[0] > FILE_CREATE_WINDOW_MS) {
-                    fileCreateBurst.put(fgPkg, new long[]{now, 1});
+                    fileCreateBurst.put(pkg, new long[]{now, 1});
                     createCount = 1;
                 } else {
                     burst[1]++;
                     createCount = (int) burst[1];
                 }
                 if (createCount >= FILE_CREATE_BURST_THRESHOLD) {
-                    HipsMonitor.addBehaviorFlag(fgPkg, "FILE_CREATED_BURST:" + createCount);
+                    HipsMonitor.addBehaviorFlag(pkg, "FILE_CREATED_BURST:" + createCount);
                 }
-                // Always track individual creates for the detail list
-                HipsMonitor.addBehaviorFlag(fgPkg,
+                HipsMonitor.addBehaviorFlag(pkg,
                     String.format("FILE_CREATED:path=%s:size=%d",
                         fileName, new java.io.File(dirPath, fileName).length()));
 
-                // ── FILE_COPY correlation ──────────────────────────────────
                 java.util.List<FileReadEstimator.RecentRead> reads =
-                    FileReadEstimator.getRecentReadsByPackage(fgPkg);
+                    FileReadEstimator.getRecentReadsByPackage(pkg);
                 java.io.File newFile = new java.io.File(dirPath, fileName);
                 long newSize = newFile.exists() ? newFile.length() : 0;
                 for (FileReadEstimator.RecentRead rr : reads) {
@@ -250,7 +237,7 @@ public final class RansomwareBehaviorGuard {
                     long diff = Math.abs(rr.sizeBytes - newSize);
                     double ratio = (double) diff / (double) Math.max(rr.sizeBytes, newSize);
                     if (ratio <= COPY_SIZE_TOLERANCE) {
-                        HipsMonitor.addBehaviorFlag(fgPkg,
+                        HipsMonitor.addBehaviorFlag(pkg,
                             String.format("FILE_COPY:size=%d:src_size=%d:src=%s:conf=%.0f",
                                 newSize, rr.sizeBytes, rr.filePath, rr.confidence * 100));
                         break;
@@ -265,9 +252,23 @@ public final class RansomwareBehaviorGuard {
             dirSnapshots.put(dirPath, snapshot);
         }
         if (isNew) snapshot.add(fileName);
+        if (pkg == null || pkg.isEmpty()) return;
+
+        // ── Ransomware rename-burst detection (gated by RANSOMWARE setting) ──
+        if (!BehaviorDetectionSettings.isEnabled(c, BehaviorDetectionSettings.RANSOMWARE)) return;
+
+        // Is this new name just an EARLIER known file with something appended
+        // to the end of it? ("report.pdf" -> "report.pdf.xyz") — the shape of
+        // mass in-place file encryption, whatever the appended text actually is.
+        String matchedBase = null;
+        for (String existing : known.keySet()) {
+            if (!existing.equals(fileName) && fileName.startsWith(existing + ".")) {
+                matchedBase = existing;
+                break;
+            }
+        }
         if (matchedBase == null) return;
 
-        String pkg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
         Long grantTime = (pkg == null || pkg.isEmpty()) ? null : grantedAt.get(pkg);
         if (grantTime == null || System.currentTimeMillis() - grantTime > GRANT_WINDOW_MS) {
             return; // no recent on-screen file-access grant to pin this on
