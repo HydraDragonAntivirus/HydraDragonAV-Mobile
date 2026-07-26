@@ -256,16 +256,40 @@ def extract_rule_name(header):
 
 def body_identifiers(block):
     """
-    Return the set of bare identifiers appearing anywhere in the rule body
-    (meta, strings, condition and comments) — excluding the rule's own name.
+    Return the set of bare identifiers appearing in the rule body
+    outside of string literals — excluding the rule's own name.
 
-    A condition can reference other rules by name, but a removed rule may also
-    be referenced indirectly elsewhere in the body; any rule that mentions a
-    removed rule's name is treated as related and dropped too.
+    A condition can reference other rules by name, but short words
+    like ``wget`` / ``linux`` / ``net`` inside string literals
+    (``$x = "wget"``) would create false-positive cascade drops.
     """
     ids = set()
     for line in block[1:]:
-        ids.update(_IDENT_RE.findall(line))
+        i, n = 0, len(line)
+        while i < n:
+            if line[i] == '"':
+                i += 1
+                while i < n:
+                    if line[i] == '\\' and i + 1 < n:
+                        i += 2
+                        continue
+                    if line[i] == '"':
+                        i += 1
+                        break
+                    i += 1
+                continue
+            if line[i] == '/' and i + 1 < n and line[i + 1] == '/':
+                break
+            if line[i] == '/' and i + 1 < n and line[i + 1] == '*':
+                end = line.find('*/', i + 2)
+                i = end + 2 if end != -1 else n
+                continue
+            m = _IDENT_RE.match(line, i)
+            if m:
+                ids.add(m.group(0))
+                i = m.end()
+            else:
+                i += 1
     ids.discard(extract_rule_name(block[0]))
     return ids
 
@@ -645,6 +669,7 @@ def main():
 
     total = len(blocks)
     names = [extract_rule_name(b[0]) for b in blocks]
+    rule_names = set(n for n in names if n)
 
     # Pass 1: direct signals (name, tags, meta, modules, comments).
     keep = [
@@ -659,6 +684,8 @@ def main():
     # body references a removed rule's name (condition, strings, meta or
     # comments). Cascades to a fixpoint: if C references B and B was dropped
     # for referencing excluded A, then C is dropped too.
+    # Only actual rule names are considered, not loop variables (s, seg, i, ...)
+    # or YARA builtins (uint32, condition, ...) that happen to match dropped names.
     dropped_names = {names[i] for i in range(total) if not keep[i] and names[i]}
     changed = True
     while changed:
@@ -666,7 +693,7 @@ def main():
         for i, b in enumerate(blocks):
             if not keep[i]:
                 continue
-            if body_identifiers(b) & dropped_names:
+            if (body_identifiers(b) & rule_names) & dropped_names:
                 keep[i] = False
                 if names[i]:
                     dropped_names.add(names[i])
@@ -679,6 +706,7 @@ def main():
     # referenced by other rules, so if no kept rule references it, it is dead
     # code. Cascades to a fixpoint: removing one private rule can leave another
     # private rule (that only the first referenced) unused in turn.
+    # Only actual rule names are tracked, not YARA builtins / loop variables.
     private_removed = 0
     changed = True
     while changed:
@@ -687,7 +715,7 @@ def main():
         referenced = set()
         for i, b in enumerate(blocks):
             if keep[i]:
-                referenced |= body_identifiers(b)
+                referenced |= (body_identifiers(b) & rule_names)
         for i, b in enumerate(blocks):
             if keep[i] and is_private_rule(b[0]) and names[i] not in referenced:
                 keep[i] = False
@@ -721,6 +749,7 @@ def main():
     # verified rule are forced into the verified bucket too.
     verified_flags = [is_android_related(b, verify_terms) for b in kept_blocks]
     kept_names = [extract_rule_name(b[0]) for b in kept_blocks]
+    keeplist_rule_names = set(n for n in kept_names if n)
 
     changed = True
     while changed:
@@ -728,7 +757,7 @@ def main():
         verified_refs = set()
         for i, b in enumerate(kept_blocks):
             if verified_flags[i]:
-                verified_refs |= body_identifiers(b)
+                verified_refs |= (body_identifiers(b) & keeplist_rule_names)
         for i, b in enumerate(kept_blocks):
             if (not verified_flags[i] and is_private_rule(b[0])
                     and kept_names[i] in verified_refs):
