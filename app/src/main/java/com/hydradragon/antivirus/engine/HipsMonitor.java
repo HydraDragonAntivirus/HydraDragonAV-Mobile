@@ -133,6 +133,17 @@ public final class HipsMonitor {
     private static final List<StrandHoggEvent> strandhoggEvents = new ArrayList<>();
     private static final List<RemovalResistanceEvent> removalResistanceEvents = new ArrayList<>();
     private static final List<LauncherChangeEvent> launcherChangeEvents = new ArrayList<>();
+
+    private static final class MinerEvent {
+        String packageName;
+        double cpuUsage;
+        long memoryMb;
+        boolean knownName;
+        boolean malicious;
+    }
+
+    private static final List<MinerEvent> minerEvents = new ArrayList<>();
+
     private static final Map<String, BehaviorFlagEntry> behaviorFlags = new HashMap<>();
 
     private static boolean isRooted = false;
@@ -275,6 +286,18 @@ public final class HipsMonitor {
         observePackage(pkg);
     }
 
+    public static synchronized void addMinerEvent(String pkg, double cpuUsage, long memoryMb,
+                                                   boolean knownName, boolean malicious) {
+        if (pkg == null) return;
+        MinerEvent e = new MinerEvent();
+        e.packageName = pkg; e.cpuUsage = cpuUsage; e.memoryMb = memoryMb;
+        e.knownName = knownName; e.malicious = malicious;
+        minerEvents.add(e);
+        if (minerEvents.size() > MAX_EVENTS_PER_TYPE) minerEvents.remove(0);
+        addBehaviorFlag(pkg, "MINER");
+        observePackage(pkg);
+    }
+
     public static synchronized void setRooted(boolean rooted) { isRooted = rooted; }
 
     public static synchronized void setDebugMode(boolean debug) { isDebugMode = debug; }
@@ -299,6 +322,16 @@ public final class HipsMonitor {
         }
         if (!entry.flags.contains(flag)) entry.flags.add(flag);
         observePackage(pkg);
+    }
+
+    public static synchronized boolean packageHasMinerMemory(String pkg, long minMemoryMb) {
+        if (pkg == null) return false;
+        for (MinerEvent e : minerEvents) {
+            if (pkg.equals(e.packageName) && e.memoryMb >= minMemoryMb && e.malicious) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static synchronized boolean hasBehaviorFlag(String pkg, String flag) {
@@ -451,6 +484,20 @@ public final class HipsMonitor {
             }
             root.put("launcher_change_events", lcArr);
             launcherChangeEvents.clear();
+
+            // Crypto-miner events (CPU + memory profiling)
+            JSONArray minArr = new JSONArray();
+            for (MinerEvent e : minerEvents) {
+                JSONObject o = new JSONObject();
+                o.put("package_name", e.packageName);
+                o.put("cpu_usage", e.cpuUsage);
+                o.put("memory_mb", e.memoryMb);
+                o.put("known_name", e.knownName);
+                o.put("is_malicious", e.malicious);
+                minArr.put(o);
+            }
+            root.put("miner_events", minArr);
+            minerEvents.clear();
 
             // System state
             JSONObject sys = new JSONObject();

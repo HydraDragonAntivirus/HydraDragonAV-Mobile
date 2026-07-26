@@ -430,5 +430,6 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="notif_threat_risk_big">Seviye: %1$s\nSebep: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
+    <string name="behavior_crypto_miner">Kripto madencisi tespiti (CPU/bellek profili)</string>
 </resources>
 

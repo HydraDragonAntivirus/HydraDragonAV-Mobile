@@ -95,6 +95,8 @@ public class GuardService extends Service {
                         if (path == null || path.isEmpty()) continue;
                         java.io.File file = new java.io.File(path);
                         if (!file.exists() || !file.isFile()) continue;
+                        com.hydradragon.antivirus.engine.FileReadEstimator.observeFile(
+                            file.getAbsolutePath(), file.length());
                         // Feed the file event into the rename-burst + memory-pressure
                         // ransomware detection pipeline.
                         java.io.File parent = file.getParentFile();
@@ -168,6 +170,8 @@ public class GuardService extends Service {
                             if (path == null || path.isEmpty()) continue;
                             java.io.File file = new java.io.File(path);
                             if (!file.exists() || !file.isFile()) continue;
+                            com.hydradragon.antivirus.engine.FileReadEstimator.observeFile(
+                                file.getAbsolutePath(), file.length());
                             java.io.File parent = file.getParentFile();
                             if (parent != null) {
                                 com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.onFileEvent(
@@ -266,6 +270,8 @@ public class GuardService extends Service {
     private ScanEngine backgroundScanEngine;
     private NetworkMonitor networkMonitor;
     private ProcessDetector processDetector;
+    private com.hydradragon.antivirus.engine.MinerDetector minerDetector;
+    private com.hydradragon.antivirus.engine.FileReadEstimator fileReadEstimator;
     private volatile boolean engineLoading = true;
     private ScheduledExecutorService scheduler;
     private int alertNotificationId = ALERT_NOTIFICATION_BASE;
@@ -399,6 +405,7 @@ public class GuardService extends Service {
         });
         networkMonitor = new NetworkMonitor(this);
         processDetector = new ProcessDetector(this);
+        minerDetector = new com.hydradragon.antivirus.engine.MinerDetector(this);
 
         // Set ONCE — see uiScanCallback's javadoc for why ScanFragment must
         // never call scanEngine.setCallback() itself.
@@ -553,6 +560,15 @@ public class GuardService extends Service {
         }, 10, 60, TimeUnit.SECONDS);
 
         scheduler.scheduleAtFixedRate(this::checkRootTransition, 15, 60, TimeUnit.SECONDS);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            try { minerDetector.scan(); } catch (Throwable t) { Log.e(TAG, "MinerDetector failed", t); }
+        }, 30, 15, TimeUnit.SECONDS);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            try { com.hydradragon.antivirus.engine.FileReadEstimator.scan(); }
+            catch (Throwable t) { Log.e(TAG, "FileReadEstimator failed", t); }
+        }, 60, 30, TimeUnit.SECONDS);
     }
 
     private void checkRootTransition() {

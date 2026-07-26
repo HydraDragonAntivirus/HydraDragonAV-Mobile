@@ -433,5 +433,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="notif_threat_risk_big">Level: %1$s\nReason: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
+
+    <string name="behavior_crypto_miner">Crypto miner detection (CPU/memory profiling)</string>
 </resources>
 

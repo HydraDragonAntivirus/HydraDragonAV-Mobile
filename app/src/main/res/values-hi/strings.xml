@@ -430,5 +430,6 @@
     <string name="notif_threat_risk_big">स्तर: %1$s\nकारण: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
+    <string name="behavior_crypto_miner">क्रिप्टो माइनर का पता लगाना (CPU/मेमोरी प्रोफ़ाइल)</string>
 </resources>
 

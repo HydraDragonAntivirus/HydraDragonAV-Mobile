@@ -138,18 +138,22 @@ public final class RansomwareBehaviorGuard {
     }
 
     /** Returns the effective rename-burst threshold for the current memory
-     *  pressure and file-entropy state.
+     *  pressure, file-entropy state, and per-process memory.
      *
      *  <ul>
-     *    <li>High memory pressure alone → {@code RENAME_BURST_THRESHOLD - 2} (3).</li>
-     *    <li>High entropy (encrypted content) alone → {@code RENAME_BURST_THRESHOLD - 1} (4).</li>
+     *    <li>System memory pressure alone → {@code RENAME_BURST_THRESHOLD - 2} (3).</li>
+     *    <li>High file entropy alone → {@code RENAME_BURST_THRESHOLD - 1} (4).</li>
      *    <li>Both → {@code RENAME_BURST_THRESHOLD - 3} (2).</li>
+     *    <li>Per-process high memory (&gt;64MB) + entropy → {@code RENAME_BURST_THRESHOLD - 2} (3).</li>
+     *    <li>Per-process high memory + system pressure → {@code RENAME_BURST_THRESHOLD - 3} (2).</li>
+     *    <li>All three → {@code RENAME_BURST_THRESHOLD - 4} (1).</li>
      *    <li>Neither → {@code RENAME_BURST_THRESHOLD} (5).</li>
      *  </ul> */
-    private static int effectiveThreshold(boolean highEntropy) {
+    private static int effectiveThreshold(boolean highEntropy, boolean highProcMemory) {
         int drop = 0;
         if (MemoryMonitor.isUnderHighPressure()) drop += 2;
         if (highEntropy) drop += 1;
+        if (highProcMemory) drop += 1;
         return Math.max(RENAME_BURST_THRESHOLD - drop, 1);
     }
 
@@ -225,11 +229,15 @@ public final class RansomwareBehaviorGuard {
         boolean highEntropy = entropy >= 7.5;
         String entropyLabel = FileEntropy.label(entropy);
 
-        int effective = effectiveThreshold(highEntropy);
+        // ── Sensor: per-process memory (from MinerDetector data) ───────
+        boolean highProcMemory = HipsMonitor.packageHasMinerMemory(pkg, 64);
+
+        int effective = effectiveThreshold(highEntropy, highProcMemory);
         String memInfo = MemoryMonitor.summary();
         Log.d(TAG, "rename+" + burst[1] + "/" + effective + " for " + pkg
             + " suffix=\"" + appendedSuffix + "\" entropy=" + entropyLabel
             + (entropy >= 0 ? String.format(" %.2f", entropy) : "")
+            + " procMem=" + highProcMemory
             + " " + memInfo);
         if (burst[1] < effective) return;
 
@@ -237,13 +245,17 @@ public final class RansomwareBehaviorGuard {
         String entropyInfo = entropy >= 0
             ? String.format("entropy=%.2f(%s)", entropy, entropyLabel)
             : "entropy=unavailable";
+        String procMemInfo = highProcMemory ? " +process memory >64MB" : "";
         String reason = "Ransomware behaviour: " + burst[1]
             + " files renamed with an appended suffix (\"" + sampleExt.get(pkg)
             + "\") within " + (RENAME_BURST_WINDOW_MS / 1000)
             + "s of this app being granted " + (wasAllFiles ? "All Files Access" : "file access")
-            + " — " + entropyInfo + " " + memInfo;
+            + " — " + entropyInfo + " " + memInfo + procMemInfo;
         Log.e(TAG, "RANSOMWARE BEHAVIOUR (" + pkg + "): " + reason);
         BehaviorFlags.flag(c, pkg, reason);
+        HipsMonitor.addBehaviorFlag(pkg, "RANSOMWARE");
+        if (highProcMemory) HipsMonitor.addBehaviorFlag(pkg, "RANSOMWARE_HIGH_MEM");
+        if (highEntropy) HipsMonitor.addBehaviorFlag(pkg, "RANSOMWARE_HIGH_ENTROPY");
         HipsMonitor.reportRansomware(pkg, (int)burst[1], sampleExt.get(pkg),
             true, wasAllFiles, RENAME_BURST_WINDOW_MS, true);
         com.hydradragon.antivirus.service.ThreatLogger.logThreat(c, pkg, pkg, reason);

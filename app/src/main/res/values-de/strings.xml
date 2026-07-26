@@ -430,5 +430,6 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="notif_threat_risk_big">Stufe: %1$s\nGrund: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
+    <string name="behavior_crypto_miner">Crypto-Miner-Erkennung (CPU-/Speicher-Profil)</string>
 </resources>
 

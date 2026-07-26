@@ -577,3 +577,93 @@ rule HIPS_Packed_DeviceAdmin_HiddenRootkit
     hydradragon.device_admin(/./) >= 1 and
     hydradragon.hidden_app(/./) >= 1
 }
+
+// ── Crypto Miner Detection (behavioral: CPU + memory via miner_events) ───────
+
+rule HIPS_Miner_BehaviorFlag
+{
+  meta:
+    description = "Detects apps flagged for cryptomining behavior via runtime CPU/memory profiling"
+    severity = "high"
+    category = "MINER"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.behavior_flagged(/MINER/) >= 1
+}
+
+rule HIPS_Miner_HighCpuAndMemory
+{
+  meta:
+    description = "Detects sustained high CPU usage combined with large memory allocation — behavioral miner fingerprint"
+    severity = "high"
+    category = "MINER"
+    suggestion = "warn"
+  condition:
+    hydradragon.miner_cpu(/./) >= 80 or
+    hydradragon.miner_memory(/./) >= 64
+}
+
+rule HIPS_Miner_KnownProcess
+{
+  meta:
+    description = "Detects known cryptominer process names via runtime profiling"
+    severity = "critical"
+    category = "MINER"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.miner_known_name(/xmrig|xmr-stak|minerd|ccminer|cpuminer|cryptominer/i) >= 1
+}
+
+rule HIPS_Miner_MultipleFlags
+{
+  meta:
+    description = "Detects apps flagged for multiple miner indicators simultaneously"
+    severity = "critical"
+    category = "MINER"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.behavior_flagged(/MINER/) >= 1 and
+    hydradragon.behavior_flagged(/./) >= 3
+}
+
+// ── Ransomware + High Memory ─────────────────────────────────────────────────
+// Some ransomware families encrypt files in-memory (e.g. SimpleLocker variants)
+// or exfiltrate data before encryption — detectable as both file rename burst
+// AND abnormally high resident memory.
+
+rule HIPS_Ransomware_And_HighMemory
+{
+  meta:
+    description = "Detects ransomware file rename burst combined with abnormally high process memory — in-memory encryption or data exfiltration"
+    severity = "critical"
+    category = "RANSOMWARE"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.ransomware_behavior(/./) >= 1 and
+    hydradragon.miner_memory(/./) >= 64
+}
+
+rule HIPS_Ransomware_With_MemoryFlag
+{
+  meta:
+    description = "Detects ransomware app that also has sustained high process memory (>64MB) — stronger indicator of active in-memory encryption"
+    severity = "critical"
+    category = "RANSOMWARE"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.behavior_flagged(/RANSOMWARE/) >= 1 and
+    hydradragon.behavior_flagged(/RANSOMWARE_HIGH_MEM/) >= 1
+}
+
+rule HIPS_Ransomware_All_Sensors
+{
+  meta:
+    description = "Detects ransomware confirmed by all four sensors: rename suffix, high entropy, system memory pressure, and high per-process memory"
+    severity = "critical"
+    category = "RANSOMWARE"
+    suggestion = "uninstall"
+  condition:
+    hydradragon.behavior_flagged(/RANSOMWARE/) >= 1 and
+    hydradragon.behavior_flagged(/RANSOMWARE_HIGH_MEM/) >= 1 and
+    hydradragon.behavior_flagged(/RANSOMWARE_HIGH_ENTROPY/) >= 1
+}

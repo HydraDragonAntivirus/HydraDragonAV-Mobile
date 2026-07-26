@@ -430,5 +430,6 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="notif_threat_risk_big">Poziom: %1$s\nPowód: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
+    <string name="behavior_crypto_miner">Wykrywanie kopaczy kryptowalut (profilowanie CPU/pamięci)</string>
 </resources>
 

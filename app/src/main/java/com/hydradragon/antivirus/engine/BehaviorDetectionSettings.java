@@ -31,6 +31,8 @@ public final class BehaviorDetectionSettings {
     /** Malware kicking the user off its own uninstall/device-admin-deactivation
      *  screen, repeatedly (RemovalResistanceGuard). */
     public static final String REMOVAL_RESISTANCE = "removal_resistance";
+    /** Crypto miner detection via sustained CPU + memory profiling (MinerDetector). */
+    public static final String CRYPTO_MINER = "crypto_miner";
 
     private BehaviorDetectionSettings() {}
 
