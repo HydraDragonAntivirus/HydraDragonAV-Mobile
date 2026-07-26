@@ -374,29 +374,45 @@ public final class HipsMonitor {
             if (pkg.isEmpty() || pkg.equals(e.packageName)) canary = true;
         }
 
-        BehaviorFlagEntry flagEntry = pkg.isEmpty() ? null : behaviorFlags.get(pkg);
-        if (flagEntry != null) {
-            flags = flagEntry.flags.size();
-            for (String f : flagEntry.flags) {
-                if (f.startsWith("FILE_READ")) {
-                    fileRead++;
-                    if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) {
-                        fileReadHigh++;
-                    }
-                } else if (f.startsWith("FILE_CREATED")) {
-                    fileCreated++;
-                } else if (f.startsWith("FILE_COPY")) {
-                    fileCopy++;
-                }
-            }
-        }
-
         int created = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countTotalObservedFiles();
         int deleted = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countRecentDeletions();
         boolean hasWiper = false;
-        if (flagEntry != null) {
-            for (String f : flagEntry.flags) {
-                if (f.startsWith("WIPER")) { hasWiper = true; break; }
+        if (pkg.isEmpty()) {
+            for (BehaviorFlagEntry entry : behaviorFlags.values()) {
+                flags += entry.flags.size();
+                for (String f : entry.flags) {
+                    if (f.startsWith("FILE_READ")) {
+                        fileRead++;
+                        if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) {
+                            fileReadHigh++;
+                        }
+                    } else if (f.startsWith("FILE_CREATED")) {
+                        fileCreated++;
+                    } else if (f.startsWith("FILE_COPY")) {
+                        fileCopy++;
+                    } else if (f.startsWith("WIPER")) {
+                        hasWiper = true;
+                    }
+                }
+            }
+        } else {
+            BehaviorFlagEntry flagEntry = behaviorFlags.get(pkg);
+            if (flagEntry != null) {
+                flags = flagEntry.flags.size();
+                for (String f : flagEntry.flags) {
+                    if (f.startsWith("FILE_READ")) {
+                        fileRead++;
+                        if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) {
+                            fileReadHigh++;
+                        }
+                    } else if (f.startsWith("FILE_CREATED")) {
+                        fileCreated++;
+                    } else if (f.startsWith("FILE_COPY")) {
+                        fileCopy++;
+                    } else if (f.startsWith("WIPER")) {
+                        hasWiper = true;
+                    }
+                }
             }
         }
 
