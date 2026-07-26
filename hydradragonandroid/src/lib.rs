@@ -55,6 +55,7 @@ unsafe extern "C" {
         text: *const std::os::raw::c_char,
     ) -> std::os::raw::c_int;
 }
+#[cfg(target_os = "android")]
 const ANDROID_LOG_INFO: std::os::raw::c_int = 4;
 
 /// Writes one line to logcat, or prints to stderr on host builds.
@@ -1209,6 +1210,8 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
         };
         #[cfg(not(target_os = "android"))]
         let mgr_addr = 0;
+        #[cfg(not(target_os = "android"))]
+        let _ = (&asset_dir, &asset_manager, mgr_addr);
         INIT_STARTED.store(true, std::sync::atomic::Ordering::Release);
 
         std::thread::Builder::new()
@@ -2000,13 +2003,13 @@ fn run_scan(
     let hashes;
     let androguard_json;
     let skip_heavy: Vec<bool>;
-    let dex_scans: Vec<Option<dex_scan::DexScan>>;
-    let dex_ms;
+    let mut dex_scans: Vec<Option<dex_scan::DexScan>> = Vec::new();
+    let mut dex_ms: u128 = 0;
     let hydradragon_meta;
     let mut module_meta: Vec<(&str, &[u8])>;
-    let emulated: Vec<emulate::EmulationResult>;
+    let mut emulated: Vec<emulate::EmulationResult> = Vec::new();
     let emulated_strings: Vec<Option<Vec<u8>>>;
-    let emulate_ms;
+    let mut emulate_ms: u128 = 0;
 
     {
         // Dangerous-permission count from the (in-memory) manifest bytes.
@@ -2085,20 +2088,75 @@ fn run_scan(
             })
             .collect();
 
-        // DEX static analysis.
-        let t_dex = std::time::Instant::now();
-        dex_scans = buffers
-            .iter()
-            .enumerate()
-            .map(|(i, b)| {
-                if !skip_heavy[i] && b.data.starts_with(b"dex\n") {
-                    dex_scan::scan(&b.data)
+        // DEX static analysis and native-code emulation are independent —
+        // run them in parallel.
+        std::thread::scope(|s| {
+            // Thread 1: DEX static analysis
+            s.spawn(|| {
+                let t0 = std::time::Instant::now();
+                dex_scans = buffers
+                    .iter()
+                    .enumerate()
+                    .map(|(i, b)| {
+                        if !skip_heavy[i] && b.data.starts_with(b"dex\n") {
+                            dex_scan::scan(&b.data)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                dex_ms = t0.elapsed().as_millis();
+            });
+            // Thread 2: Native code emulation (Unicorn)
+            s.spawn(|| {
+                let t0 = std::time::Instant::now();
+                const MAX_EMULATED_BUFFERS: usize = 8;
+                emulated = if NATIVE_EMULATION_ENABLED
+                    .load(std::sync::atomic::Ordering::Relaxed)
+                {
+                    let mut seen_hashes: std::collections::HashSet<String> = std::collections::HashSet::new();
+                    let mut emulated_count = 0usize;
+                    buffers
+                        .iter()
+                        .enumerate()
+                        .map(|(i, b)| {
+                            if skip_heavy[i] || !b.data.starts_with(b"\x7fELF") {
+                                return emulate::EmulationResult::default();
+                            }
+                            if emulated_count >= MAX_EMULATED_BUFFERS {
+                                return emulate::EmulationResult::default();
+                            }
+                            if !seen_hashes.insert(md5_hex(&b.data)) {
+                                return emulate::EmulationResult::default();
+                            }
+                            emulated_count += 1;
+                            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                emulate::emulate(&b.data)
+                            }))
+                            .unwrap_or_default()
+                        })
+                        .collect()
                 } else {
-                    None
+                    buffers.iter().map(|_| emulate::EmulationResult::default()).collect()
+                };
+                emulate_ms = t0.elapsed().as_millis();
+            });
+        });
+
+        // Emulated strings — derived from emulated results.
+        emulated_strings = emulated
+            .iter()
+            .map(|r| {
+                let mut parts: Vec<String> = Vec::new();
+                if !r.strings.is_empty() {
+                    parts.push(r.strings.join("\n"));
                 }
+                if !r.api_calls.is_empty() {
+                    parts.push(r.api_calls.iter().map(|a| a.name.clone()).collect::<Vec<_>>().join("\n"));
+                }
+                if parts.is_empty() { None } else { Some(parts.join("\n").into_bytes()) }
             })
             .collect();
-        dex_ms = t_dex.elapsed().as_millis();
 
         // Merge DEX findings into hydradragon meta.
         hydradragon_meta = merge_dex_findings(hydradragon, &dex_scans);
@@ -2113,64 +2171,6 @@ fn run_scan(
                 module_meta.push(("hydradragon", h));
             }
         }
-
-        // Native code emulation. Unicorn-based emulation is by far the heaviest
-        // pass in this pipeline, and a single APK can legitimately contain
-        // dozens of ELF buffers: multi-ABI native libs (arm64-v8a/armeabi-v7a/
-        // x86/x86_64 builds of the SAME code, only one of which ever executes
-        // on this device) plus nested/repackaged APKs that duplicate identical
-        // .so files. Emulating every one of those separately buys no extra
-        // detection coverage — identical bytes behave identically under
-        // emulation — so buffers are deduped by content hash first, and the
-        // per-scan emulation count is capped so one native-lib-heavy APK (e.g.
-        // a game engine bundling 4 ABIs) can't blow the scan time budget.
-        const MAX_EMULATED_BUFFERS: usize = 8;
-        let t_emulate = std::time::Instant::now();
-        emulated = if NATIVE_EMULATION_ENABLED
-            .load(std::sync::atomic::Ordering::Relaxed)
-        {
-            let mut seen_hashes: std::collections::HashSet<String> = std::collections::HashSet::new();
-            let mut emulated_count = 0usize;
-            buffers
-                .iter()
-                .enumerate()
-                .map(|(i, b)| {
-                    if skip_heavy[i] || !b.data.starts_with(b"\x7fELF") {
-                        return emulate::EmulationResult::default();
-                    }
-                    if emulated_count >= MAX_EMULATED_BUFFERS {
-                        return emulate::EmulationResult::default();
-                    }
-                    // Dedupe identical native libs (same code across ABIs or
-                    // duplicated inside nested archives) before paying for
-                    // emulation.
-                    if !seen_hashes.insert(md5_hex(&b.data)) {
-                        return emulate::EmulationResult::default();
-                    }
-                    emulated_count += 1;
-                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        emulate::emulate(&b.data)
-                    }))
-                    .unwrap_or_default()
-                })
-                .collect()
-        } else {
-            buffers.iter().map(|_| emulate::EmulationResult::default()).collect()
-        };
-        emulated_strings = emulated
-            .iter()
-            .map(|r| {
-                let mut parts: Vec<String> = Vec::new();
-                if !r.strings.is_empty() {
-                    parts.push(r.strings.join("\n"));
-                }
-                if !r.api_calls.is_empty() {
-                    parts.push(r.api_calls.iter().map(|a| a.name.clone()).collect::<Vec<_>>().join("\n"));
-                }
-                if parts.is_empty() { None } else { Some(parts.join("\n").into_bytes()) }
-            })
-            .collect();
-        emulate_ms = t_emulate.elapsed().as_millis();
     }
 
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
@@ -2432,33 +2432,56 @@ fn run_scan(
 
     let tlsh_ms = {
         let t_tlsh = std::time::Instant::now();
-        for (i, b) in buffers.iter().enumerate() {
-            if skip_by_size(&b.data) {
-                continue;
-            }
-            let db = if b.data.starts_with(b"\x7fELF") {
-                Some(&engine.tlsh_db_elf)
-            } else if b.data.starts_with(b"dex\n") {
-                Some(&engine.tlsh_db_dex)
-            } else if is_apk_zip(&b.data) {
-                Some(&engine.tlsh_db_apk)
-            } else {
-                None
-            };
-            if let Some(db) = db {
-                if let Some(dist) = tlsh_nearest(db, &b.data) {
-                    let obj_path = if b.entry_name.is_none() {
-                        path.to_string()
-                    } else {
-                        match &b.entry_name {
-                            Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path}!/unnamed_{i}"),
+        let n = buffers.len();
+        let num_workers = std::thread::available_parallelism()
+            .map(|n| n.get()).unwrap_or(2).min(4).max(1);
+        let tlsh_results = std::sync::Mutex::new(Vec::new());
+        let chunk_size = (n + num_workers - 1) / num_workers;
+        // Borrow references once so the spawned closures only capture copies.
+        let buffers = &*buffers;
+        let engine = engine;
+        let path: &str = path;
+        let tlsh_results = &tlsh_results;
+        std::thread::scope(|s| {
+            for worker in 0..num_workers {
+                let start = worker * chunk_size;
+                let end = (start + chunk_size).min(n);
+                if start >= end { continue; }
+                s.spawn(move || {
+                    let mut local_dets = Vec::new();
+                    for i in start..end {
+                        let b = &buffers[i];
+                        if skip_by_size(&b.data) { continue; }
+                        let db = if b.data.starts_with(b"\x7fELF") {
+                            Some(&engine.tlsh_db_elf)
+                        } else if b.data.starts_with(b"dex\n") {
+                            Some(&engine.tlsh_db_dex)
+                        } else if is_apk_zip(&b.data) {
+                            Some(&engine.tlsh_db_apk)
+                        } else {
+                            None
+                        };
+                        if let Some(db) = db {
+                            if let Some(dist) = tlsh_nearest(db, &b.data) {
+                                let obj_path = if b.entry_name.is_none() {
+                                    path.to_string()
+                                } else {
+                                    match &b.entry_name {
+                                        Some(entry) => format!("{path}!/{entry}"),
+                                        None => format!("{path}!/unnamed_{i}"),
+                                    }
+                                };
+                                local_dets.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
+                            }
                         }
-                    };
-                    detections.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
-                }
+                    }
+                    if !local_dets.is_empty() {
+                        tlsh_results.lock().unwrap().extend(local_dets);
+                    }
+                });
             }
-        }
+        });
+        detections.append(&mut *tlsh_results.lock().unwrap());
         t_tlsh.elapsed().as_millis()
     };
 

@@ -2,7 +2,6 @@
 /// without unicorn-engine-sys / bindgen / VS headers.
 
 pub fn probe_emulation() -> bool { false }
-pub fn emulation_available() -> bool { false }
 pub fn host_arch() -> &'static str { "host" }
 pub fn unsupported_reason() -> &'static str { "not available on host" }
 
