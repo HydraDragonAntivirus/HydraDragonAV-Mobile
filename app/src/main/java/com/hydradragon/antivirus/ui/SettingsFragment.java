@@ -982,8 +982,15 @@ public class SettingsFragment extends Fragment {
                 // previous version only saved the preference and restarted the
                 // activity, which did nothing because no locale was ever applied.
                 // AppCompat persists this across process restarts on its own.
-                AppCompatDelegate.setApplicationLocales(
-                    androidx.core.os.LocaleListCompat.forLanguageTags(code));
+                // "en" maps to the default locale (no override) so Android
+                // resolves to values/strings.xml instead of values-en/.
+                if ("en".equals(code)) {
+                    AppCompatDelegate.setApplicationLocales(
+                        androidx.core.os.LocaleListCompat.getEmptyLocaleList());
+                } else {
+                    AppCompatDelegate.setApplicationLocales(
+                        androidx.core.os.LocaleListCompat.forLanguageTags(code));
+                }
             }).show();
     }
 
