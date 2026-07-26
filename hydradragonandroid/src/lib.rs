@@ -60,7 +60,7 @@ const ANDROID_LOG_INFO: std::os::raw::c_int = 4;
 /// (dex scan, clamav/YARA, ML model, native-code emulation, ...) is actually
 /// slow for a given file, not just "NativeScanner" as one lump sum the way
 /// the Java-side FILE_ENGINE_TIMING/SLOWEST_ENGINE logs already do.
-fn android_log(msg: &str) {
+pub(crate) fn android_log(msg: &str) {
     use std::ffi::CString;
     let (Ok(tag), Ok(text)) = (
         CString::new("HydraDragon-RustTiming"),
@@ -73,9 +73,10 @@ fn android_log(msg: &str) {
 
 /// Writes a `HydraDragon-RustTiming` performance/diagnostic line to logcat
 /// (per-file init/load timings, `collect_buffers`'s extraction stats, etc.).
+#[macro_export]
 macro_rules! rust_timing_log {
     ($($arg:tt)*) => {
-        android_log(&format!($($arg)*))
+        $crate::android_log(&format!($($arg)*))
     };
 }
 

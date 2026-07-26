@@ -44,15 +44,6 @@ EXAMPLES:
 
 $ErrorActionPreference = "Stop"
 
-# ---------- Test mode (skips NDK build) ----------
-if ($Test) {
-    Push-Location $PSScriptRoot
-    cargo test --lib suricata_scan 2>&1
-    $ok = $LASTEXITCODE
-    Pop-Location
-    exit $ok
-}
-
 # ---------- NDK ----------
 $sdkRoot = "${env:LOCALAPPDATA}\Android\Sdk"
 if (-not $NdkHome) {
@@ -110,6 +101,17 @@ if (-not (Get-Command "cargo-ndk" -ErrorAction SilentlyContinue)) {
 # toolchain (CMAKE_TOOLCHAIN_FILE set above). No manual unicorn
 # C-source build or pkg-config bypass needed.
 $env:PKG_CONFIG_ALLOW_CROSS = "1"
+
+# ---------- Test mode (single ABI, skip APK copy) ----------
+if ($Test) {
+    $buildArgs = @()
+    if ($Configuration -eq "release") { $buildArgs = @("--release") }
+    Push-Location $PSScriptRoot
+    cargo ndk -t aarch64-linux-android build @buildArgs
+    $ok = $LASTEXITCODE
+    Pop-Location
+    exit $ok
+}
 
 foreach ($a in $abiList) {
     $abi = $a.Trim()

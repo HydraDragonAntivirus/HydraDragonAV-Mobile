@@ -794,7 +794,7 @@ dependencies = [
 [[package]]
 name = "daachorse"
 version = "4.0.0"
-source = "git+https://github.com/HydraDragonAntivirus/daachorse.git#0f7e02f389edced90922cb9830800628fc43ed61"
+source = "git+https://github.com/HydraDragonAntivirus/daachorse#0f7e02f389edced90922cb9830800628fc43ed61"
 
 [[package]]
 name = "darling"
@@ -1403,6 +1403,7 @@ name = "hydradragonandroid"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "daachorse",
  "dex-analysis",
  "dex-core",
  "hydradragonclamav",
@@ -1413,7 +1414,9 @@ dependencies = [
  "libc",
  "md-5 0.11.0",
  "memchr",
+ "regex",
  "rusqlite",
+ "serde",
  "serde_json",
  "tlsh-rs",
  "unicorn-engine",
