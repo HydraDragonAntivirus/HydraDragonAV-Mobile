@@ -437,6 +437,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="behavior_crypto_miner">Crypto miner detection (CPU/memory profiling)</string>
     <string name="behavior_file_read_estimator">File read estimation (side-channel I/O profiling)</string>
     <string name="behavior_wiper">Wiper detection (rapid file deletion + memory)</string>
+    <string name="behavior_auto_kill">Auto-kill foreground malware (accessibility)</string>
     <string name="behavior_detail">Behavior Details</string>
     <string name="btn_behavior_graph">Behavior Graph</string>
     <string name="graph_ui_spam">UI Spam Events</string>

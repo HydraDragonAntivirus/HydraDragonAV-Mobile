@@ -272,6 +272,7 @@ public class SettingsFragment extends Fragment {
         addBehaviorToggle(R.string.behavior_crypto_miner, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.CRYPTO_MINER);
         addBehaviorToggle(R.string.behavior_file_read_estimator, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.FILE_READ_ESTIMATOR);
         addBehaviorToggle(R.string.behavior_wiper, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.WIPER);
+        addBehaviorToggle(R.string.behavior_auto_kill, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.AUTO_KILL);
 
         // Web Shield is core protection (malicious-domain/IP DNS filtering),
         // not an extra — it lives in Protection, not Premium Features.

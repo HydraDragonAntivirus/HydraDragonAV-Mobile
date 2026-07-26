@@ -4,7 +4,10 @@ import android.accessibilityservice.AccessibilityService;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -67,6 +70,36 @@ public class DynamicAnalysisService extends AccessibilityService {
     /** Best-known foreground package name, or "" if none observed yet. */
     public static String getForegroundPackage() { return sForegroundPackage; }
 
+    private static volatile DynamicAnalysisService sInstance = null;
+
+    // ── Foreground-app force-stop via accessibility automation ─────────────
+    // Android gives no API for a regular app to stop the foreground app.
+    // Instead: open Settings → App info → Force Stop, then click the
+    // confirmation dialog, all through AccessibilityService. After the
+    // target is stopped, navigate back to HydraDragon's own activity.
+    private static volatile String sFsTarget = null;
+    private static volatile boolean sFsConfirmDone = false;
+    private static volatile String sFsAppName = null;
+    private static volatile String sFsReason = null;
+
+    public static void forceStopForegroundApp(String pkg, String appName, String reason) {
+        DynamicAnalysisService inst = sInstance;
+        if (inst == null || pkg == null || pkg.isEmpty()) return;
+        sFsTarget = pkg;
+        sFsConfirmDone = false;
+        sFsAppName = appName != null ? appName : pkg;
+        sFsReason = reason != null ? reason : "Malicious behaviour";
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + pkg));
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            inst.startActivity(intent);
+        } catch (Throwable t) {
+            Log.w(TAG, "forceStopForegroundApp: failed to open Settings for " + pkg, t);
+            sFsTarget = null;
+        }
+    }
+
     // Single, self-replacing alert notification (no spam).
     private static final int ALERT_NOTIF_ID = 0xA1E7;
     private volatile String lastUrlAlert = "";
@@ -86,6 +119,7 @@ public class DynamicAnalysisService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
+        sInstance = this;
         Log.i(TAG, "Dynamic Analysis Accessibility Service Connected");
         createNotificationChannel();
     }
@@ -173,8 +207,7 @@ public class DynamicAnalysisService extends AccessibilityService {
 
                 if (!trusted && BehaviorFlags.isFlagged(this, pkg)
                         && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg)) {
-                    Log.e(TAG, "FLAGGED MALWARE OPENED ON SCREEN: " + pkg + " -> kicking to home & showing MalwareFoundActivity");
-                    performGlobalAction(GLOBAL_ACTION_HOME);
+                    Log.e(TAG, "FLAGGED MALWARE OPENED ON SCREEN: " + pkg + " -> force-stop via accessibility");
                     String reason = BehaviorFlags.reasonFor(this, pkg);
                     ThreatResult threat = new ThreatResult.Builder(pkg)
                             .setAppName(pkg)
@@ -183,6 +216,83 @@ public class DynamicAnalysisService extends AccessibilityService {
                             .setReasons(java.util.Collections.singletonList(reason != null ? reason : "Detected Malware"))
                             .build();
                     com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, threat);
+                }
+            }
+
+            // ── Foreground force-stop automation ─────────────────────────
+            // If a force-stop was requested for this package, navigate the
+            // Settings → Force Stop → OK flow through accessibility.
+            if (sFsTarget != null) {
+                String settingsPkg = "com.android.settings";
+                // Step 1 + 2: In Settings app info page → click Force Stop
+                boolean onSettings = pkg.equals(settingsPkg);
+                boolean onSystemDialog = "android".equals(pkg) || "com.android.systemui".equals(pkg);
+                if (onSettings && !sFsConfirmDone) {
+                    AccessibilityNodeInfo root = getRootInActiveWindow();
+                    if (root != null) {
+                        java.util.List<AccessibilityNodeInfo> nodes =
+                            root.findAccessibilityNodeInfosByText("Force stop");
+                        if (nodes == null || nodes.isEmpty()) {
+                            nodes = root.findAccessibilityNodeInfosByViewId(
+                                "com.android.settings:id/force_stop_button");
+                        }
+                        if (nodes != null && !nodes.isEmpty()) {
+                            AccessibilityNodeInfo btn = nodes.get(0);
+                            if (btn.isClickable()) {
+                                btn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                sFsConfirmDone = true;
+                                Log.i(TAG, "force-stop: clicked Force Stop button for " + sFsTarget);
+                            }
+                            for (AccessibilityNodeInfo n : nodes) n.recycle();
+                        }
+                        root.recycle();
+                    }
+                }
+                // Step 2: On confirmation dialog → click OK
+                if (onSystemDialog && sFsConfirmDone) {
+                    AccessibilityNodeInfo root = getRootInActiveWindow();
+                    if (root != null) {
+                        java.util.List<AccessibilityNodeInfo> nodes =
+                            root.findAccessibilityNodeInfosByText("OK");
+                        if (nodes == null || nodes.isEmpty()) {
+                            nodes = root.findAccessibilityNodeInfosByText(
+                                android.os.Build.VERSION.SDK_INT >= 24 ? "OK" : "Ok");
+                        }
+                        if (nodes != null && !nodes.isEmpty()) {
+                            for (AccessibilityNodeInfo n : nodes) {
+                                if (n.isClickable()) {
+                                    n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                    Log.i(TAG, "force-stop: confirmed for " + sFsTarget);
+                                    break;
+                                }
+                            }
+                            for (AccessibilityNodeInfo n : nodes) n.recycle();
+                        }
+                        root.recycle();
+                    }
+                    // Step 3: target stopped → show MalwareFoundActivity
+                    try {
+                        Intent malware = new Intent(this, com.hydradragon.antivirus.ui.MalwareFoundActivity.class);
+                        malware.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        malware.putExtra(com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_APP_NAME, sFsAppName);
+                        malware.putExtra(com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_PACKAGE_NAME, sFsTarget);
+                        malware.putExtra(com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_REASON, sFsReason);
+                        malware.putExtra(com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_RISK_SCORE, 100);
+                        startActivity(malware);
+                    } catch (Throwable t) {
+                        Log.w(TAG, "force-stop: failed to show MalwareFoundActivity", t);
+                        try {
+                            Intent fallback = new Intent(this, com.hydradragon.antivirus.MainActivity.class);
+                            fallback.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(fallback);
+                        } catch (Throwable t2) {
+                            Log.w(TAG, "force-stop: fallback launch failed", t2);
+                        }
+                    }
+                    sFsTarget = null;
+                    sFsConfirmDone = false;
+                    sFsAppName = null;
+                    sFsReason = null;
                 }
             }
 

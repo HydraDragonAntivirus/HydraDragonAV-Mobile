@@ -57,8 +57,28 @@ public final class BehaviorResponse {
 
     private BehaviorResponse() {}
 
-    public static void killAndPromptUninstall(Context context, String pkg) {
-        if (pkg == null || pkg.isEmpty()) return;
+    /** @return true if the app was in the foreground and force-stop via accessibility was initiated */
+    public static boolean killAndPromptUninstall(Context context, String pkg) {
+        return killAndPromptUninstall(context, pkg, null, null);
+    }
+
+    /** @return true if the app was in the foreground and force-stop via accessibility was initiated */
+    public static boolean killAndPromptUninstall(Context context, String pkg, String appName, String reason) {
+        if (pkg == null || pkg.isEmpty()) return false;
+
+        // Foreground app: use accessibility force-stop (Settings → Force Stop → OK → our malware screen)
+        String fgPkg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+        if (pkg.equals(fgPkg)) {
+            if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(
+                    context, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.AUTO_KILL)) {
+                Log.i(TAG, "killAndPromptUninstall: foreground app " + pkg + " -> accessibility force-stop");
+                com.hydradragon.antivirus.service.DynamicAnalysisService.forceStopForegroundApp(pkg, appName, reason);
+                return true;
+            }
+            Log.i(TAG, "killAndPromptUninstall: foreground app " + pkg + " but auto-kill is off");
+        }
+
+        // Background app: existing kill + uninstall behavior
         try {
             ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             if (am != null) am.killBackgroundProcesses(pkg);
@@ -72,6 +92,7 @@ public final class BehaviorResponse {
         } catch (Throwable t) {
             Log.w(TAG, "uninstall prompt failed for " + pkg, t);
         }
+        return false;
     }
 
     /** Entry point for a regular scan result (quick/full/custom, background or
@@ -93,7 +114,10 @@ public final class BehaviorResponse {
         String pkg = threat.getPackageName();
         boolean installed = pkg != null && !pkg.isEmpty() && isPackageInstalled(context, pkg);
         if (installed) {
-            killAndPromptUninstall(context, pkg);
+            boolean wasForeground = killAndPromptUninstall(context, pkg,
+                threat.getAppName(),
+                threat.getReasons().isEmpty() ? null : threat.getReasons().get(0));
+            if (wasForeground) return; // force-stop automation already shows MalwareFoundActivity
         } else {
             promptDeleteFile(context, threat);
         }
@@ -159,6 +183,26 @@ public final class BehaviorResponse {
         }
     }
 
+    /** Same as the background portion of {@link #killAndPromptUninstall} but
+     *  without the foreground-force-stop path — used by {@link #autoDeleteThreat}
+     *  which must be silent and cannot involve the accessibility navigation. */
+    private static void killBackgroundOnly(Context context, String pkg) {
+        if (pkg == null || pkg.isEmpty()) return;
+        try {
+            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            if (am != null) am.killBackgroundProcesses(pkg);
+        } catch (Throwable t) {
+            Log.w(TAG, "killBackgroundOnly failed for " + pkg, t);
+        }
+        try {
+            Intent del = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + pkg));
+            del.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(del);
+        } catch (Throwable t) {
+            Log.w(TAG, "uninstall prompt (auto-delete) failed for " + pkg, t);
+        }
+    }
+
     /** Entry point used when {@link AutoDeleteMalware} is on: removes the
      *  threat right away with no ask/notification step. An installed app
      *  still has to go through the system uninstall confirmation (auto-fired
@@ -172,7 +216,7 @@ public final class BehaviorResponse {
         String pkg = threat.getPackageName();
         boolean installed = pkg != null && !pkg.isEmpty() && isPackageInstalled(context, pkg);
         if (installed) {
-            killAndPromptUninstall(context, pkg);
+            killBackgroundOnly(context, pkg);
             com.hydradragon.antivirus.service.ThreatLogger.logThreat(context, threat,
                     "auto-delete: uninstall requested");
         } else {
