@@ -80,7 +80,7 @@ public final class RansomwareBehaviorGuard {
     private static final int FILE_CREATE_BURST_THRESHOLD = 5;
     /** package -> [windowStartMs, createCount]. */
     private static final Map<String, long[]> fileCreateBurst = new HashMap<>();
-    private static final long COPY_SIZE_TOLERANCE = 0.15; // 15% size tolerance for copy correlation
+    private static final double COPY_SIZE_TOLERANCE = 0.15; // 15% size tolerance for copy correlation
 
     /** package -> last-observed state bitmask. Absent = never observed yet. */
     private static final Map<String, Integer> lastStorageState = new HashMap<>();

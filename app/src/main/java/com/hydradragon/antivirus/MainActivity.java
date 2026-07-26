@@ -662,7 +662,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void showFragment(Fragment fragment) {
+    public void showFragment(Fragment fragment) {
         getSupportFragmentManager()
             .beginTransaction()
             .replace(R.id.content_frame, fragment)

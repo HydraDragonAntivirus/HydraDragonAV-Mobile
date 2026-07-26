@@ -321,7 +321,6 @@ public class ScanFragment extends Fragment {
                     .setNeutralButton(getString(R.string.btn_ignore_signature), (dialog, which) ->
                         showIgnoreSignatureDialog(threat))
                     .show();
-                }
             }
         });
 

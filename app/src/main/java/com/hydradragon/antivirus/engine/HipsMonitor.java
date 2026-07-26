@@ -418,7 +418,7 @@ public final class HipsMonitor {
         return new BehaviorGraphData(
             pkg, ui, notif, cj, rw, net, minerMem, fileRead, fileReadHigh,
             fileCreated, fileCopy, flags,
-            sh, rr, lc, canary, da, ha, isRooted, isDebug,
+            sh, rr, lc, canary, da, ha, isRooted, isDebugMode,
             created, deleted, hasWiper);
     }
 

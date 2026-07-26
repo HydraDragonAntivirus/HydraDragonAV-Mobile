@@ -135,7 +135,7 @@ public class DashboardFragment extends Fragment {
             btnGraph.setOnClickListener(v -> {
                 if (getActivity() instanceof com.hydradragon.antivirus.MainActivity) {
                     ((com.hydradragon.antivirus.MainActivity) getActivity())
-                        .showFragment(new BehaviorGraphFragment());
+                        .showFragment(BehaviorGraphFragment.newInstance(""));
                 }
             });
         }
