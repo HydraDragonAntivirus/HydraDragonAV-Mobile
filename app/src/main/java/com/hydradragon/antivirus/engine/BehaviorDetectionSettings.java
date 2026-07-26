@@ -33,6 +33,8 @@ public final class BehaviorDetectionSettings {
     public static final String REMOVAL_RESISTANCE = "removal_resistance";
     /** Crypto miner detection via sustained CPU + memory profiling (MinerDetector). */
     public static final String CRYPTO_MINER = "crypto_miner";
+    /** File read estimation via /proc/<pid>/io side-channel (FileReadEstimator). */
+    public static final String FILE_READ_ESTIMATOR = "file_read_estimator";
 
     private BehaviorDetectionSettings() {}
 

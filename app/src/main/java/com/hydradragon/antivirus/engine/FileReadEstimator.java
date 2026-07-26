@@ -24,7 +24,12 @@ public final class FileReadEstimator {
 
     private FileReadEstimator() {}
 
-    public static synchronized void observeFile(String path, long sizeBytes) {
+    public static synchronized void observeFile(android.content.Context ctx, String path, long sizeBytes) {
+        if (ctx != null && !BehaviorDetectionSettings.isEnabled(ctx, BehaviorDetectionSettings.FILE_READ_ESTIMATOR)) {
+            knownFiles.clear();
+            procBaselines.clear();
+            return;
+        }
         if (path == null || sizeBytes <= 0) return;
         knownFiles.put(path, new FileEntry(path, sizeBytes, System.currentTimeMillis()));
         if (knownFiles.size() > 2048) {
@@ -32,7 +37,12 @@ public final class FileReadEstimator {
         }
     }
 
-    public static synchronized void scan() {
+    public static synchronized void scan(android.content.Context ctx) {
+        if (ctx != null && !BehaviorDetectionSettings.isEnabled(ctx, BehaviorDetectionSettings.FILE_READ_ESTIMATOR)) {
+            knownFiles.clear();
+            procBaselines.clear();
+            return;
+        }
         try {
             removeStale();
 

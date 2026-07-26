@@ -431,5 +431,6 @@
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">加密货币挖矿检测（CPU/内存分析）</string>
+    <string name="behavior_file_read_estimator">文件读取估计（侧信道I/O分析）</string>
 </resources>
 

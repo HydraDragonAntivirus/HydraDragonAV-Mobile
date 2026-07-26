@@ -431,5 +431,6 @@
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
     <string name="notif_process_alert_text">المعرف: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">اكتشاف تعدين العملات الرقمية (مراقبة المعالج/الذاكرة)</string>
+    <string name="behavior_file_read_estimator">تقدير قراءة الملف (مراقبة الإدخال/الإخراج الجانبية)</string>
 </resources>
 

@@ -96,7 +96,7 @@ public class GuardService extends Service {
                         java.io.File file = new java.io.File(path);
                         if (!file.exists() || !file.isFile()) continue;
                         com.hydradragon.antivirus.engine.FileReadEstimator.observeFile(
-                            file.getAbsolutePath(), file.length());
+                            GuardService.this, file.getAbsolutePath(), file.length());
                         // Feed the file event into the rename-burst + memory-pressure
                         // ransomware detection pipeline.
                         java.io.File parent = file.getParentFile();
@@ -171,7 +171,7 @@ public class GuardService extends Service {
                             java.io.File file = new java.io.File(path);
                             if (!file.exists() || !file.isFile()) continue;
                             com.hydradragon.antivirus.engine.FileReadEstimator.observeFile(
-                                file.getAbsolutePath(), file.length());
+                                GuardService.this, file.getAbsolutePath(), file.length());
                             java.io.File parent = file.getParentFile();
                             if (parent != null) {
                                 com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.onFileEvent(
@@ -271,7 +271,6 @@ public class GuardService extends Service {
     private NetworkMonitor networkMonitor;
     private ProcessDetector processDetector;
     private com.hydradragon.antivirus.engine.MinerDetector minerDetector;
-    private com.hydradragon.antivirus.engine.FileReadEstimator fileReadEstimator;
     private volatile boolean engineLoading = true;
     private ScheduledExecutorService scheduler;
     private int alertNotificationId = ALERT_NOTIFICATION_BASE;
@@ -566,7 +565,7 @@ public class GuardService extends Service {
         }, 30, 15, TimeUnit.SECONDS);
 
         scheduler.scheduleAtFixedRate(() -> {
-            try { com.hydradragon.antivirus.engine.FileReadEstimator.scan(); }
+            try { com.hydradragon.antivirus.engine.FileReadEstimator.scan(GuardService.this); }
             catch (Throwable t) { Log.e(TAG, "FileReadEstimator failed", t); }
         }, 60, 30, TimeUnit.SECONDS);
     }

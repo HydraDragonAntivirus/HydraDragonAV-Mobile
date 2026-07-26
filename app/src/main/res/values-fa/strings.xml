@@ -431,5 +431,6 @@
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
     <string name="notif_process_alert_text">PID: %1$d — %2$s</string>
     <string name="behavior_crypto_miner">تشخیص استخراج ارز دیجیتال (پروفایل CPU/حافظه)</string>
+    <string name="behavior_file_read_estimator">تخمین خواندن فایل (پروفایل I/O کانال جانبی)</string>
 </resources>
 

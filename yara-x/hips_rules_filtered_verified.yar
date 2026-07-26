@@ -667,3 +667,57 @@ rule HIPS_Ransomware_All_Sensors
     hydradragon.behavior_flagged(/RANSOMWARE_HIGH_MEM/) >= 1 and
     hydradragon.behavior_flagged(/RANSOMWARE_HIGH_ENTROPY/) >= 1
 }
+
+// ── File Read Estimation ─────────────────────────────────────────────────────
+// FileReadEstimator uses /proc/<pid>/io read_bytes deltas + known file sizes +
+// cache ratio + timing + memory to estimate which file a process read.
+// This is an estimation, not a certainty — see FileReadEstimator.java.
+
+rule HIPS_FileRead_Detected
+{
+  meta:
+    description = "Detects behavioural file-read estimation — a process was observed reading a file whose size matches a known file on disk (estimation, see FileReadEstimator.java)"
+    severity = "low"
+    category = "FILE_READ"
+    suggestion = "none"
+  condition:
+    hydradragon.behavior_flagged(/FILE_READ/) >= 1
+}
+
+rule HIPS_FileRead_HighConfidence
+{
+  meta:
+    description = "Detects high-confidence file-read estimation (≥80% confidence) — the I/O delta closely matches a known file size and was recently modified"
+    severity = "medium"
+    category = "FILE_READ"
+    suggestion = "warn"
+  condition:
+    hydradragon.behavior_flagged(/FILE_READ.*conf=(8[0-9]|9[0-9]|100)/) >= 1
+}
+
+rule HIPS_FileRead_DataExfil
+{
+  meta:
+    description = "Detects an app reading sensitive document files with minimal cache (cold read) — possible data exfiltration"
+    severity = "high"
+    category = "FILE_READ"
+    suggestion = "warn"
+  condition:
+    hydradragon.behavior_flagged(/FILE_READ.*file=.*\.(doc|docx|xls|xlsx|pdf|txt|csv|json|db|sqlite)/i) >= 1 and
+    hydradragon.behavior_flagged(/FILE_READ.*cache=(0|[0-9]|[1-2][0-9])/) >= 1
+}
+
+rule HIPS_FileRead_WithNetwork
+{
+  meta:
+    description = "Detects file read estimation combined with network activity — app reads local files and communicates externally (exfiltration pattern)"
+    severity = "high"
+    category = "FILE_READ"
+    suggestion = "warn"
+  condition:
+    hydradragon.behavior_flagged(/FILE_READ/) >= 1 and
+    (
+      hydradragon.network_connections(/./) >= 5 or
+      hydradragon.behavior_flagged(/NETWORK/) >= 1
+    )
+}
