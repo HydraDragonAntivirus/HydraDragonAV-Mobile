@@ -378,7 +378,7 @@ fn emulate_body(so_bytes: &[u8], stop_handle: &AtomicUsize) -> EmulationResult {
         _ => return result, // unsupported/unknown machine — skip, not an error
     };
     let is_x86 = matches!(info.machine, EM_386 | EM_X86_64);
-    let is_64 = matches!(info.machine, EM_AARCH64 | EM_X86_64);
+    let is_64 = info.is_64;
     let lr_reg: Option<i32> = match info.machine {
         EM_ARM => Some(RegisterARM::LR as i32),
         EM_AARCH64 => Some(RegisterARM64::LR as i32),
