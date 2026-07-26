@@ -222,6 +222,14 @@ impl AtomFilterBuilder {
                 (t != 0).then_some(t)
             })
             .collect();
+        // Ensure per-target DFAs for all Android-relevant targets are built
+        // even if no signature directly targets them. A buffer whose file type
+        // is DEX (16) or APK (17) currently falls back to the "full" automaton
+        // (which includes atoms for desktop-only targets 1, 2, 4, 9, 12 —
+        // 34K+ useless file-type skips per large buffer). Adding them here
+        // builds a smaller DFA containing only generic (target=0) atoms +
+        // any target-specific atoms, eliminating the ft_sk waste entirely.
+        specific_targets.extend_from_slice(&[16, 17]);
         specific_targets.sort();
         specific_targets.dedup();
 

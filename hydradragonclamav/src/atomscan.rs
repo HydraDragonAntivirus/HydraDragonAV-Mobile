@@ -1,5 +1,6 @@
 use crate::atomfilter::{AtomFilterDb, PerTarget, SlotId, SubsigSlot};
 use crate::atomfilter::{ExtSlot, SlotDef};
+use daachorse::DoubleArrayAhoCorasick;
 
 /// Per-slot hit counts (and last-seen match start offset) for one buffer.
 pub struct SlotCounts<'a> {
@@ -62,10 +63,15 @@ impl<'a> AtomFilterScanner<'a> {
             .unwrap_or(&per_target[0])
     }
 
+    /// Run the dense DFA on one contiguous byte slice with its own output
+    /// buffers.  Used both single-threaded and as a per-chunk worker in
+    /// `run_dense_parallel`.
     #[allow(clippy::too_many_arguments)]
-    fn run_dense_automaton(
-        pt: &PerTarget,
-        exact: bool,
+    fn run_dense_chunk(
+        pma: &DoubleArrayAhoCorasick<u32>,
+        dense: &[u32],
+        atom_to_slots: &[Box<[SlotId]>],
+        slot_to_values: &[Box<[u32]>],
         slots: &[SlotDef],
         saturated: &mut [u64],
         value_remaining: &mut [u32],
@@ -75,36 +81,11 @@ impl<'a> AtomFilterScanner<'a> {
         last_offset: &mut [u32],
         out_stats: &mut AutomatonStats,
     ) {
-        let (pma, dense) = if exact {
-            match pt.exact.as_ref() {
-                Some(pma) => {
-                    let dense = pt.exact_dense.get_or_init(|| pma.build_dense_table());
-                    (pma, dense.as_slice())
-                }
-                None => return,
-            }
-        } else {
-            match pt.nocase.as_ref() {
-                Some(pma) => {
-                    let dense = pt.nocase_dense.get_or_init(|| pma.build_dense_table());
-                    (pma, dense.as_slice())
-                }
-                None => return,
-            }
-        };
-
-        let atom_to_slots = &pt.atom_to_slots;
-        let slot_to_values = &pt.slot_to_values;
-
-        let t0 = std::time::Instant::now();
-        let mut inner_us: u64 = 0;
-
         let mut state: u32 = 0;
         for (pos, &byte) in hay.iter().enumerate() {
             state = unsafe {
                 *dense.get_unchecked(state as usize * 256 + byte as usize)
             };
-
             let mut opt = pma.state_output_pos(state);
             while let Some(op) = opt {
                 let (len, value) = pma.output_at(op);
@@ -113,7 +94,6 @@ impl<'a> AtomFilterScanner<'a> {
                 let vi = value as usize;
                 if vi < atom_to_slots.len() && value_remaining[vi] != 0 {
                     let start = end - len as usize;
-                    let t_inner = std::time::Instant::now();
                     for &slot_id in atom_to_slots[vi].iter() {
                         out_stats.inner_iterations += 1;
                         let st = slot_id as usize;
@@ -142,14 +122,174 @@ impl<'a> AtomFilterScanner<'a> {
                         last_offset[st] = last_offset[st].max(start as u32);
                         out_stats.incremented += 1;
                     }
-                    inner_us += t_inner.elapsed().as_micros() as u64;
                 }
                 opt = pma.output_parent(op);
             }
         }
+    }
+
+    /// Run the dense DFA on the whole slice (single-threaded path).
+    fn run_dense_automaton(
+        pt: &PerTarget,
+        exact: bool,
+        slots: &[SlotDef],
+        saturated: &mut [u64],
+        value_remaining: &mut [u32],
+        hay: &[u8],
+        file_type_target: u32,
+        counts: &mut [u32],
+        last_offset: &mut [u32],
+        out_stats: &mut AutomatonStats,
+    ) {
+        let (pma, dense) = Self::resolve_dense(pt, exact);
+        let (pma, dense) = match (pma, dense) {
+            (Some(p), Some(d)) => (p, d),
+            _ => return,
+        };
+        let t0 = std::time::Instant::now();
+        Self::run_dense_chunk(
+            pma, dense,
+            &pt.atom_to_slots, &pt.slot_to_values,
+            slots, saturated, value_remaining,
+            hay, file_type_target, counts, last_offset,
+            out_stats,
+        );
+        out_stats.daachorse_us = t0.elapsed().as_micros() as u64;
+    }
+
+    /// Resolve the dense DFA table for a target (exact or nocase).
+    fn resolve_dense<'b>(pt: &'b PerTarget, exact: bool)
+        -> (Option<&'b DoubleArrayAhoCorasick<u32>>, Option<&'b [u32]>)
+    {
+        if exact {
+            let pma: Option<&'b DoubleArrayAhoCorasick<u32>> = pt.exact.as_ref();
+            let dense: Option<&'b [u32]> = pma.map(|p| {
+                pt.exact_dense.get_or_init(|| p.build_dense_table()).as_slice()
+            });
+            (pma, dense)
+        } else {
+            let pma: Option<&'b DoubleArrayAhoCorasick<u32>> = pt.nocase.as_ref();
+            let dense: Option<&'b [u32]> = pma.map(|p| {
+                pt.nocase_dense.get_or_init(|| p.build_dense_table()).as_slice()
+            });
+            (pma, dense)
+        }
+    }
+
+    /// Run the daachorse DFA on `hay` in parallel chunks when the buffer is
+    /// large enough to benefit.  Each thread processes a contiguous chunk with
+    /// a small overlap so patterns that cross cut points are still detected.
+    fn run_dense_parallel(
+        pt: &PerTarget,
+        exact: bool,
+        slots: &[SlotDef],
+        hay: &[u8],
+        file_type_target: u32,
+        counts: &mut [u32],
+        last_offset: &mut [u32],
+        out_stats: &mut AutomatonStats,
+    ) {
+        let n_threads = std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(4)
+            .min(4)
+            .max(1);
+
+        // Single-threaded fallback for small buffers or single-core systems.
+        if n_threads <= 1 || hay.len() < 256 * 1024 {
+            Self::run_dense_automaton(
+                pt, exact, slots,
+                &mut vec![0u64; (counts.len() + 63) / 64],
+                &mut vec![0u32; pt.atom_to_slots.len()],
+                hay, file_type_target,
+                counts, last_offset, out_stats,
+            );
+            return;
+        }
+
+        let (pma, dense) = Self::resolve_dense(pt, exact);
+        let (pma, dense) = match (pma, dense) {
+            (Some(p), Some(d)) => (p, d),
+            _ => return,
+        };
+        let atom_to_slots = &pt.atom_to_slots;
+        let slot_to_values = &pt.slot_to_values;
+
+        // Cross-chunk overlap: daachorse detects patterns at their *ending*
+        // position.  A pattern starting just before a cut point is only found
+        // in the chunk that contains its end.  Overlap by 1024 bytes — far
+        // longer than any ClamAV atom — so every pattern that could straddle
+        // a boundary is found in the neighbouring chunk.
+        const OVERLAP: usize = 1024;
+
+        let chunk_size = (hay.len() + n_threads - 1) / n_threads;
+        let t0 = std::time::Instant::now();
+
+        // Per-thread private output.
+        let mut thread_counts: Vec<Vec<u32>> = (0..n_threads)
+            .map(|_| vec![0u32; counts.len()]).collect();
+        let mut thread_last: Vec<Vec<u32>> = (0..n_threads)
+            .map(|_| vec![u32::MAX; last_offset.len()]).collect();
+        let mut thread_sat: Vec<Vec<u64>> = (0..n_threads)
+            .map(|_| vec![0u64; (counts.len() + 63) / 64]).collect();
+        let mut thread_vr: Vec<Vec<u32>> = (0..n_threads)
+            .map(|_| atom_to_slots.iter().map(|s| s.len() as u32).collect()).collect();
+
+        let mut stats: Vec<AutomatonStats> = (0..n_threads).map(|_| AutomatonStats::default()).collect();
+
+        std::thread::scope(|s| {
+            let mut count_iter = thread_counts.iter_mut();
+            let mut last_iter = thread_last.iter_mut();
+            let mut sat_iter = thread_sat.iter_mut();
+            let mut vr_iter = thread_vr.iter_mut();
+            let mut stats_iter = stats.iter_mut();
+
+            for tid in 0..n_threads {
+                let start = tid * chunk_size;
+                if start >= hay.len() { break; }
+                let end = (start + chunk_size + OVERLAP).min(hay.len());
+                let chunk = &hay[start..end];
+
+                let counts = count_iter.next().unwrap();
+                let last = last_iter.next().unwrap();
+                let sat = sat_iter.next().unwrap();
+                let vr = vr_iter.next().unwrap();
+                let st = stats_iter.next().unwrap();
+
+                s.spawn(move || {
+                    Self::run_dense_chunk(
+                        pma, dense, atom_to_slots, slot_to_values,
+                        slots, sat, vr, chunk, file_type_target,
+                        counts, last, st,
+                    );
+                });
+            }
+        });
+
+        // Merge per-thread results into the main arrays.
+        for tid in 0..n_threads {
+            out_stats.daachorse_matches += stats[tid].daachorse_matches;
+            out_stats.inner_iterations += stats[tid].inner_iterations;
+            out_stats.saturated_skip += stats[tid].saturated_skip;
+            out_stats.ft_skip += stats[tid].ft_skip;
+            out_stats.saturated_count += stats[tid].saturated_count;
+            out_stats.saturated_dec += stats[tid].saturated_dec;
+            out_stats.incremented += stats[tid].incremented;
+
+            for i in 0..counts.len() {
+                if thread_counts[tid][i] > 0 {
+                    counts[i] = counts[i].saturating_add(thread_counts[tid][i]);
+                    if thread_last[tid][i] != u32::MAX {
+                        let global = tid * chunk_size + thread_last[tid][i] as usize;
+                        if global < last_offset[i] as usize {
+                            last_offset[i] = global as u32;
+                        }
+                    }
+                }
+            }
+        }
 
         out_stats.daachorse_us = t0.elapsed().as_micros() as u64;
-        out_stats.inner_loop_us = inner_us;
     }
 
     pub fn scan(&mut self, data: &[u8], file_type_target: u32) -> SlotCounts<'_> {
@@ -182,14 +322,25 @@ impl<'a> AtomFilterScanner<'a> {
 
         // ── Exact automaton pass ──────────────────────────────────────
         if !exact_window.is_empty() {
-            Self::run_dense_automaton(
-                pt, true,
-                &self.db.slots,
-                &mut self.saturated, &mut self.value_remaining,
-                exact_window, file_type_target,
-                &mut self.counts, &mut self.last_offset,
-                &mut exact_stats,
-            );
+            let n_threads = std::thread::available_parallelism()
+                .map(|n| n.get()).unwrap_or(4).min(4).max(1);
+            if n_threads > 1 && exact_window.len() >= 256 * 1024 {
+                Self::run_dense_parallel(
+                    pt, true, &self.db.slots,
+                    exact_window, file_type_target,
+                    &mut self.counts, &mut self.last_offset,
+                    &mut exact_stats,
+                );
+            } else {
+                Self::run_dense_automaton(
+                    pt, true,
+                    &self.db.slots,
+                    &mut self.saturated, &mut self.value_remaining,
+                    exact_window, file_type_target,
+                    &mut self.counts, &mut self.last_offset,
+                    &mut exact_stats,
+                );
+            }
             if exact_offset > 0 {
                 for o in self.last_offset.iter_mut() {
                     if *o != u32::MAX { *o += exact_offset as u32; }
@@ -202,14 +353,25 @@ impl<'a> AtomFilterScanner<'a> {
             let mut lowered = std::mem::take(&mut self.lowered_buf);
             if data.len() > lowered.len() { lowered.resize(data.len(), 0); }
             for (i, &b) in data.iter().enumerate() { lowered[i] = b.to_ascii_lowercase(); }
-            Self::run_dense_automaton(
-                pt, false,
-                &self.db.slots,
-                &mut self.saturated, &mut self.value_remaining,
-                &lowered[..data.len()], file_type_target,
-                &mut self.counts, &mut self.last_offset,
-                &mut nocase_stats,
-            );
+            let n_threads = std::thread::available_parallelism()
+                .map(|n| n.get()).unwrap_or(4).min(4).max(1);
+            if n_threads > 1 && data.len() >= 256 * 1024 {
+                Self::run_dense_parallel(
+                    pt, false, &self.db.slots,
+                    &lowered[..data.len()], file_type_target,
+                    &mut self.counts, &mut self.last_offset,
+                    &mut nocase_stats,
+                );
+            } else {
+                Self::run_dense_automaton(
+                    pt, false,
+                    &self.db.slots,
+                    &mut self.saturated, &mut self.value_remaining,
+                    &lowered[..data.len()], file_type_target,
+                    &mut self.counts, &mut self.last_offset,
+                    &mut nocase_stats,
+                );
+            }
             self.lowered_buf = lowered;
         }
 
