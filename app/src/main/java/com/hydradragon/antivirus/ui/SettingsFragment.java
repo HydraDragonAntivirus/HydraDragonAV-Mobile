@@ -270,6 +270,14 @@ public class SettingsFragment extends Fragment {
             else disableWebShield();
         });
 
+        boolean suricataScan = prefs().getBoolean("suricata_rule_scan_enabled", true);
+        addToggle(getString(R.string.suricata_rule_scan), suricataScan, (btn, on) -> {
+            prefs().edit().putBoolean("suricata_rule_scan_enabled", on).apply();
+            Toast.makeText(getContext(), on
+                ? getString(R.string.suricata_rule_scan_on_toast)
+                : getString(R.string.suricata_rule_scan_off_toast), Toast.LENGTH_SHORT).show();
+        });
+
         addHeader(getString(R.string.premium_features_header));
         boolean zeroTrust = com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext());
         addToggle(getString(R.string.zero_trust_toggle), zeroTrust, (btn, on) -> {
@@ -536,7 +544,8 @@ public class SettingsFragment extends Fragment {
         new ResetCategory(R.string.reset_cat_privacy, KEY_SHIELD, "web_shield_decided", KEY_SCREEN_OCR,
             "silent_mode", com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH,
             "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "scan_relevant_only_enabled",
-            "anti_fn_enabled", "anti_fn_tlsh_threshold"),
+            "anti_fn_enabled", "anti_fn_tlsh_threshold",
+            "suricata_rule_scan_enabled"),
         new ResetCategory(R.string.reset_cat_premium, "zero_trust_mode", "auto_rule_generation",
             "ask_signature_on_remove", "auto_delete_malware_enabled"),
         new ResetCategory(R.string.reset_cat_whitelists, "ignored_signatures", "website_whitelist"),

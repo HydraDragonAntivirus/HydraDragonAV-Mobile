@@ -53,6 +53,9 @@
     <string name="web_shield">网络防护（DNS VPN）</string>
     <string name="web_shield_enabled">网络防护已启用</string>
     <string name="web_shield_disabled">网络防护已禁用</string>
+    <string name="suricata_rule_scan">网络规则扫描 (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Suricata 规则扫描已启用</string>
+    <string name="suricata_rule_scan_off_toast">Suricata 规则扫描已禁用</string>
     <string name="vpn_unavailable">此设备不支持VPN</string>
     <string name="vpn_consent_denied">VPN授权被拒绝</string>
     <string name="web_shield_vpn_title">网络防护（VPN）</string>

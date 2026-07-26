@@ -53,6 +53,9 @@
     <string name="web_shield">Веб-щит (DNS VPN)</string>
     <string name="web_shield_enabled">Веб-щит включён</string>
     <string name="web_shield_disabled">Веб-щит выключен</string>
+    <string name="suricata_rule_scan">Сканирование правил сети (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Сканирование правил Suricata включено</string>
+    <string name="suricata_rule_scan_off_toast">Сканирование правил Suricata отключено</string>
     <string name="vpn_unavailable">VPN недоступен на этом устройстве</string>
     <string name="vpn_consent_denied">Согласие на VPN отклонено</string>
     <string name="web_shield_vpn_title">Веб-щит (VPN)</string>

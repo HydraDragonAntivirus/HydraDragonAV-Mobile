@@ -53,6 +53,9 @@
     <string name="web_shield">웹 실드 (DNS VPN)</string>
     <string name="web_shield_enabled">웹 실드 활성화됨</string>
     <string name="web_shield_disabled">웹 실드 비활성화됨</string>
+    <string name="suricata_rule_scan">네트워크 규칙 스캔 (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Suricata 규칙 스캔 활성화</string>
+    <string name="suricata_rule_scan_off_toast">Suricata 규칙 스캔 비활성화</string>
     <string name="vpn_unavailable">이 기기에서는 VPN을 사용할 수 없습니다</string>
     <string name="vpn_consent_denied">VPN 동의가 거부되었습니다</string>
     <string name="web_shield_vpn_title">웹 실드 (VPN)</string>

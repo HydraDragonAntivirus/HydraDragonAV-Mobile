@@ -53,6 +53,9 @@
     <string name="web_shield">वेब शील्ड (DNS VPN)</string>
     <string name="web_shield_enabled">वेब शील्ड सक्षम है</string>
     <string name="web_shield_disabled">वेब शील्ड अक्षम है</string>
+    <string name="suricata_rule_scan">नेटवर्क नियम स्कैन (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Suricata नियम स्कैन सक्षम</string>
+    <string name="suricata_rule_scan_off_toast">Suricata नियम स्कैन अक्षम</string>
     <string name="vpn_unavailable">इस डिवाइस पर VPN उपलब्ध नहीं है</string>
     <string name="vpn_consent_denied">VPN सहमति अस्वीकृत</string>
     <string name="web_shield_vpn_title">वेब शील्ड (VPN)</string>

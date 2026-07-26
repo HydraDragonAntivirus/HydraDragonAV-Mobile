@@ -53,6 +53,9 @@
     <string name="web_shield">Bouclier Web (VPN DNS)</string>
     <string name="web_shield_enabled">Bouclier Web activé</string>
     <string name="web_shield_disabled">Bouclier Web désactivé</string>
+    <string name="suricata_rule_scan">Analyse des règles réseau (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Analyse des règles Suricata activée</string>
+    <string name="suricata_rule_scan_off_toast">Analyse des règles Suricata désactivée</string>
     <string name="vpn_unavailable">VPN non disponible sur cet appareil</string>
     <string name="vpn_consent_denied">Consentement VPN refusé</string>
     <string name="web_shield_vpn_title">Bouclier Web (VPN)</string>

@@ -53,6 +53,9 @@
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield ingeschakeld</string>
     <string name="web_shield_disabled">Web Shield uitgeschakeld</string>
+    <string name="suricata_rule_scan">Netwerkregelscan (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Suricata-regelscan ingeschakeld</string>
+    <string name="suricata_rule_scan_off_toast">Suricata-regelscan uitgeschakeld</string>
     <string name="vpn_unavailable">VPN niet beschikbaar op dit apparaat</string>
     <string name="vpn_consent_denied">VPN-toestemming geweigerd</string>
     <string name="web_shield_vpn_title">Web Shield (VPN)</string>

@@ -53,6 +53,9 @@
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield attivato</string>
     <string name="web_shield_disabled">Web Shield disattivato</string>
+    <string name="suricata_rule_scan">Scansione regole di rete (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Scansione regole Suricata attivata</string>
+    <string name="suricata_rule_scan_off_toast">Scansione regole Suricata disattivata</string>
     <string name="vpn_unavailable">VPN non disponibile su questo dispositivo</string>
     <string name="vpn_consent_denied">Consenso VPN negato</string>
     <string name="web_shield_vpn_title">Web Shield (VPN)</string>

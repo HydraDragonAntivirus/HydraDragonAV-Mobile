@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
@@ -246,6 +247,8 @@ public class DnsVpnService extends VpnService {
 
     /** Scan currently captured packets against emerging-all.rules. */
     private void scanCapturedPackets() {
+        SharedPreferences prefs = getSharedPreferences("hydra_prefs", MODE_PRIVATE);
+        if (!prefs.getBoolean("suricata_rule_scan_enabled", true)) return;
         String packetsJson;
         synchronized (capturedPackets) {
             if (capturedPackets.isEmpty()) return;

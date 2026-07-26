@@ -53,6 +53,9 @@
     <string name="web_shield">Lá chắn Web (DNS VPN)</string>
     <string name="web_shield_enabled">Đã bật Lá chắn Web</string>
     <string name="web_shield_disabled">Đã tắt Lá chắn Web</string>
+    <string name="suricata_rule_scan">Quét quy tắc mạng (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Quét quy tắc Suricata đã bật</string>
+    <string name="suricata_rule_scan_off_toast">Quét quy tắc Suricata đã tắt</string>
     <string name="vpn_unavailable">VPN không khả dụng trên thiết bị này</string>
     <string name="vpn_consent_denied">Đã từ chối đồng ý VPN</string>
     <string name="web_shield_vpn_title">Lá chắn Web (VPN)</string>

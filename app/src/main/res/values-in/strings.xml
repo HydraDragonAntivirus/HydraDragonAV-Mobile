@@ -53,6 +53,9 @@
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">Web Shield diaktifkan</string>
     <string name="web_shield_disabled">Web Shield dinonaktifkan</string>
+    <string name="suricata_rule_scan">Pemindaian Aturan Jaringan (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Pemindaian aturan Suricata diaktifkan</string>
+    <string name="suricata_rule_scan_off_toast">Pemindaian aturan Suricata dinonaktifkan</string>
     <string name="vpn_unavailable">VPN tidak tersedia di perangkat ini</string>
     <string name="vpn_consent_denied">Persetujuan VPN ditolak</string>
     <string name="web_shield_vpn_title">Web Shield (VPN)</string>

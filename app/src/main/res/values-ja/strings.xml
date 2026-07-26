@@ -53,6 +53,9 @@
     <string name="web_shield">ウェブシールド（DNS VPN）</string>
     <string name="web_shield_enabled">ウェブシールドが有効です</string>
     <string name="web_shield_disabled">ウェブシールドが無効です</string>
+    <string name="suricata_rule_scan">ネットワークルールスキャン (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Suricata ルールスキャン有効</string>
+    <string name="suricata_rule_scan_off_toast">Suricata ルールスキャン無効</string>
     <string name="vpn_unavailable">このデバイスではVPNを利用できません</string>
     <string name="vpn_consent_denied">VPNの同意が拒否されました</string>
     <string name="web_shield_vpn_title">ウェブシールド（VPN）</string>

@@ -65,6 +65,9 @@
     <string name="web_shield">Web Tabanlı Koruma (DNS VPN)</string>
     <string name="web_shield_enabled">Web Tabanlı Koruma açık</string>
     <string name="web_shield_disabled">Web Tabanlı Koruma kapalı</string>
+    <string name="suricata_rule_scan">Ağ Kural Taraması (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">Suricata kural taraması etkin</string>
+    <string name="suricata_rule_scan_off_toast">Suricata kural taraması devre dışı</string>
     <string name="vpn_unavailable">Bu cihazda VPN kullanılamıyor</string>
     <string name="vpn_consent_denied">VPN izni reddedildi</string>
     <string name="web_shield_vpn_title">Web Tabanlı Koruma (VPN)</string>

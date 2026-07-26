@@ -53,6 +53,9 @@
     <string name="web_shield">سپر وب (DNS VPN)</string>
     <string name="web_shield_enabled">سپر وب فعال است</string>
     <string name="web_shield_disabled">سپر وب غیرفعال است</string>
+    <string name="suricata_rule_scan">پویش قواعد شبکه (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">پویش قواعد Suricata فعال شد</string>
+    <string name="suricata_rule_scan_off_toast">پویش قواعد Suricata غیرفعال شد</string>
     <string name="vpn_unavailable">VPN روی این دستگاه در دسترس نیست</string>
     <string name="vpn_consent_denied">رضایت VPN رد شد</string>
     <string name="web_shield_vpn_title">سپر وب (VPN)</string>

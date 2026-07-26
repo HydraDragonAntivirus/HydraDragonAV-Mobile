@@ -53,6 +53,9 @@
     <string name="web_shield">Web Shield (DNS VPN)</string>
     <string name="web_shield_enabled">เปิดใช้งาน Web Shield แล้ว</string>
     <string name="web_shield_disabled">ปิดใช้งาน Web Shield แล้ว</string>
+    <string name="suricata_rule_scan">สแกนกฎเครือข่าย (Suricata)</string>
+    <string name="suricata_rule_scan_on_toast">การสแกนกฎ Suricata เปิดใช้งาน</string>
+    <string name="suricata_rule_scan_off_toast">การสแกนกฎ Suricata ปิดใช้งาน</string>
     <string name="vpn_unavailable">ไม่สามารถใช้ VPN บนอุปกรณ์นี้ได้</string>
     <string name="vpn_consent_denied">การยินยอมใช้ VPN ถูกปฏิเสธ</string>
     <string name="web_shield_vpn_title">Web Shield (VPN)</string>
