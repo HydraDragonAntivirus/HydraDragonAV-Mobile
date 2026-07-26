@@ -457,6 +457,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="graph_wiper">Wiper Detected</string>
     <string name="graph_rooted">Rooted</string>
     <string name="graph_debug">Debug Mode</string>
+    <string name="behavior_auto_kill">Auto-kill foreground malware (accessibility)</string>
 </resources>
 
 
