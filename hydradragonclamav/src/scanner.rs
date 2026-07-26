@@ -682,7 +682,7 @@ impl Engine {
             if !crate::atomscan::ext_matched(*ext_slot, &self.atomfilter_db.slots, slot_counts) {
                 continue;
             }
-            if !target_matches(self.database.extended[si].target, ctx) {
+            if !target_matches(self.database.extended[si].target, ctx, self.database.ext_name(&self.database.extended[si])) {
                 continue;
             }
             self.scan_one_extended(si, ctx, matches);
@@ -697,7 +697,7 @@ impl Engine {
         matches: &mut Vec<ScanMatch>,
     ) {
         let signature = &self.database.extended[si];
-        if !target_matches(signature.target, ctx) {
+        if !target_matches(signature.target, ctx, self.database.ext_name(signature)) {
             return;
         }
         if matches!(
@@ -827,7 +827,7 @@ impl Engine {
         bufs: &mut LogicalScanBufs,
     ) {
         let signature = &self.database.logical[si];
-        if !target_matches(signature.target, ctx) {
+        if !target_matches(signature.target, ctx, &signature.name) {
             return;
         }
         // TDB gating (ClamAV's target description block). A signature only fires
@@ -1189,21 +1189,29 @@ impl Engine {
 }
 
 /// ClamAV target codes worth running the ClamAV engine on at all: HTML(3),
-/// Graphics(5), ELF(6), ASCII text(7), PDF(10), SWF(11), DEX(16), ZIP/APK(17).
+/// Graphics(5), ELF(6), ASCII text(7), PDF(10), SWF(11), DEX(16), APK(17),
+/// generic ZIP(18).
 /// Anything else — a confidently-typed desktop-only format or a type we can't
 /// classify — never runs on Android, so `scan_object` skips the whole engine
 /// for it rather than relying on `target_matches` to reject each candidate.
-const CLAMAV_ALLOWED_TARGETS: [u32; 8] = [3, 5, 6, 7, 10, 11, 16, 17];
+const CLAMAV_ALLOWED_TARGETS: [u32; 9] = [3, 5, 6, 7, 10, 11, 16, 17, 18];
 
 fn clamav_target_allowed(target: Option<u32>) -> bool {
     target.map_or(false, |t| CLAMAV_ALLOWED_TARGETS.contains(&t))
 }
 
-fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>) -> bool {
+fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>, sig_name: &str) -> bool {
     let want = target.unwrap_or(0);
 
     // Target 0 = generic: applies to every file type.
     if want == 0 {
+        // Andr.* signatures: only match ELF(6), text(7), DEX(16), APK(17).
+        if sig_name.starts_with("Andr.") {
+            let detected = ctx.detected_target
+                .or_else(|| detect_builtin_target(ctx))
+                .unwrap_or(0);
+            return matches!(detected, 6 | 7 | 16 | 17);
+        }
         return true;
     }
     // Prefer the precise `.ftm`-derived type when available (strict typing).
@@ -1228,6 +1236,21 @@ fn target_matches(target: Option<u32>, ctx: &ScanContext<'_>) -> bool {
     }
 }
 
+/// Detect whether a ZIP buffer is an Android APK by looking for the
+/// `AndroidManifest.xml` entry in the first/last 1 MB (where ZIP local file
+/// headers and central directory appear).
+pub fn is_apk_zip(data: &[u8]) -> bool {
+    let scan_size = 1 << 20;
+    let head_end = data.len().min(scan_size);
+    let tail_start = data.len().saturating_sub(scan_size);
+    let marker = b"AndroidManifest.xml";
+    let scan = |region: &[u8]| region.windows(marker.len()).any(|w| w == marker);
+    if head_end > 0 && scan(&data[..head_end]) {
+        return true;
+    }
+    tail_start > 0 && scan(&data[tail_start..])
+}
+
 /// Best-effort concrete file-type detection by magic → ClamAV target number.
 /// Returns `Some` only for confident detections (so callers reject clear
 /// cross-type mismatches); `None` when indeterminate (callers stay permissive).
@@ -1249,7 +1272,10 @@ fn detect_builtin_target(ctx: &ScanContext<'_>) -> Option<u32> {
         return Some(16); // CL_TYPE_DEX
     }
     if d.len() >= 4 && d[..2] == [0x50, 0x4b] && d[2] == 0x03 && d[3] == 0x04 {
-        return Some(17); // CL_TYPE_ZIP_APK
+        if is_apk_zip(d) {
+            return Some(17); // CL_TYPE_APK
+        }
+        return Some(18); // CL_TYPE_ZIP (generic ZIP, not APK)
     }
     // SWF: `FWS` (uncompressed), `CWS` (zlib), or `ZWS` (lzma) + version byte.
     if d.len() >= 3
@@ -1286,7 +1312,8 @@ fn clamav_type_to_target(clamav_type: &str) -> Option<u32> {
         "CL_TYPE_TEXT_ASCII" => 7,
         "CL_TYPE_PDF" => 10,
         "CL_TYPE_SWF" => 11,
-        "CL_TYPE_ZIP" | "CL_TYPE_APK" => 17,
+        "CL_TYPE_ZIP" => 18,
+        "CL_TYPE_APK" => 17,
         "CL_TYPE_DEX" => 16,
         _ => return None,
     })

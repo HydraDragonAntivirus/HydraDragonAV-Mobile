@@ -18,7 +18,7 @@
 use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
 
-use hydradragonclamav::{Engine as ClamavEngine, is_text_like, ScanOptions};
+use hydradragonclamav::{Engine as ClamavEngine, is_apk_zip, is_text_like, ScanOptions};
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 use base64::Engine as Base64Engine;
@@ -660,25 +660,6 @@ fn do_init(_dir: &str, _load_auto_rules: bool) -> Engine {
 /// Single shared gate so this rule lives in exactly one place.
 fn skip_by_size(buf: &[u8]) -> bool {
     buf.len() <= 12 || buf.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024
-}
-
-/// Returns true when the ZIP buffer is an Android APK (or AAB) by checking
-/// for APK-specific entry names (`AndroidManifest.xml` or `classes.dex`) in
-/// the ZIP metadata. The ML model is trained exclusively on APK data and
-/// produces garbage confidence scores for any other ZIP format (ODS, DOCX,
-/// JAR, …). Only scans the first/last 1 MB of the buffer — APK entry names
-/// appear in the local file headers (near start) and central directory (near
-/// end), so a full scan of very large files is unnecessary.
-fn is_apk_zip(data: &[u8]) -> bool {
-    let scan_size = 1 << 20; // 1 MB
-    let head_end = data.len().min(scan_size);
-    let tail_start = data.len().saturating_sub(scan_size);
-    let marker = b"AndroidManifest.xml";
-    let scan = |region: &[u8]| region.windows(marker.len()).any(|w| w == marker);
-    if head_end > 0 && scan(&data[..head_end]) {
-        return true;
-    }
-    tail_start > 0 && scan(&data[tail_start..])
 }
 
 /// Shared ML-scan loop: run the ONNX model on every APK buffer, collecting

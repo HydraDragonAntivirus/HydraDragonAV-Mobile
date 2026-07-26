@@ -229,7 +229,7 @@ impl AtomFilterBuilder {
         // 34K+ useless file-type skips per large buffer). Adding them here
         // builds a smaller DFA containing only generic (target=0) atoms +
         // any target-specific atoms, eliminating the ft_sk waste entirely.
-        specific_targets.extend_from_slice(&[16, 17]);
+        specific_targets.extend_from_slice(&[16, 17, 18]);
         specific_targets.sort();
         specific_targets.dedup();
 

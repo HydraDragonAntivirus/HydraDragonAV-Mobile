@@ -114,13 +114,13 @@ fn scan_benign_apk_samples() {
     for (path, bytes) in &samples {
         let name = path.file_stem().unwrap().to_string_lossy();
         let hits = scan_and_report_slow(&engine, bytes, &name);
-        // Benign samples may have 0 hits; just verify no panic and file is scannable.
         assert!(
             bytes.len() > 100,
             "benign APK too small: {} ({} bytes)",
             name,
             bytes.len()
         );
+        eprintln!("  ── {name}: {hits} ClamAV hit(s)");
     }
 }
 
