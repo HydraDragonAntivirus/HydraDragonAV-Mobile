@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ دستگاه روت شده</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">رد کردن فایل‌های بزرگ‌تر از (مگابایت):</string>
     <string name="max_scan_file_size_hint">بین %1$d و %2$d مگابایت — فایل‌های بزرگ‌تر زمان بسیار بیشتری برای اسکن نیاز دارند (هش کل فایل + ClamAV/YARA/یادگیری ماشین)؛ فایل‌های بزرگ‌تر از این اندازه به‌جای اسکن جزئی، کاملاً رد می‌شوند</string>
     <string name="max_scan_file_size_saved">حداکثر اندازه فایل برای اسکن ذخیره شد</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">لیست‌های سفید</string>
     <string name="ignored_signatures_btn">امضاهای نادیده‌گرفته‌شده</string>
     <string name="ignored_signatures_hint">یک نام دقیق امضا/تشخیص (مانند PUA.SomeAdware یا YARA.auto_...) تایپ کنید تا برای همه برنامه‌ها/فایل‌ها نادیده گرفته شود، نه فقط یکی</string>

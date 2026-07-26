@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ جهاز ذو صلاحية روت (ROOT)</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">تخطي الملفات الأكبر من (ميجابايت):</string>
     <string name="max_scan_file_size_hint">بين %1$d و %2$d ميجابايت — الملفات الأكبر تستغرق وقتاً أطول للفحص (تجزئة الملف بالكامل + ClamAV/YARA/تعلم آلي)؛ يتم تخطي الملفات الأكبر من هذا الحجم بالكامل بدلاً من فحصها جزئياً</string>
     <string name="max_scan_file_size_saved">تم حفظ الحد الأقصى لحجم الملف للفحص</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">القوائم البيضاء</string>
     <string name="ignored_signatures_btn">التوقيعات المتجاهلة</string>
     <string name="ignored_signatures_hint">اكتب اسم توقيع/اكتشاف دقيق (مثل PUA.SomeAdware أو YARA.auto_...) لتجاهله في كل تطبيق/ملف، وليس واحداً فقط</string>

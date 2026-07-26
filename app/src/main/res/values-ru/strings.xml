@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ РУТИРОВАННОЕ УСТРОЙСТВО</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">Пропускать файлы больше (МБ):</string>
     <string name="max_scan_file_size_hint">От %1$d до %2$d МБ — большие файлы сканируются значительно дольше (хешируется весь файл + ClamAV/YARA/ML); файлы больше этого размера полностью пропускаются, а не сканируются частично</string>
     <string name="max_scan_file_size_saved">Максимальный размер файла для сканирования сохранён</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Белые списки</string>
     <string name="ignored_signatures_btn">Игнорируемые сигнатуры</string>
     <string name="ignored_signatures_hint">Введите точное имя сигнатуры/обнаружения (напр. PUA.SomeAdware, YARA.auto_...), чтобы подавлять его для всех приложений/файлов, а не только одного</string>

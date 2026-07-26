@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ 루팅된 장치</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">이보다 큰 파일 건너뛰기(MB):</string>
     <string name="max_scan_file_size_hint">%1$d~%2$d MB 사이 — 파일이 클수록 스캔에 훨씬 더 오래 걸립니다(전체 파일 해시 + ClamAV/YARA/ML). 이 크기를 초과하는 파일은 부분적으로가 아니라 완전히 건너뜁니다</string>
     <string name="max_scan_file_size_saved">스캔할 최대 파일 크기가 저장되었습니다</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">화이트리스트</string>
     <string name="ignored_signatures_btn">무시된 시그니처</string>
     <string name="ignored_signatures_hint">정확한 시그니처/탐지 이름(예: PUA.SomeAdware, YARA.auto_...)을 입력하면 하나의 앱뿐만 아니라 모든 앱/파일에서 억제됩니다</string>

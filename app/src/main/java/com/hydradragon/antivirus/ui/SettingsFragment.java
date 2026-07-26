@@ -233,6 +233,8 @@ public class SettingsFragment extends Fragment {
             v -> showScanIntervalDialog());
         addBtn("📦 " + getString(R.string.max_scan_file_size_btn), color(R.color.bg_secondary),
             v -> showMaxScanFileSizeDialog());
+        addBtn("📄 " + getString(R.string.max_text_scan_bytes_btn), color(R.color.bg_secondary),
+            v -> showMaxTextScanBytesDialog());
 
         addHeader(getString(R.string.detection_categories_header));
         addCategoryToggle(R.string.detect_cat_signatures, com.hydradragon.antivirus.engine.DetectionCategories.SIGNATURES);
@@ -554,7 +556,7 @@ public class SettingsFragment extends Fragment {
             "silent_mode", com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH,
             "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "scan_relevant_only_enabled",
             "anti_fn_enabled", "anti_fn_tlsh_threshold",
-            "suricata_rule_scan_enabled"),
+            "suricata_rule_scan_enabled", "max_text_scan_bytes"),
         new ResetCategory(R.string.reset_cat_premium, "zero_trust_mode", "auto_rule_generation",
             "ask_signature_on_remove", "auto_delete_malware_enabled"),
         new ResetCategory(R.string.reset_cat_whitelists, "ignored_signatures", "website_whitelist"),
@@ -1160,6 +1162,47 @@ public class SettingsFragment extends Fragment {
                 }
                 com.hydradragon.antivirus.engine.MaxScanFileSize.setMaxMb(requireContext(), mb);
                 Toast.makeText(getContext(), getString(R.string.max_scan_file_size_saved), Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
+    }
+
+    /** Max-text-file-bytes-to-scan config (see MaxTextScanBytes) — same
+     *  EditText-in-AlertDialog pattern as showMaxScanFileSizeDialog(). Takes
+     *  effect on the NEXT scan (each ScanEngine call site reads it live, no
+     *  service restart needed). */
+    private void showMaxTextScanBytesDialog() {
+        LinearLayout box = new LinearLayout(requireContext());
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(48, 24, 48, 0);
+
+        TextView label = new TextView(requireContext());
+        label.setText(getString(R.string.max_text_scan_bytes_label));
+        label.setTextColor(color(R.color.text_primary));
+        box.addView(label);
+        android.widget.EditText input = new android.widget.EditText(requireContext());
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setText(String.valueOf(
+            com.hydradragon.antivirus.engine.MaxTextScanBytes.getMaxBytes(requireContext())));
+        box.addView(input);
+
+        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.max_text_scan_bytes_btn))
+            .setMessage(getString(R.string.max_text_scan_bytes_hint,
+                com.hydradragon.antivirus.engine.MaxTextScanBytes.MIN_BYTES,
+                com.hydradragon.antivirus.engine.MaxTextScanBytes.MAX_BYTES))
+            .setView(box)
+            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
+                int bytes;
+                try {
+                    bytes = Integer.parseInt(input.getText().toString().trim());
+                } catch (Exception e) {
+                    bytes = com.hydradragon.antivirus.engine.MaxTextScanBytes.DEFAULT_BYTES;
+                }
+                com.hydradragon.antivirus.engine.MaxTextScanBytes.setMaxBytes(requireContext(), bytes);
+                com.hydradragon.antivirus.engine.NativeScanner.setMaxTextScanBytes(
+                    com.hydradragon.antivirus.engine.MaxTextScanBytes.getMaxBytes(requireContext()));
+                Toast.makeText(getContext(), getString(R.string.max_text_scan_bytes_saved), Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton(getString(R.string.btn_cancel), null)
             .show();

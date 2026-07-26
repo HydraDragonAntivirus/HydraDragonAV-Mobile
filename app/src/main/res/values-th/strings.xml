@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ อุปกรณ์ที่รูทแล้ว</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">ข้ามไฟล์ที่ใหญ่กว่า (MB):</string>
     <string name="max_scan_file_size_hint">ระหว่าง %1$d ถึง %2$d MB — ไฟล์ที่ใหญ่กว่าจะใช้เวลาสแกนนานกว่ามาก (แฮชไฟล์ทั้งหมด + ClamAV/YARA/ML) ไฟล์ที่มีขนาดเกินนี้จะถูกข้ามทั้งหมดแทนที่จะสแกนบางส่วน</string>
     <string name="max_scan_file_size_saved">บันทึกขนาดไฟล์สูงสุดที่จะสแกนแล้ว</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">รายการที่อนุญาต</string>
     <string name="ignored_signatures_btn">ลายเซ็นที่ถูกละเว้น</string>
     <string name="ignored_signatures_hint">พิมพ์ชื่อลายเซ็น/การตรวจจับที่แน่นอน (เช่น PUA.SomeAdware, YARA.auto_...) เพื่อระงับสำหรับทุกแอป/ไฟล์ ไม่ใช่แค่รายการเดียว</string>

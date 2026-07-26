@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ PERANGKAT DI-ROOT</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">Lewati file yang lebih besar dari (MB):</string>
     <string name="max_scan_file_size_hint">Antara %1$d dan %2$d MB — file yang lebih besar membutuhkan waktu jauh lebih lama untuk dipindai (seluruh file di-hash + ClamAV/YARA/ML); file yang melebihi ukuran ini akan dilewati sepenuhnya, bukan dipindai sebagian</string>
     <string name="max_scan_file_size_saved">Ukuran file maksimum untuk dipindai disimpan</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Daftar Putih</string>
     <string name="ignored_signatures_btn">Tanda Tangan yang Diabaikan</string>
     <string name="ignored_signatures_hint">Ketik nama tanda tangan/deteksi yang tepat (mis. PUA.SomeAdware, YARA.auto_...) untuk mengabaikannya di semua aplikasi/file, bukan hanya satu</string>

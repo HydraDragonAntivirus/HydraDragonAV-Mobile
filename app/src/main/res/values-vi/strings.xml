@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ THIẾT BỊ ĐÃ ROOT</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">Bỏ qua tệp lớn hơn (MB):</string>
     <string name="max_scan_file_size_hint">Từ %1$d đến %2$d MB — tệp lớn hơn sẽ mất nhiều thời gian hơn để quét (băm toàn bộ tệp + ClamAV/YARA/ML); tệp vượt quá kích thước này sẽ bị bỏ qua hoàn toàn thay vì quét một phần</string>
     <string name="max_scan_file_size_saved">Đã lưu kích thước tệp tối đa để quét</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Danh sách trắng</string>
     <string name="ignored_signatures_btn">Chữ ký bị bỏ qua</string>
     <string name="ignored_signatures_hint">Nhập tên chữ ký/phát hiện chính xác (vd: PUA.SomeAdware, YARA.auto_...) để bỏ qua nó cho mọi ứng dụng/tệp, không chỉ một</string>

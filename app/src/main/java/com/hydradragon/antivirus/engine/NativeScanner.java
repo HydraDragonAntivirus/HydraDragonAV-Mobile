@@ -84,6 +84,8 @@ public final class NativeScanner {
 
     private static native void nativeSetMaxScanSizeMb(int maxMb);
 
+    private static native void nativeSetMaxTextScanBytes(int maxBytes);
+
     private static native void nativeSetDetectZipBomb(boolean enabled);
 
     private static native void nativeSetScanRelevantOnly(boolean on);
@@ -124,6 +126,14 @@ public final class NativeScanner {
     public static void setMaxScanSizeMb(int maxMb) {
         if (!LIB_LOADED) return;
         try { nativeSetMaxScanSizeMb(maxMb); } catch (Throwable ignore) { }
+    }
+
+    /** Push the user's {@link MaxTextScanBytes} preference into the native
+     *  engine so text-like files larger than this ceiling are excluded from
+     *  ClamAV scanning. Applied immediately; no reinit needed. */
+    public static void setMaxTextScanBytes(int maxBytes) {
+        if (!LIB_LOADED) return;
+        try { nativeSetMaxTextScanBytes(maxBytes); } catch (Throwable ignore) { }
     }
 
     /** Settings toggle for decompression-bomb rejection during archive
@@ -445,6 +455,7 @@ public final class NativeScanner {
             setEmulationEnabled(com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
                 context, com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION));
             setMaxScanSizeMb(com.hydradragon.antivirus.engine.MaxScanFileSize.getMaxMb(context));
+            setMaxTextScanBytes(com.hydradragon.antivirus.engine.MaxTextScanBytes.getMaxBytes(context));
             setDetectZipBomb(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("detect_zip_bomb_enabled", true));
             setScanRelevantOnly(context.getSharedPreferences("hydra_prefs", 0)

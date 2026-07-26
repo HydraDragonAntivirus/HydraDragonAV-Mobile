@@ -178,6 +178,12 @@ static NATIVE_EMULATION_ENABLED: std::sync::atomic::AtomicBool =
 /// User-configurable ceiling from {@link MaxScanFileSize} — extracted archive
 /// entries larger than this (in MB) are excluded from all scan passes (ClamAV,
 /// YARA, ML model). Default 650 MB. Set via nativeSetMaxScanSizeMb JNI call.
+/// Max bytes for text-like files submitted to ClamAV. Files beyond this are
+/// skipped — they're unlikely to contain malware signatures. Default 5 MB.
+/// Set via nativeSetMaxTextScanBytes JNI. Applied immediately.
+static MAX_TEXT_SCAN_BYTES: std::sync::atomic::AtomicU32 =
+    std::sync::atomic::AtomicU32::new(10_000_000);
+
 static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
     std::sync::atomic::AtomicU32::new(650);
 
@@ -801,8 +807,12 @@ fn is_executable_buffer(name: Option<&str>, data: &[u8], fmt: Option<&'static st
         }
         None => {}
     }
-    // HTML/text — phishing heuristic (<a href> spoof detection)
-    if is_text_like(data) {
+    // HTML/text — phishing heuristic (<a href> spoof detection).
+    // Skip files larger than MAX_TEXT_SCAN_BYTES: they're unlikely to
+    // contain embedded malware signatures and scanning them burns ClamAV
+    // time with no gain. Configurable via settings.
+    let max_text = MAX_TEXT_SCAN_BYTES.load(Ordering::Relaxed) as usize;
+    if is_text_like(data) && data.len() <= max_text {
         return true;
     }
     // Image magic bytes — catches renamed/misnamed image files
@@ -1352,6 +1362,20 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 ) {
     let mb = max_mb.max(1) as u32;
     MAX_SCAN_SIZE_MB.store(mb, Ordering::Relaxed);
+}
+
+/// `void nativeSetMaxTextScanBytes(int maxBytes)` — push the user's
+/// {@link MaxTextScanBytes} ceiling into the native engine so text-like
+/// files larger than this are excluded from ClamAV scanning. Applied
+/// immediately.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetMaxTextScanBytes(
+    _env: EnvUnowned,
+    _class: JClass,
+    max_bytes: jint,
+) {
+    let bytes = max_bytes.max(100_000) as u32;
+    MAX_TEXT_SCAN_BYTES.store(bytes, Ordering::Relaxed);
 }
 
 /// `void nativeSetDetectZipBomb(boolean enabled)` — Settings toggle for

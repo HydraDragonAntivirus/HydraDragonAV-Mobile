@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ 已 ROOT 设备</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">跳过大于此大小的文件（MB）：</string>
     <string name="max_scan_file_size_hint">介于 %1$d 到 %2$d MB 之间 — 文件越大扫描所需时间越长（对整个文件进行哈希计算 + ClamAV/YARA/ML）；超过此大小的文件将被完全跳过，而不是部分扫描</string>
     <string name="max_scan_file_size_saved">扫描的最大文件大小已保存</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">白名单</string>
     <string name="ignored_signatures_btn">已忽略的签名</string>
     <string name="ignored_signatures_hint">输入确切的签名/检测名称（例如 PUA.SomeAdware、YARA.auto_...），以便在所有应用/文件中忽略它，而不仅仅是一个</string>

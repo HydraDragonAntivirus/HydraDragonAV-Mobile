@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ ルート化された端末</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">これより大きいファイルをスキップ（MB）：</string>
     <string name="max_scan_file_size_hint">%1$d〜%2$d MBの範囲 — ファイルが大きいほどスキャンに時間がかかります（ファイル全体のハッシュ化＋ClamAV/YARA/ML）。この上限を超えるファイルは部分的にではなく完全にスキップされます</string>
     <string name="max_scan_file_size_saved">スキャンする最大ファイルサイズを保存しました</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">ホワイトリスト</string>
     <string name="ignored_signatures_btn">無視するシグネチャ</string>
     <string name="ignored_signatures_hint">正確なシグネチャ/検出名（例: PUA.SomeAdware、YARA.auto_...）を入力すると、1つのアプリだけでなくすべてのアプリ/ファイルで抑制されます</string>

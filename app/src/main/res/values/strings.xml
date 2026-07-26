@@ -38,6 +38,10 @@
     <string name="max_scan_file_size_label">Skip files larger than (MB):</string>
     <string name="max_scan_file_size_hint">Between %1$d and %2$d MB — larger files take much longer to scan (whole file hashed + ClamAV/YARA/ML); files above this size are skipped entirely rather than partially scanned</string>
     <string name="max_scan_file_size_saved">Max scan file size saved</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Whitelists</string>
     <string name="ignored_signatures_btn">Ignored Signatures</string>
     <string name="ignored_signatures_hint">Type an exact signature/detection name (e.g. PUA.SomeAdware, YARA.auto_...) to suppress it for every app/file, not just one</string>

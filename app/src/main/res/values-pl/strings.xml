@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ZROOTOWANE URZĄDZENIE</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">Pomijaj pliki większe niż (MB):</string>
     <string name="max_scan_file_size_hint">Od %1$d do %2$d MB — większe pliki zajmują znacznie więcej czasu podczas skanowania (cały plik jest hashowany + ClamAV/YARA/ML); pliki powyżej tego rozmiaru są całkowicie pomijane, a nie skanowane częściowo</string>
     <string name="max_scan_file_size_saved">Zapisano maksymalny rozmiar pliku do skanowania</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Białe listy</string>
     <string name="ignored_signatures_btn">Ignorowane sygnatury</string>
     <string name="ignored_signatures_hint">Wpisz dokładną nazwę sygnatury/wykrycia (np. PUA.SomeAdware, YARA.auto_...), aby ją pomijać dla każdej aplikacji/pliku, nie tylko jednego</string>

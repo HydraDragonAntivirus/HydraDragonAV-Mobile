@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirüs</string>
     <string name="root_warning_title">⚠ KÖKLÜ (ROOT) CİHAZ</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">Bundan büyük dosyaları atla (MB):</string>
     <string name="max_scan_file_size_hint">%1$d ile %2$d MB arasında — daha büyük dosyaların taranması çok daha uzun sürer (tüm dosya hash\'lenir + ClamAV/YARA/ML); bu boyutun üzerindeki dosyalar kısmen taranmak yerine tamamen atlanır</string>
     <string name="max_scan_file_size_saved">Taranacak maksimum dosya boyutu kaydedildi</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Beyaz Listeler</string>
     <string name="ignored_signatures_btn">Yoksayılan İmzalar</string>
     <string name="ignored_signatures_hint">Tam bir imza/tespit adı yazın (ör. PUA.SomeAdware, YARA.auto_...), böylece sadece bir uygulama değil, tüm uygulamalar/dosyalar için bastırılsın</string>

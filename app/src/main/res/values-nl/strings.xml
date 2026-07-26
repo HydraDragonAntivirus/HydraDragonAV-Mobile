@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ GEROOTED APPARAAT</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">Bestanden groter dan overslaan (MB):</string>
     <string name="max_scan_file_size_hint">Tussen %1$d en %2$d MB — grotere bestanden duren veel langer om te scannen (volledig bestand gehasht + ClamAV/YARA/ML); bestanden boven deze grootte worden volledig overgeslagen in plaats van gedeeltelijk gescand</string>
     <string name="max_scan_file_size_saved">Maximale scanbestandsgrootte opgeslagen</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Whitelists</string>
     <string name="ignored_signatures_btn">Genegeerde signaturen</string>
     <string name="ignored_signatures_hint">Typ een exacte signatuur-/detectienaam (bijv. PUA.SomeAdware, YARA.auto_...) om deze voor elke app/bestand te onderdrukken, niet slechts één</string>

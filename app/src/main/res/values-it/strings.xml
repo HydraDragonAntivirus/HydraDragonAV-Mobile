@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ DISPOSITIVO ROOT</string>
@@ -42,6 +42,10 @@
     <string name="max_scan_file_size_label">Ignora file più grandi di (MB):</string>
     <string name="max_scan_file_size_hint">Tra %1$d e %2$d MB — i file più grandi richiedono molto più tempo per la scansione (intero file sottoposto a hash + ClamAV/YARA/ML); i file sopra questa dimensione vengono saltati completamente anziché scansionati parzialmente</string>
     <string name="max_scan_file_size_saved">Dimensione massima file da scansionare salvata</string>
+    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Liste bianche</string>
     <string name="ignored_signatures_btn">Firme ignorate</string>
     <string name="ignored_signatures_hint">Digita un nome esatto di firma/rilevamento (es. PUA.SomeAdware, YARA.auto_...) per sopprimerla per ogni app/file, non solo uno</string>
