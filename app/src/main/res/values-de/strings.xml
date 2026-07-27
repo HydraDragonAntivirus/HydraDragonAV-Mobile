@@ -461,6 +461,8 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="behavior_auto_kill">Vordergrund-Malware automatisch töten (Barrierefreiheit)</string>
     <string name="graph_no_data">Noch keine Verhaltensdaten</string>
     <string name="graph_device_behavior">Geräteverhalten</string>
+    <string name="graph_yes">JA</string>
+    <string name="graph_no">nein</string>
 </resources>
 
 

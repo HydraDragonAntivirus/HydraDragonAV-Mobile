@@ -109,5 +109,5 @@ public class BehaviorGraphFragment extends Fragment {
         detailList.addView(row);
     }
 
-    private static String boolStr(boolean v) { return v ? "YES" : "no"; }
+    private String boolStr(boolean v) { return getString(v ? R.string.graph_yes : R.string.graph_no); }
 }

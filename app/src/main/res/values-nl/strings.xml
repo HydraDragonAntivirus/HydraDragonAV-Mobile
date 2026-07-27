@@ -461,6 +461,8 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="behavior_auto_kill">Malware op de voorgrond automatisch doden (toegankelijkheid)</string>
     <string name="graph_no_data">Nog geen gedragsgegevens</string>
     <string name="graph_device_behavior">Apparaatgedrag</string>
+    <string name="graph_yes">JA</string>
+    <string name="graph_no">nee</string>
 </resources>
 
 

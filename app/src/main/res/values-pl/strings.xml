@@ -461,6 +461,8 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="behavior_auto_kill">Automatyczne usuwanie złośliwego oprogramowania na pierwszym planie (dostępność)</string>
     <string name="graph_no_data">Brak danych behawioralnych</string>
     <string name="graph_device_behavior">Zachowanie urządzenia</string>
+    <string name="graph_yes">TAK</string>
+    <string name="graph_no">nie</string>
 </resources>
 
 

@@ -461,6 +461,8 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="behavior_auto_kill">Ön plandaki kötü amaçlı yazılımları otomatik olarak sonlandır (erişilebilirlik)</string>
     <string name="graph_no_data">Henüz davranışsal veri yok</string>
     <string name="graph_device_behavior">Cihaz Davranışı</string>
+    <string name="graph_yes">EVET</string>
+    <string name="graph_no">hayır</string>
 </resources>
 
 

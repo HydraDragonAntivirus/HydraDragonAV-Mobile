@@ -461,6 +461,8 @@
     <string name="behavior_auto_kill">Автоматическое уничтожение вредоносных программ на переднем плане (доступность)</string>
     <string name="graph_no_data">Поведенческих данных пока нет</string>
     <string name="graph_device_behavior">Поведение устройства</string>
+    <string name="graph_yes">ДА</string>
+    <string name="graph_no">нет</string>
 </resources>
 
 

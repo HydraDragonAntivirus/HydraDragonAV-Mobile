@@ -601,8 +601,27 @@ public class GuardService extends Service {
                     if (callback != null) callback.onSuspiciousProcess(processInfo);
                     if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {
                         try {
-                            com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
-                                GuardService.this, processInfo.getPackageName());
+                            if (hasScanFlag) {
+                                String appName = procPkg;
+                                try {
+                                    android.content.pm.ApplicationInfo ai = getPackageManager()
+                                        .getApplicationInfo(procPkg, 0);
+                                    appName = getPackageManager().getApplicationLabel(ai).toString();
+                                } catch (Throwable ignored) {}
+                                com.hydradragon.antivirus.model.ThreatResult threat =
+                                    new com.hydradragon.antivirus.model.ThreatResult.Builder(procPkg)
+                                        .setAppName(appName)
+                                        .setRiskScore(75)
+                                        .setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE)
+                                        .setReasons(java.util.Collections.singletonList(
+                                            "Previously detected malware app is now running"))
+                                        .build();
+                                com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
+                                    GuardService.this, threat, false);
+                            } else {
+                                com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
+                                    GuardService.this, procPkg);
+                            }
                         } catch (Throwable t) {
                             Log.e(TAG, "process auto-kill failed", t);
                         }

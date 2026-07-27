@@ -461,6 +461,8 @@
     <string name="behavior_auto_kill">القتل التلقائي للبرامج الضارة في المقدمة (إمكانية الوصول)</string>
     <string name="graph_no_data">لا توجد بيانات سلوكية حتى الآن</string>
     <string name="graph_device_behavior">سلوك الجهاز</string>
+    <string name="graph_yes">نعم</string>
+    <string name="graph_no">لا</string>
 </resources>
 
 

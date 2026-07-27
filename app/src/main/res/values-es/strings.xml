@@ -461,6 +461,8 @@ Puntuación de riesgo: %2$d/100
     <string name="behavior_auto_kill">Eliminación automática de malware en primer plano (accesibilidad)</string>
     <string name="graph_no_data">Aún no hay datos de comportamiento</string>
     <string name="graph_device_behavior">Comportamiento del Dispositivo</string>
+    <string name="graph_yes">SÍ</string>
+    <string name="graph_no">no</string>
 </resources>
 
 

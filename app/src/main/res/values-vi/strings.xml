@@ -461,6 +461,8 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="behavior_auto_kill">Tự động tiêu diệt phần mềm độc hại trên nền trước (khả năng truy cập)</string>
     <string name="graph_no_data">Chưa có dữ liệu hành vi</string>
     <string name="graph_device_behavior">Hành vi Thiết bị</string>
+    <string name="graph_yes">CÓ</string>
+    <string name="graph_no">không</string>
 </resources>
 
 

@@ -461,6 +461,8 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="behavior_auto_kill">Malware latar depan yang mematikan secara otomatis (aksesibilitas)</string>
     <string name="graph_no_data">Belum ada data perilaku</string>
     <string name="graph_device_behavior">Perilaku Perangkat</string>
+    <string name="graph_yes">YA</string>
+    <string name="graph_no">tidak</string>
 </resources>
 
 

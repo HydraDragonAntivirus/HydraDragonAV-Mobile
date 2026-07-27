@@ -461,6 +461,8 @@
     <string name="behavior_auto_kill">フォアグラウンド マルウェアを自動停止する (アクセシビリティ)</string>
     <string name="graph_no_data">行動データはまだありません</string>
     <string name="graph_device_behavior">デバイスの動作</string>
+    <string name="graph_yes">はい</string>
+    <string name="graph_no">いいえ</string>
 </resources>
 
 

@@ -461,6 +461,8 @@
     <string name="behavior_auto_kill">Автоматичне видалення зловмисного програмного забезпечення на передньому плані (спеціальні можливості)</string>
     <string name="graph_no_data">Поведінкових даних ще немає</string>
     <string name="graph_device_behavior">Поведінка пристрою</string>
+    <string name="graph_yes">ТАК</string>
+    <string name="graph_no">ні</string>
 </resources>
 
 
