@@ -219,6 +219,10 @@ public class GuardService extends Service {
                 Log.e(TAG, "MALICIOUS DOWNLOAD: " + file.getAbsolutePath());
                 ThreatLogger.logThreat(this, threat, getString(R.string.danger_download_desc));
                 if (callback != null) callback.onThreatDetected(threat);
+                String dlPkg = threat.getPackageName();
+                if (dlPkg != null && !dlPkg.isEmpty()) {
+                    com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(dlPkg, "DOWNLOAD_MALWARE");
+                }
 
                 if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(this)) {
                     try {
@@ -411,6 +415,10 @@ public class GuardService extends Service {
             @Override public void onProgress(int c, int t, String p) { }
             @Override public void onThreatFound(ThreatResult threat) {
                 ThreatLogger.logThreat(GuardService.this, threat, "BACKGROUND SCAN");
+                String pkg = threat.getPackageName();
+                if (pkg != null && !pkg.isEmpty()) {
+                    com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(pkg, "SCAN_MALWARE");
+                }
                 if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {
                     try {
                         if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(GuardService.this)) {
@@ -453,6 +461,10 @@ public class GuardService extends Service {
                     ThreatLogger.logThreat(GuardService.this, threat, "SCAN DETECTED");
                 } catch (Throwable t) {
                     Log.e(TAG, "ThreatLogger.logThreat failed", t);
+                }
+                String scanPkg = threat.getPackageName();
+                if (scanPkg != null && !scanPkg.isEmpty()) {
+                    com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(scanPkg, "SCAN_MALWARE");
                 }
                 // Isolated in its own try/catch: this whole onThreatFound() call
                 // runs INSIDE ScanEngine's per-app loop, itself wrapped in a
@@ -524,12 +536,21 @@ public class GuardService extends Service {
             public void onSuspiciousActivity(NetworkMonitor.NetworkEvent event) {
                 ThreatLogger.logThreat(GuardService.this, event.destIp, "Network", event.reason);
                 if (!com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) return;
+                String netPkg = resolvePackageForPid(event.pid);
+                if (netPkg != null && !netPkg.isEmpty()) {
+                    com.hydradragon.antivirus.engine.HipsMonitor.reportNetwork(netPkg, 1, 1, 0);
+                }
                 sendNetworkAlert(event);
                 if (callback != null) callback.onNetworkAlert(event);
             }
 
             @Override
-            public void onStatsUpdate(long bytesIn, long bytesOut, int blocked, int allowed) {}
+            public void onStatsUpdate(long bytesIn, long bytesOut, int blocked, int allowed) {
+                String fgPkg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+                if (fgPkg != null && !fgPkg.isEmpty() && blocked + allowed > 0) {
+                    com.hydradragon.antivirus.engine.HipsMonitor.reportNetwork(fgPkg, 1, 1, 0);
+                }
+            }
 
             @Override
             public void onNetworkChange(boolean isConnected, String networkType) {
@@ -540,6 +561,10 @@ public class GuardService extends Service {
         processDetector.setCallback(new ProcessDetector.ProcessCallback() {
             @Override
             public void onSuspiciousProcess(ProcessInfo processInfo) {
+                String procPkg = processInfo.getPackageName();
+                if (procPkg != null && !procPkg.isEmpty()) {
+                    com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(procPkg, "PROCESS_ANOMALY");
+                }
                 boolean shouldKill = processInfo.isCritical()
                     || (processInfo.isSuspicious()
                         && processInfo.getFlags() != null
@@ -761,6 +786,15 @@ public class GuardService extends Service {
     public AIEngine getAiEngine() { return aiEngine; }
     public NetworkMonitor getNetworkMonitor() { return networkMonitor; }
     public ProcessDetector getProcessDetector() { return processDetector; }
+
+    private String resolvePackageForPid(int pid) {
+        android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        if (am == null) return null;
+        for (android.app.ActivityManager.RunningAppProcessInfo p : am.getRunningAppProcesses()) {
+            if (p.pid == pid && p.pkgList != null && p.pkgList.length > 0) return p.pkgList[0];
+        }
+        return null;
+    }
 
     @Override
     public IBinder onBind(Intent intent) { return binder; }
