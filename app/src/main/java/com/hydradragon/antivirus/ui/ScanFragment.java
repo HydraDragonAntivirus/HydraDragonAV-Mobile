@@ -304,22 +304,18 @@ public class ScanFragment extends Fragment {
                 tv.setTextColor(0xFFE6EDF3);
                 dialogLayout.addView(tv);
 
-                android.widget.Button graphBtn = new android.widget.Button(getContext());
-                graphBtn.setText(R.string.btn_behavior_graph);
-                graphBtn.setTextSize(12);
-                graphBtn.setOnClickListener(v -> {
-                    if (getActivity() instanceof com.hydradragon.antivirus.MainActivity) {
-                        ((com.hydradragon.antivirus.MainActivity) getActivity())
-                            .runOnUiThread(() -> ((com.hydradragon.antivirus.MainActivity) getActivity())
-                                .showFragment(BehaviorGraphFragment.newInstance(pkg)));
-                    }
-                });
-                android.widget.LinearLayout.LayoutParams lp = new android.widget.LinearLayout.LayoutParams(
-                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
-                lp.setMargins(0, 16, 0, 0);
-                graphBtn.setLayoutParams(lp);
-                dialogLayout.addView(graphBtn);
+                com.hydradragon.antivirus.views.BehaviorRadarChart chart =
+                    new com.hydradragon.antivirus.views.BehaviorRadarChart(getContext());
+                int chartSize = (int) (200 * getResources().getDisplayMetrics().density);
+                android.widget.LinearLayout.LayoutParams chartLp =
+                    new android.widget.LinearLayout.LayoutParams(chartSize, chartSize);
+                chartLp.setMargins(0, 16, 0, 0);
+                chartLp.gravity = android.view.Gravity.CENTER;
+                chart.setLayoutParams(chartLp);
+                com.hydradragon.antivirus.engine.BehaviorGraphData data =
+                    com.hydradragon.antivirus.engine.BehaviorGraphData.forPackage(pkg, getContext());
+                chart.setData(data.computeAxisValues());
+                dialogLayout.addView(chart);
 
                 new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                     .setTitle(getString(R.string.threat_found_dialog_title))

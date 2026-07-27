@@ -762,7 +762,7 @@ public class GuardService extends Service {
 
         scheduler.scheduleAtFixedRate(() -> {
             checkForegroundViaUsageStats();
-        }, 2, 2, TimeUnit.SECONDS);
+        }, 0, 1, TimeUnit.SECONDS);
 
         scheduler.scheduleAtFixedRate(this::checkRootTransition, 15, 60, TimeUnit.SECONDS);
 
