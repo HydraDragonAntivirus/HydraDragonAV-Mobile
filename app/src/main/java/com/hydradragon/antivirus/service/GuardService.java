@@ -566,9 +566,10 @@ public class GuardService extends Service {
             @Override
             public void onSuspiciousProcess(ProcessInfo processInfo) {
                 String procPkg = processInfo.getPackageName();
-                if (procPkg != null && !procPkg.isEmpty()) {
+                boolean isTrusted = procPkg != null
+                    && com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(GuardService.this, procPkg);
+                if (procPkg != null && !procPkg.isEmpty() && !isTrusted) {
                     com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(procPkg, "PROCESS_ANOMALY");
-                    // Scan APK via NativeScanner (no system-app skip) every cycle
                     try {
                         android.content.pm.ApplicationInfo ai = getPackageManager()
                             .getApplicationInfo(procPkg, 0);
@@ -621,6 +622,83 @@ public class GuardService extends Service {
         networkMonitor.startMonitoring();
     }
 
+    private void checkForegroundViaUsageStats() {
+        try {
+            if (Build.VERSION.SDK_INT < 22) return;
+            if (!com.hydradragon.antivirus.engine.ProtectionState.isEnabled(this)) return;
+            android.app.AppOpsManager appOps = getSystemService(android.app.AppOpsManager.class);
+            if (appOps == null) return;
+            int mode = appOps.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(), getPackageName());
+            if (mode != android.app.AppOpsManager.MODE_ALLOWED) {
+                Log.w(TAG, "Usage access not granted — foreground scan disabled");
+                return;
+            }
+            android.app.usage.UsageStatsManager usm = getSystemService(android.app.usage.UsageStatsManager.class);
+            if (usm == null) return;
+            long now = System.currentTimeMillis();
+            java.util.List<android.app.usage.UsageStats> stats =
+                usm.queryUsageStats(android.app.usage.UsageStatsManager.INTERVAL_BEST, now - 5000, now);
+            if (stats == null) return;
+            String fgPkg = null;
+            long lastTime = 0;
+            for (android.app.usage.UsageStats s : stats) {
+                long t = s.getLastTimeUsed();
+                if (t > lastTime) {
+                    lastTime = t;
+                    fgPkg = s.getPackageName();
+                }
+            }
+            if (fgPkg == null || fgPkg.isEmpty()) return;
+            if (fgPkg.equals(getPackageName())
+                || fgPkg.equals("com.hydradragon.antivirus")
+                || fgPkg.equals("com.hydradragon.antivirus.debug")) return;
+
+            boolean hasFlag = com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(fgPkg, "SCAN_MALWARE")
+                || com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(fgPkg, "DOWNLOAD_MALWARE");
+
+            if (!hasFlag
+                    && !com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, fgPkg)) {
+                try {
+                    android.content.pm.ApplicationInfo ai = getPackageManager().getApplicationInfo(fgPkg, 0);
+                    String apkPath = ai.sourceDir;
+                    if (apkPath != null) {
+                        com.hydradragon.antivirus.engine.NativeScanner.Verdict v =
+                            com.hydradragon.antivirus.engine.NativeScanner.scan(apkPath, fgPkg);
+                        if (v != null && v.malicious) {
+                            com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(fgPkg, "SCAN_MALWARE");
+                            hasFlag = true;
+                            com.hydradragon.antivirus.service.ThreatLogger.logThreat(
+                                this, fgPkg, "FOREGROUND SCAN",
+                                "NativeScanner flagged foreground app APK");
+                        }
+                    }
+                } catch (Throwable t) {
+                    Log.w(TAG, "foreground scan failed for " + fgPkg, t);
+                }
+            }
+
+            if (hasFlag) {
+                Log.i(TAG, "Foreground flagged app " + fgPkg + " -> killing");
+                String appName = fgPkg;
+                try {
+                    android.content.pm.ApplicationInfo ai = getPackageManager().getApplicationInfo(fgPkg, 0);
+                    appName = getPackageManager().getApplicationLabel(ai).toString();
+                } catch (Throwable ignored) {}
+                com.hydradragon.antivirus.model.ThreatResult threat =
+                    new com.hydradragon.antivirus.model.ThreatResult.Builder(fgPkg)
+                        .setAppName(appName)
+                        .setRiskScore(100)
+                        .setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE)
+                        .setReasons(java.util.Collections.singletonList("Scan-detected malware"))
+                        .build();
+                com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, threat);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "checkForegroundViaUsageStats failed", t);
+        }
+    }
+
     private void handleProcessKill(String procPkg, boolean hasScanFlag) {
         if (procPkg == null || procPkg.isEmpty()) return;
         if (!com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) return;
@@ -642,7 +720,7 @@ public class GuardService extends Service {
                         .build();
                 com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
                     GuardService.this, threat, false);
-            } else {
+            } else if (!com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, procPkg)) {
                 com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
                     GuardService.this, procPkg);
             }
@@ -681,6 +759,10 @@ public class GuardService extends Service {
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();
         }, 10, 60, TimeUnit.SECONDS);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            checkForegroundViaUsageStats();
+        }, 2, 2, TimeUnit.SECONDS);
 
         scheduler.scheduleAtFixedRate(this::checkRootTransition, 15, 60, TimeUnit.SECONDS);
 
