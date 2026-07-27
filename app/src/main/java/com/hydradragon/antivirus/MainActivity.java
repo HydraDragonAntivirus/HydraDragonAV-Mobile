@@ -590,16 +590,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkAndShowThreatDialog(Intent intent) {
-        if (intent == null || !intent.hasExtra("alert_threat_name")) return;
+        if (intent == null) return;
         String name = intent.getStringExtra("alert_threat_name");
         String pkg = intent.getStringExtra("alert_threat_pkg");
+        if ((name == null || name.isEmpty()) && (pkg == null || pkg.isEmpty())) return;
+
+        if (name == null || name.isEmpty()) name = pkg != null ? pkg : "Malware";
         String reason = intent.getStringExtra("alert_threat_reason");
-        int risk = intent.getIntExtra("alert_threat_risk", 0);
+        int risk = intent.getIntExtra("alert_threat_risk", 100);
         boolean isFile = intent.getBooleanExtra("alert_threat_is_file", false);
         String path = intent.getStringExtra("alert_threat_path");
 
-        if (name == null || name.isEmpty()) name = pkg != null ? pkg : "Malware";
-        if (reason == null) reason = "-";
+        if (reason == null || reason.isEmpty()) reason = "Detected Threat";
 
         final String finalPkg = pkg;
         final String finalPath = path;
@@ -627,6 +629,7 @@ public class MainActivity extends AppCompatActivity {
             .show();
 
         intent.removeExtra("alert_threat_name");
+        intent.removeExtra("alert_threat_pkg");
     }
 
     @Override

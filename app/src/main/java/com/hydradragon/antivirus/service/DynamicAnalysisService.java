@@ -736,8 +736,12 @@ public class DynamicAnalysisService extends AccessibilityService {
         if (threatId == null
                 || !com.hydradragon.antivirus.engine.UserDecisions
                         .isRedirectDismissed(this, threatId)) {
-            redirectToApp();
+            redirectToApp(threatId);
         }
+    }
+
+    private void redirectToApp() {
+        redirectToApp(null);
     }
 
     /**
@@ -746,7 +750,7 @@ public class DynamicAnalysisService extends AccessibilityService {
      * we redirect to the antivirus screen so the user lands on protection, not
      * an empty launcher.
      */
-    private void redirectToApp() {
+    private void redirectToApp(String threatId) {
         try {
             android.content.Intent open = new android.content.Intent(this,
                     com.hydradragon.antivirus.MainActivity.class);
@@ -754,6 +758,17 @@ public class DynamicAnalysisService extends AccessibilityService {
                     | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
                     | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
             open.putExtra("open_scan_tab", true);
+            if (threatId != null && !threatId.isEmpty()) {
+                String appName = threatId;
+                try {
+                    android.content.pm.ApplicationInfo ai = getPackageManager().getApplicationInfo(threatId, 0);
+                    appName = getPackageManager().getApplicationLabel(ai).toString();
+                } catch (Throwable ignored) {}
+                open.putExtra("alert_threat_name", appName);
+                open.putExtra("alert_threat_pkg", threatId);
+                open.putExtra("alert_threat_reason", "Malicious behavior detected");
+                open.putExtra("alert_threat_risk", 100);
+            }
             startActivity(open);
         } catch (Throwable ignore) {
         }
