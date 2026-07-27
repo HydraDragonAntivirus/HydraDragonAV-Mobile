@@ -652,6 +652,8 @@ public final class HipsMonitor {
         set.addAll(behaviorFlags.keySet());
         set.addAll(observedPackages);
         set.remove("");
+        // Never expose the antivirus app itself in the behavior graph.
+        set.removeIf(pkg -> pkg.startsWith("com.hydradragon.antivirus"));
         return new ArrayList<>(set);
     }
 }

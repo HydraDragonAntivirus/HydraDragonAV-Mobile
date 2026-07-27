@@ -65,7 +65,10 @@ public class BehaviorGraphFragment extends Fragment {
         packageLabels.add(getString(R.string.graph_general_device_behavior));
 
         List<String> observedPkgs = com.hydradragon.antivirus.engine.HipsMonitor.getAllObservedPackages();
-        if (initialPkg != null && !initialPkg.isEmpty() && !observedPkgs.contains(initialPkg)) {
+        // getAllObservedPackages already strips com.hydradragon.antivirus* — also guard initialPkg.
+        if (initialPkg != null && !initialPkg.isEmpty()
+                && !initialPkg.startsWith("com.hydradragon.antivirus")
+                && !observedPkgs.contains(initialPkg)) {
             observedPkgs.add(0, initialPkg);
         }
 
