@@ -20,7 +20,15 @@
             android:textSize="18sp"
             android:fontFamily="monospace"
             android:textStyle="bold"
-            android:layout_marginBottom="16dp"/>
+            android:layout_marginBottom="8dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_package_select"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:padding="8dp"
+            android:spinnerMode="dropdown" />
 
         <com.hydradragon.antivirus.views.BehaviorRadarChart
             android:id="@+id/radar_chart"

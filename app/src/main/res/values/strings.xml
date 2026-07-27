@@ -469,6 +469,8 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="behavior_auto_kill">Auto-kill foreground malware (accessibility)</string>
     <string name="graph_no_data">No behavioral data yet</string>
     <string name="graph_device_behavior">Device Behavior</string>
+    <string name="graph_general_device_behavior">🌐 General Device Behavior (All Apps)</string>
+    <string name="graph_select_package">Select App / Package</string>
     <string name="graph_yes">YES</string>
     <string name="graph_no">no</string>
 </resources>

@@ -636,4 +636,22 @@ public final class HipsMonitor {
             return "";
         }
     }
+
+    public static synchronized List<String> getAllObservedPackages() {
+        java.util.Set<String> set = new java.util.LinkedHashSet<>();
+        for (UiSpamEvent e : uiSpamEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        for (NotificationSpamEvent e : notificationSpamEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        for (ClickjackEvent e : clickjackEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        for (RansomwareEvent e : ransomwareEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        for (NetworkEvent e : networkEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        for (MinerEvent e : minerEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        for (StrandHoggEvent e : strandhoggEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        for (RemovalResistanceEvent e : removalResistanceEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        for (LauncherChangeEvent e : launcherChangeEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        for (CanaryEvent e : canaryEvents) if (e.packageName != null && !e.packageName.isEmpty()) set.add(e.packageName);
+        set.addAll(behaviorFlags.keySet());
+        set.addAll(observedPackages);
+        set.remove("");
+        return new ArrayList<>(set);
+    }
 }

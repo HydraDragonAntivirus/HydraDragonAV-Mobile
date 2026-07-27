@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -42,17 +43,69 @@ public class BehaviorGraphFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_behavior_graph, container, false);
     }
 
+    private Spinner spinnerPackageSelect;
+    private final List<String> packageValues = new java.util.ArrayList<>();
+    private final List<String> packageLabels = new java.util.ArrayList<>();
+
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         radarChart = view.findViewById(R.id.radar_chart);
         detailList = view.findViewById(R.id.layout_detail_list);
         tvTitle = view.findViewById(R.id.tv_graph_title);
+        spinnerPackageSelect = view.findViewById(R.id.spinner_package_select);
 
-        String pkg = getArguments() != null ? getArguments().getString(ARG_PACKAGE, "") : "";
-        tvTitle.setText(pkg.isEmpty() ? getString(R.string.graph_device_behavior) : pkg);
+        String initialPkg = getArguments() != null ? getArguments().getString(ARG_PACKAGE, "") : "";
 
-        loadData(pkg);
+        // Populate package options: General Device Behavior + Per-Package
+        packageValues.clear();
+        packageLabels.clear();
+
+        packageValues.add("");
+        packageLabels.add(getString(R.string.graph_general_device_behavior));
+
+        List<String> observedPkgs = com.hydradragon.antivirus.engine.HipsMonitor.getAllObservedPackages();
+        if (initialPkg != null && !initialPkg.isEmpty() && !observedPkgs.contains(initialPkg)) {
+            observedPkgs.add(0, initialPkg);
+        }
+
+        for (String pkg : observedPkgs) {
+            packageValues.add(pkg);
+            packageLabels.add("📦 " + pkg);
+        }
+
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            packageLabels
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerPackageSelect.setAdapter(adapter);
+
+        int initialPosition = 0;
+        if (initialPkg != null && !initialPkg.isEmpty()) {
+            int foundIdx = packageValues.indexOf(initialPkg);
+            if (foundIdx >= 0) initialPosition = foundIdx;
+        }
+        spinnerPackageSelect.setSelection(initialPosition);
+
+        spinnerPackageSelect.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View v, int position, long id) {
+                if (position >= 0 && position < packageValues.size()) {
+                    String selectedPkg = packageValues.get(position);
+                    tvTitle.setText(selectedPkg.isEmpty()
+                        ? getString(R.string.graph_device_behavior)
+                        : selectedPkg);
+                    loadData(selectedPkg);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+
+        loadData(packageValues.get(initialPosition));
     }
 
     private void loadData(String pkg) {
