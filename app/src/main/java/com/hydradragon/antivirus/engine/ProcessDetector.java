@@ -89,7 +89,7 @@ public class ProcessDetector {
             ProcessInfo info = analyzeProcess(processInfo);
             processList.add(info);
 
-            if (info.isSuspicious() && callback != null) {
+            if (callback != null && info.getPackageName() != null) {
                 callback.onSuspiciousProcess(info);
             }
         }
@@ -99,7 +99,7 @@ public class ProcessDetector {
         for (ProcessInfo p : procFsProcesses) {
             if (!containsProcess(processList, p.getPid())) {
                 processList.add(p);
-                if (p.isSuspicious() && callback != null) {
+                if (callback != null && p.getPackageName() != null) {
                     callback.onSuspiciousProcess(p);
                 }
             }

@@ -43,8 +43,8 @@
     <string name="max_scan_file_size_hint">Entre %1$d e %2$d MB — arquivos maiores levam muito mais tempo para verificar (arquivo inteiro com hash + ClamAV/YARA/ML); arquivos acima desse tamanho são totalmente ignorados em vez de verificados parcialmente</string>
     <string name="max_scan_file_size_saved">Tamanho máximo de arquivo para verificar salvo</string>
     <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
-    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (MB):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Listas de permissões</string>
     <string name="ignored_signatures_btn">Assinaturas ignoradas</string>

@@ -1190,23 +1190,24 @@ public class SettingsFragment extends Fragment {
         box.addView(label);
         android.widget.EditText input = new android.widget.EditText(requireContext());
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setText(String.valueOf(
-            com.hydradragon.antivirus.engine.MaxTextScanBytes.getMaxBytes(requireContext())));
+        int curBytes = com.hydradragon.antivirus.engine.MaxTextScanBytes.getMaxBytes(requireContext());
+        input.setText(String.valueOf(curBytes / (1024 * 1024)));
         box.addView(input);
 
         new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(getString(R.string.max_text_scan_bytes_btn))
             .setMessage(getString(R.string.max_text_scan_bytes_hint,
-                com.hydradragon.antivirus.engine.MaxTextScanBytes.MIN_BYTES,
-                com.hydradragon.antivirus.engine.MaxTextScanBytes.MAX_BYTES))
+                com.hydradragon.antivirus.engine.MaxTextScanBytes.MIN_BYTES / (1024 * 1024),
+                com.hydradragon.antivirus.engine.MaxTextScanBytes.MAX_BYTES / (1024 * 1024)))
             .setView(box)
             .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
-                int bytes;
+                int mb;
                 try {
-                    bytes = Integer.parseInt(input.getText().toString().trim());
+                    mb = Integer.parseInt(input.getText().toString().trim());
                 } catch (Exception e) {
-                    bytes = com.hydradragon.antivirus.engine.MaxTextScanBytes.DEFAULT_BYTES;
+                    mb = com.hydradragon.antivirus.engine.MaxTextScanBytes.DEFAULT_BYTES / (1024 * 1024);
                 }
+                int bytes = (int) Math.min((long) mb * 1024 * 1024, (long) Integer.MAX_VALUE);
                 com.hydradragon.antivirus.engine.MaxTextScanBytes.setMaxBytes(requireContext(), bytes);
                 com.hydradragon.antivirus.engine.NativeScanner.setMaxTextScanBytes(
                     com.hydradragon.antivirus.engine.MaxTextScanBytes.getMaxBytes(requireContext()));

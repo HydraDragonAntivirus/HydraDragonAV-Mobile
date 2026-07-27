@@ -43,8 +43,8 @@
     <string name="max_scan_file_size_hint">%1$d और %2$d MB के बीच — बड़ी फ़ाइलों को स्कैन करने में बहुत अधिक समय लगता है (पूरी फ़ाइल हैश + ClamAV/YARA/ML); इस आकार से बड़ी फ़ाइलों को आंशिक रूप से स्कैन करने के बजाय पूरी तरह छोड़ दिया जाता है</string>
     <string name="max_scan_file_size_saved">स्कैन के लिए अधिकतम फ़ाइल आकार सहेजा गया</string>
     <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
-    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (bytes):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d bytes — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (MB):</string>
+    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">व्हाइटलिस्ट</string>
     <string name="ignored_signatures_btn">अनदेखे किए गए सिग्नेचर</string>

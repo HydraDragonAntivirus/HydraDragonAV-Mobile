@@ -12,7 +12,7 @@ public final class MaxTextScanBytes {
 
     public static final int DEFAULT_BYTES = 10_000_000;
     public static final int MIN_BYTES = 100_000;
-    public static final int MAX_BYTES = 650_000_000;
+    public static final int MAX_BYTES = 2_147_483_647;
 
     private MaxTextScanBytes() {}
 
