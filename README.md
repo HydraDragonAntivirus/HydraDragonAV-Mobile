@@ -100,13 +100,6 @@ In short: a security product that asks the user to first grant it debug-shell re
 
 3. Build the Android app as usual (Gradle) — the native `.so` output is picked up automatically from `app/src/main/jniLibs/`.
 
-### Build Info
-
-| Component | Tool |
-|-----------|------|
-| AI Assistant | [DeepSeek V4 Flash Free](https://deepseek.com) + [OpenCode Zen](https://opencode.ai) |
-
-
 ## 🗄️ Data Pipeline (Whitelists, Signatures & Filters)
 
 The on-device detection assets are generated offline from public threat-intel and NSRL sources, then bundled into the app:
