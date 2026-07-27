@@ -336,93 +336,65 @@ public final class HipsMonitor {
 
     static synchronized BehaviorGraphData collectBehaviorData(String pkg, android.content.Context ctx) {
         if (pkg == null) pkg = "";
+        final boolean isGeneral = pkg.isEmpty();
+
+        if (isGeneral) {
+            // General Device Behavior: use per-package MAX (not sum) for count
+            // metrics so the graph reflects the worst single offender rather
+            // than an inflated aggregate that grows with the number of apps.
+            return collectGeneralBehaviorData(ctx);
+        }
+
+        // --- Per-package path ---
         int ui = 0, notif = 0, cj = 0, rw = 0, net = 0, minerMem = 0, flags = 0;
         int fileRead = 0, fileReadHigh = 0;
         int fileCreated = 0, fileCopy = 0;
         boolean sh = false, rr = false, lc = false, canary = false;
 
         for (UiSpamEvent e : uiSpamEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) ui += e.clickCount;
+            if (pkg.equals(e.packageName)) ui += e.clickCount;
         }
         for (NotificationSpamEvent e : notificationSpamEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) notif += e.notificationCount;
+            if (pkg.equals(e.packageName)) notif += e.notificationCount;
         }
         for (ClickjackEvent e : clickjackEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) cj += e.rapidClicks;
+            if (pkg.equals(e.packageName)) cj += e.rapidClicks;
         }
         for (RansomwareEvent e : ransomwareEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) rw += e.renameCount;
+            if (pkg.equals(e.packageName)) rw += e.renameCount;
         }
         for (NetworkEvent e : networkEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) net += e.connectionCount;
+            if (pkg.equals(e.packageName)) net += e.connectionCount;
         }
         for (MinerEvent e : minerEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) {
-                minerMem = Math.max(minerMem, (int) e.memoryMb);
-            }
+            if (pkg.equals(e.packageName)) minerMem = Math.max(minerMem, (int) e.memoryMb);
         }
-        for (StrandHoggEvent e : strandhoggEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) sh = true;
-        }
-        for (RemovalResistanceEvent e : removalResistanceEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) rr = true;
-        }
-        for (LauncherChangeEvent e : launcherChangeEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) lc = true;
-        }
-        for (CanaryEvent e : canaryEvents) {
-            if (pkg.isEmpty() || pkg.equals(e.packageName)) canary = true;
-        }
+        for (StrandHoggEvent e : strandhoggEvents)      { if (pkg.equals(e.packageName)) sh = true; }
+        for (RemovalResistanceEvent e : removalResistanceEvents) { if (pkg.equals(e.packageName)) rr = true; }
+        for (LauncherChangeEvent e : launcherChangeEvents) { if (pkg.equals(e.packageName)) lc = true; }
+        for (CanaryEvent e : canaryEvents)              { if (pkg.equals(e.packageName)) canary = true; }
 
         int created = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countTotalObservedFiles();
         int deleted = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countRecentDeletions();
-        boolean hasWiper = false;
-        boolean hasScanMalware = false;
-        if (pkg.isEmpty()) {
-            for (BehaviorFlagEntry entry : behaviorFlags.values()) {
-                flags += entry.flags.size();
-                for (String f : entry.flags) {
-                    if (f.startsWith("FILE_READ")) {
-                        fileRead++;
-                        if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) {
-                            fileReadHigh++;
-                        }
-                    } else if (f.startsWith("FILE_CREATED")) {
-                        fileCreated++;
-                    } else if (f.startsWith("FILE_COPY")) {
-                        fileCopy++;
-                    } else if (f.startsWith("WIPER")) {
-                        hasWiper = true;
-                    } else if (f.equals("SCAN_MALWARE") || f.equals("DOWNLOAD_MALWARE") || f.equals("PROCESS_ANOMALY")) {
-                        hasScanMalware = true;
-                    }
-                }
-            }
-        } else {
-            BehaviorFlagEntry flagEntry = behaviorFlags.get(pkg);
-            if (flagEntry != null) {
-                flags = flagEntry.flags.size();
-                for (String f : flagEntry.flags) {
-                    if (f.startsWith("FILE_READ")) {
-                        fileRead++;
-                        if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) {
-                            fileReadHigh++;
-                        }
-                    } else if (f.startsWith("FILE_CREATED")) {
-                        fileCreated++;
-                    } else if (f.startsWith("FILE_COPY")) {
-                        fileCopy++;
-                    } else if (f.startsWith("WIPER")) {
-                        hasWiper = true;
-                    } else if (f.equals("SCAN_MALWARE") || f.equals("DOWNLOAD_MALWARE") || f.equals("PROCESS_ANOMALY")) {
-                        hasScanMalware = true;
-                    }
+        boolean hasWiper = false, hasScanMalware = false;
+        BehaviorFlagEntry flagEntry = behaviorFlags.get(pkg);
+        if (flagEntry != null) {
+            flags = flagEntry.flags.size();
+            for (String f : flagEntry.flags) {
+                if (f.startsWith("FILE_READ")) {
+                    fileRead++;
+                    if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) fileReadHigh++;
+                } else if (f.startsWith("FILE_CREATED")) { fileCreated++;
+                } else if (f.startsWith("FILE_COPY"))    { fileCopy++;
+                } else if (f.startsWith("WIPER"))        { hasWiper = true;
+                } else if (f.equals("SCAN_MALWARE") || f.equals("DOWNLOAD_MALWARE") || f.equals("PROCESS_ANOMALY")) {
+                    hasScanMalware = true;
                 }
             }
         }
 
         boolean da = false, ha = false;
-        if (ctx != null && !pkg.isEmpty()) {
+        if (ctx != null) {
             try {
                 android.app.admin.DevicePolicyManager dpm =
                     (android.app.admin.DevicePolicyManager) ctx.getSystemService(android.content.Context.DEVICE_POLICY_SERVICE);
@@ -431,15 +403,83 @@ public final class HipsMonitor {
                         if (pkg.equals(cn.getPackageName())) { da = true; break; }
                     }
                 }
-                try {
-                    ha = ctx.getPackageManager().getLaunchIntentForPackage(pkg) == null;
-                } catch (Throwable ignored) {}
+                try { ha = ctx.getPackageManager().getLaunchIntentForPackage(pkg) == null; }
+                catch (Throwable ignored) {}
             } catch (Throwable ignored) {}
         }
-        return new BehaviorGraphData(
-            pkg, ui, notif, cj, rw, net, minerMem, fileRead, fileReadHigh,
-            fileCreated, fileCopy, flags,
+        return new BehaviorGraphData(pkg, ui, notif, cj, rw, net, minerMem,
+            fileRead, fileReadHigh, fileCreated, fileCopy, flags,
             sh, rr, lc, canary, da, ha, isRooted, isDebugMode,
+            created, deleted, hasWiper, hasScanMalware);
+    }
+
+    /**
+     * Aggregates all packages using MAX per metric so that "General Device
+     * Behavior" shows the peak threat level of the single worst-behaving app,
+     * not an inflated sum that grows with the number of monitored packages.
+     */
+    private static BehaviorGraphData collectGeneralBehaviorData(android.content.Context ctx) {
+        int maxUi = 0, maxNotif = 0, maxCj = 0, maxRw = 0, maxNet = 0, maxMiner = 0, maxFlags = 0;
+        int maxFileRead = 0, maxFileReadHigh = 0, maxFileCreated = 0, maxFileCopy = 0;
+        boolean sh = false, rr = false, lc = false, canary = false;
+        boolean hasWiper = false, hasScanMalware = false;
+
+        // Aggregate per-package and take the max for count fields
+        java.util.Set<String> allPkgs = new java.util.HashSet<>();
+        for (UiSpamEvent e : uiSpamEvents)           if (e.packageName != null) allPkgs.add(e.packageName);
+        for (NotificationSpamEvent e : notificationSpamEvents) if (e.packageName != null) allPkgs.add(e.packageName);
+        for (ClickjackEvent e : clickjackEvents)      if (e.packageName != null) allPkgs.add(e.packageName);
+        for (RansomwareEvent e : ransomwareEvents)    if (e.packageName != null) allPkgs.add(e.packageName);
+        for (NetworkEvent e : networkEvents)          if (e.packageName != null) allPkgs.add(e.packageName);
+        for (StrandHoggEvent e : strandhoggEvents)   { if (e.packageName != null) allPkgs.add(e.packageName); sh = true; }
+        for (RemovalResistanceEvent e : removalResistanceEvents) { if (e.packageName != null) allPkgs.add(e.packageName); rr = true; }
+        for (LauncherChangeEvent e : launcherChangeEvents) { if (e.packageName != null) allPkgs.add(e.packageName); lc = true; }
+        for (CanaryEvent e : canaryEvents)           { if (e.packageName != null) allPkgs.add(e.packageName); canary = true; }
+        allPkgs.addAll(behaviorFlags.keySet());
+
+        for (String p : allPkgs) {
+            int pUi = 0, pNotif = 0, pCj = 0, pRw = 0, pNet = 0, pMiner = 0, pFlags = 0;
+            int pFr = 0, pFrHigh = 0, pFc = 0, pCopy = 0;
+            for (UiSpamEvent e : uiSpamEvents)           if (p.equals(e.packageName)) pUi += e.clickCount;
+            for (NotificationSpamEvent e : notificationSpamEvents) if (p.equals(e.packageName)) pNotif += e.notificationCount;
+            for (ClickjackEvent e : clickjackEvents)      if (p.equals(e.packageName)) pCj += e.rapidClicks;
+            for (RansomwareEvent e : ransomwareEvents)    if (p.equals(e.packageName)) pRw += e.renameCount;
+            for (NetworkEvent e : networkEvents)          if (p.equals(e.packageName)) pNet += e.connectionCount;
+            for (MinerEvent e : minerEvents)              if (p.equals(e.packageName)) pMiner = Math.max(pMiner, (int) e.memoryMb);
+            BehaviorFlagEntry fe = behaviorFlags.get(p);
+            if (fe != null) {
+                pFlags = fe.flags.size();
+                for (String f : fe.flags) {
+                    if (f.startsWith("FILE_READ")) {
+                        pFr++;
+                        if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) pFrHigh++;
+                    } else if (f.startsWith("FILE_CREATED")) { pFc++;
+                    } else if (f.startsWith("FILE_COPY"))    { pCopy++;
+                    } else if (f.startsWith("WIPER"))        { hasWiper = true;
+                    } else if (f.equals("SCAN_MALWARE") || f.equals("DOWNLOAD_MALWARE") || f.equals("PROCESS_ANOMALY")) {
+                        hasScanMalware = true;
+                    }
+                }
+            }
+            maxUi       = Math.max(maxUi, pUi);
+            maxNotif    = Math.max(maxNotif, pNotif);
+            maxCj       = Math.max(maxCj, pCj);
+            maxRw       = Math.max(maxRw, pRw);
+            maxNet      = Math.max(maxNet, pNet);
+            maxMiner    = Math.max(maxMiner, pMiner);
+            maxFlags    = Math.max(maxFlags, pFlags);
+            maxFileRead = Math.max(maxFileRead, pFr);
+            maxFileReadHigh = Math.max(maxFileReadHigh, pFrHigh);
+            maxFileCreated  = Math.max(maxFileCreated, pFc);
+            maxFileCopy     = Math.max(maxFileCopy, pCopy);
+        }
+
+        int created = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countTotalObservedFiles();
+        int deleted = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countRecentDeletions();
+
+        return new BehaviorGraphData("", maxUi, maxNotif, maxCj, maxRw, maxNet, maxMiner,
+            maxFileRead, maxFileReadHigh, maxFileCreated, maxFileCopy, maxFlags,
+            sh, rr, lc, canary, false, false, isRooted, isDebugMode,
             created, deleted, hasWiper, hasScanMalware);
     }
 
