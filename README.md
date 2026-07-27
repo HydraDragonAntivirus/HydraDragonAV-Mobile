@@ -12,7 +12,7 @@
 ![Languages](https://img.shields.io/badge/Languages-20-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
 
-HydraDragonAV Mobile is a multi-layered Android Antivirus and Security suite combining static analysis (YARA-X + ClamAV signatures + code anomaly detection), dynamic behavior analysis, and a lightweight on-device ML classifier — all gated by a NSRL-backed whitelist so known-good software is never a false positive. Designed with a **Zero-Trust architecture**, it actively defends the device against ransomware, clickjacking, spyware, SMS scams/phishing, and zero-day threats.
+HydraDragonAV Mobile is a multi-layered Android Antivirus and Security suite combining static analysis (YARA-X + ClamAV signatures + code anomaly detection), dynamic behavior analysis, and a lightweight on-device ML classifier — all gated by a NSRL-backed whitelist so known-good software is never a false positive. Designed with a **Zero-Trust architecture**, it actively defends the device against ransomware, clickjacking, spyware, SMS scams/phishing, and zero-day threats. When a flagged malware app is launched, it is **automatically force-stopped and blocked** in real time.
 
 > **📋 Requirements: Android 8.0 Oreo (API 26) or newer.** The per-app dynamic
 > network analysis — attributing each DNS/connection to the exact app that made
@@ -99,6 +99,13 @@ In short: a security product that asks the user to first grant it debug-shell re
    ```
 
 3. Build the Android app as usual (Gradle) — the native `.so` output is picked up automatically from `app/src/main/jniLibs/`.
+
+### Build Info
+
+| Component | Tool |
+|-----------|------|
+| AI Assistant | [DeepSeek V4 Flash Free](https://deepseek.com) + [OpenCode Zen](https://opencode.ai) |
+
 
 ## 🗄️ Data Pipeline (Whitelists, Signatures & Filters)
 
