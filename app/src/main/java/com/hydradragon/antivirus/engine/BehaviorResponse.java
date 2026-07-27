@@ -128,7 +128,22 @@ public final class BehaviorResponse {
         if (threat == null) return;
         String pkg = threat.getPackageName();
         boolean installed = pkg != null && !pkg.isEmpty() && isPackageInstalled(context, pkg);
+        boolean activeRunning = installed && isProcessRunning(context, pkg);
 
+        if (isFromScan) {
+            // For scan results: only trigger process kill / popup if the threat is ACTIVELY RUNNING right now
+            if (activeRunning) {
+                killAndPromptUninstall(context, pkg,
+                    threat.getAppName(),
+                    threat.getReasons().isEmpty() ? null : threat.getReasons().get(0),
+                    true);
+                showMalwareFoundScreen(context, threat, false, true);
+            }
+            // If the threat is passive / not running, let ScanFragment present it in the scan report.
+            return;
+        }
+
+        // Real-time behavioral triggers (inherently active threats):
         if (installed) {
             killAndPromptUninstall(context, pkg,
                 threat.getAppName(),
@@ -137,6 +152,40 @@ public final class BehaviorResponse {
         }
 
         showMalwareFoundScreen(context, threat, !installed, isFromScan);
+    }
+
+    public static boolean isProcessRunning(Context context, String pkg) {
+        if (pkg == null || pkg.isEmpty()) return false;
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager)
+                context.getSystemService(Context.ACTIVITY_SERVICE);
+            if (am != null) {
+                java.util.List<android.app.ActivityManager.RunningAppProcessInfo> procs =
+                    am.getRunningAppProcesses();
+                if (procs != null) {
+                    for (android.app.ActivityManager.RunningAppProcessInfo p : procs) {
+                        if (p.pkgList != null) {
+                            for (String pName : p.pkgList) {
+                                if (pkg.equals(pName)) return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    private static boolean hasScreenLockerReason(ThreatResult threat) {
+        if (threat == null || threat.getReasons() == null) return false;
+        for (String r : threat.getReasons()) {
+            if (r == null) continue;
+            String lower = r.toLowerCase();
+            if (lower.contains("screen_locker") || lower.contains("screen locker") || lower.contains("kilitleyici") || lower.contains("overlay")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Full-screen "MALWARE FOUND" warning, launched over whatever app the
