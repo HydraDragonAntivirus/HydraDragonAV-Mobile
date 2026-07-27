@@ -33,6 +33,9 @@ public class UserActionReceiver extends BroadcastReceiver {
     public static final String ACTION_PAUSE_PROTECTION  = "com.hydradragon.antivirus.PAUSE_PROTECTION";
     /** Resume real-time protection from the foreground notification. */
     public static final String ACTION_RESUME_PROTECTION = "com.hydradragon.antivirus.RESUME_PROTECTION";
+    /** Action to notify GuardService to refresh its foreground notification. */
+    public static final String ACTION_UPDATE_NOTIFICATION = "com.hydradragon.antivirus.ACTION_UPDATE_NOTIFICATION";
+
     public static final String EXTRA_ID    = "threat_id";
     public static final String EXTRA_NOTIF = "notif_id";
 
@@ -49,7 +52,7 @@ public class UserActionReceiver extends BroadcastReceiver {
             // "Protection Paused" warning notification stays visible.
             // Just tell GuardService to refresh its foreground notification.
             context.sendBroadcast(
-                new Intent(GuardService.ACTION_UPDATE_NOTIFICATION).setPackage(context.getPackageName()));
+                new Intent(ACTION_UPDATE_NOTIFICATION).setPackage(context.getPackageName()));
             Toast.makeText(context,
                 context.getString(R.string.protection_paused), Toast.LENGTH_LONG).show();
             Log.i("UserActionReceiver", "protection paused from notification (service kept alive)");
@@ -58,7 +61,7 @@ public class UserActionReceiver extends BroadcastReceiver {
             ProtectionState.setEnabled(context, true);
             // GuardService is still running — just tell it to refresh its notification.
             context.sendBroadcast(
-                new Intent(GuardService.ACTION_UPDATE_NOTIFICATION).setPackage(context.getPackageName()));
+                new Intent(ACTION_UPDATE_NOTIFICATION).setPackage(context.getPackageName()));
             // Also start the service in case it was killed by the OS.
             ContextCompat.startForegroundService(
                 context, new Intent(context, GuardService.class));
