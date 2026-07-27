@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ РУТОВАНИЙ ПРИСТРІЙ</string>
@@ -467,6 +467,8 @@
     <string name="behavior_auto_kill">Автоматичне видалення зловмисного програмного забезпечення на передньому плані (спеціальні можливості)</string>
     <string name="graph_no_data">Поведінкових даних ще немає</string>
     <string name="graph_device_behavior">Поведінка пристрою</string>
+    <string name="graph_general_device_behavior">🌐 Загальна поведінка пристрою (Усі програми)</string>
+    <string name="graph_select_package">Виберіть програму / пакет</string>
     <string name="graph_yes">ТАК</string>
     <string name="graph_no">ні</string>
 </resources>

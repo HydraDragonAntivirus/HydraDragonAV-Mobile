@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ GEROOTETES GERÄT</string>
@@ -469,6 +469,8 @@ Du kannst dies später in den Einstellungen aktivieren.</string>
     <string name="graph_device_behavior">Geräteverhalten</string>
     <string name="graph_yes">JA</string>
     <string name="graph_no">nein</string>
+    <string name="graph_general_device_behavior">🌐 Allgemeines Geräteverhalten (Alle Apps)</string>
+    <string name="graph_select_package">App / Paket auswählen</string>
 </resources>
 
 

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon एंटीवायरस</string>
     <string name="root_warning_title">⚠ ⚠ रूटेड डिवाइस</string>
@@ -467,6 +467,8 @@
     <string name="behavior_auto_kill">अग्रभूमि मैलवेयर को स्वतः समाप्त करें (पहुंच-योग्यता)</string>
     <string name="graph_no_data">अभी तक कोई व्यवहार संबंधी डेटा नहीं</string>
     <string name="graph_device_behavior">डिवाइस व्यवहार</string>
+    <string name="graph_general_device_behavior">🌐 सामान्य डिवाइस व्यवहार (सभी ऐप्स)</string>
+    <string name="graph_select_package">ऐप / पैकेज चुनें</string>
     <string name="graph_yes">हाँ</string>
     <string name="graph_no">नहीं</string>
 </resources>

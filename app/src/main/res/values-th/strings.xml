@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ อุปกรณ์ที่รูทแล้ว</string>
@@ -467,6 +467,8 @@
     <string name="behavior_auto_kill">ฆ่ามัลแวร์เบื้องหน้าอัตโนมัติ (การเข้าถึง)</string>
     <string name="graph_no_data">ยังไม่มีข้อมูลพฤติกรรม</string>
     <string name="graph_device_behavior">พฤติกรรมอุปกรณ์</string>
+    <string name="graph_general_device_behavior">🌐 พฤติกรรมอุปกรณ์ทั่วไป (แอปทั้งหมด)</string>
+    <string name="graph_select_package">เลือกแอป / แพ็กเกจ</string>
     <string name="graph_yes">ใช่</string>
     <string name="graph_no">ไม่</string>
 </resources>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ PERANGKAT DI-ROOT</string>
@@ -467,6 +467,8 @@ Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
     <string name="behavior_auto_kill">Malware latar depan yang mematikan secara otomatis (aksesibilitas)</string>
     <string name="graph_no_data">Belum ada data perilaku</string>
     <string name="graph_device_behavior">Perilaku Perangkat</string>
+    <string name="graph_general_device_behavior">🌐 Perilaku Umum Perangkat (Semua Aplikasi)</string>
+    <string name="graph_select_package">Pilih Aplikasi / Paket</string>
     <string name="graph_yes">YA</string>
     <string name="graph_no">tidak</string>
 </resources>

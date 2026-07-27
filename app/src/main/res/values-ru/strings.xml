@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ РУТИРОВАННОЕ УСТРОЙСТВО</string>
@@ -467,6 +467,8 @@
     <string name="behavior_auto_kill">Автоматическое уничтожение вредоносных программ на переднем плане (доступность)</string>
     <string name="graph_no_data">Поведенческих данных пока нет</string>
     <string name="graph_device_behavior">Поведение устройства</string>
+    <string name="graph_general_device_behavior">🌐 Общее поведение устройства (Все приложения)</string>
+    <string name="graph_select_package">Выберите приложение / пакет</string>
     <string name="graph_yes">ДА</string>
     <string name="graph_no">нет</string>
 </resources>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ZROOTOWANE URZĄDZENIE</string>
@@ -467,6 +467,8 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="behavior_auto_kill">Automatyczne usuwanie złośliwego oprogramowania na pierwszym planie (dostępność)</string>
     <string name="graph_no_data">Brak danych behawioralnych</string>
     <string name="graph_device_behavior">Zachowanie urządzenia</string>
+    <string name="graph_general_device_behavior">🌐 Ogólne zachowanie urządzenia (Wszystkie aplikacje)</string>
+    <string name="graph_select_package">Wybierz aplikację / pakiet</string>
     <string name="graph_yes">TAK</string>
     <string name="graph_no">nie</string>
 </resources>

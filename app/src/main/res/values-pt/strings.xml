@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ DISPOSITIVO ROOTEADO</string>
@@ -467,6 +467,8 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="behavior_auto_kill">Eliminação automática de malware em primeiro plano (acessibilidade)</string>
     <string name="graph_no_data">Nenhum dado comportamental ainda</string>
     <string name="graph_device_behavior">Comportamento do Dispositivo</string>
+    <string name="graph_general_device_behavior">🌐 Comportamento Geral do Dispositivo (Todos os Aplicativos)</string>
+    <string name="graph_select_package">Selecionar Aplicativo / Pacote</string>
     <string name="graph_yes">SIM</string>
     <string name="graph_no">não</string>
 </resources>

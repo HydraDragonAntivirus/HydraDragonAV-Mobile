@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ THIẾT BỊ ĐÃ ROOT</string>
@@ -467,6 +467,8 @@ Bạn có thể bật tính năng này sau từ Cài đặt.</string>
     <string name="behavior_auto_kill">Tự động tiêu diệt phần mềm độc hại trên nền trước (khả năng truy cập)</string>
     <string name="graph_no_data">Chưa có dữ liệu hành vi</string>
     <string name="graph_device_behavior">Hành vi Thiết bị</string>
+    <string name="graph_general_device_behavior">🌐 Hành vi Thiết bị Chung (Tất cả Ứng dụng)</string>
+    <string name="graph_select_package">Chọn Ứng dụng / Gói</string>
     <string name="graph_yes">CÓ</string>
     <string name="graph_no">không</string>
 </resources>

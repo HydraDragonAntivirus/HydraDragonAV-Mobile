@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ ルート化された端末</string>
@@ -467,6 +467,8 @@
     <string name="behavior_auto_kill">フォアグラウンド マルウェアを自動停止する (アクセシビリティ)</string>
     <string name="graph_no_data">行動データはまだありません</string>
     <string name="graph_device_behavior">デバイスの動作</string>
+    <string name="graph_general_device_behavior">🌐 一般的なデバイス動作（すべてのアプリ）</string>
+    <string name="graph_select_package">アプリ/パッケージを選択</string>
     <string name="graph_yes">はい</string>
     <string name="graph_no">いいえ</string>
 </resources>

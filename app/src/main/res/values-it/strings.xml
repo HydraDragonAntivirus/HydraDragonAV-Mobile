@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ DISPOSITIVO ROOT</string>
@@ -467,6 +467,8 @@ Puoi abilitarlo in seguito dalle Impostazioni.</string>
     <string name="behavior_auto_kill">Elimina automaticamente il malware in primo piano (accessibilità)</string>
     <string name="graph_no_data">Nessun dato comportamentale ancora</string>
     <string name="graph_device_behavior">Comportamento Dispositivo</string>
+    <string name="graph_general_device_behavior">🌐 Comportamento Generale del Dispositivo (Tutte le App)</string>
+    <string name="graph_select_package">Seleziona App / Pacchetto</string>
     <string name="graph_yes">SÌ</string>
     <string name="graph_no">no</string>
 </resources>

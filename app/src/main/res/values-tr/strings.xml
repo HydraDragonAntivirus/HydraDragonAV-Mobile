@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirüs</string>
     <string name="root_warning_title">⚠ KÖKLÜ (ROOT) CİHAZ</string>
@@ -467,6 +467,8 @@ Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.</string>
     <string name="behavior_auto_kill">Ön plandaki kötü amaçlı yazılımları otomatik olarak sonlandır (erişilebilirlik)</string>
     <string name="graph_no_data">Henüz davranışsal veri yok</string>
     <string name="graph_device_behavior">Cihaz Davranışı</string>
+    <string name="graph_general_device_behavior">🌐 Genel Cihaz Davranışı (Tüm Uygulamalar)</string>
+    <string name="graph_select_package">Uygulama / Paket Seçin</string>
     <string name="graph_yes">EVET</string>
     <string name="graph_no">hayır</string>
 </resources>

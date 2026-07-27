@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ جهاز ذو صلاحية روت (ROOT)</string>
@@ -467,6 +467,8 @@
     <string name="behavior_auto_kill">القتل التلقائي للبرامج الضارة في المقدمة (إمكانية الوصول)</string>
     <string name="graph_no_data">لا توجد بيانات سلوكية حتى الآن</string>
     <string name="graph_device_behavior">سلوك الجهاز</string>
+    <string name="graph_general_device_behavior">🌐 سلوك الجهاز العام (جميع التطبيقات)</string>
+    <string name="graph_select_package">اختر التطبيق / الحزمة</string>
     <string name="graph_yes">نعم</string>
     <string name="graph_no">لا</string>
 </resources>
