@@ -611,7 +611,7 @@ public class GuardService extends Service {
                     if (pkg != null && !pkg.isEmpty() && com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {
                         boolean hasFlag = com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(pkg, "SCAN_MALWARE")
                             || com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(pkg, "DOWNLOAD_MALWARE");
-                        if (hasFlag && !pi.isCritical() && !(pi.isSuspicious() && pi.getFlags() != null && pi.getFlags().size() >= 2)) {
+                        if (hasFlag) {
                             handleProcessKill(pkg, true);
                         }
                     }

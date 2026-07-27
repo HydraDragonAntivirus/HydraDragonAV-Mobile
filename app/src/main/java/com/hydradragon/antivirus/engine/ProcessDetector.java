@@ -72,10 +72,13 @@ public class ProcessDetector {
     }
 
     /**
-     * Scan only new/changed processes since the last call.
+     * Scan all running processes. Fires {@code onSuspiciousProcess} only for
+     * NEW PIDs (first time seen), but passes the FULL process list to
+     * {@code onProcessListUpdated} so the consumer can re-check flagged apps.
      */
     public List<ProcessInfo> scanRunningProcesses() {
-        List<ProcessInfo> processList = new ArrayList<>();
+        List<ProcessInfo> newProcesses = new ArrayList<>();
+        List<ProcessInfo> allProcesses = new ArrayList<>();
 
         java.util.HashSet<Integer> currentPids = new java.util.HashSet<>();
 
@@ -84,27 +87,28 @@ public class ProcessDetector {
 
         if (runningApps == null) {
             Log.w(TAG, "Could not get process list");
-            return processList;
+            return newProcesses;
         }
 
         for (ActivityManager.RunningAppProcessInfo processInfo : runningApps) {
             currentPids.add(processInfo.pid);
-            if (seenPids.contains(processInfo.pid)) continue;
-            seenPids.add(processInfo.pid);
-
             ProcessInfo info = analyzeProcess(processInfo);
-            processList.add(info);
+            allProcesses.add(info);
 
-            if (callback != null && info.getPackageName() != null) {
-                callback.onSuspiciousProcess(info);
+            if (!seenPids.contains(processInfo.pid)) {
+                seenPids.add(processInfo.pid);
+                newProcesses.add(info);
+                if (callback != null && info.getPackageName() != null) {
+                    callback.onSuspiciousProcess(info);
+                }
             }
         }
 
         // Remove PIDs that are no longer running
         seenPids.retainAll(currentPids);
 
-        if (callback != null) callback.onProcessListUpdated(processList);
-        return processList;
+        if (callback != null) callback.onProcessListUpdated(allProcesses);
+        return newProcesses;
     }
 
     /**
