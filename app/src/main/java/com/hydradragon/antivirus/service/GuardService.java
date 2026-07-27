@@ -895,27 +895,11 @@ public class GuardService extends Service {
         PendingIntent openPI = PendingIntent.getActivity(
             this, 0, openIntent, PendingIntent.FLAG_IMMUTABLE);
 
-        // Action button: Pause or Resume depending on current state.
-        boolean protEnabled = com.hydradragon.antivirus.engine.ProtectionState.isEnabled(this);
-        String toggleAction = protEnabled
-            ? com.hydradragon.antivirus.service.UserActionReceiver.ACTION_PAUSE_PROTECTION
-            : com.hydradragon.antivirus.service.UserActionReceiver.ACTION_RESUME_PROTECTION;
-        int toggleIcon = protEnabled ? R.drawable.ic_shield_alert : R.drawable.ic_shield_secure;
-        String toggleLabel = protEnabled
-            ? getString(R.string.protection_paused)
-            : getString(R.string.protection_enabled);
-        Intent toggleIntent = new Intent(toggleAction)
-            .setPackage(getPackageName());
-        PendingIntent togglePI = PendingIntent.getBroadcast(
-            this, 0, toggleIntent,
-            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(secure ? R.drawable.ic_shield_secure : R.drawable.ic_shield_alert)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setContentIntent(openPI)
-            .addAction(toggleIcon, toggleLabel, togglePI)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setColor(secure ? 0x00FF88 : 0xFF0040)

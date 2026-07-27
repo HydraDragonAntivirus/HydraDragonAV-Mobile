@@ -45,13 +45,21 @@ public class UserActionReceiver extends BroadcastReceiver {
         // Protection toggle actions don't need a threat id — handle them first.
         if (ACTION_PAUSE_PROTECTION.equals(action)) {
             ProtectionState.setEnabled(context, false);
-            context.stopService(new Intent(context, GuardService.class));
+            // Do NOT stop GuardService — keep it alive so the persistent
+            // "Protection Paused" warning notification stays visible.
+            // Just tell GuardService to refresh its foreground notification.
+            context.sendBroadcast(
+                new Intent(GuardService.ACTION_UPDATE_NOTIFICATION).setPackage(context.getPackageName()));
             Toast.makeText(context,
-                context.getString(R.string.protection_paused), Toast.LENGTH_SHORT).show();
-            Log.i("UserActionReceiver", "protection paused from notification");
+                context.getString(R.string.protection_paused), Toast.LENGTH_LONG).show();
+            Log.i("UserActionReceiver", "protection paused from notification (service kept alive)");
             return;
         } else if (ACTION_RESUME_PROTECTION.equals(action)) {
             ProtectionState.setEnabled(context, true);
+            // GuardService is still running — just tell it to refresh its notification.
+            context.sendBroadcast(
+                new Intent(GuardService.ACTION_UPDATE_NOTIFICATION).setPackage(context.getPackageName()));
+            // Also start the service in case it was killed by the OS.
             ContextCompat.startForegroundService(
                 context, new Intent(context, GuardService.class));
             Toast.makeText(context,
