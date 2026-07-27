@@ -89,9 +89,17 @@ public class DynamicAnalysisService extends AccessibilityService {
     private static volatile String sFsAppName = null;
     private static volatile String sFsReason = null;
 
-    public static void forceStopForegroundApp(String pkg, String appName, String reason) {
+    /** @return true if the Settings → App Info navigation was successfully
+     *  started (the one synchronous signal available here). The rest of the
+     *  flow — finding and clicking "Force Stop" then "OK" — happens later,
+     *  asynchronously, driven by {@link #onAccessibilityEvent}; there is no
+     *  synchronous way to know whether THAT part succeeds (wrong locale text,
+     *  OEM-specific Settings layout, dialog never appearing, etc. all fail
+     *  silently). Callers that need to detect a stalled/failed automation
+     *  after the fact can poll {@link #getPendingForceStopTarget()}. */
+    public static boolean forceStopForegroundApp(String pkg, String appName, String reason) {
         DynamicAnalysisService inst = sInstance;
-        if (inst == null || pkg == null || pkg.isEmpty()) return;
+        if (inst == null || pkg == null || pkg.isEmpty()) return false;
         sFsTarget = pkg;
         sFsConfirmDone = false;
         sFsDialogShown = false;
@@ -102,11 +110,22 @@ public class DynamicAnalysisService extends AccessibilityService {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             inst.startActivity(intent);
+            return true;
         } catch (Throwable t) {
             Log.w(TAG, "forceStopForegroundApp: failed to open Settings for " + pkg, t);
             sFsTarget = null;
+            return false;
         }
     }
+
+    /** @return the package currently mid-automation (Settings navigated to,
+     *  but "Force Stop"/"OK" not yet both clicked), or {@code null} if no
+     *  automation is in flight. A caller can poll this a few seconds after
+     *  {@link #forceStopForegroundApp} returned true: if it still equals the
+     *  package it passed in, the automation is stuck (button text not found,
+     *  OEM Settings layout differs, dialog never showed, etc.) and a fallback
+     *  kill method should be used instead. */
+    public static String getPendingForceStopTarget() { return sFsTarget; }
 
     // Single, self-replacing alert notification (no spam).
     private static final int ALERT_NOTIF_ID = 0xA1E7;

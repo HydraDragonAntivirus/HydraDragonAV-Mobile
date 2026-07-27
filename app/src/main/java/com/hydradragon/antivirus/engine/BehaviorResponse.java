@@ -82,18 +82,56 @@ public final class BehaviorResponse {
 
         boolean usedAccessibility = false;
 
-        // Try accessibility force-stop first (works for ANY app, foreground or
-        // background — killBackgroundProcesses is unreliable on Android 12+).
+        // forceStopForegroundApp navigates Settings -> App Info -> "Force
+        // Stop" -> "OK" via accessibility automation. Despite its name, it
+        // does NOT require pkg to be the current foreground app -- opening
+        // ACTION_APPLICATION_DETAILS_SETTINGS works for any installed app,
+        // running or not, foreground or background. That's why it's tried
+        // before killBackgroundProcesses: it's the more thorough method
+        // (Android 12+ restricts what killBackgroundProcesses can actually
+        // kill), not a foreground-only special case.
+        //
+        // Its return value only tells us the Settings screen navigation
+        // itself started -- the later steps (finding/clicking "Force Stop"
+        // then "OK") happen asynchronously and can fail silently (wrong
+        // locale text, OEM-specific Settings layout, dialog never showing).
+        // We can't detect that synchronously, but we CAN detect it a few
+        // seconds later: if the automation is still "pending" for this exact
+        // package, it stalled, and killBackgroundProcesses is run as a
+        // backup instead of trusting a stuck automation.
         if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(
                 context, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.AUTO_KILL)
                 && com.hydradragon.antivirus.service.DynamicAnalysisService.getInstance() != null) {
             Log.i(TAG, "killAndPromptUninstall: accessibility force-stop for " + pkg);
-            com.hydradragon.antivirus.service.DynamicAnalysisService.forceStopForegroundApp(pkg, appName, reason);
-            usedAccessibility = true;
+            usedAccessibility = com.hydradragon.antivirus.service.DynamicAnalysisService
+                    .forceStopForegroundApp(pkg, appName, reason);
+            if (!usedAccessibility) {
+                Log.w(TAG, "killAndPromptUninstall: accessibility force-stop failed to start for " + pkg);
+            } else {
+                final String finalPkgForStallCheck = pkg;
+                final Context appCtxForStallCheck = context.getApplicationContext();
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    if (finalPkgForStallCheck.equals(
+                            com.hydradragon.antivirus.service.DynamicAnalysisService.getPendingForceStopTarget())) {
+                        Log.w(TAG, "killAndPromptUninstall: force-stop automation stalled for "
+                                + finalPkgForStallCheck + " -> killBackgroundProcesses as backup");
+                        try {
+                            ActivityManager am = (ActivityManager)
+                                appCtxForStallCheck.getSystemService(Context.ACTIVITY_SERVICE);
+                            if (am != null) am.killBackgroundProcesses(finalPkgForStallCheck);
+                        } catch (Throwable t) {
+                            Log.w(TAG, "stalled-automation killBackgroundProcesses failed for "
+                                    + finalPkgForStallCheck, t);
+                        }
+                    }
+                }, 4000L);
+            }
         }
 
         if (!usedAccessibility) {
-            // Fallback: killBackgroundProcesses (unreliable on Android 12+)
+            // Fallback: killBackgroundProcesses (unreliable on Android 12+,
+            // but still the only non-root option when accessibility isn't
+            // available or its automation failed to even start).
             try {
                 ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
                 if (am != null) am.killBackgroundProcesses(pkg);
@@ -166,26 +204,80 @@ public final class BehaviorResponse {
         showMalwareFoundScreen(context, threat, !installed, isFromScan);
     }
 
+    /** Best-effort "is this app currently active" check for gating the
+     *  scan-result kill/alert path.
+     *
+     *  <p>The previous implementation used {@code
+     *  ActivityManager#getRunningAppProcesses()}, which on API 22+ only
+     *  returns the CALLING app's own process for a regular (non-privileged,
+     *  non-system) app — it can never see another package's process. That
+     *  made this method return {@code false} for every real threat, which
+     *  silently disabled the scan-result kill+uninstall+alert-screen path
+     *  entirely (every scan hit looked "passive" and was left for
+     *  ScanFragment to just list).
+     *
+     *  <p>This uses the two real signals this app actually has:
+     *  <ol>
+     *    <li>{@link com.hydradragon.antivirus.service.DynamicAnalysisService
+     *        #getForegroundPackage()} — live, accessibility-service-driven
+     *        foreground tracking (the same source GuardService itself
+     *        trusts elsewhere), when the accessibility service is on.</li>
+     *    <li>{@link android.app.usage.UsageStatsManager}, over a short
+     *        recent window, when the user has granted Usage Access — used
+     *        as a fallback when accessibility isn't enabled.</li>
+     *  </ol>
+     *  Neither signal can prove a purely-background service (no foreground
+     *  contact) is running — no non-root API can, for a third-party app.
+     *  If NEITHER signal is available at all, we deliberately return
+     *  {@code true} rather than {@code false}: for a security app, silently
+     *  dropping a real, active threat is worse than one extra kill/alert
+     *  attempt on an app that turns out to be idle. */
     public static boolean isProcessRunning(Context context, String pkg) {
         if (pkg == null || pkg.isEmpty()) return false;
+
         try {
-            android.app.ActivityManager am = (android.app.ActivityManager)
-                context.getSystemService(Context.ACTIVITY_SERVICE);
-            if (am != null) {
-                java.util.List<android.app.ActivityManager.RunningAppProcessInfo> procs =
-                    am.getRunningAppProcesses();
-                if (procs != null) {
-                    for (android.app.ActivityManager.RunningAppProcessInfo p : procs) {
-                        if (p.pkgList != null) {
-                            for (String pName : p.pkgList) {
-                                if (pkg.equals(pName)) return true;
+            String fg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+            if (fg != null && !fg.isEmpty()) {
+                return pkg.equals(fg);
+            }
+        } catch (Throwable ignored) {}
+
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 22) {
+                android.app.AppOpsManager appOps = (android.app.AppOpsManager)
+                    context.getSystemService(Context.APP_OPS_SERVICE);
+                if (appOps != null) {
+                    int mode = appOps.checkOpNoThrow(
+                        android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+                        android.os.Process.myUid(), context.getPackageName());
+                    if (mode == android.app.AppOpsManager.MODE_ALLOWED) {
+                        android.app.usage.UsageStatsManager usm = (android.app.usage.UsageStatsManager)
+                            context.getSystemService(Context.USAGE_STATS_SERVICE);
+                        if (usm != null) {
+                            long now = System.currentTimeMillis();
+                            java.util.List<android.app.usage.UsageStats> stats =
+                                usm.queryUsageStats(
+                                    android.app.usage.UsageStatsManager.INTERVAL_BEST,
+                                    now - 5000, now);
+                            if (stats != null) {
+                                for (android.app.usage.UsageStats s : stats) {
+                                    if (pkg.equals(s.getPackageName())) return true;
+                                }
+                                // Usage Access is granted and gave us a real
+                                // (if short-window) answer, and pkg wasn't in
+                                // it -- trust that answer.
+                                return false;
                             }
                         }
                     }
                 }
             }
         } catch (Throwable ignored) {}
-        return false;
+
+        // Neither accessibility foreground-tracking nor Usage Access is
+        // available -- we genuinely can't tell. Fail open.
+        Log.w(TAG, "isProcessRunning: no signal available for " + pkg + " -> assuming active");
+        return true;
     }
 
     private static boolean hasScreenLockerReason(ThreatResult threat) {
@@ -205,9 +297,24 @@ public final class BehaviorResponse {
      *  fired but the uninstall/delete prompt waits for the user to tap the
      *  action button on this screen. MalwareFoundActivity is a regular
      *  Activity (not a system overlay), so no SYSTEM_ALERT_WINDOW is needed
-     *  for it to launch — always attempt it and only fall back to the in-app
-     *  dialog if startActivity throws (e.g. background start restriction). */
+     *  to launch it FROM A FOREGROUND CONTEXT. But most callers here (behaviour
+     *  detectors, background scans) fire from a Service with nothing in the
+     *  foreground, and on Android 10+ a background-context startActivity()
+     *  without an exemption (e.g. SYSTEM_ALERT_WINDOW actually granted, not
+     *  just declared) is typically blocked SILENTLY by the system — no
+     *  exception is thrown, so a bare try/catch cannot detect the failure.
+     *  That's why we check the real runtime permission state up front and
+     *  only attempt startActivity when it's safe to assume it'll work; the
+     *  try/catch below is a secondary safety net for other launch failures
+     *  (e.g. FLAG_ACTIVITY_NEW_TASK edge cases), not the primary guard. */
     private static void showMalwareFoundScreen(Context context, ThreatResult threat, boolean isFile, boolean isFromScan) {
+        if (!hasOverlayOrNotifPermission(context)) {
+            // Overlay/notification permission missing: always redirect to scan screen
+            // so the user still sees the uninstall/delete alert dialog there.
+            Log.i(TAG, "Overlay or Notification permission missing -> redirecting to HydraDragon Scan Screen with threat alert");
+            redirectToScanScreen(context, threat);
+            return;
+        }
         try {
             Intent i = new Intent(context, MalwareFoundActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
