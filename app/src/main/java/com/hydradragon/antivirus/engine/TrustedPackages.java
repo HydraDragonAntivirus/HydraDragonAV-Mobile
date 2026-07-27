@@ -12,6 +12,7 @@ public final class TrustedPackages {
 
     /** Trusted publisher / OEM / system package prefixes. */
     private static final String[] PREFIXES = {
+        "com.hydradragon.",
         "com.google.", "com.android.", "android", "com.whatsapp",
         "com.facebook.", "com.instagram.", "com.twitter", "com.spotify",
         "com.microsoft.", "org.telegram.", "com.discord", "org.mozilla.",

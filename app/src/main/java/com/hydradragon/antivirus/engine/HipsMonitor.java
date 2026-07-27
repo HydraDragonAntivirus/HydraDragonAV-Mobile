@@ -193,8 +193,12 @@ public final class HipsMonitor {
         return arr;
     }
 
+    private static boolean isSelfPackage(String pkg) {
+        return pkg == null || pkg.isEmpty() || pkg.startsWith("com.hydradragon.antivirus");
+    }
+
     public static synchronized void reportUiSpam(String pkg, int clicks, int windows, long windowMs, boolean malicious) {
-        if (pkg == null) return;
+        if (isSelfPackage(pkg)) return;
         UiSpamEvent e = new UiSpamEvent();
         e.packageName = pkg; e.clickCount = clicks; e.windowCount = windows;
         e.timeWindowMs = windowMs; e.malicious = malicious; e.timestamp = System.currentTimeMillis();
@@ -204,7 +208,7 @@ public final class HipsMonitor {
     }
 
     public static synchronized void reportNotificationSpam(String pkg, int count, long windowMs, boolean malicious) {
-        if (pkg == null) return;
+        if (isSelfPackage(pkg)) return;
         NotificationSpamEvent e = new NotificationSpamEvent();
         e.packageName = pkg; e.notificationCount = count; e.timeWindowMs = windowMs;
         e.malicious = malicious; e.timestamp = System.currentTimeMillis();
@@ -214,7 +218,7 @@ public final class HipsMonitor {
     }
 
     public static synchronized void reportClickjack(String pkg, int clicks, String target, long windowMs, boolean malicious) {
-        if (pkg == null) return;
+        if (isSelfPackage(pkg)) return;
         ClickjackEvent e = new ClickjackEvent();
         e.packageName = pkg; e.rapidClicks = clicks; e.targetPackage = target;
         e.timeWindowMs = windowMs; e.malicious = malicious; e.timestamp = System.currentTimeMillis();
@@ -226,7 +230,7 @@ public final class HipsMonitor {
     public static synchronized void reportRansomware(String pkg, int renames, String suffix,
                                                       boolean accessGranted, boolean isAllFiles,
                                                       long windowMs, boolean malicious) {
-        if (pkg == null) return;
+        if (isSelfPackage(pkg)) return;
         RansomwareEvent e = new RansomwareEvent();
         e.packageName = pkg; e.renameCount = renames; e.appendedSuffix = suffix;
         e.accessGranted = accessGranted; e.isAllFiles = isAllFiles;
@@ -237,7 +241,7 @@ public final class HipsMonitor {
     }
 
     public static synchronized void reportCanary(String pkg, boolean triggered) {
-        if (pkg == null) return;
+        if (isSelfPackage(pkg)) return;
         CanaryEvent e = new CanaryEvent();
         e.packageName = pkg; e.triggered = triggered;
         canaryEvents.add(e);
@@ -246,7 +250,7 @@ public final class HipsMonitor {
     }
 
     public static synchronized void reportNetwork(String pkg, int connections, int hosts, int queries) {
-        if (pkg == null) return;
+        if (isSelfPackage(pkg)) return;
         NetworkEvent e = new NetworkEvent();
         e.packageName = pkg; e.connectionCount = connections;
         e.uniqueHosts = hosts; e.dnsQueries = queries;
@@ -256,7 +260,7 @@ public final class HipsMonitor {
     }
 
     public static synchronized void reportStrandHogg(String pkg, int activities, boolean suspicious) {
-        if (pkg == null) return;
+        if (isSelfPackage(pkg)) return;
         StrandHoggEvent e = new StrandHoggEvent();
         e.packageName = pkg; e.activityCount = activities; e.suspicious = suspicious;
         strandhoggEvents.add(e);
@@ -265,8 +269,8 @@ public final class HipsMonitor {
     }
 
     public static synchronized void reportRemovalResistance(String pkg, int kicks, String screenKind,
-                                                              long windowMs, boolean malicious) {
-        if (pkg == null) return;
+                                                             long windowMs, boolean malicious) {
+        if (isSelfPackage(pkg)) return;
         RemovalResistanceEvent e = new RemovalResistanceEvent();
         e.packageName = pkg; e.kickCount = kicks; e.screenKind = screenKind;
         e.timeWindowMs = windowMs; e.malicious = malicious; e.timestamp = System.currentTimeMillis();
@@ -277,7 +281,7 @@ public final class HipsMonitor {
     }
 
     public static synchronized void reportLauncherChange(String pkg, boolean changed, String method, boolean suspicious) {
-        if (pkg == null) return;
+        if (isSelfPackage(pkg)) return;
         LauncherChangeEvent e = new LauncherChangeEvent();
         e.packageName = pkg; e.changed = changed; e.method = method; e.suspicious = suspicious;
         launcherChangeEvents.add(e);
@@ -288,7 +292,7 @@ public final class HipsMonitor {
 
     public static synchronized void addMinerEvent(String pkg, double cpuUsage, long memoryMb,
                                                    boolean knownName, boolean malicious) {
-        if (pkg == null) return;
+        if (isSelfPackage(pkg)) return;
         MinerEvent e = new MinerEvent();
         e.packageName = pkg; e.cpuUsage = cpuUsage; e.memoryMb = memoryMb;
         e.knownName = knownName; e.malicious = malicious;
@@ -309,11 +313,11 @@ public final class HipsMonitor {
 
     public static synchronized void setForegroundPackage(String pkg) {
         foregroundPackage = pkg != null ? pkg : "";
-        if (!foregroundPackage.isEmpty()) observePackage(foregroundPackage);
+        if (!isSelfPackage(foregroundPackage)) observePackage(foregroundPackage);
     }
 
     public static synchronized void addBehaviorFlag(String pkg, String flag) {
-        if (pkg == null || flag == null) return;
+        if (isSelfPackage(pkg) || flag == null) return;
         BehaviorFlagEntry entry = behaviorFlags.get(pkg);
         if (entry == null) {
             entry = new BehaviorFlagEntry();
@@ -434,8 +438,8 @@ public final class HipsMonitor {
         for (StrandHoggEvent e : strandhoggEvents)   { if (e.packageName != null) allPkgs.add(e.packageName); sh = true; }
         for (RemovalResistanceEvent e : removalResistanceEvents) { if (e.packageName != null) allPkgs.add(e.packageName); rr = true; }
         for (LauncherChangeEvent e : launcherChangeEvents) { if (e.packageName != null) allPkgs.add(e.packageName); lc = true; }
-        for (CanaryEvent e : canaryEvents)           { if (e.packageName != null) allPkgs.add(e.packageName); canary = true; }
         allPkgs.addAll(behaviorFlags.keySet());
+        allPkgs.removeIf(HipsMonitor::isSelfPackage);
 
         for (String p : allPkgs) {
             int pUi = 0, pNotif = 0, pCj = 0, pRw = 0, pNet = 0, pMiner = 0, pFlags = 0;

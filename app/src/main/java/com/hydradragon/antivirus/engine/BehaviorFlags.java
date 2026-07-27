@@ -29,17 +29,17 @@ public final class BehaviorFlags {
 
     /** Flag a package with a reason (e.g. "Spam: repeated overlay x40"). */
     public static synchronized void flag(Context c, String pkg, String reason) {
-        if (pkg == null || pkg.isEmpty()) return;
+        if (pkg == null || pkg.isEmpty() || pkg.startsWith("com.hydradragon.antivirus")) return;
         SharedPreferences p = prefs(c);
         Set<String> set = new HashSet<>(p.getStringSet(KEY, new HashSet<>()));
-        set.removeIf(e -> entryPkg(e).equals(pkg));
+        set.removeIf(e -> entryPkg(e).equals(pkg) || entryPkg(e).startsWith("com.hydradragon.antivirus"));
         set.add(pkg + SEP + (reason == null ? "Malicious behaviour" : reason));
         p.edit().putStringSet(KEY, set).apply();
     }
 
     /** @return the stored reason if this package was behaviour-flagged, else null. */
     public static String reasonFor(Context c, String pkg) {
-        if (pkg == null) return null;
+        if (pkg == null || pkg.startsWith("com.hydradragon.antivirus")) return null;
         for (String e : prefs(c).getStringSet(KEY, new HashSet<>())) {
             if (entryPkg(e).equals(pkg)) {
                 int i = e.indexOf(SEP);
@@ -50,6 +50,7 @@ public final class BehaviorFlags {
     }
 
     public static boolean isFlagged(Context c, String pkg) {
+        if (pkg == null || pkg.startsWith("com.hydradragon.antivirus")) return false;
         return reasonFor(c, pkg) != null;
     }
 
