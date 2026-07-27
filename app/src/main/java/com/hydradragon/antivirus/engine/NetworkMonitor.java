@@ -121,9 +121,15 @@ public class NetworkMonitor {
         public final boolean blocked;
         public final String reason;
         public final int pid;
+        public final String packageName;
 
         public NetworkEvent(String sourceIp, String destIp, int destPort,
                           String protocol, boolean blocked, String reason, int pid) {
+            this(sourceIp, destIp, destPort, protocol, blocked, reason, pid, null);
+        }
+
+        public NetworkEvent(String sourceIp, String destIp, int destPort,
+                          String protocol, boolean blocked, String reason, int pid, String packageName) {
             this.timestamp = System.currentTimeMillis();
             this.sourceIp = sourceIp;
             this.destIp = destIp;
@@ -132,6 +138,10 @@ public class NetworkMonitor {
             this.blocked = blocked;
             this.reason = reason;
             this.pid = pid;
+            String resolvedPkg = (packageName != null && !packageName.isEmpty())
+                    ? packageName
+                    : com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+            this.packageName = (resolvedPkg != null) ? resolvedPkg : "";
         }
     }
 
@@ -168,7 +178,12 @@ public class NetworkMonitor {
      *  after leaving and re-entering the tab). */
     public static void recordEvent(String destIp, int port, String protocol,
                                     boolean blocked, String reason) {
-        NetworkEvent event = new NetworkEvent("local", destIp, port, protocol, blocked, reason, 0);
+        recordEvent(destIp, port, protocol, blocked, reason, null);
+    }
+
+    public static void recordEvent(String destIp, int port, String protocol,
+                                    boolean blocked, String reason, String packageName) {
+        NetworkEvent event = new NetworkEvent("local", destIp, port, protocol, blocked, reason, 0, packageName);
         eventLog.add(0, event);
         while (eventLog.size() > 1000) eventLog.remove(eventLog.size() - 1);
         if (blocked) recordBlocked(); else recordAllowed();

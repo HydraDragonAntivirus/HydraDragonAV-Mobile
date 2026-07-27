@@ -81,7 +81,11 @@ public class DynamicAnalysisService extends AccessibilityService {
     // confirmation dialog, all through AccessibilityService. After the
     // target is stopped, navigate back to HydraDragon's own activity.
     private static volatile String sFsTarget = null;
+    /** true after the Force Stop button has been clicked; waiting for OK dialog. */
     private static volatile boolean sFsConfirmDone = false;
+    /** true once sFsConfirmDone is set AND a new window event has been received,
+     *  meaning the confirmation dialog has appeared on screen. */
+    private static volatile boolean sFsDialogShown = false;
     private static volatile String sFsAppName = null;
     private static volatile String sFsReason = null;
 
@@ -90,6 +94,7 @@ public class DynamicAnalysisService extends AccessibilityService {
         if (inst == null || pkg == null || pkg.isEmpty()) return;
         sFsTarget = pkg;
         sFsConfirmDone = false;
+        sFsDialogShown = false;
         sFsAppName = appName != null ? appName : pkg;
         sFsReason = reason != null ? reason : "Malicious behaviour";
         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
@@ -273,8 +278,15 @@ public class DynamicAnalysisService extends AccessibilityService {
             // Settings → Force Stop → OK flow through accessibility.
             if (sFsTarget != null) {
                 String settingsPkg = "com.android.settings";
-                boolean onSettings = pkg.equals(settingsPkg);
-                boolean onSystemDialog = "android".equals(pkg) || "com.android.systemui".equals(pkg);
+                boolean onSettings    = pkg.equals(settingsPkg);
+                // The confirmation dialog can stay inside Settings on many ROMs
+                // (MIUI, One UI, stock Android 13+) or appear as a system dialog
+                // owned by android / SystemUI on older ones.
+                boolean onDialogHost  = onSettings
+                        || "android".equals(pkg)
+                        || "com.android.systemui".equals(pkg);
+
+                // Phase 1 → 2: on the App Info screen, click "Force Stop".
                 if (onSettings && !sFsConfirmDone) {
                     AccessibilityNodeInfo root = getRootInActiveWindow();
                     if (root != null) {
@@ -296,12 +308,21 @@ public class DynamicAnalysisService extends AccessibilityService {
                             }
                             for (AccessibilityNodeInfo n : nodes) n.recycle();
                             sFsConfirmDone = true;
+                            // sFsDialogShown stays false until a NEW window event
+                            // arrives (the confirmation dialog opening).
                             Log.i(TAG, "force-stop: clicked Force Stop button for " + sFsTarget);
                         }
                         root.recycle();
                     }
                 }
-                if (onSystemDialog && sFsConfirmDone) {
+
+                // Phase 2 → 3: once the dialog opens (new window event after
+                // sFsConfirmDone), click OK and show MalwareFoundActivity.
+                if (sFsConfirmDone && !sFsDialogShown) {
+                    // This window-change event is the dialog appearing.
+                    sFsDialogShown = true;
+                }
+                if (onDialogHost && sFsDialogShown) {
                     AccessibilityNodeInfo root = getRootInActiveWindow();
                     if (root != null) {
                         java.util.List<AccessibilityNodeInfo> nodes = null;
@@ -313,37 +334,56 @@ public class DynamicAnalysisService extends AccessibilityService {
                             for (AccessibilityNodeInfo n : nodes) {
                                 if (n.isClickable()) {
                                     n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                                    Log.i(TAG, "force-stop: confirmed for " + sFsTarget);
+                                    Log.i(TAG, "force-stop: confirmed OK for " + sFsTarget);
                                     break;
                                 }
                             }
                             for (AccessibilityNodeInfo n : nodes) n.recycle();
+
+                            // Phase 3: target stopped → show MalwareFoundActivity.
+                            try {
+                                Intent malware = new Intent(
+                                    this, com.hydradragon.antivirus.ui.MalwareFoundActivity.class);
+                                malware.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                    | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                                malware.putExtra(
+                                    com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_APP_NAME,
+                                    sFsAppName);
+                                malware.putExtra(
+                                    com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_PACKAGE_NAME,
+                                    sFsTarget);
+                                malware.putExtra(
+                                    com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_REASON,
+                                    sFsReason);
+                                malware.putExtra(
+                                    com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_RISK_SCORE,
+                                    100);
+                                startActivity(malware);
+                            } catch (Throwable t) {
+                                Log.w(TAG, "force-stop: failed to show MalwareFoundActivity", t);
+                                // Fallback: open the antivirus screen instead of
+                                // dropping the user at a blank screen. MainActivity
+                                // will show the scan tab so the threat is visible.
+                                try {
+                                    Intent fallback = new Intent(
+                                        this, com.hydradragon.antivirus.MainActivity.class);
+                                    fallback.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                        | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                    fallback.putExtra("open_scan_tab", true);
+                                    startActivity(fallback);
+                                } catch (Throwable t2) {
+                                    Log.w(TAG, "force-stop: fallback launch failed", t2);
+                                }
+                            }
+                            sFsTarget      = null;
+                            sFsConfirmDone = false;
+                            sFsDialogShown = false;
+                            sFsAppName     = null;
+                            sFsReason      = null;
                         }
                         root.recycle();
                     }
-                    // Step 3: target stopped → show MalwareFoundActivity
-                    try {
-                        Intent malware = new Intent(this, com.hydradragon.antivirus.ui.MalwareFoundActivity.class);
-                        malware.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                        malware.putExtra(com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_APP_NAME, sFsAppName);
-                        malware.putExtra(com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_PACKAGE_NAME, sFsTarget);
-                        malware.putExtra(com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_REASON, sFsReason);
-                        malware.putExtra(com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_RISK_SCORE, 100);
-                        startActivity(malware);
-                    } catch (Throwable t) {
-                        Log.w(TAG, "force-stop: failed to show MalwareFoundActivity", t);
-                        try {
-                            Intent fallback = new Intent(this, com.hydradragon.antivirus.MainActivity.class);
-                            fallback.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            startActivity(fallback);
-                        } catch (Throwable t2) {
-                            Log.w(TAG, "force-stop: fallback launch failed", t2);
-                        }
-                    }
-                    sFsTarget = null;
-                    sFsConfirmDone = false;
-                    sFsAppName = null;
-                    sFsReason = null;
                 }
             }
 

@@ -151,6 +151,8 @@
             <intent-filter>
                 <action android:name="com.hydradragon.antivirus.IGNORE_THREAT" />
                 <action android:name="com.hydradragon.antivirus.DISMISS_REDIRECT" />
+                <action android:name="com.hydradragon.antivirus.PAUSE_PROTECTION" />
+                <action android:name="com.hydradragon.antivirus.RESUME_PROTECTION" />
             </intent-filter>
         </receiver>
 

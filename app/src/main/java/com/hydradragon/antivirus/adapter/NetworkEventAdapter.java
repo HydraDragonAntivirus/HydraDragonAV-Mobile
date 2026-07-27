@@ -61,13 +61,20 @@ public class NetworkEventAdapter extends RecyclerView.Adapter<NetworkEventAdapte
                     ? ctx.getString(R.string.net_event_blocked)
                     : ctx.getString(R.string.net_event_allowed);
                 String time = sdf.format(new Date(currentEvent.timestamp));
+                String pidDisplay = (currentEvent.pid > 0) 
+                    ? String.valueOf(currentEvent.pid) 
+                    : "0 (Android SELinux Restricted)";
+                String appDisplay = (currentEvent.packageName != null && !currentEvent.packageName.isEmpty())
+                    ? currentEvent.packageName
+                    : "System / Unknown";
                 String detail = ctx.getString(R.string.net_event_detail_time) + " " + time + "\n"
                     + ctx.getString(R.string.net_event_detail_source) + " " + currentEvent.sourceIp + "\n"
                     + ctx.getString(R.string.net_event_detail_destination) + " " + currentEvent.destIp + ":" + currentEvent.destPort + "\n"
                     + ctx.getString(R.string.net_event_detail_protocol) + " " + currentEvent.protocol + "\n"
                     + ctx.getString(R.string.net_event_detail_action) + " " + action + "\n"
                     + ctx.getString(R.string.net_event_detail_reason) + " " + currentEvent.reason + "\n"
-                    + ctx.getString(R.string.net_event_detail_pid) + " " + currentEvent.pid;
+                    + ctx.getString(R.string.net_event_detail_pid) + " " + pidDisplay + "\n"
+                    + "App: " + appDisplay;
                 new AlertDialog.Builder(ctx, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                     .setTitle(ctx.getString(R.string.net_event_detail_title))
                     .setMessage(detail)
@@ -81,8 +88,11 @@ public class NetworkEventAdapter extends RecyclerView.Adapter<NetworkEventAdapte
             SimpleDateFormat sdf = new SimpleDateFormat("[HH:mm:ss]", Locale.getDefault());
             tvTime.setText(sdf.format(new Date(event.timestamp)));
 
-            tvConnection.setText(event.destIp + ":" + event.destPort
-                + " [" + event.protocol + "]");
+            String connText = event.destIp + ":" + event.destPort + " [" + event.protocol + "]";
+            if (event.packageName != null && !event.packageName.isEmpty()) {
+                connText += " • " + event.packageName;
+            }
+            tvConnection.setText(connText);
 
             if (event.blocked) {
                 tvAction.setText(R.string.net_event_blocked);

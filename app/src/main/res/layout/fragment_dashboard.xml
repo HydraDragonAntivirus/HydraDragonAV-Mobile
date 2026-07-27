@@ -147,7 +147,20 @@
                 android:id="@+id/network_chart"
                 android:layout_width="match_parent"
                 android:layout_height="100dp"
-                android:background="@color/bg_secondary"/>
+                android:background="@color/bg_secondary"
+                android:clickable="true"
+                android:focusable="true"/>
+
+            <TextView
+                android:id="@+id/tv_chart_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/live_network_activity"
+                android:textColor="@color/neon_cyan"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:padding="4dp"/>
         </LinearLayout>
 
         <Button

@@ -56,12 +56,17 @@ public class DashboardFragment extends Fragment {
     private TextView tvEngineStatus;
     private TextView tvMemoryInfo;
     private View layoutScanReminder;
+    private TextView tvChartLabel;
 
     private GuardService guardService;
     private boolean serviceBound = false;
     private Handler uiHandler;
     private Runnable statsUpdater;
     private Runnable engineStatusPoller;
+
+    private String selectedPkg = null;
+    private final java.util.LinkedHashMap<String, int[]> pkgTraffic = new java.util.LinkedHashMap<>();
+    private final java.util.List<String> pkgOrder = new java.util.ArrayList<>();
 
 
 
@@ -130,6 +135,7 @@ public class DashboardFragment extends Fragment {
         tvThreatFeed = view.findViewById(R.id.tv_threat_feed);
         tvEngineStatus = view.findViewById(R.id.tv_engine_status);
         tvMemoryInfo = view.findViewById(R.id.tv_memory_info);
+        tvChartLabel = view.findViewById(R.id.tv_chart_label);
         layoutScanReminder = view.findViewById(R.id.layout_scan_reminder);
 
         View btnGraph = view.findViewById(R.id.btn_behavior_graph);
@@ -140,6 +146,10 @@ public class DashboardFragment extends Fragment {
                         .showFragment(BehaviorGraphFragment.newInstance(""));
                 }
             });
+        }
+
+        if (networkChart != null) {
+            networkChart.setOnClickListener(v -> cycleChartPackage());
         }
         Log.d("HydraDragon-Dash", "layoutScanReminder=" + layoutScanReminder);
 
@@ -179,6 +189,7 @@ public class DashboardFragment extends Fragment {
     private void startStatsUpdater() {
         statsUpdater = new Runnable() {
             private int lastTotal = 0;
+            private java.util.HashMap<Integer, String> pidCache = new java.util.HashMap<>();
             @Override
             public void run() {
                 if (!serviceBound || guardService == null) {
@@ -201,53 +212,38 @@ public class DashboardFragment extends Fragment {
                 tvBlocked.setText(String.valueOf(blocked));
                 tvAllowed.setText(String.valueOf(allowed));
 
+                for (NetworkMonitor.NetworkEvent ev : nm.getEventLog()) {
+                    String pkg = resolvePidToPackage(ev.pid, pidCache);
+                    if (pkg == null) continue;
+                    if (!pkgTraffic.containsKey(pkg)) {
+                        pkgTraffic.put(pkg, new int[]{0});
+                        pkgOrder.add(pkg);
+                    }
+                    pkgTraffic.get(pkg)[0]++;
+                }
+
                 if (networkChart != null) {
-                    networkChart.addDataPoint(rate > 0 ? rate : 0f);
+                    float displayRate = rate;
+                    if (selectedPkg != null) {
+                        int[] cnt = pkgTraffic.get(selectedPkg);
+                        displayRate = cnt != null ? cnt[0] : 0f;
+                    }
+                    networkChart.addDataPoint(displayRate > 0 ? displayRate : 0f);
+                }
+
+                if (tvChartLabel != null) {
+                    tvChartLabel.setText(selectedPkg != null ? selectedPkg : getString(R.string.live_network_activity));
                 }
 
                 if (tvMemoryInfo != null) {
                     try {
+                        int pid = android.os.Process.myPid();
                         android.app.ActivityManager am = (android.app.ActivityManager)
                             requireContext().getSystemService(Context.ACTIVITY_SERVICE);
                         if (am == null) throw new Exception();
-                        java.util.List<android.app.ActivityManager.RunningAppProcessInfo> procs =
-                            am.getRunningAppProcesses();
-                        if (procs == null) procs = new java.util.ArrayList<>();
-                        android.content.pm.PackageManager pmm = requireContext().getPackageManager();
-                        // Collect PID -> memory
-                        java.util.List<Integer> pidList = new java.util.ArrayList<>();
-                        java.util.List<String> pkgNames = new java.util.ArrayList<>();
-                        for (android.app.ActivityManager.RunningAppProcessInfo p : procs) {
-                            if (p.processName.startsWith("android") || p.processName.equals(requireContext().getPackageName())) continue;
-                            pidList.add(p.pid);
-                            pkgNames.add(p.processName);
-                        }
-                        int[] pids = new int[pidList.size()];
-                        for (int i = 0; i < pidList.size(); i++) pids[i] = pidList.get(i);
-                        android.os.Debug.MemoryInfo[] mis = am.getProcessMemoryInfo(pids);
-                        // Build sorted list
-                        java.util.List<String[]> entries = new java.util.ArrayList<>();
-                        for (int i = 0; i < mis.length && i < pkgNames.size(); i++) {
-                            int kb = mis[i].getTotalPss();
-                            if (kb < 1024) continue; // skip <1MB
-                            String name = pkgNames.get(i);
-                            if (name.contains(":")) name = name.split(":")[0];
-                            try {
-                                name = pmm.getApplicationLabel(
-                                    pmm.getApplicationInfo(name, 0)).toString();
-                            } catch (Throwable ignored) {}
-                            entries.add(new String[]{name, String.valueOf(kb)});
-                        }
-                        entries.sort((a, b) ->
-                            Integer.parseInt(b[1]) - Integer.parseInt(a[1]));
-                        StringBuilder sb = new StringBuilder();
-                        int maxShow = Math.min(entries.size(), 4);
-                        for (int i = 0; i < maxShow; i++) {
-                            int mb = Integer.parseInt(entries.get(i)[1]) / 1024;
-                            sb.append(entries.get(i)[0]).append(": ").append(mb).append(" MB");
-                            if (i < maxShow - 1) sb.append("\n");
-                        }
-                        tvMemoryInfo.setText(sb.length() > 0 ? sb.toString() : "—");
+                        android.os.Debug.MemoryInfo mi = am.getProcessMemoryInfo(new int[]{pid})[0];
+                        int pssKb = mi.getTotalPss();
+                        tvMemoryInfo.setText(pssKb / 1024 + " MB PSS");
                     } catch (Throwable ignored) {
                         tvMemoryInfo.setText("—");
                     }
@@ -257,6 +253,43 @@ public class DashboardFragment extends Fragment {
             }
         };
         uiHandler.post(statsUpdater);
+    }
+
+    private void cycleChartPackage() {
+        if (selectedPkg == null) {
+            if (pkgOrder.isEmpty()) return;
+            selectedPkg = pkgOrder.get(0);
+        } else {
+            int idx = pkgOrder.indexOf(selectedPkg);
+            if (idx < 0 || idx >= pkgOrder.size() - 1) {
+                selectedPkg = null;
+            } else {
+                selectedPkg = pkgOrder.get(idx + 1);
+            }
+        }
+        if (tvChartLabel != null) {
+            tvChartLabel.setText(selectedPkg != null ? selectedPkg : getString(R.string.live_network_activity));
+        }
+    }
+
+    private String resolvePidToPackage(int pid, java.util.HashMap<Integer, String> cache) {
+        if (pid <= 0) return null;
+        String cached = cache.get(pid);
+        if (cached != null) return cached;
+        if (cache.size() > 200) cache.clear();
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager)
+                requireContext().getSystemService(Context.ACTIVITY_SERVICE);
+            if (am == null) return null;
+            for (android.app.ActivityManager.RunningAppProcessInfo p : am.getRunningAppProcesses()) {
+                if (p != null && p.pid == pid) {
+                    cache.put(pid, p.processName);
+                    return p.processName;
+                }
+            }
+        } catch (Throwable ignored) {}
+        cache.put(pid, "");
+        return null;
     }
 
         private void setSecureState() {

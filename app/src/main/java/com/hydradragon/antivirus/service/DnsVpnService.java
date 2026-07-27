@@ -409,7 +409,7 @@ public class DnsVpnService extends VpnService {
         if (cat != null && !com.hydradragon.antivirus.engine.WebsiteWhitelist.isDomainWhitelisted(this, host)) {
             byte[] dns = nxdomain(p, dnsOff, len);
             writeTun(buildUdp(p, ver, ipHdr, srcOff, dstOff, dns, dns.length));
-            notifyBlocked(host, cat);
+            notifyBlocked(host, cat, pkg);
             return;
         }
         final byte[] q = slice(p, dnsOff, len - dnsOff);
@@ -442,10 +442,10 @@ public class DnsVpnService extends VpnService {
                 if (ipBlocked) {
                     byte[] nx = nxdomain(p, fDnsOff, fLen);
                     writeTun(buildUdp(p, ver, ipHdr, srcOff, dstOff, nx, nx.length));
-                    notifyBlocked(fhost, "MALICIOUS_IP");
+                    notifyBlocked(fhost, "MALICIOUS_IP", fpkg);
                 } else {
                     writeTun(buildUdp(p, ver, ipHdr, srcOff, dstOff, dns, dns.length));
-                    com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent(fhost, 53, "DNS", false, "Allowed");
+                    com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent(fhost, 53, "DNS", false, "Allowed", fpkg);
                 }
             } catch (Exception e) {
                 Log.w(TAG, "udp forward: " + e.getMessage());
@@ -551,7 +551,7 @@ public class DnsVpnService extends VpnService {
                     byte[] f = buildTcp(p, ver, ipHdr, srcOff, dstOff, tcp,
                         (ourSeq + framed.length) & 0xFFFFFFFFL, clientNext, 0x11, null, 0);
                     writeTun(f);
-                    notifyBlocked(host, cat);
+                    notifyBlocked(host, cat, fpkg);
                     return;
                 }
             }
@@ -590,7 +590,7 @@ public class DnsVpnService extends VpnService {
                             fOurSeq, fClientNext, 0x18, nx, nx.length));
                         writeTun(buildTcp(fp, fVer, fIpHdr, fSrc, fDst, fTcp,
                             (fOurSeq + nx.length) & 0xFFFFFFFFL, fClientNext, 0x11, null, 0));
-                        notifyBlocked(fhost, "MALICIOUS_IP");
+                        notifyBlocked(fhost, "MALICIOUS_IP", fpkg);
                         return;
                     }
                     byte[] data = buildTcp(fp, fVer, fIpHdr, fSrc, fDst, fTcp,
@@ -599,7 +599,7 @@ public class DnsVpnService extends VpnService {
                     byte[] fin2 = buildTcp(fp, fVer, fIpHdr, fSrc, fDst, fTcp,
                         (fOurSeq + reply.length) & 0xFFFFFFFFL, fClientNext, 0x11, null, 0);
                     writeTun(fin2);
-                    com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent(fhost, 53, "DNS", false, "Allowed");
+                    com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent(fhost, 53, "DNS", false, "Allowed", fpkg);
                 } catch (Exception e) {
                     Log.w(TAG, "tcp forward: " + e.getMessage());
                 }
@@ -795,12 +795,16 @@ public class DnsVpnService extends VpnService {
     // ── lifecycle / notifications ───────────────────────────────────────────
 
     private void notifyBlocked(String host, String cat) {
+        notifyBlocked(host, cat, null);
+    }
+
+    private void notifyBlocked(String host, String cat, String pkg) {
         if (host == null) return;
         // Feeds the Dashboard/Network screens' "BLOCKED" counter AND the live
         // event list — this is where blocking ACTUALLY happens (DNS sinkhole);
         // NetworkMonitor.checkConnection() is never invoked from this real
         // traffic path on its own.
-        com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent(host, 53, "DNS", true, cat);
+        com.hydradragon.antivirus.engine.NetworkMonitor.recordEvent(host, 53, "DNS", true, cat, pkg);
         try {
             NotificationManager nm = getSystemService(NotificationManager.class);
             nm.notify(host.hashCode(), new Notification.Builder(this, CH_ID)
