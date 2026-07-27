@@ -72,6 +72,9 @@ public class DynamicAnalysisService extends AccessibilityService {
 
     private static volatile DynamicAnalysisService sInstance = null;
 
+    /** @return the current service instance, or null if not connected. */
+    public static DynamicAnalysisService getInstance() { return sInstance; }
+
     // ── Foreground-app force-stop via accessibility automation ─────────────
     // Android gives no API for a regular app to stop the foreground app.
     // Instead: open Settings → App info → Force Stop, then click the

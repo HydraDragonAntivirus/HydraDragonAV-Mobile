@@ -80,19 +80,17 @@ public final class BehaviorResponse {
     public static boolean killAndPromptUninstall(Context context, String pkg, String appName, String reason, boolean skipUninstall) {
         if (pkg == null || pkg.isEmpty()) return false;
 
-        // Foreground app: use accessibility force-stop (Settings → Force Stop → OK → our malware screen)
-        String fgPkg = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
-        if (pkg.equals(fgPkg)) {
-            if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(
-                    context, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.AUTO_KILL)) {
-                Log.i(TAG, "killAndPromptUninstall: foreground app " + pkg + " -> accessibility force-stop");
-                com.hydradragon.antivirus.service.DynamicAnalysisService.forceStopForegroundApp(pkg, appName, reason);
-                return true;
-            }
-            Log.i(TAG, "killAndPromptUninstall: foreground app " + pkg + " but auto-kill is off");
+        // Try accessibility force-stop first (works for ANY app, foreground or
+        // background — killBackgroundProcesses is unreliable on Android 12+).
+        if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(
+                context, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.AUTO_KILL)
+                && com.hydradragon.antivirus.service.DynamicAnalysisService.getInstance() != null) {
+            Log.i(TAG, "killAndPromptUninstall: accessibility force-stop for " + pkg);
+            com.hydradragon.antivirus.service.DynamicAnalysisService.forceStopForegroundApp(pkg, appName, reason);
+            return true;
         }
 
-        // Kill the process
+        // Fallback: killBackgroundProcesses (unreliable on Android 12+)
         try {
             ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             if (am != null) am.killBackgroundProcesses(pkg);

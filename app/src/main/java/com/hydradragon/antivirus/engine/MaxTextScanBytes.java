@@ -8,20 +8,24 @@ import android.content.Context;
  *  them saves ClamAV time with no detection loss. Applied immediately. */
 public final class MaxTextScanBytes {
     private static final String PREFS = "hydra_prefs";
-    private static final String KEY_MAX_BYTES = "max_text_scan_bytes";
+    private static final String KEY_MAX_MB = "max_text_scan_mb";
 
-    public static final int DEFAULT_BYTES = 10_000_000;
-    public static final int MIN_BYTES = 100_000;
-    public static final int MAX_BYTES = 2_147_483_647;
+    public static final int DEFAULT_MB = 10;
+    public static final int MIN_MB = 1;
+    public static final int MAX_MB = 2048;
 
     private MaxTextScanBytes() {}
 
-    public static int getMaxBytes(Context c) {
-        return c.getSharedPreferences(PREFS, 0).getInt(KEY_MAX_BYTES, DEFAULT_BYTES);
+    public static int getMaxMb(Context c) {
+        return c.getSharedPreferences(PREFS, 0).getInt(KEY_MAX_MB, DEFAULT_MB);
     }
 
-    public static void setMaxBytes(Context c, int bytes) {
-        int clamped = Math.max(MIN_BYTES, Math.min(MAX_BYTES, bytes));
-        c.getSharedPreferences(PREFS, 0).edit().putInt(KEY_MAX_BYTES, clamped).apply();
+    public static void setMaxMb(Context c, int mb) {
+        int clamped = Math.max(MIN_MB, Math.min(MAX_MB, mb));
+        c.getSharedPreferences(PREFS, 0).edit().putInt(KEY_MAX_MB, clamped).apply();
+    }
+
+    public static int getMaxBytes(Context c) {
+        return getMaxMb(c) * 1024 * 1024;
     }
 }
