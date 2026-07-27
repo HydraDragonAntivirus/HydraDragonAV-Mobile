@@ -446,6 +446,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="graph_file_copy">Tương quan sao chép tập tin</string>
     <string name="graph_miner_memory">Bộ nhớ khai thác</string>
     <string name="graph_behavior_flags">Cờ hành vi</string>
+    <string name="graph_scan_malware">Quét phần mềm độc hại</string>
     <string name="graph_strandhogg">sợihogg</string>
     <string name="graph_removal_resistance">Kháng loại bỏ</string>
     <string name="graph_launcher_change">Thay đổi trình khởi chạy</string>

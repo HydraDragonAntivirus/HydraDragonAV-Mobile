@@ -446,6 +446,7 @@
     <string name="graph_file_copy">文件复制关联</string>
     <string name="graph_miner_memory">矿工内存</string>
     <string name="graph_behavior_flags">行为标志</string>
+    <string name="graph_scan_malware">扫描恶意软件</string>
     <string name="graph_strandhogg">斯特兰德霍格</string>
     <string name="graph_removal_resistance">去除阻力</string>
     <string name="graph_launcher_change">启动器变更</string>
