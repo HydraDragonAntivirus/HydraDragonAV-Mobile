@@ -471,6 +471,9 @@
     <string name="graph_select_package">Виберіть програму / пакет</string>
     <string name="graph_yes">ТАК</string>
     <string name="graph_no">ні</string>
+    <string name="reason_scan_detected_malware">Шкідливе ПЗ, виявлене під час сканування</string>
+    <string name="reason_previously_detected_running">Раніше виявлений шкідливий додаток зараз запущено</string>
+    <string name="reason_malicious_behavior">Шкідлива поведінка</string>
 </resources>
 
 

@@ -471,6 +471,9 @@
     <string name="graph_select_package">เลือกแอป / แพ็กเกจ</string>
     <string name="graph_yes">ใช่</string>
     <string name="graph_no">ไม่</string>
+    <string name="reason_scan_detected_malware">มัลแวร์ที่ตรวจพบจากการสแกน</string>
+    <string name="reason_previously_detected_running">แอปมัลแวร์ที่ตรวจพบก่อนหน้านี้กำลังทำงานอยู่</string>
+    <string name="reason_malicious_behavior">พฤติกรรมที่เป็นอันตราย</string>
 </resources>
 
 
