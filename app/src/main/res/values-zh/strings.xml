@@ -458,6 +458,7 @@
     <string name="graph_rooted">扎根</string>
     <string name="graph_debug">调试模式</string>
     <string name="behavior_auto_kill">自动杀死前台恶意软件（可访问性）</string>
+    <string name="graph_no_data">尚无行为数据</string>
 </resources>
 
 

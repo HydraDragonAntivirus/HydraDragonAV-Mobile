@@ -458,6 +458,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="graph_rooted">Enraciné</string>
     <string name="graph_debug">Mode débogage</string>
     <string name="behavior_auto_kill">Supprimer automatiquement les logiciels malveillants au premier plan (accessibilité)</string>
+    <string name="graph_no_data">Aucune donnée comportementale pour le moment</string>
 </resources>
 
 

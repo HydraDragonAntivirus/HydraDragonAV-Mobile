@@ -458,6 +458,7 @@
     <string name="graph_rooted">متجذرة</string>
     <string name="graph_debug">وضع التصحيح</string>
     <string name="behavior_auto_kill">القتل التلقائي للبرامج الضارة في المقدمة (إمكانية الوصول)</string>
+    <string name="graph_no_data">لا توجد بيانات سلوكية حتى الآن</string>
 </resources>
 
 

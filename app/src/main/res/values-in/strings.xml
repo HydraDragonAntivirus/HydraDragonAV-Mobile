@@ -458,6 +458,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="graph_rooted">Berakar</string>
     <string name="graph_debug">Modus Debug</string>
     <string name="behavior_auto_kill">Malware latar depan yang mematikan secara otomatis (aksesibilitas)</string>
+    <string name="graph_no_data">Belum ada data perilaku</string>
 </resources>
 
 

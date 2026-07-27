@@ -458,6 +458,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="graph_rooted">Enraizado</string>
     <string name="graph_debug">Modo de depuração</string>
     <string name="behavior_auto_kill">Eliminação automática de malware em primeiro plano (acessibilidade)</string>
+    <string name="graph_no_data">Nenhum dado comportamental ainda</string>
 </resources>
 
 

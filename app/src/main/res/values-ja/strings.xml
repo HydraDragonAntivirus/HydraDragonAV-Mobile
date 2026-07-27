@@ -458,6 +458,7 @@
     <string name="graph_rooted">根付いた</string>
     <string name="graph_debug">デバッグモード</string>
     <string name="behavior_auto_kill">フォアグラウンド マルウェアを自動停止する (アクセシビリティ)</string>
+    <string name="graph_no_data">行動データはまだありません</string>
 </resources>
 
 

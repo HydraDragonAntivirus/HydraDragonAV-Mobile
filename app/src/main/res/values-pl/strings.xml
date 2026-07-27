@@ -458,6 +458,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="graph_rooted">Zakorzenione</string>
     <string name="graph_debug">Tryb debugowania</string>
     <string name="behavior_auto_kill">Automatyczne usuwanie złośliwego oprogramowania na pierwszym planie (dostępność)</string>
+    <string name="graph_no_data">Brak danych behawioralnych</string>
 </resources>
 
 

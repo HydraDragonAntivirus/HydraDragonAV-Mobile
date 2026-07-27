@@ -458,6 +458,7 @@
     <string name="graph_rooted">जड़ हो गया</string>
     <string name="graph_debug">डिबग मोड</string>
     <string name="behavior_auto_kill">अग्रभूमि मैलवेयर को स्वतः समाप्त करें (पहुंच-योग्यता)</string>
+    <string name="graph_no_data">अभी तक कोई व्यवहार संबंधी डेटा नहीं</string>
 </resources>
 
 

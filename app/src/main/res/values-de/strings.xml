@@ -458,6 +458,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="graph_rooted">Verwurzelt</string>
     <string name="graph_debug">Debug-Modus</string>
     <string name="behavior_auto_kill">Vordergrund-Malware automatisch töten (Barrierefreiheit)</string>
+    <string name="graph_no_data">Noch keine Verhaltensdaten</string>
 </resources>
 
 

@@ -458,6 +458,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="graph_rooted">Geworteld</string>
     <string name="graph_debug">Foutopsporingsmodus</string>
     <string name="behavior_auto_kill">Malware op de voorgrond automatisch doden (toegankelijkheid)</string>
+    <string name="graph_no_data">Nog geen gedragsgegevens</string>
 </resources>
 
 

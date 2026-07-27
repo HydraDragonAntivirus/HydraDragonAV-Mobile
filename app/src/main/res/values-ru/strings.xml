@@ -458,6 +458,7 @@
     <string name="graph_rooted">Укорененный</string>
     <string name="graph_debug">Режим отладки</string>
     <string name="behavior_auto_kill">Автоматическое уничтожение вредоносных программ на переднем плане (доступность)</string>
+    <string name="graph_no_data">Поведенческих данных пока нет</string>
 </resources>
 
 

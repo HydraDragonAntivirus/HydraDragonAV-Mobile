@@ -458,6 +458,7 @@
     <string name="graph_rooted">ریشه دار شده</string>
     <string name="graph_debug">حالت اشکال زدایی</string>
     <string name="behavior_auto_kill">کشتن خودکار بدافزار پیش زمینه (دسترسی)</string>
+    <string name="graph_no_data">هنوز داده رفتاری وجود ندارد</string>
 </resources>
 
 
