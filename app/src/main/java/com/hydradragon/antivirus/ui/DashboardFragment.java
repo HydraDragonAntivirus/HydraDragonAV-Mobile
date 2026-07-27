@@ -22,7 +22,6 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.hydradragon.antivirus.R;
-import com.hydradragon.antivirus.engine.MemoryMonitor;
 import com.hydradragon.antivirus.engine.NetworkMonitor;
 import com.hydradragon.antivirus.model.ProcessInfo;
 import com.hydradragon.antivirus.model.ThreatResult;
@@ -56,7 +55,6 @@ public class DashboardFragment extends Fragment {
     private TextView tvThreatFeed;
     private TextView tvEngineStatus;
     private TextView tvMemoryInfo;
-    private TextView tvMemoryPct;
     private View layoutScanReminder;
 
     private GuardService guardService;
@@ -132,7 +130,6 @@ public class DashboardFragment extends Fragment {
         tvThreatFeed = view.findViewById(R.id.tv_threat_feed);
         tvEngineStatus = view.findViewById(R.id.tv_engine_status);
         tvMemoryInfo = view.findViewById(R.id.tv_memory_info);
-        tvMemoryPct = view.findViewById(R.id.tv_memory_pct);
         layoutScanReminder = view.findViewById(R.id.layout_scan_reminder);
 
         View btnGraph = view.findViewById(R.id.btn_behavior_graph);
@@ -209,34 +206,50 @@ public class DashboardFragment extends Fragment {
                 }
 
                 if (tvMemoryInfo != null) {
-                    int memScore = MemoryMonitor.pressureScore();
-                    long totalKb = 0, availKb = 0;
                     try {
-                        java.io.RandomAccessFile raf = new java.io.RandomAccessFile("/proc/meminfo", "r");
-                        String line;
-                        while ((line = raf.readLine()) != null) {
-                            if (line.startsWith("MemTotal:")) {
-                                String[] parts = line.split("\\s+");
-                                totalKb = Long.parseLong(parts[1]);
-                            } else if (line.startsWith("MemAvailable:")) {
-                                String[] parts = line.split("\\s+");
-                                availKb = Long.parseLong(parts[1]);
-                                break;
-                            }
+                        android.app.ActivityManager am = (android.app.ActivityManager)
+                            requireContext().getSystemService(Context.ACTIVITY_SERVICE);
+                        if (am == null) throw new Exception();
+                        java.util.List<android.app.ActivityManager.RunningAppProcessInfo> procs =
+                            am.getRunningAppProcesses();
+                        if (procs == null) procs = new java.util.ArrayList<>();
+                        android.content.pm.PackageManager pmm = requireContext().getPackageManager();
+                        // Collect PID -> memory
+                        java.util.List<Integer> pidList = new java.util.ArrayList<>();
+                        java.util.List<String> pkgNames = new java.util.ArrayList<>();
+                        for (android.app.ActivityManager.RunningAppProcessInfo p : procs) {
+                            if (p.processName.startsWith("android") || p.processName.equals(requireContext().getPackageName())) continue;
+                            pidList.add(p.pid);
+                            pkgNames.add(p.processName);
                         }
-                        raf.close();
-                    } catch (Throwable ignored) {}
-                    if (totalKb > 0) {
-                        int usedMb = (int)((totalKb - availKb) / 1024);
-                        int totalMb = (int)(totalKb / 1024);
-                        int pct = (int)(100 - (availKb * 100 / totalKb));
-                        tvMemoryInfo.setText(usedMb + " MB / " + totalMb + " MB");
-                        tvMemoryPct.setText(pct + "%");
-                        tvMemoryPct.setTextColor(pct > 80 ? 0xFFFF0040 :
-                            pct > 60 ? 0xFFFF8800 : 0xFF00FF88);
-                    } else {
-                        tvMemoryInfo.setText("--");
-                        tvMemoryPct.setText("--");
+                        int[] pids = new int[pidList.size()];
+                        for (int i = 0; i < pidList.size(); i++) pids[i] = pidList.get(i);
+                        android.os.Debug.MemoryInfo[] mis = am.getProcessMemoryInfo(pids);
+                        // Build sorted list
+                        java.util.List<String[]> entries = new java.util.ArrayList<>();
+                        for (int i = 0; i < mis.length && i < pkgNames.size(); i++) {
+                            int kb = mis[i].getTotalPss();
+                            if (kb < 1024) continue; // skip <1MB
+                            String name = pkgNames.get(i);
+                            if (name.contains(":")) name = name.split(":")[0];
+                            try {
+                                name = pmm.getApplicationLabel(
+                                    pmm.getApplicationInfo(name, 0)).toString();
+                            } catch (Throwable ignored) {}
+                            entries.add(new String[]{name, String.valueOf(kb)});
+                        }
+                        entries.sort((a, b) ->
+                            Integer.parseInt(b[1]) - Integer.parseInt(a[1]));
+                        StringBuilder sb = new StringBuilder();
+                        int maxShow = Math.min(entries.size(), 4);
+                        for (int i = 0; i < maxShow; i++) {
+                            int mb = Integer.parseInt(entries.get(i)[1]) / 1024;
+                            sb.append(entries.get(i)[0]).append(": ").append(mb).append(" MB");
+                            if (i < maxShow - 1) sb.append("\n");
+                        }
+                        tvMemoryInfo.setText(sb.length() > 0 ? sb.toString() : "—");
+                    } catch (Throwable ignored) {
+                        tvMemoryInfo.setText("—");
                     }
                 }
 

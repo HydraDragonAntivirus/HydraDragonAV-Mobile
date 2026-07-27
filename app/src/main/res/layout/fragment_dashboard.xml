@@ -279,35 +279,17 @@
                 android:textSize="11sp"
                 android:fontFamily="monospace"
                 android:letterSpacing="0.1"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="4dp"/>
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/tv_memory_info"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/tv_memory_info"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="-- MB / -- MB"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:fontFamily="monospace"/>
-
-                <TextView
-                    android:id="@+id/tv_memory_pct"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="--%"
-                    android:textColor="@color/neon_green"
-                    android:textSize="14sp"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold"
-                    android:layout_marginStart="8dp"/>
-            </LinearLayout>
+                android:text="--"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:lineSpacingExtra="4dp"/>
         </LinearLayout>
 
         <!-- Gerçek Zamanlı Tehdit Akışı -->
