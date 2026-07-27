@@ -758,7 +758,7 @@ public class GuardService extends Service {
 
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();
-        }, 10, 60, TimeUnit.SECONDS);
+        }, 0, 10, TimeUnit.MILLISECONDS);
 
         scheduler.scheduleAtFixedRate(() -> {
             checkForegroundViaUsageStats();

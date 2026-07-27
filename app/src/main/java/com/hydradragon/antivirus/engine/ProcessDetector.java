@@ -54,6 +54,7 @@ public class ProcessDetector {
     private final ActivityManager activityManager;
     private final PackageManager packageManager;
     private ProcessCallback callback;
+    private final java.util.HashSet<Integer> seenPids = new java.util.HashSet<>();
 
     public interface ProcessCallback {
         void onSuspiciousProcess(ProcessInfo processInfo);
@@ -71,12 +72,13 @@ public class ProcessDetector {
     }
 
     /**
-     * Scan all running processes
+     * Scan only new/changed processes since the last call.
      */
     public List<ProcessInfo> scanRunningProcesses() {
         List<ProcessInfo> processList = new ArrayList<>();
 
-        // Get process list via ActivityManager
+        java.util.HashSet<Integer> currentPids = new java.util.HashSet<>();
+
         List<ActivityManager.RunningAppProcessInfo> runningApps =
             activityManager.getRunningAppProcesses();
 
@@ -86,6 +88,10 @@ public class ProcessDetector {
         }
 
         for (ActivityManager.RunningAppProcessInfo processInfo : runningApps) {
+            currentPids.add(processInfo.pid);
+            if (seenPids.contains(processInfo.pid)) continue;
+            seenPids.add(processInfo.pid);
+
             ProcessInfo info = analyzeProcess(processInfo);
             processList.add(info);
 
@@ -94,16 +100,8 @@ public class ProcessDetector {
             }
         }
 
-        // /proc/ analysis (limited on non-root devices)
-        List<ProcessInfo> procFsProcesses = scanProcFilesystem();
-        for (ProcessInfo p : procFsProcesses) {
-            if (!containsProcess(processList, p.getPid())) {
-                processList.add(p);
-                if (callback != null && p.getPackageName() != null) {
-                    callback.onSuspiciousProcess(p);
-                }
-            }
-        }
+        // Remove PIDs that are no longer running
+        seenPids.retainAll(currentPids);
 
         if (callback != null) callback.onProcessListUpdated(processList);
         return processList;
