@@ -203,15 +203,11 @@ public final class BehaviorResponse {
     /** Full-screen "MALWARE FOUND" warning, launched over whatever app the
      *  user currently has in the foreground — the process kill has already
      *  fired but the uninstall/delete prompt waits for the user to tap the
-     *  action button on this screen. */
+     *  action button on this screen. MalwareFoundActivity is a regular
+     *  Activity (not a system overlay), so no SYSTEM_ALERT_WINDOW is needed
+     *  for it to launch — always attempt it and only fall back to the in-app
+     *  dialog if startActivity throws (e.g. background start restriction). */
     private static void showMalwareFoundScreen(Context context, ThreatResult threat, boolean isFile, boolean isFromScan) {
-        if (!hasOverlayOrNotifPermission(context)) {
-            // Overlay/notification permission missing: always redirect to scan screen
-            // so the user still sees the uninstall/delete alert dialog there.
-            Log.i(TAG, "Overlay or Notification permission missing -> redirecting to HydraDragon Scan Screen with threat alert");
-            redirectToScanScreen(context, threat);
-            return;
-        }
         try {
             Intent i = new Intent(context, MalwareFoundActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
