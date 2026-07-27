@@ -253,7 +253,7 @@
     <string name="cert_untrusted">گواهی غیرقابل اعتماد (کلید آزمایشی)</string>
     <string name="cert_signature">✍️ امضا: %1$s</string>
     <string name="threat_adware">تبلیغ‌افزار شناسایی شد: SDK تبلیغاتی تهاجمی!</string>
-    <string name="accessibility_service_description">موتور تحلیل پویای HydraDragon. دستکاری رابط کاربری را به‌صورت بلادرنگ پایش می‌کند و حملات کلیک‌جکینگ/پوشش از سوی بدافزار را مسدود می‌کند.</string>
+    <string name="accessibility_service_description">موتور تحلیل پویای HydraDragon. دستکاری رابط کاربری را به‌صورت بلادرنگ پایش می‌کند، حملات کلیک‌جکینگ/پوشش را مسدود می‌کند و بدافزارهای در حال اجرا در پیش‌زمینه را خودکار می‌بندد.</string>
     <string name="system_safe">سیستم ایمن است</string>
     <string name="accessibility_desc">HydraDragon نشانی‌های وب مرورگر را پایش می‌کند تا از شما در برابر وب‌سایت‌های مخرب محافظت کند.</string>
     <string name="ransomware_blocked_title">باج‌افزار مسدود شد</string>

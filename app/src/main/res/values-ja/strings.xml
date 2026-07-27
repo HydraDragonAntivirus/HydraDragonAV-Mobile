@@ -253,7 +253,7 @@
     <string name="cert_untrusted">信頼できない証明書（テストキー）</string>
     <string name="cert_signature">✍️ 署名：%1$s</string>
     <string name="threat_adware">アドウェアを検出：攻撃的な広告SDK！</string>
-    <string name="accessibility_service_description">HydraDragon動的解析エンジン。リアルタイムのUI操作を監視し、マルウェアによるクリックジャッキング/オーバーレイ攻撃を阻止します。</string>
+    <string name="accessibility_service_description">HydraDragon動的解析エンジン。リアルタイムのUI操作を監視し、クリックジャッキング/オーバーレイ攻撃を阻止し、フォアグラウンドで実行中のマルウェアを自動的に閉じます。</string>
     <string name="system_safe">システムは安全です</string>
     <string name="accessibility_desc">HydraDragonはブラウザのURLを監視し、悪意のあるウェブサイトからあなたを守ります。</string>
     <string name="ransomware_blocked_title">ランサムウェアをブロックしました</string>

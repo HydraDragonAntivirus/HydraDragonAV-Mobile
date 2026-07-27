@@ -253,7 +253,7 @@
     <string name="cert_untrusted">신뢰할 수 없는 인증서 (테스트 키)</string>
     <string name="cert_signature">✍️ 서명: %1$s</string>
     <string name="threat_adware">애드웨어 감지됨: 공격적인 광고 SDK!</string>
-    <string name="accessibility_service_description">HydraDragon 동적 분석 엔진. 실시간 UI 조작을 모니터링하고 악성코드로 인한 클릭재킹/오버레이 공격을 차단합니다.</string>
+    <string name="accessibility_service_description">HydraDragon 동적 분석 엔진. 실시간 UI 조작을 모니터링하고, 클릭재킹/오버레이 공격을 차단하며, 포그라운드에서 실행 중인 악성코드를 자동으로 종료합니다.</string>
     <string name="system_safe">시스템 안전</string>
     <string name="accessibility_desc">HydraDragon은 브라우저 URL을 모니터링하여 악성 웹사이트로부터 사용자를 보호합니다.</string>
     <string name="ransomware_blocked_title">랜섬웨어 차단됨</string>

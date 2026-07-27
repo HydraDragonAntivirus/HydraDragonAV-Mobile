@@ -253,7 +253,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="cert_untrusted">NICHT VERTRAUENSWÜRDIGES ZERTIFIKAT (Testschlüssel)</string>
     <string name="cert_signature">✍️ Signatur: %1$s</string>
     <string name="threat_adware">ADWARE ERKANNT: Aggressives Werbe-SDK!</string>
-    <string name="accessibility_service_description">HydraDragon Dynamische Analyse-Engine. Überwacht UI-Manipulationen in Echtzeit und blockiert Clickjacking-/Overlay-Angriffe von Malware.</string>
+    <string name="accessibility_service_description">HydraDragon Dynamische Analyse-Engine. Überwacht UI-Manipulation in Echtzeit, blockiert Clickjacking-/Overlay-Angriffe und schließt automatisch Malware im Vordergrund.</string>
     <string name="system_safe">SYSTEM SICHER</string>
     <string name="accessibility_desc">HydraDragon überwacht Browser-URLs, um Sie vor bösartigen Websites zu schützen.</string>
     <string name="ransomware_blocked_title">RANSOMWARE BLOCKIERT</string>

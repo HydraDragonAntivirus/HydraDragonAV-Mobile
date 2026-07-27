@@ -253,7 +253,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="cert_untrusted">SERTIFIKAT TIDAK TEPERCAYA (Kunci Uji)</string>
     <string name="cert_signature">✍️ Tanda Tangan: %1$s</string>
     <string name="threat_adware">ADWARE TERDETEKSI: SDK Iklan Agresif!</string>
-    <string name="accessibility_service_description">Mesin Analisis Dinamis HydraDragon. Memantau manipulasi UI secara real-time dan mencegat serangan clickjacking/overlay dari malware.</string>
+    <string name="accessibility_service_description">Mesin Analisis Dinamis HydraDragon. Memantau manipulasi UI secara real-time, mencegat serangan clickjacking/overlay, dan secara otomatis menutup malware yang berjalan di latar depan.</string>
     <string name="system_safe">SISTEM AMAN</string>
     <string name="accessibility_desc">HydraDragon memantau URL browser untuk melindungi Anda dari situs web berbahaya.</string>
     <string name="ransomware_blocked_title">RANSOMWARE DIBLOKIR</string>

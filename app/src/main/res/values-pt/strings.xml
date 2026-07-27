@@ -253,7 +253,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="cert_untrusted">CERTIFICADO NÃO CONFIÁVEL (Chave de Teste)</string>
     <string name="cert_signature">✍️ Assinatura: %1$s</string>
     <string name="threat_adware">ADWARE DETECTADO: SDK de Anúncios Agressivos!</string>
-    <string name="accessibility_service_description">Motor de Análise Dinâmica HydraDragon. Monitora a manipulação da interface em tempo real e intercepta ataques de clickjacking/sobreposição de malware.</string>
+    <string name="accessibility_service_description">Motor de Análise Dinâmica HydraDragon. Monitora a manipulação da interface em tempo real, intercepta ataques de clickjacking/sobreposição e fecha automaticamente malware em primeiro plano.</string>
     <string name="system_safe">SISTEMA SEGURO</string>
     <string name="accessibility_desc">O HydraDragon monitora URLs do navegador para proteger você de sites maliciosos.</string>
     <string name="ransomware_blocked_title">RANSOMWARE BLOQUEADO</string>

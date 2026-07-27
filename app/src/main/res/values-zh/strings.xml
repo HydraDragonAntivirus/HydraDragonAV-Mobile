@@ -253,7 +253,7 @@
     <string name="cert_untrusted">不受信任的证书（测试密钥）</string>
     <string name="cert_signature">✍️ 签名：%1$s</string>
     <string name="threat_adware">检测到广告软件：激进广告SDK！</string>
-    <string name="accessibility_service_description">HydraDragon动态分析引擎。监控实时界面操作，拦截来自恶意软件的点击劫持/覆盖层攻击。</string>
+    <string name="accessibility_service_description">HydraDragon动态分析引擎。监控实时界面操作，拦截点击劫持/覆盖层攻击，并自动关闭在前台运行的恶意软件。</string>
     <string name="system_safe">系统安全</string>
     <string name="accessibility_desc">HydraDragon监控浏览器URL，保护您免受恶意网站侵害。</string>
     <string name="ransomware_blocked_title">已拦截勒索软件</string>

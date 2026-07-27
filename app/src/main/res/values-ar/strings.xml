@@ -253,7 +253,7 @@
     <string name="cert_untrusted">شهادة غير موثوقة (مفتاح اختبار)</string>
     <string name="cert_signature">✍️ التوقيع: %1$s</string>
     <string name="threat_adware">تم اكتشاف برنامج إعلانات: حزمة إعلانات عدوانية!</string>
-    <string name="accessibility_service_description">محرك التحليل الديناميكي لـ HydraDragon. يراقب التلاعب بالواجهة في الوقت الفعلي ويعترض هجمات النقر الخاطف/التراكب من البرامج الضارة.</string>
+    <string name="accessibility_service_description">محرك التحليل الديناميكي لـ HydraDragon. يراقب التلاعب بالواجهة في الوقت الفعلي، ويعترض هجمات النقر الخاطف/التراكب، ويغلق البرامج الضارة التي تعمل في المقدمة تلقائيًا.</string>
     <string name="system_safe">النظام آمن</string>
     <string name="accessibility_desc">يراقب HydraDragon عناوين URL في المتصفح لحمايتك من المواقع الضارة.</string>
     <string name="ransomware_blocked_title">تم حظر برنامج الفدية</string>

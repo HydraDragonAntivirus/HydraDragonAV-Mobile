@@ -253,7 +253,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="cert_untrusted">CERTIFICAT NON FIABLE (Clé de Test)</string>
     <string name="cert_signature">✍️ Signature : %1$s</string>
     <string name="threat_adware">LOGICIEL PUBLICITAIRE DÉTECTÉ : SDK Publicitaire Agressif !</string>
-    <string name="accessibility_service_description">Moteur d\'Analyse Dynamique HydraDragon. Surveille la manipulation de l\'interface en temps réel et intercepte les attaques de détournement de clic/superposition des logiciels malveillants.</string>
+    <string name="accessibility_service_description">Moteur d\'Analyse Dynamique HydraDragon. Surveille la manipulation de l\'interface en temps réel, intercepte les attaques de clickjacking/superposition et ferme automatiquement les logiciels malveillants au premier plan.</string>
     <string name="system_safe">SYSTÈME SÉCURISÉ</string>
     <string name="accessibility_desc">HydraDragon surveille les URL du navigateur pour vous protéger des sites web malveillants.</string>
     <string name="ransomware_blocked_title">RANÇONGICIEL BLOQUÉ</string>

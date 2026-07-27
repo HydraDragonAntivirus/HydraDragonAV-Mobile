@@ -253,7 +253,7 @@ Puntuación de riesgo: %2$d/100
     <string name="cert_untrusted">CERTIFICADO NO CONFIABLE (Clave de Prueba)</string>
     <string name="cert_signature">✍️ Firma: %1$s</string>
     <string name="threat_adware">ADWARE DETECTADO: ¡SDK de Anuncios Agresivos!</string>
-    <string name="accessibility_service_description">Motor de Análisis Dinámico de HydraDragon. Monitorea la manipulación de la interfaz en tiempo real e intercepta ataques de clickjacking/superposición de malware.</string>
+    <string name="accessibility_service_description">Motor de Análisis Dinámico de HydraDragon. Monitorea la manipulación de la interfaz en tiempo real, intercepta ataques de clickjacking/superposición y cierra automáticamente el malware en primer plano.</string>
     <string name="system_safe">SISTEMA SEGURO</string>
     <string name="accessibility_desc">HydraDragon monitorea las URL del navegador para protegerte de sitios web maliciosos.</string>
     <string name="ransomware_blocked_title">RANSOMWARE BLOQUEADO</string>

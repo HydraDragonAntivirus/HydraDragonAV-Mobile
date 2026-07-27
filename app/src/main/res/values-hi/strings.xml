@@ -253,7 +253,7 @@
     <string name="cert_untrusted">अविश्वसनीय प्रमाणपत्र (टेस्ट की)</string>
     <string name="cert_signature">✍️ हस्ताक्षर: %1$s</string>
     <string name="threat_adware">एडवेयर मिला: आक्रामक विज्ञापन SDK!</string>
-    <string name="accessibility_service_description">HydraDragon डायनामिक एनालिसिस इंजन। रीयल-टाइम में UI हेरफेर की निगरानी करता है और मैलवेयर से क्लिकजैकिंग/ओवरले हमलों को रोकता है।</string>
+    <string name="accessibility_service_description">HydraDragon डायनामिक एनालिसिस इंजन। रीयल-टाइम UI हेरफेर की निगरानी करता है, क्लिकजैकिंग/ओवरले हमलों को रोकता है, और अग्रभूमि में चल रहे मैलवेयर को स्वतः बंद कर देता है।</string>
     <string name="system_safe">सिस्टम सुरक्षित</string>
     <string name="accessibility_desc">HydraDragon दुर्भावनापूर्ण वेबसाइटों से आपकी रक्षा के लिए ब्राउज़र URL की निगरानी करता है।</string>
     <string name="ransomware_blocked_title">रैनसमवेयर ब्लॉक किया गया</string>

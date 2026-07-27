@@ -253,7 +253,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="cert_untrusted">NIET-VERTROUWD CERTIFICAAT (Testsleutel)</string>
     <string name="cert_signature">✍️ Handtekening: %1$s</string>
     <string name="threat_adware">ADWARE GEDETECTEERD: Agressieve advertentie-SDK!</string>
-    <string name="accessibility_service_description">HydraDragon Dynamic Analysis Engine. Bewaakt realtime UI-manipulatie en onderschept clickjacking/overlay-aanvallen van malware.</string>
+    <string name="accessibility_service_description">HydraDragon Dynamic Analysis Engine. Bewaakt realtime UI-manipulatie, onderschept clickjacking/overlay-aanvallen en sluit automatisch malware op de voorgrond af.</string>
     <string name="system_safe">SYSTEEM VEILIG</string>
     <string name="accessibility_desc">HydraDragon bewaakt browser-URL\'s om je te beschermen tegen schadelijke websites.</string>
     <string name="ransomware_blocked_title">RANSOMWARE GEBLOKKEERD</string>

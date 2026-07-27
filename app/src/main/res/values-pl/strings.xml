@@ -253,7 +253,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="cert_untrusted">NIEZAUFANY CERTYFIKAT (Klucz testowy)</string>
     <string name="cert_signature">✍️ Podpis: %1$s</string>
     <string name="threat_adware">WYKRYTO ADWARE: Agresywny SDK reklamowy!</string>
-    <string name="accessibility_service_description">Silnik dynamicznej analizy HydraDragon. Monitoruje manipulację interfejsem w czasie rzeczywistym i przechwytuje ataki typu clickjacking/nakładka ze złośliwego oprogramowania.</string>
+    <string name="accessibility_service_description">Silnik dynamicznej analizy HydraDragon. Monitoruje manipulację interfejsem w czasie rzeczywistym, przechwytuje ataki clickjacking/nakładka i automatycznie zamyka złośliwe oprogramowanie na pierwszym planie.</string>
     <string name="system_safe">SYSTEM BEZPIECZNY</string>
     <string name="accessibility_desc">HydraDragon monitoruje adresy URL w przeglądarce, aby chronić Cię przed szkodliwymi witrynami.</string>
     <string name="ransomware_blocked_title">RANSOMWARE ZABLOKOWANY</string>

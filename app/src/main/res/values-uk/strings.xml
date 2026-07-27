@@ -253,7 +253,7 @@
     <string name="cert_untrusted">НЕДОВІРЕНИЙ СЕРТИФІКАТ (Тестовий ключ)</string>
     <string name="cert_signature">✍️ Підпис: %1$s</string>
     <string name="threat_adware">ВИЯВЛЕНО РЕКЛАМНЕ ПЗ: Агресивний рекламний SDK!</string>
-    <string name="accessibility_service_description">Рушій динамічного аналізу HydraDragon. Відстежує маніпуляції з інтерфейсом у реальному часі та перехоплює атаки clickjacking/оверлей від шкідливого ПЗ.</string>
+    <string name="accessibility_service_description">Рушій динамічного аналізу HydraDragon. Відстежує маніпуляції з інтерфейсом у реальному часі, перехоплює атаки clickjacking/оверлей та автоматично закриває шкідливе ПЗ на передньому плані.</string>
     <string name="system_safe">СИСТЕМА БЕЗПЕЧНА</string>
     <string name="accessibility_desc">HydraDragon відстежує URL-адреси в браузері, щоб захистити вас від шкідливих сайтів.</string>
     <string name="ransomware_blocked_title">ВИМАГАЧА ЗАБЛОКОВАНО</string>

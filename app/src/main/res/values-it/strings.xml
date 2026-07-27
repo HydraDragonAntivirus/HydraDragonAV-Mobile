@@ -253,7 +253,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="cert_untrusted">CERTIFICATO NON ATTENDIBILE (Chiave di test)</string>
     <string name="cert_signature">✍️ Firma: %1$s</string>
     <string name="threat_adware">ADWARE RILEVATO: SDK pubblicitario aggressivo!</string>
-    <string name="accessibility_service_description">Motore di analisi dinamica di HydraDragon. Monitora la manipolazione dell\'interfaccia in tempo reale e intercetta attacchi di clickjacking/overlay da malware.</string>
+    <string name="accessibility_service_description">Motore di analisi dinamica di HydraDragon. Monitora la manipolazione dell\'interfaccia in tempo reale, intercetta attacchi clickjacking/overlay e chiude automaticamente il malware in primo piano.</string>
     <string name="system_safe">SISTEMA SICURO</string>
     <string name="accessibility_desc">HydraDragon monitora gli URL del browser per proteggerti da siti web dannosi.</string>
     <string name="ransomware_blocked_title">RANSOMWARE BLOCCATO</string>

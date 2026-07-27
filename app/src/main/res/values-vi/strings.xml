@@ -253,7 +253,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="cert_untrusted">CHỨNG CHỈ KHÔNG ĐÁNG TIN CẬY (Khóa Kiểm tra)</string>
     <string name="cert_signature">✍️ Chữ ký: %1$s</string>
     <string name="threat_adware">PHÁT HIỆN ADWARE: SDK Quảng cáo Tấn công!</string>
-    <string name="accessibility_service_description">Công cụ Phân tích Động HydraDragon. Giám sát thao tác UI theo thời gian thực và chặn các cuộc tấn công clickjacking/lớp phủ từ phần mềm độc hại.</string>
+    <string name="accessibility_service_description">Công cụ Phân tích Động HydraDragon. Giám sát thao tác UI theo thời gian thực, chặn các cuộc tấn công clickjacking/lớp phủ và tự động đóng phần mềm độc hại đang chạy ở nền trước.</string>
     <string name="system_safe">HỆ THỐNG AN TOÀN</string>
     <string name="accessibility_desc">HydraDragon giám sát URL trình duyệt để bảo vệ bạn khỏi các trang web độc hại.</string>
     <string name="ransomware_blocked_title">ĐÃ CHẶN RANSOMWARE</string>

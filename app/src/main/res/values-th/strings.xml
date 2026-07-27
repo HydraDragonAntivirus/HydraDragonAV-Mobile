@@ -253,7 +253,7 @@
     <string name="cert_untrusted">ใบรับรองที่ไม่น่าเชื่อถือ (คีย์ทดสอบ)</string>
     <string name="cert_signature">✍️ ลายเซ็น: %1$s</string>
     <string name="threat_adware">ตรวจพบแอดแวร์: SDK โฆษณาที่ก้าวร้าว!</string>
-    <string name="accessibility_service_description">เอนจิ้นวิเคราะห์แบบไดนามิกของ HydraDragon ตรวจสอบการปรับแต่ง UI แบบเรียลไทม์และสกัดกั้นการโจมตีแบบคลิกแจ็กกิ้ง/ซ้อนทับจากมัลแวร์</string>
+    <string name="accessibility_service_description">เอนจิ้นวิเคราะห์แบบไดนามิกของ HydraDragon ตรวจสอบการปรับแต่ง UI แบบเรียลไทม์ สกัดกั้นการโจมตีแบบคลิกแจ็คกิ้ง/ซ้อนทับ และปิดมัลแวร์ที่ทำงานอยู่เบื้องหน้าโดยอัตโนมัติ</string>
     <string name="system_safe">ระบบปลอดภัย</string>
     <string name="accessibility_desc">HydraDragon ตรวจสอบ URL ของเบราว์เซอร์เพื่อปกป้องคุณจากเว็บไซต์ที่เป็นอันตราย</string>
     <string name="ransomware_blocked_title">บล็อกแรนซัมแวร์แล้ว</string>
