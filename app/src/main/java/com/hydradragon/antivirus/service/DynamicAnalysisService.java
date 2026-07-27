@@ -246,10 +246,13 @@ public class DynamicAnalysisService extends AccessibilityService {
                 com.hydradragon.antivirus.engine.RemovalResistanceGuard.onWindowSwitch(
                     this, pkg, fgPackage, isInstaller || isSettings);
 
-                if (!trusted && BehaviorFlags.isFlagged(this, pkg)
-                        && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg)) {
+                boolean behFlagged = BehaviorFlags.isFlagged(this, pkg)
+                    && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg);
+                boolean scanFlagged = com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(pkg, "SCAN_MALWARE")
+                    || com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(pkg, "DOWNLOAD_MALWARE");
+                if (!trusted && (behFlagged || scanFlagged)) {
                     Log.e(TAG, "FLAGGED MALWARE OPENED ON SCREEN: " + pkg + " -> force-stop via accessibility");
-                    String reason = BehaviorFlags.reasonFor(this, pkg);
+                    String reason = behFlagged ? BehaviorFlags.reasonFor(this, pkg) : "Scan-detected malware";
                     ThreatResult threat = new ThreatResult.Builder(pkg)
                             .setAppName(pkg)
                             .setRiskScore(100)

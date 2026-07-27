@@ -22,6 +22,8 @@ import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.text.method.LinkMovementMethod;
+import android.text.util.Linkify;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -956,9 +958,11 @@ public class SettingsFragment extends Fragment {
             + "\n━━━━━━━━━━━━━━━━━━━━━━\n\n" +
             "[ GELİŞTİRİCİLER ]\n\n  ◈  Musayev Yusif\n  ◈  Emirhan Uçan\n\n" +
             "━━━━━━━━━━━━━━━━━━━━━━\n" +
-            "Engine : XOR Filter (Binary-Fuse) + X.509\nAI : Native Rust (MinHash/LSH + Isolation Forest)");
+            "https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile");
         v.setTextColor(color(R.color.text_secondary));
         v.setTypeface(Typeface.MONOSPACE); v.setLineSpacing(6,1); v.setPadding(16,24,16,0);
+        v.setAutoLinkMask(Linkify.WEB_URLS);
+        v.setMovementMethod(LinkMovementMethod.getInstance());
         container.addView(v);
     }
 

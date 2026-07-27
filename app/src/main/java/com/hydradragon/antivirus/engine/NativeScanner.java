@@ -14,8 +14,7 @@ import java.util.List;
  * Bridge to the native libhydradragonandroid.so scanner.
  *
  * <p>Combines the HydraDragon YARA rulesets (compiled {@code .yrc} bundled as
- * assets) with the one-class MinHash/LSH + Isolation Forest ML model
- * ({@code apk_model.json}) to flag malicious APKs on-device.
+ * assets) with native ML inference to flag malicious APKs on-device.
  *
  * <p>Usage:
  * <pre>
