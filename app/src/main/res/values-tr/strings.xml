@@ -459,6 +459,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="graph_debug">Hata Ayıklama Modu</string>
     <string name="behavior_auto_kill">Ön plandaki kötü amaçlı yazılımları otomatik olarak sonlandır (erişilebilirlik)</string>
     <string name="graph_no_data">Henüz davranışsal veri yok</string>
+    <string name="graph_device_behavior">Cihaz Davranışı</string>
 </resources>
 
 

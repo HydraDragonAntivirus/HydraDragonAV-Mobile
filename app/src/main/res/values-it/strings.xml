@@ -459,6 +459,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="graph_debug">Modalità di debug</string>
     <string name="behavior_auto_kill">Elimina automaticamente il malware in primo piano (accessibilità)</string>
     <string name="graph_no_data">Nessun dato comportamentale ancora</string>
+    <string name="graph_device_behavior">Comportamento Dispositivo</string>
 </resources>
 
 

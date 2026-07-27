@@ -50,7 +50,7 @@ public class BehaviorGraphFragment extends Fragment {
         tvTitle = view.findViewById(R.id.tv_graph_title);
 
         String pkg = getArguments() != null ? getArguments().getString(ARG_PACKAGE, "") : "";
-        tvTitle.setText(pkg.isEmpty() ? "Device Behavior" : pkg);
+        tvTitle.setText(pkg.isEmpty() ? getString(R.string.graph_device_behavior) : pkg);
 
         loadData(pkg);
     }

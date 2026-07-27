@@ -459,6 +459,7 @@
     <string name="graph_debug">Режим налагодження</string>
     <string name="behavior_auto_kill">Автоматичне видалення зловмисного програмного забезпечення на передньому плані (спеціальні можливості)</string>
     <string name="graph_no_data">Поведінкових даних ще немає</string>
+    <string name="graph_device_behavior">Поведінка пристрою</string>
 </resources>
 
 

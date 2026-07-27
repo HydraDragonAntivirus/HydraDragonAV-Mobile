@@ -459,6 +459,7 @@
     <string name="graph_debug">디버그 모드</string>
     <string name="behavior_auto_kill">포그라운드 악성 코드 자동 종료(접근성)</string>
     <string name="graph_no_data">아직 행동 데이터가 없습니다</string>
+    <string name="graph_device_behavior">기기 동작</string>
 </resources>
 
 

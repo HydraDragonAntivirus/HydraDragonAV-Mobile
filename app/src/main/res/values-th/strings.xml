@@ -459,6 +459,7 @@
     <string name="graph_debug">โหมดแก้ไขข้อบกพร่อง</string>
     <string name="behavior_auto_kill">ฆ่ามัลแวร์เบื้องหน้าอัตโนมัติ (การเข้าถึง)</string>
     <string name="graph_no_data">ยังไม่มีข้อมูลพฤติกรรม</string>
+    <string name="graph_device_behavior">พฤติกรรมอุปกรณ์</string>
 </resources>
 
 
