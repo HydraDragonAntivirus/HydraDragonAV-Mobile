@@ -565,10 +565,14 @@ public class GuardService extends Service {
                 if (procPkg != null && !procPkg.isEmpty()) {
                     com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(procPkg, "PROCESS_ANOMALY");
                 }
+                boolean hasScanFlag = procPkg != null && (
+                    com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(procPkg, "SCAN_MALWARE")
+                    || com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(procPkg, "DOWNLOAD_MALWARE"));
                 boolean shouldKill = processInfo.isCritical()
                     || (processInfo.isSuspicious()
                         && processInfo.getFlags() != null
-                        && processInfo.getFlags().size() >= 2);
+                        && processInfo.getFlags().size() >= 2)
+                    || hasScanFlag;
                 if (shouldKill) {
                     sendProcessAlert(processInfo);
                     if (callback != null) callback.onSuspiciousProcess(processInfo);
