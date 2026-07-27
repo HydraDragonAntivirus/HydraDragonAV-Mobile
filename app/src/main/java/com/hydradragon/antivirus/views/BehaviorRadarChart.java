@@ -72,6 +72,15 @@ public class BehaviorRadarChart extends View {
         super.onDraw(canvas);
         if (axes == null || axes.isEmpty()) return;
 
+        boolean allZero = true;
+        for (BehaviorGraphData.AxisValue a : axes) {
+            if (a.level > 0) { allZero = false; break; }
+        }
+        if (allZero) {
+            canvas.drawText(getContext().getString(R.string.graph_no_data), getWidth() / 2f, getHeight() / 2f, textPaint);
+            return;
+        }
+
         int w = getWidth();
         int h = getHeight();
         float cx = w / 2f;
