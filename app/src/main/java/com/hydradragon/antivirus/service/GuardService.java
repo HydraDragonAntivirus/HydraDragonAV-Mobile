@@ -474,8 +474,12 @@ public class GuardService extends Service {
                 // below NEVER ran either: the scan looked like it found nothing,
                 // both in the system tray AND in the app's own threat list.
                 if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {
-                    // Silently handle threats during background/auto scans — no
-                    // user-facing notification, no foreground-notification update.
+                    try {
+                        com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
+                            GuardService.this, threat, true);
+                    } catch (Throwable t) {
+                        Log.e(TAG, "foreground scan auto-kill failed", t);
+                    }
                     if (!scanEngine.isBackgroundScan()) {
                         try {
                             sendThreatNotification(threat);
@@ -564,6 +568,25 @@ public class GuardService extends Service {
                 String procPkg = processInfo.getPackageName();
                 if (procPkg != null && !procPkg.isEmpty()) {
                     com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(procPkg, "PROCESS_ANOMALY");
+                    // Scan APK via NativeScanner (no system-app skip) every cycle
+                    try {
+                        android.content.pm.ApplicationInfo ai = getPackageManager()
+                            .getApplicationInfo(procPkg, 0);
+                        String apkPath = ai.sourceDir;
+                        if (apkPath != null) {
+                            com.hydradragon.antivirus.engine.NativeScanner.Verdict v =
+                                com.hydradragon.antivirus.engine.NativeScanner.scan(apkPath, procPkg);
+                            if (v != null && v.malicious) {
+                                com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(
+                                    procPkg, "SCAN_MALWARE");
+                                com.hydradragon.antivirus.service.ThreatLogger.logThreat(
+                                    GuardService.this, procPkg, "RUNTIME SCAN",
+                                    "NativeScanner flagged running process APK");
+                            }
+                        }
+                    } catch (Throwable t) {
+                        Log.w(TAG, "runtime scan failed for " + procPkg, t);
+                    }
                 }
                 boolean hasScanFlag = procPkg != null && (
                     com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(procPkg, "SCAN_MALWARE")

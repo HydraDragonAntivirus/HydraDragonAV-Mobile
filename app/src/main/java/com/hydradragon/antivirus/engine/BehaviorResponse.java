@@ -59,11 +59,25 @@ public final class BehaviorResponse {
 
     /** @return true if the app was in the foreground and force-stop via accessibility was initiated */
     public static boolean killAndPromptUninstall(Context context, String pkg) {
-        return killAndPromptUninstall(context, pkg, null, null);
+        return killAndPromptUninstall(context, pkg, null, null, false);
     }
 
-    /** @return true if the app was in the foreground and force-stop via accessibility was initiated */
     public static boolean killAndPromptUninstall(Context context, String pkg, String appName, String reason) {
+        return killAndPromptUninstall(context, pkg, appName, reason, false);
+    }
+
+    private static boolean isSystemApp(Context context, String pkg) {
+        try {
+            android.content.pm.ApplicationInfo ai = context.getPackageManager()
+                .getApplicationInfo(pkg, 0);
+            return (ai.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+                || (ai.flags & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    public static boolean killAndPromptUninstall(Context context, String pkg, String appName, String reason, boolean skipUninstall) {
         if (pkg == null || pkg.isEmpty()) return false;
 
         // Foreground app: use accessibility force-stop (Settings → Force Stop → OK → our malware screen)
@@ -78,19 +92,22 @@ public final class BehaviorResponse {
             Log.i(TAG, "killAndPromptUninstall: foreground app " + pkg + " but auto-kill is off");
         }
 
-        // Background app: existing kill + uninstall behavior
+        // Kill the process
         try {
             ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             if (am != null) am.killBackgroundProcesses(pkg);
         } catch (Throwable t) {
             Log.w(TAG, "killBackgroundProcesses failed for " + pkg, t);
         }
-        try {
-            Intent del = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + pkg));
-            del.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(del);
-        } catch (Throwable t) {
-            Log.w(TAG, "uninstall prompt failed for " + pkg, t);
+
+        if (!skipUninstall) {
+            try {
+                Intent del = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + pkg));
+                del.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(del);
+            } catch (Throwable t) {
+                Log.w(TAG, "uninstall prompt failed for " + pkg, t);
+            }
         }
         return false;
     }
@@ -114,14 +131,16 @@ public final class BehaviorResponse {
         String pkg = threat.getPackageName();
         boolean installed = pkg != null && !pkg.isEmpty() && isPackageInstalled(context, pkg);
         if (installed) {
-            boolean wasForeground = killAndPromptUninstall(context, pkg,
+            killAndPromptUninstall(context, pkg,
                 threat.getAppName(),
-                threat.getReasons().isEmpty() ? null : threat.getReasons().get(0));
-            if (wasForeground) return; // force-stop automation already shows MalwareFoundActivity
+                threat.getReasons().isEmpty() ? null : threat.getReasons().get(0),
+                isFromScan);
         } else {
             promptDeleteFile(context, threat);
         }
-        showMalwareFoundScreen(context, threat, !installed, isFromScan);
+        // Manual scan: kill only, no uninstall prompt, no MalwareFoundActivity
+        if (isFromScan) return;
+        showMalwareFoundScreen(context, threat, !installed, false);
     }
 
     /** Full-screen "MALWARE FOUND" warning, launched over whatever app the
