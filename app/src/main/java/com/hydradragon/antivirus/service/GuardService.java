@@ -690,7 +690,7 @@ public class GuardService extends Service {
                         .setAppName(appName)
                         .setRiskScore(100)
                         .setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE)
-                        .setReasons(java.util.Collections.singletonList("Scan-detected malware"))
+                        .setReasons(java.util.Collections.singletonList(getString(R.string.reason_scan_detected_malware)))
                         .build();
                 com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, threat);
             }
@@ -716,7 +716,7 @@ public class GuardService extends Service {
                         .setRiskScore(75)
                         .setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE)
                         .setReasons(java.util.Collections.singletonList(
-                            "Previously detected malware app is now running"))
+                            getString(R.string.reason_previously_detected_running)))
                         .build();
                 com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
                     GuardService.this, threat, false);

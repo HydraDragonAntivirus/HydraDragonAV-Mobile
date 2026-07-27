@@ -281,12 +281,12 @@ public class DynamicAnalysisService extends AccessibilityService {
                     || com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(pkg, "DOWNLOAD_MALWARE");
                 if (!trusted && (behFlagged || scanFlagged)) {
                     Log.e(TAG, "FLAGGED MALWARE OPENED ON SCREEN: " + pkg + " -> force-stop via accessibility");
-                    String reason = behFlagged ? BehaviorFlags.reasonFor(this, pkg) : "Scan-detected malware";
+                    String reason = behFlagged ? BehaviorFlags.reasonFor(this, pkg) : getString(R.string.reason_scan_detected_malware);
                     ThreatResult threat = new ThreatResult.Builder(pkg)
                             .setAppName(pkg)
                             .setRiskScore(100)
                             .setThreatType(ThreatResult.ThreatType.MALWARE)
-                            .setReasons(java.util.Collections.singletonList(reason != null ? reason : "Detected Malware"))
+                            .setReasons(java.util.Collections.singletonList(reason != null ? reason : getString(R.string.reason_scan_detected_malware)))
                             .build();
                     com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, threat);
                 }

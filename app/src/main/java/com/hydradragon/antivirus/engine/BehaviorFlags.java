@@ -3,6 +3,8 @@ package com.hydradragon.antivirus.engine;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.hydradragon.antivirus.R;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -41,7 +43,7 @@ public final class BehaviorFlags {
         for (String e : prefs(c).getStringSet(KEY, new HashSet<>())) {
             if (entryPkg(e).equals(pkg)) {
                 int i = e.indexOf(SEP);
-                return i >= 0 ? e.substring(i + SEP.length()) : "Malicious behaviour";
+                return i >= 0 ? e.substring(i + SEP.length()) : c.getString(R.string.reason_malicious_behavior);
             }
         }
         return null;

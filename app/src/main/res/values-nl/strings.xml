@@ -471,6 +471,9 @@ Je kunt dit later inschakelen via Instellingen.</string>
     <string name="graph_select_package">Selecteer app / pakket</string>
     <string name="graph_yes">JA</string>
     <string name="graph_no">nee</string>
+    <string name="reason_scan_detected_malware">Via scan gedetecteerde malware</string>
+    <string name="reason_previously_detected_running">Eerder gedetecteerde malware-app is nu actief</string>
+    <string name="reason_malicious_behavior">Schadelijk gedrag</string>
 </resources>
 
 

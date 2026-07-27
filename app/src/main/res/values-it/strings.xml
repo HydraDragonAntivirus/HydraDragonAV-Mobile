@@ -471,6 +471,9 @@ Puoi abilitarlo in seguito dalle Impostazioni.</string>
     <string name="graph_select_package">Seleziona App / Pacchetto</string>
     <string name="graph_yes">SÌ</string>
     <string name="graph_no">no</string>
+    <string name="reason_scan_detected_malware">Malware rilevato dalla scansione</string>
+    <string name="reason_previously_detected_running">Un\'app malware precedentemente rilevata è ora in esecuzione</string>
+    <string name="reason_malicious_behavior">Comportamento malevolo</string>
 </resources>
 
 

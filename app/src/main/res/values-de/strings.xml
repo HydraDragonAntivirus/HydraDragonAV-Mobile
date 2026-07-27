@@ -471,6 +471,9 @@ Du kannst dies später in den Einstellungen aktivieren.</string>
     <string name="graph_no">nein</string>
     <string name="graph_general_device_behavior">🌐 Allgemeines Geräteverhalten (Alle Apps)</string>
     <string name="graph_select_package">App / Paket auswählen</string>
+    <string name="reason_scan_detected_malware">Beim Scan erkannte Malware</string>
+    <string name="reason_previously_detected_running">Zuvor erkannte Malware-App läuft jetzt</string>
+    <string name="reason_malicious_behavior">Schädliches Verhalten</string>
 </resources>
 
 

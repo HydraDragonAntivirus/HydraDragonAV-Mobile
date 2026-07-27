@@ -471,6 +471,9 @@
     <string name="graph_select_package">اختر التطبيق / الحزمة</string>
     <string name="graph_yes">نعم</string>
     <string name="graph_no">لا</string>
+    <string name="reason_scan_detected_malware">برنامج ضار تم اكتشافه بواسطة الفحص</string>
+    <string name="reason_previously_detected_running">تطبيق ضار تم اكتشافه سابقًا قيد التشغيل الآن</string>
+    <string name="reason_malicious_behavior">سلوك ضار</string>
 </resources>
 
 

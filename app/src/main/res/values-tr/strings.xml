@@ -471,6 +471,9 @@ Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.</string>
     <string name="graph_select_package">Uygulama / Paket Seçin</string>
     <string name="graph_yes">EVET</string>
     <string name="graph_no">hayır</string>
+    <string name="reason_scan_detected_malware">Taramada tespit edilen zararlı yazılım</string>
+    <string name="reason_previously_detected_running">Tespit edilmiş zararlı uygulama şu an çalışıyor</string>
+    <string name="reason_malicious_behavior">Şüpheli / zararlı davranış</string>
 </resources>
 
 

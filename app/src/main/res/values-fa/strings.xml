@@ -471,6 +471,9 @@
     <string name="graph_select_package">انتخاب برنامه / پکیج</string>
     <string name="graph_yes">بله</string>
     <string name="graph_no">نه</string>
+    <string name="reason_scan_detected_malware">بدافزار شناسایی شده در اسکن</string>
+    <string name="reason_previously_detected_running">برنامه بدافزاری شناسایی شده قبلی اکنون در حال اجراست</string>
+    <string name="reason_malicious_behavior">رفتار مخرب</string>
 </resources>
 
 

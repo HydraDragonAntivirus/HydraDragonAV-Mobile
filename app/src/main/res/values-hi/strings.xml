@@ -471,6 +471,9 @@
     <string name="graph_select_package">ऐप / पैकेज चुनें</string>
     <string name="graph_yes">हाँ</string>
     <string name="graph_no">नहीं</string>
+    <string name="reason_scan_detected_malware">स्कैन में पाया गया मालवेयर</string>
+    <string name="reason_previously_detected_running">पहले पाया गया मालवेयर ऐप अब चल रहा है</string>
+    <string name="reason_malicious_behavior">हानिकारक व्यवहार</string>
 </resources>
 
 

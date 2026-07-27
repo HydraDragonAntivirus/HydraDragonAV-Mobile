@@ -471,6 +471,9 @@ Vous pouvez activer cela plus tard depuis Paramètres.</string>
     <string name="graph_select_package">Sélectionner l\'application / le paquet</string>
     <string name="graph_yes">OUI</string>
     <string name="graph_no">non</string>
+    <string name="reason_scan_detected_malware">Logiciel malveillant détecté par l\'analyse</string>
+    <string name="reason_previously_detected_running">Application malveillante précédemment détectée en cours d\'exécution</string>
+    <string name="reason_malicious_behavior">Comportement malveillant</string>
 </resources>
 
 

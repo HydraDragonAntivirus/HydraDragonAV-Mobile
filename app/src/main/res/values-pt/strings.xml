@@ -471,6 +471,9 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="graph_select_package">Selecionar Aplicativo / Pacote</string>
     <string name="graph_yes">SIM</string>
     <string name="graph_no">não</string>
+    <string name="reason_scan_detected_malware">Malware detectado pela verificação</string>
+    <string name="reason_previously_detected_running">O aplicativo com malware detectado anteriormente está em execução</string>
+    <string name="reason_malicious_behavior">Comportamento malicioso</string>
 </resources>
 
 
