@@ -158,6 +158,7 @@ public class ProcessDetector {
                 ApplicationInfo appInfo = packageManager.getApplicationInfo(packages[0], 0);
                 boolean isSystem = (appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
                 builder.setSystemProcess(isSystem);
+                builder.setPackageName(packages[0]);
                 builder.setAppName((String) packageManager.getApplicationLabel(appInfo));
             } catch (PackageManager.NameNotFoundException e) {
                 // Package not found - suspicious!

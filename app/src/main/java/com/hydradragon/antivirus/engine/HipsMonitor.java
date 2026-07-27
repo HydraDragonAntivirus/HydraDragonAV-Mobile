@@ -453,7 +453,6 @@ public final class HipsMonitor {
 
     /**
      * Build the complete HIPS JSON report for the YARA-X hydradragon module.
-     * Clears accumulated events after building (one-shot evaluation).
      */
     public static synchronized String buildReportJson(android.content.Context ctx) {
         try {
@@ -471,7 +470,6 @@ public final class HipsMonitor {
                 uiArr.put(o);
             }
             root.put("ui_spam_events", uiArr);
-            uiSpamEvents.clear();
 
             // Notification spam events
             JSONArray notifArr = new JSONArray();
@@ -484,7 +482,6 @@ public final class HipsMonitor {
                 notifArr.put(o);
             }
             root.put("notification_spam_events", notifArr);
-            notificationSpamEvents.clear();
 
             // Clickjack events
             JSONArray cjArr = new JSONArray();
@@ -498,7 +495,6 @@ public final class HipsMonitor {
                 cjArr.put(o);
             }
             root.put("clickjack_events", cjArr);
-            clickjackEvents.clear();
 
             // Ransomware events
             JSONArray rwArr = new JSONArray();
@@ -514,7 +510,6 @@ public final class HipsMonitor {
                 rwArr.put(o);
             }
             root.put("ransomware_events", rwArr);
-            ransomwareEvents.clear();
 
             // Canary events
             JSONArray canArr = new JSONArray();
@@ -525,7 +520,6 @@ public final class HipsMonitor {
                 canArr.put(o);
             }
             root.put("canary_events", canArr);
-            canaryEvents.clear();
 
             // Network events
             JSONArray netArr = new JSONArray();
@@ -538,7 +532,6 @@ public final class HipsMonitor {
                 netArr.put(o);
             }
             root.put("network_events", netArr);
-            networkEvents.clear();
 
             // Captured packets (VpnService full-tunnel mode) for Suricata
             // payload matching via hydradragon.network.payload_hex.
@@ -560,7 +553,6 @@ public final class HipsMonitor {
                 shArr.put(o);
             }
             root.put("strandhogg_events", shArr);
-            strandhoggEvents.clear();
 
             // Removal-resistance events (device-admin/uninstall screen "kick")
             JSONArray rrArr = new JSONArray();
@@ -574,7 +566,6 @@ public final class HipsMonitor {
                 rrArr.put(o);
             }
             root.put("removal_resistance_events", rrArr);
-            removalResistanceEvents.clear();
 
             // Launcher-change events (homepage/app default launcher hijacking)
             JSONArray lcArr = new JSONArray();
@@ -587,7 +578,6 @@ public final class HipsMonitor {
                 lcArr.put(o);
             }
             root.put("launcher_change_events", lcArr);
-            launcherChangeEvents.clear();
 
             // Crypto-miner events (CPU + memory profiling)
             JSONArray minArr = new JSONArray();
@@ -601,7 +591,6 @@ public final class HipsMonitor {
                 minArr.put(o);
             }
             root.put("miner_events", minArr);
-            minerEvents.clear();
 
             // System state
             JSONObject sys = new JSONObject();

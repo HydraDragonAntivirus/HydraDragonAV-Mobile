@@ -103,6 +103,15 @@ public class ScanFragment extends Fragment {
                 } else if (guardService.getScanEngine() != null
                         && !guardService.getScanEngine().isScanRunning()) {
                     // Scan finished without a pending result — recover state.
+                    java.util.List<ThreatResult> missed = guardService.consumePendingUiThreats();
+                    for (ThreatResult t : missed) {
+                        if (foundThreats.contains(t) || !t.isThreat()) continue;
+                        if (foundThreats.size() < MAX_DISPLAYED_THREATS) {
+                            foundThreats.add(t);
+                        } else {
+                            hiddenThreatCount++;
+                        }
+                    }
                     isScanning = false;
                     hasScanned = true;
                     stopScanTimer();
@@ -110,6 +119,14 @@ public class ScanFragment extends Fragment {
                     btnScan.setText(getString(R.string.rescan));
                     btnPauseResume.setVisibility(View.INVISIBLE);
                     tvCurrentApp.setText("");
+                    if (!missed.isEmpty()) {
+                        threatAdapter.notifyDataSetChanged();
+                        int total = foundThreats.size() + hiddenThreatCount;
+                        tvThreats.setText(String.valueOf(total));
+                        tvActiveThreats.setText(String.valueOf(total));
+                        tvThreats.setTextColor(0xFFFF0040);
+                        tvThreatLabel.setVisibility(View.VISIBLE);
+                    }
                 } else {
                     startScanTimer();
                     attachScanCallback();
@@ -755,6 +772,7 @@ public class ScanFragment extends Fragment {
      *  onServiceConnected when a scan finished while the UI was detached. */
     private void handleScanComplete(ScanResult result) {
         stopScanTimer();
+        lastScannedCount = result.getTotalScanned();
         Log.d(TAG, "onScanComplete: totalScanned=" + result.getTotalScanned()
             + " threatsFound=" + result.getThreatsFound()
             + " durationMs=" + result.getScanDurationMs()

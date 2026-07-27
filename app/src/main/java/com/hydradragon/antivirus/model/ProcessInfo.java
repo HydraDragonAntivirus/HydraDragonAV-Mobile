@@ -7,6 +7,7 @@ import java.util.List;
 public class ProcessInfo {
     private final int pid;
     private final String processName;
+    private final String packageName;
     private final String appName;
     private final long memoryMb;
     private final int riskScore;
@@ -17,6 +18,7 @@ public class ProcessInfo {
     private ProcessInfo(Builder builder) {
         this.pid = builder.pid;
         this.processName = builder.processName;
+        this.packageName = builder.packageName;
         this.appName = builder.appName;
         this.memoryMb = builder.memoryMb;
         this.riskScore = builder.riskScore;
@@ -30,6 +32,7 @@ public class ProcessInfo {
 
     public int getPid() { return pid; }
     public String getProcessName() { return processName; }
+    public String getPackageName() { return packageName; }
     public String getAppName() { return appName != null ? appName : processName; }
     public long getMemoryMb() { return memoryMb; }
     public int getRiskScore() { return riskScore; }
@@ -40,6 +43,7 @@ public class ProcessInfo {
     public static class Builder {
         private int pid;
         private String processName = "";
+        private String packageName;
         private String appName;
         private long memoryMb;
         private int riskScore;
@@ -49,6 +53,7 @@ public class ProcessInfo {
 
         public Builder setPid(int p) { pid = p; return this; }
         public Builder setProcessName(String n) { processName = n; return this; }
+        public Builder setPackageName(String n) { packageName = n; return this; }
         public Builder setAppName(String n) { appName = n; return this; }
         public Builder setMemoryMb(long m) { memoryMb = m; return this; }
         public Builder setRiskScore(int s) { riskScore = s; return this; }

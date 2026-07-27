@@ -220,6 +220,20 @@ public class GuardService extends Service {
                 ThreatLogger.logThreat(this, threat, getString(R.string.danger_download_desc));
                 if (callback != null) callback.onThreatDetected(threat);
 
+                if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(this)) {
+                    try {
+                        if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(this)) {
+                            com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(
+                                this, threat);
+                        } else {
+                            com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
+                                this, threat);
+                        }
+                    } catch (Throwable t) {
+                        Log.e(TAG, "download auto-kill failed", t);
+                    }
+                }
+
                 android.content.Intent removeIntent = new android.content.Intent(this, UserActionReceiver.class)
                         .setAction(UserActionReceiver.ACTION_REMOVE_FILE)
                         .putExtra(UserActionReceiver.EXTRA_ID, file.getAbsolutePath())
@@ -517,6 +531,14 @@ public class GuardService extends Service {
                 if (processInfo.isCritical()) {
                     sendProcessAlert(processInfo);
                     if (callback != null) callback.onSuspiciousProcess(processInfo);
+                    if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {
+                        try {
+                            com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
+                                GuardService.this, processInfo.getPackageName());
+                        } catch (Throwable t) {
+                            Log.e(TAG, "process auto-kill failed", t);
+                        }
+                    }
                 }
             }
 

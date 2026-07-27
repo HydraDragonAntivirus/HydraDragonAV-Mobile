@@ -8,6 +8,9 @@ import android.graphics.Path;
 import android.util.AttributeSet;
 import android.view.View;
 
+import androidx.core.content.ContextCompat;
+
+import com.hydradragon.antivirus.R;
 import com.hydradragon.antivirus.engine.BehaviorGraphData;
 
 import java.util.List;
@@ -25,10 +28,19 @@ public class BehaviorRadarChart extends View {
     }
 
     private void init() {
+        Context ctx = getContext();
+
+        int textPrimary = 0xFFE0E0E0;
+        int textSecondary = 0xFFA0A0A0;
+        if (ctx != null) {
+            textPrimary = ContextCompat.getColor(ctx, R.color.text_primary);
+            textSecondary = ContextCompat.getColor(ctx, R.color.text_secondary);
+        }
+
         gridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         gridPaint.setStyle(Paint.Style.STROKE);
         gridPaint.setStrokeWidth(1f);
-        gridPaint.setColor(0x40FFFFFF);
+        gridPaint.setColor((textSecondary & 0x00FFFFFF) | 0x40000000);
 
         fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         fillPaint.setStyle(Paint.Style.FILL);
@@ -40,12 +52,12 @@ public class BehaviorRadarChart extends View {
         strokePaint.setColor(0xFF00D4FF);
 
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setColor(0xFFCCCCCC);
+        textPaint.setColor(textSecondary);
         textPaint.setTextSize(28f);
         textPaint.setTextAlign(Paint.Align.CENTER);
 
         labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        labelPaint.setColor(0xFFFFFFFF);
+        labelPaint.setColor(textPrimary);
         labelPaint.setTextSize(32f);
         labelPaint.setTextAlign(Paint.Align.CENTER);
     }

@@ -41,14 +41,18 @@ public class HexagonStatusView extends View {
         super(context, attrs, defStyleAttr); init();
     }
 
+    private Paint innerPaint;
+
     private void init() {
+        setLayerType(LAYER_TYPE_SOFTWARE, null);
+
         hexPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         hexPaint.setStyle(Paint.Style.FILL);
-        hexPaint.setColor(0xFF0D2B1E);
+        hexPaint.setColor(0x00000000);
 
         borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setStrokeWidth(4f);
+        borderPaint.setStrokeWidth(6f);
         borderPaint.setColor(COLOR_SECURE);
 
         glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -62,6 +66,10 @@ public class HexagonStatusView extends View {
         checkPaint.setStrokeCap(Paint.Cap.ROUND);
         checkPaint.setStrokeJoin(Paint.Join.ROUND);
         checkPaint.setColor(COLOR_SECURE);
+
+        innerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        innerPaint.setStyle(Paint.Style.FILL);
+        innerPaint.setColor(adjustAlpha(COLOR_SECURE, 30));
     }
 
     public void setSecureState(boolean secure) {
@@ -70,7 +78,7 @@ public class HexagonStatusView extends View {
         borderPaint.setColor(color);
         glowPaint.setColor(color);
         checkPaint.setColor(color);
-        hexPaint.setColor(secure ? 0xFF0D2B1E : 0xFF2B0D0D);
+        innerPaint.setColor(adjustAlpha(color, secure ? 30 : 50));
         invalidate();
     }
 
@@ -79,7 +87,7 @@ public class HexagonStatusView extends View {
         borderPaint.setColor(COLOR_WARN);
         glowPaint.setColor(COLOR_WARN);
         checkPaint.setColor(COLOR_WARN);
-        hexPaint.setColor(0xFF2B2B0D);
+        innerPaint.setColor(adjustAlpha(COLOR_WARN, 40));
         invalidate();
     }
 
@@ -126,9 +134,7 @@ public class HexagonStatusView extends View {
 
         // Inner hexagon (second layer)
         Path innerHex = createHexagonPath(cx, cy, radius * 0.88f);
-        Paint innerPaint = new Paint(hexPaint);
-        innerPaint.setAlpha(60);
-        canvas.drawPath(innerHex, borderPaint);
+        canvas.drawPath(innerHex, innerPaint);
 
         // Check, X, or nothing (loading)
         switch (state) {
