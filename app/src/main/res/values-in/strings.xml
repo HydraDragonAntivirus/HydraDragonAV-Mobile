@@ -172,6 +172,12 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="btn_close">Tutup</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ Tersisa: %2$d</string>
+    <string name="memory_usage">💾 Penggunaan Memori</string>
+    <string name="usage_stats_title">Akses Penggunaan (Direkomendasikan)</string>
+    <string name="usage_stats_msg">HydraDragon memerlukan izin Akses Penggunaan untuk mendeteksi saat aplikasi malware yang ditandai dibuka dan memblokirnya segera.
+
+Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
+    <string name="usage_settings_error">Tidak dapat membuka pengaturan Akses Penggunaan</string>
     <string name="scan_btn">PINDAI</string>
     <string name="scan_initial_status">Tekan PINDAI untuk mulai</string>
     <string name="scan_scanning_btn">MEMINDAI...</string>

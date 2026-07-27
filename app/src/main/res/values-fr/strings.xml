@@ -172,6 +172,12 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="btn_close">Fermer</string>
     <string name="ram_usage">💾 %1$d Mo RAM
 ⏳ Restant : %2$d</string>
+    <string name="memory_usage">💾 Utilisation mémoire</string>
+    <string name="usage_stats_title">Accès à l\'utilisation (Recommandé)</string>
+    <string name="usage_stats_msg">HydraDragon a besoin de l\'autorisation d\'accès à l\'utilisation pour détecter l\'ouverture d\'applications malveillantes et les bloquer immédiatement.
+
+Vous pouvez activer cela plus tard depuis Paramètres.</string>
+    <string name="usage_settings_error">Impossible d\'ouvrir les paramètres d\'accès à l\'utilisation</string>
     <string name="scan_btn">ANALYSER</string>
     <string name="scan_initial_status">Appuyez sur ANALYSER pour commencer</string>
     <string name="scan_scanning_btn">ANALYSE EN COURS...</string>

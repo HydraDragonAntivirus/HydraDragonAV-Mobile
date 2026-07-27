@@ -172,6 +172,12 @@ Puntuación de riesgo: %2$d/100
     <string name="btn_close">Cerrar</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ Restante: %2$d</string>
+    <string name="memory_usage">💾 Uso de memoria</string>
+    <string name="usage_stats_title">Acceso de uso (Recomendado)</string>
+    <string name="usage_stats_msg">HydraDragon necesita permiso de Acceso de uso para detectar cuando se abren aplicaciones maliciosas marcadas y bloquearlas de inmediato.
+
+Puedes habilitar esto más tarde desde Ajustes.</string>
+    <string name="usage_settings_error">No se pudo abrir la configuración de Acceso de uso</string>
     <string name="scan_btn">ESCANEAR</string>
     <string name="scan_initial_status">Presiona ESCANEAR para comenzar</string>
     <string name="scan_scanning_btn">ESCANEANDO...</string>

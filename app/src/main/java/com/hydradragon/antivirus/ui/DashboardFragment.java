@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.hydradragon.antivirus.R;
+import com.hydradragon.antivirus.engine.MemoryMonitor;
 import com.hydradragon.antivirus.engine.NetworkMonitor;
 import com.hydradragon.antivirus.model.ProcessInfo;
 import com.hydradragon.antivirus.model.ThreatResult;
@@ -54,6 +55,8 @@ public class DashboardFragment extends Fragment {
     private View threatIntelPanel;
     private TextView tvThreatFeed;
     private TextView tvEngineStatus;
+    private TextView tvMemoryInfo;
+    private TextView tvMemoryPct;
     private View layoutScanReminder;
 
     private GuardService guardService;
@@ -128,6 +131,8 @@ public class DashboardFragment extends Fragment {
         tvLiveActivityRate = view.findViewById(R.id.tv_live_rate);
         tvThreatFeed = view.findViewById(R.id.tv_threat_feed);
         tvEngineStatus = view.findViewById(R.id.tv_engine_status);
+        tvMemoryInfo = view.findViewById(R.id.tv_memory_info);
+        tvMemoryPct = view.findViewById(R.id.tv_memory_pct);
         layoutScanReminder = view.findViewById(R.id.layout_scan_reminder);
 
         View btnGraph = view.findViewById(R.id.btn_behavior_graph);
@@ -201,6 +206,38 @@ public class DashboardFragment extends Fragment {
 
                 if (networkChart != null) {
                     networkChart.addDataPoint(rate > 0 ? rate : 0f);
+                }
+
+                if (tvMemoryInfo != null) {
+                    int memScore = MemoryMonitor.pressureScore();
+                    long totalKb = 0, availKb = 0;
+                    try {
+                        java.io.RandomAccessFile raf = new java.io.RandomAccessFile("/proc/meminfo", "r");
+                        String line;
+                        while ((line = raf.readLine()) != null) {
+                            if (line.startsWith("MemTotal:")) {
+                                String[] parts = line.split("\\s+");
+                                totalKb = Long.parseLong(parts[1]);
+                            } else if (line.startsWith("MemAvailable:")) {
+                                String[] parts = line.split("\\s+");
+                                availKb = Long.parseLong(parts[1]);
+                                break;
+                            }
+                        }
+                        raf.close();
+                    } catch (Throwable ignored) {}
+                    if (totalKb > 0) {
+                        int usedMb = (int)((totalKb - availKb) / 1024);
+                        int totalMb = (int)(totalKb / 1024);
+                        int pct = (int)(100 - (availKb * 100 / totalKb));
+                        tvMemoryInfo.setText(usedMb + " MB / " + totalMb + " MB");
+                        tvMemoryPct.setText(pct + "%");
+                        tvMemoryPct.setTextColor(pct > 80 ? 0xFFFF0040 :
+                            pct > 60 ? 0xFFFF8800 : 0xFF00FF88);
+                    } else {
+                        tvMemoryInfo.setText("--");
+                        tvMemoryPct.setText("--");
+                    }
                 }
 
                 uiHandler.postDelayed(this, 2000);

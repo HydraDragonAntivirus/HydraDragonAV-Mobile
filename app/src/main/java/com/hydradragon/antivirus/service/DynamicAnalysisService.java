@@ -108,6 +108,7 @@ public class DynamicAnalysisService extends AccessibilityService {
 
     private static final String[] FORCE_STOP_TEXTS = {
         "Force stop",
+        "Durmaya zorla",
         "Zorla durdur",
         "Beenden erzwingen",
         "Forcer l'arrêt",

@@ -172,6 +172,12 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="btn_close">Zamknij</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ Pozostało: %2$d</string>
+    <string name="memory_usage">💾 Użycie pamięci</string>
+    <string name="usage_stats_title">Dostęp do użycia (Zalecane)</string>
+    <string name="usage_stats_msg">HydraDragon potrzebuje uprawnienia Dostępu do użycia, aby wykrywać oznakowane aplikacje złośliwe po ich otwarciu i natychmiast je blokować.
+
+Możesz włączyć to później w Ustawieniach.</string>
+    <string name="usage_settings_error">Nie można otworzyć ustawień Dostępu do użycia</string>
     <string name="scan_btn">SKANUJ</string>
     <string name="scan_initial_status">Naciśnij SKANUJ, aby rozpocząć</string>
     <string name="scan_scanning_btn">SKANOWANIE...</string>

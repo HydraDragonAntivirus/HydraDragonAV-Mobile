@@ -172,6 +172,12 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="btn_close">Sluiten</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ Resterend: %2$d</string>
+    <string name="memory_usage">💾 Geheugengebruik</string>
+    <string name="usage_stats_title">Gebruikstoegang (Aanbevolen)</string>
+    <string name="usage_stats_msg">HydraDragon heeft toestemming voor Gebruikstoegang nodig om te detecteren wanneer gemarkeerde malware-apps worden geopend en deze onmiddellijk te blokkeren.
+
+Je kunt dit later inschakelen via Instellingen.</string>
+    <string name="usage_settings_error">Kon Gebruikstoegang-instellingen niet openen</string>
     <string name="scan_btn">SCANNEN</string>
     <string name="scan_initial_status">Druk op SCAN om te beginnen</string>
     <string name="scan_scanning_btn">BEZIG MET SCANNEN...</string>

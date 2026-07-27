@@ -172,6 +172,12 @@
     <string name="btn_close">إغلاق</string>
     <string name="ram_usage">💾 %1$d ميجابايت من الذاكرة
 ⏳ المتبقي: %2$d</string>
+    <string name="memory_usage">💾 استخدام الذاكرة</string>
+    <string name="usage_stats_title">الوصول إلى الاستخدام (موصى به)</string>
+    <string name="usage_stats_msg">يحتاج HydraDragon إلى إذن الوصول إلى الاستخدام لاكتشاف تطبيقات البرامج الضارة عند فتحها وحظرها فورًا.
+
+يمكنك تمكين هذا لاحقًا من الإعدادات.</string>
+    <string name="usage_settings_error">تعذر فتح إعدادات الوصول إلى الاستخدام</string>
     <string name="scan_btn">فحص</string>
     <string name="scan_initial_status">اضغط فحص للبدء</string>
     <string name="scan_scanning_btn">جارٍ الفحص...</string>

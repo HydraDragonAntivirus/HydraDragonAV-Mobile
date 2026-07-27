@@ -172,6 +172,12 @@
     <string name="btn_close">بستن</string>
     <string name="ram_usage">💾 %1$d مگابایت رم
 ⏳ باقی‌مانده: %2$d</string>
+    <string name="memory_usage">💾 مصرف حافظه</string>
+    <string name="usage_stats_title">دسترسی مصرف (توصیه شده)</string>
+    <string name="usage_stats_msg">HydraDragon برای تشخیص باز شدن برنامه‌های مخرب علامت‌گذاری شده و مسدود کردن فوری آنها به مجوز دسترسی مصرف نیاز دارد.
+
+می‌توانید این را بعداً از تنظیمات فعال کنید.</string>
+    <string name="usage_settings_error">تنظیمات دسترسی مصرف باز نشد</string>
     <string name="scan_btn">اسکن</string>
     <string name="scan_initial_status">برای شروع دکمه اسکن را فشار دهید</string>
     <string name="scan_scanning_btn">در حال اسکن...</string>

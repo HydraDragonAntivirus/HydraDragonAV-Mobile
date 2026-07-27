@@ -172,6 +172,12 @@
     <string name="btn_close">ปิด</string>
     <string name="ram_usage">💾 %1$d MB แรม
 ⏳ เหลือ: %2$d</string>
+    <string name="memory_usage">💾 การใช้หน่วยความจำ</string>
+    <string name="usage_stats_title">การเข้าถึงการใช้งาน (แนะนำ)</string>
+    <string name="usage_stats_msg">HydraDragon จำเป็นต้องได้รับอนุญาตการเข้าถึงการใช้งานเพื่อตรวจจับเมื่อแอปมัลแวร์ที่ถูกทำเครื่องหมายถูกเปิดและบล็อกทันที
+
+คุณสามารถเปิดใช้งานได้ภายหลังจากการตั้งค่า</string>
+    <string name="usage_settings_error">ไม่สามารถเปิดการตั้งค่าการเข้าถึงการใช้งาน</string>
     <string name="scan_btn">สแกน</string>
     <string name="scan_initial_status">กดสแกนเพื่อเริ่มต้น</string>
     <string name="scan_scanning_btn">กำลังสแกน...</string>

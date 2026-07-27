@@ -172,6 +172,12 @@
     <string name="btn_close">閉じる</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ 残り：%2$d</string>
+    <string name="memory_usage">💾 メモリ使用量</string>
+    <string name="usage_stats_title">使用状況へのアクセス（推奨）</string>
+    <string name="usage_stats_msg">HydraDragonがフラグ付きマルウェアアプリの開封を検出し即座にブロックするには、使用状況へのアクセス許可が必要です。
+
+後で設定から有効にできます。</string>
+    <string name="usage_settings_error">使用状況へのアクセス設定を開けませんでした</string>
     <string name="scan_btn">スキャン</string>
     <string name="scan_initial_status">スキャンを押して開始</string>
     <string name="scan_scanning_btn">スキャン中...</string>

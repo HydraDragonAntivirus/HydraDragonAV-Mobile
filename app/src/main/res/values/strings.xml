@@ -182,6 +182,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="disabled_success">✅ Disabled!</string>
     <string name="btn_skip">SKIP →</string>
     <string name="btn_close">Close</string>
+    <string name="memory_usage">💾 Memory Usage</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ Remaining: %2$d</string>
     <string name="scan_btn">SCAN</string>

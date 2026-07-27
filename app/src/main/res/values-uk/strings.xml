@@ -172,6 +172,12 @@
     <string name="btn_close">Закрити</string>
     <string name="ram_usage">💾 %1$d МБ RAM
 ⏳ Залишилось: %2$d</string>
+    <string name="memory_usage">💾 Використання пам\'яті</string>
+    <string name="usage_stats_title">Доступ до використання (Рекомендовано)</string>
+    <string name="usage_stats_msg">HydraDragon потребує дозвіл на доступ до використання, щоб виявляти позначені шкідливі програми під час їх відкриття та негайно блокувати їх.
+
+Ви можете ввімкнути це пізніше в Налаштуваннях.</string>
+    <string name="usage_settings_error">Не вдалося відкрити налаштування доступу до використання</string>
     <string name="scan_btn">СКАНУВАТИ</string>
     <string name="scan_initial_status">Натисніть СКАНУВАТИ для початку</string>
     <string name="scan_scanning_btn">СКАНУВАННЯ...</string>

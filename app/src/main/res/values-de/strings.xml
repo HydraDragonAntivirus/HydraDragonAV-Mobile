@@ -172,6 +172,12 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="btn_close">Schließen</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ Verbleibend: %2$d</string>
+    <string name="memory_usage">💾 Arbeitsspeichernutzung</string>
+    <string name="usage_stats_title">Nutzungszugriff (Empfohlen)</string>
+    <string name="usage_stats_msg">HydraDragon benötigt die Berechtigung für den Nutzungszugriff, um gekennzeichnete Malware-Apps zu erkennen und sofort zu blockieren.
+
+Du kannst dies später in den Einstellungen aktivieren.</string>
+    <string name="usage_settings_error">Nutzungszugriff-Einstellungen konnten nicht geöffnet werden</string>
     <string name="scan_btn">SCAN</string>
     <string name="scan_initial_status">SCAN drücken, um zu starten</string>
     <string name="scan_scanning_btn">SCANNEN...</string>

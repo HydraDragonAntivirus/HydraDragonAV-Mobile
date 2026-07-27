@@ -172,6 +172,12 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="btn_close">Đóng</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ Còn lại: %2$d</string>
+    <string name="memory_usage">💾 Sử dụng bộ nhớ</string>
+    <string name="usage_stats_title">Quyền truy cập sử dụng (Khuyến nghị)</string>
+    <string name="usage_stats_msg">HydraDragon cần quyền Truy cập sử dụng để phát hiện khi các ứng dụng độc hại bị đánh dấu được mở và chặn chúng ngay lập tức.
+
+Bạn có thể bật tính năng này sau từ Cài đặt.</string>
+    <string name="usage_settings_error">Không thể mở cài đặt Truy cập sử dụng</string>
     <string name="scan_btn">QUÉT</string>
     <string name="scan_initial_status">Nhấn QUÉT để bắt đầu</string>
     <string name="scan_scanning_btn">ĐANG QUÉT...</string>

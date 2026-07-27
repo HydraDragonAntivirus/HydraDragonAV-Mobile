@@ -184,6 +184,12 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="btn_close">Kapat</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ Kalan: %2$d</string>
+    <string name="memory_usage">💾 Bellek Kullanımı</string>
+    <string name="usage_stats_title">Kullanım Erişimi (Önerilen)</string>
+    <string name="usage_stats_msg">HydraDragon, işaretlenmiş kötü amaçlı uygulamaların açıldığını tespit etmek ve hemen engellemek için Kullanım Erişimi iznine ihtiyaç duyar.
+
+Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.</string>
+    <string name="usage_settings_error">Kullanım Erişimi ayarları açılamadı</string>
     <string name="scan_btn">TARA</string>
     <string name="scan_initial_status">Taramayı başlatmak için TARA butonuna basın</string>
     <string name="scan_scanning_btn">TARANIYOR...</string>

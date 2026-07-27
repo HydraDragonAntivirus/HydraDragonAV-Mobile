@@ -172,6 +172,12 @@
     <string name="btn_close">关闭</string>
     <string name="ram_usage">💾 %1$d MB 内存
 ⏳ 剩余：%2$d</string>
+    <string name="memory_usage">💾 内存使用</string>
+    <string name="usage_stats_title">使用情况访问（推荐）</string>
+    <string name="usage_stats_msg">HydraDragon需要使用情况访问权限，以便在被标记的恶意应用打开时检测并立即阻止它们。
+
+您可以稍后从设置中启用此功能。</string>
+    <string name="usage_settings_error">无法打开使用情况访问设置</string>
     <string name="scan_btn">扫描</string>
     <string name="scan_initial_status">按下扫描开始</string>
     <string name="scan_scanning_btn">扫描中...</string>

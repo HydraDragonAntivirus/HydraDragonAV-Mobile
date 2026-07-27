@@ -172,6 +172,12 @@
     <string name="btn_close">닫기</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ 남음: %2$d</string>
+    <string name="memory_usage">💾 메모리 사용량</string>
+    <string name="usage_stats_title">사용 액세스 (권장)</string>
+    <string name="usage_stats_msg">HydraDragon이 플래그된 멀웨어 앱이 열릴 때 감지하고 즉시 차단하려면 사용 액세스 권한이 필요합니다.
+
+나중에 설정에서 활성화할 수 있습니다.</string>
+    <string name="usage_settings_error">사용 액세스 설정을 열 수 없습니다</string>
     <string name="scan_btn">스캔</string>
     <string name="scan_initial_status">스캔을 눌러 시작하세요</string>
     <string name="scan_scanning_btn">스캔 중...</string>

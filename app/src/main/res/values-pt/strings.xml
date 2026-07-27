@@ -172,6 +172,12 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="btn_close">Fechar</string>
     <string name="ram_usage">💾 %1$d MB RAM
 ⏳ Restante: %2$d</string>
+    <string name="memory_usage">💾 Uso de memória</string>
+    <string name="usage_stats_title">Acesso de uso (Recomendado)</string>
+    <string name="usage_stats_msg">O HydraDragon precisa da permissão de Acesso de uso para detectar quando aplicativos maliciosos sinalizados são abertos e bloqueá-los imediatamente.
+
+Você pode ativar isso mais tarde nas Configurações.</string>
+    <string name="usage_settings_error">Não foi possível abrir as configurações de Acesso de uso</string>
     <string name="scan_btn">VERIFICAR</string>
     <string name="scan_initial_status">Pressione VERIFICAR para iniciar</string>
     <string name="scan_scanning_btn">VERIFICANDO...</string>

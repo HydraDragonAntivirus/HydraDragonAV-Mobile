@@ -172,6 +172,12 @@
     <string name="btn_close">बंद करें</string>
     <string name="ram_usage">💾 %1$d MB रैम
 ⏳ शेष: %2$d</string>
+    <string name="memory_usage">💾 मेमोरी उपयोग</string>
+    <string name="usage_stats_title">उपयोग पहुंच (अनुशंसित)</string>
+    <string name="usage_stats_msg">HydraDragon को फ़्लैग किए गए मैलवेयर ऐप्स खुलने पर उन्हें तुरंत ब्लॉक करने के लिए उपयोग पहुंच अनुमति की आवश्यकता है।
+
+आप इसे बाद में सेटिंग्स से सक्षम कर सकते हैं।</string>
+    <string name="usage_settings_error">उपयोग पहुंच सेटिंग्स नहीं खोल सका</string>
     <string name="scan_btn">स्कैन</string>
     <string name="scan_initial_status">शुरू करने के लिए स्कैन दबाएँ</string>
     <string name="scan_scanning_btn">स्कैन हो रहा है...</string>
