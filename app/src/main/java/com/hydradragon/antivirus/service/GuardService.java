@@ -120,7 +120,7 @@ public class GuardService extends Service {
      *  scans them. Off by default (Settings toggle — battery/query cost). */
     private void startFullStorageMonitor() {
         if (!getSharedPreferences("hydra_prefs", MODE_PRIVATE)
-                .getBoolean(KEY_REALTIME_STORAGE_WATCH, false)) {
+                .getBoolean(KEY_REALTIME_STORAGE_WATCH, true)) {
             return;
         }
         if (fullStorageObserver != null) return;

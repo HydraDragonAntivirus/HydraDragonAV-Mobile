@@ -465,7 +465,7 @@ public class SettingsFragment extends Fragment {
         // dropped outside Downloads are also already caught (just not instantly)
         // by GuardService's periodic Full Scan. See GuardService.KEY_REALTIME_STORAGE_WATCH.
         boolean storageWatch = prefs().getBoolean(
-            com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH, false);
+            com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH, true);
         addToggle(getString(R.string.storage_watch_toggle), storageWatch, (btn, on) -> {
             prefs().edit().putBoolean(
                 com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH, on).apply();
