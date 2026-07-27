@@ -42,8 +42,8 @@
     <string name="max_scan_file_size_label">Bestanden groter dan overslaan (MB):</string>
     <string name="max_scan_file_size_hint">Tussen %1$d en %2$d MB — grotere bestanden duren veel langer om te scannen (volledig bestand gehasht + ClamAV/YARA/ML); bestanden boven deze grootte worden volledig overgeslagen in plaats van gedeeltelijk gescand</string>
     <string name="max_scan_file_size_saved">Maximale scanbestandsgrootte opgeslagen</string>
-    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
-    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (MB):</string>
+    <string name="max_text_scan_bytes_btn">Max. HTML/tekstbestandsgrootte</string>
+    <string name="max_text_scan_bytes_label">HTML/tekstbestanden scannen tot (MB):</string>
     <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Whitelists</string>

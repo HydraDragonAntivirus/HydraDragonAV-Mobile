@@ -42,8 +42,8 @@
     <string name="max_scan_file_size_label">تخطي الملفات الأكبر من (ميجابايت):</string>
     <string name="max_scan_file_size_hint">بين %1$d و %2$d ميجابايت — الملفات الأكبر تستغرق وقتاً أطول للفحص (تجزئة الملف بالكامل + ClamAV/YARA/تعلم آلي)؛ يتم تخطي الملفات الأكبر من هذا الحجم بالكامل بدلاً من فحصها جزئياً</string>
     <string name="max_scan_file_size_saved">تم حفظ الحد الأقصى لحجم الملف للفحص</string>
-    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
-    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (MB):</string>
+    <string name="max_text_scan_bytes_btn">الحد الأقصى لحجم HTML/نص</string>
+    <string name="max_text_scan_bytes_label">فحص ملفات HTML/نص حتى (ميغابايت):</string>
     <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">القوائم البيضاء</string>

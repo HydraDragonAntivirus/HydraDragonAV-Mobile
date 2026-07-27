@@ -42,8 +42,8 @@
     <string name="max_scan_file_size_label">Ignorer les fichiers plus volumineux que (Mo) :</string>
     <string name="max_scan_file_size_hint">Entre %1$d et %2$d Mo — les fichiers plus volumineux prennent beaucoup plus de temps à analyser (fichier entier haché + ClamAV/YARA/ML) ; les fichiers dépassant cette taille sont entièrement ignorés plutôt qu\'analysés partiellement</string>
     <string name="max_scan_file_size_saved">Taille max. des fichiers à analyser enregistrée</string>
-    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
-    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (MB):</string>
+    <string name="max_text_scan_bytes_btn">Taille max. fichier HTML/texte</string>
+    <string name="max_text_scan_bytes_label">Scanner les fichiers HTML/texte jusqu\'à (Mo) :</string>
     <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Listes blanches</string>

@@ -42,8 +42,8 @@
     <string name="max_scan_file_size_label">رد کردن فایل‌های بزرگ‌تر از (مگابایت):</string>
     <string name="max_scan_file_size_hint">بین %1$d و %2$d مگابایت — فایل‌های بزرگ‌تر زمان بسیار بیشتری برای اسکن نیاز دارند (هش کل فایل + ClamAV/YARA/یادگیری ماشین)؛ فایل‌های بزرگ‌تر از این اندازه به‌جای اسکن جزئی، کاملاً رد می‌شوند</string>
     <string name="max_scan_file_size_saved">حداکثر اندازه فایل برای اسکن ذخیره شد</string>
-    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
-    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (MB):</string>
+    <string name="max_text_scan_bytes_btn">حداکثر اندازه فایل HTML/متن</string>
+    <string name="max_text_scan_bytes_label">اسکن فایلهای HTML/متن تا (مگابایت):</string>
     <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">لیست‌های سفید</string>

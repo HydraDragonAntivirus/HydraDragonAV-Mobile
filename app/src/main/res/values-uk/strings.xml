@@ -42,8 +42,8 @@
     <string name="max_scan_file_size_label">Пропускати файли більші за (МБ):</string>
     <string name="max_scan_file_size_hint">Від %1$d до %2$d МБ — більші файли скануються значно довше (хешується весь файл + ClamAV/YARA/ML); файли більші за цей розмір повністю пропускаються, а не скануються частково</string>
     <string name="max_scan_file_size_saved">Максимальний розмір файлу для сканування збережено</string>
-    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
-    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (MB):</string>
+    <string name="max_text_scan_bytes_btn">Макс. розмір HTML/текст файлу</string>
+    <string name="max_text_scan_bytes_label">Сканувати HTML/текстові файли до (МБ):</string>
     <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Білі списки</string>

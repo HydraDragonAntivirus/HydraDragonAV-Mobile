@@ -42,8 +42,8 @@
     <string name="max_scan_file_size_label">Bundan büyük dosyaları atla (MB):</string>
     <string name="max_scan_file_size_hint">%1$d ile %2$d MB arasında — daha büyük dosyaların taranması çok daha uzun sürer (tüm dosya hash\'lenir + ClamAV/YARA/ML); bu boyutun üzerindeki dosyalar kısmen taranmak yerine tamamen atlanır</string>
     <string name="max_scan_file_size_saved">Taranacak maksimum dosya boyutu kaydedildi</string>
-    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
-    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (MB):</string>
+    <string name="max_text_scan_bytes_btn">Maks HTML/Metin Dosyası Boyutu</string>
+    <string name="max_text_scan_bytes_label">HTML/metin dosyalarını tara (MB\'ya kadar):</string>
     <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Beyaz Listeler</string>

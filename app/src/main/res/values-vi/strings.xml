@@ -42,8 +42,8 @@
     <string name="max_scan_file_size_label">Bỏ qua tệp lớn hơn (MB):</string>
     <string name="max_scan_file_size_hint">Từ %1$d đến %2$d MB — tệp lớn hơn sẽ mất nhiều thời gian hơn để quét (băm toàn bộ tệp + ClamAV/YARA/ML); tệp vượt quá kích thước này sẽ bị bỏ qua hoàn toàn thay vì quét một phần</string>
     <string name="max_scan_file_size_saved">Đã lưu kích thước tệp tối đa để quét</string>
-    <string name="max_text_scan_bytes_btn">Max HTML/Text File Size</string>
-    <string name="max_text_scan_bytes_label">Scan HTML/text files up to (MB):</string>
+    <string name="max_text_scan_bytes_btn">Kích thước tệp HTML/văn bản tối đa</string>
+    <string name="max_text_scan_bytes_label">Quét tệp HTML/văn bản tới (MB):</string>
     <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Danh sách trắng</string>
