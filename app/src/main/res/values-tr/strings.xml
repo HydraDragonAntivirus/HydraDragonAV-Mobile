@@ -436,7 +436,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="behavior_detail">Davranış Detayları</string>
     <string name="btn_behavior_graph">Davranış Grafiği</string>
     <string name="graph_ui_spam">Kullanıcı Arayüzü Spam Etkinlikleri</string>
-    <string name="graph_notification_spam">Bildirim Spam'ı</string>
+    <string name="graph_notification_spam">Bildirim Spam\'ı</string>
     <string name="graph_clickjack">Clickjack Etkinlikleri</string>
     <string name="graph_ransomware">Fidye Yazılımı Olayları</string>
     <string name="graph_network">Ağ Bağlantıları</string>

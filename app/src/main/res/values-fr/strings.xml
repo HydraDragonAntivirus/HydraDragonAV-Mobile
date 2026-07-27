@@ -435,7 +435,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="behavior_wiper">Détection de wiper (suppression rapide + mémoire)</string>
     <string name="behavior_detail">Détails du comportement</string>
     <string name="btn_behavior_graph">Graphique de comportement</string>
-    <string name="graph_ui_spam">Événements de spam de l'interface utilisateur</string>
+    <string name="graph_ui_spam">Événements de spam de l\'interface utilisateur</string>
     <string name="graph_notification_spam">Spam de notifications</string>
     <string name="graph_clickjack">Événements Clickjack</string>
     <string name="graph_ransomware">Événements de rançongiciels</string>
@@ -450,7 +450,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="graph_removal_resistance">Résistance au retrait</string>
     <string name="graph_launcher_change">Changement de lanceur</string>
     <string name="graph_canary">Canari déclenché</string>
-    <string name="graph_device_admin">Administrateur de l'appareil</string>
+    <string name="graph_device_admin">Administrateur de l\'appareil</string>
     <string name="graph_hidden_app">Application cachée</string>
     <string name="graph_observed_files">Fichiers observés</string>
     <string name="graph_deleted_files">Fichiers supprimés</string>

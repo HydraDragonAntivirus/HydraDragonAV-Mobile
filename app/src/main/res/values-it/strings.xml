@@ -435,7 +435,7 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="behavior_wiper">Rilevamento wiper (cancellazione rapida + memoria)</string>
     <string name="behavior_detail">Dettagli comportamento</string>
     <string name="btn_behavior_graph">Grafico comportamento</string>
-    <string name="graph_ui_spam">Eventi di spam dell'interfaccia utente</string>
+    <string name="graph_ui_spam">Eventi di spam dell\'interfaccia utente</string>
     <string name="graph_notification_spam">Notifiche indesiderate</string>
     <string name="graph_clickjack">Eventi Clickjack</string>
     <string name="graph_ransomware">Eventi ransomware</string>
