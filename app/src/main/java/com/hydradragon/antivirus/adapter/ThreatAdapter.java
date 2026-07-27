@@ -81,6 +81,7 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
         PackageManager pm = holder.itemView.getContext().getPackageManager();
         try {
             Drawable icon = null;
+            String pkg = threat.getPackageName();
             // If this is a raw .apk file on SD Card, extract the icon from inside it
             if (threat.getApkPath() != null && threat.getApkPath().endsWith(".apk")) {
                 PackageInfo pkgInfo = pm.getPackageArchiveInfo(threat.getApkPath(), 0);
@@ -89,9 +90,13 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
                     pkgInfo.applicationInfo.publicSourceDir = threat.getApkPath();
                     icon = pkgInfo.applicationInfo.loadIcon(pm);
                 }
-            } else {
-                // If it's an app installed on the phone, directly fetch its icon
-                icon = pm.getApplicationIcon(threat.getPackageName());
+            }
+            // Fallback: if the APK path didn't work (deleted or null) but the
+            // app is installed, load the installed icon directly.
+            if (icon == null && pkg != null) {
+                try {
+                    icon = pm.getApplicationIcon(pkg);
+                } catch (Throwable ignored) {}
             }
             
             // Display the icon

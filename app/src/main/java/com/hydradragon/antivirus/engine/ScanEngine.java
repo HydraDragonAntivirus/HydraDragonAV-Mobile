@@ -1503,7 +1503,6 @@ public class ScanEngine {
                 b.setReasons(reasons);
                 CharSequence label = pm.getApplicationLabel(app);
                 b.setAppName((label != null ? label.toString() : app.packageName) + " (DEEP)");
-                b.setApkPath(app.sourceDir);
                 ThreatResult r = b.build();
                 if (r.isThreat() && !threats.contains(r)) {
                     threats.add(r);
@@ -1987,7 +1986,7 @@ public class ScanEngine {
             appName = new java.io.File(app.sourceDir).getName();
         if (isApkFile) appName = appName + " (SD CARD)";
         builder.setAppName(appName.toString());
-        builder.setApkPath(app.sourceDir);
+        if (isApkFile) builder.setApkPath(app.sourceDir);
         
         ThreatResult finalRes = builder.build();
         if (finalRes.isThreat() && app.packageName != null && !UserDecisions.isThreatAllowed(context, app.packageName)) {

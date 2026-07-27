@@ -349,6 +349,21 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        // Usage Stats Access — needed for foreground app detection in realtime
+        // protection (checkForegroundViaUsageStats). System-level "special
+        // permission", requested via Settings intent, not runtime dialog.
+        if (Build.VERSION.SDK_INT >= 22) {
+            android.app.AppOpsManager appOps = getSystemService(android.app.AppOpsManager.class);
+            boolean hasUsageStats = appOps != null
+                && appOps.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(), getPackageName())
+                    == android.app.AppOpsManager.MODE_ALLOWED;
+            if (!hasUsageStats && !prefs.getBoolean("usage_stats_decided", false)) {
+                showOptionalUsageStatsDialog();
+                return;
+            }
+        }
+
         // Optional local DNS-filtering VPN (Web Shield). The system VPN/key icon
         // only appears once VpnService.prepare() consent is granted AND the
         // service establishes the tunnel — so we must request consent here.
@@ -512,6 +527,32 @@ public class MainActivity extends AppCompatActivity {
                 permissionDialogShowing = false;
                 getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
                     .putBoolean("accessibility_decided", true).apply();
+                checkMandatoryPermissions();
+            })
+            .show();
+    }
+
+    private void showOptionalUsageStatsDialog() {
+        permissionDialogShowing = true;
+        new AlertDialog.Builder(this)
+            .setTitle(getString(R.string.usage_stats_title))
+            .setMessage(getString(R.string.usage_stats_msg))
+            .setCancelable(false)
+            .setPositiveButton(getString(R.string.btn_grant_now), (dialog, which) -> {
+                permissionDialogShowing = false;
+                try {
+                    startActivity(new Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS));
+                } catch (Throwable t) {
+                    Toast.makeText(this, getString(R.string.usage_settings_error), Toast.LENGTH_LONG).show();
+                    getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                        .putBoolean("usage_stats_decided", true).apply();
+                    checkMandatoryPermissions();
+                }
+            })
+            .setNegativeButton(getString(R.string.skip), (dialog, which) -> {
+                permissionDialogShowing = false;
+                getSharedPreferences("hydra_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("usage_stats_decided", true).apply();
                 checkMandatoryPermissions();
             })
             .show();
