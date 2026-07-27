@@ -228,6 +228,18 @@ public class GuardService extends Service {
                         } else {
                             com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
                                 this, threat);
+                            // Even without auto-delete, try to remove the file if it's a standalone APK
+                            if (threat.isStandaloneFile()) {
+                                String path = threat.getApkPath();
+                                if (path != null && !path.isEmpty()) {
+                                    try {
+                                        boolean deleted = new java.io.File(path).delete();
+                                        Log.i(TAG, "download scan: file " + (deleted ? "deleted" : "delete failed") + ": " + path);
+                                    } catch (Throwable t) {
+                                        Log.w(TAG, "download scan file delete failed", t);
+                                    }
+                                }
+                            }
                         }
                     } catch (Throwable t) {
                         Log.e(TAG, "download auto-kill failed", t);
@@ -528,7 +540,11 @@ public class GuardService extends Service {
         processDetector.setCallback(new ProcessDetector.ProcessCallback() {
             @Override
             public void onSuspiciousProcess(ProcessInfo processInfo) {
-                if (processInfo.isCritical()) {
+                boolean shouldKill = processInfo.isCritical()
+                    || (processInfo.isSuspicious()
+                        && processInfo.getFlags() != null
+                        && processInfo.getFlags().size() >= 2);
+                if (shouldKill) {
                     sendProcessAlert(processInfo);
                     if (callback != null) callback.onSuspiciousProcess(processInfo);
                     if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(GuardService.this)) {

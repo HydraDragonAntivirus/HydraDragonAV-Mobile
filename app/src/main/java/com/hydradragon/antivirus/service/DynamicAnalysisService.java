@@ -106,6 +106,47 @@ public class DynamicAnalysisService extends AccessibilityService {
     private long lastAlertTime = 0;
     private String lastAlertMsg = "";
 
+    private static final String[] FORCE_STOP_TEXTS = {
+        "Force stop",
+        "Zorla durdur",
+        "Beenden erzwingen",
+        "Forcer l'arrêt",
+        "Forzar detención",
+        "Forçar parada",
+        "Arresto forzato",
+        "Geforceerd stoppen",
+        "Wymuś zatrzymanie",
+        "Принудительно остановить",
+        "강제 중지",
+        "強制停止",
+        "强行停止",
+        "ເອົາອອກ",
+        "Paksa berhenti",
+        "บังคับหยุด",
+        "भरपूर रोकें",
+        "Zorla Dayandır",
+        "توقف إجباري",
+        "పూర్తిగా ఆపండి"
+    };
+    private static final String[] OK_TEXTS = {
+        "OK", "Ok", "ok",
+        "TAMAM", "Tamam",
+        "확인",
+        "好的", "好",
+        "はい",
+        "ОК",
+        "aanvaarden",
+        "Conferma",
+        "Aceptar",
+        "Confirmar",
+        "Bestätigen",
+        "अनुमति दें",
+        "بالتأكيد",
+        "อนุมัติ",
+        "Setuju",
+        "ยืนยัน"
+    };
+
     /** Browsers: a flagged URL HERE is actually being navigated to -> hard block. */
     private static final java.util.Set<String> BROWSERS = new java.util.HashSet<>(java.util.Arrays.asList(
         "com.android.chrome", "com.chrome.beta", "com.chrome.dev",
@@ -224,39 +265,41 @@ public class DynamicAnalysisService extends AccessibilityService {
             // Settings → Force Stop → OK flow through accessibility.
             if (sFsTarget != null) {
                 String settingsPkg = "com.android.settings";
-                // Step 1 + 2: In Settings app info page → click Force Stop
                 boolean onSettings = pkg.equals(settingsPkg);
                 boolean onSystemDialog = "android".equals(pkg) || "com.android.systemui".equals(pkg);
                 if (onSettings && !sFsConfirmDone) {
                     AccessibilityNodeInfo root = getRootInActiveWindow();
                     if (root != null) {
-                        java.util.List<AccessibilityNodeInfo> nodes =
-                            root.findAccessibilityNodeInfosByText("Force stop");
+                        java.util.List<AccessibilityNodeInfo> nodes = null;
+                        for (String forceStopText : FORCE_STOP_TEXTS) {
+                            nodes = root.findAccessibilityNodeInfosByText(forceStopText);
+                            if (nodes != null && !nodes.isEmpty()) break;
+                        }
                         if (nodes == null || nodes.isEmpty()) {
                             nodes = root.findAccessibilityNodeInfosByViewId(
                                 "com.android.settings:id/force_stop_button");
                         }
                         if (nodes != null && !nodes.isEmpty()) {
-                            AccessibilityNodeInfo btn = nodes.get(0);
-                            if (btn.isClickable()) {
-                                btn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                                sFsConfirmDone = true;
-                                Log.i(TAG, "force-stop: clicked Force Stop button for " + sFsTarget);
+                            for (AccessibilityNodeInfo btn : nodes) {
+                                if (btn.isClickable()) {
+                                    btn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                    break;
+                                }
                             }
                             for (AccessibilityNodeInfo n : nodes) n.recycle();
+                            sFsConfirmDone = true;
+                            Log.i(TAG, "force-stop: clicked Force Stop button for " + sFsTarget);
                         }
                         root.recycle();
                     }
                 }
-                // Step 2: On confirmation dialog → click OK
                 if (onSystemDialog && sFsConfirmDone) {
                     AccessibilityNodeInfo root = getRootInActiveWindow();
                     if (root != null) {
-                        java.util.List<AccessibilityNodeInfo> nodes =
-                            root.findAccessibilityNodeInfosByText("OK");
-                        if (nodes == null || nodes.isEmpty()) {
-                            nodes = root.findAccessibilityNodeInfosByText(
-                                android.os.Build.VERSION.SDK_INT >= 24 ? "OK" : "Ok");
+                        java.util.List<AccessibilityNodeInfo> nodes = null;
+                        for (String okText : OK_TEXTS) {
+                            nodes = root.findAccessibilityNodeInfosByText(okText);
+                            if (nodes != null && !nodes.isEmpty()) break;
                         }
                         if (nodes != null && !nodes.isEmpty()) {
                             for (AccessibilityNodeInfo n : nodes) {

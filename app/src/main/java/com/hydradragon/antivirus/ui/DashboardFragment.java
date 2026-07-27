@@ -176,6 +176,7 @@ public class DashboardFragment extends Fragment {
 
     private void startStatsUpdater() {
         statsUpdater = new Runnable() {
+            private int lastTotal = 0;
             @Override
             public void run() {
                 if (!serviceBound || guardService == null) {
@@ -191,10 +192,16 @@ public class DashboardFragment extends Fragment {
                 int blocked = nm.getBlockedCount();
                 int allowed = nm.getAllowedCount();
                 int total = blocked + allowed;
+                float rate = total - lastTotal;
+                lastTotal = total;
 
                 tvTotalTraffic.setText(String.valueOf(total));
                 tvBlocked.setText(String.valueOf(blocked));
                 tvAllowed.setText(String.valueOf(allowed));
+
+                if (networkChart != null) {
+                    networkChart.addDataPoint(rate > 0 ? rate : 0f);
+                }
 
                 uiHandler.postDelayed(this, 2000);
             }

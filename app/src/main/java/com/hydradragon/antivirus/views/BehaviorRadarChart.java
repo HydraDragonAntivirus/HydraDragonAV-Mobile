@@ -80,7 +80,7 @@ public class BehaviorRadarChart extends View {
         int n = axes.size();
         if (n < 3) return;
 
-        float labelR = radius + 90f;
+        float labelR = Math.min(radius * 1.6f, cy * 0.8f);
         float startAngle = -90f;
 
         // Grid rings (20%, 40%, 60%, 80%, 100%)
