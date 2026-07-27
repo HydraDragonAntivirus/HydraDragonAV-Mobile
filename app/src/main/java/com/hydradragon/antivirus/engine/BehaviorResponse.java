@@ -80,6 +80,8 @@ public final class BehaviorResponse {
     public static boolean killAndPromptUninstall(Context context, String pkg, String appName, String reason, boolean skipUninstall) {
         if (pkg == null || pkg.isEmpty()) return false;
 
+        boolean usedAccessibility = false;
+
         // Try accessibility force-stop first (works for ANY app, foreground or
         // background — killBackgroundProcesses is unreliable on Android 12+).
         if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(
@@ -87,27 +89,37 @@ public final class BehaviorResponse {
                 && com.hydradragon.antivirus.service.DynamicAnalysisService.getInstance() != null) {
             Log.i(TAG, "killAndPromptUninstall: accessibility force-stop for " + pkg);
             com.hydradragon.antivirus.service.DynamicAnalysisService.forceStopForegroundApp(pkg, appName, reason);
-            return true;
+            usedAccessibility = true;
         }
 
-        // Fallback: killBackgroundProcesses (unreliable on Android 12+)
-        try {
-            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-            if (am != null) am.killBackgroundProcesses(pkg);
-        } catch (Throwable t) {
-            Log.w(TAG, "killBackgroundProcesses failed for " + pkg, t);
+        if (!usedAccessibility) {
+            // Fallback: killBackgroundProcesses (unreliable on Android 12+)
+            try {
+                ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+                if (am != null) am.killBackgroundProcesses(pkg);
+            } catch (Throwable t) {
+                Log.w(TAG, "killBackgroundProcesses failed for " + pkg, t);
+            }
         }
 
         if (!skipUninstall) {
-            try {
-                Intent del = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + pkg));
-                del.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(del);
-            } catch (Throwable t) {
-                Log.w(TAG, "uninstall prompt failed for " + pkg, t);
-            }
+            // Delay uninstall prompt slightly so the force-stop animation can
+            // complete and the app is no longer in the foreground when the
+            // system uninstall dialog appears.
+            final String finalPkg = pkg;
+            final Context appCtx = context.getApplicationContext();
+            long delayMs = usedAccessibility ? 1500L : 0L;
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    Intent del = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + finalPkg));
+                    del.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    appCtx.startActivity(del);
+                } catch (Throwable t) {
+                    Log.w(TAG, "uninstall prompt failed for " + finalPkg, t);
+                }
+            }, delayMs);
         }
-        return false;
+        return usedAccessibility;
     }
 
     /** Entry point for a regular scan result (quick/full/custom, background or
@@ -194,10 +206,9 @@ public final class BehaviorResponse {
      *  action button on this screen. */
     private static void showMalwareFoundScreen(Context context, ThreatResult threat, boolean isFile, boolean isFromScan) {
         if (!hasOverlayOrNotifPermission(context)) {
-            if (isFromScan) {
-                return;
-            }
-            Log.i(TAG, "Overlay or Notification permission missing -> redirecting directly to HydraDragon Scan Screen with threat alert");
+            // Overlay/notification permission missing: always redirect to scan screen
+            // so the user still sees the uninstall/delete alert dialog there.
+            Log.i(TAG, "Overlay or Notification permission missing -> redirecting to HydraDragon Scan Screen with threat alert");
             redirectToScanScreen(context, threat);
             return;
         }
