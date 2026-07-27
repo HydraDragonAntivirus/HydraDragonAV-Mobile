@@ -130,23 +130,21 @@ public final class BehaviorResponse {
         if (threat == null) return;
         String pkg = threat.getPackageName();
         boolean installed = pkg != null && !pkg.isEmpty() && isPackageInstalled(context, pkg);
+
         if (installed) {
             killAndPromptUninstall(context, pkg,
                 threat.getAppName(),
                 threat.getReasons().isEmpty() ? null : threat.getReasons().get(0),
-                isFromScan);
-        } else {
-            promptDeleteFile(context, threat);
+                true);
         }
-        // Manual scan: kill only, no uninstall prompt, no MalwareFoundActivity
-        if (isFromScan) return;
-        showMalwareFoundScreen(context, threat, !installed, false);
+
+        showMalwareFoundScreen(context, threat, !installed, isFromScan);
     }
 
     /** Full-screen "MALWARE FOUND" warning, launched over whatever app the
-     *  user currently has in the foreground — the kill+uninstall (or
-     *  delete-file prompt) has ALREADY fired by the time this shows; it's the
-     *  unmissable backdrop, not a confirmation gate of its own. */
+     *  user currently has in the foreground — the process kill has already
+     *  fired but the uninstall/delete prompt waits for the user to tap the
+     *  action button on this screen. */
     private static void showMalwareFoundScreen(Context context, ThreatResult threat, boolean isFile, boolean isFromScan) {
         if (!hasOverlayOrNotifPermission(context)) {
             if (isFromScan) {
