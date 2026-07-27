@@ -446,6 +446,7 @@ Puntuación de riesgo: %2$d/100
     <string name="graph_file_copy">Correlaciones de copia de archivos</string>
     <string name="graph_miner_memory">Memoria minera</string>
     <string name="graph_behavior_flags">Banderas de comportamiento</string>
+    <string name="graph_scan_malware">Escaneo de Malware</string>
     <string name="graph_strandhogg">StrandHogg</string>
     <string name="graph_removal_resistance">Resistencia a la eliminación</string>
     <string name="graph_launcher_change">Cambio de lanzador</string>

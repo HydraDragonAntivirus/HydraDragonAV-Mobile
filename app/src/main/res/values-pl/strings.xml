@@ -446,6 +446,7 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="graph_file_copy">Korelacje kopiowania plików</string>
     <string name="graph_miner_memory">Pamięć Górnika</string>
     <string name="graph_behavior_flags">Flagi zachowań</string>
+    <string name="graph_scan_malware">Skanowanie złośliwego oprogramowania</string>
     <string name="graph_strandhogg">StrandHogg</string>
     <string name="graph_removal_resistance">Opór usuwania</string>
     <string name="graph_launcher_change">Zmiana programu uruchamiającego</string>

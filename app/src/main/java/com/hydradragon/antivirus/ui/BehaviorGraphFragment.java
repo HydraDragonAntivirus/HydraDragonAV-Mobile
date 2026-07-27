@@ -72,6 +72,7 @@ public class BehaviorGraphFragment extends Fragment {
         addDetailItem(getString(R.string.graph_file_copy), String.valueOf(data.fileCopyCount));
         addDetailItem(getString(R.string.graph_miner_memory), data.minerMemoryMb + " MB");
         addDetailItem(getString(R.string.graph_behavior_flags), String.valueOf(data.flagCount));
+        addDetailItem(getString(R.string.graph_scan_malware), boolStr(data.hasScanMalware));
         addDetailItem(getString(R.string.graph_strandhogg), boolStr(data.hasStrandHogg));
         addDetailItem(getString(R.string.graph_removal_resistance), boolStr(data.hasRemovalResistance));
         addDetailItem(getString(R.string.graph_launcher_change), boolStr(data.hasLauncherChange));

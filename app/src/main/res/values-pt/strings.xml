@@ -446,6 +446,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="graph_file_copy">Correlações de cópia de arquivo</string>
     <string name="graph_miner_memory">Memória Mineira</string>
     <string name="graph_behavior_flags">Sinalizadores de comportamento</string>
+    <string name="graph_scan_malware">Varredura de Malware</string>
     <string name="graph_strandhogg">StrandHogg</string>
     <string name="graph_removal_resistance">Resistência à remoção</string>
     <string name="graph_launcher_change">Mudança no iniciador</string>

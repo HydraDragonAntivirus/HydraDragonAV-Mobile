@@ -446,6 +446,7 @@ Möchten Sie diese schädliche Datei/App vollständig entfernen?</string>
     <string name="graph_file_copy">Korrelationen zwischen Dateikopien</string>
     <string name="graph_miner_memory">Miner-Speicher</string>
     <string name="graph_behavior_flags">Verhaltensflags</string>
+    <string name="graph_scan_malware">Scan Malware</string>
     <string name="graph_strandhogg">StrandHogg</string>
     <string name="graph_removal_resistance">Entfernungswiderstand</string>
     <string name="graph_launcher_change">Launcher-Änderung</string>

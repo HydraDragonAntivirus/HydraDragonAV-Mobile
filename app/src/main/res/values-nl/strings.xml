@@ -446,6 +446,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="graph_file_copy">Correlaties met bestandskopieën</string>
     <string name="graph_miner_memory">Mijnwerker geheugen</string>
     <string name="graph_behavior_flags">Gedragsvlaggen</string>
+    <string name="graph_scan_malware">Scan Malware</string>
     <string name="graph_strandhogg">StrandHogg</string>
     <string name="graph_removal_resistance">Verwijderingsweerstand</string>
     <string name="graph_launcher_change">Launcher-wijziging</string>

@@ -446,6 +446,7 @@
     <string name="graph_file_copy">फ़ाइल प्रतिलिपि सहसंबंध</string>
     <string name="graph_miner_memory">माइनर मेमोरी</string>
     <string name="graph_behavior_flags">व्यवहार झंडे</string>
+    <string name="graph_scan_malware">मैलवेयर स्कैन</string>
     <string name="graph_strandhogg">स्ट्रैंडहॉग</string>
     <string name="graph_removal_resistance">निष्कासन प्रतिरोध</string>
     <string name="graph_launcher_change">लॉन्चर परिवर्तन</string>

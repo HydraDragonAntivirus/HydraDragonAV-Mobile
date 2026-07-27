@@ -446,6 +446,7 @@
     <string name="graph_file_copy">ファイルコピーの相関関係</string>
     <string name="graph_miner_memory">マイナーメモリー</string>
     <string name="graph_behavior_flags">動作フラグ</string>
+    <string name="graph_scan_malware">スキャンマルウェア</string>
     <string name="graph_strandhogg">ストランドホッグ</string>
     <string name="graph_removal_resistance">除去耐性</string>
     <string name="graph_launcher_change">ランチャーの変更</string>

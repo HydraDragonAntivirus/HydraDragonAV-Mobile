@@ -28,6 +28,7 @@ public final class BehaviorGraphData {
     public final int createdFiles;
     public final int deletedFiles;
     public final boolean hasWiper;
+    public final boolean hasScanMalware;
 
     BehaviorGraphData(String packageName, int uiSpamCount, int notificationSpamCount,
                       int clickjackCount, int ransomwareCount, int networkConnectionCount,
@@ -37,7 +38,8 @@ public final class BehaviorGraphData {
                       boolean hasLauncherChange, boolean hasCanaryTrigger,
                       boolean isDeviceAdmin, boolean isHiddenApp,
                       boolean isRooted, boolean isDebug,
-                      int createdFiles, int deletedFiles, boolean hasWiper) {
+                      int createdFiles, int deletedFiles, boolean hasWiper,
+                      boolean hasScanMalware) {
         this.packageName = packageName;
         this.uiSpamCount = uiSpamCount;
         this.notificationSpamCount = notificationSpamCount;
@@ -61,6 +63,7 @@ public final class BehaviorGraphData {
         this.createdFiles = createdFiles;
         this.deletedFiles = deletedFiles;
         this.hasWiper = hasWiper;
+        this.hasScanMalware = hasScanMalware;
     }
 
     public static BehaviorGraphData forPackage(String pkg, android.content.Context ctx) {
@@ -76,7 +79,8 @@ public final class BehaviorGraphData {
             (isDeviceAdmin ? 30 : 0) + (isHiddenApp ? 30 : 0), 0, 100)));
         axes.add(new AxisValue("Malware", normalize(
             (hasStrandHogg ? 25 : 0) + (hasRemovalResistance ? 25 : 0)
-            + (hasLauncherChange ? 15 : 0) + (hasCanaryTrigger ? 35 : 0), 0, 100)));
+            + (hasLauncherChange ? 15 : 0) + (hasCanaryTrigger ? 35 : 0)
+            + (hasScanMalware ? 40 : 0), 0, 100)));
         axes.add(new AxisValue("Wiper", normalize(
             (hasWiper ? 80 : 0) + deletedFiles, 0, 50)));
         axes.add(new AxisValue("System", normalize(

@@ -446,6 +446,7 @@ Bu kötü amaçlı dosyayı/uygulamayı tamamen kaldırmak istiyor musunuz?</str
     <string name="graph_file_copy">Dosya Kopyalama Korelasyonları</string>
     <string name="graph_miner_memory">Madenci Belleği</string>
     <string name="graph_behavior_flags">Davranış Bayrakları</string>
+    <string name="graph_scan_malware">Tarama Kötücül Yazılım</string>
     <string name="graph_strandhogg">StrandHogg</string>
     <string name="graph_removal_resistance">Kaldırma Direnci</string>
     <string name="graph_launcher_change">Başlatıcı Değişikliği</string>

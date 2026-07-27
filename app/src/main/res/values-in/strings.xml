@@ -446,6 +446,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="graph_file_copy">Korelasi Salinan File</string>
     <string name="graph_miner_memory">Memori Penambang</string>
     <string name="graph_behavior_flags">Bendera Perilaku</string>
+    <string name="graph_scan_malware">Pindai Malware</string>
     <string name="graph_strandhogg">UntaiHogg</string>
     <string name="graph_removal_resistance">Resistensi Penghapusan</string>
     <string name="graph_launcher_change">Perubahan Peluncur</string>

@@ -446,6 +446,7 @@
     <string name="graph_file_copy">همبستگی های کپی فایل</string>
     <string name="graph_miner_memory">حافظه ماینر</string>
     <string name="graph_behavior_flags">پرچم های رفتار</string>
+    <string name="graph_scan_malware">اسکن بدافزار</string>
     <string name="graph_strandhogg">استرند هاگ</string>
     <string name="graph_removal_resistance">مقاومت حذف</string>
     <string name="graph_launcher_change">تغییر لانچر</string>

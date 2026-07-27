@@ -446,6 +446,7 @@
     <string name="graph_file_copy">ملفات نسخ الارتباطات</string>
     <string name="graph_miner_memory">ذاكرة مينر</string>
     <string name="graph_behavior_flags">أعلام السلوك</string>
+    <string name="graph_scan_malware">فحص البرامج الضارة</string>
     <string name="graph_strandhogg">ستراندهوغ</string>
     <string name="graph_removal_resistance">مقاومة الإزالة</string>
     <string name="graph_launcher_change">تغيير قاذفة</string>

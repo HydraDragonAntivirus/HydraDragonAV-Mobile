@@ -446,6 +446,7 @@
     <string name="graph_file_copy">파일 복사 상관관계</string>
     <string name="graph_miner_memory">광부 메모리</string>
     <string name="graph_behavior_flags">행동 플래그</string>
+    <string name="graph_scan_malware">스캔 악성코드</string>
     <string name="graph_strandhogg">스트랜드호그</string>
     <string name="graph_removal_resistance">제거 저항</string>
     <string name="graph_launcher_change">런처 변경</string>

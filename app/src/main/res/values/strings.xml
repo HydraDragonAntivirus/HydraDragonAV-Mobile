@@ -450,6 +450,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="graph_file_copy">File Copy Correlations</string>
     <string name="graph_miner_memory">Miner Memory</string>
     <string name="graph_behavior_flags">Behavior Flags</string>
+    <string name="graph_scan_malware">Scan Malware</string>
     <string name="graph_strandhogg">StrandHogg</string>
     <string name="graph_removal_resistance">Removal Resistance</string>
     <string name="graph_launcher_change">Launcher Change</string>

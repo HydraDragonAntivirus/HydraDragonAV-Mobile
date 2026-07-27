@@ -446,6 +446,7 @@
     <string name="graph_file_copy">ความสัมพันธ์ของการคัดลอกไฟล์</string>
     <string name="graph_miner_memory">หน่วยความจำคนขุดแร่</string>
     <string name="graph_behavior_flags">ธงพฤติกรรม</string>
+    <string name="graph_scan_malware">สแกนมัลแวร์</string>
     <string name="graph_strandhogg">สแตรนด์ฮอกก์</string>
     <string name="graph_removal_resistance">ความต้านทานการกำจัด</string>
     <string name="graph_launcher_change">การเปลี่ยนแปลงตัวเรียกใช้</string>

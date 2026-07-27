@@ -377,6 +377,7 @@ public final class HipsMonitor {
         int created = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countTotalObservedFiles();
         int deleted = com.hydradragon.antivirus.engine.RansomwareBehaviorGuard.countRecentDeletions();
         boolean hasWiper = false;
+        boolean hasScanMalware = false;
         if (pkg.isEmpty()) {
             for (BehaviorFlagEntry entry : behaviorFlags.values()) {
                 flags += entry.flags.size();
@@ -392,6 +393,8 @@ public final class HipsMonitor {
                         fileCopy++;
                     } else if (f.startsWith("WIPER")) {
                         hasWiper = true;
+                    } else if (f.equals("SCAN_MALWARE") || f.equals("DOWNLOAD_MALWARE") || f.equals("PROCESS_ANOMALY")) {
+                        hasScanMalware = true;
                     }
                 }
             }
@@ -411,6 +414,8 @@ public final class HipsMonitor {
                         fileCopy++;
                     } else if (f.startsWith("WIPER")) {
                         hasWiper = true;
+                    } else if (f.equals("SCAN_MALWARE") || f.equals("DOWNLOAD_MALWARE") || f.equals("PROCESS_ANOMALY")) {
+                        hasScanMalware = true;
                     }
                 }
             }
@@ -435,7 +440,7 @@ public final class HipsMonitor {
             pkg, ui, notif, cj, rw, net, minerMem, fileRead, fileReadHigh,
             fileCreated, fileCopy, flags,
             sh, rr, lc, canary, da, ha, isRooted, isDebugMode,
-            created, deleted, hasWiper);
+            created, deleted, hasWiper, hasScanMalware);
     }
 
     public static synchronized boolean hasBehaviorFlag(String pkg, String flag) {

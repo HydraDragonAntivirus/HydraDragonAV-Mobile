@@ -446,6 +446,7 @@
     <string name="graph_file_copy">Корреляции копирования файлов</string>
     <string name="graph_miner_memory">Память майнера</string>
     <string name="graph_behavior_flags">Флаги поведения</string>
+    <string name="graph_scan_malware">Сканирование вредоносных программ</string>
     <string name="graph_strandhogg">СтрэндХогг</string>
     <string name="graph_removal_resistance">Сопротивление удалению</string>
     <string name="graph_launcher_change">Изменение лаунчера</string>
