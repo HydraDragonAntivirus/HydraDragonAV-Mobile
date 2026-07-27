@@ -274,7 +274,7 @@
     <string name="mandatory_permission_suffix">\n\nاگر این مجوز را اعطا نکنید، برنامه بسته خواهد شد.</string>
     <string name="all_files_access_title">دسترسی به همه فایل‌ها لازم است</string>
     <string name="all_files_access_msg">HydraDragon برای اسکن بدافزار به دسترسی کامل به فایل‌ها نیاز دارد.</string>
-    <string name="accessibility_optional_title">سرویس دسترس‌پذیری (اختیاری)</string>
+    <string name="accessibility_optional_title">سرویس دسترس‌پذیری (توصیه شده)</string>
     <string name="accessibility_optional_msg">تحلیل رفتار پویای HydraDragon برای پایش فعال برنامه‌ها و توقف باج‌افزار به‌صورت بلادرنگ به سرویس دسترس‌پذیری نیاز دارد.\n\nبا این حال، برخی دستگاه‌ها این را محدود می‌کنند. اگر دستگاه شما اجازه نمی‌دهد می‌توانید از این مرحله رد شوید، اما محافظت پویای پیشرفته غیرفعال خواهد شد.</string>
     <string name="notification_permission_required">مجوز اعلان لازم است!</string>
     <string name="play_protect_open_failed">باز کردن تنظیمات Play Protect ممکن نشد</string>

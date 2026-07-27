@@ -274,7 +274,7 @@ Apakah Anda ingin menghapus sepenuhnya file/aplikasi berbahaya ini?</string>
     <string name="mandatory_permission_suffix">\n\nJika Anda tidak memberikan izin ini, aplikasi akan ditutup.</string>
     <string name="all_files_access_title">Akses Semua File Diperlukan</string>
     <string name="all_files_access_msg">HydraDragon memerlukan akses file penuh untuk memindai malware.</string>
-    <string name="accessibility_optional_title">Layanan Aksesibilitas (Opsional)</string>
+    <string name="accessibility_optional_title">Layanan Aksesibilitas (Disarankan)</string>
     <string name="accessibility_optional_msg">Analisis Perilaku Dinamis HydraDragon memerlukan Layanan Aksesibilitas untuk memantau aplikasi secara aktif dan menghentikan ransomware secara real-time.\n\nNamun, beberapa perangkat membatasi hal ini. Anda dapat melewati ini jika perangkat Anda tidak mengizinkannya, tetapi Perlindungan Dinamis Lanjutan akan dinonaktifkan.</string>
     <string name="notification_permission_required">Izin notifikasi diperlukan!</string>
     <string name="play_protect_open_failed">Tidak dapat membuka pengaturan Play Protect</string>

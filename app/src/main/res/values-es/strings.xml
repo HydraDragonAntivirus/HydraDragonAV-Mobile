@@ -274,7 +274,7 @@ Puntuación de riesgo: %2$d/100
     <string name="mandatory_permission_suffix">\n\nSi no concedes este permiso, la aplicación se cerrará.</string>
     <string name="all_files_access_title">Se Requiere Acceso a Todos los Archivos</string>
     <string name="all_files_access_msg">HydraDragon necesita acceso completo a los archivos para buscar malware.</string>
-    <string name="accessibility_optional_title">Servicio de Accesibilidad (Opcional)</string>
+    <string name="accessibility_optional_title">Servicio de Accesibilidad (Recomendado)</string>
     <string name="accessibility_optional_msg">El Análisis de Comportamiento Dinámico de HydraDragon necesita el Servicio de Accesibilidad para monitorear activamente las aplicaciones y detener el ransomware en tiempo real.\n\nSin embargo, algunos dispositivos restringen esto. Puedes omitirlo si tu dispositivo no lo permite, pero la Protección Dinámica Avanzada quedará deshabilitada.</string>
     <string name="notification_permission_required">¡Se requiere el permiso de notificaciones!</string>
     <string name="play_protect_open_failed">No se pudo abrir la configuración de Play Protect</string>

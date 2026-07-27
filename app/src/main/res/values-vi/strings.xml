@@ -274,7 +274,7 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="mandatory_permission_suffix">\n\nNếu bạn không cấp quyền này, ứng dụng sẽ đóng.</string>
     <string name="all_files_access_title">Yêu cầu Truy cập Tất cả Tệp</string>
     <string name="all_files_access_msg">HydraDragon cần quyền truy cập tệp đầy đủ để quét phần mềm độc hại.</string>
-    <string name="accessibility_optional_title">Dịch vụ Trợ năng (Tùy chọn)</string>
+    <string name="accessibility_optional_title">Dịch vụ Trợ năng (Khuyến nghị)</string>
     <string name="accessibility_optional_msg">Phân tích Hành vi Động của HydraDragon cần Dịch vụ Trợ năng để chủ động giám sát ứng dụng và chặn ransomware theo thời gian thực.\n\nTuy nhiên, một số thiết bị hạn chế điều này. Bạn có thể bỏ qua nếu thiết bị của bạn không cho phép, nhưng Bảo vệ Động Nâng cao sẽ bị vô hiệu hóa.</string>
     <string name="notification_permission_required">Cần có quyền thông báo!</string>
     <string name="play_protect_open_failed">Không thể mở cài đặt Play Protect</string>

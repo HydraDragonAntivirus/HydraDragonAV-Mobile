@@ -289,7 +289,7 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="mandatory_permission_suffix">\n\nIf you don\'t grant this permission, the app will close.</string>
     <string name="all_files_access_title">All Files Access Required</string>
     <string name="all_files_access_msg">HydraDragon needs full file access to scan for malware.</string>
-    <string name="accessibility_optional_title">Accessibility Service (Optional)</string>
+    <string name="accessibility_optional_title">Accessibility Service (Recommended)</string>
     <string name="accessibility_optional_msg">HydraDragon Dynamic Behavior Analysis needs Accessibility Service to actively monitor apps and stop ransomware in real-time.\n\nHowever, some devices restrict this. You can skip this if your device doesn\'t allow it, but Advanced Dynamic Protection will be disabled.</string>
     <string name="notification_permission_required">Notification permission is required!</string>
     <string name="play_protect_open_failed">Could not open Play Protect settings</string>

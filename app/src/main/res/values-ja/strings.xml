@@ -274,7 +274,7 @@
     <string name="mandatory_permission_suffix">\n\nこの権限を許可しない場合、アプリは終了します。</string>
     <string name="all_files_access_title">すべてのファイルへのアクセスが必要です</string>
     <string name="all_files_access_msg">HydraDragonがマルウェアをスキャンするには、すべてのファイルへのフルアクセスが必要です。</string>
-    <string name="accessibility_optional_title">ユーザー補助サービス（任意）</string>
+    <string name="accessibility_optional_title">ユーザー補助サービス（推奨）</string>
     <string name="accessibility_optional_msg">HydraDragonの動的挙動分析では、アプリをリアルタイムで積極的に監視しランサムウェアを阻止するためにユーザー補助サービスが必要です。\n\nただし、一部の端末ではこれが制限されています。端末が許可しない場合はスキップできますが、高度な動的保護は無効になります。</string>
     <string name="notification_permission_required">通知の権限が必要です！</string>
     <string name="play_protect_open_failed">Play プロテクトの設定を開けませんでした</string>

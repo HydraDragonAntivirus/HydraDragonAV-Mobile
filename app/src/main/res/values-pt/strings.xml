@@ -274,7 +274,7 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="mandatory_permission_suffix">\n\nSe você não conceder esta permissão, o aplicativo será fechado.</string>
     <string name="all_files_access_title">Acesso a Todos os Arquivos Necessário</string>
     <string name="all_files_access_msg">O HydraDragon precisa de acesso total aos arquivos para verificar a presença de malware.</string>
-    <string name="accessibility_optional_title">Serviço de Acessibilidade (Opcional)</string>
+    <string name="accessibility_optional_title">Serviço de Acessibilidade (Recomendado)</string>
     <string name="accessibility_optional_msg">O Motor de Análise Dinâmica de Comportamento do HydraDragon precisa do Serviço de Acessibilidade para monitorar ativamente os aplicativos e interromper ransomware em tempo real.\n\nNo entanto, alguns dispositivos restringem isso. Você pode pular esta etapa se o seu dispositivo não permitir, mas a Proteção Dinâmica Avançada será desativada.</string>
     <string name="notification_permission_required">A permissão de notificação é necessária!</string>
     <string name="play_protect_open_failed">Não foi possível abrir as configurações do Play Protect</string>

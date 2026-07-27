@@ -274,7 +274,7 @@
     <string name="mandatory_permission_suffix">\n\n如果您不授予此权限，应用将关闭。</string>
     <string name="all_files_access_title">需要所有文件访问权限</string>
     <string name="all_files_access_msg">HydraDragon需要完整的文件访问权限以扫描恶意软件。</string>
-    <string name="accessibility_optional_title">无障碍服务（可选）</string>
+    <string name="accessibility_optional_title">无障碍服务（推荐）</string>
     <string name="accessibility_optional_msg">HydraDragon动态行为分析需要无障碍服务来主动监控应用并实时阻止勒索软件。\n\n但是，某些设备会限制此功能。如果您的设备不允许，可以跳过此步骤，但高级动态防护将被禁用。</string>
     <string name="notification_permission_required">需要通知权限！</string>
     <string name="play_protect_open_failed">无法打开Play Protect设置</string>

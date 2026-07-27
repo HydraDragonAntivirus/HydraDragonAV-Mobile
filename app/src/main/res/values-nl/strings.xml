@@ -274,7 +274,7 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="mandatory_permission_suffix">\n\nAls u deze toestemming niet verleent, wordt de app gesloten.</string>
     <string name="all_files_access_title">Toegang tot alle bestanden vereist</string>
     <string name="all_files_access_msg">HydraDragon heeft volledige bestandstoegang nodig om te scannen op malware.</string>
-    <string name="accessibility_optional_title">Toegankelijkheidsservice (optioneel)</string>
+    <string name="accessibility_optional_title">Toegankelijkheidsservice (Aanbevolen)</string>
     <string name="accessibility_optional_msg">HydraDragon Dynamic Behavior Analysis heeft de Toegankelijkheidsservice nodig om apps actief te controleren en ransomware in realtime te stoppen.\n\nSommige apparaten beperken dit echter. U kunt dit overslaan als uw apparaat het niet toestaat, maar Advanced Dynamic Protection wordt dan uitgeschakeld.</string>
     <string name="notification_permission_required">Meldingstoestemming is vereist!</string>
     <string name="play_protect_open_failed">Kon Play Protect-instellingen niet openen</string>

@@ -274,7 +274,7 @@
     <string name="mandatory_permission_suffix">\n\nЕсли вы не предоставите это разрешение, приложение закроется.</string>
     <string name="all_files_access_title">Требуется Доступ ко Всем Файлам</string>
     <string name="all_files_access_msg">HydraDragon требуется полный доступ к файлам для поиска вредоносного ПО.</string>
-    <string name="accessibility_optional_title">Служба Специальных Возможностей (Необязательно)</string>
+    <string name="accessibility_optional_title">Служба Специальных Возможностей (Рекомендуется)</string>
     <string name="accessibility_optional_msg">Динамический анализ поведения HydraDragon требует Службу специальных возможностей для активного мониторинга приложений и остановки вымогателей в реальном времени.\n\nОднако некоторые устройства это ограничивают. Вы можете пропустить этот шаг, если ваше устройство не позволяет это, но Расширенная динамическая защита будет отключена.</string>
     <string name="notification_permission_required">Требуется разрешение на уведомления!</string>
     <string name="play_protect_open_failed">Не удалось открыть настройки Play Protect</string>

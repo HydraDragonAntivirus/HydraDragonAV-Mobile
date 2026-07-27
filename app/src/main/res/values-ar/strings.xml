@@ -274,7 +274,7 @@
     <string name="mandatory_permission_suffix">\n\nإذا لم تمنح هذا الإذن، سيتم إغلاق التطبيق.</string>
     <string name="all_files_access_title">الوصول إلى جميع الملفات مطلوب</string>
     <string name="all_files_access_msg">يحتاج HydraDragon إلى وصول كامل للملفات لفحص البرمجيات الخبيثة.</string>
-    <string name="accessibility_optional_title">خدمة إمكانية الوصول (اختياري)</string>
+    <string name="accessibility_optional_title">خدمة إمكانية الوصول (موصى به)</string>
     <string name="accessibility_optional_msg">يحتاج تحليل السلوك الديناميكي في HydraDragon إلى خدمة إمكانية الوصول لمراقبة التطبيقات بفعالية وإيقاف برامج الفدية في الوقت الفعلي.\n\nومع ذلك، تفرض بعض الأجهزة قيودًا على هذا. يمكنك تخطي هذا إذا لم يسمح جهازك به، لكن سيتم تعطيل الحماية الديناميكية المتقدمة.</string>
     <string name="notification_permission_required">إذن الإشعارات مطلوب!</string>
     <string name="play_protect_open_failed">تعذّر فتح إعدادات حماية Play</string>

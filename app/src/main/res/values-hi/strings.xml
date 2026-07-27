@@ -274,7 +274,7 @@
     <string name="mandatory_permission_suffix">\n\nयदि आप यह अनुमति नहीं देते हैं, तो ऐप बंद हो जाएगा।</string>
     <string name="all_files_access_title">सभी फ़ाइलों तक पहुंच आवश्यक है</string>
     <string name="all_files_access_msg">मैलवेयर स्कैन करने के लिए HydraDragon को पूर्ण फ़ाइल एक्सेस की आवश्यकता है।</string>
-    <string name="accessibility_optional_title">एक्सेसिबिलिटी सेवा (वैकल्पिक)</string>
+    <string name="accessibility_optional_title">एक्सेसिबिलिटी सेवा (अनुशंसित)</string>
     <string name="accessibility_optional_msg">HydraDragon डायनामिक बिहेवियर एनालिसिस को ऐप्स की सक्रिय निगरानी करने और रैनसमवेयर को रीयल-टाइम में रोकने के लिए एक्सेसिबिलिटी सेवा की आवश्यकता है।\n\nहालांकि, कुछ डिवाइस इसे प्रतिबंधित करते हैं। यदि आपका डिवाइस इसकी अनुमति नहीं देता है तो आप इसे छोड़ सकते हैं, लेकिन एडवांस्ड डायनामिक प्रोटेक्शन अक्षम हो जाएगा।</string>
     <string name="notification_permission_required">नोटिफिकेशन अनुमति आवश्यक है!</string>
     <string name="play_protect_open_failed">Play Protect सेटिंग्स नहीं खोली जा सकीं</string>

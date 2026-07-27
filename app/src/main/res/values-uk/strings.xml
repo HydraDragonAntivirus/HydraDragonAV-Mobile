@@ -274,7 +274,7 @@
     <string name="mandatory_permission_suffix">\n\nЯкщо ви не надасте цей дозвіл, додаток закриється.</string>
     <string name="all_files_access_title">Потрібен доступ до всіх файлів</string>
     <string name="all_files_access_msg">HydraDragon потребує повного доступу до файлів для сканування на наявність шкідливого ПЗ.</string>
-    <string name="accessibility_optional_title">Спеціальні можливості (необов\'язково)</string>
+    <string name="accessibility_optional_title">Спеціальні можливості (Рекомендовано)</string>
     <string name="accessibility_optional_msg">Аналіз динамічної поведінки HydraDragon потребує служби спеціальних можливостей для активного моніторингу додатків та зупинки програм-вимагачів у реальному часі.\n\nОднак деякі пристрої обмежують це. Ви можете пропустити цей крок, якщо ваш пристрій не дозволяє цього, але розширений динамічний захист буде вимкнено.</string>
     <string name="notification_permission_required">Потрібен дозвіл на сповіщення!</string>
     <string name="play_protect_open_failed">Не вдалося відкрити налаштування Play Захисту</string>

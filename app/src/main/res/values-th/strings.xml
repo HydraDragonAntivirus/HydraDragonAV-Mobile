@@ -274,7 +274,7 @@
     <string name="mandatory_permission_suffix">\n\nหากคุณไม่ให้สิทธิ์นี้ แอปจะปิดตัวลง</string>
     <string name="all_files_access_title">ต้องการสิทธิ์เข้าถึงไฟล์ทั้งหมด</string>
     <string name="all_files_access_msg">HydraDragon ต้องการสิทธิ์เข้าถึงไฟล์แบบเต็มเพื่อสแกนหามัลแวร์</string>
-    <string name="accessibility_optional_title">บริการการช่วยเหลือพิเศษ (ไม่บังคับ)</string>
+    <string name="accessibility_optional_title">บริการการช่วยเหลือพิเศษ (แนะนำ)</string>
     <string name="accessibility_optional_msg">การวิเคราะห์พฤติกรรมแบบไดนามิกของ HydraDragon ต้องใช้บริการการช่วยเหลือพิเศษเพื่อตรวจสอบแอปอย่างต่อเนื่องและหยุดแรนซัมแวร์แบบเรียลไทม์\n\nอย่างไรก็ตาม อุปกรณ์บางเครื่องมีข้อจำกัดในเรื่องนี้ คุณสามารถข้ามขั้นตอนนี้ได้หากอุปกรณ์ของคุณไม่อนุญาต แต่การป้องกันแบบไดนามิกขั้นสูงจะถูกปิดใช้งาน</string>
     <string name="notification_permission_required">ต้องมีสิทธิ์การแจ้งเตือน!</string>
     <string name="play_protect_open_failed">ไม่สามารถเปิดการตั้งค่า Play Protect ได้</string>

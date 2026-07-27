@@ -274,7 +274,7 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="mandatory_permission_suffix">\n\nSi vous n\'accordez pas cette autorisation, l\'application se fermera.</string>
     <string name="all_files_access_title">Accès à Tous les Fichiers Requis</string>
     <string name="all_files_access_msg">HydraDragon a besoin d\'un accès complet aux fichiers pour rechercher les logiciels malveillants.</string>
-    <string name="accessibility_optional_title">Service d\'Accessibilité (Optionnel)</string>
+    <string name="accessibility_optional_title">Service d\'Accessibilité (Recommandé)</string>
     <string name="accessibility_optional_msg">L\'Analyse Comportementale Dynamique de HydraDragon a besoin du Service d\'Accessibilité pour surveiller activement les applications et arrêter les rançongiciels en temps réel.\n\nCependant, certains appareils restreignent cela. Vous pouvez ignorer cette étape si votre appareil ne le permet pas, mais la Protection Dynamique Avancée sera désactivée.</string>
     <string name="notification_permission_required">L\'autorisation de notification est requise !</string>
     <string name="play_protect_open_failed">Impossible d\'ouvrir les paramètres de Play Protect</string>

@@ -274,7 +274,7 @@
     <string name="mandatory_permission_suffix">\n\n이 권한을 허용하지 않으면 앱이 종료됩니다.</string>
     <string name="all_files_access_title">모든 파일 접근 권한 필요</string>
     <string name="all_files_access_msg">HydraDragon은 악성코드를 검사하기 위해 전체 파일 접근 권한이 필요합니다.</string>
-    <string name="accessibility_optional_title">접근성 서비스 (선택 사항)</string>
+    <string name="accessibility_optional_title">접근성 서비스 (권장)</string>
     <string name="accessibility_optional_msg">HydraDragon 동적 행위 분석은 앱을 실시간으로 모니터링하고 랜섬웨어를 즉시 차단하기 위해 접근성 서비스가 필요합니다.\n\n하지만 일부 기기에서는 이 기능이 제한될 수 있습니다. 기기에서 허용하지 않는다면 건너뛸 수 있지만, 고급 동적 보호 기능은 비활성화됩니다.</string>
     <string name="notification_permission_required">알림 권한이 필요합니다!</string>
     <string name="play_protect_open_failed">Play 프로텍트 설정을 열 수 없습니다</string>
