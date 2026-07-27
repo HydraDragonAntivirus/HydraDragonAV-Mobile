@@ -246,6 +246,7 @@ public class DynamicAnalysisService extends AccessibilityService {
                 com.hydradragon.antivirus.engine.RemovalResistanceGuard.onWindowSwitch(
                     this, pkg, fgPackage, isInstaller || isSettings);
 
+                sForegroundPackage = pkg;
                 boolean behFlagged = BehaviorFlags.isFlagged(this, pkg)
                     && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg);
                 boolean scanFlagged = com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(pkg, "SCAN_MALWARE")
