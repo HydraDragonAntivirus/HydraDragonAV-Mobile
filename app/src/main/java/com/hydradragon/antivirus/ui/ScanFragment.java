@@ -312,10 +312,23 @@ public class ScanFragment extends Fragment {
                 chartLp.setMargins(0, 16, 0, 0);
                 chartLp.gravity = android.view.Gravity.CENTER;
                 chart.setLayoutParams(chartLp);
-                com.hydradragon.antivirus.engine.BehaviorGraphData data =
-                    com.hydradragon.antivirus.engine.BehaviorGraphData.forPackage(pkg, getContext());
-                chart.setData(data.computeAxisValues());
                 dialogLayout.addView(chart);
+                // BehaviorGraphData.forPackage() does filesystem I/O
+                // (RansomwareBehaviorGuard.countRecentDeletions -> dir.listFiles),
+                // which janks the UI thread (~1.3s frame) if run inline. Compute
+                // it off-thread and push the result back to the chart when ready.
+                final String dataPkg = pkg;
+                new Thread(() -> {
+                    com.hydradragon.antivirus.engine.BehaviorGraphData data =
+                        com.hydradragon.antivirus.engine.BehaviorGraphData.forPackage(dataPkg, getContext());
+                    java.util.List<com.hydradragon.antivirus.engine.BehaviorGraphData.AxisValue> axes =
+                        data.computeAxisValues();
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        if (!isAdded()) return;
+                        chart.setData(axes);
+                    });
+                }, "radar-data").start();
 
                 new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                     .setTitle(getString(R.string.threat_found_dialog_title))
