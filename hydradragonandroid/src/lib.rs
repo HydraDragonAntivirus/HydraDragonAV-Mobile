@@ -1050,10 +1050,10 @@ fn jpeg_has_hidden(data: &[u8]) -> bool {
         }
 
         match marker {
-            // Comment (FF FE)
+            // Comment (FF FE) — only flag executable magic, not text content
+            // (camera-generated binary metadata routinely fails UTF-8 check)
             0xFE => {
-                let comment = &data[payload_start..payload_start + payload_len];
-                if image_text_suspicious(comment) || image_magic_in_slice(comment) {
+                if image_magic_in_slice(&data[payload_start..payload_start + payload_len]) {
                     return true;
                 }
             }
