@@ -474,6 +474,20 @@
     <string name="reason_scan_detected_malware">검사에서 감지된 악성코드</string>
     <string name="reason_previously_detected_running">이전에 감지된 악성 앱이 현재 실행 중입니다</string>
     <string name="reason_malicious_behavior">악성 행위</string>
+    <string name="threat_log_export">내보내기 .TXT</string>
+    <string name="threat_log_import">가져오기 .TXT</string>
+    <string name="threat_log_clear">지우기</string>
+    <string name="threat_log_clear_title">위협 로그 지우기</string>
+    <string name="threat_log_clear_msg">확실합니까? 이 작업은 되돌릴 수 없습니다.</string>
+    <string name="threat_log_clear_confirm">지우기</string>
+    <string name="threat_log_clear_cancel">취소</string>
+    <string name="threat_log_cleared_toast">위협 로그가 지워졌습니다</string>
+    <string name="threat_log_exported_toast">위협 로그가 내보내졌습니다</string>
+    <string name="threat_log_imported_toast">위협 로그가 가져와졌습니다</string>
+    <string name="behavior_data_clear">동작 데이터 지우기</string>
+    <string name="behavior_data_clear_title">동작 데이터 지우기</string>
+    <string name="behavior_data_clear_msg">모든 동작 플래그와 기록이 지워집니다. 이 작업은 되돌릴 수 없습니다.</string>
+    <string name="behavior_data_cleared_toast">동작 데이터가 지워졌습니다</string>
 </resources>
 
 

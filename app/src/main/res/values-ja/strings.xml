@@ -474,6 +474,20 @@
     <string name="reason_scan_detected_malware">スキャンで検出されたマルウェア</string>
     <string name="reason_previously_detected_running">以前検出されたマルウェアアプリが実行中です</string>
     <string name="reason_malicious_behavior">悪意のある動作</string>
+    <string name="threat_log_export">エクスポート .TXT</string>
+    <string name="threat_log_import">インポート .TXT</string>
+    <string name="threat_log_clear">クリア</string>
+    <string name="threat_log_clear_title">脅威ログをクリア</string>
+    <string name="threat_log_clear_msg">よろしいですか？この操作は元に戻せません。</string>
+    <string name="threat_log_clear_confirm">クリア</string>
+    <string name="threat_log_clear_cancel">キャンセル</string>
+    <string name="threat_log_cleared_toast">脅威ログがクリアされました</string>
+    <string name="threat_log_exported_toast">脅威ログがエクスポートされました</string>
+    <string name="threat_log_imported_toast">脅威ログがインポートされました</string>
+    <string name="behavior_data_clear">動作データをクリア</string>
+    <string name="behavior_data_clear_title">動作データをクリア</string>
+    <string name="behavior_data_clear_msg">すべての動作フラグと履歴が消去されます。この操作は元に戻せません。</string>
+    <string name="behavior_data_cleared_toast">動作データがクリアされました</string>
 </resources>
 
 

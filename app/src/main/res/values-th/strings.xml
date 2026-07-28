@@ -474,6 +474,20 @@
     <string name="reason_scan_detected_malware">มัลแวร์ที่ตรวจพบจากการสแกน</string>
     <string name="reason_previously_detected_running">แอปมัลแวร์ที่ตรวจพบก่อนหน้านี้กำลังทำงานอยู่</string>
     <string name="reason_malicious_behavior">พฤติกรรมที่เป็นอันตราย</string>
+    <string name="threat_log_export">ส่งออก .TXT</string>
+    <string name="threat_log_import">นำเข้า .TXT</string>
+    <string name="threat_log_clear">ล้าง</string>
+    <string name="threat_log_clear_title">ล้างบันทึกภัยคุกคาม</string>
+    <string name="threat_log_clear_msg">คุณแน่ใจหรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้</string>
+    <string name="threat_log_clear_confirm">ล้าง</string>
+    <string name="threat_log_clear_cancel">ยกเลิก</string>
+    <string name="threat_log_cleared_toast">บันทึกภัยคุกคามถูกล้างแล้ว</string>
+    <string name="threat_log_exported_toast">บันทึกภัยคุกคามถูกส่งออกแล้ว</string>
+    <string name="threat_log_imported_toast">บันทึกภัยคุกคามถูกนำเข้าแล้ว</string>
+    <string name="behavior_data_clear">ล้างข้อมูลพฤติกรรม</string>
+    <string name="behavior_data_clear_title">ล้างข้อมูลพฤติกรรม</string>
+    <string name="behavior_data_clear_msg">แฟล็กพฤติกรรมและประวัติทั้งหมดจะถูกลบ การดำเนินการนี้ไม่สามารถยกเลิกได้</string>
+    <string name="behavior_data_cleared_toast">ข้อมูลพฤติกรรมถูกล้างแล้ว</string>
 </resources>
 
 

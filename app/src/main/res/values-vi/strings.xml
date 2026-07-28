@@ -474,6 +474,20 @@ Bạn có thể bật tính năng này sau từ Cài đặt.</string>
     <string name="reason_scan_detected_malware">Mã độc được phát hiện qua quét</string>
     <string name="reason_previously_detected_running">Ứng dụng mã độc đã phát hiện trước đó hiện đang chạy</string>
     <string name="reason_malicious_behavior">Hành vi độc hại</string>
+    <string name="threat_log_export">XUẤT .TXT</string>
+    <string name="threat_log_import">NHẬP .TXT</string>
+    <string name="threat_log_clear">XÓA</string>
+    <string name="threat_log_clear_title">Xóa nhật ký mối đe dọa</string>
+    <string name="threat_log_clear_msg">Bạn có chắc chắn? Hành động này không thể hoàn tác.</string>
+    <string name="threat_log_clear_confirm">Xóa</string>
+    <string name="threat_log_clear_cancel">Hủy</string>
+    <string name="threat_log_cleared_toast">Nhật ký mối đe dọa đã xóa</string>
+    <string name="threat_log_exported_toast">Nhật ký mối đe dọa đã xuất</string>
+    <string name="threat_log_imported_toast">Nhật ký mối đe dọa đã nhập</string>
+    <string name="behavior_data_clear">XÓA DỮ LIỆU HÀNH VI</string>
+    <string name="behavior_data_clear_title">Xóa dữ liệu hành vi</string>
+    <string name="behavior_data_clear_msg">Tất cả cờ hành vi và lịch sử sẽ bị xóa. Hành động này không thể hoàn tác.</string>
+    <string name="behavior_data_cleared_toast">Dữ liệu hành vi đã xóa</string>
 </resources>
 
 

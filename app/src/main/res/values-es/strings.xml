@@ -474,6 +474,20 @@ Puedes habilitar esto más tarde desde Ajustes.</string>
     <string name="reason_scan_detected_malware">Malware detectado por el escaneo</string>
     <string name="reason_previously_detected_running">Aplicación de malware detectada anteriormente en ejecución</string>
     <string name="reason_malicious_behavior">Comportamiento malicioso</string>
+    <string name="threat_log_export">EXPORTAR .TXT</string>
+    <string name="threat_log_import">IMPORTAR .TXT</string>
+    <string name="threat_log_clear">LIMPIAR</string>
+    <string name="threat_log_clear_title">Limpiar registros de amenazas</string>
+    <string name="threat_log_clear_msg">¿Está seguro? Esto no se puede deshacer.</string>
+    <string name="threat_log_clear_confirm">Limpiar</string>
+    <string name="threat_log_clear_cancel">Cancelar</string>
+    <string name="threat_log_cleared_toast">Registros de amenazas limpiados</string>
+    <string name="threat_log_exported_toast">Registros de amenazas exportados</string>
+    <string name="threat_log_imported_toast">Registros de amenazas importados</string>
+    <string name="behavior_data_clear">LIMPIAR DATOS DE COMPORTAMIENTO</string>
+    <string name="behavior_data_clear_title">Limpiar datos de comportamiento</string>
+    <string name="behavior_data_clear_msg">Todos los indicadores de comportamiento y el historial se borrarán. Esto no se puede deshacer.</string>
+    <string name="behavior_data_cleared_toast">Datos de comportamiento limpiados</string>
 </resources>
 
 

@@ -474,6 +474,20 @@
     <string name="reason_scan_detected_malware">برنامج ضار تم اكتشافه بواسطة الفحص</string>
     <string name="reason_previously_detected_running">تطبيق ضار تم اكتشافه سابقًا قيد التشغيل الآن</string>
     <string name="reason_malicious_behavior">سلوك ضار</string>
+    <string name="threat_log_export">تصدير .TXT</string>
+    <string name="threat_log_import">استيراد .TXT</string>
+    <string name="threat_log_clear">مسح</string>
+    <string name="threat_log_clear_title">مسح سجلات التهديدات</string>
+    <string name="threat_log_clear_msg">هل أنت متأكد؟ لا يمكن التراجع عن هذا.</string>
+    <string name="threat_log_clear_confirm">مسح</string>
+    <string name="threat_log_clear_cancel">إلغاء</string>
+    <string name="threat_log_cleared_toast">تم مسح سجلات التهديدات</string>
+    <string name="threat_log_exported_toast">تم تصدير سجلات التهديدات</string>
+    <string name="threat_log_imported_toast">تم استيراد سجلات التهديدات</string>
+    <string name="behavior_data_clear">مسح بيانات السلوك</string>
+    <string name="behavior_data_clear_title">مسح بيانات السلوك</string>
+    <string name="behavior_data_clear_msg">سيتم مسح جميع علامات السلوك والسجل. لا يمكن التراجع عن هذا.</string>
+    <string name="behavior_data_cleared_toast">تم مسح بيانات السلوك</string>
 </resources>
 
 

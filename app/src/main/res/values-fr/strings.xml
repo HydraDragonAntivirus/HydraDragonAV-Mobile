@@ -474,6 +474,20 @@ Vous pouvez activer cela plus tard depuis Paramètres.</string>
     <string name="reason_scan_detected_malware">Logiciel malveillant détecté par l\'analyse</string>
     <string name="reason_previously_detected_running">Application malveillante précédemment détectée en cours d\'exécution</string>
     <string name="reason_malicious_behavior">Comportement malveillant</string>
+    <string name="threat_log_export">EXPORTER .TXT</string>
+    <string name="threat_log_import">IMPORTER .TXT</string>
+    <string name="threat_log_clear">EFFACER</string>
+    <string name="threat_log_clear_title">Effacer les journaux de menaces</string>
+    <string name="threat_log_clear_msg">Êtes-vous sûr ? Cette action est irréversible.</string>
+    <string name="threat_log_clear_confirm">Effacer</string>
+    <string name="threat_log_clear_cancel">Annuler</string>
+    <string name="threat_log_cleared_toast">Journaux de menaces effacés</string>
+    <string name="threat_log_exported_toast">Journaux de menaces exportés</string>
+    <string name="threat_log_imported_toast">Journaux de menaces importés</string>
+    <string name="behavior_data_clear">EFFACER DONNÉES COMPORTEMENTALES</string>
+    <string name="behavior_data_clear_title">Effacer les données comportementales</string>
+    <string name="behavior_data_clear_msg">Tous les indicateurs comportementaux et l\'historique seront effacés. Cette action est irréversible.</string>
+    <string name="behavior_data_cleared_toast">Données comportementales effacées</string>
 </resources>
 
 

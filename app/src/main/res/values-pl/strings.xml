@@ -474,6 +474,20 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="reason_scan_detected_malware">Złośliwe oprogramowanie wykryte podczas skanowania</string>
     <string name="reason_previously_detected_running">Wcześniej wykryta złośliwa aplikacja jest teraz uruchomiona</string>
     <string name="reason_malicious_behavior">Szkodliwe zachowanie</string>
+    <string name="threat_log_export">EKSPORTUJ .TXT</string>
+    <string name="threat_log_import">IMPORTUJ .TXT</string>
+    <string name="threat_log_clear">WYCZYŚĆ</string>
+    <string name="threat_log_clear_title">Wyczyść dzienniki zagrożeń</string>
+    <string name="threat_log_clear_msg">Czy na pewno? Tej operacji nie można cofnąć.</string>
+    <string name="threat_log_clear_confirm">Wyczyść</string>
+    <string name="threat_log_clear_cancel">Anuluj</string>
+    <string name="threat_log_cleared_toast">Dzienniki zagrożeń wyczyszczone</string>
+    <string name="threat_log_exported_toast">Dzienniki zagrożeń wyeksportowane</string>
+    <string name="threat_log_imported_toast">Dzienniki zagrożeń zaimportowane</string>
+    <string name="behavior_data_clear">WYCZYŚĆ DANE BEHAWIORALNE</string>
+    <string name="behavior_data_clear_title">Wyczyść dane behawioralne</string>
+    <string name="behavior_data_clear_msg">Wszystkie flagi behawioralne i historia zostaną usunięte. Tej operacji nie można cofnąć.</string>
+    <string name="behavior_data_cleared_toast">Dane behawioralne wyczyszczone</string>
 </resources>
 
 

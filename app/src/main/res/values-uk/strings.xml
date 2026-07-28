@@ -474,6 +474,20 @@
     <string name="reason_scan_detected_malware">Шкідливе ПЗ, виявлене під час сканування</string>
     <string name="reason_previously_detected_running">Раніше виявлений шкідливий додаток зараз запущено</string>
     <string name="reason_malicious_behavior">Шкідлива поведінка</string>
+    <string name="threat_log_export">ЕКСПОРТ .TXT</string>
+    <string name="threat_log_import">ІМПОРТ .TXT</string>
+    <string name="threat_log_clear">ОЧИСТИТИ</string>
+    <string name="threat_log_clear_title">Очистити журнали загроз</string>
+    <string name="threat_log_clear_msg">Ви впевнені? Цю дію не можна скасувати.</string>
+    <string name="threat_log_clear_confirm">Очистити</string>
+    <string name="threat_log_clear_cancel">Скасувати</string>
+    <string name="threat_log_cleared_toast">Журнали загрез очищено</string>
+    <string name="threat_log_exported_toast">Журнали загроз експортовано</string>
+    <string name="threat_log_imported_toast">Журнали загроз імпортовано</string>
+    <string name="behavior_data_clear">ОЧИСТИТИ ДАНІ ПОВЕДІНКИ</string>
+    <string name="behavior_data_clear_title">Очистити дані поведінки</string>
+    <string name="behavior_data_clear_msg">Усі прапорці поведінки та історію буде стерто. Цю дію не можна скасувати.</string>
+    <string name="behavior_data_cleared_toast">Дані поведінки очищено</string>
 </resources>
 
 

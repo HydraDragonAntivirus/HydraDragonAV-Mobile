@@ -474,6 +474,20 @@
     <string name="reason_scan_detected_malware">स्कैन में पाया गया मालवेयर</string>
     <string name="reason_previously_detected_running">पहले पाया गया मालवेयर ऐप अब चल रहा है</string>
     <string name="reason_malicious_behavior">हानिकारक व्यवहार</string>
+    <string name="threat_log_export">निर्यात .TXT</string>
+    <string name="threat_log_import">आयात .TXT</string>
+    <string name="threat_log_clear">साफ़ करें</string>
+    <string name="threat_log_clear_title">खतरे के लॉग साफ़ करें</string>
+    <string name="threat_log_clear_msg">क्या आप sure हैं? यह पूर्ववत नहीं किया जा सकता।</string>
+    <string name="threat_log_clear_confirm">साफ़ करें</string>
+    <string name="threat_log_clear_cancel">रद्द करें</string>
+    <string name="threat_log_cleared_toast">खतरे के लॉग साफ़ हो गए</string>
+    <string name="threat_log_exported_toast">खतरे के लॉग निर्यात हो गए</string>
+    <string name="threat_log_imported_toast">खतरे के लॉग आयात हो गए</string>
+    <string name="behavior_data_clear">व्यवहार डेटा साफ़ करें</string>
+    <string name="behavior_data_clear_title">व्यवहार डेटा साफ़ करें</string>
+    <string name="behavior_data_clear_msg">सभी व्यवहार फ़्लैग और इतिहास मिटा दिए जाएंगे। इसे पूर्ववत नहीं किया जा सकता।</string>
+    <string name="behavior_data_cleared_toast">व्यवहार डेटा साफ़ हो गया</string>
 </resources>
 
 
