@@ -924,7 +924,17 @@ public class GuardService extends Service {
         }
     }
 
-    public boolean isEngineLoading() { return engineLoading; }
+    public boolean isEngineLoading() {
+        // engineLoading only tracks the Java-side ScanEngine construction.
+        // The heavy native engine (ClamAV/YARA, ~70s on a background Rust
+        // thread) can still be loading after that, and scanning before it's
+        // ready silently skips the native pass. Treat "still loading" as true
+        // until BOTH the Java engines are built AND the native scanner reports
+        // ready — otherwise a scan can start against a not-yet-initialised
+        // native engine.
+        return engineLoading
+            || !com.hydradragon.antivirus.engine.NativeScanner.isReady();
+    }
     public void setCallback(GuardCallback cb) { this.callback = cb; }
     public ScanEngine getScanEngine() { return scanEngine; }
     public AIEngine getAiEngine() { return aiEngine; }
