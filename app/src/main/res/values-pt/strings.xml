@@ -484,10 +484,20 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="threat_log_cleared_toast">Registros de ameaças limpos</string>
     <string name="threat_log_exported_toast">Registros de ameaças exportados</string>
     <string name="threat_log_imported_toast">Registros de ameaças importados</string>
-    <string name="behavior_data_clear">LIMPAR DADOS COMPORTAMENTAIS</string>
-    <string name="behavior_data_clear_title">Limpar dados comportamentais</string>
-    <string name="behavior_data_clear_msg">Todas as flags e histórico comportamentais serão apagados. Isto não pode ser desfeito.</string>
-    <string name="behavior_data_cleared_toast">Dados comportamentais limpos</string>
+    <string name="threat_log_export">EXPORTAR .TXT</string>
+    <string name="threat_log_import">IMPORTAR .TXT</string>
+    <string name="threat_log_clear">LIMPAR</string>
+    <string name="threat_log_clear_title">Limpar registros de ameaças</string>
+    <string name="threat_log_clear_msg">Tem certeza? Isto não pode ser desfeito.</string>
+    <string name="threat_log_clear_confirm">Limpar</string>
+    <string name="threat_log_clear_cancel">Cancelar</string>
+    <string name="threat_log_cleared_toast">Registros de ameaças limpos</string>
+    <string name="threat_log_exported_toast">Registros de ameaças exportados</string>
+    <string name="threat_log_imported_toast">Registros de ameaças importados</string>
+    <string name="behavior_graph_clear">LIMPAR GRÁFICO COMPORTAMENTAL</string>
+    <string name="behavior_graph_clear_title">Limpar gráfico comportamental</string>
+    <string name="behavior_graph_clear_msg">Todos os dados do gráfico comportamental e histórico serão apagados. Isto não pode ser desfeito.</string>
+    <string name="behavior_graph_cleared_toast">Gráfico comportamental limpo</string>
 </resources>
 
 

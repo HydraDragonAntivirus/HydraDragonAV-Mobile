@@ -484,10 +484,20 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="threat_log_cleared_toast">Dzienniki zagrożeń wyczyszczone</string>
     <string name="threat_log_exported_toast">Dzienniki zagrożeń wyeksportowane</string>
     <string name="threat_log_imported_toast">Dzienniki zagrożeń zaimportowane</string>
-    <string name="behavior_data_clear">WYCZYŚĆ DANE BEHAWIORALNE</string>
-    <string name="behavior_data_clear_title">Wyczyść dane behawioralne</string>
-    <string name="behavior_data_clear_msg">Wszystkie flagi behawioralne i historia zostaną usunięte. Tej operacji nie można cofnąć.</string>
-    <string name="behavior_data_cleared_toast">Dane behawioralne wyczyszczone</string>
+    <string name="threat_log_export">EKSPORTUJ .TXT</string>
+    <string name="threat_log_import">IMPORTUJ .TXT</string>
+    <string name="threat_log_clear">WYCZYŚĆ</string>
+    <string name="threat_log_clear_title">Wyczyść dzienniki zagrożeń</string>
+    <string name="threat_log_clear_msg">Jesteś pewien? Tej operacji nie można cofnąć.</string>
+    <string name="threat_log_clear_confirm">Wyczyść</string>
+    <string name="threat_log_clear_cancel">Anuluj</string>
+    <string name="threat_log_cleared_toast">Dzienniki zagrożeń wyczyszczone</string>
+    <string name="threat_log_exported_toast">Dzienniki zagrożeń wyeksportowane</string>
+    <string name="threat_log_imported_toast">Dzienniki zagrożeń zaimportowane</string>
+    <string name="behavior_graph_clear">WYCZYŚĆ WYKRES BEHAWIORALNY</string>
+    <string name="behavior_graph_clear_title">Wyczyść wykres behawioralny</string>
+    <string name="behavior_graph_clear_msg">Wszystkie dane wykresu behawioralnego i historia zostaną usunięte. Tej operacji nie można cofnąć.</string>
+    <string name="behavior_graph_cleared_toast">Wykres behawioralny wyczyszczony</string>
 </resources>
 
 

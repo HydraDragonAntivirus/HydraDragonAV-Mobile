@@ -484,10 +484,20 @@ Puoi abilitarlo in seguito dalle Impostazioni.</string>
     <string name="threat_log_cleared_toast">Registri minacce cancellati</string>
     <string name="threat_log_exported_toast">Registri minacce esportati</string>
     <string name="threat_log_imported_toast">Registri minacce importati</string>
-    <string name="behavior_data_clear">PULISCI DATI COMPORTAMENTALI</string>
-    <string name="behavior_data_clear_title">Cancella dati comportamentali</string>
-    <string name="behavior_data_clear_msg">Tutti i flag comportamentali e la cronologia verranno cancellati. Questa operazione non può essere annullata.</string>
-    <string name="behavior_data_cleared_toast">Dati comportamentali cancellati</string>
+    <string name="threat_log_export">ESPORTA .TXT</string>
+    <string name="threat_log_import">IMPORTA .TXT</string>
+    <string name="threat_log_clear">PULISCI</string>
+    <string name="threat_log_clear_title">Cancella registri minacce</string>
+    <string name="threat_log_clear_msg">Sei sicuro? Questa operazione non può essere annullata.</string>
+    <string name="threat_log_clear_confirm">Pulisci</string>
+    <string name="threat_log_clear_cancel">Annulla</string>
+    <string name="threat_log_cleared_toast">Registri minacce cancellati</string>
+    <string name="threat_log_exported_toast">Registri minacce esportati</string>
+    <string name="threat_log_imported_toast">Registri minacce importati</string>
+    <string name="behavior_graph_clear">PULISCI GRAFICO COMPORTAMENTALE</string>
+    <string name="behavior_graph_clear_title">Cancella grafico comportamentale</string>
+    <string name="behavior_graph_clear_msg">Tutti i dati del grafico comportamentale e la cronologia verranno cancellati. Questa operazione non può essere annullata.</string>
+    <string name="behavior_graph_cleared_toast">Grafico comportamentale cancellato</string>
 </resources>
 
 

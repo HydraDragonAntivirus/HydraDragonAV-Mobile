@@ -484,10 +484,20 @@ Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
     <string name="threat_log_cleared_toast">Log ancaman dihapus</string>
     <string name="threat_log_exported_toast">Log ancaman diekspor</string>
     <string name="threat_log_imported_toast">Log ancaman diimpor</string>
-    <string name="behavior_data_clear">HAPUS DATA PERILAKU</string>
-    <string name="behavior_data_clear_title">Hapus data perilaku</string>
-    <string name="behavior_data_clear_msg">Semua flag perilaku dan riwayat akan dihapus. Ini tidak dapat dibatalkan.</string>
-    <string name="behavior_data_cleared_toast">Data perilaku dihapus</string>
+    <string name="threat_log_export">EKSPOR .TXT</string>
+    <string name="threat_log_import">IMPOR .TXT</string>
+    <string name="threat_log_clear">HAPUS</string>
+    <string name="threat_log_clear_title">Hapus log ancaman</string>
+    <string name="threat_log_clear_msg">Anda yakin? Ini tidak dapat dibatalkan.</string>
+    <string name="threat_log_clear_confirm">Hapus</string>
+    <string name="threat_log_clear_cancel">Batal</string>
+    <string name="threat_log_cleared_toast">Log ancaman dihapus</string>
+    <string name="threat_log_exported_toast">Log ancaman diekspor</string>
+    <string name="threat_log_imported_toast">Log ancaman diimpor</string>
+    <string name="behavior_graph_clear">HAPUS GRAFIK PERILAKU</string>
+    <string name="behavior_graph_clear_title">Hapus grafik perilaku</string>
+    <string name="behavior_graph_clear_msg">Semua data grafik perilaku dan riwayat akan dihapus. Ini tidak dapat dibatalkan.</string>
+    <string name="behavior_graph_cleared_toast">Grafik perilaku dihapus</string>
 </resources>
 
 

@@ -484,10 +484,20 @@
     <string name="threat_log_cleared_toast">Журналы угроз очищены</string>
     <string name="threat_log_exported_toast">Журналы угроз экспортированы</string>
     <string name="threat_log_imported_toast">Журналы угроз импортированы</string>
-    <string name="behavior_data_clear">ОЧИСТИТЬ ДАННЫЕ ПОВЕДЕНИЯ</string>
-    <string name="behavior_data_clear_title">Очистить данные поведения</string>
-    <string name="behavior_data_clear_msg">Все флаги поведения и история будут стерты. Это действие нельзя отменить.</string>
-    <string name="behavior_data_cleared_toast">Данные поведения очищены</string>
+    <string name="threat_log_export">ЭКСПОРТ .TXT</string>
+    <string name="threat_log_import">ИМПОРТ .TXT</string>
+    <string name="threat_log_clear">ОЧИСТИТЬ</string>
+    <string name="threat_log_clear_title">Очистить журналы угроз</string>
+    <string name="threat_log_clear_msg">Вы уверены? Это действие нельзя отменить.</string>
+    <string name="threat_log_clear_confirm">Очистить</string>
+    <string name="threat_log_clear_cancel">Отмена</string>
+    <string name="threat_log_cleared_toast">Журналы угроз очищены</string>
+    <string name="threat_log_exported_toast">Журналы угроз экспортированы</string>
+    <string name="threat_log_imported_toast">Журналы угроз импортированы</string>
+    <string name="behavior_graph_clear">ОЧИСТИТЬ ГРАФИК ПОВЕДЕНИЯ</string>
+    <string name="behavior_graph_clear_title">Очистить график поведения</string>
+    <string name="behavior_graph_clear_msg">Все данные графика поведения и история будут стерты. Это действие нельзя отменить.</string>
+    <string name="behavior_graph_cleared_toast">График поведения очищен</string>
 </resources>
 
 

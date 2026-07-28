@@ -484,10 +484,20 @@ Du kannst dies später in den Einstellungen aktivieren.</string>
     <string name="threat_log_cleared_toast">Bedrohungsprotokolle gelöscht</string>
     <string name="threat_log_exported_toast">Bedrohungsprotokolle exportiert</string>
     <string name="threat_log_imported_toast">Bedrohungsprotokolle importiert</string>
-    <string name="behavior_data_clear">VERHALTENSDATEN LÖSCHEN</string>
-    <string name="behavior_data_clear_title">Verhaltensdaten löschen</string>
-    <string name="behavior_data_clear_msg">Alle Verhaltensflags und der Verlauf werden gelöscht. Dies kann nicht rückgängig gemacht werden.</string>
-    <string name="behavior_data_cleared_toast">Verhaltensdaten gelöscht</string>
+    <string name="threat_log_export">EXPORTIEREN .TXT</string>
+    <string name="threat_log_import">IMPORTIEREN .TXT</string>
+    <string name="threat_log_clear">LÖSCHEN</string>
+    <string name="threat_log_clear_title">Bedrohungsprotokolle löschen</string>
+    <string name="threat_log_clear_msg">Sind Sie sicher? Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="threat_log_clear_confirm">Löschen</string>
+    <string name="threat_log_clear_cancel">Abbrechen</string>
+    <string name="threat_log_cleared_toast">Bedrohungsprotokolle gelöscht</string>
+    <string name="threat_log_exported_toast">Bedrohungsprotokolle exportiert</string>
+    <string name="threat_log_imported_toast">Bedrohungsprotokolle importiert</string>
+    <string name="behavior_graph_clear">VERHALTENSGRAPHIK LÖSCHEN</string>
+    <string name="behavior_graph_clear_title">Verhaltensgraphik löschen</string>
+    <string name="behavior_graph_clear_msg">Alle Verhaltensgraphikdaten und der Verlauf werden gelöscht. Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="behavior_graph_cleared_toast">Verhaltensgraphik gelöscht</string>
 </resources>
 
 

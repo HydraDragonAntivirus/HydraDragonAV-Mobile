@@ -13,8 +13,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import android.widget.Toast;
 import com.hydradragon.antivirus.R;
 import com.hydradragon.antivirus.engine.BehaviorGraphData;
+import com.hydradragon.antivirus.engine.BehaviorFlags;
 import com.hydradragon.antivirus.views.BehaviorRadarChart;
 
 import java.util.List;
@@ -109,6 +111,20 @@ public class BehaviorGraphFragment extends Fragment {
         });
 
         loadData(packageValues.get(initialPosition));
+
+        View btnClear = view.findViewById(R.id.btn_clear_behavior_graph);
+        btnClear.setOnClickListener(v -> {
+            new android.app.AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(R.string.behavior_graph_clear_title)
+                .setMessage(R.string.behavior_graph_clear_msg)
+                .setPositiveButton(R.string.threat_log_clear_confirm, (d, w) -> {
+                    BehaviorFlags.clearAll(requireContext());
+                    loadData(spinnerPackageSelect.getSelectedItem().toString());
+                    Toast.makeText(getContext(), R.string.behavior_graph_cleared_toast, Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.threat_log_clear_cancel, null)
+                .show();
+        });
     }
 
     private void loadData(String pkg) {

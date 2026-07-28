@@ -17,7 +17,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.hydradragon.antivirus.service.ThreatLogger;
-import com.hydradragon.antivirus.engine.BehaviorFlags;
 
 public class ThreatLogFragment extends Fragment {
 
@@ -97,32 +96,7 @@ public class ThreatLogFragment extends Fragment {
         });
         header.addView(clearBtn);
 
-        // separator + behavior data row
         root.addView(header);
-
-        LinearLayout behaviorRow = new LinearLayout(getContext());
-        behaviorRow.setOrientation(LinearLayout.HORIZONTAL);
-        behaviorRow.setPadding(40, 0, 40, 20);
-
-        TextView behaviorClearBtn = new TextView(getContext());
-        behaviorClearBtn.setText(R.string.behavior_data_clear);
-        behaviorClearBtn.setTextColor(Color.parseColor("#FF0040"));
-        behaviorClearBtn.setTextSize(12);
-        behaviorClearBtn.setTypeface(android.graphics.Typeface.MONOSPACE);
-        behaviorClearBtn.setPadding(16, 8, 16, 8);
-        behaviorClearBtn.setOnClickListener(v -> {
-            new android.app.AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                .setTitle(R.string.behavior_data_clear_title)
-                .setMessage(R.string.behavior_data_clear_msg)
-                .setPositiveButton(R.string.threat_log_clear_confirm, (d, w) -> {
-                    BehaviorFlags.clearAll(requireContext());
-                    Toast.makeText(getContext(), R.string.behavior_data_cleared_toast, Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton(R.string.threat_log_clear_cancel, null)
-                .show();
-        });
-        behaviorRow.addView(behaviorClearBtn);
-        root.addView(behaviorRow);
 
         ScrollView scrollView = new ScrollView(getContext());
         tv = new TextView(getContext());

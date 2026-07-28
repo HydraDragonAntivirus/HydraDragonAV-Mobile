@@ -486,9 +486,9 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="threat_log_cleared_toast">Threat logs cleared</string>
     <string name="threat_log_exported_toast">Threat logs exported</string>
     <string name="threat_log_imported_toast">Threat logs imported</string>
-    <string name="behavior_data_clear">CLEAR BEHAVIOR DATA</string>
-    <string name="behavior_data_clear_title">Clear Behavior Data</string>
-    <string name="behavior_data_clear_msg">All behavioral flags and history will be erased. This cannot be undone.</string>
-    <string name="behavior_data_cleared_toast">Behavior data cleared</string>
+    <string name="behavior_graph_clear">CLEAR BEHAVIOR GRAPH</string>
+    <string name="behavior_graph_clear_title">Clear Behavior Graph</string>
+    <string name="behavior_graph_clear_msg">All behavior graph data and history will be erased. This cannot be undone.</string>
+    <string name="behavior_graph_cleared_toast">Behavior graph cleared</string>
 </resources>
 

@@ -484,10 +484,20 @@
     <string name="threat_log_cleared_toast">खतरे के लॉग साफ़ हो गए</string>
     <string name="threat_log_exported_toast">खतरे के लॉग निर्यात हो गए</string>
     <string name="threat_log_imported_toast">खतरे के लॉग आयात हो गए</string>
-    <string name="behavior_data_clear">व्यवहार डेटा साफ़ करें</string>
-    <string name="behavior_data_clear_title">व्यवहार डेटा साफ़ करें</string>
-    <string name="behavior_data_clear_msg">सभी व्यवहार फ़्लैग और इतिहास मिटा दिए जाएंगे। इसे पूर्ववत नहीं किया जा सकता।</string>
-    <string name="behavior_data_cleared_toast">व्यवहार डेटा साफ़ हो गया</string>
+    <string name="threat_log_export">निर्यात .TXT</string>
+    <string name="threat_log_import">आयात .TXT</string>
+    <string name="threat_log_clear">साफ़ करें</string>
+    <string name="threat_log_clear_title">खतरे के लॉग साफ़ करें</string>
+    <string name="threat_log_clear_msg">क्या आप sure हैं? इसे पूर्ववत नहीं किया जा सकता।</string>
+    <string name="threat_log_clear_confirm">साफ़ करें</string>
+    <string name="threat_log_clear_cancel">रद्द करें</string>
+    <string name="threat_log_cleared_toast">खतरे के लॉग साफ़ हो गए</string>
+    <string name="threat_log_exported_toast">खतरे के लॉग निर्यात हो गए</string>
+    <string name="threat_log_imported_toast">खतरे के लॉग आयात हो गए</string>
+    <string name="behavior_graph_clear">व्यवहार ग्राफ़ साफ़ करें</string>
+    <string name="behavior_graph_clear_title">व्यवहार ग्राफ़ साफ़ करें</string>
+    <string name="behavior_graph_clear_msg">सभी व्यवहार ग्राफ़ डेटा और इतिहास मिटा दिए जाएंगे। इसे पूर्ववत नहीं किया जा सकता।</string>
+    <string name="behavior_graph_cleared_toast">व्यवहार ग्राफ़ साफ़ हो गया</string>
 </resources>
 
 

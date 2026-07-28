@@ -484,10 +484,10 @@ Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.</string>
     <string name="threat_log_cleared_toast">Tehdit kayıtları temizlendi</string>
     <string name="threat_log_exported_toast">Tehdit kayıtları dışa aktarıldı</string>
     <string name="threat_log_imported_toast">Tehdit kayıtları içe aktarıldı</string>
-    <string name="behavior_data_clear">DAVRANIŞ VERİSİNİ TEMİZLE</string>
-    <string name="behavior_data_clear_title">Davranış Verisini Temizle</string>
-    <string name="behavior_data_clear_msg">Tüm davranış bayrakları ve geçmiş silinecek. Bu işlem geri alınamaz.</string>
-    <string name="behavior_data_cleared_toast">Davranış verisi temizlendi</string>
+    <string name="behavior_graph_clear">DAVRANIŞ GRAFİĞİNİ TEMİZLE</string>
+    <string name="behavior_graph_clear_title">Davranış Grafiği Verisini Temizle</string>
+    <string name="behavior_graph_clear_msg">Tüm davranış grafiği verileri ve geçmiş silinecek. Bu işlem geri alınamaz.</string>
+    <string name="behavior_graph_cleared_toast">Davranış grafiği temizlendi</string>
 </resources>
 
 

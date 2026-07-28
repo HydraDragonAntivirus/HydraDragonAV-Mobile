@@ -52,5 +52,19 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"/>
 
+        <TextView
+            android:id="@+id/btn_clear_behavior_graph"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:padding="16dp"
+            android:text="@string/behavior_graph_clear"
+            android:textColor="#FF0040"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:clickable="true"
+            android:focusable="true"/>
+
     </LinearLayout>
 </ScrollView>
