@@ -5,9 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -75,105 +73,11 @@ public class DynamicAnalysisService extends AccessibilityService {
     /** @return the current service instance, or null if not connected. */
     public static DynamicAnalysisService getInstance() { return sInstance; }
 
-    // ── Foreground-app force-stop via accessibility automation ─────────────
-    // Android gives no API for a regular app to stop the foreground app.
-    // Instead: open Settings → App info → Force Stop, then click the
-    // confirmation dialog, all through AccessibilityService. After the
-    // target is stopped, navigate back to HydraDragon's own activity.
-    private static volatile String sFsTarget = null;
-    /** true after the Force Stop button has been clicked; waiting for OK dialog. */
-    private static volatile boolean sFsConfirmDone = false;
-    /** true once sFsConfirmDone is set AND a new window event has been received,
-     *  meaning the confirmation dialog has appeared on screen. */
-    private static volatile boolean sFsDialogShown = false;
-    private static volatile String sFsAppName = null;
-    private static volatile String sFsReason = null;
-
-    /** @return true if the Settings → App Info navigation was successfully
-     *  started (the one synchronous signal available here). The rest of the
-     *  flow — finding and clicking "Force Stop" then "OK" — happens later,
-     *  asynchronously, driven by {@link #onAccessibilityEvent}; there is no
-     *  synchronous way to know whether THAT part succeeds (wrong locale text,
-     *  OEM-specific Settings layout, dialog never appearing, etc. all fail
-     *  silently). Callers that need to detect a stalled/failed automation
-     *  after the fact can poll {@link #getPendingForceStopTarget()}. */
-    public static boolean forceStopForegroundApp(String pkg, String appName, String reason) {
-        DynamicAnalysisService inst = sInstance;
-        if (inst == null || pkg == null || pkg.isEmpty()) return false;
-        sFsTarget = pkg;
-        sFsConfirmDone = false;
-        sFsDialogShown = false;
-        sFsAppName = appName != null ? appName : pkg;
-        sFsReason = reason != null ? reason : "Malicious behaviour";
-        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-        intent.setData(Uri.parse("package:" + pkg));
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            inst.startActivity(intent);
-            return true;
-        } catch (Throwable t) {
-            Log.w(TAG, "forceStopForegroundApp: failed to open Settings for " + pkg, t);
-            sFsTarget = null;
-            return false;
-        }
-    }
-
-    /** @return the package currently mid-automation (Settings navigated to,
-     *  but "Force Stop"/"OK" not yet both clicked), or {@code null} if no
-     *  automation is in flight. A caller can poll this a few seconds after
-     *  {@link #forceStopForegroundApp} returned true: if it still equals the
-     *  package it passed in, the automation is stuck (button text not found,
-     *  OEM Settings layout differs, dialog never showed, etc.) and a fallback
-     *  kill method should be used instead. */
-    public static String getPendingForceStopTarget() { return sFsTarget; }
-
     // Single, self-replacing alert notification (no spam).
     private static final int ALERT_NOTIF_ID = 0xA1E7;
     private volatile String lastUrlAlert = "";
     private long lastAlertTime = 0;
     private String lastAlertMsg = "";
-
-    private static final String[] FORCE_STOP_TEXTS = {
-        "Force stop",
-        "Durmaya zorla",
-        "Zorla durdur",
-        "Beenden erzwingen",
-        "Forcer l'arrêt",
-        "Forzar detención",
-        "Forçar parada",
-        "Arresto forzato",
-        "Geforceerd stoppen",
-        "Wymuś zatrzymanie",
-        "Принудительно остановить",
-        "강제 중지",
-        "強制停止",
-        "强行停止",
-        "ເອົາອອກ",
-        "Paksa berhenti",
-        "บังคับหยุด",
-        "भरपूर रोकें",
-        "Zorla Dayandır",
-        "توقف إجباري",
-        "పూర్తిగా ఆపండి"
-    };
-    private static final String[] OK_TEXTS = {
-        "OK", "Ok", "ok",
-        "TAMAM", "Tamam",
-        "확인",
-        "好的", "好",
-        "はい",
-        "ОК",
-        "aanvaarden",
-        "Conferma",
-        "Aceptar",
-        "Confirmar",
-        "Bestätigen",
-        "अनुमति दें",
-        "بالتأكيد",
-        "อนุมัติ",
-        "Setuju",
-        "ยืนยัน"
-    };
 
     /** Browsers: a flagged URL HERE is actually being navigated to -> hard block. */
     private static final java.util.Set<String> BROWSERS = new java.util.HashSet<>(java.util.Arrays.asList(
@@ -289,120 +193,6 @@ public class DynamicAnalysisService extends AccessibilityService {
                             .setReasons(java.util.Collections.singletonList(reason != null ? reason : getString(R.string.reason_scan_detected_malware)))
                             .build();
                     com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, threat);
-                }
-            }
-
-            // ── Foreground force-stop automation ─────────────────────────
-            // If a force-stop was requested for this package, navigate the
-            // Settings → Force Stop → OK flow through accessibility.
-            if (sFsTarget != null) {
-                String settingsPkg = "com.android.settings";
-                boolean onSettings    = pkg.equals(settingsPkg);
-                // The confirmation dialog can stay inside Settings on many ROMs
-                // (MIUI, One UI, stock Android 13+) or appear as a system dialog
-                // owned by android / SystemUI on older ones.
-                boolean onDialogHost  = onSettings
-                        || "android".equals(pkg)
-                        || "com.android.systemui".equals(pkg);
-
-                // Phase 1 → 2: on the App Info screen, click "Force Stop".
-                if (onSettings && !sFsConfirmDone) {
-                    AccessibilityNodeInfo root = getRootInActiveWindow();
-                    if (root != null) {
-                        java.util.List<AccessibilityNodeInfo> nodes = null;
-                        for (String forceStopText : FORCE_STOP_TEXTS) {
-                            nodes = root.findAccessibilityNodeInfosByText(forceStopText);
-                            if (nodes != null && !nodes.isEmpty()) break;
-                        }
-                        if (nodes == null || nodes.isEmpty()) {
-                            nodes = root.findAccessibilityNodeInfosByViewId(
-                                "com.android.settings:id/force_stop_button");
-                        }
-                        if (nodes != null && !nodes.isEmpty()) {
-                            for (AccessibilityNodeInfo btn : nodes) {
-                                if (btn.isClickable()) {
-                                    btn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                                    break;
-                                }
-                            }
-                            for (AccessibilityNodeInfo n : nodes) n.recycle();
-                            sFsConfirmDone = true;
-                            // sFsDialogShown stays false until a NEW window event
-                            // arrives (the confirmation dialog opening).
-                            Log.i(TAG, "force-stop: clicked Force Stop button for " + sFsTarget);
-                        }
-                        root.recycle();
-                    }
-                }
-
-                // Phase 2 → 3: once the dialog opens (new window event after
-                // sFsConfirmDone), click OK and show MalwareFoundActivity.
-                if (sFsConfirmDone && !sFsDialogShown) {
-                    // This window-change event is the dialog appearing.
-                    sFsDialogShown = true;
-                }
-                if (onDialogHost && sFsDialogShown) {
-                    AccessibilityNodeInfo root = getRootInActiveWindow();
-                    if (root != null) {
-                        java.util.List<AccessibilityNodeInfo> nodes = null;
-                        for (String okText : OK_TEXTS) {
-                            nodes = root.findAccessibilityNodeInfosByText(okText);
-                            if (nodes != null && !nodes.isEmpty()) break;
-                        }
-                        if (nodes != null && !nodes.isEmpty()) {
-                            for (AccessibilityNodeInfo n : nodes) {
-                                if (n.isClickable()) {
-                                    n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                                    Log.i(TAG, "force-stop: confirmed OK for " + sFsTarget);
-                                    break;
-                                }
-                            }
-                            for (AccessibilityNodeInfo n : nodes) n.recycle();
-
-                            // Phase 3: target stopped → show MalwareFoundActivity.
-                            try {
-                                Intent malware = new Intent(
-                                    this, com.hydradragon.antivirus.ui.MalwareFoundActivity.class);
-                                malware.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                                    | Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                                malware.putExtra(
-                                    com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_APP_NAME,
-                                    sFsAppName);
-                                malware.putExtra(
-                                    com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_PACKAGE_NAME,
-                                    sFsTarget);
-                                malware.putExtra(
-                                    com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_REASON,
-                                    sFsReason);
-                                malware.putExtra(
-                                    com.hydradragon.antivirus.ui.MalwareFoundActivity.EXTRA_RISK_SCORE,
-                                    100);
-                                startActivity(malware);
-                            } catch (Throwable t) {
-                                Log.w(TAG, "force-stop: failed to show MalwareFoundActivity", t);
-                                // Fallback: open the antivirus screen instead of
-                                // dropping the user at a blank screen. MainActivity
-                                // will show the scan tab so the threat is visible.
-                                try {
-                                    Intent fallback = new Intent(
-                                        this, com.hydradragon.antivirus.MainActivity.class);
-                                    fallback.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                                        | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                    fallback.putExtra("open_scan_tab", true);
-                                    startActivity(fallback);
-                                } catch (Throwable t2) {
-                                    Log.w(TAG, "force-stop: fallback launch failed", t2);
-                                }
-                            }
-                            sFsTarget      = null;
-                            sFsConfirmDone = false;
-                            sFsDialogShown = false;
-                            sFsAppName     = null;
-                            sFsReason      = null;
-                        }
-                        root.recycle();
-                    }
                 }
             }
 

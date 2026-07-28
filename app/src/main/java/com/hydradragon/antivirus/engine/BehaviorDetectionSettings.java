@@ -37,8 +37,6 @@ public final class BehaviorDetectionSettings {
     public static final String FILE_READ_ESTIMATOR = "file_read_estimator";
     /** Wiper detection via rapid file deletion + memory profiling. */
     public static final String WIPER = "wiper";
-    /** Auto-kill foreground malware via AccessibilityService (Settings → Force Stop). */
-    public static final String AUTO_KILL = "auto_kill";
 
     private BehaviorDetectionSettings() {}
 

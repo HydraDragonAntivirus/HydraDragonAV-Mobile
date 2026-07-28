@@ -80,73 +80,16 @@ public final class BehaviorResponse {
     public static boolean killAndPromptUninstall(Context context, String pkg, String appName, String reason, boolean skipUninstall) {
         if (pkg == null || pkg.isEmpty()) return false;
 
-        boolean usedAccessibility = false;
-
-        // forceStopForegroundApp navigates Settings -> App Info -> "Force
-        // Stop" -> "OK" via accessibility automation. Despite its name, it
-        // does NOT require pkg to be the current foreground app -- opening
-        // ACTION_APPLICATION_DETAILS_SETTINGS works for any installed app,
-        // running or not, foreground or background. That's why it's tried
-        // before killBackgroundProcesses: it's the more thorough method
-        // (Android 12+ restricts what killBackgroundProcesses can actually
-        // kill), not a foreground-only special case.
-        //
-        // Its return value only tells us the Settings screen navigation
-        // itself started -- the later steps (finding/clicking "Force Stop"
-        // then "OK") happen asynchronously and can fail silently (wrong
-        // locale text, OEM-specific Settings layout, dialog never showing).
-        // We can't detect that synchronously, but we CAN detect it a few
-        // seconds later: if the automation is still "pending" for this exact
-        // package, it stalled, and killBackgroundProcesses is run as a
-        // backup instead of trusting a stuck automation.
-        if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(
-                context, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.AUTO_KILL)
-                && com.hydradragon.antivirus.service.DynamicAnalysisService.getInstance() != null) {
-            Log.i(TAG, "killAndPromptUninstall: accessibility force-stop for " + pkg);
-            usedAccessibility = com.hydradragon.antivirus.service.DynamicAnalysisService
-                    .forceStopForegroundApp(pkg, appName, reason);
-            if (!usedAccessibility) {
-                Log.w(TAG, "killAndPromptUninstall: accessibility force-stop failed to start for " + pkg);
-            } else {
-                final String finalPkgForStallCheck = pkg;
-                final Context appCtxForStallCheck = context.getApplicationContext();
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                    if (finalPkgForStallCheck.equals(
-                            com.hydradragon.antivirus.service.DynamicAnalysisService.getPendingForceStopTarget())) {
-                        Log.w(TAG, "killAndPromptUninstall: force-stop automation stalled for "
-                                + finalPkgForStallCheck + " -> killBackgroundProcesses as backup");
-                        try {
-                            ActivityManager am = (ActivityManager)
-                                appCtxForStallCheck.getSystemService(Context.ACTIVITY_SERVICE);
-                            if (am != null) am.killBackgroundProcesses(finalPkgForStallCheck);
-                        } catch (Throwable t) {
-                            Log.w(TAG, "stalled-automation killBackgroundProcesses failed for "
-                                    + finalPkgForStallCheck, t);
-                        }
-                    }
-                }, 4000L);
-            }
-        }
-
-        if (!usedAccessibility) {
-            // Fallback: killBackgroundProcesses (unreliable on Android 12+,
-            // but still the only non-root option when accessibility isn't
-            // available or its automation failed to even start).
-            try {
-                ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-                if (am != null) am.killBackgroundProcesses(pkg);
-            } catch (Throwable t) {
-                Log.w(TAG, "killBackgroundProcesses failed for " + pkg, t);
-            }
+        try {
+            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            if (am != null) am.killBackgroundProcesses(pkg);
+        } catch (Throwable t) {
+            Log.w(TAG, "killBackgroundProcesses failed for " + pkg, t);
         }
 
         if (!skipUninstall) {
-            // Delay uninstall prompt slightly so the force-stop animation can
-            // complete and the app is no longer in the foreground when the
-            // system uninstall dialog appears.
             final String finalPkg = pkg;
             final Context appCtx = context.getApplicationContext();
-            long delayMs = usedAccessibility ? 1500L : 0L;
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                 try {
                     Intent del = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + finalPkg));
@@ -155,9 +98,9 @@ public final class BehaviorResponse {
                 } catch (Throwable t) {
                     Log.w(TAG, "uninstall prompt failed for " + finalPkg, t);
                 }
-            }, delayMs);
+            }, 0L);
         }
-        return usedAccessibility;
+        return false;
     }
 
     /** Entry point for a regular scan result (quick/full/custom, background or
