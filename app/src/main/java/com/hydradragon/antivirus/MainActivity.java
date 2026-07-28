@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
-        com.hydradragon.antivirus.engine.AppLifecycleTracker.register(getApplication());
+        com.hydradragon.antivirus.engine.AppLifecycleTracker.register(getApplication()); // idempotent; primary registration is in HydraDragonApp.onCreate
         // Fire the native engine init as early as possible: the ~70s ClamAV/YARA
         // load runs in a background thread so it's ready before the first scan
         // hits ScanEngine (which also calls init — it's idempotent).

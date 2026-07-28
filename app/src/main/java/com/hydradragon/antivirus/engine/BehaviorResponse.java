@@ -322,7 +322,7 @@ public final class BehaviorResponse {
             i.putExtra(MalwareFoundActivity.EXTRA_APP_NAME, threat.getAppName());
             i.putExtra(MalwareFoundActivity.EXTRA_RISK_SCORE, threat.getRiskScore());
             i.putExtra(MalwareFoundActivity.EXTRA_REASON,
-                    threat.getReasons().isEmpty() ? "-" : threat.getReasons().get(0));
+                    threat.getReasons().isEmpty() ? "-" : String.join("\n", threat.getReasons()));
             i.putExtra(MalwareFoundActivity.EXTRA_IS_FILE, isFile);
             i.putExtra(MalwareFoundActivity.EXTRA_PACKAGE_NAME, threat.getPackageName());
             i.putExtra(MalwareFoundActivity.EXTRA_APK_PATH, threat.getApkPath());
@@ -350,7 +350,7 @@ public final class BehaviorResponse {
             if (threat != null) {
                 open.putExtra("alert_threat_name", threat.getAppName());
                 open.putExtra("alert_threat_pkg", threat.getPackageName());
-                open.putExtra("alert_threat_reason", threat.getReasons().isEmpty() ? "-" : threat.getReasons().get(0));
+                open.putExtra("alert_threat_reason", threat.getReasons().isEmpty() ? "-" : String.join("\n", threat.getReasons()));
                 open.putExtra("alert_threat_risk", threat.getRiskScore());
                 open.putExtra("alert_threat_is_file", threat.isStandaloneFile());
                 open.putExtra("alert_threat_path", threat.getApkPath());

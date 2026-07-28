@@ -30,6 +30,13 @@ public final class HydraDragonApp extends Application {
         }
 
         super.onCreate();
+        // Register the activity-lifecycle tracker at the Application level, BEFORE
+        // any Activity is created. Registering it inside MainActivity.onCreate()
+        // (as it used to be) misses MainActivity's own onActivityCreated — it
+        // fires only for activities created AFTER registration — so createdCount
+        // stayed 0 while MainActivity was on screen. StrandHoggGuard then read
+        // numActivities=1 vs expected=0 and false-tripped "task hijack".
+        com.hydradragon.antivirus.engine.AppLifecycleTracker.register(this);
         NativeScanner.init(this);
     }
 }
