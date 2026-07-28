@@ -1506,7 +1506,16 @@ public class ScanEngine {
                 }
                 boolean anyEvidence = real || eicar || autoOnly || tlshOnly || mlOnly || !reasons.isEmpty();
                 if (cancelRequested) return;
-                if (!anyEvidence) continue;
+                if (!anyEvidence) {
+                    // Cache clean result so subsequent scans skip deep native scan
+                    if (app.packageName != null && scanCache != null) {
+                        scanCache.putPhotonCache(app.packageName, new ThreatResult.Builder(app.packageName)
+                            .setRiskScore(0)
+                            .setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.CLEAN)
+                            .build());
+                    }
+                    continue;
+                }
                 boolean isSuspicious = autoOnly || tlshOnly || mlOnly;
                 b.setThreatType(real
                     ? com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE
@@ -1522,6 +1531,9 @@ public class ScanEngine {
                 CharSequence label = pm.getApplicationLabel(app);
                 b.setAppName((label != null ? label.toString() : app.packageName) + " (DEEP)");
                 ThreatResult r = b.build();
+                if (app.packageName != null && scanCache != null) {
+                    scanCache.putPhotonCache(app.packageName, r);
+                }
                 if (r.isThreat() && !threats.contains(r)) {
                     threats.add(r);
                     if (app.packageName != null) seen.add(app.packageName);
