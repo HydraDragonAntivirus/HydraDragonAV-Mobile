@@ -692,6 +692,7 @@ public class ScanFragment extends Fragment {
                 }
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() -> {
+                    if (!isAdded()) return;
                     progressBar.setMax(total);
                     progressBar.setProgress(current);
                     tvProgress.setText(current + "/" + total);
@@ -712,6 +713,7 @@ public class ScanFragment extends Fragment {
                 if (getActivity() == null) return;
                 if (!threat.isThreat()) return;
                 getActivity().runOnUiThread(() -> {
+                    if (!isAdded()) return;
                     if (foundThreats.contains(threat)) return;
                     if (foundThreats.size() < MAX_DISPLAYED_THREATS) {
                         foundThreats.add(threat);
@@ -744,6 +746,7 @@ public class ScanFragment extends Fragment {
                 isScanning = false;
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() -> {
+                    if (!isAdded()) return;
                     stopScannerAnimation();
                     btnScan.setText(getString(R.string.rescan));
                     btnScan.setEnabled(true);
@@ -833,6 +836,7 @@ public class ScanFragment extends Fragment {
             lastScanStatus += " (" + getString(R.string.threats_hidden_count, hiddenThreatCount) + ")";
         }
         getActivity().runOnUiThread(() -> {
+            if (!isAdded()) return;
             stopScannerAnimation();
             btnScan.setText(getString(R.string.rescan));
             btnScan.setEnabled(true);
