@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ GEROOTETES GERÄT</string>
@@ -474,16 +474,6 @@ Du kannst dies später in den Einstellungen aktivieren.</string>
     <string name="reason_scan_detected_malware">Beim Scan erkannte Malware</string>
     <string name="reason_previously_detected_running">Zuvor erkannte Malware-App läuft jetzt</string>
     <string name="reason_malicious_behavior">Schädliches Verhalten</string>
-    <string name="threat_log_export">EXPORTIEREN .TXT</string>
-    <string name="threat_log_import">IMPORTIEREN .TXT</string>
-    <string name="threat_log_clear">LÖSCHEN</string>
-    <string name="threat_log_clear_title">Bedrohungsprotokolle löschen</string>
-    <string name="threat_log_clear_msg">Sind Sie sicher? Dies kann nicht rückgängig gemacht werden.</string>
-    <string name="threat_log_clear_confirm">Löschen</string>
-    <string name="threat_log_clear_cancel">Abbrechen</string>
-    <string name="threat_log_cleared_toast">Bedrohungsprotokolle gelöscht</string>
-    <string name="threat_log_exported_toast">Bedrohungsprotokolle exportiert</string>
-    <string name="threat_log_imported_toast">Bedrohungsprotokolle importiert</string>
     <string name="threat_log_export">EXPORTIEREN .TXT</string>
     <string name="threat_log_import">IMPORTIEREN .TXT</string>
     <string name="threat_log_clear">LÖSCHEN</string>

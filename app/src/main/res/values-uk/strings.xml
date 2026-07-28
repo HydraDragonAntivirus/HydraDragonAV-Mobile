@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ РУТОВАНИЙ ПРИСТРІЙ</string>
@@ -484,16 +484,6 @@
     <string name="threat_log_cleared_toast">Журнали загрез очищено</string>
     <string name="threat_log_exported_toast">Журнали загроз експортовано</string>
     <string name="threat_log_imported_toast">Журнали загроз імпортовано</string>
-    <string name="threat_log_export">ЕКСПОРТ .TXT</string>
-    <string name="threat_log_import">ІМПОРТ .TXT</string>
-    <string name="threat_log_clear">ОЧИСТИТИ</string>
-    <string name="threat_log_clear_title">Очистити журнали загроз</string>
-    <string name="threat_log_clear_msg">Ви впевнені? Цю дію не можна скасувати.</string>
-    <string name="threat_log_clear_confirm">Очистити</string>
-    <string name="threat_log_clear_cancel">Скасувати</string>
-    <string name="threat_log_cleared_toast">Журнали загров очищено</string>
-    <string name="threat_log_exported_toast">Журнали загров експортовано</string>
-    <string name="threat_log_imported_toast">Журнали загров імпортовано</string>
     <string name="behavior_graph_clear">ОЧИСТИТИ ГРАФІК ПОВЕДІНКИ</string>
     <string name="behavior_graph_clear_title">Очистити графік поведінки</string>
     <string name="behavior_graph_clear_msg">Усі дані графіка поведінки та історію буде стерто. Цю дію не можна скасувати.</string>

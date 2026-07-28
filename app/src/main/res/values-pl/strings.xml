@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ZROOTOWANE URZĄDZENIE</string>
@@ -479,16 +479,6 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="threat_log_clear">WYCZYŚĆ</string>
     <string name="threat_log_clear_title">Wyczyść dzienniki zagrożeń</string>
     <string name="threat_log_clear_msg">Czy na pewno? Tej operacji nie można cofnąć.</string>
-    <string name="threat_log_clear_confirm">Wyczyść</string>
-    <string name="threat_log_clear_cancel">Anuluj</string>
-    <string name="threat_log_cleared_toast">Dzienniki zagrożeń wyczyszczone</string>
-    <string name="threat_log_exported_toast">Dzienniki zagrożeń wyeksportowane</string>
-    <string name="threat_log_imported_toast">Dzienniki zagrożeń zaimportowane</string>
-    <string name="threat_log_export">EKSPORTUJ .TXT</string>
-    <string name="threat_log_import">IMPORTUJ .TXT</string>
-    <string name="threat_log_clear">WYCZYŚĆ</string>
-    <string name="threat_log_clear_title">Wyczyść dzienniki zagrożeń</string>
-    <string name="threat_log_clear_msg">Jesteś pewien? Tej operacji nie można cofnąć.</string>
     <string name="threat_log_clear_confirm">Wyczyść</string>
     <string name="threat_log_clear_cancel">Anuluj</string>
     <string name="threat_log_cleared_toast">Dzienniki zagrożeń wyczyszczone</string>

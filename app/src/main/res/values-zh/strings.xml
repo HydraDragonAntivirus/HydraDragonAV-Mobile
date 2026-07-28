@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ 已 ROOT 设备</string>
@@ -474,16 +474,6 @@
     <string name="reason_scan_detected_malware">扫描检测到的恶意软件</string>
     <string name="reason_previously_detected_running">之前检测到的恶意应用正在运行</string>
     <string name="reason_malicious_behavior">恶意行为</string>
-    <string name="threat_log_export">导出 .TXT</string>
-    <string name="threat_log_import">导入 .TXT</string>
-    <string name="threat_log_clear">清除</string>
-    <string name="threat_log_clear_title">清除威胁日志</string>
-    <string name="threat_log_clear_msg">确定吗？此操作无法撤销。</string>
-    <string name="threat_log_clear_confirm">清除</string>
-    <string name="threat_log_clear_cancel">取消</string>
-    <string name="threat_log_cleared_toast">威胁日志已清除</string>
-    <string name="threat_log_exported_toast">威胁日志已导出</string>
-    <string name="threat_log_imported_toast">威胁日志已导入</string>
     <string name="threat_log_export">导出 .TXT</string>
     <string name="threat_log_import">导入 .TXT</string>
     <string name="threat_log_clear">清除</string>

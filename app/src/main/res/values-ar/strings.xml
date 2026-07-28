@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ جهاز ذو صلاحية روت (ROOT)</string>
@@ -477,16 +477,6 @@
     <string name="threat_log_export">تصدير .TXT</string>
     <string name="threat_log_import">استيراد .TXT</string>
     <string name="threat_log_clear">مسح</string>
-    <string name="threat_log_clear_title">مسح سجلات التهديدات</string>
-    <string name="threat_log_clear_msg">هل أنت متأكد؟ لا يمكن التراجع عن هذا.</string>
-    <string name="threat_log_clear_confirm">مسح</string>
-    <string name="threat_log_clear_cancel">إلغاء</string>
-    <string name="threat_log_cleared_toast">تم مسح سجلات التهديدات</string>
-    <string name="threat_log_exported_toast">تم تصدير سجلات التهديدات</string>
-    <string name="threat_log_imported_toast">تم استيراد سجلات التهديدات</string>
-    <string name="threat_log_export">تَصْدِير .TXT</string>
-    <string name="threat_log_import">اِسْتِيرَاد .TXT</string>
-    <string name="threat_log_clear">مَسْح</string>
     <string name="threat_log_clear_title">مسح سجلات التهديدات</string>
     <string name="threat_log_clear_msg">هل أنت متأكد؟ لا يمكن التراجع عن هذا.</string>
     <string name="threat_log_clear_confirm">مسح</string>

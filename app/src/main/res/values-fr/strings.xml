@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ APPAREIL ROOTÉ</string>
@@ -484,19 +484,9 @@ Vous pouvez activer cela plus tard depuis Paramètres.</string>
     <string name="threat_log_cleared_toast">Journaux de menaces effacés</string>
     <string name="threat_log_exported_toast">Journaux de menaces exportés</string>
     <string name="threat_log_imported_toast">Journaux de menaces importés</string>
-    <string name="threat_log_export">EXPORTER .TXT</string>
-    <string name="threat_log_import">IMPORTER .TXT</string>
-    <string name="threat_log_clear">EFFACER</string>
-    <string name="threat_log_clear_title">Effacer les journaux de menaces</string>
-    <string name="threat_log_clear_msg">Êtes-vous sûr ? Cette action est irréversible.</string>
-    <string name="threat_log_clear_confirm">Effacer</string>
-    <string name="threat_log_clear_cancel">Annuler</string>
-    <string name="threat_log_cleared_toast">Journaux de menaces effacés</string>
-    <string name="threat_log_exported_toast">Journaux de menaces exportés</string>
-    <string name="threat_log_imported_toast">Journaux de menaces importés</string>
     <string name="behavior_graph_clear">EFFACER GRAPHIQUE COMPORTEMENTAL</string>
     <string name="behavior_graph_clear_title">Effacer le graphique comportemental</string>
-    <string name="behavior_graph_clear_msg">Toutes les données du graphique comportemental et l'historique seront effacées. Cette action est irréversible.</string>
+    <string name="behavior_graph_clear_msg">Toutes les données du graphique comportemental et l\'historique seront effacées. Cette action est irréversible.</string>
     <string name="behavior_graph_cleared_toast">Graphique comportemental effacé</string>
 </resources>
 

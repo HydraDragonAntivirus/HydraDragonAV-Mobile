@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ DISPOSITIVO ROOTEADO</string>
@@ -474,16 +474,6 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="reason_scan_detected_malware">Malware detectado pela verificação</string>
     <string name="reason_previously_detected_running">O aplicativo com malware detectado anteriormente está em execução</string>
     <string name="reason_malicious_behavior">Comportamento malicioso</string>
-    <string name="threat_log_export">EXPORTAR .TXT</string>
-    <string name="threat_log_import">IMPORTAR .TXT</string>
-    <string name="threat_log_clear">LIMPAR</string>
-    <string name="threat_log_clear_title">Limpar registros de ameaças</string>
-    <string name="threat_log_clear_msg">Tem certeza? Isto não pode ser desfeito.</string>
-    <string name="threat_log_clear_confirm">Limpar</string>
-    <string name="threat_log_clear_cancel">Cancelar</string>
-    <string name="threat_log_cleared_toast">Registros de ameaças limpos</string>
-    <string name="threat_log_exported_toast">Registros de ameaças exportados</string>
-    <string name="threat_log_imported_toast">Registros de ameaças importados</string>
     <string name="threat_log_export">EXPORTAR .TXT</string>
     <string name="threat_log_import">IMPORTAR .TXT</string>
     <string name="threat_log_clear">LIMPAR</string>

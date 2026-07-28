@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ دستگاه روت شده</string>
@@ -484,16 +484,6 @@
     <string name="threat_log_cleared_toast">گزارش‌های تهدید پاک شدند</string>
     <string name="threat_log_exported_toast">گزارش‌های تهدید خروجی شدند</string>
     <string name="threat_log_imported_toast">گزارش‌های تهدید ورودی شدند</string>
-    <string name="threat_log_export">خروجی .TXT</string>
-    <string name="threat_log_import">ورودی .TXT</string>
-    <string name="threat_log_clear">پاک کردن</string>
-    <string name="threat_log_clear_title">پاک کردن گزارش‌های تهدید</string>
-    <string name="threat_log_clear_msg">آیا مطمئن هستید؟ این عمل قابل بازگشت نیست.</string>
-    <string name="threat_log_clear_confirm">پاک کردن</string>
-    <string name="threat_log_clear_cancel">لغو</string>
-    <string name="threat_log_cleared_toast">گزارش‌های تهدید پاک شد</string>
-    <string name="threat_log_exported_toast">گزارش‌های تهدید خروجی شد</string>
-    <string name="threat_log_imported_toast">گزارش‌های تهدید ورودی شد</string>
     <string name="behavior_graph_clear">پاک کردن نمودار رفتاری</string>
     <string name="behavior_graph_clear_title">پاک کردن نمودار رفتاری</string>
     <string name="behavior_graph_clear_msg">همه داده‌های نمودار رفتاری و تاریخچه پاک خواهند شد. این عمل قابل بازگشت نیست.</string>

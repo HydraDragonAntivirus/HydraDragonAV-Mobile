@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon एंटीवायरस</string>
     <string name="root_warning_title">⚠ ⚠ रूटेड डिवाइस</string>
@@ -479,16 +479,6 @@
     <string name="threat_log_clear">साफ़ करें</string>
     <string name="threat_log_clear_title">खतरे के लॉग साफ़ करें</string>
     <string name="threat_log_clear_msg">क्या आप sure हैं? यह पूर्ववत नहीं किया जा सकता।</string>
-    <string name="threat_log_clear_confirm">साफ़ करें</string>
-    <string name="threat_log_clear_cancel">रद्द करें</string>
-    <string name="threat_log_cleared_toast">खतरे के लॉग साफ़ हो गए</string>
-    <string name="threat_log_exported_toast">खतरे के लॉग निर्यात हो गए</string>
-    <string name="threat_log_imported_toast">खतरे के लॉग आयात हो गए</string>
-    <string name="threat_log_export">निर्यात .TXT</string>
-    <string name="threat_log_import">आयात .TXT</string>
-    <string name="threat_log_clear">साफ़ करें</string>
-    <string name="threat_log_clear_title">खतरे के लॉग साफ़ करें</string>
-    <string name="threat_log_clear_msg">क्या आप sure हैं? इसे पूर्ववत नहीं किया जा सकता।</string>
     <string name="threat_log_clear_confirm">साफ़ करें</string>
     <string name="threat_log_clear_cancel">रद्द करें</string>
     <string name="threat_log_cleared_toast">खतरे के लॉग साफ़ हो गए</string>

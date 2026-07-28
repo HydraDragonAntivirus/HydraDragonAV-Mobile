@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ ルート化された端末</string>
@@ -484,16 +484,6 @@
     <string name="threat_log_cleared_toast">脅威ログがクリアされました</string>
     <string name="threat_log_exported_toast">脅威ログがエクスポートされました</string>
     <string name="threat_log_imported_toast">脅威ログがインポートされました</string>
-    <string name="threat_log_export">エクスポート .TXT</string>
-    <string name="threat_log_import">インポート .TXT</string>
-    <string name="threat_log_clear">クリア</string>
-    <string name="threat_log_clear_title">脅威ログをクリア</string>
-    <string name="threat_log_clear_msg">よろしいですか？この操作は元に戻せません。</string>
-    <string name="threat_log_clear_confirm">クリア</string>
-    <string name="threat_log_clear_cancel">キャンセル</string>
-    <string name="threat_log_cleared_toast">脅威ログをクリアしました</string>
-    <string name="threat_log_exported_toast">脅威ログをエクスポートしました</string>
-    <string name="threat_log_imported_toast">脅威ログをインポートしました</string>
     <string name="behavior_graph_clear">動作グラフをクリア</string>
     <string name="behavior_graph_clear_title">動作グラフをクリア</string>
     <string name="behavior_graph_clear_msg">すべての動作グラフデータと履歴が消去されます。この操作は元に戻せません。</string>

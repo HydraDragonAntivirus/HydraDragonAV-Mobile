@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ THIẾT BỊ ĐÃ ROOT</string>
@@ -479,16 +479,6 @@ Bạn có thể bật tính năng này sau từ Cài đặt.</string>
     <string name="threat_log_clear">XÓA</string>
     <string name="threat_log_clear_title">Xóa nhật ký mối đe dọa</string>
     <string name="threat_log_clear_msg">Bạn có chắc chắn? Hành động này không thể hoàn tác.</string>
-    <string name="threat_log_clear_confirm">Xóa</string>
-    <string name="threat_log_clear_cancel">Hủy</string>
-    <string name="threat_log_cleared_toast">Nhật ký mối đe dọa đã xóa</string>
-    <string name="threat_log_exported_toast">Nhật ký mối đe dọa đã xuất</string>
-    <string name="threat_log_imported_toast">Nhật ký mối đe dọa đã nhập</string>
-    <string name="threat_log_export">XUẤT .TXT</string>
-    <string name="threat_log_import">NHẬP .TXT</string>
-    <string name="threat_log_clear">XÓA</string>
-    <string name="threat_log_clear_title">Xóa nhật ký mối đe dọa</string>
-    <string name="threat_log_clear_msg">Bạn có chắc? Hành động này không thể hoàn tác.</string>
     <string name="threat_log_clear_confirm">Xóa</string>
     <string name="threat_log_clear_cancel">Hủy</string>
     <string name="threat_log_cleared_toast">Nhật ký mối đe dọa đã xóa</string>

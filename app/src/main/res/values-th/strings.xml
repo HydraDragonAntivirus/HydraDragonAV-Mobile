@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ อุปกรณ์ที่รูทแล้ว</string>
@@ -484,16 +484,6 @@
     <string name="threat_log_cleared_toast">บันทึกภัยคุกคามถูกล้างแล้ว</string>
     <string name="threat_log_exported_toast">บันทึกภัยคุกคามถูกส่งออกแล้ว</string>
     <string name="threat_log_imported_toast">บันทึกภัยคุกคามถูกนำเข้าแล้ว</string>
-    <string name="threat_log_export">ส่งออก .TXT</string>
-    <string name="threat_log_import">นำเข้า .TXT</string>
-    <string name="threat_log_clear">ล้าง</string>
-    <string name="threat_log_clear_title">ล้างบันทึกภัยคุกคาม</string>
-    <string name="threat_log_clear_msg">แน่ใจหรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้</string>
-    <string name="threat_log_clear_confirm">ล้าง</string>
-    <string name="threat_log_clear_cancel">ยกเลิก</string>
-    <string name="threat_log_cleared_toast">ล้างบันทึกภัยคุกคามแล้ว</string>
-    <string name="threat_log_exported_toast">ส่งออกบันทึกภัยคุกคามแล้ว</string>
-    <string name="threat_log_imported_toast">นำเข้าบันทึกภัยคุกคามแล้ว</string>
     <string name="behavior_graph_clear">ล้างกราฟพฤติกรรม</string>
     <string name="behavior_graph_clear_title">ล้างกราฟพฤติกรรม</string>
     <string name="behavior_graph_clear_msg">ข้อมูลกราฟพฤติกรรมและประวัติทั้งหมดจะถูกลบ การดำเนินการนี้ไม่สามารถยกเลิกได้</string>
