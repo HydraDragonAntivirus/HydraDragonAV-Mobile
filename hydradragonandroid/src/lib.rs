@@ -3207,6 +3207,8 @@ struct Manifest {
     min_sdk: Option<i64>,
     max_sdk: Option<i64>,
     target_sdk: Option<i64>,
+    /// `<meta-data>` entries: (name, value) pairs from the manifest.
+    meta_data: Vec<(String, String)>,
 }
 
 /// Read a boolean-typed AXML attribute (TYPE_INT_BOOLEAN: data u32 at a+16,
@@ -3234,6 +3236,7 @@ fn parse_manifest(data: &[u8]) -> Option<Manifest> {
         min_sdk: None,
         max_sdk: None,
         target_sdk: None,
+        meta_data: Vec::new(),
     };
 
     // Small nesting-aware state for locating a MAIN/LAUNCHER activity: which
@@ -3303,6 +3306,17 @@ fn parse_manifest(data: &[u8]) -> Option<Manifest> {
                 }
                 "service" => push_component(data, &strings, off, &mut m.services),
                 "receiver" => push_component(data, &strings, off, &mut m.receivers),
+                "meta-data" => {
+                    let name = axml_find_attr(data, &strings, off, "name")
+                        .and_then(|a| axml_attr_string(data, &strings, a));
+                    let value = axml_find_attr(data, &strings, off, "value")
+                        .and_then(|a| axml_attr_string(data, &strings, a));
+                    if let (Some(n), Some(v)) = (name, value) {
+                        if m.meta_data.len() < 256 {
+                            m.meta_data.push((n, v));
+                        }
+                    }
+                }
                 "intent-filter" => {
                     in_intent_filter = true;
                     has_action_main = false;
@@ -3394,13 +3408,20 @@ fn build_androguard_json(buffers: &[Buf], urls: &[String]) -> Option<String> {
         }
     };
 
+    let meta_data_json = manifest.meta_data.iter()
+        .map(|(n, v)| format!("{{\"name\":\"{}\",\"value\":\"{}\"}}",
+            json_escape(n), json_escape(v)))
+        .collect::<Vec<_>>()
+        .join(",");
+
     Some(format!(
         concat!(
             "{{\"package_name\":{},\"app_name\":{},\"main_activity\":{},",
             "\"activities\":[{}],\"services\":[{}],\"receivers\":[{}],",
             "\"permissions\":[{}],\"new_permissions\":[{}],\"urls\":[{}],",
             "\"min_sdk_version\":{},\"max_sdk_version\":{},\"target_sdk_version\":{},",
-            "\"certificate\":{{\"subjectDN\":{},\"IssuerDN\":{},\"sha1\":{}}}}}"
+            "\"certificate\":{{\"subjectDN\":{},\"IssuerDN\":{},\"sha1\":{}}},",
+            "\"meta_data\":[{}]}}"
         ),
         opt_str(&manifest.package),
         opt_str(&manifest.app_name),
@@ -3417,6 +3438,7 @@ fn build_androguard_json(buffers: &[Buf], urls: &[String]) -> Option<String> {
         opt_str(&cert.as_ref().map(|c| c.subject.clone())),
         opt_str(&cert.as_ref().map(|c| c.issuer.clone())),
         opt_str(&cert.as_ref().map(|c| c.sha1.clone())),
+        meta_data_json,
     ))
 }
 
