@@ -63,6 +63,11 @@ public class ThreatLogger {
         return prefs.getString("logs", context.getString(com.hydradragon.antivirus.R.string.no_threat_logs));
     }
 
+    public static void clearLogs(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs.edit().clear().apply();
+    }
+
     public static void exportLogs(Context context, Uri uri) {
         String logs = getLogs(context);
         try (OutputStream out = context.getContentResolver().openOutputStream(uri)) {

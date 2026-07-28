@@ -17,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.hydradragon.antivirus.service.ThreatLogger;
+import com.hydradragon.antivirus.engine.BehaviorFlags;
 
 public class ThreatLogFragment extends Fragment {
 
@@ -27,7 +28,7 @@ public class ThreatLogFragment extends Fragment {
             uri -> {
                 if (uri == null) return;
                 ThreatLogger.exportLogs(requireContext(), uri);
-                Toast.makeText(getContext(), "Threat logs exported", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), R.string.threat_log_exported_toast, Toast.LENGTH_SHORT).show();
             });
 
     private final androidx.activity.result.ActivityResultLauncher<String[]> importLauncher =
@@ -36,7 +37,7 @@ public class ThreatLogFragment extends Fragment {
                 if (uri == null) return;
                 ThreatLogger.importLogs(requireContext(), uri);
                 refreshLogs();
-                Toast.makeText(getContext(), "Threat logs imported", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), R.string.threat_log_imported_toast, Toast.LENGTH_SHORT).show();
             });
 
     @Nullable
@@ -59,7 +60,7 @@ public class ThreatLogFragment extends Fragment {
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
 
         TextView exportBtn = new TextView(getContext());
-        exportBtn.setText("EXPORT .TXT");
+        exportBtn.setText(R.string.threat_log_export);
         exportBtn.setTextColor(Color.parseColor("#FFD700"));
         exportBtn.setTextSize(12);
         exportBtn.setTypeface(android.graphics.Typeface.MONOSPACE);
@@ -68,7 +69,7 @@ public class ThreatLogFragment extends Fragment {
         header.addView(exportBtn);
 
         TextView importBtn = new TextView(getContext());
-        importBtn.setText("IMPORT .TXT");
+        importBtn.setText(R.string.threat_log_import);
         importBtn.setTextColor(Color.parseColor("#FFD700"));
         importBtn.setTextSize(12);
         importBtn.setTypeface(android.graphics.Typeface.MONOSPACE);
@@ -76,7 +77,52 @@ public class ThreatLogFragment extends Fragment {
         importBtn.setOnClickListener(v -> importLauncher.launch(new String[]{"text/plain"}));
         header.addView(importBtn);
 
+        TextView clearBtn = new TextView(getContext());
+        clearBtn.setText(R.string.threat_log_clear);
+        clearBtn.setTextColor(Color.parseColor("#FF0040"));
+        clearBtn.setTextSize(12);
+        clearBtn.setTypeface(android.graphics.Typeface.MONOSPACE);
+        clearBtn.setPadding(16, 8, 16, 8);
+        clearBtn.setOnClickListener(v -> {
+            new android.app.AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(R.string.threat_log_clear_title)
+                .setMessage(R.string.threat_log_clear_msg)
+                .setPositiveButton(R.string.threat_log_clear_confirm, (d, w) -> {
+                    ThreatLogger.clearLogs(requireContext());
+                    refreshLogs();
+                    Toast.makeText(getContext(), R.string.threat_log_cleared_toast, Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.threat_log_clear_cancel, null)
+                .show();
+        });
+        header.addView(clearBtn);
+
+        // separator + behavior data row
         root.addView(header);
+
+        LinearLayout behaviorRow = new LinearLayout(getContext());
+        behaviorRow.setOrientation(LinearLayout.HORIZONTAL);
+        behaviorRow.setPadding(40, 0, 40, 20);
+
+        TextView behaviorClearBtn = new TextView(getContext());
+        behaviorClearBtn.setText(R.string.behavior_data_clear);
+        behaviorClearBtn.setTextColor(Color.parseColor("#FF0040"));
+        behaviorClearBtn.setTextSize(12);
+        behaviorClearBtn.setTypeface(android.graphics.Typeface.MONOSPACE);
+        behaviorClearBtn.setPadding(16, 8, 16, 8);
+        behaviorClearBtn.setOnClickListener(v -> {
+            new android.app.AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(R.string.behavior_data_clear_title)
+                .setMessage(R.string.behavior_data_clear_msg)
+                .setPositiveButton(R.string.threat_log_clear_confirm, (d, w) -> {
+                    BehaviorFlags.clearAll(requireContext());
+                    Toast.makeText(getContext(), R.string.behavior_data_cleared_toast, Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.threat_log_clear_cancel, null)
+                .show();
+        });
+        behaviorRow.addView(behaviorClearBtn);
+        root.addView(behaviorRow);
 
         ScrollView scrollView = new ScrollView(getContext());
         tv = new TextView(getContext());

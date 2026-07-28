@@ -476,5 +476,19 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="reason_scan_detected_malware">Scan-detected malware</string>
     <string name="reason_previously_detected_running">Previously detected malware app is now running</string>
     <string name="reason_malicious_behavior">Malicious behavior</string>
+    <string name="threat_log_export">EXPORT .TXT</string>
+    <string name="threat_log_import">IMPORT .TXT</string>
+    <string name="threat_log_clear">CLEAR</string>
+    <string name="threat_log_clear_title">Clear Threat Logs</string>
+    <string name="threat_log_clear_msg">Are you sure? This cannot be undone.</string>
+    <string name="threat_log_clear_confirm">Clear</string>
+    <string name="threat_log_clear_cancel">Cancel</string>
+    <string name="threat_log_cleared_toast">Threat logs cleared</string>
+    <string name="threat_log_exported_toast">Threat logs exported</string>
+    <string name="threat_log_imported_toast">Threat logs imported</string>
+    <string name="behavior_data_clear">CLEAR BEHAVIOR DATA</string>
+    <string name="behavior_data_clear_title">Clear Behavior Data</string>
+    <string name="behavior_data_clear_msg">All behavioral flags and history will be erased. This cannot be undone.</string>
+    <string name="behavior_data_cleared_toast">Behavior data cleared</string>
 </resources>
 

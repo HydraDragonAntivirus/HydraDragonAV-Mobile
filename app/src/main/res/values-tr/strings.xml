@@ -474,6 +474,20 @@ Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.</string>
     <string name="reason_scan_detected_malware">Taramada tespit edilen zararlı yazılım</string>
     <string name="reason_previously_detected_running">Tespit edilmiş zararlı uygulama şu an çalışıyor</string>
     <string name="reason_malicious_behavior">Şüpheli / zararlı davranış</string>
+    <string name="threat_log_export">DIŞA AKTAR .TXT</string>
+    <string name="threat_log_import">İÇE AKTAR .TXT</string>
+    <string name="threat_log_clear">TEMİZLE</string>
+    <string name="threat_log_clear_title">Tehdit Kayıtlarını Temizle</string>
+    <string name="threat_log_clear_msg">Emin misiniz? Bu işlem geri alınamaz.</string>
+    <string name="threat_log_clear_confirm">Temizle</string>
+    <string name="threat_log_clear_cancel">İptal</string>
+    <string name="threat_log_cleared_toast">Tehdit kayıtları temizlendi</string>
+    <string name="threat_log_exported_toast">Tehdit kayıtları dışa aktarıldı</string>
+    <string name="threat_log_imported_toast">Tehdit kayıtları içe aktarıldı</string>
+    <string name="behavior_data_clear">DAVRANIŞ VERİSİNİ TEMİZLE</string>
+    <string name="behavior_data_clear_title">Davranış Verisini Temizle</string>
+    <string name="behavior_data_clear_msg">Tüm davranış bayrakları ve geçmiş silinecek. Bu işlem geri alınamaz.</string>
+    <string name="behavior_data_cleared_toast">Davranış verisi temizlendi</string>
 </resources>
 
 

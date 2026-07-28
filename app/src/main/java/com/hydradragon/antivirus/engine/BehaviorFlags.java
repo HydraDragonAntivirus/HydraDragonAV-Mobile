@@ -54,6 +54,11 @@ public final class BehaviorFlags {
         return reasonFor(c, pkg) != null;
     }
 
+    /** Clear all behavioral flags for every package. */
+    public static synchronized void clearAll(Context c) {
+        prefs(c).edit().clear().apply();
+    }
+
     public static synchronized void clear(Context c, String pkg) {
         SharedPreferences p = prefs(c);
         Set<String> set = new HashSet<>(p.getStringSet(KEY, new HashSet<>()));
