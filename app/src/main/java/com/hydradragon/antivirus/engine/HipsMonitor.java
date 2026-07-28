@@ -459,6 +459,8 @@ public final class HipsMonitor {
                         if (f.contains("conf=8") || f.contains("conf=9") || f.contains("conf=100")) pFrHigh++;
                     } else if (f.startsWith("FILE_CREATED")) { pFc++;
                     } else if (f.startsWith("FILE_COPY"))    { pCopy++;
+                    } else if (f.startsWith("FILE_EXTENSION_ADDED")) { pFc++;
+                    } else if (f.startsWith("FILE_EXTENSION_CHANGE")) { pFc++;
                     } else if (f.startsWith("WIPER"))        { hasWiper = true;
                     } else if (f.equals("SCAN_MALWARE") || f.equals("DOWNLOAD_MALWARE") || f.equals("PROCESS_ANOMALY")) {
                         hasScanMalware = true;

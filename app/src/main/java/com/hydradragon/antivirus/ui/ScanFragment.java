@@ -845,6 +845,9 @@ public class ScanFragment extends Fragment {
             threatAdapter.notifyDataSetChanged();
             tvThreats.setText(String.valueOf(displayThreatCount));
             tvActiveThreats.setText(String.valueOf(displayThreatCount));
+            tvScanned.setText(String.valueOf(result.getTotalScanned()));
+            if (progressBar.getMax() > 0)
+                tvProgress.setText(progressBar.getMax() + "/" + progressBar.getMax());
             tvScanStatus.setText(lastScanStatus);
             if (wasCancelled) {
                 tvScanStatus.setTextColor(0xFFFFAA00);

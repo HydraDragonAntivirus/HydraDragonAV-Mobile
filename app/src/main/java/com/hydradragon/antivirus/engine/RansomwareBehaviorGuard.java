@@ -243,6 +243,34 @@ public final class RansomwareBehaviorGuard {
                         break;
                     }
                 }
+
+                // FILE_EXTENSION_ADDED: known file with an appended suffix
+                // (e.g. "report.pdf" → "report.pdf.xyz")
+                for (String existing : known.keySet()) {
+                    if (!existing.equals(fileName) && fileName.startsWith(existing + ".")) {
+                        String suffix = fileName.substring(existing.length());
+                        HipsMonitor.addBehaviorFlag(pkg, "FILE_EXTENSION_ADDED:" + suffix);
+                        break;
+                    }
+                }
+
+                // FILE_EXTENSION_CHANGE: same stem, different extension
+                // (e.g. "report.pdf" → "report.jpg")
+                int dotIdx = fileName.lastIndexOf('.');
+                if (dotIdx > 0) {
+                    String newStem = fileName.substring(0, dotIdx);
+                    String newExt = fileName.substring(dotIdx);
+                    for (String existing : known.keySet()) {
+                        if (existing.equals(fileName)) continue;
+                        int edot = existing.lastIndexOf('.');
+                        if (edot > 0 && existing.substring(0, edot).equals(newStem)
+                                && !existing.substring(edot).equals(newExt)) {
+                            String oldExt = existing.substring(edot);
+                            HipsMonitor.addBehaviorFlag(pkg, "FILE_EXTENSION_CHANGE:" + oldExt + "→" + newExt);
+                            break;
+                        }
+                    }
+                }
             }
         }
         // Update directory snapshot for deletion tracking
