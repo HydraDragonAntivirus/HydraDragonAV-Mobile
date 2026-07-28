@@ -34,6 +34,7 @@ mod emulate;
 #[path = "emulate_stub.rs"]
 mod emulate;
 mod ip_scan;
+mod media_scan;
 mod suricata_scan;
 mod url_scan;
 mod benign_db;
@@ -813,6 +814,10 @@ fn is_executable_buffer(name: Option<&str>, data: &[u8], fmt: Option<&'static st
     )
 }
 
+fn is_media_file(data: &[u8]) -> bool {
+    media_scan::is_media_file(data)
+}
+
 fn is_harmless_resource_extension(lower: &str) -> bool {
     lower.ends_with(".png")
         || lower.ends_with(".jpg")
@@ -1106,6 +1111,11 @@ fn has_polyglot_or_hidden_data(data: &[u8]) -> bool {
     // JPEG signature: FF D8 FF
     if data.starts_with(&[0xFF, 0xD8, 0xFF]) {
         return jpeg_has_hidden(data);
+    }
+    // ISOBMFF media files (MP4, M4V, 3GP, MOV, etc.): walk the box tree to
+    // find the structural end of the file, then check for appended data.
+    if is_media_file(data) {
+        return media_scan::has_hidden_data(data);
     }
     // All other image types: scan only the last 4 KB for appended executable magic
     let tail_start = data.len().saturating_sub(4096);
@@ -3994,12 +4004,20 @@ fn collect_buffers(
                         // pass in Phase 3.
                         //
                         // Only known Android-relevant formats (DEX, ELF, archives,
-                        // text, images) get scanned here.  Desktop formats (PE,
-                        // Mach-O, OLE2, SWF, etc.) and unknown binaries are skipped
-                        // entirely — no ClamAV, no YARA.
+                        // text, images, media) get scanned here.  Desktop formats
+                        // (PE, Mach-O, OLE2, SWF, etc.) and unknown binaries are
+                        // skipped entirely — no ClamAV, no YARA.
+                        //
+                        // Media files (MP4, M4V, 3GP, etc.) are scanned
+                        // metadata-only — only the ISOBMFF boxes before/after the
+                        // `mdat` box are passed to ClamAV/YARA, skipping the raw
+                        // audio/video payload.  99.9 % of media-borne malware lives
+                        // in metadata; the 0.1 % that is a full-file phish is not
+                        // detectable via static signatures anyway.
                         if let Some(clamav_engine) = clamav {
                             if relevant && !skip_by_size(&item.buf)
-                                && is_executable_buffer(item.entry_name.as_deref(), &item.buf, fmt)
+                                && (is_executable_buffer(item.entry_name.as_deref(), &item.buf, fmt)
+                                    || is_media_file(&item.buf))
                             {
                                 let obj_path = if idx == 0 {
                                     path.to_string()
@@ -4009,9 +4027,14 @@ fn collect_buffers(
                                         None => format!("{path}!/unnamed_{idx}"),
                                     }
                                 };
+                                let scan_buf = if is_media_file(&item.buf) {
+                                    media_scan::extract_metadata(&item.buf)
+                                } else {
+                                    item.buf.to_vec()
+                                };
                                 match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                                     clamav_engine.scan_bytes_named_with_container(
-                                        &item.buf,
+                                        &scan_buf,
                                         &obj_path,
                                         hydradragonclamav::ScanOptions::default(),
                                         &[],
@@ -4036,6 +4059,15 @@ fn collect_buffers(
                                             "collect_buffers: streaming scan PANIC on {obj_path}, skipping this buffer: {}",
                                             last_panic()
                                         ));
+                                    }
+                                }
+                                if is_media_file(&item.buf) && media_scan::has_hidden_data(&item.buf) {
+                                    if let Ok(mut sd) = streaming_dets.lock() {
+                                        sd.push(("HDR.Media.Steganography".to_string(), obj_path.clone(), lineage.clone()));
+                                    }
+                                } else if has_polyglot_or_hidden_data(&item.buf) {
+                                    if let Ok(mut sd) = streaming_dets.lock() {
+                                        sd.push(("HDR.Image.Steganography".to_string(), obj_path, lineage.clone()));
                                     }
                                 }
                             }
