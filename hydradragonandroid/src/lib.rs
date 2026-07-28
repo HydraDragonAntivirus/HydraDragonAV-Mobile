@@ -1117,9 +1117,24 @@ fn has_polyglot_or_hidden_data(data: &[u8]) -> bool {
     if is_media_file(data) {
         return media_scan::has_hidden_data(data);
     }
-    // All other image types: scan only the last 4 KB for appended executable magic
-    let tail_start = data.len().saturating_sub(4096);
-    image_magic_in_slice(&data[tail_start..])
+    // Other known image types (GIF, BMP, WebP, TIFF, ICO): scan only the last
+    // 4 KB for appended executable magic.  Only run when the file actually starts
+    // with image magic — ZIPs, ELFs, DEXs etc. have their own magic and checking
+    // their tail would FP on valid archive structures (PK\x03\x04 in the central
+    // directory, dex\n etc.).
+    let starts_with_image_magic = data.len() > 4 && (
+        data.starts_with(b"GIF8")
+        || data.starts_with(b"BM")
+        || (data.starts_with(b"RIFF") && data.len() > 12 && &data[8..12] == b"WEBP")
+        || data.starts_with(&[0x49, 0x49, 0x2A, 0x00])
+        || data.starts_with(&[0x4D, 0x4D, 0x00, 0x2A])
+        || data.starts_with(&[0x00, 0x00, 0x01, 0x00])
+    );
+    if starts_with_image_magic {
+        let tail_start = data.len().saturating_sub(4096);
+        return image_magic_in_slice(&data[tail_start..]);
+    }
+    false
 }
 
 /// Smallest TLSH distance from `buf` to any digest in `db`, or None when
