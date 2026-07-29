@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ 루팅된 장치</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">스캔할 최대 파일 크기가 저장되었습니다</string>
     <string name="max_text_scan_bytes_btn">최대 HTML/텍스트 파일 크기</string>
     <string name="max_text_scan_bytes_label">HTML/텍스트 파일 검사 (MB까지):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">%1$d~%2$d MB 사이 — 이보다 큰 텍스트 파일은 ClamAV에서 건너뜁니다(탐지 손실 없음).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">화이트리스트</string>
     <string name="ignored_signatures_btn">무시된 시그니처</string>
@@ -465,7 +465,6 @@
     <string name="graph_wiper">와이퍼 감지됨</string>
     <string name="graph_rooted">루팅됨</string>
     <string name="graph_debug">디버그 모드</string>
-    <string name="behavior_auto_kill">포그라운드 악성 코드 자동 종료(접근성)</string>
     <string name="graph_no_data">아직 행동 데이터가 없습니다</string>
     <string name="graph_device_behavior">기기 동작</string>
     <string name="graph_general_device_behavior">🌐 일반 기기 동작 (모든 앱)</string>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ دستگاه روت شده</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">حداکثر اندازه فایل برای اسکن ذخیره شد</string>
     <string name="max_text_scan_bytes_btn">حداکثر اندازه فایل HTML/متن</string>
     <string name="max_text_scan_bytes_label">اسکن فایلهای HTML/متن تا (مگابایت):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">بین %1$d و %2$d مگابایت — فایل‌های متنی بزرگتر از این در ClamAV رد می‌شوند (بدون کاهش تشخیص).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">لیست‌های سفید</string>
     <string name="ignored_signatures_btn">امضاهای نادیده‌گرفته‌شده</string>
@@ -465,7 +465,6 @@
     <string name="graph_wiper">برف پاک کن شناسایی شد</string>
     <string name="graph_rooted">ریشه دار شده</string>
     <string name="graph_debug">حالت اشکال زدایی</string>
-    <string name="behavior_auto_kill">کشتن خودکار بدافزار پیش زمینه (دسترسی)</string>
     <string name="graph_no_data">هنوز داده رفتاری وجود ندارد</string>
     <string name="graph_device_behavior">رفتار دستگاه</string>
     <string name="graph_general_device_behavior">🌐 رفتار کلی دستگاه (همه برنامه‌ها)</string>

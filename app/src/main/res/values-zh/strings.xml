@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ 已 ROOT 设备</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">扫描的最大文件大小已保存</string>
     <string name="max_text_scan_bytes_btn">最大 HTML/文本文件大小</string>
     <string name="max_text_scan_bytes_label">扫描 HTML/文本文件至（MB）:</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">介于 %1$d 到 %2$d MB 之间 — 超过此大小的文本文件将在 ClamAV 中被跳过（不会遗漏检测）。</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">白名单</string>
     <string name="ignored_signatures_btn">已忽略的签名</string>
@@ -465,7 +465,6 @@
     <string name="graph_wiper">检测到雨刮器</string>
     <string name="graph_rooted">扎根</string>
     <string name="graph_debug">调试模式</string>
-    <string name="behavior_auto_kill">自动杀死前台恶意软件（可访问性）</string>
     <string name="graph_no_data">尚无行为数据</string>
     <string name="graph_device_behavior">设备行为</string>
     <string name="graph_general_device_behavior">🌐 通用设备行为（所有应用）</string>

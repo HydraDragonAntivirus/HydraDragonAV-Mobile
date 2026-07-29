@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ DISPOSITIVO ROOT</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">Dimensione massima file da scansionare salvata</string>
     <string name="max_text_scan_bytes_btn">Dimensione max file HTML/testo</string>
     <string name="max_text_scan_bytes_label">Scansiona file HTML/testo fino a (MB):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">Tra %1$d e %2$d MB — i file di testo oltre questa dimensione vengono saltati in ClamAV (nessuna perdita di rilevamento).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Liste bianche</string>
     <string name="ignored_signatures_btn">Firme ignorate</string>
@@ -465,7 +465,6 @@ Puoi abilitarlo in seguito dalle Impostazioni.</string>
     <string name="graph_wiper">Rilevato tergicristallo</string>
     <string name="graph_rooted">Radicato</string>
     <string name="graph_debug">Modalità di debug</string>
-    <string name="behavior_auto_kill">Elimina automaticamente il malware in primo piano (accessibilità)</string>
     <string name="graph_no_data">Nessun dato comportamentale ancora</string>
     <string name="graph_device_behavior">Comportamento Dispositivo</string>
     <string name="graph_general_device_behavior">🌐 Comportamento Generale del Dispositivo (Tutte le App)</string>

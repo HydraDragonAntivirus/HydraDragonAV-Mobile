@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ ⚠ ルート化された端末</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">スキャンする最大ファイルサイズを保存しました</string>
     <string name="max_text_scan_bytes_btn">HTMLやテキストファイルの最大サイズ</string>
     <string name="max_text_scan_bytes_label">HTML/テキストファイルをスキャン（MBまで）:</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">%1$d〜%2$d MBの範囲 — これを超えるテキストファイルはClamAVでスキップされます（検出漏れなし）。</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">ホワイトリスト</string>
     <string name="ignored_signatures_btn">無視するシグネチャ</string>
@@ -465,7 +465,6 @@
     <string name="graph_wiper">ワイパーを検出しました</string>
     <string name="graph_rooted">根付いた</string>
     <string name="graph_debug">デバッグモード</string>
-    <string name="behavior_auto_kill">フォアグラウンド マルウェアを自動停止する (アクセシビリティ)</string>
     <string name="graph_no_data">行動データはまだありません</string>
     <string name="graph_device_behavior">デバイスの動作</string>
     <string name="graph_general_device_behavior">🌐 一般的なデバイス動作（すべてのアプリ）</string>

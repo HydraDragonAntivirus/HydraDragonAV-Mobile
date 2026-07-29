@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ GEROOTETES GERÄT</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">Maximale Scan-Dateigröße gespeichert</string>
     <string name="max_text_scan_bytes_btn">Max. HTML/Text-Dateigröße</string>
     <string name="max_text_scan_bytes_label">HTML/Textdateien scannen bis (MB):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">Zwischen %1$d und %2$d MB — Textdateien darüber werden in ClamAV übersprungen (keine Erkennungseinbußen).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Positivlisten</string>
     <string name="ignored_signatures_btn">Ignorierte Signaturen</string>
@@ -465,7 +465,6 @@ Du kannst dies später in den Einstellungen aktivieren.</string>
     <string name="graph_wiper">Wischer erkannt</string>
     <string name="graph_rooted">Verwurzelt</string>
     <string name="graph_debug">Debug-Modus</string>
-    <string name="behavior_auto_kill">Vordergrund-Malware automatisch töten (Barrierefreiheit)</string>
     <string name="graph_no_data">Noch keine Verhaltensdaten</string>
     <string name="graph_device_behavior">Geräteverhalten</string>
     <string name="graph_yes">JA</string>

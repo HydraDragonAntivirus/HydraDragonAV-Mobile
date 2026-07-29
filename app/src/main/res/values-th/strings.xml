@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ อุปกรณ์ที่รูทแล้ว</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">บันทึกขนาดไฟล์สูงสุดที่จะสแกนแล้ว</string>
     <string name="max_text_scan_bytes_btn">ขนาดไฟล์ HTML/ข้อความสูงสุด</string>
     <string name="max_text_scan_bytes_label">สแกนไฟล์ HTML/ข้อความถึง (MB):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">ระหว่าง %1$d ถึง %2$d MB — ไฟล์ข้อความที่ใหญ่กว่านี้จะถูกข้ามใน ClamAV (ไม่สูญเสียการตรวจจับ)</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">รายการที่อนุญาต</string>
     <string name="ignored_signatures_btn">ลายเซ็นที่ถูกละเว้น</string>
@@ -465,7 +465,6 @@
     <string name="graph_wiper">ตรวจพบที่ปัดน้ำฝน</string>
     <string name="graph_rooted">รูทแล้ว</string>
     <string name="graph_debug">โหมดแก้ไขข้อบกพร่อง</string>
-    <string name="behavior_auto_kill">ฆ่ามัลแวร์เบื้องหน้าอัตโนมัติ (การเข้าถึง)</string>
     <string name="graph_no_data">ยังไม่มีข้อมูลพฤติกรรม</string>
     <string name="graph_device_behavior">พฤติกรรมอุปกรณ์</string>
     <string name="graph_general_device_behavior">🌐 พฤติกรรมอุปกรณ์ทั่วไป (แอปทั้งหมด)</string>

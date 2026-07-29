@@ -188,10 +188,12 @@ static MAX_TEXT_SCAN_BYTES: std::sync::atomic::AtomicU32 =
 static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
     std::sync::atomic::AtomicU32::new(650);
 
-/// User-configurable toggle: when true, only scan extracted buffers that are
-/// DEX files, ELF native libs, or AndroidManifest.xml — skip all other assets
-/// (images, layouts, resources.arsc, etc.). Default true (skip irrelevant
-/// assets inside archives for performance; top-level file always scanned).
+/// User-configurable toggle (recommended): when true, only APK/ZIP archives are
+/// extracted and only Android-relevant buffers inside them are scanned — DEX,
+/// ELF (.so), JAR (extracted for nested DEX), AndroidManifest.xml, and
+/// relevant text-like files. Non-zip archives (tar, gz, 7z, rar, etc.) and
+/// standalone non-APK files are skipped entirely. Default true (recommended).
+/// Applied immediately; no reinit needed. Set via nativeSetScanRelevantOnly.
 static SCAN_RELEVANT_ONLY: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(true);
 
@@ -3969,6 +3971,10 @@ fn collect_buffers(
 
                         let mut lineage = item.lineage;
                         let fmt = hydradragonextractor::detect_format(&item.buf);
+                        if item.depth == 0 && SCAN_RELEVANT_ONLY.load(Ordering::Relaxed) && fmt != Some("zip") {
+                            outstanding.fetch_sub(1, AtomOrdering::AcqRel);
+                            continue;
+                        }
                         if fmt == Some("zip") {
                             let h = match top_md5 {
                                 Some(md5) if item.depth == 0 => md5.to_string(),

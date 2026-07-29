@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ جهاز ذو صلاحية روت (ROOT)</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">تم حفظ الحد الأقصى لحجم الملف للفحص</string>
     <string name="max_text_scan_bytes_btn">الحد الأقصى لحجم HTML/نص</string>
     <string name="max_text_scan_bytes_label">فحص ملفات HTML/نص حتى (ميغابايت):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">بين %1$d و %2$d ميغابايت — ملفات النص الأكبر من هذا الحجم يتم تخطيها في ClamAV (بدون فقدان اكتشاف).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">القوائم البيضاء</string>
     <string name="ignored_signatures_btn">التوقيعات المتجاهلة</string>
@@ -465,7 +465,6 @@
     <string name="graph_wiper">تم الكشف عن ممسحة</string>
     <string name="graph_rooted">متجذرة</string>
     <string name="graph_debug">وضع التصحيح</string>
-    <string name="behavior_auto_kill">القتل التلقائي للبرامج الضارة في المقدمة (إمكانية الوصول)</string>
     <string name="graph_no_data">لا توجد بيانات سلوكية حتى الآن</string>
     <string name="graph_device_behavior">سلوك الجهاز</string>
     <string name="graph_general_device_behavior">🌐 سلوك الجهاز العام (جميع التطبيقات)</string>

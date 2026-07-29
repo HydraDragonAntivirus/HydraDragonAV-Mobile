@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ THIẾT BỊ ĐÃ ROOT</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">Đã lưu kích thước tệp tối đa để quét</string>
     <string name="max_text_scan_bytes_btn">Kích thước tệp HTML/văn bản tối đa</string>
     <string name="max_text_scan_bytes_label">Quét tệp HTML/văn bản tới (MB):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">Từ %1$d đến %2$d MB — tệp văn bản lớn hơn mức này sẽ bị bỏ qua trong ClamAV (không mất khả năng phát hiện).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Danh sách trắng</string>
     <string name="ignored_signatures_btn">Chữ ký bị bỏ qua</string>
@@ -465,7 +465,6 @@ Bạn có thể bật tính năng này sau từ Cài đặt.</string>
     <string name="graph_wiper">Đã phát hiện cần gạt nước</string>
     <string name="graph_rooted">Đã root</string>
     <string name="graph_debug">Chế độ gỡ lỗi</string>
-    <string name="behavior_auto_kill">Tự động tiêu diệt phần mềm độc hại trên nền trước (khả năng truy cập)</string>
     <string name="graph_no_data">Chưa có dữ liệu hành vi</string>
     <string name="graph_device_behavior">Hành vi Thiết bị</string>
     <string name="graph_general_device_behavior">🌐 Hành vi Thiết bị Chung (Tất cả Ứng dụng)</string>

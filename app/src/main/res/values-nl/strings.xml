@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ GEROOTED APPARAAT</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">Maximale scanbestandsgrootte opgeslagen</string>
     <string name="max_text_scan_bytes_btn">Max. HTML/tekstbestandsgrootte</string>
     <string name="max_text_scan_bytes_label">HTML/tekstbestanden scannen tot (MB):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">Tussen %1$d en %2$d MB — tekstbestanden groter dan dit worden overgeslagen in ClamAV (geen detectieverlies).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Whitelists</string>
     <string name="ignored_signatures_btn">Genegeerde signaturen</string>
@@ -465,7 +465,6 @@ Je kunt dit later inschakelen via Instellingen.</string>
     <string name="graph_wiper">Ruitenwisser gedetecteerd</string>
     <string name="graph_rooted">Geworteld</string>
     <string name="graph_debug">Foutopsporingsmodus</string>
-    <string name="behavior_auto_kill">Malware op de voorgrond automatisch doden (toegankelijkheid)</string>
     <string name="graph_no_data">Nog geen gedragsgegevens</string>
     <string name="graph_device_behavior">Apparaatgedrag</string>
     <string name="graph_general_device_behavior">🌐 Algemeen apparaatgedrag (Alle apps)</string>

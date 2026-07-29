@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon Antivirus</string>
     <string name="root_warning_title">⚠ PERANGKAT DI-ROOT</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">Ukuran file maksimum untuk dipindai disimpan</string>
     <string name="max_text_scan_bytes_btn">Ukuran Maks File HTML/Teks</string>
     <string name="max_text_scan_bytes_label">Pindai file HTML/teks hingga (MB):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">Antara %1$d dan %2$d MB — file teks yang lebih besar dari ini dilewati di ClamAV (tanpa kehilangan deteksi).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Daftar Putih</string>
     <string name="ignored_signatures_btn">Tanda Tangan yang Diabaikan</string>
@@ -465,7 +465,6 @@ Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
     <string name="graph_wiper">Penghapus Terdeteksi</string>
     <string name="graph_rooted">Berakar</string>
     <string name="graph_debug">Modus Debug</string>
-    <string name="behavior_auto_kill">Malware latar depan yang mematikan secara otomatis (aksesibilitas)</string>
     <string name="graph_no_data">Belum ada data perilaku</string>
     <string name="graph_device_behavior">Perilaku Perangkat</string>
     <string name="graph_general_device_behavior">🌐 Perilaku Umum Perangkat (Semua Aplikasi)</string>

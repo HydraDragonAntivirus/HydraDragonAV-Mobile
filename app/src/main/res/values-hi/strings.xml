@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HydraDragon एंटीवायरस</string>
     <string name="root_warning_title">⚠ ⚠ रूटेड डिवाइस</string>
@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">स्कैन के लिए अधिकतम फ़ाइल आकार सहेजा गया</string>
     <string name="max_text_scan_bytes_btn">अधिकतम HTML/टेक्स्ट फ़ाइल आकार</string>
     <string name="max_text_scan_bytes_label">HTML/टेक्स्ट फ़ाइलें स्कैन करें (MB तक):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">%1$d से %2$d MB के बीच — इससे बड़ी टेक्स्ट फ़ाइलें ClamAV में छोड़ दी जाती हैं (कोई डिटेक्शन हानि नहीं)।</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">व्हाइटलिस्ट</string>
     <string name="ignored_signatures_btn">अनदेखे किए गए सिग्नेचर</string>
@@ -465,7 +465,6 @@
     <string name="graph_wiper">वाइपर का पता चला</string>
     <string name="graph_rooted">जड़ हो गया</string>
     <string name="graph_debug">डिबग मोड</string>
-    <string name="behavior_auto_kill">अग्रभूमि मैलवेयर को स्वतः समाप्त करें (पहुंच-योग्यता)</string>
     <string name="graph_no_data">अभी तक कोई व्यवहार संबंधी डेटा नहीं</string>
     <string name="graph_device_behavior">डिवाइस व्यवहार</string>
     <string name="graph_general_device_behavior">🌐 सामान्य डिवाइस व्यवहार (सभी ऐप्स)</string>

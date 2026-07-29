@@ -44,7 +44,7 @@
     <string name="max_scan_file_size_saved">Taranacak maksimum dosya boyutu kaydedildi</string>
     <string name="max_text_scan_bytes_btn">Maks HTML/Metin Dosyası Boyutu</string>
     <string name="max_text_scan_bytes_label">HTML/metin dosyalarını tara (MB\'ya kadar):</string>
-    <string name="max_text_scan_bytes_hint">Between %1$d and %2$d MB — text files beyond this are skipped in ClamAV (no detection loss).</string>
+    <string name="max_text_scan_bytes_hint">%1$d ile %2$d MB arasında — bundan büyük metin dosyaları ClamAV'de atlanır (algılama kaybı olmaz).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
     <string name="whitelists_header">Beyaz Listeler</string>
     <string name="ignored_signatures_btn">Yoksayılan İmzalar</string>
@@ -465,7 +465,6 @@ Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.</string>
     <string name="graph_wiper">Silecek Algılandı</string>
     <string name="graph_rooted">Köklü</string>
     <string name="graph_debug">Hata Ayıklama Modu</string>
-    <string name="behavior_auto_kill">Ön plandaki kötü amaçlı yazılımları otomatik olarak sonlandır (erişilebilirlik)</string>
     <string name="graph_no_data">Henüz davranışsal veri yok</string>
     <string name="graph_device_behavior">Cihaz Davranışı</string>
     <string name="graph_general_device_behavior">🌐 Genel Cihaz Davranışı (Tüm Uygulamalar)</string>
