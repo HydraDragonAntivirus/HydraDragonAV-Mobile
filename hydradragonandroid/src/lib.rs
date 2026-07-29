@@ -1111,8 +1111,9 @@ fn jpeg_has_hidden(data: &[u8]) -> bool {
 /// Covers:
 /// * **PNG** — `tEXt`/`iTXt`/`zTXt` chunk payloads; data appended after `IEND`
 /// * **JPEG** — `FF FE` comment and APPn (`FF E0`–`FF EF`) payloads; data after `FF D9`
-/// * **Other images** (BMP, GIF, WebP, TIFF, ICO, HEIC, AVIF) — executable magic
-///   in the last 4 KB (appended-data heuristic)
+/// * **ISOBMFF media** (MP4, M4V, 3GP, MOV) — appended data after the box tree
+/// * **Other images / video / audio** (BMP, GIF, WebP, TIFF, ICO, Matroska/WebM,
+///   WAV, OGG, FLAC, MP3/AAC) — executable magic in the last 4 KB
 fn has_polyglot_or_hidden_data(data: &[u8]) -> bool {
     if data.len() < 8 {
         return false;
@@ -1130,20 +1131,33 @@ fn has_polyglot_or_hidden_data(data: &[u8]) -> bool {
     if is_media_file(data) {
         return media_scan::has_hidden_data(data);
     }
-    // Other known image types (GIF, BMP, WebP, TIFF, ICO): scan only the last
-    // 4 KB for appended executable magic.  Only run when the file actually starts
-    // with image magic — ZIPs, ELFs, DEXs etc. have their own magic and checking
-    // their tail would FP on valid archive structures (PK\x03\x04 in the central
-    // directory, dex\n etc.).
-    let starts_with_image_magic = data.len() > 4 && (
-        data.starts_with(b"GIF8")
-        || data.starts_with(b"BM")
-        || (data.starts_with(b"RIFF") && data.len() > 12 && &data[8..12] == b"WEBP")
-        || data.starts_with(&[0x49, 0x49, 0x2A, 0x00])
-        || data.starts_with(&[0x4D, 0x4D, 0x00, 0x2A])
-        || data.starts_with(&[0x00, 0x00, 0x01, 0x00])
+    // Other known image / media / audio types: scan only the last 4 KB for
+    // appended executable magic (ZIP/APK/DEX/ELF/class).  Only run when the
+    // file actually starts with a recognised container magic — ZIPs, ELFs,
+    // DEXs etc. have their own magic and checking their tail would FP on valid
+    // archive structures (PK\x03\x04 in the central directory, dex\n etc.).
+    //
+    // These formats have no lightweight structural parser here, so the tail
+    // heuristic is the pragmatic check: it never inspects the raw
+    // pixel/audio/video payload and only flags a real appended executable.
+    let starts_with_container_magic = data.len() > 4 && (
+        // Images
+        data.starts_with(b"GIF8")                                       // GIF
+        || data.starts_with(b"BM")                                      // BMP
+        || (data.starts_with(b"RIFF") && data.len() > 12 && &data[8..12] == b"WEBP") // WebP
+        || data.starts_with(&[0x49, 0x49, 0x2A, 0x00])                  // TIFF LE
+        || data.starts_with(&[0x4D, 0x4D, 0x00, 0x2A])                  // TIFF BE
+        || data.starts_with(&[0x00, 0x00, 0x01, 0x00])                  // ICO
+        // Video / container
+        || data.starts_with(&[0x1A, 0x45, 0xDF, 0xA3])                  // Matroska / WebM (EBML)
+        // Audio
+        || (data.starts_with(b"RIFF") && data.len() > 12 && &data[8..12] == b"WAVE") // WAV
+        || data.starts_with(b"OggS")                                    // OGG (Ogg/Vorbis/Opus)
+        || data.starts_with(b"fLaC")                                    // FLAC
+        || data.starts_with(b"ID3")                                     // MP3 with ID3 tag
+        || (data.len() > 2 && data[0] == 0xFF && (data[1] & 0xE0) == 0xE0) // MP3/AAC(ADTS) frame sync
     );
-    if starts_with_image_magic {
+    if starts_with_container_magic {
         let tail_start = data.len().saturating_sub(4096);
         return image_magic_in_slice(&data[tail_start..]);
     }
