@@ -94,7 +94,6 @@ public class ScanEngine {
 
     private final Context context;
     private final AIEngine aiEngine;
-    private final CodeAnalyzer codeAnalyzer;
     private final AntiFnCache antiFnCache;
     // Process-wide, bounded below the device's core count. GuardService and
     // InstallReceiver each hold their own ScanEngine instance (InstallReceiver
@@ -379,7 +378,6 @@ public class ScanEngine {
     public ScanEngine(Context context, AIEngine aiEngine) {
         this.context = context;
         this.aiEngine = aiEngine;
-        this.codeAnalyzer = new CodeAnalyzer(context);
         this.antiFnCache = new AntiFnCache(context);
         if (scanCache == null) scanCache = new ScanCache(context);
         loadPackageWhitelist();
@@ -1736,38 +1734,14 @@ public class ScanEngine {
                         pm.getPackageInfo(app.packageName, 0));
                     apkPath = pi != null ? pi.applicationInfo.sourceDir : null;
                 }
-                // CodeAnalyzer is a cheap Java-side heuristic (raw substring search
-                // over DEX bytes — "DexClassLoader", "Runtime.exec", etc). Those
-                // strings show up in plenty of LEGITIMATE apps (plugin loaders,
-                // shell helpers, reflection-based libraries), so on their own they
-                // are NOT proof of malware. Its verdict is applied further down,
-                // ONLY if the real engine (native YARA/ClamAV signatures, the ML
-                // model, or a high dangerous-permission count) corroborates it —
-                // "code smells like malware" plus "the antivirus also found
-                // something" is what actually earns a MALWARE verdict.
-                long codeT0 = android.os.SystemClock.elapsedRealtime();
-                CodeAnalyzer.AnalysisResult codeResult = codeAnalyzer.analyzeApk(apkPath);
-                long codeMs = android.os.SystemClock.elapsedRealtime() - codeT0;
-                addTiming("CodeAnalyzer", codeMs);
-
-                // Native engine: clamav (type-gated YARA + signatures) + ML model.
-                // The native scanner (Rust) reads the file once and computes MD5
-                // from bytes already in memory — no need for a separate Java read.
                 boolean withinSizeLimit = apkPath != null
                     && MaxScanFileSize.isWithinLimit(context, new java.io.File(apkPath));
-                boolean nativeCorroborated = false;
                 if (apkPath == null) {
                     Log.d(TAG, "NATIVE-SKIP[apkPath null] " + app.packageName);
-                    Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
-                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped slowest=CodeAnalyzer");
                 } else if (!withinSizeLimit) {
                     Log.d(TAG, "NATIVE-SKIP[over-size-limit] " + app.packageName + " path=" + apkPath);
-                    Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
-                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped(over-size-limit) slowest=CodeAnalyzer");
                 } else if (!NativeScanner.isReady()) {
                     Log.d(TAG, "NATIVE-SKIP[engine not ready] " + app.packageName);
-                    Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
-                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=skipped slowest=CodeAnalyzer");
                 }
                 if (withinSizeLimit && NativeScanner.isReady()) {
                     long nativeT0 = android.os.SystemClock.elapsedRealtime();
@@ -1778,10 +1752,8 @@ public class ScanEngine {
                     // Per-FILE breakdown (not the cumulative session totals
                     // logEngineTimings() prints at the end of a whole scan) —
                     // which engine was slowest for THIS specific app/file.
-                    String slowestHere = nativeMs >= codeMs ? "NativeScanner" : "CodeAnalyzer";
                     Log.i(TAG, "FILE_ENGINE_TIMING " + app.packageName
-                        + " CodeAnalyzer=" + codeMs + "ms NativeScanner=" + nativeMs
-                        + "ms slowest=" + slowestHere);
+                        + " NativeScanner=" + nativeMs + "ms");
                     Log.d(TAG, "NATIVE-RESULT " + app.packageName + " verdict="
                         + (v == null ? "NULL(cancelled/error)" : ("detections=" + v.detections.size()
                             + " permissions=" + v.permissions + " probability=" + v.probability
@@ -1848,7 +1820,6 @@ public class ScanEngine {
                         if (hasRealThreat) {
                             riskScore = 100;
                             builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
-                            nativeCorroborated = true;
                             if (AutoRuleGeneration.isEnabled(context)) saveGeneratedRule(v);
                         } else if (hasEicar) {
                             riskScore = Math.max(riskScore, 50);
@@ -1893,21 +1864,6 @@ public class ScanEngine {
                         }
                     }
                     } // end if (v != null)
-                }
-
-                // Apply CodeAnalyzer's heuristic verdict now that the real engine has
-                // had a chance to weigh in. Corroborated (native signature/YARA hit,
-                // ML flag, or 6+ dangerous permissions) => full weight, genuine
-                // finding. NOT corroborated => discarded entirely — a raw DEX
-                // substring hit ("DexClassLoader", "Runtime.exec", etc.) with no
-                // real-engine backing is noise, not evidence, and was showing up as
-                // a "[CODE, unverified by engine]" reason on completely clean apps.
-                if (codeResult.isMalicious && nativeCorroborated) {
-                    riskScore = Math.min(100, riskScore + codeResult.riskScore);
-                    if (riskScore >= 60) builder.setThreatType(codeResult.threatType);
-                    for (String finding : codeResult.findings) {
-                        if (!finding.startsWith("✅")) reasons.add("💻 [CODE] " + finding);
-                    }
                 }
 
                 // (URL-based APK scan removed — too slow and false-positive prone:
