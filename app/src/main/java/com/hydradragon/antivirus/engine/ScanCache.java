@@ -42,11 +42,8 @@ public final class ScanCache {
     private final ConcurrentHashMap<String, ThreatResult> photonCache = new ConcurrentHashMap<>();
 
     private final SQLiteDatabase db;
-    private final boolean enabled;
 
     public ScanCache(Context context) {
-        enabled = context.getSharedPreferences("hydra_prefs", 0)
-            .getBoolean("scan_cache_enabled", true);
         File dbFile = new File(context.getNoBackupFilesDir(), DB_NAME);
         SQLiteDatabase d;
         try {
@@ -94,7 +91,6 @@ public final class ScanCache {
 
     /** Returns cached result (empty = clean, non-empty = threat) or null if not cached. */
     public Optional<ThreatResult> getFileCache(String md5) {
-        if (!enabled) return null;
         Optional<ThreatResult> mem = fileCache.get(md5);
         if (mem != null) return mem;
         // Miss in memory → try SQLite
@@ -118,7 +114,6 @@ public final class ScanCache {
     }
 
     public void putFileCache(String md5, Optional<ThreatResult> value) {
-        if (!enabled) return;
         fileCache.put(md5, value);
         if (db == null) return;
         try {
@@ -143,7 +138,7 @@ public final class ScanCache {
     // ── Photon (package) cache ────────────────────────────────────────────
 
     public boolean containsPhotonCache(String packageName) {
-        if (!enabled || packageName == null) return false;
+        if (packageName == null) return false;
         if (photonCache.containsKey(packageName)) return true;
         // Miss → try SQLite
         if (db == null) return false;
@@ -161,7 +156,7 @@ public final class ScanCache {
     }
 
     public ThreatResult getPhotonCache(String packageName) {
-        if (!enabled || packageName == null) return null;
+        if (packageName == null) return null;
         ThreatResult mem = photonCache.get(packageName);
         if (mem != null) return mem;
         // Miss → try SQLite
@@ -180,7 +175,7 @@ public final class ScanCache {
     }
 
     public void putPhotonCache(String packageName, ThreatResult value) {
-        if (!enabled || packageName == null || value == null) return;
+        if (packageName == null || value == null) return;
         photonCache.put(packageName, value);
         if (db == null) return;
         try {
