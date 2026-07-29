@@ -2304,10 +2304,9 @@ fn run_scan(
     // NOT be passed when scanning non-DEX buffer data — otherwise HIPS rules
     // that check hydradragon.dex_severe_finding_count() would match on XML,
     // TXT, PNG, etc. just because the APK's DEX analysis found something.
-    let rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
+    let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     if let Some(clamav) = &engine.clamav {
-                if !module_meta.is_empty() {
-            let meta_ref: &[(&str, &[u8])] = &module_meta;
+        if !module_meta.is_empty() {
             // Build set of object_paths that the streaming scan already flagged.
             let flagged_paths: std::collections::HashSet<String> =
                 yara_dets.iter().map(|(_, op, _)| op.clone()).collect();
@@ -2315,41 +2314,29 @@ fn run_scan(
                 if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
                     continue;
                 }
-                let phase_results: Vec<Vec<(String, String, Vec<String>)>> =
-                    std::thread::scope(|s| {
-                        let mut handles = Vec::new();
-                        for (i, b) in buffers.iter().enumerate() {
-                            let base_path = if buffers[i].entry_name.is_none() {
-                                path.to_string()
-                            } else {
-                                match &b.entry_name {
-                                    Some(entry) => format!("{path}!/{entry}"),
-                                    None => format!("{path}!/unnamed_{i}"),
-                                }
-                            };
-                            if !flagged_paths.contains(base_path.as_str()) {
-                                continue;
-                            }
-                            handles.push(s.spawn(move || {
-                                let per_buf_meta = if b.data.starts_with(b"dex\n") {
-                                    meta_ref
-                                } else {
-                                    &[]
-                                };
-                                let matches = yengine.scan(&b.data, &base_path, per_buf_meta);
-                                matches.into_iter().map(|m| {
-                                    (m.name, m.object_path, b.apk_lineage.clone())
-                                }).collect::<Vec<_>>()
-                            }));
+                for (i, b) in buffers.iter().enumerate() {
+                    let base_path = if buffers[i].entry_name.is_none() {
+                        path.to_string()
+                    } else {
+                        match &b.entry_name {
+                            Some(entry) => format!("{path}!/{entry}"),
+                            None => format!("{path}!/unnamed_{i}"),
                         }
-                        let mut results = Vec::with_capacity(handles.len());
-                        for h in handles {
-                            results.push(h.join().unwrap_or(Vec::new()));
-                        }
-                        results
-                    });
-                for dets in &phase_results {
-                    yara_dets.extend(dets.iter().cloned());
+                    };
+                    if !flagged_paths.contains(base_path.as_str()) {
+                        continue;
+                    }
+                    let per_buf_meta = if b.data.starts_with(b"dex\n") {
+                        &module_meta[..]
+                    } else {
+                        &[]
+                    };
+                    let t0 = std::time::Instant::now();
+                    let matches = yengine.scan(&b.data, &base_path, per_buf_meta);
+                    rescan_timing.yara_per_engine.push((yengine.name.clone(), t0.elapsed().as_nanos()));
+                    for m in matches {
+                        yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
+                    }
                 }
             }
         }
@@ -4060,6 +4047,17 @@ fn collect_buffers(
                             || !SCAN_RELEVANT_ONLY.load(Ordering::Relaxed)
                             || is_relevant_buffer(item.entry_name.as_deref(), &item.buf);
 
+                        // Photos and videos are only scanned when the user
+                        // opts in via SCAN_MEDIA_ENABLED (default off).
+                        // Computed before the clamav block so `media_ok`
+                        // can also gate the `out.push` below — otherwise
+                        // media files would still enter `buffers` and
+                        // waste time in every post-collection phase.
+                        let scan_media = SCAN_MEDIA_ENABLED.load(Ordering::Relaxed);
+                        let is_img = is_image_buffer(item.entry_name.as_deref(), &item.buf);
+                        let is_vid = is_media_file(&item.buf);
+                        let media_ok = scan_media || (!is_img && !is_vid);
+
                         // Streaming scan: run before item.buf is moved into `out`.
                         // Uses empty module_meta (androguard/hydradragon not yet
                         // built); module-dependent YARA rules get a second YARA-only
@@ -4077,15 +4075,10 @@ fn collect_buffers(
                         // in metadata; the 0.1 % that is a full-file phish is not
                         // detectable via static signatures anyway.
                         if let Some(clamav_engine) = clamav {
-                            // Photos and videos are only scanned when the user
-                            // opts in via SCAN_MEDIA_ENABLED (default off).
-                            let scan_media = SCAN_MEDIA_ENABLED.load(Ordering::Relaxed);
-                            let is_img = is_image_buffer(item.entry_name.as_deref(), &item.buf);
-                            let is_vid = is_media_file(&item.buf);
-                            let media_ok = scan_media || (!is_img && !is_vid);
                             if relevant && media_ok && !skip_by_size(&item.buf)
                                 && (is_executable_buffer(item.entry_name.as_deref(), &item.buf, fmt)
-                                    || is_vid)
+                                    || is_vid
+                                    || (scan_media && is_img))
                             {
                                 let obj_path = if idx == 0 {
                                     path.to_string()
@@ -4141,7 +4134,7 @@ fn collect_buffers(
                             }
                         }
 
-                        if relevant {
+                        if relevant && media_ok {
                             if let Ok(mut og) = out.lock() {
                                 og.push(Buf {
                                     data: item.buf, // OwnedBuf — no copy
