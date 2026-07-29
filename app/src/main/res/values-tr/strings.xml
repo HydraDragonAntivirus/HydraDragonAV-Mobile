@@ -45,7 +45,7 @@
     <string name="max_text_scan_bytes_btn">Maks HTML/Metin Dosyası Boyutu</string>
     <string name="max_text_scan_bytes_label">HTML/metin dosyalarını tara (MB\'ya kadar):</string>
     <string name="max_text_scan_bytes_hint">%1$d ile %2$d MB arasında — bundan büyük metin dosyaları ClamAV'de atlanır (algılama kaybı olmaz).</string>
-    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_text_scan_bytes_saved">Maksimum metin tarama boyutu kaydedildi</string>
     <string name="max_archive_size_btn">Maksimum Arşiv Boyutu</string>
     <string name="max_archive_size_label">Zip olmayan arşivleri şuna kadar çıkar (MB):</string>
     <string name="max_archive_size_hint">%1$d ile %2$d MB arası — bundan büyük zip olmayan bir arşiv (tar, gz, xz, 7z, rar vb.) çıkarılmaz ve içeriği atlanır. APK ve zip dosyaları etkilenmez.</string>

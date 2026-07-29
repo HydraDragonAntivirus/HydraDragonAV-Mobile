@@ -45,7 +45,7 @@
     <string name="max_text_scan_bytes_btn">Maks. rozmiar pliku HTML/tekst</string>
     <string name="max_text_scan_bytes_label">Skanuj pliki HTML/tekst do (MB):</string>
     <string name="max_text_scan_bytes_hint">Od %1$d do %2$d MB — pliki tekstowe większe niż ta wartość są pomijane w ClamAV (bez utraty wykrywania).</string>
-    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_text_scan_bytes_saved">Zapisano maksymalny rozmiar skanowania tekstu</string>
     <string name="max_archive_size_btn">Maksymalny rozmiar archiwum</string>
     <string name="max_archive_size_label">Wypakuj archiwa inne niż zip do (MB):</string>
     <string name="max_archive_size_hint">Między %1$d a %2$d MB — archiwum inne niż zip (tar, gz, xz, 7z, rar itp.) większe niż to nie jest wypakowywane, a jego zawartość jest pomijana. Pliki APK i zip nie są objęte.</string>

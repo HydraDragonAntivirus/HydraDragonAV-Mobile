@@ -45,7 +45,7 @@
     <string name="max_text_scan_bytes_btn">अधिकतम HTML/टेक्स्ट फ़ाइल आकार</string>
     <string name="max_text_scan_bytes_label">HTML/टेक्स्ट फ़ाइलें स्कैन करें (MB तक):</string>
     <string name="max_text_scan_bytes_hint">%1$d से %2$d MB के बीच — इससे बड़ी टेक्स्ट फ़ाइलें ClamAV में छोड़ दी जाती हैं (कोई डिटेक्शन हानि नहीं)।</string>
-    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_text_scan_bytes_saved">अधिकतम टेक्स्ट स्कैन आकार सहेजा गया</string>
     <string name="max_archive_size_btn">अधिकतम संग्रह आकार</string>
     <string name="max_archive_size_label">गैर-ज़िप संग्रह निकालें (MB तक):</string>
     <string name="max_archive_size_hint">%1$d और %2$d MB के बीच — इससे बड़ा कोई गैर-ज़िप संग्रह (tar, gz, xz, 7z, rar, आदि) नहीं निकाला जाता और उसकी सामग्री छोड़ दी जाती है। APK और ज़िप फ़ाइलें प्रभावित नहीं होतीं।</string>

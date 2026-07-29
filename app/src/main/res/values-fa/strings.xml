@@ -45,7 +45,7 @@
     <string name="max_text_scan_bytes_btn">حداکثر اندازه فایل HTML/متن</string>
     <string name="max_text_scan_bytes_label">اسکن فایلهای HTML/متن تا (مگابایت):</string>
     <string name="max_text_scan_bytes_hint">بین %1$d و %2$d مگابایت — فایل‌های متنی بزرگتر از این در ClamAV رد می‌شوند (بدون کاهش تشخیص).</string>
-    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_text_scan_bytes_saved">حداکثر اندازه اسکن متن ذخیره شد</string>
     <string name="max_archive_size_btn">حداکثر اندازه بایگانی</string>
     <string name="max_archive_size_label">استخراج بایگانی‌های غیرزیپ تا (مگابایت):</string>
     <string name="max_archive_size_hint">بین %1$d و %2$d مگابایت — بایگانی غیرزیپ (tar، gz، xz، 7z، rar و غیره) بزرگ‌تر از این استخراج نمی‌شود و محتوای آن نادیده گرفته می‌شود. فایل‌های APK و zip تأثیری نمی‌پذیرند.</string>

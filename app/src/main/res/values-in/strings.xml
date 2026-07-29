@@ -45,7 +45,7 @@
     <string name="max_text_scan_bytes_btn">Ukuran Maks File HTML/Teks</string>
     <string name="max_text_scan_bytes_label">Pindai file HTML/teks hingga (MB):</string>
     <string name="max_text_scan_bytes_hint">Antara %1$d dan %2$d MB — file teks yang lebih besar dari ini dilewati di ClamAV (tanpa kehilangan deteksi).</string>
-    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_text_scan_bytes_saved">Ukuran pemindaian teks maksimum disimpan</string>
     <string name="max_archive_size_btn">Ukuran Arsip Maksimum</string>
     <string name="max_archive_size_label">Ekstrak arsip non-zip hingga (MB):</string>
     <string name="max_archive_size_hint">Antara %1$d dan %2$d MB — arsip non-zip (tar, gz, xz, 7z, rar, dll.) yang lebih besar tidak diekstrak dan isinya dilewati. File APK dan zip tidak terpengaruh.</string>

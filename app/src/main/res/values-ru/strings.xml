@@ -45,7 +45,7 @@
     <string name="max_text_scan_bytes_btn">Макс. размер HTML/текст файла</string>
     <string name="max_text_scan_bytes_label">Сканировать HTML/текстовые файлы до (МБ):</string>
     <string name="max_text_scan_bytes_hint">От %1$d до %2$d МБ — текстовые файлы больше этого размера пропускаются в ClamAV (без потери обнаружения).</string>
-    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_text_scan_bytes_saved">Максимальный размер сканирования текста сохранён</string>
     <string name="max_archive_size_btn">Максимальный размер архива</string>
     <string name="max_archive_size_label">Извлекать не-zip архивы до (МБ):</string>
     <string name="max_archive_size_hint">От %1$d до %2$d МБ — не-zip архив (tar, gz, xz, 7z, rar и т. д.) больше этого не извлекается, а его содержимое пропускается. APK и zip-файлы не затрагиваются.</string>

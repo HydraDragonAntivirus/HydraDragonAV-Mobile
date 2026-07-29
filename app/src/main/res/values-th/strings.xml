@@ -45,7 +45,7 @@
     <string name="max_text_scan_bytes_btn">ขนาดไฟล์ HTML/ข้อความสูงสุด</string>
     <string name="max_text_scan_bytes_label">สแกนไฟล์ HTML/ข้อความถึง (MB):</string>
     <string name="max_text_scan_bytes_hint">ระหว่าง %1$d ถึง %2$d MB — ไฟล์ข้อความที่ใหญ่กว่านี้จะถูกข้ามใน ClamAV (ไม่สูญเสียการตรวจจับ)</string>
-    <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_text_scan_bytes_saved">บันทึกขนาดการสแกนข้อความสูงสุดแล้ว</string>
     <string name="max_archive_size_btn">ขนาดไฟล์บีบอัดสูงสุด</string>
     <string name="max_archive_size_label">แตกไฟล์บีบอัดที่ไม่ใช่ zip ได้สูงสุด (MB):</string>
     <string name="max_archive_size_hint">ระหว่าง %1$d ถึง %2$d MB — ไฟล์บีบอัดที่ไม่ใช่ zip (tar, gz, xz, 7z, rar ฯลฯ) ที่ใหญ่กว่านี้จะไม่ถูกแตกและข้ามเนื้อหาไป ไฟล์ APK และ zip จะไม่ได้รับผลกระทบ</string>
