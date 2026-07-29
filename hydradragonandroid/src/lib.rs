@@ -2359,32 +2359,56 @@ fn run_scan(
             // Build set of object_paths that the streaming scan already flagged.
             let flagged_paths: std::collections::HashSet<String> =
                 yara_dets.iter().map(|(_, op, _)| op.clone()).collect();
-            for yengine in &clamav.yara {
-                if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
-                    continue;
-                }
-                for (i, b) in buffers.iter().enumerate() {
-                    let base_path = if buffers[i].entry_name.is_none() {
-                        path.to_string()
-                    } else {
-                        match &b.entry_name {
-                            Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path}!/unnamed_{i}"),
+            // Collect the flagged buffers ONCE — computing each base_path a
+            // single time instead of rebuilding it (a heap-allocating format!)
+            // for every module-dependent engine × every buffer. On a large APK
+            // (up to 4096 buffers) with several module-dependent engines this
+            // was O(engines × buffers) throwaway allocations; it's now O(buffers)
+            // done once, and the per-engine loop only ever touches the handful of
+            // buffers that were actually flagged.
+            let flagged_buffers: Vec<(usize, String)> = if flagged_paths.is_empty() {
+                Vec::new()
+            } else {
+                buffers
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, b)| {
+                        let base_path = if b.entry_name.is_none() {
+                            path.to_string()
+                        } else {
+                            match &b.entry_name {
+                                Some(entry) => format!("{path}!/{entry}"),
+                                None => format!("{path}!/unnamed_{i}"),
+                            }
+                        };
+                        if flagged_paths.contains(base_path.as_str()) {
+                            Some((i, base_path))
+                        } else {
+                            None
                         }
-                    };
-                    if !flagged_paths.contains(base_path.as_str()) {
+                    })
+                    .collect()
+            };
+            // Nothing flagged → no module-dependent rescan needed at all; skip
+            // even iterating the engine list.
+            if !flagged_buffers.is_empty() {
+                for yengine in &clamav.yara {
+                    if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
                         continue;
                     }
-                    let per_buf_meta = if b.data.starts_with(b"dex\n") {
-                        &module_meta[..]
-                    } else {
-                        &[]
-                    };
-                    let t0 = std::time::Instant::now();
-                    let matches = yengine.scan(&b.data, &base_path, per_buf_meta);
-                    rescan_timing.yara_per_engine.push((yengine.name.clone(), t0.elapsed().as_nanos()));
-                    for m in matches {
-                        yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
+                    for (i, base_path) in &flagged_buffers {
+                        let b = &buffers[*i];
+                        let per_buf_meta = if b.data.starts_with(b"dex\n") {
+                            &module_meta[..]
+                        } else {
+                            &[]
+                        };
+                        let t0 = std::time::Instant::now();
+                        let matches = yengine.scan(&b.data, base_path, per_buf_meta);
+                        rescan_timing.yara_per_engine.push((yengine.name.clone(), t0.elapsed().as_nanos()));
+                        for m in matches {
+                            yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
+                        }
                     }
                 }
             }
