@@ -128,6 +128,8 @@
     <string name="scan_stop">⛔ DURDUR</string>
     <string name="scan_stopping">Durduruluyor…</string>
     <string name="scan_stopped">⏹ Tarama durduruldu</string>
+    <string name="scan_paused">⏸ Tarama duraklatıldı</string>
+    <string name="scan_resuming">Devam ediliyor…</string>
     <string name="scanned">TARANAN</string>
     <string name="threat">TEHDİT</string>
     <string name="active_threats">AKTİF TEHDİTLER</string>

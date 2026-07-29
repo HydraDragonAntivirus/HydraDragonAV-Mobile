@@ -1395,7 +1395,8 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass,
     max_mb: jint,
 ) {
-    let mb = max_mb.max(1) as u32;
+    // 0 is a valid "disable" value (scan nothing); only guard against negatives.
+    let mb = max_mb.max(0) as u32;
     MAX_SCAN_SIZE_MB.store(mb, Ordering::Relaxed);
 }
 
@@ -1409,7 +1410,8 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     _class: JClass,
     max_bytes: jint,
 ) {
-    let bytes = max_bytes.max(100_000) as u32;
+    // 0 is a valid "disable" value; only guard against negatives.
+    let bytes = max_bytes.max(0) as u32;
     MAX_TEXT_SCAN_BYTES.store(bytes, Ordering::Relaxed);
 }
 

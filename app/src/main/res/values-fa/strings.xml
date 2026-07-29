@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ توقف</string>
     <string name="scan_stopping">در حال توقف…</string>
     <string name="scan_stopped">⏹ اسکن متوقف شد</string>
+    <string name="scan_paused">⏸ اسکن متوقف شد</string>
+    <string name="scan_resuming">از سرگیری…</string>
     <string name="scanned">اسکن‌شده</string>
     <string name="threat">تهدید</string>
     <string name="active_threats">تهدیدهای فعال</string>

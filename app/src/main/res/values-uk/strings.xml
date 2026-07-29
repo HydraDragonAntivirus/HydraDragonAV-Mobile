@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ ЗУПИНИТИ</string>
     <string name="scan_stopping">Зупинення…</string>
     <string name="scan_stopped">⏹ Сканування зупинено</string>
+    <string name="scan_paused">⏸ Сканування призупинено</string>
+    <string name="scan_resuming">Відновлення…</string>
     <string name="scanned">ПРОСКАНОВАНО</string>
     <string name="threat">ЗАГРОЗА</string>
     <string name="active_threats">АКТИВНІ ЗАГРОЗИ</string>

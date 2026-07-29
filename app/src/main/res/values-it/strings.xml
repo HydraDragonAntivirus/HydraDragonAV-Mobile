@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ FERMA</string>
     <string name="scan_stopping">Arresto in corso…</string>
     <string name="scan_stopped">⏹ Scansione interrotta</string>
+    <string name="scan_paused">⏸ Scansione in pausa</string>
+    <string name="scan_resuming">Ripresa…</string>
     <string name="scanned">SCANSIONATI</string>
     <string name="threat">MINACCIA</string>
     <string name="active_threats">MINACCE ATTIVE</string>
