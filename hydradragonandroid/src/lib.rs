@@ -2441,10 +2441,11 @@ fn run_scan(
             ));
         }
     }
-    // ML on every nested APK buffer (skip index 0 — the outer container).
+    // ML on every APK/zip buffer (including the top-level file — the ML
+    // model is trained on APK features and run_ml_on_mmap already validates
+    // format via is_apk_zip, so non-zip buffers are safely skipped).
     if let Some(model) = &engine.model {
         for (i, b) in buffers.iter().enumerate() {
-            if buffers[i].entry_name.is_none() { continue; }
             let obj_path = match &b.entry_name {
                 Some(entry) => format!("{path}!/{entry}"),
                 None => format!("{path}!/unnamed_{i}"),
