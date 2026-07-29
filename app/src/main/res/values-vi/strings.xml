@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ DỪNG</string>
     <string name="scan_stopping">Đang dừng…</string>
     <string name="scan_stopped">⏹ Đã dừng quét</string>
+    <string name="scan_paused">⏸ Đã tạm dừng quét</string>
+    <string name="scan_resuming">Đang tiếp tục…</string>
     <string name="scanned">ĐÃ QUÉT</string>
     <string name="threat">MỐI ĐE DỌA</string>
     <string name="active_threats">MỐI ĐE DỌA ĐANG HOẠT ĐỘNG</string>

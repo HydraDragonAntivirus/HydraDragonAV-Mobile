@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ หยุด</string>
     <string name="scan_stopping">กำลังหยุด…</string>
     <string name="scan_stopped">⏹ หยุดการสแกนแล้ว</string>
+    <string name="scan_paused">⏸ หยุดการสแกนชั่วคราว</string>
+    <string name="scan_resuming">กำลังดำเนินการต่อ…</string>
     <string name="scanned">สแกนแล้ว</string>
     <string name="threat">ภัยคุกคาม</string>
     <string name="active_threats">ภัยคุกคามที่ใช้งานอยู่</string>

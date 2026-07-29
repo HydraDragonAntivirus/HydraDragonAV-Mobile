@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ STOPP</string>
     <string name="scan_stopping">Wird gestoppt…</string>
     <string name="scan_stopped">⏹ Scan gestoppt</string>
+    <string name="scan_paused">⏸ Scan angehalten</string>
+    <string name="scan_resuming">Wird fortgesetzt…</string>
     <string name="scanned">GESCANNT</string>
     <string name="threat">BEDROHUNG</string>
     <string name="active_threats">AKTIVE BEDROHUNGEN</string>

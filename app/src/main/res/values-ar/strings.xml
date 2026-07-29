@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ إيقاف</string>
     <string name="scan_stopping">جارٍ الإيقاف…</string>
     <string name="scan_stopped">⏹ تم إيقاف الفحص</string>
+    <string name="scan_paused">⏸ تم إيقاف الفحص مؤقتًا</string>
+    <string name="scan_resuming">استئناف…</string>
     <string name="scanned">تم فحصه</string>
     <string name="threat">تهديد</string>
     <string name="active_threats">تهديدات نشطة</string>

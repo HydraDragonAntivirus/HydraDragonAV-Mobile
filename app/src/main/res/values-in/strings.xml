@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ HENTIKAN</string>
     <string name="scan_stopping">Menghentikan…</string>
     <string name="scan_stopped">⏹ Pemindaian dihentikan</string>
+    <string name="scan_paused">⏸ Pemindaian dijeda</string>
+    <string name="scan_resuming">Melanjutkan…</string>
     <string name="scanned">DIPINDAI</string>
     <string name="threat">ANCAMAN</string>
     <string name="active_threats">ANCAMAN AKTIF</string>

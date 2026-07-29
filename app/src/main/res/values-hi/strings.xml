@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ रोकें</string>
     <string name="scan_stopping">रोका जा रहा है…</string>
     <string name="scan_stopped">⏹ स्कैन रोक दिया गया</string>
+    <string name="scan_paused">⏸ स्कैन रोका गया</string>
+    <string name="scan_resuming">पुनः आरंभ हो रहा है…</string>
     <string name="scanned">स्कैन किया गया</string>
     <string name="threat">खतरा</string>
     <string name="active_threats">सक्रिय खतरे</string>

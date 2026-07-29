@@ -116,6 +116,8 @@
     <string name="scan_stop">⛔ 중지</string>
     <string name="scan_stopping">중지 중…</string>
     <string name="scan_stopped">⏹ 스캔이 중지되었습니다</string>
+    <string name="scan_paused">⏸ 검사 일시정지</string>
+    <string name="scan_resuming">다시 시작하는 중…</string>
     <string name="scanned">스캔됨</string>
     <string name="threat">위협</string>
     <string name="active_threats">활성 위협</string>
