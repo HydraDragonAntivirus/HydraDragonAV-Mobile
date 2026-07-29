@@ -188,6 +188,15 @@ static MAX_TEXT_SCAN_BYTES: std::sync::atomic::AtomicU32 =
 static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
     std::sync::atomic::AtomicU32::new(650);
 
+/// User-configurable ceiling from {@link MaxArchiveSize} — a NON-zip archive
+/// (tar, gz, xz, 7z, rar, bz2, zst, lz4, cab, iso, etc.) larger than this (in
+/// MB) is NOT extracted; its contents are skipped. APKs and plain .zip files
+/// are unaffected (they stay under the {@link MaxScanFileSize} scan ceiling).
+/// Default 100 MB. 0 means "never extract non-zip archives". Set via
+/// nativeSetMaxArchiveSizeMb JNI call. Applied immediately; no reinit needed.
+static MAX_ARCHIVE_SIZE_MB: std::sync::atomic::AtomicU32 =
+    std::sync::atomic::AtomicU32::new(100);
+
 /// User-configurable toggle (recommended): when true, only APK/ZIP archives are
 /// extracted and only Android-relevant buffers inside them are scanned — DEX,
 /// ELF (.so), JAR (extracted for nested DEX), AndroidManifest.xml, and
@@ -1413,6 +1422,22 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     // 0 is a valid "disable" value; only guard against negatives.
     let bytes = max_bytes.max(0) as u32;
     MAX_TEXT_SCAN_BYTES.store(bytes, Ordering::Relaxed);
+}
+
+/// `void nativeSetMaxArchiveSizeMb(int maxMb)` — push the user's
+/// {@link MaxArchiveSize} ceiling into the native engine so a NON-zip archive
+/// (tar, gz, xz, 7z, rar, etc.) larger than this is not extracted. Applied
+/// immediately; no reinit needed.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetMaxArchiveSizeMb(
+    _env: EnvUnowned,
+    _class: JClass,
+    max_mb: jint,
+) {
+    // 0 is a valid "disable" value (never extract non-zip archives); only
+    // guard against negatives.
+    let mb = max_mb.max(0) as u32;
+    MAX_ARCHIVE_SIZE_MB.store(mb, Ordering::Relaxed);
 }
 
 /// `void nativeSetDetectZipBomb(boolean enabled)` — Settings toggle for
@@ -3986,8 +4011,21 @@ fn collect_buffers(
                         }
 
                         if item.depth < 16 && fmt.is_some() {
+                            // Non-zip archives (tar, gz, xz, 7z, rar, cab, iso,
+                            // etc.) larger than the user's MAX_ARCHIVE_SIZE_MB
+                            // ceiling are not extracted — their contents are
+                            // skipped. APKs and plain .zip (fmt == "zip") are
+                            // exempt; they stay under MAX_SCAN_SIZE_MB instead.
+                            let archive_too_big = fmt != Some("zip") && {
+                                let cap = MAX_ARCHIVE_SIZE_MB.load(Ordering::Relaxed) as usize;
+                                item.buf.len() > cap.saturating_mul(1024 * 1024)
+                            };
                             let relevant_only = SCAN_RELEVANT_ONLY.load(Ordering::Relaxed);
-                            match hydradragonextractor::extract_archive_from_bytes(&item.buf, relevant_only) {
+                            match if archive_too_big {
+                                Ok(Vec::new())
+                            } else {
+                                hydradragonextractor::extract_archive_from_bytes(&item.buf, relevant_only)
+                            } {
                                 Ok(children) => {
                                     let valid_children: Vec<_> = children
                                         .into_iter()

@@ -46,6 +46,10 @@
     <string name="max_text_scan_bytes_label">فحص ملفات HTML/نص حتى (ميغابايت):</string>
     <string name="max_text_scan_bytes_hint">بين %1$d و %2$d ميغابايت — ملفات النص الأكبر من هذا الحجم يتم تخطيها في ClamAV (بدون فقدان اكتشاف).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_archive_size_btn">الحد الأقصى لحجم الأرشيف</string>
+    <string name="max_archive_size_label">استخراج الأرشيفات غير المضغوطة حتى (ميغابايت):</string>
+    <string name="max_archive_size_hint">بين %1$d و %2$d ميغابايت — لا يتم استخراج أي أرشيف غير مضغوط (tar وgz وxz و7z وrar وغيرها) أكبر من هذا ويتم تخطي محتوياته. لا يتأثر ملفات APK وZIP.</string>
+    <string name="max_archive_size_saved">تم حفظ الحد الأقصى لحجم الأرشيف</string>
     <string name="whitelists_header">القوائم البيضاء</string>
     <string name="ignored_signatures_btn">التوقيعات المتجاهلة</string>
     <string name="ignored_signatures_hint">اكتب اسم توقيع/اكتشاف دقيق (مثل PUA.SomeAdware أو YARA.auto_...) لتجاهله في كل تطبيق/ملف، وليس واحداً فقط</string>

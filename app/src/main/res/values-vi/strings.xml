@@ -46,6 +46,10 @@
     <string name="max_text_scan_bytes_label">Quét tệp HTML/văn bản tới (MB):</string>
     <string name="max_text_scan_bytes_hint">Từ %1$d đến %2$d MB — tệp văn bản lớn hơn mức này sẽ bị bỏ qua trong ClamAV (không mất khả năng phát hiện).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_archive_size_btn">Kích thước lưu trữ tối đa</string>
+    <string name="max_archive_size_label">Giải nén kho lưu trữ không phải zip đến (MB):</string>
+    <string name="max_archive_size_hint">Từ %1$d đến %2$d MB — kho lưu trữ không phải zip (tar, gz, xz, 7z, rar, v.v.) lớn hơn mức này sẽ không được giải nén và nội dung bị bỏ qua. Tệp APK và zip không bị ảnh hưởng.</string>
+    <string name="max_archive_size_saved">Đã lưu kích thước lưu trữ tối đa</string>
     <string name="whitelists_header">Danh sách trắng</string>
     <string name="ignored_signatures_btn">Chữ ký bị bỏ qua</string>
     <string name="ignored_signatures_hint">Nhập tên chữ ký/phát hiện chính xác (vd: PUA.SomeAdware, YARA.auto_...) để bỏ qua nó cho mọi ứng dụng/tệp, không chỉ một</string>

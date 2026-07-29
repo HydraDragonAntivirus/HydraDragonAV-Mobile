@@ -46,6 +46,10 @@
     <string name="max_text_scan_bytes_label">Scanner les fichiers HTML/texte jusqu\'à (Mo) :</string>
     <string name="max_text_scan_bytes_hint">Entre %1$d et %2$d Mo — les fichiers texte plus volumineux sont ignorés dans ClamAV (aucune perte de détection).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_archive_size_btn">Taille maximale des archives</string>
+    <string name="max_archive_size_label">Extraire les archives non-zip jusqu\'à (Mo) :</string>
+    <string name="max_archive_size_hint">Entre %1$d et %2$d Mo — une archive non-zip (tar, gz, xz, 7z, rar, etc.) plus grande n\'est pas extraite et son contenu est ignoré. Les APK et les fichiers zip ne sont pas concernés.</string>
+    <string name="max_archive_size_saved">Taille maximale des archives enregistrée</string>
     <string name="whitelists_header">Listes blanches</string>
     <string name="ignored_signatures_btn">Signatures ignorées</string>
     <string name="ignored_signatures_hint">Tapez un nom exact de signature/détection (ex. PUA.SomeAdware, YARA.auto_...) pour la supprimer pour toute app/fichier, pas seulement un</string>

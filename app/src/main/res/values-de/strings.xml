@@ -46,6 +46,10 @@
     <string name="max_text_scan_bytes_label">HTML/Textdateien scannen bis (MB):</string>
     <string name="max_text_scan_bytes_hint">Zwischen %1$d und %2$d MB — Textdateien darüber werden in ClamAV übersprungen (keine Erkennungseinbußen).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_archive_size_btn">Maximale Archivgröße</string>
+    <string name="max_archive_size_label">Nicht-ZIP-Archive extrahieren bis (MB):</string>
+    <string name="max_archive_size_hint">Zwischen %1$d und %2$d MB — ein Nicht-ZIP-Archiv (tar, gz, xz, 7z, rar usw.), das größer ist, wird nicht extrahiert und sein Inhalt übersprungen. APKs und ZIP-Dateien sind nicht betroffen.</string>
+    <string name="max_archive_size_saved">Maximale Archivgröße gespeichert</string>
     <string name="whitelists_header">Positivlisten</string>
     <string name="ignored_signatures_btn">Ignorierte Signaturen</string>
     <string name="ignored_signatures_hint">Gib einen exakten Signatur-/Erkennungsnamen ein (z. B. PUA.SomeAdware, YARA.auto_...), um ihn für jede App/Datei zu unterdrücken, nicht nur eine</string>

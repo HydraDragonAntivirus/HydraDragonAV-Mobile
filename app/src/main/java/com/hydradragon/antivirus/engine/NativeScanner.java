@@ -85,6 +85,8 @@ public final class NativeScanner {
 
     private static native void nativeSetMaxTextScanBytes(int maxBytes);
 
+    private static native void nativeSetMaxArchiveSizeMb(int maxMb);
+
     private static native void nativeSetDetectZipBomb(boolean enabled);
 
     private static native void nativeSetScanRelevantOnly(boolean on);
@@ -146,6 +148,15 @@ public final class NativeScanner {
     public static void setMaxTextScanBytes(int maxBytes) {
         if (!LIB_LOADED) return;
         try { nativeSetMaxTextScanBytes(maxBytes); } catch (Throwable ignore) { }
+    }
+
+    /** Push the user's {@link MaxArchiveSize} preference into the native engine
+     *  so a non-zip archive (tar, gz, xz, 7z, rar, etc.) larger than this
+     *  ceiling is left unextracted (its contents skipped). APKs and plain .zip
+     *  are unaffected. Applied immediately; no reinit needed. */
+    public static void setMaxArchiveSizeMb(int maxMb) {
+        if (!LIB_LOADED) return;
+        try { nativeSetMaxArchiveSizeMb(maxMb); } catch (Throwable ignore) { }
     }
 
     /** Settings toggle for decompression-bomb rejection during archive
@@ -468,6 +479,7 @@ public final class NativeScanner {
                 context, com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION));
             setMaxScanSizeMb(com.hydradragon.antivirus.engine.MaxScanFileSize.getMaxMb(context));
             setMaxTextScanBytes(com.hydradragon.antivirus.engine.MaxTextScanBytes.getMaxBytes(context));
+            setMaxArchiveSizeMb(com.hydradragon.antivirus.engine.MaxArchiveSize.getMaxMb(context));
             setDetectZipBomb(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("detect_zip_bomb_enabled", true));
             setScanRelevantOnly(context.getSharedPreferences("hydra_prefs", 0)

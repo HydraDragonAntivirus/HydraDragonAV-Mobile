@@ -46,6 +46,10 @@
     <string name="max_text_scan_bytes_label">扫描 HTML/文本文件至（MB）:</string>
     <string name="max_text_scan_bytes_hint">介于 %1$d 到 %2$d MB 之间 — 超过此大小的文本文件将在 ClamAV 中被跳过（不会遗漏检测）。</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_archive_size_btn">最大压缩包大小</string>
+    <string name="max_archive_size_label">解压非 zip 压缩包上限 (MB):</string>
+    <string name="max_archive_size_hint">介于 %1$d 到 %2$d MB — 超过此大小的非 zip 压缩包 (tar、gz、xz、7z、rar 等) 不会被解压，其内容将被跳过。APK 和 zip 文件不受影响。</string>
+    <string name="max_archive_size_saved">已保存最大压缩包大小</string>
     <string name="whitelists_header">白名单</string>
     <string name="ignored_signatures_btn">已忽略的签名</string>
     <string name="ignored_signatures_hint">输入确切的签名/检测名称（例如 PUA.SomeAdware、YARA.auto_...），以便在所有应用/文件中忽略它，而不仅仅是一个</string>

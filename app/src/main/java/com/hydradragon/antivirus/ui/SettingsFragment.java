@@ -237,6 +237,8 @@ public class SettingsFragment extends Fragment {
             v -> showMaxScanFileSizeDialog());
         addBtn("📄 " + getString(R.string.max_text_scan_bytes_btn), color(R.color.bg_secondary),
             v -> showMaxTextScanBytesDialog());
+        addBtn("🗜 " + getString(R.string.max_archive_size_btn), color(R.color.bg_secondary),
+            v -> showMaxArchiveSizeDialog());
 
         addHeader(getString(R.string.detection_categories_header));
         addCategoryToggle(R.string.detect_cat_signatures, com.hydradragon.antivirus.engine.DetectionCategories.SIGNATURES);
@@ -567,7 +569,7 @@ public class SettingsFragment extends Fragment {
             "silent_mode", com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH,
             "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "scan_relevant_only_enabled",
             "anti_fn_enabled", "anti_fn_tlsh_threshold",
-            "suricata_rule_scan_enabled", "max_text_scan_bytes"),
+            "suricata_rule_scan_enabled", "max_text_scan_bytes", "max_archive_size_mb"),
         new ResetCategory(R.string.reset_cat_premium, "zero_trust_mode", "auto_rule_generation",
             "ask_signature_on_remove", "auto_delete_malware_enabled"),
         new ResetCategory(R.string.reset_cat_whitelists, "ignored_signatures", "website_whitelist"),
@@ -1216,6 +1218,48 @@ public class SettingsFragment extends Fragment {
                 com.hydradragon.antivirus.engine.NativeScanner.setMaxTextScanBytes(
                     com.hydradragon.antivirus.engine.MaxTextScanBytes.getMaxBytes(requireContext()));
                 Toast.makeText(getContext(), getString(R.string.max_text_scan_bytes_saved), Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
+    }
+
+    /** Max-non-zip-archive-size config (see MaxArchiveSize) — same
+     *  EditText-in-AlertDialog pattern as showMaxScanFileSizeDialog(). A non-zip
+     *  archive (tar, gz, xz, 7z, rar, etc.) larger than this is not extracted;
+     *  its contents are skipped. APKs and plain .zip are unaffected. Takes
+     *  effect on the NEXT scan (read live, no service restart needed). */
+    private void showMaxArchiveSizeDialog() {
+        LinearLayout box = new LinearLayout(requireContext());
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(48, 24, 48, 0);
+
+        TextView label = new TextView(requireContext());
+        label.setText(getString(R.string.max_archive_size_label));
+        label.setTextColor(color(R.color.text_primary));
+        box.addView(label);
+        android.widget.EditText input = new android.widget.EditText(requireContext());
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setText(String.valueOf(
+            com.hydradragon.antivirus.engine.MaxArchiveSize.getMaxMb(requireContext())));
+        box.addView(input);
+
+        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.max_archive_size_btn))
+            .setMessage(getString(R.string.max_archive_size_hint,
+                com.hydradragon.antivirus.engine.MaxArchiveSize.MIN_MB,
+                com.hydradragon.antivirus.engine.MaxArchiveSize.MAX_MB))
+            .setView(box)
+            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
+                int mb;
+                try {
+                    mb = Integer.parseInt(input.getText().toString().trim());
+                } catch (Exception e) {
+                    mb = com.hydradragon.antivirus.engine.MaxArchiveSize.DEFAULT_MB;
+                }
+                com.hydradragon.antivirus.engine.MaxArchiveSize.setMaxMb(requireContext(), mb);
+                com.hydradragon.antivirus.engine.NativeScanner.setMaxArchiveSizeMb(
+                    com.hydradragon.antivirus.engine.MaxArchiveSize.getMaxMb(requireContext()));
+                Toast.makeText(getContext(), getString(R.string.max_archive_size_saved), Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton(getString(R.string.btn_cancel), null)
             .show();

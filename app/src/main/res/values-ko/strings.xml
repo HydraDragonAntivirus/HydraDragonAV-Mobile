@@ -46,6 +46,10 @@
     <string name="max_text_scan_bytes_label">HTML/텍스트 파일 검사 (MB까지):</string>
     <string name="max_text_scan_bytes_hint">%1$d~%2$d MB 사이 — 이보다 큰 텍스트 파일은 ClamAV에서 건너뜁니다(탐지 손실 없음).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_archive_size_btn">최대 아카이브 크기</string>
+    <string name="max_archive_size_label">비-ZIP 아카이브 추출 상한 (MB):</string>
+    <string name="max_archive_size_hint">%1$d~%2$d MB — 이보다 큰 비-ZIP 아카이브(tar, gz, xz, 7z, rar 등)는 추출되지 않고 내용이 건너뛰어집니다. APK와 ZIP 파일은 영향을 받지 않습니다.</string>
+    <string name="max_archive_size_saved">최대 아카이브 크기 저장됨</string>
     <string name="whitelists_header">화이트리스트</string>
     <string name="ignored_signatures_btn">무시된 시그니처</string>
     <string name="ignored_signatures_hint">정확한 시그니처/탐지 이름(예: PUA.SomeAdware, YARA.auto_...)을 입력하면 하나의 앱뿐만 아니라 모든 앱/파일에서 억제됩니다</string>

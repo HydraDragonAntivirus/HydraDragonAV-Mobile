@@ -46,6 +46,10 @@
     <string name="max_text_scan_bytes_label">HTML/テキストファイルをスキャン（MBまで）:</string>
     <string name="max_text_scan_bytes_hint">%1$d〜%2$d MBの範囲 — これを超えるテキストファイルはClamAVでスキップされます（検出漏れなし）。</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_archive_size_btn">最大アーカイブサイズ</string>
+    <string name="max_archive_size_label">非ZIPアーカイブを展開する上限 (MB):</string>
+    <string name="max_archive_size_hint">%1$d〜%2$d MB — これより大きい非ZIPアーカイブ (tar、gz、xz、7z、rar など) は展開されず、内容はスキップされます。APK と ZIP ファイルは影響を受けません。</string>
+    <string name="max_archive_size_saved">最大アーカイブサイズを保存しました</string>
     <string name="whitelists_header">ホワイトリスト</string>
     <string name="ignored_signatures_btn">無視するシグネチャ</string>
     <string name="ignored_signatures_hint">正確なシグネチャ/検出名（例: PUA.SomeAdware、YARA.auto_...）を入力すると、1つのアプリだけでなくすべてのアプリ/ファイルで抑制されます</string>

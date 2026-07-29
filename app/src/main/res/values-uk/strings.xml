@@ -46,6 +46,10 @@
     <string name="max_text_scan_bytes_label">Сканувати HTML/текстові файли до (МБ):</string>
     <string name="max_text_scan_bytes_hint">Від %1$d до %2$d МБ — текстові файли більші за цей розмір пропускаються в ClamAV (без втрати виявлення).</string>
     <string name="max_text_scan_bytes_saved">Max text scan bytes saved</string>
+    <string name="max_archive_size_btn">Максимальний розмір архіву</string>
+    <string name="max_archive_size_label">Розпаковувати не-zip архіви до (МБ):</string>
+    <string name="max_archive_size_hint">Від %1$d до %2$d МБ — не-zip архів (tar, gz, xz, 7z, rar тощо) більший за це не розпаковується, а його вміст пропускається. Файли APK та zip не зачіпаються.</string>
+    <string name="max_archive_size_saved">Максимальний розмір архіву збережено</string>
     <string name="whitelists_header">Білі списки</string>
     <string name="ignored_signatures_btn">Ігноровані сигнатури</string>
     <string name="ignored_signatures_hint">Введіть точну назву сигнатури/виявлення (напр. PUA.SomeAdware, YARA.auto_...), щоб придушувати її для всіх додатків/файлів, а не лише одного</string>
