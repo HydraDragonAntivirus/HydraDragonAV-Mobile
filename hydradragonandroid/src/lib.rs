@@ -2299,73 +2299,57 @@ fn run_scan(
     let mut yara_dets = streaming_dets;
 
     // Phase 3 YARA-only rescan with full module_meta for module-dependent rules.
-    // Re-scans buffer data, DEX string pools, and emulated strings.
     //
     // IMPORTANT: DEX-related module metadata (hydradragon DEX findings) must
     // NOT be passed when scanning non-DEX buffer data — otherwise HIPS rules
     // that check hydradragon.dex_severe_finding_count() would match on XML,
     // TXT, PNG, etc. just because the APK's DEX analysis found something.
-    // DEX string pools and emulated strings are always scanned with full meta.
-    let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
+    let rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
     if let Some(clamav) = &engine.clamav {
-        if !module_meta.is_empty() {
+                if !module_meta.is_empty() {
+            let meta_ref: &[(&str, &[u8])] = &module_meta;
             // Build set of object_paths that the streaming scan already flagged.
-            // Phase 3 should only re-scan those specific buffers — otherwise
-            // module-dependent rules that check APK-level properties (like
-            // androguard.device_admin_permission) fire on every buffer even
-            // though only one triggered the initial detection.
             let flagged_paths: std::collections::HashSet<String> =
                 yara_dets.iter().map(|(_, op, _)| op.clone()).collect();
             for yengine in &clamav.yara {
                 if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
                     continue;
                 }
-                for (i, b) in buffers.iter().enumerate() {
-                    let base_path = if buffers[i].entry_name.is_none() {
-                        path.to_string()
-                    } else {
-                        match &b.entry_name {
-                            Some(entry) => format!("{path}!/{entry}"),
-                            None => format!("{path}!/unnamed_{i}"),
+                let phase_results: Vec<Vec<(String, String, Vec<String>)>> =
+                    std::thread::scope(|s| {
+                        let mut handles = Vec::new();
+                        for (i, b) in buffers.iter().enumerate() {
+                            let base_path = if buffers[i].entry_name.is_none() {
+                                path.to_string()
+                            } else {
+                                match &b.entry_name {
+                                    Some(entry) => format!("{path}!/{entry}"),
+                                    None => format!("{path}!/unnamed_{i}"),
+                                }
+                            };
+                            if !flagged_paths.contains(base_path.as_str()) {
+                                continue;
+                            }
+                            handles.push(s.spawn(move || {
+                                let per_buf_meta = if b.data.starts_with(b"dex\n") {
+                                    meta_ref
+                                } else {
+                                    &[]
+                                };
+                                let matches = yengine.scan(&b.data, &base_path, per_buf_meta);
+                                matches.into_iter().map(|m| {
+                                    (m.name, m.object_path, b.apk_lineage.clone())
+                                }).collect::<Vec<_>>()
+                            }));
                         }
-                    };
-                    if !flagged_paths.contains(base_path.as_str()) {
-                        continue;
-                    }
-                    let per_buf_meta: &[(&str, &[u8])] = if b.data.starts_with(b"dex\n") {
-                        &module_meta
-                    } else {
-                        &[]
-                    };
-                    let t0 = std::time::Instant::now();
-                    let matches = yengine.scan(&b.data, &base_path, per_buf_meta);
-                    let ns = t0.elapsed().as_nanos();
-                    rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
-                    for m in matches {
-                        yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
-                    }
-                    // DEX string pool — always with full module_meta
-                    if let Some(ds) = &dex_scans[i] {
-                        let dname = format!("{base_path}#dex");
-                        let t0 = std::time::Instant::now();
-                        let matches = yengine.scan(ds.text.as_bytes(), &dname, &module_meta);
-                        let ns = t0.elapsed().as_nanos();
-                        rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
-                        for m in matches {
-                            yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
+                        let mut results = Vec::with_capacity(handles.len());
+                        for h in handles {
+                            results.push(h.join().unwrap_or(Vec::new()));
                         }
-                    }
-                    // Emulated strings — always with full module_meta
-                    if let Some(decoded) = &emulated_strings[i] {
-                        let ename = format!("{base_path}#emulated");
-                        let t0 = std::time::Instant::now();
-                        let matches = yengine.scan(decoded, &ename, &module_meta);
-                        let ns = t0.elapsed().as_nanos();
-                        rescan_timing.yara_per_engine.push((yengine.name.clone(), ns));
-                        for m in matches {
-                            yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
-                        }
-                    }
+                        results
+                    });
+                for dets in &phase_results {
+                    yara_dets.extend(dets.iter().cloned());
                 }
             }
         }
