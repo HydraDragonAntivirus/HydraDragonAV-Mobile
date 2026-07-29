@@ -192,6 +192,7 @@ public class DashboardFragment extends Fragment {
             private java.util.HashMap<Integer, String> pidCache = new java.util.HashMap<>();
             @Override
             public void run() {
+                if (!isAdded()) { uiHandler.removeCallbacks(this); return; }
                 if (!serviceBound || guardService == null) {
                     uiHandler.postDelayed(this, 1000);
                     return;
@@ -256,6 +257,7 @@ public class DashboardFragment extends Fragment {
     }
 
     private void cycleChartPackage() {
+        if (!isAdded()) return;
         if (selectedPkg == null) {
             if (pkgOrder.isEmpty()) return;
             selectedPkg = pkgOrder.get(0);
