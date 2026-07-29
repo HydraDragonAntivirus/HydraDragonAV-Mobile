@@ -47,7 +47,7 @@ public class DynamicAnalysisService extends AccessibilityService {
 
     // ── Behavioural spam detection ──────────────────────────────────────────
     /** Same event signature N+ times within the window => spam => malware. */
-    private static final int SPAM_THRESHOLD = 60;
+    private static final int SPAM_THRESHOLD = 100;
     private static final long SPAM_WINDOW_MS = 8_000;
     /** Notification spam: N+ notifications from one app in the window => malware. */
     private static final int NOTIF_THRESHOLD = 20;
