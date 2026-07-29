@@ -47,7 +47,7 @@ public class DynamicAnalysisService extends AccessibilityService {
 
     // ── Behavioural spam detection ──────────────────────────────────────────
     /** Same event signature N+ times within the window => spam => malware. */
-    private static final int SPAM_THRESHOLD = 30;
+    private static final int SPAM_THRESHOLD = 60;
     private static final long SPAM_WINDOW_MS = 8_000;
     /** Notification spam: N+ notifications from one app in the window => malware. */
     private static final int NOTIF_THRESHOLD = 20;
@@ -149,14 +149,14 @@ public class DynamicAnalysisService extends AccessibilityService {
 
         if (eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
             long currentTime = System.currentTimeMillis();
-            if (currentTime - lastClickTime < 300) { 
+            if (currentTime - lastClickTime < 200) { 
                 rapidClickCount++;
             } else {
                 rapidClickCount = 1;
             }
             lastClickTime = currentTime;
 
-            if (rapidClickCount >= 3 && (isInstaller || isSettings)) {
+            if (rapidClickCount >= 8 && (isInstaller || isSettings)) {
                 Log.w(TAG, "DETECTED: Automated Clickjacking/Permission granting!");
                 com.hydradragon.antivirus.engine.HipsMonitor.reportClickjack(pkg, rapidClickCount,
                     packageName.toString(), 2, true);
