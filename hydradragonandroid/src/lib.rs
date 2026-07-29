@@ -4306,7 +4306,9 @@ fn collect_buffers(
                                     let valid_children: Vec<_> = children
                                         .into_iter()
                                         .filter(|entry| {
-                                            if entry.name.trim().is_empty() {
+                                            if entry.name.trim().is_empty()
+                                                || entry.name.ends_with('/') // directory entries — no payload
+                                            {
                                                 return false;
                                             }
                                             let child_lower = entry.name.to_ascii_lowercase();

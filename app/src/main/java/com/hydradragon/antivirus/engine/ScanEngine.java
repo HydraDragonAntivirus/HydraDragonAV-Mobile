@@ -1854,13 +1854,11 @@ public class ScanEngine {
                             riskScore = 100;
                             builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                             reasons.add("🔐 Virus permissions (" + v.permissions + "/36)");
-                            nativeCorroborated = true;
                         } else if (v.permissions >= 25) {
                             riskScore = Math.max(riskScore, 40);
                             if (riskScore < 50) builder.setThreatType(
                                 com.hydradragon.antivirus.model.ThreatResult.ThreatType.SUSPICIOUS);
                             reasons.add("🔐 Suspicious permissions (" + v.permissions + "/36)");
-                            nativeCorroborated = true;
                         }
                     }
                     } // end if (v != null)
