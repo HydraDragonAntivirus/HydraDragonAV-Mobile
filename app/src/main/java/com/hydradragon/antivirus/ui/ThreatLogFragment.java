@@ -104,6 +104,9 @@ public class ThreatLogFragment extends Fragment {
         tv.setTextSize(14);
         tv.setPadding(40, 20, 40, 40);
         tv.setTypeface(android.graphics.Typeface.MONOSPACE);
+        tv.setAutoLinkMask(android.text.util.Linkify.WEB_URLS);
+        tv.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+        tv.setLinksClickable(true);
         scrollView.addView(tv);
         root.addView(scrollView, new LinearLayout.LayoutParams(-1, -1));
 
