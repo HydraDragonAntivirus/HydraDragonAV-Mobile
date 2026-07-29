@@ -837,6 +837,26 @@ fn is_media_file(data: &[u8]) -> bool {
     media_scan::is_media_file(data)
 }
 
+/// Cheap direct check for the EICAR standard antivirus test file — a fixed
+/// 68-byte ASCII string. Per the EICAR spec the string must be at the very
+/// start of the file, and the file may be padded up to 128 bytes with trailing
+/// whitespace. This lets a loose (standalone) EICAR file be flagged instantly
+/// without routing it through the full ClamAV/YARA pass — used for the depth-0
+/// standalone case where "scan relevant only" would otherwise skip it. The
+/// EICAR detection-category toggle is applied later on the Java side.
+fn is_eicar(data: &[u8]) -> bool {
+    const EICAR: &[u8] =
+        b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
+    if data.len() < EICAR.len() || data.len() > 128 {
+        return false;
+    }
+    if &data[..EICAR.len()] != EICAR {
+        return false;
+    }
+    // Anything after the 68-byte string must be whitespace-only padding.
+    data[EICAR.len()..].iter().all(|b| b.is_ascii_whitespace())
+}
+
 /// True when a buffer is a still image — by file extension or by magic bytes.
 /// Used to gate photo scanning behind the `SCAN_MEDIA_ENABLED` toggle
 /// (videos are covered separately by `is_media_file`).
@@ -3999,6 +4019,19 @@ fn collect_buffers(
                         let mut lineage = item.lineage;
                         let fmt = hydradragonextractor::detect_format(&item.buf);
                         if item.depth == 0 && SCAN_RELEVANT_ONLY.load(Ordering::Relaxed) && fmt != Some("zip") {
+                            // A standalone (loose) EICAR test file is 68 bytes
+                            // of text — normally skipped here because it isn't an
+                            // APK/zip. Emit it directly as an EICAR detection so
+                            // it's still caught, without paying the full
+                            // ClamAV/YARA pass. The EICAR category toggle is
+                            // applied on the Java side. Everything else standalone
+                            // (media, images, unknown binaries, larger text) is
+                            // skipped as before.
+                            if is_eicar(&item.buf) {
+                                if let Ok(mut sd) = streaming_dets.lock() {
+                                    sd.push(("Test.EICAR".to_string(), path.to_string(), lineage.clone()));
+                                }
+                            }
                             outstanding.fetch_sub(1, AtomOrdering::AcqRel);
                             continue;
                         }
