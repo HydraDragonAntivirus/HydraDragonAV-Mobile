@@ -936,7 +936,8 @@ impl Engine {
         bufs.last_offsets.resize(n, None);
         // Populate last_offsets from slot assignments for ByteCompare anchoring.
         if let Some(slots) = sub_slots {
-            for (i, slot) in slots.iter().enumerate() {
+            let limit = slots.len().min(n);
+            for (i, slot) in slots[..limit].iter().enumerate() {
                 if let crate::atomfilter::SubsigSlot::Atom(id) = *slot {
                     bufs.last_offsets[i] = slot_counts.last_offset(id);
                 }

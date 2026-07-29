@@ -2242,12 +2242,7 @@ fn run_scan(
         .ok()
         .map(|d| d.to_string())
         .unwrap_or_default();
-    // ML inference — deferred to after collect_buffers so only nested APK
-    // buffers are scored (the outer container is never fed to the model).
-    let mut ml_malicious = false;
-    let mut ml_probability = 0.0f32;
-    let mut ml_lineages = Vec::<(String, Vec<String>)>::new();
-    let mut ml_ms = 0u128;
+    // ML inference runs in Phase 3 parallel scope.
     if whitelisted {
         android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
     }
@@ -2255,7 +2250,7 @@ fn run_scan(
     let (buffers, bomb_dets, mut streaming_dets, streaming_timing) = if whitelisted {
         (Vec::new(), Vec::new(), Vec::new(), hydradragonclamav::scanner::TimingBreakdown::default())
     } else {
-        collect_buffers(apk_bytes, file_md5, path, engine.clamav.as_ref())
+        collect_buffers(apk_bytes, file_md5, path)
     };
     let extract_ms = t_extract.elapsed().as_millis();
 
@@ -2438,28 +2433,32 @@ fn run_scan(
     }
 
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
-    // (ML, ClamAV, YARA, TLSH) and return clean immediately.
+    // (ML, ClamAV, YARA, TLSH) and return immediately.
     if skip_heavy.iter().all(|&s| s) {
-        let bomb_dets_json: Vec<String> = bomb_dets.iter().map(|(n, op, lin)| {
-            let hs: Vec<String> = lin.iter().map(|h| format!("\"{}\"", h)).collect();
-            format!(r#"{{"name":"{}","object_path":"{}","hashes":[{}]}}"#,
-                json_escape(n), json_escape(op), hs.join(","))
-        }).collect();
         let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
+        if !bomb_dets.is_empty() {
+            let bomb_dets_json: Vec<String> = bomb_dets.iter().map(|(n, op, lin)| {
+                let hs: Vec<String> = lin.iter().map(|h| format!("\"{}\"", h)).collect();
+                format!(r#"{{"name":"{}","object_path":"{}","hashes":[{}]}}"#,
+                    json_escape(n), json_escape(op), hs.join(","))
+            }).collect();
+            let pkgs: Vec<String> = packages.iter().map(|p| format!("\"{}\"", json_escape(p))).collect();
+            let hs: Vec<String> = hashes.iter().map(|h| format!("\"{}\"", h)).collect();
+            return format!(
+                r#"{{"malicious":true,"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
+                bomb_dets_json.join(","),
+                perm_count,
+                pkgs.join(","),
+                hs.join(","),
+                file_hash,
+                file_tlsh_json,
+            );
+        }
         let pkgs: Vec<String> = packages.iter().map(|p| format!("\"{}\"", json_escape(p))).collect();
         let hs: Vec<String> = hashes.iter().map(|h| format!("\"{}\"", h)).collect();
-        let malicious = !bomb_dets.is_empty() || ml_malicious;
         return format!(
-            r#"{{"malicious":{},"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{}}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
-            if malicious { "true" } else { "false" },
-            bomb_dets_json.join(","),
-            perm_count,
-            pkgs.join(","),
-            hs.join(","),
-            file_hash,
-            file_tlsh_json,
-            if ml_malicious { "true" } else { "false" },
-            ml_probability,
+            r#"{{"malicious":false,"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0}}}}"#,
+            perm_count, pkgs.join(","), hs.join(","), file_hash, file_tlsh_json,
         );
     }
 
@@ -2488,128 +2487,261 @@ fn run_scan(
         // per-bucket accounting, and the data is diagnostic-only.
     }
 
-    let mut scan_timing = streaming_timing;
-    let mut yara_dets = streaming_dets;
+    // ── Parallel heavy phases ──────────────────────────────────────────
+    // Phase 3 YARA rescan, emulation signal, ML, TLSH, and URL scanning
+    // all depend on read-only `buffers` / `dex_scans` / `module_meta` etc.
+    // Run them concurrently so wall time = slowest phase, not sum of all.
+    use std::sync::Mutex;
 
-    // Phase 3 YARA-only rescan with full module_meta for module-dependent rules.
-    //
-    // IMPORTANT: DEX-related module metadata (hydradragon DEX findings) must
-    // NOT be passed when scanning non-DEX buffer data — otherwise HIPS rules
-    // that check hydradragon.dex_severe_finding_count() would match on XML,
-    // TXT, PNG, etc. just because the APK's DEX analysis found something.
-    let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
-    if let Some(clamav) = &engine.clamav {
-        if !module_meta.is_empty() {
-            // Build set of object_paths that the streaming scan already flagged.
-            let flagged_paths: std::collections::HashSet<String> =
-                yara_dets.iter().map(|(_, op, _)| op.clone()).collect();
-            // Collect the flagged buffers ONCE — computing each base_path a
-            // single time instead of rebuilding it (a heap-allocating format!)
-            // for every module-dependent engine × every buffer. On a large APK
-            // (up to 4096 buffers) with several module-dependent engines this
-            // was O(engines × buffers) throwaway allocations; it's now O(buffers)
-            // done once, and the per-engine loop only ever touches the handful of
-            // buffers that were actually flagged.
-            let flagged_buffers: Vec<(usize, String)> = if flagged_paths.is_empty() {
-                Vec::new()
-            } else {
-                buffers
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(i, b)| {
-                        let base_path = if b.entry_name.is_none() {
-                            path.to_string()
-                        } else {
-                            match &b.entry_name {
-                                Some(entry) => format!("{path}!/{entry}"),
-                                None => format!("{path}!/unnamed_{i}"),
+    let yara_dets = Mutex::new(streaming_dets);
+    let scan_timing = Mutex::new(streaming_timing);
+    let ml_out = Mutex::new((false, 0.0f32, Vec::<(String, Vec<String>)>::new(), 0u128));
+    let tlsh_out = Mutex::new(Vec::<(String, String, Vec<String>)>::new());
+    let tlsh_ms_out = Mutex::new(0u128);
+    let _url_out = Mutex::new(Vec::<(String, String, Vec<String>)>::new());
+    let err_shared = Mutex::new(None::<String>);
+
+    let buffers_ref = &*buffers;
+    let engine_ref = engine;
+    let path_ref = path;
+    let module_meta_ref = &module_meta[..];
+    let emulated_ref = &emulated;
+
+    std::thread::scope(|s| {
+        // Thread 1: Phase 3 YARA rescan + emulation signal
+        s.spawn(|| {
+            let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
+            if let Some(clamav) = &engine_ref.clamav {
+                if !module_meta_ref.is_empty() {
+                    let flagged_paths: std::collections::HashSet<String> =
+                        std::collections::HashSet::new();
+                    let flagged_buffers: Vec<(usize, String)> = buffers_ref
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, b)| {
+                            let base_path = if b.entry_name.is_none() {
+                                path_ref.to_string()
+                            } else {
+                                match &b.entry_name {
+                                    Some(entry) => format!("{path_ref}!/{entry}"),
+                                    None => format!("{path_ref}!/unnamed_{i}"),
+                                }
+                            };
+                            if flagged_paths.contains(base_path.as_str()) {
+                                Some((i, base_path))
+                            } else {
+                                None
                             }
-                        };
-                        if flagged_paths.contains(base_path.as_str()) {
-                            Some((i, base_path))
-                        } else {
-                            None
-                        }
-                    })
-                    .collect()
-            };
-            // Nothing flagged → no module-dependent rescan needed at all; skip
-            // even iterating the engine list.
-            if !flagged_buffers.is_empty() {
-                for yengine in &clamav.yara {
-                    if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
-                        continue;
-                    }
-                    for (i, base_path) in &flagged_buffers {
-                        let b = &buffers[*i];
-                        let per_buf_meta = if b.data.starts_with(b"dex\n") {
-                            &module_meta[..]
-                        } else {
-                            &[]
-                        };
-                        let t0 = std::time::Instant::now();
-                        let matches = yengine.scan(&b.data, base_path, per_buf_meta);
-                        rescan_timing.yara_per_engine.push((yengine.name.clone(), t0.elapsed().as_nanos()));
-                        for m in matches {
-                            yara_dets.push((m.name, m.object_path, b.apk_lineage.clone()));
+                        })
+                        .collect();
+                    if !flagged_buffers.is_empty() {
+                        for yengine in &clamav.yara {
+                            if !MODULE_DEPENDENT_YRC.contains(&yengine.name.as_str()) {
+                                continue;
+                            }
+                            for (i, base_path) in &flagged_buffers {
+                                let b = &buffers_ref[*i];
+                                let per_buf_meta = if b.data.starts_with(b"dex\n") {
+                                    module_meta_ref
+                                } else {
+                                    &[]
+                                };
+                                let t0 = std::time::Instant::now();
+                                let matches = yengine.scan(&b.data, base_path, per_buf_meta);
+                                rescan_timing.yara_per_engine.push((yengine.name.clone(), t0.elapsed().as_nanos()));
+                                if let Ok(mut yg) = yara_dets.lock() {
+                                    for m in matches {
+                                        yg.push((m.name, m.object_path, b.apk_lineage.clone()));
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
-    }
-    scan_timing.accumulate(rescan_timing);
+            if let Ok(mut st) = scan_timing.lock() {
+                st.accumulate(rescan_timing);
+            }
+            // Emulation signal
+            for (i, b) in buffers_ref.iter().enumerate() {
+                if emulated_ref[i].api_calls.is_empty() {
+                    continue;
+                }
+                let base_path = if buffers_ref[i].entry_name.is_none() {
+                    path_ref.to_string()
+                } else {
+                    match &b.entry_name {
+                        Some(entry) => format!("{path_ref}!/{entry}"),
+                        None => format!("{path_ref}!/unnamed_{i}"),
+                    }
+                };
+                let mut seen_apis = std::collections::HashSet::new();
+                for call in &emulated_ref[i].api_calls {
+                    if !seen_apis.insert(call.name.clone()) { continue; }
+                    if let Ok(mut yg) = yara_dets.lock() {
+                        yg.push((
+                            format!("Behavior.Native: {}", call.name),
+                            base_path.clone(),
+                            b.apk_lineage.clone(),
+                        ));
+                    }
+                }
+            }
+        });
 
-    // Behavioral signal from emulation — generated unconditionally.
-    for (i, b) in buffers.iter().enumerate() {
-        if emulated[i].api_calls.is_empty() {
-            continue;
-        }
-        let base_path = if buffers[i].entry_name.is_none() {
-            path.to_string()
-        } else {
-            match &b.entry_name {
-                Some(entry) => format!("{path}!/{entry}"),
-                None => format!("{path}!/unnamed_{i}"),
-            }
-        };
-        let mut seen_apis = std::collections::HashSet::new();
-        for call in &emulated[i].api_calls {
-            if !seen_apis.insert(call.name.clone()) {
-                continue;
-            }
-            yara_dets.push((
-                format!("Behavior.Native: {}", call.name),
-                base_path.clone(),
-                b.apk_lineage.clone(),
-            ));
-        }
-    }
-    // ML on every APK/zip buffer (including the top-level file — the ML
-    // model is trained on APK features and run_ml_on_mmap already validates
-    // format via is_apk_zip, so non-zip buffers are safely skipped).
-    if let Some(model) = &engine.model {
-        for (i, b) in buffers.iter().enumerate() {
-            let obj_path = match &b.entry_name {
-                Some(entry) => format!("{path}!/{entry}"),
-                None => format!("{path}!/unnamed_{i}"),
-            };
-            let t0 = std::time::Instant::now();
-            let (mal, conf, lineages) = match std::panic::catch_unwind(
-                std::panic::AssertUnwindSafe(|| run_ml_on_mmap(model, &b.data, &obj_path, b.fmt)),
-            ) {
-                Ok(r) => r,
-                Err(_) => {
-                    let _ = err.get_or_insert_with(|| format!("ml: {}", last_panic()));
-                    (false, 0.0, Vec::new())
+        // Thread 2: ClamAV + YARA (streaming scan replacement)
+        // Runs on every relevant buffer with empty module_meta, just like
+        // the old streaming scan inside collect_buffers.
+        s.spawn(|| {
+            let scan_media = SCAN_MEDIA_ENABLED.load(std::sync::atomic::Ordering::Relaxed);
+            let relevant_only = SCAN_RELEVANT_ONLY.load(std::sync::atomic::Ordering::Relaxed);
+            for (i, b) in buffers_ref.iter().enumerate() {
+                if skip_by_size(&b.data) { continue; }
+                if relevant_only && b.entry_name.is_some()
+                    && !is_relevant_buffer(b.entry_name.as_deref(), &b.data) { continue; }
+                let is_img = is_image_buffer(b.entry_name.as_deref(), &b.data);
+                let is_vid = is_media_file(&b.data);
+                let media_ok = scan_media || (!is_img && !is_vid);
+                if !media_ok { continue; }
+                if !(is_executable_buffer(b.entry_name.as_deref(), &b.data, b.fmt)
+                    || is_vid || (scan_media && is_img)) { continue; }
+                let obj_path = if b.entry_name.is_none() {
+                    path_ref.to_string()
+                } else {
+                    match &b.entry_name {
+                        Some(entry) => format!("{path_ref}!/{entry}"),
+                        None => format!("{path_ref}!/unnamed_{i}"),
+                    }
+                };
+                if let Some(clamav) = &engine_ref.clamav {
+                    let scan_data = if is_vid {
+                        media_scan::extract_metadata(&b.data)
+                    } else {
+                        b.data.to_vec()
+                    };
+                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        let t0 = std::time::Instant::now();
+                        let (matches, bt) = clamav.scan_bytes_named_with_breakdown(
+                            &scan_data, &obj_path, Default::default(), &[],
+                        );
+                        let _elapsed = t0.elapsed().as_millis();
+                        if let Ok(mut yg) = yara_dets.lock() {
+                            for m in &matches {
+                                yg.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
+                            }
+                        }
+                        if let Ok(mut st) = scan_timing.lock() {
+                            st.accumulate(bt);
+                        }
+                    }));
+                    if is_vid && media_scan::has_hidden_data(&b.data) {
+                        if let Ok(mut yg) = yara_dets.lock() {
+                            yg.push(("HDR.Media.Steganography".to_string(), obj_path, b.apk_lineage.clone()));
+                        }
+                    } else if has_polyglot_or_hidden_data(&b.data) {
+                        if let Ok(mut yg) = yara_dets.lock() {
+                            yg.push(("HDR.Image.Steganography".to_string(), obj_path, b.apk_lineage.clone()));
+                        }
+                    }
                 }
-            };
-            ml_ms += t0.elapsed().as_millis();
-            if mal { ml_malicious = true; }
-            if conf > ml_probability { ml_probability = conf; }
-            ml_lineages.extend(lineages);
-        }
-    }
+            }
+        });
+
+        // Thread 3: ML inference
+        s.spawn(|| {
+            let mut ml_mal = false;
+            let mut ml_prob = 0.0f32;
+            let mut ml_lin = Vec::<(String, Vec<String>)>::new();
+            let mut ml_time = 0u128;
+            if let Some(model) = &engine_ref.model {
+                for (i, b) in buffers_ref.iter().enumerate() {
+                    let obj_path = match &b.entry_name {
+                        Some(entry) => format!("{path_ref}!/{entry}"),
+                        None => format!("{path_ref}!/unnamed_{i}"),
+                    };
+                    let t0 = std::time::Instant::now();
+                    let (mal, conf, lineages) = match std::panic::catch_unwind(
+                        std::panic::AssertUnwindSafe(|| run_ml_on_mmap(model, &b.data, &obj_path, b.fmt)),
+                    ) {
+                        Ok(r) => r,
+                        Err(_) => {
+                            let _ = err_shared.lock().map(|mut e| {
+                                *e = Some(format!("ml: {}", last_panic()));
+                            });
+                            (false, 0.0, Vec::new())
+                        }
+                    };
+                    ml_time += t0.elapsed().as_millis();
+                    if mal { ml_mal = true; }
+                    if conf > ml_prob { ml_prob = conf; }
+                    ml_lin.extend(lineages);
+                }
+            }
+            let _ = ml_out.lock().map(|mut o| { *o = (ml_mal, ml_prob, ml_lin, ml_time); });
+        });
+
+        // Thread 4: TLSH (parallel inside, single worker launches its own scope)
+        s.spawn(|| {
+            let t_tlsh = std::time::Instant::now();
+            let n = buffers_ref.len();
+            let num_workers = std::thread::available_parallelism()
+                .map(|n| n.get()).unwrap_or(2).min(4).max(1);
+            let inner_results = std::sync::Mutex::new(Vec::new());
+            let inner_ref = &inner_results;
+            let chunk_size = (n + num_workers - 1) / num_workers;
+            std::thread::scope(|s2| {
+                for worker in 0..num_workers {
+                    let start = worker * chunk_size;
+                    let end = (start + chunk_size).min(n);
+                    if start >= end { continue; }
+                    s2.spawn(move || {
+                        let mut local_dets = Vec::new();
+                        for i in start..end {
+                            let b = &buffers_ref[i];
+                            if skip_by_size(&b.data) { continue; }
+                            let db = if b.data.starts_with(b"\x7fELF") {
+                                Some(&engine_ref.tlsh_db_elf)
+                            } else if b.data.starts_with(b"dex\n") {
+                                Some(&engine_ref.tlsh_db_dex)
+                            } else if is_apk_zip(&b.data) {
+                                Some(&engine_ref.tlsh_db_apk)
+                            } else {
+                                None
+                            };
+                                if let Some(db) = db {
+                                if let Some(dist) = tlsh_nearest(db, &b.data) {
+                                    let obj_path = if b.entry_name.is_none() {
+                                        path_ref.to_string()
+                                    } else {
+                                        match &b.entry_name {
+                                            Some(entry) => format!("{path_ref}!/{entry}"),
+                                            None => format!("{path_ref}!/unnamed_{i}"),
+                                        }
+                                    };
+                                    local_dets.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
+                                }
+                            }
+                        }
+                        if !local_dets.is_empty() {
+                            let _ = inner_ref.lock().map(|mut r| r.extend(local_dets));
+                        }
+                    });
+                }
+            });
+            let tlsh_dets = inner_results.into_inner().unwrap_or_default();
+            let _ = tlsh_out.lock().map(|mut o| *o = tlsh_dets);
+            let _ = tlsh_ms_out.lock().map(|mut o| *o = t_tlsh.elapsed().as_millis());
+        });
+    });
+
+    // ── Merge results ────────────────────────────────────────────
+    let scan_timing = scan_timing.into_inner().unwrap_or_default();
+    let mut yara_dets = yara_dets.into_inner().unwrap_or_default();
+    let (ml_malicious, ml_probability, ml_lineages, ml_ms) = ml_out.into_inner().unwrap_or_default();
+    let tlsh_dets = tlsh_out.into_inner().unwrap_or_default();
+    let tlsh_ms = tlsh_ms_out.into_inner().unwrap_or_default();
+    let _ = err_shared.into_inner().map(|e| { if let Some(e) = e { err = Some(e); } });
+
     let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
     let mut yara_agg: std::collections::HashMap<String, u128> = std::collections::HashMap::new();
     for (name, ns) in &scan_timing.yara_per_engine {
@@ -2625,14 +2757,12 @@ fn run_scan(
 
     let mut detections: Vec<(String, String, Vec<String>)> = bomb_dets;
     detections.append(&mut yara_dets);
+    detections.extend(tlsh_dets);
     for (obj_path, lin) in ml_lineages {
         detections.push(("ML".to_string(), obj_path, lin));
     }
 
-    // Scan URLs against Binary Fuse .xf filters:
-    // - Base64-encoded URLs in buffer bytes
-    // - DEX string pool entries
-    // - Emulation-decoded strings
+    // URL scanning (lightweight, run on main thread after scope)
     if let Some(scanner) = &engine.url_scanner {
         let mut url_limit = 0u32;
         if url_limit < 16 {
@@ -2690,61 +2820,6 @@ fn run_scan(
         }
     }
 
-    let tlsh_ms = {
-        let t_tlsh = std::time::Instant::now();
-        let n = buffers.len();
-        let num_workers = std::thread::available_parallelism()
-            .map(|n| n.get()).unwrap_or(2).min(4).max(1);
-        let tlsh_results = std::sync::Mutex::new(Vec::new());
-        let chunk_size = (n + num_workers - 1) / num_workers;
-        // Borrow references once so the spawned closures only capture copies.
-        let buffers = &*buffers;
-        let engine = engine;
-        let path: &str = path;
-        let tlsh_results = &tlsh_results;
-        std::thread::scope(|s| {
-            for worker in 0..num_workers {
-                let start = worker * chunk_size;
-                let end = (start + chunk_size).min(n);
-                if start >= end { continue; }
-                s.spawn(move || {
-                    let mut local_dets = Vec::new();
-                    for i in start..end {
-                        let b = &buffers[i];
-                        if skip_by_size(&b.data) { continue; }
-                        let db = if b.data.starts_with(b"\x7fELF") {
-                            Some(&engine.tlsh_db_elf)
-                        } else if b.data.starts_with(b"dex\n") {
-                            Some(&engine.tlsh_db_dex)
-                        } else if is_apk_zip(&b.data) {
-                            Some(&engine.tlsh_db_apk)
-                        } else {
-                            None
-                        };
-                        if let Some(db) = db {
-                            if let Some(dist) = tlsh_nearest(db, &b.data) {
-                                let obj_path = if b.entry_name.is_none() {
-                                    path.to_string()
-                                } else {
-                                    match &b.entry_name {
-                                        Some(entry) => format!("{path}!/{entry}"),
-                                        None => format!("{path}!/unnamed_{i}"),
-                                    }
-                                };
-                                local_dets.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
-                            }
-                        }
-                    }
-                    if !local_dets.is_empty() {
-                        tlsh_results.lock().unwrap().extend(local_dets);
-                    }
-                });
-            }
-        });
-        detections.append(&mut *tlsh_results.lock().unwrap());
-        t_tlsh.elapsed().as_millis()
-    };
-
     // Per-YARA-ruleset breakdown string.
     let mut yara_breakdown = String::new();
     let mut yara_sorted: Vec<_> = yara_agg.into_iter().collect();
@@ -2757,11 +2832,7 @@ fn run_scan(
         }
     }
 
-    // Per-stage breakdown for THIS file — filter logcat with
-    // `adb logcat -s HydraDragon-RustTiming` to see which Rust-side stage is
-    // actually the bottleneck (extraction, dex analysis, native-code
-    // emulation, ClamAV, YARA, ML model, or TLSH), not just "NativeScanner" as
-    // one lump sum the way the Java-side FILE_ENGINE_TIMING log already does.
+    // Per-stage breakdown for THIS file
     let stages = [
         ("extract", extract_ms),
         ("dex", dex_ms),
@@ -2899,10 +2970,22 @@ fn run_scan(
         None => String::new(),
     };
 
-    let result = format!(
-        r#"{{"cached":false,"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
-        malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
-    );
+    let result = if malicious || zero_trust {
+        // Full JSON: detections, generated rule, per-entry hashes (needed by
+        // Java's Anti-FP cache and yarGen rule display).
+        format!(
+            r#"{{"cached":false,"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
+            malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
+        )
+    } else {
+        // Clean result: minimal JSON — Java only needs essential fields for
+        // the clean path. No detections, no generated rule, no entry hashes.
+        // This cuts JSON size from ~100KB+ to ~500B for clean scans.
+        format!(
+            r#"{{"cached":false,"malicious":false,"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0}}{}}}"#,
+            perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, err_json
+        )
+    };
 
     // Cache clean results so repeated scans return instantly.
     if !malicious && !whitelisted {
@@ -4071,18 +4154,13 @@ struct Buf {
 /// Returns (buffers, bomb_dets, streaming_dets, streaming_timing).
 /// - `buffers`: every extracted buffer (used by Phase 2 and YARA-only rescan).
 /// - `bomb_dets`: zip-bomb detection errors.
-/// - `streaming_dets`: ClamAV + YARA detections from the streaming pass
-///   (module_meta is empty during streaming, so module-dependent YARA rules
-///   won't match here — they require androguard/hydradragon metadata that is
-///   only available after Phase 2).
-/// - `streaming_timing`: timing breakdown for the streaming scan pass.
-///
-/// When `clamav` is `None`, streaming scan is skipped (returns empty detections).
+/// - `streaming_dets`: detections from EICAR checks during extraction.
+/// - `streaming_timing`: timing breakdown (currently always empty — ClamAV
+///   scanning moved to Phase 3 parallel scope).
 fn collect_buffers(
     data: Vec<u8>,
     top_md5: Option<&str>,
     path: &str,
-    clamav: Option<&ClamavEngine>,
 ) -> (
     Vec<Buf>,
     Vec<(String, String, Vec<String>)>,
@@ -4097,15 +4175,7 @@ fn collect_buffers(
         buf: OwnedBuf,
         depth: usize,
         lineage: Vec<String>,
-        /// In-archive path within its immediate parent, `None` for the seed
-        /// (top-level) item.
         entry_name: Option<String>,
-        /// Parent archive container type (e.g. `"zip"`), `None` for top-level.
-        container_type: Option<&'static str>,
-        /// Decompressed (real) size of this entry in the parent archive.
-        container_size_real: Option<u64>,
-        /// Byte offset of this entry within the parent archive.
-        container_file_pos: Option<u64>,
     }
 
     let stack: Mutex<Vec<WorkItem>> = Mutex::new(vec![WorkItem {
@@ -4113,9 +4183,6 @@ fn collect_buffers(
         depth: 0,
         lineage: Vec::new(),
         entry_name: None,
-        container_type: None,
-        container_size_real: None,
-        container_file_pos: None,
     }]);
     // Termination detection for the shared work stack: counts items that are
     // either sitting in `stack` or actively being processed by some worker.
@@ -4271,9 +4338,6 @@ fn collect_buffers(
                                                 depth: item.depth + 1,
                                                 lineage: lineage.clone(),
                                                 entry_name,
-                                                container_type: fmt,
-                                                container_size_real: Some(entry.size_real),
-                                                container_file_pos: Some(entry.file_pos),
                                             });
                                         }
                                     }
@@ -4313,81 +4377,11 @@ fn collect_buffers(
                         let is_vid = is_media_file(&item.buf);
                         let media_ok = scan_media || (!is_img && !is_vid);
 
-                        // Streaming scan: run before item.buf is moved into `out`.
-                        // Uses empty module_meta (androguard/hydradragon not yet
-                        // built); module-dependent YARA rules get a second YARA-only
-                        // pass in Phase 3.
-                        //
-                        // Only known Android-relevant formats (DEX, ELF, archives,
-                        // text, images, media) get scanned here.  Desktop formats
-                        // (PE, Mach-O, OLE2, SWF, etc.) and unknown binaries are
-                        // skipped entirely — no ClamAV, no YARA.
-                        //
-                        // Media files (MP4, M4V, 3GP, etc.) are scanned
-                        // metadata-only — only the ISOBMFF boxes before/after the
-                        // `mdat` box are passed to ClamAV/YARA, skipping the raw
-                        // audio/video payload.  99.9 % of media-borne malware lives
-                        // in metadata; the 0.1 % that is a full-file phish is not
-                        // detectable via static signatures anyway.
-                        if let Some(clamav_engine) = clamav {
-                            if relevant && media_ok && !skip_by_size(&item.buf)
-                                && (is_executable_buffer(item.entry_name.as_deref(), &item.buf, fmt)
-                                    || is_vid
-                                    || (scan_media && is_img))
-                            {
-                                let obj_path = if idx == 0 {
-                                    path.to_string()
-                                } else {
-                                    match &item.entry_name {
-                                        Some(entry) => format!("{path}!/{entry}"),
-                                        None => format!("{path}!/unnamed_{idx}"),
-                                    }
-                                };
-                                let scan_buf = if is_vid {
-                                    media_scan::extract_metadata(&item.buf)
-                                } else {
-                                    item.buf.to_vec()
-                                };
-                                match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                    clamav_engine.scan_bytes_named_with_container(
-                                        &scan_buf,
-                                        &obj_path,
-                                        hydradragonclamav::ScanOptions::default(),
-                                        &[],
-                                        item.container_type,
-                                        item.container_size_real,
-                                        item.container_file_pos,
-                                        item.entry_name.clone(),
-                                    )
-                                })) {
-                                    Ok((matches, bt)) => {
-                                        if let Ok(mut sd) = streaming_dets.lock() {
-                                            for m in matches {
-                                                sd.push((m.name, m.object_path, lineage.clone()));
-                                            }
-                                        }
-                                        if let Ok(mut st) = streaming_timing.lock() {
-                                            st.accumulate(bt);
-                                        }
-                                    }
-                                    Err(_) => {
-                                        android_log(&format!(
-                                            "collect_buffers: streaming scan PANIC on {obj_path}, skipping this buffer: {}",
-                                            last_panic()
-                                        ));
-                                    }
-                                }
-                                if is_vid && media_scan::has_hidden_data(&item.buf) {
-                                    if let Ok(mut sd) = streaming_dets.lock() {
-                                        sd.push(("HDR.Media.Steganography".to_string(), obj_path.clone(), lineage.clone()));
-                                    }
-                                } else if has_polyglot_or_hidden_data(&item.buf) {
-                                    if let Ok(mut sd) = streaming_dets.lock() {
-                                        sd.push(("HDR.Image.Steganography".to_string(), obj_path, lineage.clone()));
-                                    }
-                                }
-                            }
-                        }
+                        // ClamAV + steganography scanning moved to Phase 3
+                        // parallel scope (see run_scan) so extraction is not
+                        // blocked by signature matching.  EICAR test files are
+                        // still caught here because they are tiny and have no
+                        // extractable children.
 
                         if relevant && media_ok {
                             if let Ok(mut og) = out.lock() {
@@ -4423,7 +4417,7 @@ fn collect_buffers(
     let streaming_dets = streaming_dets.into_inner().unwrap_or_default();
     let streaming_timing = streaming_timing.into_inner().unwrap_or_default();
     rust_timing_log!(
-        "collect_buffers :: extracted {} buffers ({} workers), total {} MB, streaming {} detections",
+        "collect_buffers :: extracted {} buffers ({} workers), total {} MB, {} detections",
         out.len(),
         workers,
         total_bytes.load(AtomOrdering::Relaxed) / 1_000_000,
