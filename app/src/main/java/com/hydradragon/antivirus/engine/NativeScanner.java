@@ -104,6 +104,8 @@ public final class NativeScanner {
         try { nativeSetScanMediaEnabled(enabled); } catch (Throwable ignore) { }
     }
 
+    private static native void nativeSetScanCacheDir(String cacheDir);
+
     private static native void nativeSetRiskwareTestKeyEnabled(boolean enabled);
 
     /** Andr.Riskware.TestKey — flags APKs signed with publicly-known Android
@@ -468,6 +470,9 @@ public final class NativeScanner {
         boolean loadAutoRules = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
             context, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
         nativeInit(ASSET_DIR, loadAutoRules, context.getAssets(), dir.getAbsolutePath());
+        if (LIB_LOADED) {
+            try { nativeSetScanCacheDir(context.getCacheDir().getAbsolutePath()); } catch (Throwable ignore) { }
+        }
         if (isReady()) {
             // Probe Unicorn at startup — if the ARM64 JIT backend hangs
             // (known bug on real phone hardware), emulation is permanently

@@ -818,28 +818,15 @@ public class ScanEngine {
 
             try {
                 if (isFullScan && !cancelRequested) {
-                    // Full scan = quick scan PLUS four extra passes:
-                    //  1) every file under ALL storage volumes (not just /sdcard)
-                    //  2) deep native (clamav/YARA/ML) scan of every installed APK
-                    //  3) running / recently-active processes
-                    //  4) accessible app-data & system directories
+                    // Full scan = main installed-app loop PLUS look for
+                    // standalone APK files under all storage volumes (SD
+                    // card, downloads, etc.) — these are not installed
+                    // packages so analyzeApp doesn't see them.
                     java.util.Set<String> installedPackages = new java.util.HashSet<>();
                     for (ApplicationInfo a : apps) if (a.packageName != null) installedPackages.add(a.packageName);
                     long t0 = android.os.SystemClock.elapsedRealtime();
                     scanAllStorageRoots(pm, threats, installedPackages);
                     addTiming("scanAllStorageRoots", android.os.SystemClock.elapsedRealtime() - t0);
-
-                    t0 = android.os.SystemClock.elapsedRealtime();
-                    deepNativeScanInstalledApks(apps, pm, threats);
-                    addTiming("deepNativeScanInstalledApks", android.os.SystemClock.elapsedRealtime() - t0);
-
-                    t0 = android.os.SystemClock.elapsedRealtime();
-                    scanRecentProcesses(pm, threats);
-                    addTiming("scanRecentProcesses", android.os.SystemClock.elapsedRealtime() - t0);
-
-                    t0 = android.os.SystemClock.elapsedRealtime();
-                    scanAccessibleDataDirs(pm, threats);
-                    addTiming("scanAccessibleDataDirs", android.os.SystemClock.elapsedRealtime() - t0);
                 }
             } catch (Exception e) { }
 
@@ -1196,35 +1183,10 @@ public class ScanEngine {
                 return true;
             }
 
-            String fileMd5 = computeFileMd5(file);
-            if (fileMd5 != null && photonCacheEnabled()) {
-                java.util.Optional<ThreatResult> cached = scanCache != null ? scanCache.getFileCache(fileMd5) : null;
-                if (cached != null) {
-                    Log.i(TAG, "File-MD5 cache hit (" + fileMd5 + "): " + file.getAbsolutePath());
-                    if (cached.isPresent()) {
-                        ThreatResult r = cached.get();
-                        if (!threats.contains(r)) {
-                            threats.add(r);
-                            if (callback != null) callback.onThreatFound(r);
-                        }
-                    }
-                    return true;
-                }
-                if (isFileHashWhitelisted(file.getAbsolutePath(), fileMd5)) {
-                    Log.i(TAG, "NSRL Whitelist hit (MD5 clean): " + file.getAbsolutePath());
-                    if (scanCache != null) scanCache.putFileCache(fileMd5, java.util.Optional.empty());
-                    return true;
-                }
-            }
-
-            if (callback != null) {
-                int n = appsScannedBase + filesScannedCount.get();
-                callback.onProgress(n, n, file.getName());
-            }
             String path = file.getAbsolutePath();
             long nativeT0 = android.os.SystemClock.elapsedRealtime();
             NativeScanner.Verdict v = runNativeInterruptible(() ->
-                NativeScanner.scan(path, null, fileMd5, ZeroTrustMode.isEnabled(context)));
+                NativeScanner.scan(path, null, null, ZeroTrustMode.isEnabled(context)));
             long nativeMs = android.os.SystemClock.elapsedRealtime() - nativeT0;
             addTiming("NativeScanner", nativeMs);
             Log.i(TAG, "FILE_ENGINE_TIMING " + file.getName()
@@ -1362,11 +1324,6 @@ public class ScanEngine {
             if (r.isThreat() && !threats.contains(r)) {
                 threats.add(r);
                 if (callback != null) callback.onThreatFound(r);
-            }
-            if (fileMd5 != null && photonCacheEnabled() && !cancelRequested && scanCache != null) {
-                scanCache.putFileCache(fileMd5, r.isThreat()
-                    ? java.util.Optional.of(r)
-                    : java.util.Optional.empty());
             }
             return true;
         } catch (Throwable t) {
@@ -2025,12 +1982,6 @@ public class ScanEngine {
         if (isApkFile) builder.setApkPath(app.sourceDir);
         
         ThreatResult finalRes = builder.build();
-        if (finalRes.isThreat() && app.packageName != null && !UserDecisions.isThreatAllowed(context, app.packageName)) {
-            String allReasons = finalRes.getReasons().isEmpty()
-                ? finalRes.getThreatType().toString()
-                : String.join("\n", finalRes.getReasons());
-            BehaviorFlags.flag(context, app.packageName, allReasons);
-        }
         if (!cancelRequested && app.packageName != null && scanCache != null) scanCache.putPhotonCache(app.packageName, finalRes);
         return finalRes;
     }

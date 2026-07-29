@@ -245,6 +245,117 @@ static INIT_DIR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 static INIT_STARTED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
+/// Scan result cache: keyed by MD5 of the whole file. Only stores CLEAN
+/// results. A subsequent scan of the same file (same MD5) returns the cached
+/// JSON instantly — no extract, no ClamAV, no YARA, no ML.
+/// Persisted to `{SCAN_CACHE_DIR}/hydra_scan_cache.json` across restarts.
+/// LRU eviction at `SCAN_CACHE_MAX` entries (oldest discarded).
+static SCAN_CACHE: std::sync::Mutex<Option<ScanCache>> = std::sync::Mutex::new(None);
+/// Directory path for the cache file, set by Java via `nativeSetScanCacheDir`.
+static SCAN_CACHE_DIR: OnceLock<String> = OnceLock::new();
+const SCAN_CACHE_FILE: &str = "hydra_scan_cache.json";
+const SCAN_CACHE_MAX: usize = 1000;
+
+struct ScanCache {
+    map: std::collections::HashMap<String, CachedEntry>,
+    /// Insertion-ordered keys for LRU eviction.
+    order: Vec<String>,
+    /// Whether the cache has been modified since last save.
+    dirty: bool,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+struct CachedEntry {
+    json: String,
+    timestamp: u64,
+}
+
+fn scan_cache_path() -> Option<String> {
+    SCAN_CACHE_DIR.get().map(|d| format!("{d}/{SCAN_CACHE_FILE}"))
+}
+
+fn load_scan_cache() {
+    let path = match scan_cache_path() {
+        Some(p) => p,
+        None => return,
+    };
+    let data = match std::fs::read_to_string(&path) {
+        Ok(d) => d,
+        Err(_) => return,
+    };
+    let map: std::collections::HashMap<String, CachedEntry> = match serde_json::from_str(&data) {
+        Ok(m) => m,
+        Err(_) => return,
+    };
+    let order: Vec<String> = map.keys().cloned().collect();
+    if let Ok(mut g) = SCAN_CACHE.lock() {
+        *g = Some(ScanCache { map, order, dirty: false });
+    }
+}
+
+fn save_scan_cache() {
+    let path = match scan_cache_path() {
+        Some(p) => p,
+        None => return,
+    };
+    let (map, dirty) = {
+        let mut g = match SCAN_CACHE.lock() {
+            Ok(g) => g,
+            Err(_) => return,
+        };
+        let cache = match g.as_mut() {
+            Some(c) => c,
+            None => return,
+        };
+        if !cache.dirty { return; }
+        cache.dirty = false;
+        (cache.map.clone(), true)
+    };
+    if !dirty { return; }
+    if let Ok(json) = serde_json::to_string(&map) {
+        let _ = std::fs::write(&path, &json);
+    }
+}
+
+fn cache_scan_result(md5: &str, json: &str) {
+    {
+        let mut g = match SCAN_CACHE.lock() {
+            Ok(g) => g,
+            Err(_) => return,
+        };
+        let cache = match g.as_mut() {
+            Some(c) => c,
+            None => return,
+        };
+        while cache.order.len() >= SCAN_CACHE_MAX {
+            let oldest = cache.order.remove(0);
+            cache.map.remove(&oldest);
+        }
+        cache.map.insert(md5.to_string(), CachedEntry {
+            json: json.to_string(),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0),
+        });
+        cache.order.push(md5.to_string());
+        cache.dirty = true;
+    } // g dropped here → lock released
+    save_scan_cache();
+}
+
+fn check_scan_cache(md5: &str) -> Option<String> {
+    let g = match SCAN_CACHE.lock() {
+        Ok(g) => g,
+        Err(_) => return None,
+    };
+    let cache = match g.as_ref() {
+        Some(c) => c,
+        None => return None,
+    };
+    cache.map.get(md5).map(|e| e.json.clone())
+}
+
 /// Last panic's "message @ file:line", captured by our hook so we can report
 /// WHY a scan panicked (root cause) instead of just swallowing it.
 static LAST_PANIC: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
@@ -1498,6 +1609,22 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     SCAN_MEDIA_ENABLED.store(enabled != JNI_FALSE, Ordering::Relaxed);
 }
 
+/// `void nativeSetScanCacheDir(String cacheDir)` — sets the directory for
+/// the scan result cache file. Called from Java after NativeScanner.init(),
+/// before any scan. The cache persists clean results across restarts.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetScanCacheDir<'local>(
+    mut env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    cache_dir: JString<'local>,
+) {
+    let dir: String = env.with_env(|env| cache_dir.try_to_string(env)).resolve::<LogErrorAndDefault>();
+    if !dir.is_empty() {
+        let _ = SCAN_CACHE_DIR.set(dir);
+        load_scan_cache();
+    }
+}
+
 /// `boolean nativeLearnRule(String yarPath)` — hot-load ONE freshly
 /// auto-generated `.yar` file (already written to disk by
 /// ScanEngine.saveGeneratedRule) into the LIVE engine via a brief write lock,
@@ -2091,6 +2218,23 @@ fn run_scan(
     };
     // If the top-level file is hash-whitelisted, skip extraction entirely.
     let whitelisted = engine.whitelist.as_ref().is_some_and(|wl| wl.contains(&file_hash));
+    // Scan result cache: if this file's MD5 was previously scanned and clean,
+    // return the cached JSON immediately — no extract, no engines.
+    if !whitelisted {
+        if let Some(mut cached) = check_scan_cache(&file_hash) {
+            // Flip "cached":false → "cached":true so Java knows it's from cache.
+            if let Some(pos) = cached.find(r#""cached":"#) {
+                let after = &cached[pos + 9..];
+                if after.starts_with("false") {
+                    let before = &cached[..pos + 9];
+                    cached = format!("{}true{}", before, &after[5..]);
+                }
+            }
+            rust_timing_log!("{path} :: cache HIT (MD5 {file_hash}) — returning cached result");
+            return cached;
+        }
+    }
+
     // TLSH of the whole top-level file — computed early while `mmap` is still
     // available (before collect_buffers consumes it). Used in the skip_heavy
     // early-return and in the final result JSON.
@@ -2755,10 +2899,17 @@ fn run_scan(
         None => String::new(),
     };
 
-    format!(
-        r#"{{"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
+    let result = format!(
+        r#"{{"cached":false,"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
         malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
-    )
+    );
+
+    // Cache clean results so repeated scans return instantly.
+    if !malicious && !whitelisted {
+        cache_scan_result(&file_hash, &result);
+    }
+
+    result
 }
 
 /// Build a yarGen-style YARA rule from THIS scan's own results. Called when
