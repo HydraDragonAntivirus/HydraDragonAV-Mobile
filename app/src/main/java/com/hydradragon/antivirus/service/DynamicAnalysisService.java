@@ -184,13 +184,19 @@ public class DynamicAnalysisService extends AccessibilityService {
                 boolean scanFlagged = com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(pkg, "SCAN_MALWARE")
                     || com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(pkg, "DOWNLOAD_MALWARE");
                 if (!trusted && (behFlagged || scanFlagged)) {
-                    Log.e(TAG, "FLAGGED MALWARE OPENED ON SCREEN: " + pkg + " -> force-stop via accessibility");
-                    String reason = behFlagged ? BehaviorFlags.reasonFor(this, pkg) : getString(R.string.reason_scan_detected_malware);
+                    Log.e(TAG, "FLAGGED MALWARE OPENED ON SCREEN: " + pkg);
+                    // Prefer the full stored reason (BehaviorFlags keeps every
+                    // detection reason joined with newlines); fall back to the
+                    // generic scan-detected string only if nothing was stored.
+                    String stored = BehaviorFlags.reasonFor(this, pkg);
+                    String reason = (stored != null && !stored.isEmpty())
+                        ? stored : getString(R.string.reason_scan_detected_malware);
+                    java.util.List<String> reasonList = java.util.Arrays.asList(reason.split("\n"));
                     ThreatResult threat = new ThreatResult.Builder(pkg)
                             .setAppName(pkg)
                             .setRiskScore(100)
                             .setThreatType(ThreatResult.ThreatType.MALWARE)
-                            .setReasons(java.util.Collections.singletonList(reason != null ? reason : getString(R.string.reason_scan_detected_malware)))
+                            .setReasons(reasonList)
                             .build();
                     com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(this, threat);
                 }

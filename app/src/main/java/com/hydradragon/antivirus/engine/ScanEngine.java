@@ -2026,8 +2026,10 @@ public class ScanEngine {
         
         ThreatResult finalRes = builder.build();
         if (finalRes.isThreat() && app.packageName != null && !UserDecisions.isThreatAllowed(context, app.packageName)) {
-            String firstReason = finalRes.getReasons().isEmpty() ? finalRes.getThreatType().toString() : finalRes.getReasons().get(0);
-            BehaviorFlags.flag(context, app.packageName, firstReason);
+            String allReasons = finalRes.getReasons().isEmpty()
+                ? finalRes.getThreatType().toString()
+                : String.join("\n", finalRes.getReasons());
+            BehaviorFlags.flag(context, app.packageName, allReasons);
         }
         if (!cancelRequested && app.packageName != null && scanCache != null) scanCache.putPhotonCache(app.packageName, finalRes);
         return finalRes;

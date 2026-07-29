@@ -39,6 +39,12 @@ pub fn is_target_allowed(target: Option<u32>) -> bool {
     matches!(target, Some(t) if ALLOWED_TARGETS.contains(&t))
 }
 
+/// Ruleset names that depend on module metadata (androguard/hydradragon JSON
+/// reports) built only AFTER the streaming extract pass. These are skipped
+/// during streaming (their module functions can't evaluate without metadata)
+/// and scanned exactly once in the Phase 3 module-metadata rescan.
+const MODULE_DEPENDENT_NAMES: [&str; 2] = ["androguard.yrc", "hips_rules_filtered_verified.yrc"];
+
 /// A compiled YARA ruleset ready for scanning.
 /// `rules` is boxed so its address is stable even when the containing `Vec<YaraEngine>`
 /// is pushed to (which can reallocate and move elements). Thread-local `Scanner` caches
@@ -47,12 +53,21 @@ pub fn is_target_allowed(target: Option<u32>) -> bool {
 pub struct YaraEngine {
     id: u64,
     pub name: String,
+    /// True if this ruleset references the androguard/hydradragon modules and
+    /// therefore only produces meaningful results once module metadata exists.
+    pub module_dependent: bool,
     rules: Box<yara_x::Rules>,
 }
 
 impl YaraEngine {
     fn new(rules: yara_x::Rules, name: String) -> Self {
-        Self { id: NEXT_ENGINE_ID.fetch_add(1, Ordering::Relaxed), name, rules: Box::new(rules) }
+        let module_dependent = MODULE_DEPENDENT_NAMES.contains(&name.as_str());
+        Self {
+            id: NEXT_ENGINE_ID.fetch_add(1, Ordering::Relaxed),
+            name,
+            module_dependent,
+            rules: Box::new(rules),
+        }
     }
 
     /// Compile a YARA source file and build the engine.

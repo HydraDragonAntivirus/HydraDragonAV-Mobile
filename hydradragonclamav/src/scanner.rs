@@ -547,6 +547,14 @@ impl Engine {
             && crate::yara_scan::is_target_allowed(confident_target)
         {
             for yara in &self.yara {
+                // Module-dependent rulesets (androguard/hips) can't evaluate
+                // without their JSON metadata, which only exists AFTER the
+                // streaming extract pass. Skip them here when no metadata is
+                // present — Phase 3 rescans them exactly once with metadata.
+                // This ensures every ruleset is scanned once, not twice.
+                if yara.module_dependent && module_meta.is_empty() {
+                    continue;
+                }
                 let t_yara = timing.as_ref().map(|_| Instant::now());
                 for m in yara.scan(data, object_path, module_meta) {
                     state.matches.push(m);
