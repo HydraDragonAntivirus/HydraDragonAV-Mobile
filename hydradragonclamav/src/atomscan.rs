@@ -19,13 +19,28 @@ impl SlotCounts<'_> {
     }
 }
 
-pub struct AtomFilterScanner<'a> {
-    db: &'a AtomFilterDb,
+/// Reusable per-thread scratch buffers for the atom-filter sweep.
+///
+/// These arrays are sized to the signature database (hundreds of thousands of
+/// slots) and are fully reset at the start of every `scan`. Previously they
+/// were owned by a short-lived `AtomFilterScanner` that was allocated fresh for
+/// every extracted buffer (`scan_context` → `AtomFilterScanner::new`), so an APK
+/// with hundreds of nested files paid hundreds of large heap
+/// allocations+deallocations proportional to the DB size. Holding the scratch
+/// in a thread-local `AtomScratch` and reusing it across buffers keeps the
+/// (unavoidable) per-buffer zeroing but eliminates the allocation churn.
+pub struct AtomScratch {
     lowered_buf: Vec<u8>,
     value_remaining: Vec<u32>,
     saturated: Vec<u64>,
     counts: Vec<u32>,
     last_offset: Vec<u32>,
+}
+
+impl Default for AtomScratch {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Default)]
@@ -41,16 +56,16 @@ struct AutomatonStats {
     inner_loop_us: u64,
 }
 
-impl<'a> AtomFilterScanner<'a> {
-    pub fn new(db: &'a AtomFilterDb) -> Self {
-        let n_slots = db.slots.len();
-        AtomFilterScanner {
-            db,
+impl AtomScratch {
+    /// Allocate empty scratch. Buffers are grown/reset lazily on the first
+    /// `scan` to match the database slot count, then reused across buffers.
+    pub fn new() -> Self {
+        AtomScratch {
             lowered_buf: Vec::new(),
             value_remaining: Vec::new(),
-            saturated: vec![0u64; (n_slots + 63) / 64],
-            counts: vec![0u32; n_slots],
-            last_offset: vec![u32::MAX; n_slots],
+            saturated: Vec::new(),
+            counts: Vec::new(),
+            last_offset: Vec::new(),
         }
     }
 
@@ -292,19 +307,28 @@ impl<'a> AtomFilterScanner<'a> {
         out_stats.daachorse_us = t0.elapsed().as_micros() as u64;
     }
 
-    pub fn scan(&mut self, data: &[u8], file_type_target: u32) -> SlotCounts<'_> {
-        let n_slots = self.db.slots.len();
+    pub fn scan<'d>(
+        &mut self,
+        db: &'d AtomFilterDb,
+        data: &[u8],
+        file_type_target: u32,
+    ) -> SlotCounts<'_> {
+        let n_slots = db.slots.len();
 
         if self.counts.len() != n_slots {
             self.counts.resize(n_slots, 0);
             self.last_offset.resize(n_slots, u32::MAX);
         }
+        let sat_words = (n_slots + 63) / 64;
+        if self.saturated.len() != sat_words {
+            self.saturated.resize(sat_words, 0);
+        }
         for c in self.counts.iter_mut() { *c = 0; }
         for o in self.last_offset.iter_mut() { *o = u32::MAX; }
         for w in &mut self.saturated { *w = 0; }
 
-        // Select target automaton — borrows only self.db, not other fields.
-        let pt = Self::select_target(&self.db.per_target, file_type_target);
+        // Select target automaton.
+        let pt = Self::select_target(&db.per_target, file_type_target);
 
         self.value_remaining.clear();
         for slots in pt.atom_to_slots.iter() {
@@ -315,7 +339,7 @@ impl<'a> AtomFilterScanner<'a> {
         let mut nocase_stats = AutomatonStats::default();
 
         // ── Shift-OR prefilter (exact-only hint) ──────────────────────
-        let (exact_window, exact_offset) = match self.db.prefilter.search(data) {
+        let (exact_window, exact_offset) = match db.prefilter.search(data) {
             Some(start) if start < data.len() => (&data[start..], start),
             _ => (&data[0..0], 0),
         };
@@ -326,7 +350,7 @@ impl<'a> AtomFilterScanner<'a> {
                 .map(|n| n.get()).unwrap_or(4).min(4).max(1);
             if n_threads > 1 && exact_window.len() >= 256 * 1024 {
                 Self::run_dense_parallel(
-                    pt, true, &self.db.slots,
+                    pt, true, &db.slots,
                     exact_window, file_type_target,
                     &mut self.counts, &mut self.last_offset,
                     &mut exact_stats,
@@ -334,7 +358,7 @@ impl<'a> AtomFilterScanner<'a> {
             } else {
                 Self::run_dense_automaton(
                     pt, true,
-                    &self.db.slots,
+                    &db.slots,
                     &mut self.saturated, &mut self.value_remaining,
                     exact_window, file_type_target,
                     &mut self.counts, &mut self.last_offset,
@@ -357,7 +381,7 @@ impl<'a> AtomFilterScanner<'a> {
                 .map(|n| n.get()).unwrap_or(4).min(4).max(1);
             if n_threads > 1 && data.len() >= 256 * 1024 {
                 Self::run_dense_parallel(
-                    pt, false, &self.db.slots,
+                    pt, false, &db.slots,
                     &lowered[..data.len()], file_type_target,
                     &mut self.counts, &mut self.last_offset,
                     &mut nocase_stats,
@@ -365,7 +389,7 @@ impl<'a> AtomFilterScanner<'a> {
             } else {
                 Self::run_dense_automaton(
                     pt, false,
-                    &self.db.slots,
+                    &db.slots,
                     &mut self.saturated, &mut self.value_remaining,
                     &lowered[..data.len()], file_type_target,
                     &mut self.counts, &mut self.last_offset,
@@ -375,7 +399,7 @@ impl<'a> AtomFilterScanner<'a> {
             self.lowered_buf = lowered;
         }
 
-        // ── Timing output (pt is still alive from self.db borrow) ─────
+        // ── Timing output (pt is still alive from the db borrow) ─────
         let total_us = exact_stats.daachorse_us + nocase_stats.daachorse_us;
         if total_us > 200_000 {
             let target_label = if pt.target == 0 {
@@ -490,12 +514,12 @@ mod tests {
         let hex = hex_of(b"HydraDragonTestAtom");
         let db = load_str("test.ndb", &format!("Test.Ndb.Sig:0:*:{hex}\n"));
         let afdb = AtomFilterBuilder::build(&db);
-        let mut scanner = AtomFilterScanner::new(&afdb);
+        let mut scanner = AtomScratch::new();
 
-        let present = scanner.scan(b"junk...HydraDragonTestAtom...junk", 0);
+        let present = scanner.scan(&afdb, b"junk...HydraDragonTestAtom...junk", 0);
         assert!(ext_matched(afdb.ext_slot[0], &afdb.slots, &present));
 
-        let absent = scanner.scan(b"nothing interesting here at all", 0);
+        let absent = scanner.scan(&afdb, b"nothing interesting here at all", 0);
         assert!(!ext_matched(afdb.ext_slot[0], &afdb.slots, &absent));
     }
 
@@ -508,19 +532,19 @@ mod tests {
             &format!("Test.Ldb.Sig;Target:0;0&1;{hex_a};{hex_b}\n"),
         );
         let afdb = AtomFilterBuilder::build(&db);
-        let mut scanner = AtomFilterScanner::new(&afdb);
+        let mut scanner = AtomScratch::new();
         let sub_slots = &afdb.log_subsig_slots[0];
         let expr = &db.logical[0].expression;
 
-        let both = scanner.scan(b"...AtomAlphaLiteral...AtomBravoLiteral...", 0);
+        let both = scanner.scan(&afdb, b"...AtomAlphaLiteral...AtomBravoLiteral...", 0);
         let counts = logical_initial_counts(sub_slots, &afdb.slots, &both);
         assert!(expr.eval(&counts).matched);
 
-        let only_a = scanner.scan(b"...AtomAlphaLiteral only...", 0);
+        let only_a = scanner.scan(&afdb, b"...AtomAlphaLiteral only...", 0);
         let counts = logical_initial_counts(sub_slots, &afdb.slots, &only_a);
         assert!(!expr.eval(&counts).matched);
 
-        let neither = scanner.scan(b"...nothing relevant...", 0);
+        let neither = scanner.scan(&afdb, b"...nothing relevant...", 0);
         let counts = logical_initial_counts(sub_slots, &afdb.slots, &neither);
         assert!(!expr.eval(&counts).matched);
     }
@@ -530,9 +554,9 @@ mod tests {
         let hex = hex_of(b"CaseSensitiveAtom");
         let db = load_str("test.ndb", &format!("Test.Ndb.Sig:0:*:{hex}\n"));
         let afdb = AtomFilterBuilder::build(&db);
-        let mut scanner = AtomFilterScanner::new(&afdb);
+        let mut scanner = AtomScratch::new();
 
-        let wrong_case = scanner.scan(b"...casesensitiveatom...", 0);
+        let wrong_case = scanner.scan(&afdb, b"...casesensitiveatom...", 0);
         assert!(!ext_matched(afdb.ext_slot[0], &afdb.slots, &wrong_case));
     }
 }

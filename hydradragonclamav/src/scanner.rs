@@ -1,9 +1,20 @@
 use crate::database::{Database, OffsetAnchor, SourceLocation};
 use crate::logical::Subsignature;
+use std::cell::RefCell;
 use std::fs;
 use std::io;
 use std::path::Path;
 use std::time::Instant;
+
+thread_local! {
+    /// Per-thread reusable atom-filter scratch. The scan pipeline runs many
+    /// buffers per file (every extracted APK entry is its own context), each
+    /// needing per-slot count/offset arrays sized to the whole signature DB.
+    /// Reusing one `AtomScratch` per thread avoids reallocating those large
+    /// arrays on every buffer; `AtomScratch::scan` resets them each call.
+    static ATOM_SCRATCH: RefCell<crate::atomscan::AtomScratch> =
+        RefCell::new(crate::atomscan::AtomScratch::new());
+}
 
 /// Per-scan timing breakdown: ClamAV and per-YARA-ruleset elapsed nanoseconds.
 #[derive(Clone, Debug, Default)]
@@ -633,25 +644,36 @@ impl Engine {
 
         // One rolling-hash sweep builds per-slot hit counts for this buffer;
         // both phases then promote slots that reached their threshold.
-        let t0 = Instant::now();
-        let mut scanner = crate::atomscan::AtomFilterScanner::new(&self.atomfilter_db);
-        let file_type_target = ctx.detected_target
-            .or_else(|| detect_builtin_target(ctx))
-            .unwrap_or(0);
-        let slot_counts = scanner.scan(ctx.data, file_type_target);
-        let t1 = Instant::now();
-        self.scan_extended(ctx, matches, &slot_counts);
-        let t2 = Instant::now();
-        self.scan_logical(ctx, matches, &slot_counts);
-        let t3 = Instant::now();
-        rust_timing_log!(
-            "scan_context :: {}KB view={:?} atomscan={}ms ext_scan={}ms log_scan={}ms",
-            ctx.data.len() / 1024,
-            ctx.view,
-            (t1 - t0).as_millis(),
-            (t2 - t1).as_millis(),
-            (t3 - t2).as_millis(),
-        );
+        //
+        // The scratch buffers (per-slot counts/offsets, sized to the whole
+        // signature DB) are held in a thread-local and reused across every
+        // buffer this thread scans. Allocating them fresh per buffer — as an
+        // APK with hundreds of nested entries does — was hundreds of large
+        // heap alloc/free cycles proportional to DB size. `AtomScratch::scan`
+        // still fully resets them each call, so results are unchanged. The
+        // thread-local borrow is held for the whole `scan_context` so the
+        // extended/logical passes read the counts in place with no copy.
+        ATOM_SCRATCH.with(|cell| {
+            let mut scratch = cell.borrow_mut();
+            let file_type_target = ctx.detected_target
+                .or_else(|| detect_builtin_target(ctx))
+                .unwrap_or(0);
+            let t0 = Instant::now();
+            let slot_counts = scratch.scan(&self.atomfilter_db, ctx.data, file_type_target);
+            let t1 = Instant::now();
+            self.scan_extended(ctx, matches, &slot_counts);
+            let t2 = Instant::now();
+            self.scan_logical(ctx, matches, &slot_counts);
+            let t3 = Instant::now();
+            rust_timing_log!(
+                "scan_context :: {}KB view={:?} atomscan={}ms ext_scan={}ms log_scan={}ms",
+                ctx.data.len() / 1024,
+                ctx.view,
+                (t1 - t0).as_millis(),
+                (t2 - t1).as_millis(),
+                (t3 - t2).as_millis(),
+            );
+        });
 
         // ── Container metadata signatures (.cdb) ──────────────────────────
         if let (Some(sr), Some(fp)) = (ctx.container_size_real, ctx.container_file_pos) {
