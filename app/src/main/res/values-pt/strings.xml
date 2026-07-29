@@ -432,6 +432,7 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="scan_cancelled">Verificação cancelada</string>
 
     <string name="scan_relevant_only_toggle">Digitalizar apenas relevantes (DEX/ELF/texto)</string>
+    <string name="scan_media_toggle">Digitalizar fotos e vídeos (mais lento, desativado por padrão)</string>
     <string name="notif_threat_risk_text">%1$s — Risco: %2$d/100</string>
     <string name="notif_threat_risk_big">Nível: %1$s\nMotivo: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>

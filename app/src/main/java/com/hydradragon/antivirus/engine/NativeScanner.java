@@ -89,6 +89,19 @@ public final class NativeScanner {
 
     private static native void nativeSetScanRelevantOnly(boolean on);
 
+    private static native void nativeSetScanMediaEnabled(boolean enabled);
+
+    /** Settings toggle for scanning photos and videos. When true, images
+     *  (PNG/JPEG/GIF/BMP/WebP/TIFF/ICO/HEIC/HEIF/AVIF) and videos
+     *  (MP4/MKV/WebM/3GP and other ISOBMFF media) are scanned for hidden /
+     *  polyglot payloads and ClamAV signatures. Disabled by default —
+     *  media scanning is high-cost, low-yield, so it is opt-in. Applied
+     *  immediately; no engine reinit needed. */
+    public static void setScanMediaEnabled(boolean enabled) {
+        if (!LIB_LOADED) return;
+        try { nativeSetScanMediaEnabled(enabled); } catch (Throwable ignore) { }
+    }
+
     private static native void nativeSetRiskwareTestKeyEnabled(boolean enabled);
 
     /** Andr.Riskware.TestKey — flags APKs signed with publicly-known Android
@@ -459,6 +472,8 @@ public final class NativeScanner {
                 .getBoolean("detect_zip_bomb_enabled", true));
             setScanRelevantOnly(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("scan_relevant_only_enabled", true));
+            setScanMediaEnabled(context.getSharedPreferences("hydra_prefs", 0)
+                .getBoolean("scan_media_enabled", false));
             setTlshThreshold(context.getSharedPreferences("hydra_prefs", 0)
                 .getInt("anti_fn_tlsh_threshold", 30));
         }

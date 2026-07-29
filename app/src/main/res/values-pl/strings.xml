@@ -432,6 +432,7 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="scan_cancelled">Skanowanie anulowane</string>
 
     <string name="scan_relevant_only_toggle">Skanuj tylko istotne (DEX/ELF/tekst)</string>
+    <string name="scan_media_toggle">Skanuj zdjęcia i filmy (wolniej, domyślnie wyłączone)</string>
     <string name="notif_threat_risk_text">%1$s — Ryzyko: %2$d/100</string>
     <string name="notif_threat_risk_big">Poziom: %1$s\nPowód: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>

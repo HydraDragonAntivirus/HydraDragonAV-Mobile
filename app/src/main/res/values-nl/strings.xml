@@ -432,6 +432,7 @@ Je kunt dit later inschakelen via Instellingen.</string>
     <string name="scan_cancelled">Scan geannuleerd</string>
 
     <string name="scan_relevant_only_toggle">Alleen relevante scannen (DEX/ELF/tekst)</string>
+    <string name="scan_media_toggle">Foto's en video's scannen (trager, standaard uit)</string>
     <string name="notif_threat_risk_text">%1$s — Risico: %2$d/100</string>
     <string name="notif_threat_risk_big">Niveau: %1$s\nReden: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>

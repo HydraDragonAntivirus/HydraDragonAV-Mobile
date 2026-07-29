@@ -432,6 +432,7 @@
     <string name="scan_cancelled">扫描已取消</string>
 
     <string name="scan_relevant_only_toggle">仅扫描相关文件 (DEX/ELF/文本)</string>
+    <string name="scan_media_toggle">扫描照片和视频（较慢，默认关闭）</string>
     <string name="notif_threat_risk_text">%1$s — 风险: %2$d/100</string>
     <string name="notif_threat_risk_big">等级: %1$s\n原因: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>

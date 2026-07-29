@@ -432,6 +432,7 @@
     <string name="scan_cancelled">Сканирование отменено</string>
 
     <string name="scan_relevant_only_toggle">Сканировать только релевантные (DEX/ELF/текст)</string>
+    <string name="scan_media_toggle">Сканировать фото и видео (медленнее, по умолчанию выключено)</string>
     <string name="notif_threat_risk_text">%1$s — Риск: %2$d/100</string>
     <string name="notif_threat_risk_big">Уровень: %1$s\nПричина: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>

@@ -195,6 +195,14 @@ static MAX_SCAN_SIZE_MB: std::sync::atomic::AtomicU32 =
 static SCAN_RELEVANT_ONLY: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(true);
 
+/// User-configurable toggle: when true, photos (PNG/JPEG/GIF/BMP/WebP/TIFF/
+/// ICO/HEIC/HEIF/AVIF) and videos (MP4/MKV/WebM/3GP and other ISOBMFF media)
+/// are scanned for hidden/polyglot payloads and ClamAV signatures. Default
+/// false — media files are a large scan-cost and low-yield target, so they are
+/// skipped unless the user explicitly opts in. Set via nativeSetScanMediaEnabled.
+static SCAN_MEDIA_ENABLED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 /// Whether the Suricata rule engine has been initialised (set once on first
 /// nativeEnableVpnScan(true) call). The suricata_scan::RuleEngine uses its
 /// own OnceLock internally; this flag avoids re-triggering it on every call.
@@ -818,6 +826,38 @@ fn is_media_file(data: &[u8]) -> bool {
     media_scan::is_media_file(data)
 }
 
+/// True when a buffer is a still image — by file extension or by magic bytes.
+/// Used to gate photo scanning behind the `SCAN_MEDIA_ENABLED` toggle
+/// (videos are covered separately by `is_media_file`).
+fn is_image_buffer(name: Option<&str>, data: &[u8]) -> bool {
+    if let Some(n) = name {
+        let lower = n.to_ascii_lowercase();
+        if lower.ends_with(".png") || lower.ends_with(".jpg") || lower.ends_with(".jpeg")
+            || lower.ends_with(".gif") || lower.ends_with(".bmp") || lower.ends_with(".webp")
+            || lower.ends_with(".tiff") || lower.ends_with(".tif")
+            || lower.ends_with(".ico") || lower.ends_with(".svg")
+            || lower.ends_with(".heic") || lower.ends_with(".heif")
+            || lower.ends_with(".avif")
+        {
+            return true;
+        }
+    }
+    data.len() > 4 && (
+        data.starts_with(&[0x89, 0x50, 0x4E, 0x47])              // PNG
+        || data.starts_with(&[0xFF, 0xD8, 0xFF])                 // JPEG
+        || data.starts_with(b"GIF8")                             // GIF
+        || data.starts_with(b"BM")                               // BMP
+        || (data.starts_with(b"RIFF") && data.len() > 12 && &data[8..12] == b"WEBP") // WebP
+        || data.starts_with(&[0x49, 0x49, 0x2A, 0x00])           // TIFF LE
+        || data.starts_with(&[0x4D, 0x4D, 0x00, 0x2A])           // TIFF BE
+        || data.starts_with(&[0x00, 0x00, 0x01, 0x00])           // ICO
+        || (data.len() > 12 && &data[4..8] == b"ftyp"            // HEIC / HEIF / AVIF
+            && (&data[8..12] == b"heic" || &data[8..12] == b"heif"
+                || &data[8..12] == b"avif" || &data[8..12] == b"mif1"
+                || &data[8..12] == b"msf1"))
+    )
+}
+
 fn is_harmless_resource_extension(lower: &str) -> bool {
     lower.ends_with(".png")
         || lower.ends_with(".jpg")
@@ -936,37 +976,6 @@ fn image_magic_in_slice(data: &[u8]) -> bool {
     })
 }
 
-/// Scan a text payload (PNG text chunk, JPEG comment, XMP) for suspicious content:
-/// * Binary data in a declared-text field
-/// * Embedded `http://` / `https://` URLs
-/// * Base64 run of ≥ 40 characters
-#[inline]
-fn image_text_suspicious(data: &[u8]) -> bool {
-    // Binary content in a declared-text field is anomalous
-    if std::str::from_utf8(data).is_err() {
-        return true;
-    }
-    // Embedded URLs
-    if data.windows(7).any(|w| w == b"http://")
-        || data.windows(8).any(|w| w == b"https://")
-    {
-        return true;
-    }
-    // Long base64 run (≥ 40 chars of base64 alphabet)
-    let mut run = 0usize;
-    for &b in data {
-        if b.is_ascii_alphanumeric() || b == b'+' || b == b'/' || b == b'=' {
-            run += 1;
-            if run >= 40 {
-                return true;
-            }
-        } else {
-            run = 0;
-        }
-    }
-    false
-}
-
 /// PNG chunk-aware scanner. Inspects text chunks (`tEXt`, `iTXt`, `zTXt`) and
 /// detects any data appended after the `IEND` marker.  Never touches `IDAT`
 /// (compressed pixel data), so it is fast even on multi-megabyte images.
@@ -992,13 +1001,18 @@ fn png_has_hidden(data: &[u8]) -> bool {
 
         match chunk_type {
             b"IEND" => {
-                // Any byte after IEND is anomalous (common polyglot/stego trick)
-                return next_pos < limit;
+                // Data after IEND is only suspicious when it carries executable
+                // magic (appended ZIP/APK/DEX/ELF polyglot). Trailing padding or
+                // benign metadata after IEND is common and must not FP.
+                return next_pos < limit && image_magic_in_slice(&data[next_pos..]);
             }
             b"tEXt" | b"iTXt" | b"zTXt" => {
+                // Only flag embedded executable magic. Text metadata routinely
+                // carries URLs (Adobe XMP namespaces) and base64 blobs (ICC
+                // profiles, thumbnails), so a text-heuristic here FPs heavily.
                 if chunk_len > 0 {
                     let payload = &data[payload_start..payload_start + chunk_len];
-                    if image_text_suspicious(payload) || image_magic_in_slice(payload) {
+                    if image_magic_in_slice(payload) {
                         return true;
                     }
                 }
@@ -1011,9 +1025,9 @@ fn png_has_hidden(data: &[u8]) -> bool {
 }
 
 /// JPEG segment-aware scanner. Inspects comment (`FF FE`) and APPn (`FF E0`–`FF EF`)
-/// segments for embedded executables or suspicious text, and detects any data
-/// appended after the `FF D9` (EOI) marker.  Skips past the SOS (Start of Scan)
-/// compressed payload without decoding it.
+/// segments for embedded executables or suspicious text, and detects executable
+/// magic appended after the `FF D9` (EOI) marker.  Skips past the SOS (Start of
+/// Scan) compressed payload without decoding it.
 fn jpeg_has_hidden(data: &[u8]) -> bool {
     let mut pos = 2usize; // skip FF D8 (SOI)
     let limit = data.len();
@@ -1024,9 +1038,13 @@ fn jpeg_has_hidden(data: &[u8]) -> bool {
         }
         let marker = data[pos + 1];
 
-        // EOI — anything after this is a polyglot/appended payload
+        // EOI — data after this is only suspicious when it carries executable
+        // magic (appended ZIP/APK/DEX/ELF polyglot). Trailing padding, MPF
+        // multi-picture second images, and thumbnails are legitimate and very
+        // common on phone photos, so a bare "bytes after EOI" check FPs heavily.
         if marker == 0xD9 {
-            return pos + 2 < limit;
+            let tail_start = pos + 2;
+            return tail_start < limit && image_magic_in_slice(&data[tail_start..]);
         }
 
         // Standalone markers (no length): RST0–RST7, SOI, TEM
@@ -1060,18 +1078,11 @@ fn jpeg_has_hidden(data: &[u8]) -> bool {
             // APPn segments (FF E0 – FF EF): JFIF, EXIF, XMP, ICC, …
             0xE0..=0xEF => {
                 let app_data = &data[payload_start..payload_start + payload_len];
-                // Executable magic anywhere in an APPn payload → polyglot
+                // Executable magic anywhere in an APPn payload → polyglot.
+                // Text heuristics are deliberately NOT applied here: XMP/EXIF
+                // legitimately carry namespace URLs and base64 thumbnails.
                 if image_magic_in_slice(app_data) {
                     return true;
-                }
-                // APP1 with Adobe XMP namespace — scan as XML text
-                if marker == 0xE1
-                    && app_data.starts_with(b"http://ns.adobe.com/xap/1.0/")
-                {
-                    let xmp = &app_data[28..];
-                    if image_text_suspicious(xmp) {
-                        return true;
-                    }
                 }
             }
             // SOS — compressed image data starts here; we can't reliably parse
@@ -1079,8 +1090,10 @@ fn jpeg_has_hidden(data: &[u8]) -> bool {
             0xDA => {
                 let rest = &data[pos..];
                 if let Some(eoi_rel) = rest.windows(2).position(|w| w == b"\xFF\xD9") {
-                    // Any data after EOI is suspicious
-                    return pos + eoi_rel + 2 < limit;
+                    // Only appended executable magic after EOI is suspicious —
+                    // benign trailing data (padding, MPF images) is common.
+                    let tail_start = pos + eoi_rel + 2;
+                    return tail_start < limit && image_magic_in_slice(&data[tail_start..]);
                 }
                 break; // no EOI found — truncated / odd file
             }
@@ -1406,6 +1419,20 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     on: jboolean,
 ) {
     SCAN_RELEVANT_ONLY.store(on != JNI_FALSE, Ordering::Relaxed);
+}
+
+/// `void nativeSetScanMediaEnabled(boolean enabled)` — Settings toggle: when
+/// true, photos and videos are scanned (hidden/polyglot payload detection +
+/// ClamAV signatures on image bytes / media metadata). Default false — media
+/// scanning is high-cost, low-yield, so it is opt-in. Applied immediately; no
+/// reinit needed.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetScanMediaEnabled(
+    _env: EnvUnowned,
+    _class: JClass,
+    enabled: jboolean,
+) {
+    SCAN_MEDIA_ENABLED.store(enabled != JNI_FALSE, Ordering::Relaxed);
 }
 
 /// `boolean nativeLearnRule(String yarPath)` — hot-load ONE freshly
@@ -4052,9 +4079,15 @@ fn collect_buffers(
                         // in metadata; the 0.1 % that is a full-file phish is not
                         // detectable via static signatures anyway.
                         if let Some(clamav_engine) = clamav {
-                            if relevant && !skip_by_size(&item.buf)
+                            // Photos and videos are only scanned when the user
+                            // opts in via SCAN_MEDIA_ENABLED (default off).
+                            let scan_media = SCAN_MEDIA_ENABLED.load(Ordering::Relaxed);
+                            let is_img = is_image_buffer(item.entry_name.as_deref(), &item.buf);
+                            let is_vid = is_media_file(&item.buf);
+                            let media_ok = scan_media || (!is_img && !is_vid);
+                            if relevant && media_ok && !skip_by_size(&item.buf)
                                 && (is_executable_buffer(item.entry_name.as_deref(), &item.buf, fmt)
-                                    || is_media_file(&item.buf))
+                                    || is_vid)
                             {
                                 let obj_path = if idx == 0 {
                                     path.to_string()
@@ -4064,7 +4097,7 @@ fn collect_buffers(
                                         None => format!("{path}!/unnamed_{idx}"),
                                     }
                                 };
-                                let scan_buf = if is_media_file(&item.buf) {
+                                let scan_buf = if is_vid {
                                     media_scan::extract_metadata(&item.buf)
                                 } else {
                                     item.buf.to_vec()
@@ -4098,7 +4131,7 @@ fn collect_buffers(
                                         ));
                                     }
                                 }
-                                if is_media_file(&item.buf) && media_scan::has_hidden_data(&item.buf) {
+                                if is_vid && media_scan::has_hidden_data(&item.buf) {
                                     if let Ok(mut sd) = streaming_dets.lock() {
                                         sd.push(("HDR.Media.Steganography".to_string(), obj_path.clone(), lineage.clone()));
                                     }

@@ -432,6 +432,7 @@ Bạn có thể bật tính năng này sau từ Cài đặt.</string>
     <string name="scan_cancelled">Đã hủy quét</string>
 
     <string name="scan_relevant_only_toggle">Chỉ quét tệp liên quan (DEX/ELF/văn bản)</string>
+    <string name="scan_media_toggle">Quét ảnh và video (chậm hơn, mặc định tắt)</string>
     <string name="notif_threat_risk_text">%1$s — Rủi ro: %2$d/100</string>
     <string name="notif_threat_risk_big">Mức độ: %1$s\nLý do: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>

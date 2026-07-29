@@ -432,6 +432,7 @@ Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.</string>
     <string name="scan_cancelled">Tarama iptal edildi</string>
 
     <string name="scan_relevant_only_toggle">Sadece ilgili dosyaları tara (DEX/ELF/metin)</string>
+    <string name="scan_media_toggle">Fotoğraf ve videoları tara (daha yavaş, varsayılan kapalı)</string>
     <string name="notif_threat_risk_text">%1$s — Risk: %2$d/100</string>
     <string name="notif_threat_risk_big">Seviye: %1$s\nSebep: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>

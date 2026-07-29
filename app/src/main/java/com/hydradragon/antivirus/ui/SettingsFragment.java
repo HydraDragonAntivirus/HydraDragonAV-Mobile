@@ -385,6 +385,12 @@ public class SettingsFragment extends Fragment {
             com.hydradragon.antivirus.engine.NativeScanner.setScanRelevantOnly(on);
         });
 
+        boolean scanMedia = prefs().getBoolean("scan_media_enabled", false);
+        addToggle(getString(R.string.scan_media_toggle), scanMedia, (btn, on) -> {
+            prefs().edit().putBoolean("scan_media_enabled", on).apply();
+            com.hydradragon.antivirus.engine.NativeScanner.setScanMediaEnabled(on);
+        });
+
         boolean screenOcr = prefs().getBoolean(KEY_SCREEN_OCR, false);
         addToggle(getString(R.string.screen_ocr_toggle), screenOcr, (btn, on) -> {
             if (on) requestScreenCapture(btn);

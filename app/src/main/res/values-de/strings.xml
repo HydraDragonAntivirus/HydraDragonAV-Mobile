@@ -432,6 +432,7 @@ Du kannst dies später in den Einstellungen aktivieren.</string>
     <string name="scan_cancelled">Scan abgebrochen</string>
 
     <string name="scan_relevant_only_toggle">Nur relevante Dateien scannen (DEX/ELF/Text)</string>
+    <string name="scan_media_toggle">Fotos und Videos scannen (langsamer, standardmäßig aus)</string>
     <string name="notif_threat_risk_text">%1$s — Risiko: %2$d/100</string>
     <string name="notif_threat_risk_big">Stufe: %1$s\nGrund: %2$s</string>
     <string name="notif_network_alert_text">%1$s:%2$d → %3$s</string>
