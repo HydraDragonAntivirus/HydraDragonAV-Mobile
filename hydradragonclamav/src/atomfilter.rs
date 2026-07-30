@@ -1,4 +1,4 @@
-use crate::clamav_prefilter::{ClamavMultilevelPrefilter, ClamavPrefilter};
+use daachorse::prefilter::{MultiQgramPrefilter, QgramPrefilter};
 use daachorse::DoubleArrayAhoCorasick;
 
 pub type SlotId = u32;
@@ -63,7 +63,7 @@ pub struct AtomFilterDb {
     pub slots: Vec<SlotDef>,
     pub ext_slot: Vec<ExtSlot>,
     pub log_subsig_slots: Vec<Box<[SubsigSlot]>>,
-    pub prefilter: ClamavMultilevelPrefilter,
+    pub prefilter: MultiQgramPrefilter,
 }
 
 impl std::fmt::Debug for AtomFilterDb {
@@ -92,7 +92,7 @@ impl AtomFilterDb {
     ///
     /// Format (all integers little-endian):
     ///   1. version (u8) = 2
-    ///   2. prefilter: 6 × [`ClamavPrefilter`], each 2 × 65536 bytes = 786432 bytes
+    ///   2. prefilter: 6 × [`QgramPrefilter`], each 2 × 65536 bytes = 786432 bytes
     ///   3. per_target count (u32)
     ///   4. for each per_target:
     ///        target (u32)
@@ -482,9 +482,9 @@ fn read_u64(bytes: &[u8], pos: &mut usize) -> Option<u64> {
     Some(u64::from_le_bytes([slice[0], slice[1], slice[2], slice[3], slice[4], slice[5], slice[6], slice[7]]))
 }
 
-fn read_prefilter(bytes: &[u8]) -> Option<ClamavMultilevelPrefilter> {
+fn read_prefilter(bytes: &[u8]) -> Option<MultiQgramPrefilter> {
     let mut pos = 0usize;
-    let empty = ClamavPrefilter::empty();
+    let empty = QgramPrefilter::empty();
     let mut filters = [
         empty.clone(), empty.clone(), empty.clone(),
         empty.clone(), empty.clone(), empty,
@@ -496,8 +496,8 @@ fn read_prefilter(bytes: &[u8]) -> Option<ClamavMultilevelPrefilter> {
         let mut end = [0u8; 65536];
         b.copy_from_slice(b_slice);
         end.copy_from_slice(end_slice);
-        *f = ClamavPrefilter::from_raw(b, end);
+        *f = QgramPrefilter::from_raw(b, end);
         pos += 131072;
     }
-    Some(ClamavMultilevelPrefilter::from_filters(filters))
+    Some(MultiQgramPrefilter::from_filters(filters))
 }
