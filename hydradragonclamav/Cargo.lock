@@ -520,7 +520,7 @@ dependencies = [
 [[package]]
 name = "daachorse"
 version = "4.0.0"
-source = "git+https://github.com/HydraDragonAntivirus/daachorse.git?rev=ddf6820a77560dd59f355d283d85cd6c1726a218#ddf6820a77560dd59f355d283d85cd6c1726a218"
+source = "git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=pglo#ddf6820a77560dd59f355d283d85cd6c1726a218"
 
 [[package]]
 name = "daachorse"
@@ -974,7 +974,7 @@ dependencies = [
 name = "hydradragonclamav"
 version = "0.1.0"
 dependencies = [
- "daachorse 4.0.0 (git+https://github.com/HydraDragonAntivirus/daachorse.git?rev=ddf6820a77560dd59f355d283d85cd6c1726a218)",
+ "daachorse 4.0.0 (git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=pglo)",
  "image",
  "memchr",
  "regex",

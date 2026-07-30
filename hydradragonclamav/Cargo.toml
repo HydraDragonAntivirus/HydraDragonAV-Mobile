@@ -24,7 +24,7 @@ memchr = "2"
 # Aho-Corasick automaton for the atom prefilter — one pass over the buffer,
 # matching every atom simultaneously. Replaced the multi-sweep rolling-hash /
 # Bf16 approach which needed 5 separate passes (one per atom length).
-daachorse = { git = "https://github.com/HydraDragonAntivirus/daachorse.git", rev = "ddf6820a77560dd59f355d283d85cd6c1726a218" }
+daachorse = { git = "https://github.com/HydraDragonAntivirus/daachorse.git", branch = "pglo" }
 
 # Image decoding for `fuzzy_img#` logical subsignatures (ClamAV's image fuzzy
 # hash). Same crates ClamAV's libclamav_rust uses, so the perceptual hash is
