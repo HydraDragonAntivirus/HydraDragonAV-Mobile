@@ -1,0 +1,131 @@
+use std::boxed::Box;
+use std::vec::Vec;
+
+/// Shift-OR bloom prefilter (ClamAV-style).
+///
+/// `b[q]` has bit P clear if q-gram `q` can appear at position P of some pattern.
+/// `end[q]` has bit P clear if `q` can be the terminal q-gram of a pattern
+/// (i.e. the pattern ends at byte P+2).  Only exact-case q-grams are tracked
+/// (no lowering) — use [`ClamavMultilevelPrefilter`] for nocase support or
+/// large pattern sets.
+#[derive(Clone)]
+pub struct ClamavPrefilter {
+    b: Box<[u8; 65536]>,
+    end: Box<[u8; 65536]>,
+}
+
+impl core::fmt::Debug for ClamavPrefilter {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ClamavPrefilter").finish()
+    }
+}
+
+impl ClamavPrefilter {
+    pub fn empty() -> Self {
+        Self { b: Box::new([0u8; 65536]), end: Box::new([0u8; 65536]) }
+    }
+
+    pub fn from_raw(b: [u8; 65536], end: [u8; 65536]) -> Self {
+        Self { b: Box::new(b), end: Box::new(end) }
+    }
+
+    pub fn raw_b(&self) -> &[u8; 65536] { &self.b }
+    pub fn raw_end(&self) -> &[u8; 65536] { &self.end }
+
+    pub fn from_patterns(patterns: &[Vec<u8>]) -> Self {
+        let mut b = Box::new([0xFFu8; 65536]);
+        let mut end = Box::new([0xFFu8; 65536]);
+        for pat in patterns {
+            let n = pat.len().min(9);
+            if n < 3 { continue; }
+            for j in 0..n - 1 {
+                let q = u16::from_le_bytes([pat[j], pat[j + 1]]) as usize;
+                b[q] &= !(1u8 << j);
+                if j == n - 2 {
+                    end[q] &= !(1u8 << j);
+                }
+            }
+        }
+        Self { b, end }
+    }
+
+    pub fn search(&self, data: &[u8]) -> Option<usize> {
+        if data.len() < 2 { return None; }
+        let mut state: u8 = 0xFF;
+        for j in 0..data.len() - 1 {
+            let q = u16::from_le_bytes([data[j], data[j + 1]]) as usize;
+            state = (state << 1) | self.b[q];
+            if (state | self.end[q]) != 0xFF {
+                let start = if j + 2 >= 16 { j + 2 - 16 } else { 0 };
+                return Some(start);
+            }
+        }
+        None
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.b.iter().all(|&x| x == 0xFF)
+    }
+}
+
+/// Multilevel prefilter: one [`ClamavPrefilter`] per pattern-length bucket.
+///
+/// With many patterns, a single prefilter saturates (every q-gram matches).
+/// Bucketing by length keeps each per-bucket filter sparse enough to be
+/// effective.
+#[derive(Clone)]
+pub struct ClamavMultilevelPrefilter {
+    filters: Box<[ClamavPrefilter; 6]>,
+}
+
+impl ClamavMultilevelPrefilter {
+    pub fn filters(&self) -> &[ClamavPrefilter; 6] { &self.filters }
+
+    pub fn from_filters(filters: [ClamavPrefilter; 6]) -> Self {
+        Self { filters: Box::new(filters) }
+    }
+
+    pub fn from_patterns(patterns: &[Vec<u8>]) -> Self {
+        let mut buckets: [Vec<Vec<u8>>; 6] = Default::default();
+        for pat in patterns {
+            let idx = match pat.len() {
+                3..=4 => 0,
+                5..=6 => 1,
+                7..=9 => 2,
+                10..=15 => 3,
+                16..=25 => 4,
+                _ => 5,
+            };
+            buckets[idx].push(pat.clone());
+        }
+        Self {
+            filters: Box::new([
+                ClamavPrefilter::from_patterns(&buckets[0]),
+                ClamavPrefilter::from_patterns(&buckets[1]),
+                ClamavPrefilter::from_patterns(&buckets[2]),
+                ClamavPrefilter::from_patterns(&buckets[3]),
+                ClamavPrefilter::from_patterns(&buckets[4]),
+                ClamavPrefilter::from_patterns(&buckets[5]),
+            ]),
+        }
+    }
+
+    pub fn search(&self, data: &[u8]) -> Option<usize> {
+        let mut earliest: Option<usize> = None;
+        for f in self.filters.iter() {
+            if f.is_empty() { continue; }
+            if let Some(start) = f.search(data) {
+                match earliest {
+                    None => earliest = Some(start),
+                    Some(e) if start < e => earliest = Some(start),
+                    _ => {}
+                }
+            }
+        }
+        earliest
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.filters.iter().all(|f| f.is_empty())
+    }
+}

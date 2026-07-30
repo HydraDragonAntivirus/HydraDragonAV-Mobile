@@ -1,4 +1,5 @@
-use daachorse::{ClamavMultilevelPrefilter, ClamavPrefilter, DoubleArrayAhoCorasick};
+use crate::clamav_prefilter::{ClamavMultilevelPrefilter, ClamavPrefilter};
+use daachorse::DoubleArrayAhoCorasick;
 
 pub type SlotId = u32;
 
@@ -33,8 +34,6 @@ pub struct PerTarget {
     pub target: u32,
     pub exact: Option<DoubleArrayAhoCorasick<u32>>,
     pub nocase: Option<DoubleArrayAhoCorasick<u32>>,
-    pub exact_dense: std::sync::OnceLock<Vec<u32>>,
-    pub nocase_dense: std::sync::OnceLock<Vec<u32>>,
     pub atom_to_slots: Vec<Box<[SlotId]>>,
     pub pattern_lens: Vec<usize>,
     pub slot_to_values: Vec<Box<[u32]>>,
@@ -92,7 +91,7 @@ impl AtomFilterDb {
     /// Serialise the entire atomfilter into a byte vector.
     ///
     /// Format (all integers little-endian):
-    ///   1. version (u8) = 1
+    ///   1. version (u8) = 2
     ///   2. prefilter: 6 × [`ClamavPrefilter`], each 2 × 65536 bytes = 786432 bytes
     ///   3. per_target count (u32)
     ///   4. for each per_target:
@@ -100,9 +99,6 @@ impl AtomFilterDb {
     ///
     ///        exact automaton: has (u8) + len (u32) + bytes (daachorse wire format)
     ///        nocase automaton: has (u8) + len (u32) + bytes
-    ///
-    ///        exact_dense: len (u32) + [u32; len]
-    ///        nocase_dense: len (u32) + [u32; len]
     ///
     ///        atom_to_slots count (u32)
     ///        for each: slot_id count (u32) + [SlotId; count]
@@ -128,7 +124,7 @@ impl AtomFilterDb {
         let mut buf = Vec::new();
 
         // 1. version
-        buf.push(1u8);
+        buf.push(2u8);
 
         // 2. prefilter (6 filters × 65536 bytes per b + 65536 bytes per end)
         for f in self.prefilter.filters().iter() {
@@ -145,19 +141,6 @@ impl AtomFilterDb {
             write_auto(&mut buf, pt.exact.as_ref());
             // nocase automaton
             write_auto(&mut buf, pt.nocase.as_ref());
-
-            // exact_dense (from OnceLock or empty)
-            let ed = pt.exact_dense.get().map(|v| v.as_slice()).unwrap_or(&[]);
-            buf.extend_from_slice(&(ed.len() as u32).to_le_bytes());
-            for &v in ed {
-                buf.extend_from_slice(&v.to_le_bytes());
-            }
-            // nocase_dense
-            let nd = pt.nocase_dense.get().map(|v| v.as_slice()).unwrap_or(&[]);
-            buf.extend_from_slice(&(nd.len() as u32).to_le_bytes());
-            for &v in nd {
-                buf.extend_from_slice(&v.to_le_bytes());
-            }
 
             // atom_to_slots
             buf.extend_from_slice(&(pt.atom_to_slots.len() as u32).to_le_bytes());
@@ -231,7 +214,11 @@ impl AtomFilterDb {
         let mut pos = 0usize;
 
         // 1. version
-        if bytes.get(pos).copied()? != 1 { return None; }
+        match bytes.get(pos).copied()? {
+            1 => return Self::from_bytes_v1(bytes),
+            2 => {}
+            _ => return None,
+        }
         pos += 1;
 
         // 2. prefilter
@@ -249,26 +236,6 @@ impl AtomFilterDb {
 
             let exact = read_auto(bytes, &mut pos)?;
             let nocase = read_auto(bytes, &mut pos)?;
-
-            let ed_len = read_u32(bytes, &mut pos)? as usize;
-            let mut exact_dense_vec = Vec::with_capacity(ed_len);
-            for _ in 0..ed_len {
-                exact_dense_vec.push(read_u32(bytes, &mut pos)?);
-            }
-            let exact_dense = std::sync::OnceLock::new();
-            if !exact_dense_vec.is_empty() {
-                let _ = exact_dense.set(exact_dense_vec);
-            }
-
-            let nd_len = read_u32(bytes, &mut pos)? as usize;
-            let mut nocase_dense_vec = Vec::with_capacity(nd_len);
-            for _ in 0..nd_len {
-                nocase_dense_vec.push(read_u32(bytes, &mut pos)?);
-            }
-            let nocase_dense = std::sync::OnceLock::new();
-            if !nocase_dense_vec.is_empty() {
-                let _ = nocase_dense.set(nocase_dense_vec);
-            }
 
             // atom_to_slots
             let ats_count = read_u32(bytes, &mut pos)? as usize;
@@ -305,8 +272,123 @@ impl AtomFilterDb {
                 target,
                 exact,
                 nocase,
-                exact_dense,
-                nocase_dense,
+                atom_to_slots,
+                pattern_lens,
+                slot_to_values,
+            });
+        }
+
+        // 5. slots count
+        let slots_count = read_u32(bytes, &mut pos)? as usize;
+        let mut slots = Vec::with_capacity(slots_count);
+        for _ in 0..slots_count {
+            let tag = read_u32(bytes, &mut pos)?;
+            let si = read_u32(bytes, &mut pos)?;
+            let ssi = read_u32(bytes, &mut pos)?;
+            let threshold = read_u32(bytes, &mut pos)?;
+            let file_type_target = read_u32(bytes, &mut pos)?;
+            let target = match tag {
+                0 => SlotTarget::Extended { sig_index: si },
+                1 => SlotTarget::LogicalSubsig { sig_index: si, subsig_index: ssi },
+                _ => return None,
+            };
+            slots.push(SlotDef { target, threshold, file_type_target });
+        }
+
+        // ext_slot
+        let es_count = read_u32(bytes, &mut pos)? as usize;
+        let mut ext_slot = Vec::with_capacity(es_count);
+        for _ in 0..es_count {
+            let v = read_u32(bytes, &mut pos)?;
+            ext_slot.push(if v == u32::MAX { ExtSlot::AutoMatch } else { ExtSlot::Atom(v) });
+        }
+
+        // log_subsig_slots
+        let lss_count = read_u32(bytes, &mut pos)? as usize;
+        let mut log_subsig_slots = Vec::with_capacity(lss_count);
+        for _ in 0..lss_count {
+            let count = read_u32(bytes, &mut pos)? as usize;
+            let mut ss = Vec::with_capacity(count);
+            for _ in 0..count {
+                let v = read_u32(bytes, &mut pos)?;
+                ss.push(if v == u32::MAX { SubsigSlot::AutoMatch }
+                    else if v == u32::MAX - 1 { SubsigSlot::External }
+                    else { SubsigSlot::Atom(v) });
+            }
+            log_subsig_slots.push(ss.into_boxed_slice());
+        }
+
+        Some(AtomFilterDb { per_target, slots, ext_slot, log_subsig_slots, prefilter })
+    }
+
+    /// Fallback: deserialize v1 format (which had dense tables). We skip the
+    /// dense bytes that are no longer used.
+    fn from_bytes_v1(bytes: &[u8]) -> Option<Self> {
+        let mut pos = 0usize;
+
+        // 1. version
+        if bytes.get(pos).copied()? != 1 { return None; }
+        pos += 1;
+
+        // 2. prefilter
+        let pf_bytes = bytes.get(pos..pos + 786432)?;
+        pos += 786432;
+        let prefilter = read_prefilter(pf_bytes)?;
+
+        // 3. per_target count
+        let pt_count = read_u32(bytes, &mut pos)? as usize;
+
+        // 4. per_target array
+        let mut per_target = Vec::with_capacity(pt_count);
+        for _ in 0..pt_count {
+            let target = read_u32(bytes, &mut pos)?;
+
+            let exact = read_auto(bytes, &mut pos)?;
+            let nocase = read_auto(bytes, &mut pos)?;
+
+            // skip exact_dense (len + values)
+            let ed_len = read_u32(bytes, &mut pos)? as usize;
+            pos += ed_len * 4;
+
+            // skip nocase_dense (len + values)
+            let nd_len = read_u32(bytes, &mut pos)? as usize;
+            pos += nd_len * 4;
+
+            // atom_to_slots
+            let ats_count = read_u32(bytes, &mut pos)? as usize;
+            let mut atom_to_slots = Vec::with_capacity(ats_count);
+            for _ in 0..ats_count {
+                let ids_count = read_u32(bytes, &mut pos)? as usize;
+                let mut ids = Vec::with_capacity(ids_count);
+                for _ in 0..ids_count {
+                    ids.push(read_u32(bytes, &mut pos)?);
+                }
+                atom_to_slots.push(ids.into_boxed_slice());
+            }
+
+            // pattern_lens
+            let pl_count = read_u32(bytes, &mut pos)? as usize;
+            let mut pattern_lens = Vec::with_capacity(pl_count);
+            for _ in 0..pl_count {
+                pattern_lens.push(read_u64(bytes, &mut pos)? as usize);
+            }
+
+            // slot_to_values
+            let stv_count = read_u32(bytes, &mut pos)? as usize;
+            let mut slot_to_values = Vec::with_capacity(stv_count);
+            for _ in 0..stv_count {
+                let ids_count = read_u32(bytes, &mut pos)? as usize;
+                let mut ids = Vec::with_capacity(ids_count);
+                for _ in 0..ids_count {
+                    ids.push(read_u32(bytes, &mut pos)?);
+                }
+                slot_to_values.push(ids.into_boxed_slice());
+            }
+
+            per_target.push(PerTarget {
+                target,
+                exact,
+                nocase,
                 atom_to_slots,
                 pattern_lens,
                 slot_to_values,

@@ -1,5 +1,7 @@
 use daachorse::{DoubleArrayAhoCorasick, DoubleArrayAhoCorasickBuilder};
 
+use crate::clamav_prefilter::ClamavMultilevelPrefilter;
+
 use crate::atomfilter::{
     AtomFilterDb, ExtSlot, PerTarget, SlotDef, SlotId, SubsigSlot,
 };
@@ -213,7 +215,7 @@ impl AtomFilterBuilder {
         // ── Build the Shift-OR prefilter (all atoms) ─────────────────────
         let all_atoms: Vec<Vec<u8>> = reg.exact.iter().chain(&reg.nocase)
             .map(|(bytes, _, _)| bytes.clone()).collect();
-        let prefilter = daachorse::ClamavMultilevelPrefilter::from_patterns(&all_atoms);
+        let prefilter = ClamavMultilevelPrefilter::from_patterns(&all_atoms);
 
         // ── Identify which specific targets are present in the DB ────────
         let mut specific_targets: Vec<u32> = slots.iter()
@@ -266,8 +268,6 @@ impl AtomFilterBuilder {
                 target,
                 exact,
                 nocase,
-                exact_dense: std::sync::OnceLock::new(),
-                nocase_dense: std::sync::OnceLock::new(),
                 atom_to_slots,
                 pattern_lens,
                 slot_to_values: slot_to_values.into_iter().map(|v| v.into_boxed_slice()).collect(),
