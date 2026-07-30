@@ -10,7 +10,7 @@
 ![Rust](https://img.shields.io/badge/Rust-Native_Engine-DEA584?style=for-the-badge&logo=rust&logoColor=black)
 ![Security](https://img.shields.io/badge/Security-Zero_Trust-red?style=for-the-badge)
 ![Languages](https://img.shields.io/badge/Languages-20-blue?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
+![License](https://img.shields.io/badge/License-GPL%20v2-blue.svg?style=for-the-badge)
 
 HydraDragonAV Mobile is a multi-layered Android Antivirus and Security suite combining static analysis (YARA-X + ClamAV signatures + code anomaly detection), dynamic behavior analysis, and a lightweight on-device ML classifier — all gated by a NSRL-backed whitelist so known-good software is never a false positive. Designed with a **Zero-Trust architecture**, it actively defends the device against ransomware, clickjacking, spyware, SMS scams/phishing, and zero-day threats. When a flagged malware app is launched, it is **automatically force-stopped and blocked** in real time.
 
