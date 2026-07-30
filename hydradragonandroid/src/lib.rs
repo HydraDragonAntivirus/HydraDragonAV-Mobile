@@ -793,6 +793,27 @@ fn skip_by_size(buf: &[u8]) -> bool {
     buf.len() <= 12 || buf.len() > (MAX_SCAN_SIZE_MB.load(Ordering::Relaxed) as usize) * 1024 * 1024
 }
 
+/// Cached CPU count, capped at 4. `std::thread::available_parallelism()` probes
+/// cgroup-v2 CPU-quota files under `/sys/fs/cgroup` on Android, which the app
+/// sandbox is denied `search` on — each call emits an SELinux `avc: denied
+/// { search } … cgroup2` audit line. This is called once per file for the
+/// collect_buffers pool and the TLSH pool; the value can't change over a
+/// process's lifetime, so resolve it once and reuse the cached value to avoid
+/// both the repeated probe cost and the logcat AVC spam.
+fn worker_count() -> usize {
+    static CACHED: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+    let cached = CACHED.load(Ordering::Relaxed);
+    if cached != 0 {
+        return cached as usize;
+    }
+    let n = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1)
+        .clamp(1, 4);
+    CACHED.store(n as u32, Ordering::Relaxed);
+    n
+}
+
 /// Shared ML-scan loop: run the ONNX model on every APK buffer, collecting
 /// malicious lineages and tracking the highest confidence score. Used by both
 /// `run_scan` (callers wrap it in `catch_unwind`).
@@ -2507,6 +2528,55 @@ fn run_scan(
     let module_meta_ref = &module_meta[..];
     let emulated_ref = &emulated;
 
+    // Precompute the set of buffers eligible for ClamAV/YARA content scanning
+    // once, up front. The gating (size/relevance/media/executable checks) and
+    // the per-video metadata extraction used to be recomputed inline inside a
+    // single thread that ran ClamAV *and then* YARA on each buffer, so its wall
+    // time was clamav_time + yara_time. Hoisting the work list out lets the
+    // ClamAV and YARA passes run on two separate threads over the same
+    // read-only slice, overlapping their runtimes (wall time ≈ max, not sum).
+    // Non-video buffers are borrowed directly instead of copied with `to_vec`.
+    struct ScanItem<'a> {
+        idx: usize,
+        obj_path: String,
+        data: std::borrow::Cow<'a, [u8]>,
+        is_vid: bool,
+    }
+    let scan_items: Vec<ScanItem> = {
+        let scan_media = SCAN_MEDIA_ENABLED.load(std::sync::atomic::Ordering::Relaxed);
+        let relevant_only = SCAN_RELEVANT_ONLY.load(std::sync::atomic::Ordering::Relaxed);
+        buffers_ref
+            .iter()
+            .enumerate()
+            .filter_map(|(i, b)| {
+                if skip_by_size(&b.data) { return None; }
+                if relevant_only && b.entry_name.is_some()
+                    && !is_relevant_buffer(b.entry_name.as_deref(), &b.data) { return None; }
+                let is_img = is_image_buffer(b.entry_name.as_deref(), &b.data);
+                let is_vid = is_media_file(&b.data);
+                let media_ok = scan_media || (!is_img && !is_vid);
+                if !media_ok { return None; }
+                if !(is_executable_buffer(b.entry_name.as_deref(), &b.data, b.fmt)
+                    || is_vid || (scan_media && is_img)) { return None; }
+                let obj_path = if b.entry_name.is_none() {
+                    path_ref.to_string()
+                } else {
+                    match &b.entry_name {
+                        Some(entry) => format!("{path_ref}!/{entry}"),
+                        None => format!("{path_ref}!/unnamed_{i}"),
+                    }
+                };
+                let data = if is_vid {
+                    std::borrow::Cow::Owned(media_scan::extract_metadata(&b.data))
+                } else {
+                    std::borrow::Cow::Borrowed(&b.data[..])
+                };
+                Some(ScanItem { idx: i, obj_path, data, is_vid })
+            })
+            .collect()
+    };
+    let scan_items_ref = &scan_items;
+
     std::thread::scope(|s| {
         // Thread 1: Phase 3 YARA rescan + emulation signal
         s.spawn(|| {
@@ -2589,42 +2659,17 @@ fn run_scan(
             }
         });
 
-        // Thread 2: ClamAV + YARA (streaming scan replacement)
-        // Runs on every relevant buffer with empty module_meta, just like
-        // the old streaming scan inside collect_buffers.
+        // Thread 2: ClamAV signatures + phishing (no YARA — that runs on
+        // Thread 5 concurrently). Also carries the steganography/polyglot
+        // heuristics that were previously bundled with this pass.
         s.spawn(|| {
-            let scan_media = SCAN_MEDIA_ENABLED.load(std::sync::atomic::Ordering::Relaxed);
-            let relevant_only = SCAN_RELEVANT_ONLY.load(std::sync::atomic::Ordering::Relaxed);
-            for (i, b) in buffers_ref.iter().enumerate() {
-                if skip_by_size(&b.data) { continue; }
-                if relevant_only && b.entry_name.is_some()
-                    && !is_relevant_buffer(b.entry_name.as_deref(), &b.data) { continue; }
-                let is_img = is_image_buffer(b.entry_name.as_deref(), &b.data);
-                let is_vid = is_media_file(&b.data);
-                let media_ok = scan_media || (!is_img && !is_vid);
-                if !media_ok { continue; }
-                if !(is_executable_buffer(b.entry_name.as_deref(), &b.data, b.fmt)
-                    || is_vid || (scan_media && is_img)) { continue; }
-                let obj_path = if b.entry_name.is_none() {
-                    path_ref.to_string()
-                } else {
-                    match &b.entry_name {
-                        Some(entry) => format!("{path_ref}!/{entry}"),
-                        None => format!("{path_ref}!/unnamed_{i}"),
-                    }
-                };
-                if let Some(clamav) = &engine_ref.clamav {
-                    let scan_data = if is_vid {
-                        media_scan::extract_metadata(&b.data)
-                    } else {
-                        b.data.to_vec()
-                    };
+            if let Some(clamav) = &engine_ref.clamav {
+                for item in scan_items_ref {
+                    let b = &buffers_ref[item.idx];
                     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        let t0 = std::time::Instant::now();
-                        let (matches, bt) = clamav.scan_bytes_named_with_breakdown(
-                            &scan_data, &obj_path, Default::default(), &[],
+                        let (matches, bt) = clamav.scan_clamav_only_with_breakdown(
+                            &item.data, &item.obj_path, Default::default(), &[],
                         );
-                        let _elapsed = t0.elapsed().as_millis();
                         if let Ok(mut yg) = yara_dets.lock() {
                             for m in &matches {
                                 yg.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
@@ -2634,15 +2679,38 @@ fn run_scan(
                             st.accumulate(bt);
                         }
                     }));
-                    if is_vid && media_scan::has_hidden_data(&b.data) {
+                    if item.is_vid && media_scan::has_hidden_data(&b.data) {
                         if let Ok(mut yg) = yara_dets.lock() {
-                            yg.push(("HDR.Media.Steganography".to_string(), obj_path, b.apk_lineage.clone()));
+                            yg.push(("HDR.Media.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
                         }
                     } else if has_polyglot_or_hidden_data(&b.data) {
                         if let Ok(mut yg) = yara_dets.lock() {
-                            yg.push(("HDR.Image.Steganography".to_string(), obj_path, b.apk_lineage.clone()));
+                            yg.push(("HDR.Image.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
                         }
                     }
+                }
+            }
+        });
+
+        // Thread 5: YARA-x rulesets (non-module-dependent) — runs concurrently
+        // with the ClamAV pass on Thread 2 instead of sequentially after it.
+        s.spawn(|| {
+            if let Some(clamav) = &engine_ref.clamav {
+                for item in scan_items_ref {
+                    let b = &buffers_ref[item.idx];
+                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        let (matches, bt) = clamav.scan_yara_only_with_breakdown(
+                            &item.data, &item.obj_path, &[],
+                        );
+                        if let Ok(mut yg) = yara_dets.lock() {
+                            for m in &matches {
+                                yg.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
+                            }
+                        }
+                        if let Ok(mut st) = scan_timing.lock() {
+                            st.accumulate(bt);
+                        }
+                    }));
                 }
             }
         });
@@ -2684,8 +2752,7 @@ fn run_scan(
         s.spawn(|| {
             let t_tlsh = std::time::Instant::now();
             let n = buffers_ref.len();
-            let num_workers = std::thread::available_parallelism()
-                .map(|n| n.get()).unwrap_or(2).min(4).max(1);
+            let num_workers = worker_count();
             let inner_results = std::sync::Mutex::new(Vec::new());
             let inner_ref = &inner_results;
             let chunk_size = (n + num_workers - 1) / num_workers;
@@ -4213,10 +4280,7 @@ fn collect_buffers(
     // Small, capped pool — collect_buffers already runs inside run_scan's
     // SCAN_SERIAL lock (one file at a time), so it's safe to actually spend
     // the device's cores here without a second file's pool competing for them.
-    let workers = std::thread::available_parallelism()
-        .map(|n| n.get())
-        .unwrap_or(1)
-        .clamp(1, 4);
+    let workers = worker_count();
 
     std::thread::scope(|s| {
         for _ in 0..workers {

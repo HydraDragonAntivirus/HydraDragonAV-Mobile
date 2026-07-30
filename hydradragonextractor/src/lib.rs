@@ -1,6 +1,27 @@
 use std::io::{Cursor, Read, Seek};
 use std::path::{Path, PathBuf};
 
+/// Cached CPU count, capped at 4. `std::thread::available_parallelism()` probes
+/// cgroup-v2 CPU-quota files under `/sys/fs/cgroup` on Android, which the app
+/// sandbox is denied `search` on — each call emits an SELinux `avc: denied
+/// { search } … cgroup2` audit line. Extraction is called once per nested
+/// archive, so caching the count avoids both the repeated probe and the logcat
+/// AVC spam. The value can't change over a process's lifetime.
+fn extractor_worker_count() -> usize {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static CACHED: AtomicUsize = AtomicUsize::new(0);
+    let cached = CACHED.load(Ordering::Relaxed);
+    if cached != 0 {
+        return cached;
+    }
+    let n = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(2)
+        .clamp(1, 4);
+    CACHED.store(n, Ordering::Relaxed);
+    n
+}
+
 /// Magic bytes for format detection.
 const GZIP_MAGIC: [u8; 2] = [0x1f, 0x8b];
 const ZIP_LOCAL_MAGIC: [u8; 4] = [0x50, 0x4b, 0x03, 0x04];
@@ -596,9 +617,7 @@ fn zip_to_memory(data: &[u8], relevant_only: bool) -> Result<Vec<ExtractedEntry>
         return Ok(Vec::new());
     }
 
-    let n_threads = std::thread::available_parallelism()
-        .map(|n| n.get().min(4))
-        .unwrap_or(2);
+    let n_threads = extractor_worker_count();
     let chunk_size = (entries_to_extract.len() + n_threads - 1) / n_threads;
 
     let (tx, rx) = std::sync::mpsc::channel::<Vec<ExtractedEntry>>();

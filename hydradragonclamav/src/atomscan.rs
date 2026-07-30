@@ -2,6 +2,29 @@ use crate::atomfilter::{AtomFilterDb, PerTarget, SlotId, SubsigSlot};
 use crate::atomfilter::{ExtSlot, SlotDef};
 use daachorse::DoubleArrayAhoCorasick;
 
+/// Cached CPU count, capped at 4. `std::thread::available_parallelism()` is not
+/// free on Android: it probes CPU affinity and cgroup-v2 CPU-quota files under
+/// `/sys/fs/cgroup`, which the app sandbox is denied `search` on — every call
+/// produces an SELinux `avc: denied { search } … cgroup2` audit line. The atom
+/// sweep used to call it up to three times per scanned buffer (once per pass,
+/// per exact/nocase), so an APK with hundreds of nested entries flooded logcat
+/// with denials AND paid the probe cost repeatedly. The value can't change over
+/// a process's lifetime, so resolve it once and reuse it.
+fn worker_count() -> usize {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static CACHED: AtomicUsize = AtomicUsize::new(0);
+    let cached = CACHED.load(Ordering::Relaxed);
+    if cached != 0 {
+        return cached;
+    }
+    let n = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .clamp(1, 4);
+    CACHED.store(n, Ordering::Relaxed);
+    n
+}
+
 /// Per-slot hit counts (and last-seen match start offset) for one buffer.
 pub struct SlotCounts<'a> {
     counts: &'a [u32],
@@ -204,11 +227,7 @@ impl AtomScratch {
         last_offset: &mut [u32],
         out_stats: &mut AutomatonStats,
     ) {
-        let n_threads = std::thread::available_parallelism()
-            .map(|n| n.get())
-            .unwrap_or(4)
-            .min(4)
-            .max(1);
+        let n_threads = worker_count();
 
         // Single-threaded fallback for small buffers or single-core systems.
         if n_threads <= 1 || hay.len() < 256 * 1024 {
@@ -346,8 +365,7 @@ impl AtomScratch {
 
         // ── Exact automaton pass ──────────────────────────────────────
         if !exact_window.is_empty() {
-            let n_threads = std::thread::available_parallelism()
-                .map(|n| n.get()).unwrap_or(4).min(4).max(1);
+            let n_threads = worker_count();
             if n_threads > 1 && exact_window.len() >= 256 * 1024 {
                 Self::run_dense_parallel(
                     pt, true, &db.slots,
@@ -377,8 +395,7 @@ impl AtomScratch {
             let mut lowered = std::mem::take(&mut self.lowered_buf);
             if data.len() > lowered.len() { lowered.resize(data.len(), 0); }
             for (i, &b) in data.iter().enumerate() { lowered[i] = b.to_ascii_lowercase(); }
-            let n_threads = std::thread::available_parallelism()
-                .map(|n| n.get()).unwrap_or(4).min(4).max(1);
+            let n_threads = worker_count();
             if n_threads > 1 && data.len() >= 256 * 1024 {
                 Self::run_dense_parallel(
                     pt, false, &db.slots,

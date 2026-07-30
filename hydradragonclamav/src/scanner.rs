@@ -409,7 +409,7 @@ impl Engine {
         let mut state = ScanState {
             matches: Vec::new(),
         };
-        self.scan_object(data, object_path, None, None, None, None, 0, options, module_meta, &mut state, &mut None, false);
+        self.scan_object(data, object_path, None, None, None, None, 0, options, module_meta, &mut state, &mut None, false, false);
         state.matches
     }
 
@@ -426,7 +426,27 @@ impl Engine {
             matches: Vec::new(),
         };
         let mut breakdown = TimingBreakdown::default();
-        self.scan_object(data, object_path, None, None, None, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown), false);
+        self.scan_object(data, object_path, None, None, None, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown), false, false);
+        (state.matches, breakdown)
+    }
+
+    /// Run only the ClamAV engine (prefilter + extended + logical + phishing),
+    /// skipping all YARA-x rulesets. The counterpart to
+    /// [`scan_yara_only_with_breakdown`] — used by the parallel scan pipeline so
+    /// ClamAV and YARA can run on separate threads and overlap instead of being
+    /// evaluated back-to-back on one thread inside `scan_object`.
+    pub fn scan_clamav_only_with_breakdown(
+        &self,
+        data: &[u8],
+        object_path: &str,
+        options: ScanOptions,
+        module_meta: &[(&str, &[u8])],
+    ) -> (Vec<ScanMatch>, TimingBreakdown) {
+        let mut state = ScanState {
+            matches: Vec::new(),
+        };
+        let mut breakdown = TimingBreakdown::default();
+        self.scan_object(data, object_path, None, None, None, None, 0, options, module_meta, &mut state, &mut Some(&mut breakdown), false, true);
         (state.matches, breakdown)
     }
 
@@ -449,7 +469,7 @@ impl Engine {
             matches: Vec::new(),
         };
         let mut breakdown = TimingBreakdown::default();
-        self.scan_object(data, object_path, container_type, container_size_real, container_file_pos, container_entry_name, 0, options, module_meta, &mut state, &mut Some(&mut breakdown), false);
+        self.scan_object(data, object_path, container_type, container_size_real, container_file_pos, container_entry_name, 0, options, module_meta, &mut state, &mut Some(&mut breakdown), false, false);
         (state.matches, breakdown)
     }
 
@@ -468,7 +488,7 @@ impl Engine {
             matches: Vec::new(),
         };
         let mut breakdown = TimingBreakdown::default();
-        self.scan_object(data, object_path, None, None, None, None, 0, ScanOptions::default(), module_meta, &mut state, &mut Some(&mut breakdown), true);
+        self.scan_object(data, object_path, None, None, None, None, 0, ScanOptions::default(), module_meta, &mut state, &mut Some(&mut breakdown), true, false);
         (state.matches, breakdown)
     }
 
@@ -486,6 +506,7 @@ impl Engine {
         state: &mut ScanState,
         timing: &mut Option<&mut TimingBreakdown>,
         skip_clamav: bool,
+        skip_yara: bool,
     ) {
         let _slow = SlowAlert::new("scan_object", 200);
         if data.len() > options.max_child_size {
@@ -554,7 +575,8 @@ impl Engine {
 
         // YARA-x scan for Android-relevant file types — run every loaded ruleset,
         // timing each YARA ruleset individually.
-        if !self.yara.is_empty()
+        if !skip_yara
+            && !self.yara.is_empty()
             && crate::yara_scan::is_target_allowed(confident_target)
         {
             for yara in &self.yara {
@@ -1667,6 +1689,7 @@ mod tests {
             &mut state,
             &mut None,
             false,
+            false,
         );
         assert!(state
             .matches
@@ -2089,6 +2112,7 @@ mod tests {
             &[],
             &mut state,
             &mut None,
+            false,
             false,
         );
         assert!(state.matches.iter().any(|m| m.name == "Test.InZip"));
