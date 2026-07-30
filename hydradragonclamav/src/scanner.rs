@@ -1,5 +1,7 @@
+use crate::atomscan::InlineVerifyCtx;
 use crate::database::{Database, OffsetAnchor, SourceLocation};
 use crate::logical::Subsignature;
+use crate::pattern::Pattern;
 use std::cell::RefCell;
 use std::fs;
 use std::io;
@@ -681,11 +683,32 @@ impl Engine {
                 .or_else(|| detect_builtin_target(ctx))
                 .unwrap_or(0);
             let t0 = Instant::now();
-            let slot_counts = scratch.scan(&self.atomfilter_db, ctx.data, file_type_target);
+            // Build slot→patterns mapping for inline verification.
+            // slot_patterns[slot_id] = patterns to verify (empty if no Body subsig).
+            let mut slot_patterns: Vec<&[Pattern]> = Vec::with_capacity(self.atomfilter_db.slots.len());
+            slot_patterns.resize(self.atomfilter_db.slots.len(), &[]);
+            for (slot_id, slot) in self.atomfilter_db.slots.iter().enumerate() {
+                if let crate::atomfilter::SlotTarget::LogicalSubsig { sig_index, subsig_index, .. } = slot.target {
+                    let Some(sig) = self.database.logical.get(sig_index as usize) else { continue };
+                    let Some(subsig) = sig.subsignatures.get(subsig_index as usize) else { continue };
+                    if let Subsignature::Body { patterns, .. } = subsig {
+                        slot_patterns[slot_id] = &patterns[..];
+                    }
+                }
+            }
+            let mut verify_results = vec![false; self.atomfilter_db.slots.len()];
+            let verify_ctx = InlineVerifyCtx {
+                slot_patterns: slot_patterns.as_slice(),
+                hay: ctx.data,
+            };
+            let slot_counts = scratch.scan_with_verify(
+                &self.atomfilter_db, ctx.data, file_type_target,
+                &verify_ctx, &mut verify_results,
+            );
             let t1 = Instant::now();
             self.scan_extended(ctx, matches, &slot_counts);
             let t2 = Instant::now();
-            self.scan_logical(ctx, matches, &slot_counts);
+            self.scan_logical(ctx, matches, &slot_counts, &verify_results);
             let t3 = Instant::now();
             rust_timing_log!(
                 "scan_context :: {}KB view={:?} atomscan={}ms ext_scan={}ms log_scan={}ms",
@@ -802,6 +825,7 @@ impl Engine {
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
         slot_counts: &crate::atomscan::SlotCounts,
+        verify_results: &[bool],
     ) {
         let mut bufs = LogicalScanBufs {
             counts: Vec::new(),
@@ -848,7 +872,7 @@ impl Engine {
                 continue;
             }
             let t = std::time::Instant::now();
-            self.scan_one_logical(si, slot_counts, ctx, matches, &mut bufs);
+            self.scan_one_logical(si, slot_counts, ctx, matches, &mut bufs, verify_results);
             let ms = t.elapsed().as_millis();
             if ms >= 50 {
                 rust_timing_log!("[SLOW-LOG] {ms}ms {}", self.database.logical[si].name);
@@ -870,6 +894,11 @@ impl Engine {
     }
 
     /// Evaluate a single logical signature using the pre-computed slot counts.
+    ///
+    /// `verify_results` \[slot_id] = true if the atom pattern was verified inline
+    /// during the atom sweep.  When `body_count_limit == 1` the per‑subsig
+    /// `count_all` re‑scan can be skipped for these slots, saving a redundant
+    /// full‑buffer pattern scan.
     fn scan_one_logical(
         &self,
         si: usize,
@@ -877,6 +906,7 @@ impl Engine {
         ctx: &ScanContext<'_>,
         matches: &mut Vec<ScanMatch>,
         bufs: &mut LogicalScanBufs,
+        verify_results: &[bool],
     ) {
         let signature = &self.database.logical[si];
         if !target_matches(signature.target, ctx, &signature.name) {
@@ -1013,12 +1043,32 @@ impl Engine {
             if counts[i] == 0 {
                 continue; // atom absent → cannot match; leave at 0.
             }
+            // ── Inline verification fast-path ───────────────────────
+            // When body_count_limit == 1 (existence check) and the
+            // atom sweep's inline verifier already confirmed the full
+            // pattern, skip the redundant count_all re-scans entirely.
+            if body_count_limit == 1 {
+                if let Some(slots) = sub_slots {
+                    if i < slots.len() {
+                        if let crate::atomfilter::SubsigSlot::Atom(slot_id) = slots[i] {
+                            if verify_results.get(slot_id as usize).copied().unwrap_or(false) {
+                                counts[i] = 1;
+                                if !signature.expression.can_still_match(counts, evaluated) {
+                                    return;
+                                }
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+
             let ranges = match offset.as_deref() {
                 Some(spec) => {
                     let r = spec.scan_ranges(ctx.data.len());
                     // Unsupported anchor (EP/section/VI): can't compute the range,
                     // stay permissive with a full-buffer scan (avoids a false
-                    // negative) rather than trusting the raw atom count.
+                    // negative) than trusting the raw atom count.
                     if r.is_empty() { vec![(0, ctx.data.len())] } else { r }
                 }
                 None => vec![(0, ctx.data.len())],
