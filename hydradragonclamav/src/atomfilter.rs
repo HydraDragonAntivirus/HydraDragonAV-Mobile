@@ -84,7 +84,7 @@ impl AtomFilterDb {
             slots: Vec::new(),
             ext_slot: Vec::new(),
             log_subsig_slots: Vec::new(),
-            prefilter: ClamavMultilevelPrefilter::from_patterns(&[]),
+            prefilter: MultiQgramPrefilter::from_patterns(&[]),
         }
     }
 

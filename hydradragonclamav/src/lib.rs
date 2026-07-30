@@ -1,7 +1,6 @@
 pub mod atomfilter;
 pub mod atomfilter_build;
 pub mod atomscan;
-pub mod clamav_prefilter;
 pub mod bytecode;
 pub mod bytecode_vm;
 pub mod database;
