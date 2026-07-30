@@ -192,7 +192,7 @@ fn insert_string(s: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
 }
 
 /// Feature-hash the token set into a fixed-width, L2-normalised vector.
-fn dense_vector(tokens: &HashSet<u64>) -> Vec<f32> {
+pub(crate) fn dense_vector(tokens: &HashSet<u64>) -> Vec<f32> {
     let mut counts = vec![0u32; DENSE_DIM];
     for &t in tokens {
         // Signed hashing trick reduces collision bias.

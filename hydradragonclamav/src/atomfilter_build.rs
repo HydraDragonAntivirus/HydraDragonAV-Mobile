@@ -1,6 +1,6 @@
 use daachorse::{DoubleArrayAhoCorasick, DoubleArrayAhoCorasickBuilder};
 
-use daachorse::prefilter::MultiQgramPrefilter;
+use daachorse::prefilter::MultiPatternShiftOr;
 
 use crate::atomfilter::{
     AtomFilterDb, ExtSlot, PerTarget, SlotDef, SlotId, SubsigSlot,
@@ -213,9 +213,9 @@ impl AtomFilterBuilder {
         }
 
         // ── Build the Shift-OR prefilter (all atoms) ─────────────────────
-        let all_atoms: Vec<Vec<u8>> = reg.exact.iter().chain(&reg.nocase)
-            .map(|(bytes, _, _)| bytes.clone()).collect();
-        let prefilter = MultiQgramPrefilter::from_patterns(&all_atoms);
+        let all_atoms: Vec<&[u8]> = reg.exact.iter().chain(&reg.nocase)
+            .map(|(bytes, _, _)| bytes.as_slice()).collect();
+        let prefilter = MultiPatternShiftOr::new(&all_atoms);
 
         // ── Identify which specific targets are present in the DB ────────
         let mut specific_targets: Vec<u32> = slots.iter()

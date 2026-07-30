@@ -9,6 +9,43 @@ pub const DEFAULT_CONFIDENCE_THRESHOLD: f32 = 0.95;
 /// Minimum confidence to flag a sample as suspicious (below malicious threshold).
 pub const SUSPICIOUS_THRESHOLD: f32 = 0.90;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_from_test_apk() {
+        let bytes = std::fs::read(
+            "../com.ttech.android.onlineislem_base.apk",
+        )
+        .expect("APK file not found at project root. Run: adb pull ...");
+        let feats = features::extract(&bytes).expect("extract() returned None");
+        assert!(!feats.tokens.is_empty(), "token set should not be empty");
+        assert_eq!(feats.dense.len(), features::DENSE_DIM);
+        // Dense vector should be L2-normalised (norm ≈ 1.0).
+        let norm: f32 = feats.dense.iter().map(|x| x * x).sum::<f32>().sqrt();
+        assert!((norm - 1.0).abs() < 0.01, "L2 norm should be ~1.0, got {norm}");
+    }
+
+    #[test]
+    fn fnv1a_is_stable() {
+        let h = features::fnv1a(b"hello");
+        assert_eq!(h, 0xA430_D846_80AA_BD0B);
+    }
+
+    #[test]
+    fn dense_vector_normalised() {
+        let mut tokens = std::collections::HashSet::new();
+        tokens.insert(42);
+        tokens.insert(99);
+        tokens.insert(123456789);
+        let v = features::dense_vector(&tokens);
+        assert_eq!(v.len(), features::DENSE_DIM);
+        let norm: f32 = v.iter().map(|x| x * x).sum::<f32>().sqrt();
+        assert!((norm - 1.0).abs() < 0.01);
+    }
+}
+
 pub struct Model {
     plan: SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
     confidence_threshold: f32,

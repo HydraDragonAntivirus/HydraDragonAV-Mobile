@@ -420,9 +420,16 @@ impl AtomScratch {
         let mut nocase_stats = AutomatonStats::default();
 
         // ── Shift-OR prefilter (exact-only hint) ──────────────────────
-        let (exact_window, exact_offset) = match db.prefilter.search(data) {
-            Some(start) if start < data.len() => (&data[start..], start),
-            _ => (&data[0..0], 0),
+        let (exact_window, exact_offset) = match &db.prefilter {
+            Some(pf) => {
+                let matches = pf.search(data);
+                let earliest = matches.iter().map(|&(off, _)| off).min();
+                match earliest {
+                    Some(start) if start < data.len() => (&data[start..], start),
+                    _ => (&data[0..0], 0),
+                }
+            }
+            None => (&data[..], 0),
         };
 
         // ── Exact automaton pass (data_offset = exact_offset) ────────
