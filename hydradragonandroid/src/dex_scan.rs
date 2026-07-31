@@ -35,7 +35,7 @@ pub fn scan(bytes: &[u8]) -> Option<DexScan> {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let dex = parse_dex(bytes).ok()?;
         let mut text = String::new();
-        for s in dex.strings() {
+        for s in dex.strings().flatten() {
             text.push_str(s);
             text.push('\n');
             if text.len() >= MAX_TEXT {

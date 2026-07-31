@@ -333,7 +333,7 @@ fn dex_features(buf: &[u8]) -> Option<(usize, usize, usize, f32, f32)> {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let dex = parse_dex(buf).ok()?;
         let mut text = String::new();
-        for s in dex.strings() {
+        for s in dex.strings().flatten() {
             text.push_str(s);
             text.push('\n');
             if text.len() >= 8 * 1024 * 1024 {
