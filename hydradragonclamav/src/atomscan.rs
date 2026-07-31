@@ -80,11 +80,13 @@ struct AutomatonStats {
     inner_loop_us: u64,
 }
 
-/// Context for inline pattern verification during the atom sweep.
+/// Context for inline pattern verification during the dense DFA sweep.
 ///
 /// When an atom matches at a position, the sweep can immediately call
 /// `Pattern::match_at` at that position. If the full pattern matches, the
 /// slot is marked verified — no separate `count_all` re-scan is needed.
+/// This mirrors ClamAV's approach where the AC trie traversal and pattern
+/// verification happen in a single pass (cf. `cli_ac_scanbuff` + `ac_findmatch`).
 ///
 /// `slot_patterns[slot_id]` is the set of patterns to verify for that slot.
 /// An empty slice means no verification (non-Body subsig or extended sig).
@@ -137,19 +139,16 @@ impl AtomScratch {
             .unwrap_or(&per_target[0])
     }
 
-    /// Run the daachorse automaton on one contiguous byte slice with its own
-    /// output buffers.  Used both single-threaded and as a per-chunk worker
-    /// in `run_dense_parallel`.
-    ///
-    /// Uses `find_overlapping_iter` from the standard daachorse API so the
-    /// double-array traversal automatically benefits from PGLO's hot-state
-    /// clustering.
+    /// Run the dense DFA on one contiguous byte slice with its own output
+    /// buffers.  Used both single-threaded and as a per-chunk worker in
+    /// `run_dense_parallel`.
     ///
     /// `data_offset`: the offset of `hay[0]` within the full data buffer
     /// (used to compute the absolute position for inline verification).
     #[allow(clippy::too_many_arguments)]
     fn run_dense_chunk(
         pma: &DoubleArrayAhoCorasick<u32>,
+        dense: &[u32],
         atom_to_slots: &[Box<[SlotId]>],
         slot_to_values: &[Box<[u32]>],
         slots: &[SlotDef],
@@ -164,51 +163,67 @@ impl AtomScratch {
         verify_results: &mut [bool],
         data_offset: usize,
     ) {
-        for m in pma.find_overlapping_iter(hay) {
-            out_stats.daachorse_matches += 1;
-            let start = m.start();
-            let vi = m.value() as usize;
-            if vi < atom_to_slots.len() && value_remaining[vi] != 0 {
-                for &slot_id in atom_to_slots[vi].iter() {
-                    out_stats.inner_iterations += 1;
-                    let st = slot_id as usize;
-                    if (saturated[st >> 6] >> (st & 63)) & 1 == 1 {
-                        out_stats.saturated_skip += 1;
-                        continue;
-                    }
-                    let ft = slots[st].file_type_target;
-                    if ft != 0 && ft != file_type_target {
-                        out_stats.ft_skip += 1;
-                        continue;
-                    }
-                    if counts[st] >= slots[st].threshold {
-                        saturated[st >> 6] |= 1 << (st & 63);
-                        out_stats.saturated_count += 1;
-                        for &ref_vi in slot_to_values[st].iter() {
-                            out_stats.saturated_dec += 1;
-                            let rvi = ref_vi as usize;
-                            if rvi < value_remaining.len() {
-                                value_remaining[rvi] = value_remaining[rvi].saturating_sub(1);
-                            }
+        let mut state: u32 = 0;
+        for (pos, &byte) in hay.iter().enumerate() {
+            state = unsafe {
+                *dense.get_unchecked(state as usize * 256 + byte as usize)
+            };
+            let mut opt = pma.state_output_pos(state);
+            while let Some(op) = opt {
+                let (len, value) = pma.output_at(op);
+                out_stats.daachorse_matches += 1;
+                let end = pos + 1;
+                let vi = value as usize;
+                if vi < atom_to_slots.len() && value_remaining[vi] != 0 {
+                    let start = end - len as usize;
+                    for &slot_id in atom_to_slots[vi].iter() {
+                        out_stats.inner_iterations += 1;
+                        let st = slot_id as usize;
+                        if (saturated[st >> 6] >> (st & 63)) & 1 == 1 {
+                            out_stats.saturated_skip += 1;
+                            continue;
                         }
-                        continue;
-                    }
-                    counts[st] = counts[st].saturating_add(1);
-                    last_offset[st] = last_offset[st].max(start as u32);
-                    out_stats.incremented += 1;
-                    if let Some(vctx) = verify_ctx {
-                        if st < verify_results.len() && !verify_results[st] {
-                            if vctx.try_verify(slot_id, data_offset + start, false) {
-                                verify_results[st] = true;
+                        let ft = slots[st].file_type_target;
+                        if ft != 0 && ft != file_type_target {
+                            out_stats.ft_skip += 1;
+                            continue;
+                        }
+                        if counts[st] >= slots[st].threshold {
+                            saturated[st >> 6] |= 1 << (st & 63);
+                            out_stats.saturated_count += 1;
+                            for &ref_vi in slot_to_values[st].iter() {
+                                out_stats.saturated_dec += 1;
+                                let rvi = ref_vi as usize;
+                                if rvi < value_remaining.len() {
+                                    value_remaining[rvi] = value_remaining[rvi].saturating_sub(1);
+                                }
+                            }
+                            continue;
+                        }
+                        counts[st] = counts[st].saturating_add(1);
+                        last_offset[st] = last_offset[st].max(start as u32);
+                        out_stats.incremented += 1;
+                        // Inline verification: if the atom matched at `start`,
+                        // try to verify the full pattern immediately (like
+                        // ClamAV's ac_findmatch). Once verified, the slot
+                        // won't need a separate count_all rescan.
+                        // `abs_start = data_offset + start` is the position
+                        // within the original full data buffer.
+                        if let Some(vctx) = verify_ctx {
+                            if st < verify_results.len() && !verify_results[st] {
+                                if vctx.try_verify(slot_id, data_offset + start, false) {
+                                    verify_results[st] = true;
+                                }
                             }
                         }
                     }
                 }
+                opt = pma.output_parent(op);
             }
         }
     }
 
-    /// Run the daachorse automaton on the whole slice (single-threaded path).
+    /// Run the dense DFA on the whole slice (single-threaded path).
     ///
     /// `data_offset`: the offset of `hay[0]` within the full data buffer.
     fn run_dense_automaton(
@@ -226,14 +241,14 @@ impl AtomScratch {
         verify_results: &mut [bool],
         data_offset: usize,
     ) {
-        let pma = if exact { pt.exact.as_ref() } else { pt.nocase.as_ref() };
-        let pma = match pma {
-            Some(p) => p,
-            None => return,
+        let (pma, dense) = Self::resolve_dense(pt, exact);
+        let (pma, dense) = match (pma, dense) {
+            (Some(p), Some(d)) => (p, d),
+            _ => return,
         };
         let t0 = std::time::Instant::now();
         Self::run_dense_chunk(
-            pma,
+            pma, dense,
             &pt.atom_to_slots, &pt.slot_to_values,
             slots, saturated, value_remaining,
             hay, file_type_target, counts, last_offset,
@@ -243,10 +258,28 @@ impl AtomScratch {
         out_stats.daachorse_us = t0.elapsed().as_micros() as u64;
     }
 
-    /// Run the daachorse automaton on `hay` in parallel chunks when the
-    /// buffer is large enough to benefit.  Each thread processes a contiguous
-    /// chunk with a small overlap so patterns that cross cut points are still
-    /// detected.
+    /// Resolve the dense DFA table for a target (exact or nocase).
+    fn resolve_dense<'b>(pt: &'b PerTarget, exact: bool)
+        -> (Option<&'b DoubleArrayAhoCorasick<u32>>, Option<&'b [u32]>)
+    {
+        if exact {
+            let pma: Option<&'b DoubleArrayAhoCorasick<u32>> = pt.exact.as_ref();
+            let dense: Option<&'b [u32]> = pma.map(|p| {
+                pt.exact_dense.get_or_init(|| p.build_dense_table()).as_slice()
+            });
+            (pma, dense)
+        } else {
+            let pma: Option<&'b DoubleArrayAhoCorasick<u32>> = pt.nocase.as_ref();
+            let dense: Option<&'b [u32]> = pma.map(|p| {
+                pt.nocase_dense.get_or_init(|| p.build_dense_table()).as_slice()
+            });
+            (pma, dense)
+        }
+    }
+
+    /// Run the daachorse DFA on `hay` in parallel chunks when the buffer is
+    /// large enough to benefit.  Each thread processes a contiguous chunk with
+    /// a small overlap so patterns that cross cut points are still detected.
     ///
     /// `data_offset`: the offset of `hay[0]` within the full data buffer.
     fn run_dense_parallel(
@@ -277,19 +310,19 @@ impl AtomScratch {
             return;
         }
 
-        let pma = if exact { pt.exact.as_ref() } else { pt.nocase.as_ref() };
-        let pma = match pma {
-            Some(p) => p,
-            None => return,
+        let (pma, dense) = Self::resolve_dense(pt, exact);
+        let (pma, dense) = match (pma, dense) {
+            (Some(p), Some(d)) => (p, d),
+            _ => return,
         };
         let atom_to_slots = &pt.atom_to_slots;
         let slot_to_values = &pt.slot_to_values;
 
-        // Cross-chunk overlap: the automaton detects patterns at their ending
+        // Cross-chunk overlap: daachorse detects patterns at their *ending*
         // position.  A pattern starting just before a cut point is only found
         // in the chunk that contains its end.  Overlap by 1024 bytes — far
-        // longer than any atom — so every pattern that could straddle a
-        // boundary is found in the neighbouring chunk.
+        // longer than any ClamAV atom — so every pattern that could straddle
+        // a boundary is found in the neighbouring chunk.
         const OVERLAP: usize = 1024;
 
         let chunk_size = (hay.len() + n_threads - 1) / n_threads;
@@ -342,7 +375,7 @@ impl AtomScratch {
 
                 s.spawn(move || {
                     Self::run_dense_chunk(
-                        pma, atom_to_slots, slot_to_values,
+                        pma, dense, atom_to_slots, slot_to_values,
                         slots, sat, vr, chunk, file_type_target,
                         counts, last, st, verify_ctx, vfy,
                         chunk_data_offset,
@@ -420,16 +453,9 @@ impl AtomScratch {
         let mut nocase_stats = AutomatonStats::default();
 
         // ── Shift-OR prefilter (exact-only hint) ──────────────────────
-        let (exact_window, exact_offset) = match &db.prefilter {
-            Some(pf) => {
-                let matches = pf.search(data);
-                let earliest = matches.iter().map(|&(off, _)| off).min();
-                match earliest {
-                    Some(start) if start < data.len() => (&data[start..], start),
-                    _ => (&data[0..0], 0),
-                }
-            }
-            None => (&data[..], 0),
+        let (exact_window, exact_offset) = match db.prefilter.search(data) {
+            Some(start) if start < data.len() => (&data[start..], start),
+            _ => (&data[0..0], 0),
         };
 
         // ── Exact automaton pass (data_offset = exact_offset) ────────
@@ -548,9 +574,10 @@ impl AtomScratch {
     /// Run the atom sweep with inline pattern verification.
     ///
     /// When an atom matches, the patterns associated with its slot are
-    /// immediately verified at the match position using `Pattern::match_at`.
-    /// Slots whose pattern is verified are set to `true` in `verify_results`,
-    /// which the caller can use to skip the separate `count_all` re-scan.
+    /// immediately verified at the match position (like ClamAV's
+    /// `ac_findmatch`). Slots whose pattern is verified are set to `true`
+    /// in `verify_results`, which the caller can use to skip the separate
+    /// `count_all` re-scan.
     pub(crate) fn scan_with_verify<'d>(
         &mut self,
         db: &'d AtomFilterDb,
