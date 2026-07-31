@@ -68,6 +68,25 @@ public class ThreatLogger {
         prefs.edit().clear().apply();
     }
 
+    public static void deleteSingleLog(Context context, String logBlock) {
+        if (logBlock == null || logBlock.trim().isEmpty()) return;
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        String currentLogs = prefs.getString("logs", "");
+        if (currentLogs.contains(logBlock)) {
+            String updated = currentLogs.replace(logBlock + "\n", "").replace(logBlock, "");
+            prefs.edit().putString("logs", updated.trim().isEmpty() ? "" : updated).apply();
+        }
+    }
+
+    public static void exportSingleLog(Context context, Uri uri, String logBlock) {
+        if (logBlock == null) return;
+        try (OutputStream out = context.getContentResolver().openOutputStream(uri)) {
+            if (out != null) {
+                out.write(logBlock.getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception ignored) {}
+    }
+
     public static void exportLogs(Context context, Uri uri) {
         String logs = getLogs(context);
         try (OutputStream out = context.getContentResolver().openOutputStream(uri)) {

@@ -68,7 +68,12 @@ public class LiveNetworkChart extends View {
     public void addDataPoint(float value) {
         if (dataPoints.size() >= MAX_POINTS) dataPoints.pollFirst();
         dataPoints.addLast(value);
-        if (value > maxValue) maxValue = value * 1.2f;
+
+        float peak = 10f;
+        for (float p : dataPoints) {
+            if (p > peak) peak = p;
+        }
+        maxValue = peak * 1.25f;
         invalidate();
     }
 

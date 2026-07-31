@@ -72,6 +72,7 @@
     <string name="skip">Bỏ qua</string>
     <string name="app_title">ANTIVIRUS v%1$s</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
+    <string name="developers_header">NHÀ PHÁT TRIỂN</string>
     <string name="nav_dashboard">Bảng điều khiển</string>
     <string name="nav_scan">Quét</string>
     <string name="nav_network">Mạng</string>

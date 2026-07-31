@@ -136,9 +136,13 @@ public class SettingsFragment extends Fragment {
     private void buildUI() {
         container.removeAllViews();
         addTitle(getString(R.string.settings_title));
-        addBtn("🌍 " + getString(R.string.language_settings), color(R.color.bg_secondary), v -> selectLanguage());
 
+        addBtn("🌍  " + getString(R.string.language_settings), color(R.color.bg_secondary), v -> selectLanguage());
+
+        // ── APPEARANCE ──────────────────────────────────────────────
         addHeader(getString(R.string.appearance));
+        LinearLayout cardApp = createCardGroup();
+
         String currentTheme = prefs().getString(KEY_THEME, null);
         if (currentTheme == null) {
             // Migrate from old boolean preference
@@ -152,11 +156,14 @@ public class SettingsFragment extends Fragment {
             case "light":  themeLabel = getString(R.string.theme_light);  break;
             default:       themeLabel = getString(R.string.theme_dark);   break;
         }
-        addThemeSelector(themeLabel, v -> showThemeModeDialog());
+        addThemeSelector(cardApp, themeLabel, v -> showThemeModeDialog());
 
+        // ── PROTECTION ──────────────────────────────────────────────
         addHeader(getString(R.string.protection_header));
+        LinearLayout cardProt = createCardGroup();
+
         boolean prot = com.hydradragon.antivirus.engine.ProtectionState.isEnabled(requireContext());
-        addToggle(getString(R.string.realtime_protection), prot, (btn, on) -> {
+        addToggle(cardProt, getString(R.string.realtime_protection), prot, (btn, on) -> {
             com.hydradragon.antivirus.engine.ProtectionState.setEnabled(requireContext(), on);
             Intent svc = new Intent(requireContext(),
                 com.hydradragon.antivirus.service.GuardService.class);
@@ -170,7 +177,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean bootAutoStart = com.hydradragon.antivirus.engine.BootAutoStart.isEnabled(requireContext());
-        addToggle(getString(R.string.boot_auto_start_toggle), bootAutoStart, (btn, on) -> {
+        addToggle(cardProt, getString(R.string.boot_auto_start_toggle), bootAutoStart, (btn, on) -> {
             com.hydradragon.antivirus.engine.BootAutoStart.setEnabled(requireContext(), on);
             Toast.makeText(getContext(), on
                 ? getString(R.string.boot_auto_start_on_toast)
@@ -178,15 +185,15 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean debugWarn = com.hydradragon.antivirus.engine.DebugModeWarning.isEnabled(requireContext());
-        addToggle(getString(R.string.debug_mode_warning_toggle), debugWarn, (btn, on) ->
+        addToggle(cardProt, getString(R.string.debug_mode_warning_toggle), debugWarn, (btn, on) ->
             com.hydradragon.antivirus.engine.DebugModeWarning.setEnabled(requireContext(), on));
 
         boolean rootWarn = com.hydradragon.antivirus.engine.RootWarning.isEnabled(requireContext());
-        addToggle(getString(R.string.root_warning_toggle), rootWarn, (btn, on) ->
+        addToggle(cardProt, getString(R.string.root_warning_toggle), rootWarn, (btn, on) ->
             com.hydradragon.antivirus.engine.RootWarning.setEnabled(requireContext(), on));
 
         boolean uninstallWarn = prefs().getBoolean("uninstall_warning_enabled", true);
-        addToggle(getString(R.string.uninstall_warning_toggle), uninstallWarn, (btn, on) ->
+        addToggle(cardProt, getString(R.string.uninstall_warning_toggle), uninstallWarn, (btn, on) ->
             prefs().edit().putBoolean("uninstall_warning_enabled", on).apply());
 
         // Device Admin self-protection (SelfProtection/AdminReceiver) existed
@@ -196,7 +203,7 @@ public class SettingsFragment extends Fragment {
         // next time this screen builds, same as the Accessibility toggle).
         // Turning OFF is synchronous (removeActiveAdmin).
         boolean selfProtectionActive = com.hydradragon.antivirus.engine.SelfProtection.isActive(requireContext());
-        addToggle(getString(R.string.self_protection_toggle), selfProtectionActive, (btn, on) -> {
+        addToggle(cardProt, getString(R.string.self_protection_toggle), selfProtectionActive, (btn, on) -> {
             if (on) {
                 startActivity(com.hydradragon.antivirus.engine.SelfProtection.activationIntent(requireContext()));
             } else {
@@ -206,7 +213,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean periodicScanOn = com.hydradragon.antivirus.engine.ScanSchedule.isPeriodicScanEnabled(requireContext());
-        addToggle(getString(R.string.periodic_scan_toggle), periodicScanOn, (btn, on) -> {
+        addToggle(cardProt, getString(R.string.periodic_scan_toggle), periodicScanOn, (btn, on) -> {
             com.hydradragon.antivirus.engine.ScanSchedule.setPeriodicScanEnabled(requireContext(), on);
             // Only startPeriodicScans() reads this, at GuardService startup —
             // restart it so the change takes effect right away, same as the
@@ -221,7 +228,7 @@ public class SettingsFragment extends Fragment {
 
         boolean wakeLockOn = com.hydradragon.antivirus.engine.ScanSchedule.isScanWakeLockEnabled(requireContext());
         com.hydradragon.antivirus.engine.ScanEngine.setBackgroundPriority(!wakeLockOn);
-        addToggle(getString(R.string.scan_wakelock_toggle), wakeLockOn, (btn, on) -> {
+        addToggle(cardProt, getString(R.string.scan_wakelock_toggle), wakeLockOn, (btn, on) -> {
             com.hydradragon.antivirus.engine.ScanSchedule.setScanWakeLockEnabled(requireContext(), on);
             com.hydradragon.antivirus.engine.ScanEngine.setBackgroundPriority(!on);
             // Read fresh at the start of each scan (acquireScanWakeLock), so no
@@ -231,27 +238,63 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.scan_wakelock_off_toast), Toast.LENGTH_SHORT).show();
         });
 
-        addBtn("⏱ " + getString(R.string.scan_interval_btn), color(R.color.bg_secondary),
+        // Off by default: one FileObserver thread per storage root, plus files
+        // dropped outside Downloads are also already caught (just not instantly)
+        // by GuardService's periodic Full Scan. See GuardService.KEY_REALTIME_STORAGE_WATCH.
+        boolean storageWatch = prefs().getBoolean(
+            com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH, true);
+        addToggle(cardProt, getString(R.string.storage_watch_toggle), storageWatch, (btn, on) -> {
+            prefs().edit().putBoolean(
+                com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH, on).apply();
+            // GuardService only sets up the extra watchers in onCreate() — restart
+            // it so the new setting takes effect immediately instead of on next
+            // device reboot / app relaunch.
+            Intent svc = new Intent(requireContext(), com.hydradragon.antivirus.service.GuardService.class);
+            requireContext().stopService(svc);
+            ContextCompat.startForegroundService(requireContext(), svc);
+        });
+
+        // Allow screen recording — removes FLAG_SECURE so other apps
+        // (screen recorders, remote-support tools) can see this app's UI.
+        boolean allowRecording = prefs().getBoolean("disable_secure_flag", true);
+        addToggle(cardProt, getString(R.string.disable_secure_flag_toggle), allowRecording, (btn, on) -> {
+            prefs().edit().putBoolean("disable_secure_flag", on).apply();
+            android.app.Activity a = getActivity();
+            if (a != null) {
+                if (on) {
+                    a.getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+                } else if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(a,
+                        com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY)) {
+                    a.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+                }
+            }
+        });
+
+        addBtn("⏱  " + getString(R.string.scan_interval_btn), color(R.color.bg_secondary),
             v -> showScanIntervalDialog());
-        addBtn("📦 " + getString(R.string.max_scan_file_size_btn), color(R.color.bg_secondary),
+        addBtn("📦  " + getString(R.string.max_scan_file_size_btn), color(R.color.bg_secondary),
             v -> showMaxScanFileSizeDialog());
-        addBtn("📄 " + getString(R.string.max_text_scan_bytes_btn), color(R.color.bg_secondary),
+        addBtn("📄  " + getString(R.string.max_text_scan_bytes_btn), color(R.color.bg_secondary),
             v -> showMaxTextScanBytesDialog());
-        addBtn("🗜 " + getString(R.string.max_archive_size_btn), color(R.color.bg_secondary),
+        addBtn("🗜  " + getString(R.string.max_archive_size_btn), color(R.color.bg_secondary),
             v -> showMaxArchiveSizeDialog());
 
+        // ── DETECTION CATEGORIES ────────────────────────────────────
         addHeader(getString(R.string.detection_categories_header));
-        addCategoryToggle(R.string.detect_cat_signatures, com.hydradragon.antivirus.engine.DetectionCategories.SIGNATURES);
-        addCategoryToggle(R.string.detect_cat_ml, com.hydradragon.antivirus.engine.DetectionCategories.ML);
-        addCategoryToggle(R.string.detect_cat_pua, com.hydradragon.antivirus.engine.DetectionCategories.PUA);
-        addCategoryToggle(R.string.detect_cat_auto_rules, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
-        addCategoryToggle(R.string.detect_cat_permissions, com.hydradragon.antivirus.engine.DetectionCategories.PERMISSIONS);
-        addCategoryToggle(R.string.detect_cat_eicar, com.hydradragon.antivirus.engine.DetectionCategories.EICAR);
-        addCategoryToggle(R.string.detect_cat_url_strings, com.hydradragon.antivirus.engine.DetectionCategories.URL_STRINGS);
-        addCategoryToggle(R.string.detect_cat_rootkit, com.hydradragon.antivirus.engine.DetectionCategories.ROOTKIT);
+        LinearLayout cardDet = createCardGroup();
+
+        addCategoryToggle(cardDet, R.string.detect_cat_signatures, com.hydradragon.antivirus.engine.DetectionCategories.SIGNATURES);
+        addCategoryToggle(cardDet, R.string.detect_cat_ml, com.hydradragon.antivirus.engine.DetectionCategories.ML);
+        addCategoryToggle(cardDet, R.string.detect_cat_pua, com.hydradragon.antivirus.engine.DetectionCategories.PUA);
+        addCategoryToggle(cardDet, R.string.detect_cat_auto_rules, com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES);
+        addCategoryToggle(cardDet, R.string.detect_cat_permissions, com.hydradragon.antivirus.engine.DetectionCategories.PERMISSIONS);
+        addCategoryToggle(cardDet, R.string.detect_cat_eicar, com.hydradragon.antivirus.engine.DetectionCategories.EICAR);
+        addCategoryToggle(cardDet, R.string.detect_cat_url_strings, com.hydradragon.antivirus.engine.DetectionCategories.URL_STRINGS);
+        addCategoryToggle(cardDet, R.string.detect_cat_rootkit, com.hydradragon.antivirus.engine.DetectionCategories.ROOTKIT);
+
         boolean nativeEmuOn = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
             requireContext(), com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION);
-        addToggle(getString(R.string.detect_cat_native_emulation), nativeEmuOn, (btn, checked) -> {
+        addToggle(cardDet, getString(R.string.detect_cat_native_emulation), nativeEmuOn, (btn, checked) -> {
             com.hydradragon.antivirus.engine.DetectionCategories.setEnabled(requireContext(),
                 com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION, checked);
             com.hydradragon.antivirus.engine.NativeScanner.setEmulationEnabled(checked);
@@ -259,28 +302,35 @@ public class SettingsFragment extends Fragment {
 
         boolean testKeyOn = requireContext().getSharedPreferences("hydra_prefs", 0)
             .getBoolean(com.hydradragon.antivirus.engine.DetectionCategories.RISKWARE_TESTKEY, false);
-        addToggle(getString(R.string.detect_cat_riskware_testkey), testKeyOn, (btn, checked) -> {
+        addToggle(cardDet, getString(R.string.detect_cat_riskware_testkey), testKeyOn, (btn, checked) -> {
             com.hydradragon.antivirus.engine.DetectionCategories.setEnabled(requireContext(),
                 com.hydradragon.antivirus.engine.DetectionCategories.RISKWARE_TESTKEY, checked);
             com.hydradragon.antivirus.engine.NativeScanner.setRiskwareTestKeyEnabled(checked);
         });
 
+        // ── BEHAVIOR DETECTION ──────────────────────────────────────
         addHeader(getString(R.string.behavior_detection_header));
-        addBehaviorToggle(R.string.behavior_ui_spam, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.UI_SPAM);
-        addBehaviorToggle(R.string.behavior_root_exploit, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.ROOT_EXPLOIT);
-        addBehaviorToggle(R.string.behavior_dynamic_risk, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.DYNAMIC_RISK);
-        addBehaviorToggle(R.string.behavior_ransomware, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.RANSOMWARE);
-        addBehaviorToggle(R.string.behavior_file_canary, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.FILE_CANARY);
-        addBehaviorToggle(R.string.behavior_task_hijack, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.TASK_HIJACK);
-        addBehaviorToggle(R.string.behavior_screen_security, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY);
-        addBehaviorToggle(R.string.behavior_crypto_miner, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.CRYPTO_MINER);
-        addBehaviorToggle(R.string.behavior_file_read_estimator, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.FILE_READ_ESTIMATOR);
-        addBehaviorToggle(R.string.behavior_wiper, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.WIPER);
+        LinearLayout cardBeh = createCardGroup();
 
+        addBehaviorToggle(cardBeh, R.string.behavior_ui_spam, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.UI_SPAM);
+        addBehaviorToggle(cardBeh, R.string.behavior_root_exploit, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.ROOT_EXPLOIT);
+        addBehaviorToggle(cardBeh, R.string.behavior_dynamic_risk, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.DYNAMIC_RISK);
+        addBehaviorToggle(cardBeh, R.string.behavior_ransomware, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.RANSOMWARE);
+        addBehaviorToggle(cardBeh, R.string.behavior_file_canary, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.FILE_CANARY);
+        addBehaviorToggle(cardBeh, R.string.behavior_task_hijack, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.TASK_HIJACK);
+        addBehaviorToggle(cardBeh, R.string.behavior_screen_security, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY);
+        addBehaviorToggle(cardBeh, R.string.behavior_crypto_miner, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.CRYPTO_MINER);
+        addBehaviorToggle(cardBeh, R.string.behavior_file_read_estimator, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.FILE_READ_ESTIMATOR);
+        addBehaviorToggle(cardBeh, R.string.behavior_wiper, com.hydradragon.antivirus.engine.BehaviorDetectionSettings.WIPER);
+
+        // ── WEB & NETWORK SHIELD ────────────────────────────────────
         // Web Shield is core protection (malicious-domain/IP DNS filtering),
         // not an extra — it lives in Protection, not Premium Features.
+        addHeader("Web & Network Shield");
+        LinearLayout cardNet = createCardGroup();
+
         boolean shield = prefs().getBoolean(KEY_SHIELD, false);
-        addToggle(getString(R.string.web_shield), shield, (btn, on) -> {
+        addToggle(cardNet, getString(R.string.web_shield), shield, (btn, on) -> {
             prefs().edit().putBoolean("web_shield_decided", true)
                           .putBoolean(KEY_SHIELD, on).apply();
             if (on) enableWebShield(btn);
@@ -288,16 +338,19 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean suricataScan = prefs().getBoolean("suricata_rule_scan_enabled", true);
-        addToggle(getString(R.string.suricata_rule_scan), suricataScan, (btn, on) -> {
+        addToggle(cardNet, getString(R.string.suricata_rule_scan), suricataScan, (btn, on) -> {
             prefs().edit().putBoolean("suricata_rule_scan_enabled", on).apply();
             Toast.makeText(getContext(), on
                 ? getString(R.string.suricata_rule_scan_on_toast)
                 : getString(R.string.suricata_rule_scan_off_toast), Toast.LENGTH_SHORT).show();
         });
 
+        // ── PREMIUM FEATURES ────────────────────────────────────────
         addHeader(getString(R.string.premium_features_header));
+        LinearLayout cardPrem = createCardGroup();
+
         boolean zeroTrust = com.hydradragon.antivirus.engine.ZeroTrustMode.isEnabled(requireContext());
-        addToggle(getString(R.string.zero_trust_toggle), zeroTrust, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.zero_trust_toggle), zeroTrust, (btn, on) -> {
             com.hydradragon.antivirus.engine.ZeroTrustMode.setEnabled(requireContext(), on);
             Toast.makeText(getContext(), on
                 ? getString(R.string.zero_trust_on_toast)
@@ -305,7 +358,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean autoRuleGen = com.hydradragon.antivirus.engine.AutoRuleGeneration.isEnabled(requireContext());
-        addToggle(getString(R.string.auto_rule_gen_toggle), autoRuleGen, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.auto_rule_gen_toggle), autoRuleGen, (btn, on) -> {
             com.hydradragon.antivirus.engine.AutoRuleGeneration.setEnabled(requireContext(), on);
             Toast.makeText(getContext(), on
                 ? getString(R.string.auto_rule_gen_on_toast)
@@ -313,7 +366,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean saveAutoRules = com.hydradragon.antivirus.engine.SaveAutoRules.isEnabled(requireContext());
-        addToggle(getString(R.string.save_auto_rules_toggle), saveAutoRules, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.save_auto_rules_toggle), saveAutoRules, (btn, on) -> {
             com.hydradragon.antivirus.engine.SaveAutoRules.setEnabled(requireContext(), on);
             Toast.makeText(getContext(), on
                 ? getString(R.string.save_auto_rules_on_toast)
@@ -321,7 +374,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean askSigOnRemove = com.hydradragon.antivirus.engine.AskSignatureOnRemove.isEnabled(requireContext());
-        addToggle(getString(R.string.ask_sig_on_remove_toggle), askSigOnRemove, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.ask_sig_on_remove_toggle), askSigOnRemove, (btn, on) -> {
             com.hydradragon.antivirus.engine.AskSignatureOnRemove.setEnabled(requireContext(), on);
             Toast.makeText(getContext(), on
                 ? getString(R.string.ask_sig_on_remove_on_toast)
@@ -329,7 +382,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean autoDeleteMalware = com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(requireContext());
-        addToggle(getString(R.string.auto_delete_malware_toggle), autoDeleteMalware, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.auto_delete_malware_toggle), autoDeleteMalware, (btn, on) -> {
             com.hydradragon.antivirus.engine.AutoDeleteMalware.setEnabled(requireContext(), on);
             Toast.makeText(getContext(), on
                 ? getString(R.string.auto_delete_malware_on_toast)
@@ -337,7 +390,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean scanCache = prefs().getBoolean("scan_cache_enabled", true);
-        addToggle(getString(R.string.scan_cache_toggle), scanCache, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.scan_cache_toggle), scanCache, (btn, on) -> {
             prefs().edit().putBoolean("scan_cache_enabled", on).apply();
             if (!on) com.hydradragon.antivirus.engine.ScanEngine.clearCache(requireContext());
             Toast.makeText(getContext(), on
@@ -346,7 +399,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean detectZipBomb = prefs().getBoolean("detect_zip_bomb_enabled", true);
-        addToggle(getString(R.string.detect_zip_bomb_toggle), detectZipBomb, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.detect_zip_bomb_toggle), detectZipBomb, (btn, on) -> {
             prefs().edit().putBoolean("detect_zip_bomb_enabled", on).apply();
             com.hydradragon.antivirus.engine.NativeScanner.setDetectZipBomb(on);
             Toast.makeText(getContext(), on
@@ -355,7 +408,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean systemScan = prefs().getBoolean("scan_system_files_enabled", false);
-        addToggle(getString(R.string.scan_system_toggle), systemScan, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.scan_system_toggle), systemScan, (btn, on) -> {
             prefs().edit().putBoolean("scan_system_files_enabled", on).apply();
             Toast.makeText(getContext(), on
                 ? getString(R.string.scan_system_on_toast)
@@ -363,7 +416,7 @@ public class SettingsFragment extends Fragment {
         });
 
         boolean antiFn = prefs().getBoolean("anti_fn_enabled", true);
-        addToggle(getString(R.string.anti_fn_enabled_toggle), antiFn, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.anti_fn_enabled_toggle), antiFn, (btn, on) -> {
             prefs().edit().putBoolean("anti_fn_enabled", on).apply();
             if (!on) {
                 // Clear the cache when disabled
@@ -377,31 +430,30 @@ public class SettingsFragment extends Fragment {
         });
 
         int antiFnTlshThresh = prefs().getInt("anti_fn_tlsh_threshold", 30);
-        addBtn("🔀 " + getString(R.string.anti_fn_tlsh_threshold_btn) + " (" + antiFnTlshThresh + ")", color(R.color.bg_secondary),
+        addBtn("🔀  " + getString(R.string.anti_fn_tlsh_threshold_btn) + " (" + antiFnTlshThresh + ")", color(R.color.bg_secondary),
             v -> showAntiFnTlshThresholdDialog());
 
-
         boolean relevantOnly = prefs().getBoolean("scan_relevant_only_enabled", true);
-        addToggle(getString(R.string.scan_relevant_only_toggle), relevantOnly, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.scan_relevant_only_toggle), relevantOnly, (btn, on) -> {
             prefs().edit().putBoolean("scan_relevant_only_enabled", on).apply();
             com.hydradragon.antivirus.engine.NativeScanner.setScanRelevantOnly(on);
         });
 
         boolean scanMedia = prefs().getBoolean("scan_media_enabled", false);
-        addToggle(getString(R.string.scan_media_toggle), scanMedia, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.scan_media_toggle), scanMedia, (btn, on) -> {
             prefs().edit().putBoolean("scan_media_enabled", on).apply();
             com.hydradragon.antivirus.engine.NativeScanner.setScanMediaEnabled(on);
         });
 
         boolean screenOcr = prefs().getBoolean(KEY_SCREEN_OCR, false);
-        addToggle(getString(R.string.screen_ocr_toggle), screenOcr, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.screen_ocr_toggle), screenOcr, (btn, on) -> {
             if (on) requestScreenCapture(btn);
             else stopScreenCapture();
         });
 
         boolean smsGranted = ContextCompat.checkSelfPermission(requireContext(),
             android.Manifest.permission.RECEIVE_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED;
-        addToggle(getString(R.string.sms_scan_toggle), smsGranted, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.sms_scan_toggle), smsGranted, (btn, on) -> {
             if (on) requestSmsPermission(btn);
             else openAppSettingsToRevokeSms();
         });
@@ -409,7 +461,7 @@ public class SettingsFragment extends Fragment {
         // Silent Mode — when ON, no notification permission is requested
         // and the app runs without any notification popups.
         boolean silentMode = prefs().getBoolean("silent_mode", false);
-        addToggle(getString(R.string.silent_mode_toggle), silentMode, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.silent_mode_toggle), silentMode, (btn, on) -> {
             prefs().edit().putBoolean("silent_mode", on).apply();
             if (!on && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                     && ContextCompat.checkSelfPermission(requireContext(),
@@ -424,7 +476,7 @@ public class SettingsFragment extends Fragment {
         // are optional (notifications, accessibility, etc.).
         boolean allFilesGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.R
             || Environment.isExternalStorageManager();
-        addToggle(getString(R.string.all_files_access_title), allFilesGranted, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.all_files_access_title), allFilesGranted, (btn, on) -> {
             if (on && !allFilesGranted) {
                 try {
                     startActivity(new Intent(
@@ -450,7 +502,7 @@ public class SettingsFragment extends Fragment {
         // the system's special-access screen.
         boolean overlayGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
             || android.provider.Settings.canDrawOverlays(requireContext());
-        addToggle(getString(R.string.draw_overlay_toggle), overlayGranted, (btn, on) -> {
+        addToggle(cardPrem, getString(R.string.draw_overlay_toggle), overlayGranted, (btn, on) -> {
             if (on && !overlayGranted) {
                 try {
                     startActivity(new Intent(
@@ -470,68 +522,40 @@ public class SettingsFragment extends Fragment {
             }
         });
 
-        // Off by default: one FileObserver thread per storage root, plus files
-        // dropped outside Downloads are also already caught (just not instantly)
-        // by GuardService's periodic Full Scan. See GuardService.KEY_REALTIME_STORAGE_WATCH.
-        boolean storageWatch = prefs().getBoolean(
-            com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH, true);
-        addToggle(getString(R.string.storage_watch_toggle), storageWatch, (btn, on) -> {
-            prefs().edit().putBoolean(
-                com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH, on).apply();
-            // GuardService only sets up the extra watchers in onCreate() — restart
-            // it so the new setting takes effect immediately instead of on next
-            // device reboot / app relaunch.
-            Intent svc = new Intent(requireContext(), com.hydradragon.antivirus.service.GuardService.class);
-            requireContext().stopService(svc);
-            ContextCompat.startForegroundService(requireContext(), svc);
-        });
-
-        // Allow screen recording — removes FLAG_SECURE so other apps
-        // (screen recorders, remote-support tools) can see this app's UI.
-        boolean allowRecording = prefs().getBoolean("disable_secure_flag", true);
-        addToggle(getString(R.string.disable_secure_flag_toggle), allowRecording, (btn, on) -> {
-            prefs().edit().putBoolean("disable_secure_flag", on).apply();
-            android.app.Activity a = getActivity();
-            if (a != null) {
-                if (on) {
-                    a.getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
-                } else if (com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(a,
-                        com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCREEN_SECURITY)) {
-                    a.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
-                }
-            }
-        });
-
+        // ── WHITELISTS ──────────────────────────────────────────────
         addHeader(getString(R.string.whitelists_header));
-        addBtn("🚫 " + getString(R.string.ignored_signatures_btn), color(R.color.bg_secondary),
+        addBtn("🚫  " + getString(R.string.ignored_signatures_btn), color(R.color.bg_secondary),
             v -> showManagedListDialog(
                 getString(R.string.ignored_signatures_btn),
                 getString(R.string.ignored_signatures_hint),
                 com.hydradragon.antivirus.engine.IgnoredSignatures.getAll(requireContext()),
                 com.hydradragon.antivirus.engine.IgnoredSignatures::add,
                 com.hydradragon.antivirus.engine.IgnoredSignatures::remove));
-        addBtn("🌐 " + getString(R.string.website_whitelist_btn), color(R.color.bg_secondary),
+        addBtn("🌐  " + getString(R.string.website_whitelist_btn), color(R.color.bg_secondary),
             v -> showManagedListDialog(
                 getString(R.string.website_whitelist_btn),
                 getString(R.string.website_whitelist_hint),
                 com.hydradragon.antivirus.engine.WebsiteWhitelist.getAll(requireContext()),
                 com.hydradragon.antivirus.engine.WebsiteWhitelist::add,
                 com.hydradragon.antivirus.engine.WebsiteWhitelist::remove));
-        addBtn("📜 " + getString(R.string.auto_rules_manager_btn), color(R.color.bg_secondary),
+        addBtn("📜  " + getString(R.string.auto_rules_manager_btn), color(R.color.bg_secondary),
             v -> showAutoRulesManagerDialog());
-        addBtn("🗑 " + getString(R.string.clear_scan_cache_btn), color(R.color.bg_secondary),
+        addBtn("🗑  " + getString(R.string.clear_scan_cache_btn), color(R.color.bg_secondary),
             v -> showClearCacheDialog());
 
+        // ── KNOWLEDGE DATABASE ──────────────────────────────────────
         addHeader(getString(R.string.knowledge_db_header));
-        addBtn("📤 " + getString(R.string.knowledge_db_export_btn), color(R.color.bg_secondary),
+        addBtn("📤  " + getString(R.string.knowledge_db_export_btn), color(R.color.bg_secondary),
             v -> exportKnowledgeDatabase());
-        addBtn("📥 " + getString(R.string.knowledge_db_import_btn), color(R.color.bg_secondary),
+        addBtn("📥  " + getString(R.string.knowledge_db_import_btn), color(R.color.bg_secondary),
             v -> importKnowledgeDatabase());
 
+        // ── SYSTEM ──────────────────────────────────────────────────
         addHeader(getString(R.string.system));
-        addBtn(getString(R.string.bloatware_cleaner), color(R.color.neon_cyan), v -> runCleanup());
-        addBtn("⟲ " + getString(R.string.reset_settings_btn), 0xFFFF0040, v -> confirmResetSettings());
+        addBtn("🧹  " + getString(R.string.bloatware_cleaner), color(R.color.neon_cyan), v -> runCleanup());
+        addBtn("⟲  " + getString(R.string.reset_settings_btn), 0xFFFF0040, v -> confirmResetSettings());
 
+        // ── ABOUT ───────────────────────────────────────────────────
         addHeader(getString(R.string.about));
         addAbout();
     }
@@ -817,25 +841,73 @@ public class SettingsFragment extends Fragment {
 
     private void addTitle(String t) {
         TextView v = new TextView(getContext());
-        v.setText(t); v.setTextColor(color(R.color.neon_green));
-        v.setTextSize(22); v.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        v.setPadding(0,0,0,32); container.addView(v);
+        v.setText(t);
+        v.setTextColor(color(R.color.neon_green));
+        v.setTextSize(24);
+        v.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
+        v.setPadding(4, 0, 4, 20);
+        container.addView(v);
     }
+
     private void addHeader(String t) {
         TextView v = new TextView(getContext());
-        v.setText("── " + t + " ──"); v.setTextColor(color(R.color.text_secondary));
-        v.setTextSize(11); v.setTypeface(Typeface.MONOSPACE);
-        v.setPadding(0,32,0,12); container.addView(v);
+        v.setText(t.toUpperCase(Locale.ROOT));
+        v.setTextColor(color(R.color.neon_cyan));
+        v.setTextSize(12);
+        v.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
+        v.setLetterSpacing(0.06f);
+        v.setPadding(6, 24, 6, 10);
+        container.addView(v);
     }
-    private LinearLayout row() {
-        LinearLayout r = new LinearLayout(getContext());
-        r.setOrientation(LinearLayout.HORIZONTAL);
-        r.setBackgroundColor(color(R.color.bg_secondary));
-        r.setPadding(24,20,24,20); r.setGravity(Gravity.CENTER_VERTICAL);
+
+    private LinearLayout createCardGroup() {
+        LinearLayout card = new LinearLayout(getContext());
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.card_background));
+        card.setPadding(8, 4, 8, 4);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.bottomMargin = 8; r.setLayoutParams(lp); return r;
+        lp.bottomMargin = 16;
+        card.setLayoutParams(lp);
+        container.addView(card);
+        return card;
     }
+
+    private void addCardDivider(LinearLayout card) {
+        View divider = new View(getContext());
+        divider.setBackgroundColor(color(R.color.card_border));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 1);
+        lp.setMargins(16, 0, 16, 0);
+        divider.setLayoutParams(lp);
+        card.addView(divider);
+    }
+
+    private LinearLayout row() {
+        return row(null);
+    }
+
+    private LinearLayout row(LinearLayout cardParent) {
+        LinearLayout r = new LinearLayout(getContext());
+        r.setOrientation(LinearLayout.HORIZONTAL);
+        r.setPadding(20, 16, 20, 16);
+        r.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        r.setLayoutParams(lp);
+        if (cardParent != null) {
+            if (cardParent.getChildCount() > 0) {
+                addCardDivider(cardParent);
+            }
+            cardParent.addView(r);
+        } else {
+            lp.bottomMargin = 8;
+            r.setBackgroundColor(color(R.color.bg_secondary));
+            container.addView(r);
+        }
+        return r;
+    }
+
     private void applyObscuredTouchWarning(View v) {
         v.setOnTouchListener((view, event) -> {
             if ((event.getFlags() & MotionEvent.FLAG_WINDOW_IS_OBSCURED) != 0
@@ -845,28 +917,46 @@ public class SettingsFragment extends Fragment {
             return false;
         });
     }
-    private void addInfo(String em, String label, String val) {
-        LinearLayout r = row();
-        TextView l = new TextView(getContext()); l.setText(em + "  " + label);
-        l.setTextColor(color(R.color.text_primary)); l.setTypeface(Typeface.MONOSPACE);
-        l.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        r.addView(l);
-        TextView v = new TextView(getContext()); v.setText(val);
-        v.setTextColor(color(R.color.neon_green)); v.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        r.addView(v); container.addView(r);
-    }
+
     private void addToggle(String label, boolean state, CompoundButton.OnCheckedChangeListener cb) {
-        LinearLayout r = row();
-        TextView l = new TextView(getContext()); l.setText(label);
-        l.setTextColor(color(R.color.text_primary)); l.setTypeface(Typeface.MONOSPACE);
-        l.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        r.addView(l);
-        Switch sw = new Switch(getContext()); sw.setChecked(state);
-        // Overlay warning instead of blocking — PiP windows (YouTube, etc.)
-        // would otherwise make toggles unresponsive.
+        addToggle(null, label, state, cb);
+    }
+
+    private void addToggle(LinearLayout cardParent, String label, boolean state, CompoundButton.OnCheckedChangeListener cb) {
+        addToggleWithDesc(cardParent, label, null, state, cb);
+    }
+
+    private void addToggleWithDesc(LinearLayout cardParent, String label, String desc, boolean state, CompoundButton.OnCheckedChangeListener cb) {
+        LinearLayout r = row(cardParent);
+
+        LinearLayout textCol = new LinearLayout(getContext());
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        textCol.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        TextView l = new TextView(getContext());
+        l.setText(label);
+        l.setTextColor(color(R.color.text_primary));
+        l.setTextSize(14);
+        l.setTypeface(Typeface.SANS_SERIF, Typeface.NORMAL);
+        textCol.addView(l);
+
+        if (desc != null && !desc.isEmpty()) {
+            TextView d = new TextView(getContext());
+            d.setText(desc);
+            d.setTextColor(color(R.color.text_secondary));
+            d.setTextSize(11);
+            d.setTypeface(Typeface.SANS_SERIF, Typeface.NORMAL);
+            d.setPadding(0, 2, 12, 0);
+            textCol.addView(d);
+        }
+
+        r.addView(textCol);
+
+        Switch sw = new Switch(getContext());
+        sw.setChecked(state);
         applyObscuredTouchWarning(sw);
         sw.setOnCheckedChangeListener(guardedToggleListener(cb));
-        r.addView(sw); container.addView(r);
+        r.addView(sw);
     }
 
     /** Wraps a toggle's real listener with the rate-limit described above the
@@ -894,21 +984,31 @@ public class SettingsFragment extends Fragment {
             real.onCheckedChanged(btn, checked);
         };
     }
-    private void addThemeSelector(String currentLabel, View.OnClickListener cl) {
-        LinearLayout r = row();
-        TextView l = new TextView(getContext()); l.setText(getString(R.string.theme_mode_label));
-        l.setTextColor(color(R.color.text_primary)); l.setTypeface(Typeface.MONOSPACE);
+
+    private void addThemeSelector(LinearLayout cardParent, String currentLabel, View.OnClickListener cl) {
+        LinearLayout r = row(cardParent);
+        r.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.card_background_ripple));
+
+        TextView l = new TextView(getContext());
+        l.setText(getString(R.string.theme_mode_label));
+        l.setTextColor(color(R.color.text_primary));
+        l.setTextSize(14);
+        l.setTypeface(Typeface.SANS_SERIF, Typeface.NORMAL);
         l.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         r.addView(l);
-        TextView v = new TextView(getContext()); v.setText(currentLabel);
-        v.setTextColor(color(R.color.neon_green)); v.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+
+        TextView v = new TextView(getContext());
+        v.setText(currentLabel);
+        v.setTextColor(color(R.color.neon_green));
+        v.setTextSize(14);
+        v.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
         v.setPadding(16, 0, 0, 0);
         r.addView(v);
+
         r.setOnClickListener(cl);
         r.setClickable(true);
         r.setFocusable(true);
         applyObscuredTouchWarning(r);
-        container.addView(r);
     }
 
     private void showThemeModeDialog() {
@@ -945,32 +1045,60 @@ public class SettingsFragment extends Fragment {
     }
 
     private void addBtn(String label, int bgColor, View.OnClickListener cl) {
-        TextView b = new TextView(getContext()); b.setText(label);
-        // Was hardcoded pure black regardless of theme — invisible on a dark
-        // mode button whose background is bg_secondary (dark navy in night
-        // mode). text_primary tracks day/night correctly (dark text on the
-        // light backgrounds, light text on the dark ones).
-        b.setTextColor(color(R.color.text_primary)); b.setBackgroundColor(bgColor);
-        b.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        b.setPadding(32,28,32,28); b.setTextSize(14); b.setGravity(Gravity.CENTER);
-        applyObscuredTouchWarning(b); // warn instead of blocking (PiP-friendly)
+        TextView b = new TextView(getContext());
+        b.setText(label);
+        b.setTextColor(color(R.color.text_primary));
+
+        if (bgColor == 0xFFFF0040) {
+            // Special reset button (neon red outline card)
+            android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
+            gd.setColor(0x22FF0040);
+            gd.setCornerRadius(12 * getResources().getDisplayMetrics().density);
+            gd.setStroke(1, 0xFFFF0040);
+            b.setBackground(gd);
+            b.setTextColor(0xFFFF4D6D);
+        } else if (bgColor == color(R.color.neon_cyan)) {
+            // Accent button (neon cyan)
+            android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
+            gd.setColor(0x2200E5FF);
+            gd.setCornerRadius(12 * getResources().getDisplayMetrics().density);
+            gd.setStroke(1, color(R.color.neon_cyan));
+            b.setBackground(gd);
+            b.setTextColor(color(R.color.neon_cyan));
+        } else {
+            b.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.btn_rounded_secondary));
+        }
+
+        b.setTypeface(Typeface.SANS_SERIF, Typeface.BOLD);
+        b.setPadding(28, 20, 28, 20);
+        b.setTextSize(14);
+        b.setGravity(Gravity.CENTER);
+        applyObscuredTouchWarning(b);
         b.setOnClickListener(cl);
+
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.bottomMargin = 12; b.setLayoutParams(lp); container.addView(b);
+        lp.bottomMargin = 10;
+        b.setLayoutParams(lp);
+        container.addView(b);
     }
+
     private void addAbout() {
+        LinearLayout card = createCardGroup();
         TextView v = new TextView(getContext());
         v.setText("HydraDragon Antivirus v" + com.hydradragon.antivirus.BuildConfig.VERSION_NAME
             + "\n━━━━━━━━━━━━━━━━━━━━━━\n\n" +
-            "[ GELİŞTİRİCİLER ]\n\n  ◈  Musayev Yusif\n  ◈  Emirhan Uçan\n\n" +
+            "[ " + getString(R.string.developers_header) + " ]\n\n  ◈  Musayev Yusif\n  ◈  Emirhan Uçan\n\n" +
             "━━━━━━━━━━━━━━━━━━━━━━\n" +
             "https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile");
         v.setTextColor(color(R.color.text_secondary));
-        v.setTypeface(Typeface.MONOSPACE); v.setLineSpacing(6,1); v.setPadding(16,24,16,0);
+        v.setTypeface(Typeface.SANS_SERIF);
+        v.setTextSize(13);
+        v.setLineSpacing(6, 1);
+        v.setPadding(20, 20, 20, 20);
         v.setAutoLinkMask(Linkify.WEB_URLS);
         v.setMovementMethod(LinkMovementMethod.getInstance());
-        container.addView(v);
+        card.addView(v);
     }
 
     // Display name (native script) <-> BCP-47 tag, in the same order/set as the
@@ -1070,8 +1198,12 @@ public class SettingsFragment extends Fragment {
      *  same pattern as the storage-watch toggle — instead of only taking
      *  effect on the next full app restart. */
     private void addCategoryToggle(int labelRes, String category) {
+        addCategoryToggle(null, labelRes, category);
+    }
+
+    private void addCategoryToggle(LinearLayout cardParent, int labelRes, String category) {
         boolean on = com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(requireContext(), category);
-        addToggle(getString(labelRes), on, (btn, checked) -> {
+        addToggle(cardParent, getString(labelRes), on, (btn, checked) -> {
             com.hydradragon.antivirus.engine.DetectionCategories.setEnabled(requireContext(), category, checked);
             if (com.hydradragon.antivirus.engine.DetectionCategories.AUTO_RULES.equals(category)) {
                 Intent svc = new Intent(requireContext(), com.hydradragon.antivirus.service.GuardService.class);
@@ -1088,8 +1220,12 @@ public class SettingsFragment extends Fragment {
      *  see BehaviorDetectionSettings' javadoc for which detector each key
      *  maps to. */
     private void addBehaviorToggle(int labelRes, String key) {
+        addBehaviorToggle(null, labelRes, key);
+    }
+
+    private void addBehaviorToggle(LinearLayout cardParent, int labelRes, String key) {
         boolean on = com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(requireContext(), key);
-        addToggle(getString(labelRes), on, (btn, checked) ->
+        addToggle(cardParent, getString(labelRes), on, (btn, checked) ->
             com.hydradragon.antivirus.engine.BehaviorDetectionSettings.setEnabled(requireContext(), key, checked));
     }
 

@@ -50,6 +50,8 @@ public class NetworkFragment extends Fragment {
     private boolean serviceBound = false;
     private Handler handler;
     private Runnable statsUpdater;
+    private long lastTotalBytes = 0;
+    private long lastTimeMs = 0;
 
     private final ActivityResultLauncher<String> exportLauncher =
         registerForActivityResult(new ActivityResultContracts.CreateDocument("application/json"),
@@ -179,8 +181,22 @@ public class NetworkFragment extends Fragment {
                 tvBytesOut.setText(formatBytes(totalOut));
                 tvBlockedCount.setText(String.valueOf(nm.getBlockedCount()));
                 tvAllowedCount.setText(String.valueOf(nm.getAllowedCount()));
-                if (liveChart != null) liveChart.addDataPoint(0);
-                handler.postDelayed(this, 2000);
+
+                long now = System.currentTimeMillis();
+                long totalBytes = totalIn + totalOut;
+                if (lastTimeMs > 0 && now > lastTimeMs) {
+                    long deltaBytes = totalBytes - lastTotalBytes;
+                    long deltaTimeMs = now - lastTimeMs;
+                    if (deltaBytes < 0) deltaBytes = 0;
+                    float speedKbps = (deltaBytes / 1024f) / (deltaTimeMs / 1000f);
+                    if (liveChart != null) liveChart.addDataPoint(speedKbps);
+                } else if (liveChart != null) {
+                    liveChart.addDataPoint(0f);
+                }
+                lastTotalBytes = totalBytes;
+                lastTimeMs = now;
+
+                handler.postDelayed(this, 1000);
             }
         };
         handler.post(statsUpdater);
