@@ -875,7 +875,7 @@ public class SettingsFragment extends Fragment {
 
     private void addCardDivider(LinearLayout card) {
         View divider = new View(getContext());
-        divider.setBackgroundColor(0x1AFFFFFF);
+        divider.setBackgroundColor(color(R.color.card_border));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 1);
         lp.setMargins(16, 0, 16, 0);

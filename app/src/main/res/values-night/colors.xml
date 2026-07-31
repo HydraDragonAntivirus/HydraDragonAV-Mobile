@@ -17,6 +17,8 @@
 
     <color name="nav_bg">#0C1017</color>
     <color name="card_bg">#151A22</color>
+    <color name="card_border">#2A3241</color>
+    <color name="ripple_color">#33FFFFFF</color>
     <color name="threat_red">#FF0040</color>
     <color name="warning_orange">#FF9900</color>
 </resources>
