@@ -2649,7 +2649,7 @@ checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 [[package]]
 name = "yara-x"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#f8bad871dca4c968f65e94411a526f3625281198"
 dependencies = [
  "annotate-snippets",
  "anyhow",
@@ -2720,7 +2720,7 @@ dependencies = [
 [[package]]
 name = "yara-x-macros"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#f8bad871dca4c968f65e94411a526f3625281198"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -2731,7 +2731,7 @@ dependencies = [
 [[package]]
 name = "yara-x-parser"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#f8bad871dca4c968f65e94411a526f3625281198"
 dependencies = [
  "ascii_tree",
  "bitflags",
@@ -2748,7 +2748,7 @@ dependencies = [
 [[package]]
 name = "yara-x-proto"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#f8bad871dca4c968f65e94411a526f3625281198"
 dependencies = [
  "base64",
  "chrono",
