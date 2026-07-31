@@ -1088,7 +1088,7 @@ public class SettingsFragment extends Fragment {
         TextView v = new TextView(getContext());
         v.setText("HydraDragon Antivirus v" + com.hydradragon.antivirus.BuildConfig.VERSION_NAME
             + "\n━━━━━━━━━━━━━━━━━━━━━━\n\n" +
-            "[ GELİŞTİRİCİLER ]\n\n  ◈  Musayev Yusif\n  ◈  Emirhan Uçan\n\n" +
+            "[ " + getString(R.string.developers_header) + " ]\n\n  ◈  Musayev Yusif\n  ◈  Emirhan Uçan\n\n" +
             "━━━━━━━━━━━━━━━━━━━━━━\n" +
             "https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile");
         v.setTextColor(color(R.color.text_secondary));

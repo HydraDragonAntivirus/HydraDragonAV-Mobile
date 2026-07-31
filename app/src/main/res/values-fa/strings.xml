@@ -72,6 +72,7 @@
     <string name="skip">رد کردن</string>
     <string name="app_title">آنتی‌ویروس v%1$s</string>
     <string name="developers">Musayev Yusif و Emirhan Uçan</string>
+    <string name="developers_header">توسعه‌دهندگان</string>
     <string name="nav_dashboard">داشبورد</string>
     <string name="nav_scan">اسکن</string>
     <string name="nav_network">شبکه</string>
