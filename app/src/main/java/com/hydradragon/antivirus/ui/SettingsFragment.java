@@ -1462,7 +1462,12 @@ public class SettingsFragment extends Fragment {
                 listBox.addView(empty);
             }
             for (java.io.File f : rules) {
-                LinearLayout r = row();
+                LinearLayout r = new LinearLayout(requireContext());
+                r.setOrientation(LinearLayout.HORIZONTAL);
+                r.setPadding(20, 16, 20, 16);
+                r.setGravity(Gravity.CENTER_VERTICAL);
+                r.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                 TextView name = new TextView(requireContext());
                 name.setText(f.getName());
                 name.setTextColor(color(R.color.text_primary));
