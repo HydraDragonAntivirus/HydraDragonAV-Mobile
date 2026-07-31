@@ -63,6 +63,8 @@ public class DashboardFragment extends Fragment {
     private Handler uiHandler;
     private Runnable statsUpdater;
     private Runnable engineStatusPoller;
+    private long lastTotalBytes = 0;
+    private long lastTimeMs = 0;
 
     private String selectedPkg = null;
     private final java.util.LinkedHashMap<String, int[]> pkgTraffic = new java.util.LinkedHashMap<>();
@@ -206,12 +208,33 @@ public class DashboardFragment extends Fragment {
                 int blocked = nm.getBlockedCount();
                 int allowed = nm.getAllowedCount();
                 int total = blocked + allowed;
-                float rate = total - lastTotal;
-                lastTotal = total;
 
                 tvTotalTraffic.setText(String.valueOf(total));
                 tvBlocked.setText(String.valueOf(blocked));
                 tvAllowed.setText(String.valueOf(allowed));
+
+                long totalIn = nm.getBytesReceived();
+                long totalOut = nm.getBytesSent();
+                long now = System.currentTimeMillis();
+                long totalBytes = totalIn + totalOut;
+                float speedKbps = 0f;
+
+                if (lastTimeMs > 0 && now > lastTimeMs) {
+                    long deltaBytes = totalBytes - lastTotalBytes;
+                    long deltaTimeMs = now - lastTimeMs;
+                    if (deltaBytes < 0) deltaBytes = 0;
+                    speedKbps = (deltaBytes / 1024f) / (deltaTimeMs / 1000f);
+                }
+                lastTotalBytes = totalBytes;
+                lastTimeMs = now;
+
+                if (tvLiveActivityRate != null) {
+                    if (speedKbps < 1024f) {
+                        tvLiveActivityRate.setText(String.format(java.util.Locale.US, "%.1f KB/s", speedKbps));
+                    } else {
+                        tvLiveActivityRate.setText(String.format(java.util.Locale.US, "%.2f MB/s", speedKbps / 1024f));
+                    }
+                }
 
                 for (NetworkMonitor.NetworkEvent ev : nm.getEventLog()) {
                     String pkg = resolvePidToPackage(ev.pid, pidCache);
@@ -224,7 +247,7 @@ public class DashboardFragment extends Fragment {
                 }
 
                 if (networkChart != null) {
-                    float displayRate = rate;
+                    float displayRate = speedKbps;
                     if (selectedPkg != null) {
                         int[] cnt = pkgTraffic.get(selectedPkg);
                         displayRate = cnt != null ? cnt[0] : 0f;

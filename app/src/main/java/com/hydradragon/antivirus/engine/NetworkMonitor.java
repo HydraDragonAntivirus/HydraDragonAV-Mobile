@@ -93,7 +93,7 @@ public class NetworkMonitor {
     private long bytesReceived = 0;
     private long bytesSent = 0;
     private long statsLastFetchMs = 0;
-    private static final long STATS_CACHE_TTL_MS = 5_000;
+    private static final long STATS_CACHE_TTL_MS = 500;
     // Static (process-wide): the ACTUAL blocking/allowing of DNS queries happens
     // in DnsVpnService — a separate Service instance from whichever NetworkMonitor
     // the UI is bound to (via GuardService). Both run in the same app process (no
