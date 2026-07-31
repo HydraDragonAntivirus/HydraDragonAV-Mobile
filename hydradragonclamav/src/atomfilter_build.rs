@@ -7,13 +7,44 @@ use crate::database::Database;
 use crate::logical::Subsignature;
 use crate::pattern::Pattern;
 
-const MIN_DEPTH: usize = 3;
-const MAX_ATOM: usize = 16;
-
-#[inline]
-fn usable(a: &[u8]) -> bool {
-    a.len() >= MIN_DEPTH
+/// Dynamic atom quality & entropy scoring function.
+/// Evaluates the uniqueness/rarity of a byte sequence to adaptively choose the required minimum depth.
+fn calculate_atom_entropy_score(bytes: &[u8]) -> u32 {
+    let mut score = 0u32;
+    for &b in bytes {
+        let byte_score = match b {
+            0x00 | 0xff | 0x20 | b'\n' | b'\r' | b'\t' => 1, // Low entropy / common padding
+            b'a' | b'e' | b'i' | b'o' | b'u' | b'A' | b'E' | b'I' | b'O' | b'U' => 2, // Common vowels
+            b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' => 4, // Alphanumeric
+            _ => 8, // High entropy byte (binary / rare opcode / symbol)
+        };
+        score += byte_score;
+    }
+    score
 }
+
+/// Dynamically determine if an atom is usable based on its length, byte entropy, and target file type.
+#[inline]
+fn is_atom_usable_dynamic(a: &[u8], target: u32) -> bool {
+    let len = a.len();
+    if len < 3 {
+        return false;
+    }
+
+    let entropy_score = calculate_atom_entropy_score(a);
+    
+    // For Android APK/DEX targets (target == 0 or specific Android targets):
+    // Require higher entropy or longer depth to prevent noise from ZIP/DEX structures.
+    let min_required_score = if target == 0 {
+        if len >= 6 { 12 } else if len >= 4 { 16 } else { 20 }
+    } else {
+        if len >= 5 { 10 } else if len >= 4 { 14 } else { 18 }
+    };
+
+    entropy_score >= min_required_score
+}
+
+const MAX_ATOM: usize = 16;
 
 #[inline]
 fn short_atom(a: &[u8]) -> Vec<u8> {
@@ -29,27 +60,27 @@ enum Atom {
     Nocase(Vec<u8>),
 }
 
-fn pattern_atom(p: &Pattern) -> Option<Atom> {
+fn pattern_atom(p: &Pattern, target: u32) -> Option<Atom> {
     if let Some(a) = p.required_atom() {
-        if usable(&a) {
+        if is_atom_usable_dynamic(&a, target) {
             return Some(Atom::Exact(short_atom(&a)));
         }
     }
     if let Some(a) = p.required_atom_nocase() {
-        if usable(&a) {
+        if is_atom_usable_dynamic(&a, target) {
             return Some(Atom::Nocase(short_atom(&a)));
         }
     }
     None
 }
 
-fn all_pattern_atoms(patterns: &[Pattern]) -> Option<Vec<Atom>> {
+fn all_pattern_atoms(patterns: &[Pattern], target: u32) -> Option<Vec<Atom>> {
     if patterns.is_empty() {
         return None;
     }
     let mut atoms = Vec::with_capacity(patterns.len());
     for p in patterns {
-        atoms.push(pattern_atom(p)?);
+        atoms.push(pattern_atom(p, target)?);
     }
     Some(atoms)
 }
@@ -156,7 +187,7 @@ impl AtomFilterBuilder {
         // ── Extended signatures ──────────────────────────────────────────
         for (si, sig) in db.extended.iter().enumerate() {
             let target = sig.target.unwrap_or(0);
-            match all_pattern_atoms(&sig.patterns) {
+            match all_pattern_atoms(&sig.patterns, target) {
                 Some(atoms) => {
                     let slot_id = slots.len() as SlotId;
                     let threshold = atoms.iter().map(atom_threshold).max().unwrap_or(1);
@@ -183,7 +214,7 @@ impl AtomFilterBuilder {
                     sub_slots.push(SubsigSlot::External);
                     continue;
                 };
-                match all_pattern_atoms(patterns) {
+                match all_pattern_atoms(patterns, target) {
                     Some(atoms) => {
                         let slot_id = slots.len() as SlotId;
                         let sig_index = log_subsig_slots.len() as u32;
