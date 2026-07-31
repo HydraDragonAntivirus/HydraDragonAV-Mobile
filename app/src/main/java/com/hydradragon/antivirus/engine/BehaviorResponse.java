@@ -124,15 +124,8 @@ public final class BehaviorResponse {
         boolean activeRunning = installed && isProcessRunning(context, pkg);
 
         if (isFromScan) {
-            // For scan results: only trigger process kill / popup if the threat is ACTIVELY RUNNING right now
-            if (activeRunning) {
-                killAndPromptUninstall(context, pkg,
-                    threat.getAppName(),
-                    threat.getReasons().isEmpty() ? null : threat.getReasons().get(0),
-                    true);
-                showMalwareFoundScreen(context, threat, false, true);
-            }
-            // If the threat is passive / not running, let ScanFragment present it in the scan report.
+            // During a scan, never show uninstall prompt or popup regardless of active state.
+            // ScanFragment is solely responsible for presenting scan results to the user.
             return;
         }
 

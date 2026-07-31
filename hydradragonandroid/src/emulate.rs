@@ -161,6 +161,8 @@ const MAX_INSN: usize = 200_000;
 const TIMEOUT_US: u64 = 500_000; // 500ms wall-clock cap
 const STACK_BASE: u64 = 0x7000_0000;
 const STACK_SIZE: u64 = 4 * PAGE;
+const HEAP_BASE: u64 = 0x5000_0000;
+const HEAP_SIZE: u64 = 16 * PAGE;
 const MIN_STRING_LEN: usize = 6;
 
 // How many `emulate()` calls may actually be running Unicorn AT THE SAME
@@ -424,24 +426,32 @@ fn emulate_body(so_bytes: &[u8], stop_handle: &AtomicUsize) -> EmulationResult {
     let sp = STACK_BASE + STACK_SIZE - PAGE;
     let _ = uc.reg_write(sp_reg, sp);
 
+    // A small dedicated heap region for memory allocation stubs (malloc/new)
+    let _ = uc.mem_map(HEAP_BASE, HEAP_SIZE, Prot::ALL);
+
+    let ret_val_reg: i32 = match info.machine {
+        EM_ARM => RegisterARM::R0 as i32,
+        EM_AARCH64 => RegisterARM64::X0 as i32,
+        EM_386 => RegisterX86::EAX as i32,
+        EM_X86_64 => RegisterX86::RAX as i32,
+        _ => return result,
+    };
+
     // JNI_OnLoad(JavaVM*, void*) — args don't matter (we never emulate the
     // JNI functions those pointers would call through), just need something
     // in the calling-convention registers so the prologue doesn't fault
     // immediately on a null-deref before any real decode logic runs.
     let _ = uc.reg_write(sp_reg, sp); // re-affirm after any arch-specific setup above
 
-    // Set up the fake-import-stub page and patch resolved GOT slots for any
-    // tracked import to point into it, one unique stub address per import.
-    let stub_names: Rc<RefCell<std::collections::HashMap<u64, String>>> =
+    // Set up the fake-import-stub page and patch resolved GOT slots for ALL
+    // imports (including libc++ / libc helpers), one unique stub address per import.
+    let stub_names: Rc<RefCell<std::collections::HashMap<u64, (String, bool)>>> =
         Rc::new(RefCell::new(std::collections::HashMap::new()));
     if uc.mem_map(STUB_BASE, STUB_SIZE, Prot::ALL).is_ok() {
         let imports = elf::find_imports(so_bytes);
         let ptr_size: u64 = if is_64 { 8 } else { 4 };
         let mut next_slot: u64 = 0;
         for imp in imports {
-            if !TRACKED_APIS.contains(&imp.name.as_str()) {
-                continue;
-            }
             if next_slot >= MAX_STUBS {
                 break; // guardrail — plenty of headroom for any real library
             }
@@ -456,7 +466,8 @@ fn emulate_body(so_bytes: &[u8], stop_handle: &AtomicUsize) -> EmulationResult {
                 (stub_addr as u32).to_le_bytes().to_vec()
             };
             let _ = uc.mem_write(imp.got_addr, &bytes[..ptr_size as usize]);
-            stub_names.borrow_mut().insert(stub_addr, imp.name);
+            let is_tracked = TRACKED_APIS.contains(&imp.name.as_str());
+            stub_names.borrow_mut().insert(stub_addr, (imp.name, is_tracked));
         }
     }
 
@@ -465,13 +476,21 @@ fn emulate_body(so_bytes: &[u8], stop_handle: &AtomicUsize) -> EmulationResult {
         let names = Rc::clone(&stub_names);
         let calls = Rc::clone(&api_calls);
         let _ = uc.add_code_hook(STUB_BASE, STUB_BASE + STUB_SIZE, move |uc, addr, _size| {
-            let name = match names.borrow().get(&addr) {
-                Some(n) => n.clone(),
+            let (name, is_tracked) = match names.borrow().get(&addr) {
+                Some(info) => info.clone(),
                 None => return,
             };
-            if calls.borrow().len() < 256 {
-                calls.borrow_mut().push(ApiCall { name });
+            if is_tracked && calls.borrow().len() < 256 {
+                calls.borrow_mut().push(ApiCall { name: name.clone() });
             }
+
+            // Return non-null dummy pointers for dynamic heap memory allocations (libc/libc++)
+            if name.contains("malloc") || name.contains("calloc") || name.contains("realloc") || name == "_Znwm" || name == "_Znam" {
+                let _ = uc.reg_write(ret_val_reg, HEAP_BASE + 0x100);
+            } else if name == "__cxa_finalize" || name == "__cxa_atexit" || name == "pthread_mutex_lock" || name == "pthread_mutex_unlock" {
+                let _ = uc.reg_write(ret_val_reg, 0);
+            }
+
             // "Return" from the fake call: redirect PC to the real caller's
             // return address instead of executing anything at the stub.
             let ret = if let Some(lr) = lr_reg {

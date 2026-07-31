@@ -5,21 +5,13 @@
 //! byte-offset-reading style as `pe.rs`, rather than pulling in a generic
 //! ELF crate, to keep this dependency-free like the rest of this module.
 
-/// Only used on Android where native-code emulation (emulate.rs) is
-/// compiled in. On desktop/dev builds (emulate_stub.rs) these are dead code.
-#[cfg(target_os = "android")]
 pub const EM_ARM: u16 = 40;
-#[cfg(target_os = "android")]
 pub const EM_AARCH64: u16 = 183;
-#[cfg(target_os = "android")]
 pub const EM_386: u16 = 3;
-#[cfg(target_os = "android")]
 pub const EM_X86_64: u16 = 62;
 
-#[cfg(target_os = "android")]
 const PT_LOAD: u32 = 1;
 
-#[cfg(target_os = "android")]
 #[derive(Clone, Debug)]
 pub struct Segment {
     pub vaddr: u64,
@@ -28,7 +20,6 @@ pub struct Segment {
     pub memsz: u64,
 }
 
-#[cfg(target_os = "android")]
 #[derive(Clone, Debug)]
 pub struct ElfInfo {
     pub is_64: bool,
@@ -37,19 +28,16 @@ pub struct ElfInfo {
     pub segments: Vec<Segment>,
 }
 
-#[cfg(target_os = "android")]
 fn read_u16(d: &[u8], off: usize, le: bool) -> Option<u16> {
     let b: [u8; 2] = d.get(off..off + 2)?.try_into().ok()?;
     Some(if le { u16::from_le_bytes(b) } else { u16::from_be_bytes(b) })
 }
 
-#[cfg(target_os = "android")]
 fn read_u32(d: &[u8], off: usize, le: bool) -> Option<u32> {
     let b: [u8; 4] = d.get(off..off + 4)?.try_into().ok()?;
     Some(if le { u32::from_le_bytes(b) } else { u32::from_be_bytes(b) })
 }
 
-#[cfg(target_os = "android")]
 fn read_u64(d: &[u8], off: usize, le: bool) -> Option<u64> {
     let b: [u8; 8] = d.get(off..off + 8)?.try_into().ok()?;
     Some(if le { u64::from_le_bytes(b) } else { u64::from_be_bytes(b) })
@@ -57,7 +45,6 @@ fn read_u64(d: &[u8], off: usize, le: bool) -> Option<u64> {
 
 /// Parse an ELF file's header + program headers. Returns `None` for anything
 /// that isn't a well-formed, little-endian ELF (every Android ABI is LE).
-#[cfg(target_os = "android")]
 pub fn parse_elf(data: &[u8]) -> Option<ElfInfo> {
     if data.len() < 20 || &data[0..4] != b"\x7fELF" {
         return None;
@@ -131,7 +118,6 @@ pub fn parse_elf(data: &[u8]) -> Option<ElfInfo> {
 /// or `None` if not found / not present. A full hash-table symbol lookup
 /// (`.hash`/`.gnu.hash`) isn't needed here — native libraries export at most a
 /// few hundred dynamic symbols, so a linear scan is cheap and much simpler.
-#[cfg(target_os = "android")]
 pub fn find_dynsym(data: &[u8], want: &str) -> Option<u64> {
     if data.len() < 20 || &data[0..4] != b"\x7fELF" || data[5] != 1 {
         return None;
@@ -230,7 +216,6 @@ pub fn find_dynsym(data: &[u8], want: &str) -> Option<u64> {
 /// An imported (undefined) dynamic symbol along with the GOT/data address a
 /// relocation says should hold its resolved address — i.e. "this library
 /// calls `<name>` through the value stored at `got_addr`".
-#[cfg(target_os = "android")]
 #[derive(Clone, Debug)]
 pub struct Import {
     pub name: String,
@@ -242,7 +227,6 @@ pub struct Import {
 /// `.rel.dyn`/`.rel.plt` variants). This is a standard SysV relocation walk —
 /// Android's packed `.android.rela` (APS2, LEB128-encoded) format is a
 /// distinct encoding and is intentionally NOT handled here.
-#[cfg(target_os = "android")]
 pub fn find_imports(data: &[u8]) -> Vec<Import> {
     let mut out = Vec::new();
     if data.len() < 20 || &data[0..4] != b"\x7fELF" || data[5] != 1 {
