@@ -174,7 +174,7 @@ fn main() {
             batch_labels.push(sample.label);
 
             if batch_rows.len() >= args.batch_size
-                || batch_rows.iter().map(|r| r.len()).sum::<usize>() >= 64_000
+                || batch_rows.iter().map(|r| r.len()).sum::<usize>() >= 16_000
             {
                 let loss = forward_loss(&model, &loss_fn, &device, &batch_rows, &batch_feats, &batch_labels);
                 epoch_loss += loss.clone().into_scalar() as f64;
@@ -252,6 +252,9 @@ fn collect_apks(dir: &Path, out: &mut Vec<PathBuf>) {
     let Ok(rd) = std::fs::read_dir(dir) else { return };
     for ent in rd.flatten() {
         let p = ent.path();
+        if p.to_string_lossy().to_ascii_lowercase().contains("invalid") {
+            continue;
+        }
         if p.is_dir() {
             collect_apks(&p, out);
         } else if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
@@ -293,17 +296,6 @@ fn engine_features_from_apk(apk: &[u8]) -> EngineFeatures {
             }
         } else if name.ends_with(".so") || name.ends_with(".dylib") {
             elf_count += 1;
-        } else if name.ends_with(".dex") {
-            let mut buf = Vec::new();
-            if entry.by_ref().take(8 * 1024 * 1024).read_to_end(&mut buf).is_ok() {
-                if let Some((strings, api_calls, classes, high, critical)) = dex_features(&buf) {
-                    feats.dex_string_count += strings as f32;
-                    feats.dex_api_call_count += api_calls as f32;
-                    feats.dex_class_count += classes as f32;
-                    feats.dex_finding_high += high;
-                    feats.dex_finding_critical += critical;
-                }
-            }
         }
     }
     feats.elf_count = elf_count as f32;
@@ -322,76 +314,7 @@ fn engine_features_from_apk(apk: &[u8]) -> EngineFeatures {
     feats
 }
 
-/// Parse one DEX buffer with the real FossRust DEX analyzer (the same
-/// `dex_scan` the Android engine uses at serving time) and reduce it to the
-/// five DEX feature signals. Returns
-/// `(string_count, api_call_count, class_count, high_findings, critical_findings)`.
-fn dex_features(buf: &[u8]) -> Option<(usize, usize, usize, f32, f32)> {
-    use dex_analysis::{analyze_dex, AnalysisConfig, Severity};
-    use dex_core::{graphs, parse_dex, semantics};
 
-    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let dex = parse_dex(buf).ok()?;
-        let mut text = String::new();
-        for s in dex.strings().flatten() {
-            text.push_str(s);
-            text.push('\n');
-            if text.len() >= 8 * 1024 * 1024 {
-                break;
-            }
-        }
-        let string_count = text.lines().count();
-
-        let mut high = 0usize;
-        let mut critical = 0usize;
-        // Static analysis is best-effort: a panic on an exotic DEX buffer
-        // must not drop the string/api/class counts.
-        let findings_ok = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let report = analyze_dex(&dex, &AnalysisConfig::default());
-            for f in report.findings.iter().take(64) {
-                match f.severity {
-                    Severity::High => high += 1,
-                    Severity::Critical => critical += 1,
-                    _ => {}
-                }
-            }
-        }));
-        let _ = findings_ok;
-
-        let mut api_counts: std::collections::HashMap<String, u32> =
-            std::collections::HashMap::new();
-        if let Ok(xrefs) = graphs::build_xrefs(&dex) {
-            for (_, callee_idx) in &xrefs.method_calls {
-                if api_counts.len() >= 4096 {
-                    break;
-                }
-                let midx = dex_core::format::MethodIdx::new(*callee_idx);
-                if let Ok(sig) = semantics::pretty_method(&dex, midx) {
-                    *api_counts.entry(sig).or_insert(0) += 1;
-                }
-            }
-        }
-        let api_call_count = api_counts.len();
-
-        let mut classes: std::collections::HashSet<String> = std::collections::HashSet::new();
-        for sig in api_counts.keys() {
-            if let Some(cls) = sig.split("->").next() {
-                classes.insert(cls.trim().to_string());
-            }
-        }
-        let class_count = classes.len();
-
-        Some((
-            string_count,
-            api_call_count,
-            class_count,
-            high as f32,
-            critical as f32,
-        ))
-    }))
-    .ok()
-    .flatten()
-}
 
 // ── minimal AXML manifest parsing (subset of the Android crate's parser) ────
 
@@ -620,43 +543,52 @@ fn evaluate(
         return m;
     }
 
-    let rows: Vec<Vec<i64>> = valid.iter().map(|s| s.tokens.clone()).collect();
-    let max_len = rows.iter().map(|r| r.len()).max().unwrap_or(1);
-    let mut padded = vec![0i64; rows.len() * max_len];
-    for (row, seq) in rows.iter().enumerate() {
-        for (j, t) in seq.iter().take(max_len).enumerate() {
-            padded[row * max_len + j] = *t;
+    let mut total_loss = 0.0f64;
+    let mut n_chunks = 0usize;
+
+    for chunk in valid.chunks(16) {
+        let rows: Vec<Vec<i64>> = chunk.iter().map(|s| s.tokens.clone()).collect();
+        let max_len = rows.iter().map(|r| r.len()).max().unwrap_or(1);
+        let n = rows.len();
+        let mut padded = vec![0i64; n * max_len];
+        for (row, seq) in rows.iter().enumerate() {
+            for (j, t) in seq.iter().take(max_len).enumerate() {
+                padded[row * max_len + j] = *t;
+            }
+        }
+        let feats: Vec<f32> = chunk.iter().flat_map(|s| s.engine_features.to_vec()).collect();
+        let labels: Vec<i64> = chunk.iter().map(|s| s.label).collect();
+
+        // Evaluate on the plain (non-autodiff) backend in mini-batches.
+        let token_tensor = Tensor::<Wgpu, 2, Int>::from_data(
+            TensorData::new(padded, [n, max_len]),
+            device,
+        );
+        let feat_tensor = Tensor::<Wgpu, 2, Float>::from_data(
+            TensorData::new(feats, [n, features::ENGINE_FEATURE_COUNT]),
+            device,
+        );
+        let label_tensor = Tensor::<Wgpu, 1, Int>::from_data(
+            TensorData::new(labels.clone(), [n]),
+            device,
+        );
+
+        let output = model.valid().forward_batch(token_tensor, feat_tensor);
+        let loss = loss_fn.valid().forward(output.clone().squeeze_dim::<1>(1), label_tensor);
+        total_loss += loss.into_scalar() as f64;
+        n_chunks += 1;
+
+        let data = output.into_data();
+        let probs = data.to_vec::<f32>().unwrap_or_default();
+        for (i, p) in probs.iter().enumerate() {
+            let pred = if *p >= 0.5 { 1 } else { 0 };
+            if pred == labels[i] {
+                m.correct += 1;
+            }
         }
     }
-    let feats: Vec<f32> = valid.iter().flat_map(|s| s.engine_features.to_vec()).collect();
-    let labels: Vec<i64> = valid.iter().map(|s| s.label).collect();
 
-    // Evaluate on the plain (non-autodiff) backend.
-    let token_tensor = Tensor::<Wgpu, 2, Int>::from_data(
-        TensorData::new(padded, [rows.len(), max_len]),
-        device,
-    );
-    let feat_tensor = Tensor::<Wgpu, 2, Float>::from_data(
-        TensorData::new(feats, [rows.len(), features::ENGINE_FEATURE_COUNT]),
-        device,
-    );
-    let label_tensor = Tensor::<Wgpu, 1, Int>::from_data(
-        TensorData::new(labels.clone(), [rows.len()]),
-        device,
-    );
-
-    let output = model.valid().forward_batch(token_tensor, feat_tensor);
-    let loss = loss_fn.valid().forward(output.clone().squeeze_dim::<1>(1), label_tensor);
-    m.loss = loss.into_scalar() as f64;
-
-    let data = output.into_data();
-    let probs = data.to_vec::<f32>().unwrap_or_default();
-    for (i, p) in probs.iter().enumerate() {
-        let pred = if *p >= 0.5 { 1 } else { 0 };
-        if pred == labels[i] {
-            m.correct += 1;
-        }
-    }
+    m.loss = total_loss / n_chunks.max(1) as f64;
     m.accuracy = m.correct as f32 / m.total as f32;
     m
 }

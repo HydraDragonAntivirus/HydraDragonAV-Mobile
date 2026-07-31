@@ -4,7 +4,7 @@ use std::io::{Cursor, Read};
 pub const VOCAB_SIZE: usize = 20000;
 pub const EMBED_DIM: usize = 64;
 pub const MIN_STR_LEN: usize = 5;
-pub const MAX_TOKENS: usize = 120_000;
+pub const MAX_TOKENS: usize = 4096;
 pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
 pub const ENGINE_FEATURE_COUNT: usize = 26;

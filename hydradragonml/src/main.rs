@@ -64,16 +64,20 @@ fn parse_args() -> Args {
 
 fn find_apks(root: &std::path::Path) -> Vec<PathBuf> {
     let mut apks = Vec::new();
-    for entry in WalkDir::new(root).into_iter().filter_map(|e| e.ok()) {
+    let walker = WalkDir::new(root).into_iter().filter_entry(|e| {
+        !e.path()
+            .to_string_lossy()
+            .to_ascii_lowercase()
+            .contains("invalid")
+    });
+    for entry in walker.filter_map(|e| e.ok()) {
         let path = entry.path();
-        if path.to_string_lossy().to_ascii_lowercase().contains("invalid") {
-            continue;
-        }
-        if path
-            .extension()
-            .and_then(|e| e.to_str())
-            .map(|e| e.eq_ignore_ascii_case("apk"))
-            .unwrap_or(false)
+        if path.is_file()
+            && path
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(|e| e.eq_ignore_ascii_case("apk"))
+                .unwrap_or(false)
         {
             apks.push(path.to_path_buf());
         }
