@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::time::Instant;
 
-use hydradragonml::{Model, DEFAULT_CONFIDENCE_THRESHOLD};
+use hydradragonml::Model;
 use walkdir::WalkDir;
 
 struct Args {
@@ -15,7 +15,7 @@ fn parse_args() -> Args {
     let mut dataset = None;
     let mut model = None;
     let mut vocab = None;
-    let mut threshold = DEFAULT_CONFIDENCE_THRESHOLD;
+    let mut threshold = 0.5;
 
     let mut args = std::env::args().skip(1).peekable();
     while let Some(arg) = args.next() {
@@ -167,11 +167,11 @@ fn main() {
         let verdict = if malicious { "MALICIOUS" } else { "BENIGN" };
 
         println!(
-            "  {:<12} {:<50}  [{:.3}s]  confidence={:.4}",
+            "  {:<12} {:<50}  [{:.3}s]  score={:.0}/100",
             verdict,
             relative.to_string().chars().take(48).collect::<String>(),
             elapsed as f64 / 1000.0,
-            confidence,
+            confidence * 100.0,
         );
 
         if let Some(exp) = expected {
