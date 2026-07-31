@@ -1,18 +1,20 @@
 use std::path::PathBuf;
 use std::time::Instant;
 
-use hydradragonml::{features, Model, DEFAULT_CONFIDENCE_THRESHOLD};
+use hydradragonml::{Model, DEFAULT_CONFIDENCE_THRESHOLD};
 use walkdir::WalkDir;
 
 struct Args {
     dataset: PathBuf,
-    model: Option<PathBuf>,
+    model: PathBuf,
+    vocab: PathBuf,
     threshold: f32,
 }
 
 fn parse_args() -> Args {
     let mut dataset = None;
     let mut model = None;
+    let mut vocab = None;
     let mut threshold = DEFAULT_CONFIDENCE_THRESHOLD;
 
     let mut args = std::env::args().skip(1).peekable();
@@ -32,6 +34,13 @@ fn parse_args() -> Args {
                         .expect("--model requires a path"),
                 );
             }
+            "--vocab" | "-v" => {
+                vocab = Some(
+                    args.next()
+                        .map(PathBuf::from)
+                        .expect("--vocab requires a path"),
+                );
+            }
             "--threshold" | "-t" => {
                 threshold = args
                     .next()
@@ -47,7 +56,8 @@ fn parse_args() -> Args {
 
     Args {
         dataset: dataset.expect("--dataset is required"),
-        model,
+        model: model.expect("--model is required"),
+        vocab: vocab.expect("--vocab is required"),
         threshold,
     }
 }
@@ -79,30 +89,24 @@ fn main() {
         eprintln!("ERROR: dataset path does not exist: {}", args.dataset.display());
         std::process::exit(1);
     }
+    if !args.model.exists() {
+        eprintln!("ERROR: --model path does not exist: {}", args.model.display());
+        std::process::exit(1);
+    }
+    if !args.vocab.exists() {
+        eprintln!("ERROR: --vocab path does not exist: {}", args.vocab.display());
+        std::process::exit(1);
+    }
 
-    let model = match &args.model {
-        Some(p) => {
-            if !p.exists() {
-                eprintln!("ERROR: --model path does not exist: {}", p.display());
-                std::process::exit(1);
-            }
-            match Model::load_bin(p) {
-                Ok(mut m) => {
-                    m.set_threshold(args.threshold);
-                    eprintln!("OK  model loaded: {} (threshold={})", p.display(), args.threshold);
-                    Some(m)
-                }
-                Err(e) => {
-                    eprintln!("ERROR: failed to load model {p:?}: {e}");
-                    std::process::exit(1);
-                }
-            }
-        }
-        None => {
-            eprintln!("WARNING: --model not provided. All APKs will show BENIGN/0.0.");
-            None
-        }
-    };
+    let model_bytes = std::fs::read(&args.model).expect("cannot read model file");
+    let vocab_bytes = std::fs::read(&args.vocab).expect("cannot read vocab file");
+    let mut model = Model::load(&model_bytes, &vocab_bytes)
+        .unwrap_or_else(|e| {
+            eprintln!("ERROR: failed to load model: {e}");
+            std::process::exit(1);
+        });
+    model.set_threshold(args.threshold);
+    eprintln!("OK  model loaded: {} (threshold={})", args.model.display(), args.threshold);
 
     let apks = find_apks(&args.dataset);
     eprintln!("\nFound {} APK files. Scanning...\n", apks.len());
@@ -134,15 +138,8 @@ fn main() {
 
         let t0 = Instant::now();
 
-        // extraction ve model tahminini ayrı tutuyoruz ki extraction hatasi
-        // "model malicious demedi" ile karismasin
-        let feats = model.as_ref().and_then(|_| features::extract(&apk_bytes));
-        let extraction_ok = model.is_none() || feats.is_some();
-
-        let result = match (&model, &feats) {
-            (Some(m), Some(f)) => Some(m.scan_features(f)),
-            _ => None,
-        };
+        let result = model.scan(&apk_bytes);
+        let extraction_ok = result.is_some();
 
         let elapsed = t0.elapsed().as_millis();
         total_ms += elapsed;
@@ -152,20 +149,20 @@ fn main() {
             .unwrap_or(apk_path)
             .display();
 
-        if model.is_some() && !extraction_ok {
+        if !extraction_ok {
             extract_failed += 1;
             println!(
-                "  {:<12} {:<50}  [{:.3}s]  (feature extraction failed, skipped)",
+                "  {:<12} {:<50}  [{:.3}s]  (tokenization failed, skipped)",
                 "EXTRACT-FAIL",
                 relative.to_string().chars().take(48).collect::<String>(),
                 elapsed as f64 / 1000.0,
             );
-            continue; // confusion matrix'i bozmasin, hesaba katma
+            continue;
         }
 
-        let malicious = result.as_ref().map(|r| r.malicious).unwrap_or(false);
-        let confidence = result.as_ref().map(|r| r.confidence).unwrap_or(0.0);
-
+        let result = result.unwrap();
+        let malicious = result.malicious;
+        let confidence = result.confidence;
         let verdict = if malicious { "MALICIOUS" } else { "BENIGN" };
 
         println!(

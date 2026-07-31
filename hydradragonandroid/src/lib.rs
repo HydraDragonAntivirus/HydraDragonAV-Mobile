@@ -103,6 +103,7 @@ const MODULE_DEPENDENT_YRC: &[&str] = &[
 /// Parses emerging-all.rules at runtime and builds a daachorse double-array
 /// automaton for hex-pattern matching.
 const MODEL_ONNX: &str = "model.onnx";
+const VOCAB_JSON: &str = "vocab.json";
 /// Per-type malware TLSH similarity databases (one T1 digest per line), built
 /// from the MalwareBazaar dump separated by file type (`gen_tlsh_db.py`).
 /// Each type is stored in its own file so the scanner only compares a buffer
@@ -587,9 +588,10 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 let t_model = std::time::Instant::now();
                 let mut report = String::new();
                 let model_bytes = files.get(MODEL_ONNX);
-                let model = match model_bytes.and_then(|b| {
+                let vocab_bytes = files.get(VOCAB_JSON);
+                let model = match model_bytes.zip(vocab_bytes).and_then(|(m, v)| {
                     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Option<Model> {
-                        hydradragonml::Model::load_bytes(b).ok()
+                        hydradragonml::Model::load(m, v).ok()
                     }))
                     .ok()
                     .flatten()
@@ -2332,7 +2334,7 @@ fn run_scan(
                 // 2. Check if the buffer matches the content-based MinHash benign signatures whitelist
                 if let Some(pkg) = axml_package(&b.data) {
                     if let Some(bdb) = &engine.benign_db {
-                        if let Some(feats) = hydradragonml::features::extract(&b.data) {
+                        if let Some(feats) = hydradragonml::features::extract_minhash(&b.data) {
                             if bdb.is_known_benign(&pkg, &feats.tokens) {
                                 rust_timing_log!("whitelist :: MinHash match for package '{}'", pkg);
                                 return true;

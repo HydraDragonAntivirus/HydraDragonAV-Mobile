@@ -1,133 +1,67 @@
+"""HydraDragonML — EmbeddingBag + MLP with learned vocabulary.
+
+Replaces old FNV hash → 2048 buckets approach:
+  - No hash collisions: each token maps to a learned embedding
+  - EmbeddingBag handles variable-length token sequences natively
+  - Far fewer parameters, better generalization
+"""
+
+import json
 import os
 import re
+import sys
 import zipfile
+from collections import Counter
 
 import numpy as np
-import onnx
-from onnx import helper, TensorProto, numpy_helper
 import torch
 import torch.nn as nn
+from onnx import helper, TensorProto, numpy_helper
 
-DENSE_DIM = 2048
 MIN_STR_LEN = 5
-MAX_TOKENS = 120000
+MAX_TOKENS = 120_000
 MAX_ENTRY_SCAN = 16 * 1024 * 1024
+VOCAB_SIZE = 20000
+EMBED_DIM = 64
 
-# FNV-1a 64-bit constants (must match Rust exactly)
-FNV_OFFSET = 0xcbf29ce484222325
-FNV_PRIME  = 0x00000100000001b3
-
-
-def fnv1a(data: bytes) -> int:
-    h = FNV_OFFSET
-    for b in data:
-        h ^= b
-        h = (h * FNV_PRIME) & 0xFFFFFFFFFFFFFFFF
-    return h
+_ASCII_RE = re.compile(b'[\x20-\x7e]{5,}')
+_UTF16_RE = re.compile(b'(?:[\x20-\x7e]\x00){5,}')
 
 
-def token(prefix: str, s: bytes) -> int:
-    return fnv1a(prefix.encode() + s)
+def sub_tokenize(text: str) -> list[str]:
+    out = []
+    for part in re.split(r'[./;:\-\\_]+', text):
+        if len(part) >= 2:
+            out.append(part.lower())
+    return out
 
 
-# ---------------------------------------------------------------------------
-# Precompute the FNV-1a state AFTER hashing each prefix string.
-# token(prefix, s) == _continue_fnv1a(_PREFIX_STATE[prefix], s)
-# This is valid because FNV-1a is purely sequential state-based.
-# ---------------------------------------------------------------------------
-def _fnv1a_state(prefix_bytes: bytes) -> int:
-    h = FNV_OFFSET
-    for b in prefix_bytes:
-        h ^= b
-        h = (h * FNV_PRIME) & 0xFFFFFFFFFFFFFFFF
-    return h
-
-
-_PREFIX_STATE: dict = {}
-for _p in ('name:', 'dex:', 'manifest:', 'res:', 'perm:', 'api:', 'url:'):
-    _PREFIX_STATE[_p] = _fnv1a_state(_p.encode())
-
-
-def _token_fast(prefix: str, s: bytes) -> int:
-    """Like token() but skips re-hashing the prefix on every call."""
-    h = _PREFIX_STATE[prefix]
-    for b in s:
-        h ^= b
-        h = (h * FNV_PRIME) & 0xFFFFFFFFFFFFFFFF
-    return h
-
-
-# ---------------------------------------------------------------------------
-# Compiled regexes — scanning runs in C, avoiding Python byte-by-byte loops
-# ---------------------------------------------------------------------------
-_ASCII_RE = re.compile(b'[\x20-\x7e]{%d,}' % MIN_STR_LEN)
-_UTF16_RE = re.compile(b'(?:[\x20-\x7e]\x00){%d,}' % MIN_STR_LEN)
-
-# Valid permission name chars (integers, as returned by bytes indexing)
-_PERM_CHARS = frozenset(
-    list(range(ord('a'), ord('z') + 1)) +
-    list(range(ord('A'), ord('Z') + 1)) +
-    list(range(ord('0'), ord('9') + 1)) +
-    [ord('_')]
-)
-_PERM_PAT = b'permission.'
-
-
-def harvest_strings(data: bytes, prefix: str, tokens: set):
-    """Extract printable ASCII and UTF-16LE runs using compiled C-level regexes."""
-    # ASCII runs
+def harvest_strings(data: bytes, tokens: list[str]):
     for m in _ASCII_RE.finditer(data):
-        insert_string(m.group(0), prefix, tokens)
-        if len(tokens) >= MAX_TOKENS:
-            return
-    # UTF-16LE runs: every other byte (the high byte is 0x00, discard it)
+        for t in sub_tokenize(m.group(0).decode('ascii', errors='replace')):
+            tokens.append(t)
+            if len(tokens) >= MAX_TOKENS:
+                return
     for m in _UTF16_RE.finditer(data):
-        insert_string(m.group(0)[::2], prefix, tokens)
-        if len(tokens) >= MAX_TOKENS:
-            return
+        decoded = m.group(0)[::2].decode('ascii', errors='replace')
+        for t in sub_tokenize(decoded):
+            tokens.append(t)
+            if len(tokens) >= MAX_TOKENS:
+                return
 
 
-def insert_string(s: bytes, prefix: str, tokens: set):
-    """Insert a printable-run token and promote high-signal sub-tokens.
-
-    Works purely on bytes to avoid str decode overhead.
-    Results are identical to the original string-based version.
-    """
-    tokens.add(_token_fast(prefix, s))
-
-    ls = s.lower()  # bytes.lower() — C-level, fast
-
-    # Permission token: look for b'permission.' in the lowercased run
-    idx = ls.find(_PERM_PAT)
-    if idx >= 0:
-        after = ls[idx + 11:]
-        end = 0
-        while end < len(after) and after[end] in _PERM_CHARS:
-            end += 1
-        if end > 0:
-            tokens.add(_token_fast('perm:', after[:end]))
-
-    # API descriptor: starts with 'L' (0x4c) and contains '/' (0x2f)
-    if s and s[0] == 0x4c and b'/' in s[1:]:
-        tokens.add(_token_fast('api:', s))
-
-    # URL / protocol
-    if b'://' in s:
-        tokens.add(_token_fast('url:', ls))
-
-
-def extract_features(apk_path: str):
+def extract_tokens(apk_path: str) -> list[str] | None:
     try:
         z = zipfile.ZipFile(apk_path, 'r')
         namelist = z.namelist()
     except Exception:
         return None
-
-    tokens = set()
+    tokens: list[str] = []
     for name in namelist:
         if len(tokens) >= MAX_TOKENS:
             break
-        tokens.add(_token_fast('name:', name.encode()))
+        for t in sub_tokenize(name):
+            tokens.append(t)
         lname = name.lower()
         scan = (lname == 'androidmanifest.xml' or lname == 'resources.arsc'
                 or lname.endswith('.dex') or lname.startswith('meta-inf/'))
@@ -138,216 +72,228 @@ def extract_features(apk_path: str):
                 data = f.read(MAX_ENTRY_SCAN) or b''
         except Exception:
             continue
-        if lname.endswith('.dex'):
-            prefix = 'dex:'
-        elif lname == 'androidmanifest.xml':
-            prefix = 'manifest:'
-        else:
-            prefix = 'res:'
-        harvest_strings(data, prefix, tokens)
+        harvest_strings(data, tokens)
     z.close()
-
-    if not tokens:
-        return None
-
-    counts = [0] * DENSE_DIM
-    for t in tokens:
-        bucket = t % DENSE_DIM
-        counts[bucket] = min(counts[bucket] + 1, 0xFFFFFFFF)
-
-    v = np.array([np.log1p(c) for c in counts], dtype=np.float32)
-    norm = np.sqrt(np.sum(v * v))
-    if norm > 0:
-        v /= norm
-    return v
+    return tokens if tokens else None
 
 
-def _extract_one(args):
-    path, label = args
-    feats = extract_features(path)
-    if feats is not None:
-        return feats, label
-    return None
-
-
-def gather_dataset(dataset_root: str):
+def build_vocab(dataset_root: str) -> dict[str, int]:
     import concurrent.futures
-    try:
-        from tqdm import tqdm
-    except ImportError:
-        tqdm = lambda x, **kw: x
+    from tqdm import tqdm
+    apks = []
+    for root, dirs, files in os.walk(dataset_root):
+        for fname in files:
+            if not fname.lower().endswith('.apk') or 'invalid' in root.lower():
+                continue
+            apks.append(os.path.join(root, fname))
+    counter: Counter = Counter()
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max(1, os.cpu_count() or 4)) as pool:
+        for toks in tqdm(pool.map(_extract_tokens_worker, apks), total=len(apks), desc='Vocab'):
+            if toks:
+                counter.update(set(toks))
+    most_common = counter.most_common(VOCAB_SIZE - 1)
+    vocab = {'<UNK>': 0}
+    for i, (token, _freq) in enumerate(most_common, start=1):
+        vocab[token] = i
+    print(f'  vocabulary: {len(vocab)} tokens (from {len(counter)} unique)')
+    with open('vocab.json', 'w', encoding='utf-8') as f:
+        json.dump(vocab, f, ensure_ascii=False)
+    print('  vocab.json saved')
+    return vocab
 
+
+def _extract_tokens_worker(path: str):
+    return extract_tokens(path)
+
+
+def encode_apk(apk_path: str, vocab: dict[str, int]) -> np.ndarray | None:
+    toks = extract_tokens(apk_path)
+    if toks is None:
+        return None
+    return np.array([vocab.get(t, 0) for t in toks], dtype=np.int64)
+
+
+def gather_dataset(dataset_root: str, vocab: dict[str, int]):
+    import concurrent.futures
+    from tqdm import tqdm
     jobs = []
     for root, dirs, files in os.walk(dataset_root):
         for fname in files:
-            if not fname.lower().endswith('.apk'):
+            if not fname.lower().endswith('.apk') or 'invalid' in root.lower():
                 continue
-            if 'invalid' in root.lower():
-                continue
-            path = os.path.join(root, fname)
             label = 1 if 'malware' in root.lower() else 0
-            jobs.append((path, label))
-
-    X, y = [], []
-    n_workers = max(1, os.cpu_count() or 4)
-    with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as pool:
-        for result in tqdm(pool.map(_extract_one, jobs), total=len(jobs), desc='Extracting'):
+            jobs.append((os.path.join(root, fname), label, vocab))
+    results = []
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max(1, os.cpu_count() or 4)) as pool:
+        for result in tqdm(pool.map(_encode_one, jobs), total=len(jobs), desc='Encoding'):
             if result is not None:
-                feats, label = result
-                X.append(feats)
-                y.append(label)
-    return np.array(X, dtype=np.float32), np.array(y, dtype=np.int64)
+                results.append(result)
+    return results
 
 
-class Net(nn.Module):
-    """3-layer MLP with dropout.  Input: DENSE_DIM=2048 features."""
-    def __init__(self):
+def _encode_one(args):
+    path, label, vocab = args
+    indices = encode_apk(path, vocab)
+    return (indices, label) if indices is not None else None
+
+
+class EmbeddingBagMLP(nn.Module):
+    def __init__(self, vocab_size: int, embed_dim: int):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(DENSE_DIM, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(512, 128),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(128, 1),
-            nn.Sigmoid(),
-        )
+        self.emb = nn.EmbeddingBag(vocab_size, embed_dim, mode='mean')
+        self.fc1 = nn.Linear(embed_dim, 32)
+        self.fc2 = nn.Linear(32, 1)
+        self.dropout = nn.Dropout(0.2)
 
-    def forward(self, x):
-        return self.net(x).squeeze(-1)
+    def forward(self, indices, offsets):
+        x = self.emb(indices, offsets)
+        x = self.dropout(torch.relu(self.fc1(x)))
+        return self.fc2(x).squeeze(-1)
 
 
-def main():
-    import sys
-    dataset = sys.argv[1] if len(sys.argv) > 1 else 'dataset'
-    print(f'Scanning {dataset}...')
-    X, y = gather_dataset(dataset)
-    print(f'\nLoaded {len(X)} samples ({y.sum()} malware, {len(y) - y.sum()} benign)')
-
-    if len(X) == 0:
+def train(dataset_root: str):
+    print(f'Building vocabulary from {dataset_root}...')
+    vocab = build_vocab(dataset_root)
+    print('Encoding APKs...')
+    encoded = gather_dataset(dataset_root, vocab)
+    print(f'  {len(encoded)} APKs encoded')
+    if len(encoded) == 0:
         print('ERROR: no APKs found')
-        return
+        return None, None
 
-    idx = np.random.permutation(len(X))
-    X, y = X[idx], y[idx]
-    split = int(len(X) * 0.8)
-    X_train, X_val = X[:split], X[split:]
-    y_train, y_val = y[:split], y[split:]
+    rng = np.random.RandomState(42)
+    rng.shuffle(encoded)
+    split = int(len(encoded) * 0.8)
+    train_data, val_data = encoded[:split], encoded[split:]
 
-    pos_weight = float((len(y_train) - y_train.sum()) / max(y_train.sum(), 1))
-    model = Net()
-    criterion     = nn.BCELoss(reduction='none')
-    val_criterion = nn.BCELoss()
+    n_mal = sum(l for _, l in train_data)
+    n_pos = len(train_data) - n_mal
+    print(f'  train: {len(train_data)} ({n_mal} malware, {n_pos} benign)')
+    print(f'  val:   {len(val_data)}')
+
+    model = EmbeddingBagMLP(len(vocab), EMBED_DIM)
+    pos_weight = torch.tensor(n_pos / max(n_mal, 1))
+    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    val_criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
 
-    X_t = torch.from_numpy(X_train)
-    y_t = torch.from_numpy(y_train).float()
-    X_v = torch.from_numpy(X_val)
-    y_v = torch.from_numpy(y_val).float()
-    pos_w = torch.tensor(pos_weight)
+    batch_size = 32
+    rng.shuffle(train_data)
+    train_batches = [train_data[i:i + batch_size] for i in range(0, len(train_data), batch_size)]
+    val_batches = [val_data[i:i + batch_size] for i in range(0, len(val_data), batch_size)]
+
+    def collate(batch):
+        indices_list = [torch.from_numpy(indices) for indices, _ in batch]
+        labels = torch.tensor([l for _, l in batch], dtype=torch.float32)
+        all_indices = torch.cat(indices_list)
+        offsets = torch.zeros(len(indices_list), dtype=torch.long)
+        cum = 0
+        for i, inds in enumerate(indices_list):
+            offsets[i] = cum
+            cum += len(inds)
+        return all_indices, offsets, labels
 
     best_val_loss = float('inf')
     stall = 0
     for epoch in range(300):
         model.train()
-        optimizer.zero_grad()
-        outputs = model(X_t)
-        per_sample = criterion(outputs, y_t)
-        weight_vec = torch.where(y_t == 1, pos_w, torch.ones(1))
-        loss = (per_sample * weight_vec).mean()
-        loss.backward()
-        optimizer.step()
+        total_loss = 0.0
+        for batch in train_batches:
+            indices, offsets, labels = collate(batch)
+            optimizer.zero_grad()
+            logits = model(indices, offsets)
+            loss = criterion(logits, labels)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
 
         model.eval()
+        v_loss = 0.0
+        v_correct = 0
+        v_total = 0
+        v_tp = v_fn = v_fp = 0
         with torch.no_grad():
-            preds   = (outputs > 0.5).float()
-            v_out   = model(X_v)
-            v_loss  = val_criterion(v_out, y_v).item()
-            v_preds = (v_out > 0.5).float()
-            v_tp    = (v_preds * y_v).sum().item()
-            v_fn    = ((1 - v_preds) * y_v).sum().item()
-            v_fp    = (v_preds * (1 - y_v)).sum().item()
-            v_f1    = 2 * v_tp / (2 * v_tp + v_fn + v_fp + 1e-8)
-            v_acc   = (v_preds == y_v).float().mean().item()
-        scheduler.step(v_loss)
-        print(f'  Epoch {epoch+1:3d} loss={loss.item():.4f} val_loss={v_loss:.4f} '
-              f'val_acc={v_acc:.4f} val_f1={v_f1:.4f}')
-        if v_loss < best_val_loss:
-            best_val_loss = v_loss
+            for batch in val_batches:
+                indices, offsets, labels = collate(batch)
+                logits = model(indices, offsets)
+                v_loss += val_criterion(logits, labels).item()
+                preds = (torch.sigmoid(logits) > 0.5).float()
+                v_correct += (preds == labels).sum().item()
+                v_total += len(labels)
+                v_tp += ((preds == 1) & (labels == 1)).sum().item()
+                v_fn += ((preds == 0) & (labels == 1)).sum().item()
+                v_fp += ((preds == 1) & (labels == 0)).sum().item()
+
+        avg_loss = total_loss / len(train_batches)
+        avg_vloss = v_loss / len(val_batches)
+        v_acc = v_correct / max(v_total, 1)
+        v_f1 = 2 * v_tp / max(2 * v_tp + v_fn + v_fp, 1)
+        print(f'  Epoch {epoch+1:3d} loss={avg_loss:.4f} val_loss={avg_vloss:.4f} '
+              f'acc={v_acc:.4f} f1={v_f1:.4f}')
+        scheduler.step(avg_vloss)
+        if avg_vloss < best_val_loss:
+            best_val_loss = avg_vloss
+            torch.save(model.state_dict(), 'model_weights.pt')
             stall = 0
         else:
             stall += 1
             if stall >= 25:
-                print(f'  Early stop at epoch {epoch+1}, best val_loss={best_val_loss:.4f}')
+                print(f'  Early stop at epoch {epoch+1}')
                 break
+    return model, vocab
 
-    # ── ONNX export: opset 11, BatchNorm fused into fc1, Dropout removed ────
-    # tract-onnx (Android inference) supports opset ≤ 13 and requires a simple
-    # Gemm→Relu→…→Sigmoid graph. torch.onnx.export produces opset 18 + Squeeze
-    # which tract can't load.  We export manually instead.
-    #
-    # BatchNorm at eval time is a fixed linear transform:
-    #   y = (x - mean) / sqrt(var + eps) * gamma + beta
-    # Fusing it into the preceding Linear layer:
-    #   scale    = gamma / sqrt(var + eps)          # [512]
-    #   W_fused  = W1 * scale[:, None]  (transposed for Gemm)
-    #   b_fused  = (b1 - mean) * scale + beta
+
+def export_onnx(model: EmbeddingBagMLP, vocab: dict[str, int]):
     model.eval()
-    eps      = model.net[1].eps
-    bn_mean  = model.net[1].running_mean.detach().numpy()
-    bn_var   = model.net[1].running_var.detach().numpy()
-    bn_g     = model.net[1].weight.detach().numpy()
-    bn_b     = model.net[1].bias.detach().numpy()
-    scale    = bn_g / np.sqrt(bn_var + eps)
-
-    w1_raw   = model.net[0].weight.detach().numpy()   # [512, 2048]
-    b1_raw   = model.net[0].bias.detach().numpy()
-    w1_fused = (w1_raw * scale[:, None]).T             # [2048, 512]
-    b1_fused = (b1_raw - bn_mean) * scale + bn_b
-
-    # net[3] = Dropout (identity at eval) → skip
-    w2 = model.net[4].weight.detach().numpy().T        # [512, 128]
-    b2 = model.net[4].bias.detach().numpy()
-    # net[6] = Dropout (identity at eval) → skip
-    w3 = model.net[7].weight.detach().numpy().T        # [128, 1]
-    b3 = model.net[7].bias.detach().numpy()
-
-    from onnx import helper, TensorProto, numpy_helper
     inits = [
-        numpy_helper.from_array(w1_fused.astype(np.float32), 'fc1_w'),
-        numpy_helper.from_array(b1_fused.astype(np.float32), 'fc1_b'),
-        numpy_helper.from_array(w2.astype(np.float32),        'fc2_w'),
-        numpy_helper.from_array(b2.astype(np.float32),        'fc2_b'),
-        numpy_helper.from_array(w3.astype(np.float32),        'fc3_w'),
-        numpy_helper.from_array(b3.astype(np.float32),        'fc3_b'),
+        numpy_helper.from_array(model.emb.weight.detach().numpy().astype(np.float32), 'emb_w'),
+        numpy_helper.from_array(model.fc1.weight.detach().numpy().T.astype(np.float32), 'fc1_w'),
+        numpy_helper.from_array(model.fc1.bias.detach().numpy().astype(np.float32), 'fc1_b'),
+        numpy_helper.from_array(model.fc2.weight.detach().numpy().T.astype(np.float32), 'fc2_w'),
+        numpy_helper.from_array(model.fc2.bias.detach().numpy().astype(np.float32), 'fc2_b'),
     ]
     nodes = [
-        helper.make_node('Gemm',    ['input','fc1_w','fc1_b'], ['fc1'],    alpha=1.0, beta=1.0, transA=0, transB=0),
-        helper.make_node('Relu',    ['fc1'],                    ['r1']),
-        helper.make_node('Gemm',    ['r1','fc2_w','fc2_b'],    ['fc2'],    alpha=1.0, beta=1.0, transA=0, transB=0),
-        helper.make_node('Relu',    ['fc2'],                    ['r2']),
-        helper.make_node('Gemm',    ['r2','fc3_w','fc3_b'],    ['fc3'],    alpha=1.0, beta=1.0, transA=0, transB=0),
-        helper.make_node('Sigmoid', ['fc3'],                    ['output']),
+        helper.make_node('Gather', ['emb_w', 'input'], ['gathered'], axis=0),
+        helper.make_node('ReduceMean', ['gathered'], ['pooled'], axes=[0], keepdims=0),
+        helper.make_node('Gemm', ['pooled', 'fc1_w', 'fc1_b'], ['fc1'], alpha=1.0, beta=1.0),
+        helper.make_node('Relu', ['fc1'], ['r1']),
+        helper.make_node('Gemm', ['r1', 'fc2_w', 'fc2_b'], ['fc2'], alpha=1.0, beta=1.0),
+        helper.make_node('Sigmoid', ['fc2'], ['output']),
     ]
     graph = helper.make_graph(
-        nodes, 'hydradragon_ml',
-        [helper.make_tensor_value_info('input',  TensorProto.FLOAT, [None, DENSE_DIM])],
-        [helper.make_tensor_value_info('output', TensorProto.FLOAT, [None, 1])],
+        nodes, 'hdragon_ml',
+        [helper.make_tensor_value_info('input', TensorProto.INT64, [None])],
+        [helper.make_tensor_value_info('output', TensorProto.FLOAT, [1])],
         inits,
     )
     onnx_model = helper.make_model(graph, opset_imports=[helper.make_opsetid('', 11)])
     with open('model.onnx', 'wb') as f:
         f.write(onnx_model.SerializeToString())
+    with open('vocab.json', 'w', encoding='utf-8') as f:
+        json.dump(vocab, f, ensure_ascii=False)
+    print(f'\nOK model.onnx exported ({len(vocab)} vocab, {EMBED_DIM} embed_dim)')
 
-    # Save PyTorch weights so export_onnx_opset11.py can reload without retraining
-    torch.save(model.state_dict(), 'model_weights.pt')
-    print('\nOK model.onnx exported (opset 11, BN fused, tract-onnx compatible)')
-    print('OK model_weights.pt saved')
+
+def main():
+    args = sys.argv[1:]
+    export_only = '--export-only' in args
+    dataset = args[0] if args and args[0] != '--export-only' else 'dataset'
+    if export_only:
+        print(f'HydraDragonML — export only from {dataset}')
+        with open('vocab.json', 'r') as f:
+            vocab = json.load(f)
+        model = EmbeddingBagMLP(len(vocab), EMBED_DIM)
+        state = torch.load('model_weights.pt', map_location='cpu', weights_only=True)
+        model.load_state_dict(state)
+        export_onnx(model, vocab)
+        return
+    print(f'HydraDragonML — training from {dataset}')
+    model, vocab = train(dataset)
+    if model is None:
+        return
+    export_onnx(model, vocab)
 
 
 if __name__ == '__main__':
     main()
-

@@ -4,115 +4,51 @@ use std::io::Cursor;
 
 use tract_onnx::prelude::*;
 
-/// Minimum confidence to flag a sample as malicious.
 pub const DEFAULT_CONFIDENCE_THRESHOLD: f32 = 0.95;
-/// Minimum confidence to flag a sample as suspicious (below malicious threshold).
 pub const SUSPICIOUS_THRESHOLD: f32 = 0.90;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn extract_from_test_apk() {
-        let bytes = std::fs::read(
-            "../com.ttech.android.onlineislem_base.apk",
-        )
-        .expect("APK file not found at project root. Run: adb pull ...");
-        let feats = features::extract(&bytes).expect("extract() returned None");
-        assert!(!feats.tokens.is_empty(), "token set should not be empty");
-        assert_eq!(feats.dense.len(), features::DENSE_DIM);
-        // Dense vector should be L2-normalised (norm ≈ 1.0).
-        let norm: f32 = feats.dense.iter().map(|x| x * x).sum::<f32>().sqrt();
-        assert!((norm - 1.0).abs() < 0.01, "L2 norm should be ~1.0, got {norm}");
-    }
-
-    #[test]
-    fn fnv1a_is_stable() {
-        let h = features::fnv1a(b"hello");
-        assert_eq!(h, 0xA430_D846_80AA_BD0B);
-    }
-
-    #[test]
-    fn dense_vector_normalised() {
-        let mut tokens = std::collections::HashSet::new();
-        tokens.insert(42);
-        tokens.insert(99);
-        tokens.insert(123456789);
-        let v = features::dense_vector(&tokens);
-        assert_eq!(v.len(), features::DENSE_DIM);
-        let norm: f32 = v.iter().map(|x| x * x).sum::<f32>().sqrt();
-        assert!((norm - 1.0).abs() < 0.01);
-    }
-}
 
 pub struct Model {
     plan: SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>,
+    tokenizer: features::Tokenizer,
     confidence_threshold: f32,
 }
 
 #[derive(Debug)]
 pub struct ScanResult {
     pub malicious: bool,
-    /// Confidence is >= SUSPICIOUS_THRESHOLD but < confidence_threshold.
     pub suspicious: bool,
-    /// Malware confidence 0.0 (benign) – 1.0 (malware).
     pub confidence: f32,
 }
 
 impl Model {
-    /// Load an ONNX model from bytes.
-    pub fn load_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn load(model_bytes: &[u8], vocab_bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+        let tokenizer = features::Tokenizer::load_json(vocab_bytes)
+            .ok_or("failed to parse vocab.json")?;
         let tract_model = onnx()
-            .model_for_read(&mut Cursor::new(bytes))?
-            .with_input_fact(0, InferenceFact::dt_shape(f32::datum_type(), tvec!(1, features::DENSE_DIM)))?
+            .model_for_read(&mut Cursor::new(model_bytes))?
+            .with_input_fact(0, InferenceFact::dt_shape(i64::datum_type(), tvec!(0)))?
             .into_optimized()?
             .into_runnable()?;
         Ok(Model {
             plan: tract_model,
+            tokenizer,
             confidence_threshold: DEFAULT_CONFIDENCE_THRESHOLD,
         })
     }
 
-    /// Load an ONNX model from a file path.
-    pub fn load_bin(path: &std::path::Path) -> Result<Self, Box<dyn std::error::Error>> {
-        let bytes = std::fs::read(path)?;
-        Self::load_bytes(&bytes)
-    }
-
-    /// Override the confidence threshold (default: 0.5).
     pub fn set_threshold(&mut self, t: f32) {
         self.confidence_threshold = t.clamp(0.0, 1.0);
     }
 
-    /// Score raw APK bytes.
     pub fn scan(&self, apk: &[u8]) -> Option<ScanResult> {
-        let feats = features::extract(apk)?;
-        Some(self.scan_features(&feats))
-    }
-
-    /// Score pre-extracted features.
-    pub fn scan_features(&self, feats: &features::ApkFeatures) -> ScanResult {
-        let input = tract_ndarray::Array2::from_shape_vec(
-            (1, features::DENSE_DIM),
-            feats.dense.clone(),
-        )
-        .unwrap();
+        let indices = self.tokenizer.tokenize(apk)?;
+        let input = tract_ndarray::Array1::from_vec(indices);
         let result = self.plan.run(tvec!(input.into_tensor().into()));
         let confidence = match result {
             Ok(outputs) => {
                 let output = outputs[0].to_array_view::<f32>().ok();
                 match output {
-                    Some(arr) => {
-                        let val = arr.iter().copied().next().unwrap_or(0.0);
-                        if val > 1.0 {
-                            1.0
-                        } else if val < 0.0 {
-                            0.0
-                        } else {
-                            val
-                        }
-                    }
+                    Some(arr) => arr.iter().copied().next().unwrap_or(0.0).clamp(0.0, 1.0),
                     None => 0.0,
                 }
             }
@@ -120,10 +56,35 @@ impl Model {
         };
         let malicious = confidence >= self.confidence_threshold;
         let suspicious = !malicious && confidence >= SUSPICIOUS_THRESHOLD;
-        ScanResult {
-            malicious,
-            suspicious,
-            confidence,
-        }
+        Some(ScanResult { malicious, suspicious, confidence })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tokenize_test_apk() {
+        let bytes = std::fs::read("../com.ttech.android.onlineislem_base.apk")
+            .expect("APK not found");
+        // Without a loaded vocab, we can't test full pipeline, but we can
+        // at least verify the Tokenizer loads a dummy vocab.
+        let mut vocab = std::collections::HashMap::new();
+        vocab.insert("test".to_string(), 1);
+        let tok = features::Tokenizer::new(vocab);
+        // Tokenizing should work — all tokens will map to UNK (0) since vocab is empty.
+        let result = tok.tokenize(&bytes);
+        assert!(result.is_some());
+        let ids = result.unwrap();
+        assert!(!ids.is_empty(), "should produce at least some tokens");
+    }
+
+    #[test]
+    fn load_vocab_from_json() {
+        let json = br#"{"<UNK>": 0, "hello": 1, "world": 2}"#;
+        let tok = features::Tokenizer::load_json(json).expect("should parse");
+        let ids = tok.tokenize(b"hello world");
+        assert!(ids.is_none(), "not a zip, should return None");
     }
 }

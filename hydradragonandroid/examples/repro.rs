@@ -52,7 +52,11 @@ fn run() {
         }
     }
     eprintln!("STEP: load_model");
-    let model = Model::load_bin(&base.join("model.onnx")).ok();
+    let model_bytes = std::fs::read(base.join("model.onnx")).ok();
+    let vocab_bytes = std::fs::read(base.join("vocab.json")).ok();
+    let model = model_bytes
+        .zip(vocab_bytes)
+        .and_then(|(m, v)| Model::load(&m, &v).ok());
     eprintln!("STEP: loaded ok");
     println!("loaded: clamav={} model={}", clamav.is_some(), model.is_some());
 

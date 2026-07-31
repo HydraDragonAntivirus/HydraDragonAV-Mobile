@@ -1,80 +1,55 @@
 # hydradragonml
 
 Pure-Rust ONNX-based APK malware binary classifier. Feature extraction from
-APK strings (manifest, dex, resources) → 256-d vector → tract-onnx inference.
+APK strings (manifest, dex, resources) → vocabulary tokenization →
+EmbeddingBag → ONNX inference.
 
-## Feature Engineering
+## Architecture
 
-Feature set is intentionally minimal: printable strings from
-`AndroidManifest.xml`, `resources.arsc`, `classes*.dex`, and `META-INF/*`
-are harvested, hashed into 256 bins, and L2-normalized.
+1. **Tokenizer** (`features::Tokenizer`) loads `vocab.json` (20K subword tokens),
+   harvests printable strings from APK entries, splits on delimiters, and
+   maps each fragment to a vocabulary index (0 = UNK).
+2. **Model** (`Model`) runs the tokenized indices through an ONNX graph:
+   `Gather → ReduceMean → Linear(64→32) → ReLU → Linear(32→1) → Sigmoid`.
+3. **Output**: confidence `0.0` (benign) to `1.0` (malware).
 
-Why not add opcode n-grams, ELF analysis, CFG features, etc.?
-
-- **Curse of dimensionality**: more features than training samples causes
-  the model to memorize noise instead of learning patterns.
-- **Overfitting**: each new feature is another axis the model can exploit
-  to separate training data by accident. On unseen malware the extra
-  features degrade detection.
-- **Feature decay**: opcodes, API call graphs, ELF structures change
-  rapidly across Android versions. String-based features (permissions,
-  URLs, class names) are more stable across malware families and versions.
-- **Model size**: more features means a larger ONNX graph, more RAM on
-  the device, and slower inference. 256-d is a proven trade-off.
+The MinHash pipeline (`features::extract_minhash`) is kept for benign-DB
+lookups and uses FNV-1a hashing (unchanged).
 
 ## Dataset scanner (CLI)
 
 ```powershell
-# Build
 cd hydradragonml
 cargo build --release
 
-# Feature extraction only (no model)
-.\target\release\hydradragonml-scan.exe --dataset ..\dataset\
-
-# Full scan with ML model (--model is required for actual inference)
-.\target\release\hydradragonml-scan.exe --dataset ..\dataset\ --model ..\app\src\main\assets\scan\model.onnx --threshold 0.5
+.\target\release\hydradragonml-scan.exe --dataset ..\dataset\ --model model.onnx --vocab vocab.json --threshold 0.5
 ```
 
-Without `--model`, inference is skipped — every APK shows `BENIGN` with
-`confidence=0.0000` and `total time = 0 ms`. Always pass `--model` for
-real detection. Scan pipeline per APK:
-
-1. **ML model** (`model.onnx`) → `BENIGN` / `MALICIOUS` with confidence
-
-Output includes per-file verdict, confidence score, and a summary with
-accuracy / precision / recall / F1 vs folder labels.
-
 ## Training the model
-
-A Python training script is at the repo root:
 
 ```powershell
 pip install torch numpy
 python ..\train_model.py ..\dataset\
 ```
 
-This walks `dataset/benign/` and `dataset/malware/`, extracts 256-d feature
-vectors from each APK (same algorithm as the Rust inference), trains a small
-neural network, and exports `model.onnx` in the current directory.
-
-**Dataset hygiene**: if benign APKs are mixed into `malware/` folders or vice
-versa, the model learns wrong labels and produces garbage at inference time.
-Verify the split before training.
+This walks `dataset/benign/` and `dataset/malware/`, builds a 20K-token
+vocabulary, trains an EmbeddingBag + MLP classifier, and exports
+`model.onnx` + `vocab.json`.
 
 ## Library
 
 ```rust
 use hydradragonml::Model;
 
-let model = Model::load_bin("model.onnx")?;
+let model_bytes = std::fs::read("model.onnx")?;
+let vocab_bytes = std::fs::read("vocab.json")?;
+let model = Model::load(&model_bytes, &vocab_bytes)?;
 let apk = std::fs::read("sample.apk")?;
-let result = model.scan(&apk);
+let result = model.scan(&apk).unwrap();
 println!("malicious={} confidence={}", result.malicious, result.confidence);
 ```
 
 ## On-device (Android)
 
-Ship `model.onnx` as an app asset. The JNI bridge in `hydradragonandroid`
-loads it once at init and calls `Model::scan` per APK buffer as part of
-the full scan pipeline (ClamAV + YARA-X + ML + TLSH).
+Ship `model.onnx` + `vocab.json` as app assets. The JNI bridge in
+`hydradragonandroid` loads both at init and calls `Model::scan` per APK.

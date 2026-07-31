@@ -1,31 +1,20 @@
-// src/bin/dump_features.rs olarak projene ekle
-// Cagirma: cargo run --release --bin dump_features -- <apk_yolu>
-//
-// Ciktisi: <apk_yolu>.rust_dense.json  -> Python'un urettigi
-// <apk_yolu>.python_dense.json ile birebir karsilastir.
-//
-// Ayrica total_entries / unique_names / scan_ok / scan_failed sayilarini
-// yazdirir - Python zipfile ile Rust zip crate arasindaki farki bulmak icin.
-
 use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::io::{Cursor, Read};
-
-use hydradragonml::features;
 
 const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        eprintln!("Kullanim: dump_features <apk_yolu>");
+        eprintln!("Usage: dump_features <apk_path>");
         std::process::exit(1);
     }
     let apk_path = &args[1];
-    let bytes = fs::read(apk_path).expect("apk okunamadi");
+    let bytes = fs::read(apk_path).expect("cannot read apk");
 
-    // --- Debug: entry sayimi, Python zipfile ile karsilastirmak icin ---
+    // Debug: entry counting
     {
         let reader = Cursor::new(&bytes);
         match zip::ZipArchive::new(reader) {
@@ -90,26 +79,21 @@ fn main() {
                 );
             }
             Err(e) => {
-                println!("ZIP ACILAMADI: {e}");
+                println!("ZIP error: {e}");
             }
         }
     }
 
-    // --- Asil feature extraction (gercek pipeline ile ayni) ---
-    let feats = match features::extract(&bytes) {
-        Some(f) => f,
+    // Tokenize using a dummy vocabulary (all tokens map to UNK=0)
+    let vocab = std::collections::HashMap::new();
+    let tokenizer = hydradragonml::features::Tokenizer::new(vocab);
+    let indices = match tokenizer.tokenize(&bytes) {
+        Some(v) => v,
         None => {
-            eprintln!("ERROR: features::extract None dondu (zip acilamadi / token yok)");
+            eprintln!("ERROR: tokenize returned None");
             std::process::exit(1);
         }
     };
-
-    println!("token_count={}", feats.tokens.len());
-    println!("dense={:?}", feats.dense);
-
-    let parts: Vec<String> = feats.dense.iter().map(|x| x.to_string()).collect();
-    let json = format!("[{}]", parts.join(","));
-    let out_path = format!("{}.rust_dense.json", apk_path);
-    fs::write(&out_path, json).expect("yazilamadi");
-    println!("-> dense vektor yazildi: {}", out_path);
+    println!("token_count={}", indices.len());
+    println!("first_20_tokens={:?}", &indices[..indices.len().min(20)]);
 }
