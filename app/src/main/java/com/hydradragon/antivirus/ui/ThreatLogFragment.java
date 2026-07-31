@@ -14,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.hydradragon.antivirus.R;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,8 +29,9 @@ import java.util.List;
 public class ThreatLogFragment extends Fragment {
 
     private LinearLayout containerLogs;
+    private String pendingExportBlock = null;
 
-    private final androidx.activity.result.ActivityResultLauncher<String> exportLauncher =
+    private final ActivityResultLauncher<String> exportLauncher =
         registerForActivityResult(new ActivityResultContracts.CreateDocument("text/plain"),
             uri -> {
                 if (uri == null) return;
@@ -37,7 +39,16 @@ public class ThreatLogFragment extends Fragment {
                 Toast.makeText(getContext(), R.string.threat_log_exported_toast, Toast.LENGTH_SHORT).show();
             });
 
-    private final androidx.activity.result.ActivityResultLauncher<String[]> importLauncher =
+    private final ActivityResultLauncher<String> singleExportLauncher =
+        registerForActivityResult(new ActivityResultContracts.CreateDocument("text/plain"),
+            uri -> {
+                if (uri == null || pendingExportBlock == null) return;
+                ThreatLogger.exportSingleLog(requireContext(), uri, pendingExportBlock);
+                pendingExportBlock = null;
+                Toast.makeText(getContext(), R.string.threat_log_exported_toast, Toast.LENGTH_SHORT).show();
+            });
+
+    private final ActivityResultLauncher<String[]> importLauncher =
         registerForActivityResult(new ActivityResultContracts.OpenDocument(),
             uri -> {
                 if (uri == null) return;
@@ -95,7 +106,6 @@ public class ThreatLogFragment extends Fragment {
             return;
         }
 
-        // Parse log entries separated by timestamp headers e.g. [2026-07-31 ...
         List<String> entries = parseLogEntries(rawLogs);
         if (entries.isEmpty()) {
             renderEmptyState();
@@ -121,7 +131,6 @@ public class ThreatLogFragment extends Fragment {
         emptyCard.addView(shieldIcon, iconParams);
 
         TextView title = new TextView(getContext());
-        title.setText(R.string.threat_log_clear_confirm); // or clean message
         title.setText("Hiçbir Tehdit Bulunmuyor");
         title.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
         title.setTextSize(16);
@@ -161,15 +170,16 @@ public class ThreatLogFragment extends Fragment {
 
     private void renderLogCard(String logBlock) {
         LinearLayout card = new LinearLayout(getContext());
-        card.setOrientation(LinearLayout.VERTICAL);
+        card.setOrientation(LinearLayout.HORIZONTAL);
         card.setBackgroundResource(R.drawable.card_background);
-        card.setPadding(32, 24, 32, 24);
+        card.setPadding(28, 24, 28, 24);
 
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        cardParams.setMargins(0, 0, 0, 24);
+        cardParams.setMargins(0, 0, 0, 20);
         card.setLayoutParams(cardParams);
 
+        // Content on the left
         TextView contentTv = new TextView(getContext());
         contentTv.setText(logBlock);
         contentTv.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
@@ -180,7 +190,53 @@ public class ThreatLogFragment extends Fragment {
         contentTv.setMovementMethod(LinkMovementMethod.getInstance());
         contentTv.setLinksClickable(true);
 
-        card.addView(contentTv);
+        LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        card.addView(contentTv, textParams);
+
+        // Action buttons column on the right
+        LinearLayout actionCol = new LinearLayout(getContext());
+        actionCol.setOrientation(LinearLayout.VERTICAL);
+        actionCol.setGravity(android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL);
+        LinearLayout.LayoutParams colParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        colParams.setMargins(16, 0, 0, 0);
+        actionCol.setLayoutParams(colParams);
+
+        // Top right: Delete button (Trash icon)
+        ImageView btnDelete = new ImageView(getContext());
+        btnDelete.setImageResource(R.drawable.ic_trash);
+        btnDelete.setColorFilter(ContextCompat.getColor(requireContext(), R.color.threat_red));
+        btnDelete.setBackgroundResource(R.drawable.btn_rounded_secondary);
+        btnDelete.setPadding(16, 16, 16, 16);
+        btnDelete.setClickable(true);
+        btnDelete.setFocusable(true);
+        btnDelete.setOnClickListener(v -> {
+            ThreatLogger.deleteSingleLog(requireContext(), logBlock);
+            refreshLogs();
+            Toast.makeText(getContext(), R.string.threat_log_cleared_toast, Toast.LENGTH_SHORT).show();
+        });
+
+        LinearLayout.LayoutParams btnDelParams = new LinearLayout.LayoutParams(80, 80);
+        actionCol.addView(btnDelete, btnDelParams);
+
+        // Bottom right: Export button (Export icon)
+        ImageView btnExportSingle = new ImageView(getContext());
+        btnExportSingle.setImageResource(R.drawable.ic_export_single);
+        btnExportSingle.setColorFilter(ContextCompat.getColor(requireContext(), R.color.neon_cyan));
+        btnExportSingle.setBackgroundResource(R.drawable.btn_rounded_secondary);
+        btnExportSingle.setPadding(16, 16, 16, 16);
+        btnExportSingle.setClickable(true);
+        btnExportSingle.setFocusable(true);
+        btnExportSingle.setOnClickListener(v -> {
+            pendingExportBlock = logBlock;
+            singleExportLauncher.launch("threat_entry.txt");
+        });
+
+        LinearLayout.LayoutParams btnExpParams = new LinearLayout.LayoutParams(80, 80);
+        btnExpParams.setMargins(0, 16, 0, 0);
+        actionCol.addView(btnExportSingle, btnExpParams);
+
+        card.addView(actionCol);
         containerLogs.addView(card);
     }
 }
