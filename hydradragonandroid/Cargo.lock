@@ -2079,6 +2079,11 @@ dependencies = [
 [[package]]
 name = "daachorse"
 version = "4.0.0"
+source = "git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=main#0f7e02f389edced90922cb9830800628fc43ed61"
+
+[[package]]
+name = "daachorse"
+version = "4.0.0"
 source = "git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=pglo#b38d13ffd18cd826209384b880c082c0a2980961"
 
 [[package]]
@@ -3511,9 +3516,9 @@ checksum = "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87"
 
 [[package]]
 name = "hybrid-array"
-version = "0.4.13"
+version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "818356c5132c1fede50f837ca96afbe78ff42413047f4abb886217845e1b6c8c"
+checksum = "707114b52a152fa7bdb290cd7cd5912d9467273b6d74e21b8d81aca1f8533f6b"
 dependencies = [
  "typenum",
 ]
@@ -8683,7 +8688,7 @@ checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 [[package]]
 name = "yara-x"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#af40c4a26a6047ad0f21da5d53e4a90b98c28abb"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
 dependencies = [
  "annotate-snippets",
  "anyhow",
@@ -8695,7 +8700,7 @@ dependencies = [
  "codepage",
  "const-oid 0.9.6",
  "crc32fast",
- "daachorse 4.0.0 (git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=pglo)",
+ "daachorse 4.0.0 (git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=main)",
  "der-parser",
  "digest 0.10.7",
  "dsa",
@@ -8754,7 +8759,7 @@ dependencies = [
 [[package]]
 name = "yara-x-macros"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#af40c4a26a6047ad0f21da5d53e4a90b98c28abb"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
 dependencies = [
  "darling 0.23.0",
  "proc-macro2",
@@ -8765,7 +8770,7 @@ dependencies = [
 [[package]]
 name = "yara-x-parser"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#af40c4a26a6047ad0f21da5d53e4a90b98c28abb"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
 dependencies = [
  "ascii_tree",
  "bitflags 2.13.1",
@@ -8782,7 +8787,7 @@ dependencies = [
 [[package]]
 name = "yara-x-proto"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#af40c4a26a6047ad0f21da5d53e4a90b98c28abb"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
 dependencies = [
  "base64 0.23.0",
  "chrono",

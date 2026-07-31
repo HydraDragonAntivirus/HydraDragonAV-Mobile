@@ -529,6 +529,11 @@ dependencies = [
 [[package]]
 name = "daachorse"
 version = "4.0.0"
+source = "git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=main#0f7e02f389edced90922cb9830800628fc43ed61"
+
+[[package]]
+name = "daachorse"
+version = "4.0.0"
 source = "git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=pglo#b38d13ffd18cd826209384b880c082c0a2980961"
 
 [[package]]
@@ -616,13 +621,13 @@ dependencies = [
 
 [[package]]
 name = "displaydoc"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ac70aa55017e108007fbaf5aa0f54b021c98f92ff8af59d42eda9da96e3dd4f"
+checksum = "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -657,9 +662,9 @@ dependencies = [
 
 [[package]]
 name = "either"
-version = "1.16.0"
+version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
+checksum = "9e5e8f6c15a24b9a3ee5efec809ccd006d3b30e8b3bb63c39af737c7f87daa1d"
 
 [[package]]
 name = "elliptic-curve"
@@ -983,7 +988,7 @@ dependencies = [
 name = "hydradragonclamav"
 version = "0.1.0"
 dependencies = [
- "daachorse",
+ "daachorse 4.0.0 (git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=pglo)",
  "image",
  "memchr",
  "regex",
@@ -1609,9 +1614,9 @@ dependencies = [
 
 [[package]]
 name = "psl"
-version = "2.1.221"
+version = "2.1.223"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "131e7bc39f71eb433f96399150b9e6729908dab3640467a3e90d5c5a77831568"
+checksum = "c0dedad316e05de220cbf3fd8bfb69f3df8755dde2d7d479211827b595168a93"
 dependencies = [
  "psl-types",
 ]
@@ -2817,7 +2822,7 @@ checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 [[package]]
 name = "yara-x"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#af40c4a26a6047ad0f21da5d53e4a90b98c28abb"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
 dependencies = [
  "annotate-snippets",
  "anyhow",
@@ -2829,7 +2834,7 @@ dependencies = [
  "codepage",
  "const-oid",
  "crc32fast",
- "daachorse",
+ "daachorse 4.0.0 (git+https://github.com/HydraDragonAntivirus/daachorse.git?branch=main)",
  "der-parser",
  "digest",
  "dsa",
@@ -2888,7 +2893,7 @@ dependencies = [
 [[package]]
 name = "yara-x-macros"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#af40c4a26a6047ad0f21da5d53e4a90b98c28abb"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -2899,7 +2904,7 @@ dependencies = [
 [[package]]
 name = "yara-x-parser"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#af40c4a26a6047ad0f21da5d53e4a90b98c28abb"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
 dependencies = [
  "ascii_tree",
  "bitflags",
@@ -2916,7 +2921,7 @@ dependencies = [
 [[package]]
 name = "yara-x-proto"
 version = "1.19.0"
-source = "git+https://github.com/HydraDragonAntivirus/yara-x#af40c4a26a6047ad0f21da5d53e4a90b98c28abb"
+source = "git+https://github.com/HydraDragonAntivirus/yara-x#eb3bab9a2de9b632d221bff41f095a77af18f1be"
 dependencies = [
  "base64",
  "chrono",
