@@ -12,6 +12,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 hydradragonclamav = { path = "../hydradragonclamav" }
 hydradragonml = { path = "../hydradragonml" }
+burn-wgpu = "0.21"
 hydradragonextractor = { path = "../hydradragonextractor" }
 md-5 = "0.11"
 jni = "0.22"
@@ -33,7 +34,7 @@ dex-analysis = { git = "https://github.com/FossRust/dex-parser-analyzer", branch
 # NSRL-known-good row skips the heavy clamav/YARA/ML/TLSH pass instead of
 # rescanning what Java's whitelist already vouches for. "bundled" statically
 # links sqlite3 (no cross-compiled system dependency needed for the .so).
-rusqlite = { version = "0.40", features = ["bundled"] }
+rusqlite = { version = "0.37", features = ["bundled"] }
 serde_json = "1.0"
 # Lets the native-init worker thread lower its own scheduling priority (see
 # ANDROID_PRIORITY_BACKGROUND usage in lib.rs) so ~8s of ClamAV/YARA/ML/TLSH

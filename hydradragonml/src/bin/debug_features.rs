@@ -4,10 +4,10 @@ fn main() {
         r"C:\Users\semae\OneDrive\Belgeler\GitHub\HydraDragonAV-Mobile\dataset\benign\F-Droid\16-07-2026-14.49\a2dp.Vol_169.apk",
     ];
 
-    let model_bytes = match std::fs::read("model.onnx") {
+    let model_bytes = match std::fs::read("model.mpk") {
         Ok(b) => b,
         Err(e) => {
-            eprintln!("ERROR: cannot read model.onnx: {e}");
+            eprintln!("ERROR: cannot read model.mpk: {e}");
             return;
         }
     };
@@ -19,7 +19,8 @@ fn main() {
         }
     };
 
-    let model = match hydradragonml::Model::load(&model_bytes, &vocab_bytes) {
+    let device = burn_wgpu::WgpuDevice::default();
+    let model = match hydradragonml::Model::load(&model_bytes, &vocab_bytes, device) {
         Ok(m) => m,
         Err(e) => {
             eprintln!("ERROR: Model::load: {e}");

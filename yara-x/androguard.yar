@@ -95,7 +95,7 @@ rule BaDoink : official android
 //		$type_c_4 = "FLAG_REQUEST_ENHANCED_WEB_ACCESSIBILITY"
 
 	condition:
-		androguard.app_name("BaDoink") or
+		hydradragon.app_name("BaDoink") or
 		//all of ($url_string_*) or
 		$type_a_1 or
 		all of ($type_b*) 
@@ -112,7 +112,7 @@ rule assd_developer : official android
 		sample = "cb9721c524f155478e9402d213e240b9f99eaba86fcbce0571cd7da4e258a79e"
 
 	condition:
-		androguard.certificate.sha1("ED9A1CE1F18A1097DCCC5C0CB005E3861DA9C34A")
+		hydradragon.certificate.sha1("ED9A1CE1F18A1097DCCC5C0CB005E3861DA9C34A")
 		
 }
 
@@ -125,8 +125,8 @@ rule batterybotpro : ClickFraud AdFraud SMS Downloader_Trojan android
 
 	condition:
 
-		androguard.activity(/com\.polaris\.BatteryIndicatorPro\.BatteryInfoActivity/i) and
-		androguard.permission(/android\.permission\.SEND_SMS/)
+		hydradragon.activity(/com\.polaris\.BatteryIndicatorPro\.BatteryInfoActivity/i) and
+		hydradragon.permission(/android\.permission\.SEND_SMS/)
 		
 }
 
@@ -137,13 +137,13 @@ rule sensual_woman: chinese android
 		author = "https://twitter.com/plutec_net"
 		reference = "https://koodous.com/"
 	condition:
-		androguard.package_name(/com.phone.gzlok.live/)
-		or androguard.package_name(/com.yongrun.app.sxmn/)
-		or androguard.package_name(/com.wnm.zycs/)
-		or androguard.package_name(/com.charile.chen/i)
-		or androguard.package_name(/com.sp.meise/i)
-		or androguard.package_name(/com.legame.wfxk.wjyg/)
-		or androguard.package_name(/com.video.uiA/i)
+		hydradragon.package_name(/com.phone.gzlok.live/)
+		or hydradragon.package_name(/com.yongrun.app.sxmn/)
+		or hydradragon.package_name(/com.wnm.zycs/)
+		or hydradragon.package_name(/com.charile.chen/i)
+		or hydradragon.package_name(/com.sp.meise/i)
+		or hydradragon.package_name(/com.legame.wfxk.wjyg/)
+		or hydradragon.package_name(/com.video.uiA/i)
 }
 
 rule chinese2 : sms_sender android
@@ -152,12 +152,12 @@ rule chinese2 : sms_sender android
 		author = "https://twitter.com/plutec_net"
 		reference = "https://koodous.com/"
 	condition:
-		androguard.package_name(/com.adr.yykbplayer/) or 
-		androguard.package_name(/sdej.hpcite.icep/) or
-		androguard.package_name(/p.da.wdh/) or
-		androguard.package_name(/com.shenqi.video.sjyj.gstx/) or
-		androguard.package_name(/cjbbtwkj.xyduzi.fa/) or
-		androguard.package_name(/kr.mlffstrvwb.mu/)
+		hydradragon.package_name(/com.adr.yykbplayer/) or 
+		hydradragon.package_name(/sdej.hpcite.icep/) or
+		hydradragon.package_name(/p.da.wdh/) or
+		hydradragon.package_name(/com.shenqi.video.sjyj.gstx/) or
+		hydradragon.package_name(/cjbbtwkj.xyduzi.fa/) or
+		hydradragon.package_name(/kr.mlffstrvwb.mu/)
 }
 
 rule chinese_porn : SMSSend android
@@ -166,8 +166,8 @@ rule chinese_porn : SMSSend android
 		author = "https://twitter.com/plutec_net"
 		reference = "https://koodous.com/"
 	condition:
-		androguard.package_name("com.tzi.shy") or
-		androguard.package_name("com.shenqi.video.nfkw.neim")
+		hydradragon.package_name("com.tzi.shy") or
+		hydradragon.package_name("com.shenqi.video.nfkw.neim")
 }
 
 rule chineseporn4 : SMSSend android
@@ -176,8 +176,8 @@ rule chineseporn4 : SMSSend android
 		author = "https://twitter.com/plutec_net"
 		reference = "https://koodous.com/"
 	condition:
-		androguard.activity(/com\.shenqi\.video\.Welcome/) or
-		androguard.package_name("org.mygson.videoa.zw")
+		hydradragon.activity(/com\.shenqi\.video\.Welcome/) or
+		hydradragon.package_name("org.mygson.videoa.zw")
 }
 
 rule chineseporn5 : SMSSend android
@@ -186,12 +186,12 @@ rule chineseporn5 : SMSSend android
 		author = "https://twitter.com/plutec_net"
 		reference = "https://koodous.com/"
 	condition:
-		androguard.package_name("com.shenqi.video.ycef.svcr") or 
-		androguard.package_name("dxas.ixa.xvcekbxy") or
-		androguard.package_name("com.video.ui") or 
-		androguard.package_name("com.qq.navideo") or
-		androguard.package_name("com.android.sxye.wwwl") or
-		androguard.certificate.issuer(/llfovtfttfldddcffffhhh/)
+		hydradragon.package_name("com.shenqi.video.ycef.svcr") or 
+		hydradragon.package_name("dxas.ixa.xvcekbxy") or
+		hydradragon.package_name("com.video.ui") or 
+		hydradragon.package_name("com.qq.navideo") or
+		hydradragon.package_name("com.android.sxye.wwwl") or
+		hydradragon.certificate.issuer(/llfovtfttfldddcffffhhh/)
 		
 }
 
@@ -246,8 +246,8 @@ rule fake_facebook: fake android
 		  author = "https://twitter.com/Diviei"
 		  reference = "https://koodous.com/"
 	condition:
-		androguard.app_name("Facebook")
-		and not androguard.certificate.sha1("A0E980408030C669BCEB38FEFEC9527BE6C3DDD0")
+		hydradragon.app_name("Facebook")
+		and not hydradragon.certificate.sha1("A0E980408030C669BCEB38FEFEC9527BE6C3DDD0")
 }
 
 rule fake_facebook_2 : fake android
@@ -266,9 +266,9 @@ rule fake_facebook_2 : fake android
 		hash_7 = "7345c3124891b34607a07e93c8ab6dcbbf513e24e936c3710434b085981b815a"
 		
 	condition:
-		androguard.app_name("Facebook") and
-		not androguard.package_name(/com.facebook.katana/) and 
-		not androguard.certificate.issuer(/O=Facebook Mobile/)	
+		hydradragon.app_name("Facebook") and
+		not hydradragon.package_name(/com.facebook.katana/) and 
+		not hydradragon.certificate.issuer(/O=Facebook Mobile/)	
 }
 
 rule fake_instagram: fake android
@@ -277,26 +277,26 @@ rule fake_instagram: fake android
 		  author = "https://twitter.com/Diviei"
 		  reference = "https://koodous.com/"
 	condition:
-		androguard.app_name("Instagram")
-		and not androguard.certificate.sha1("76D72C35164513A4A7EBA098ACCB2B22D2229CBE")
+		hydradragon.app_name("Instagram")
+		and not hydradragon.certificate.sha1("76D72C35164513A4A7EBA098ACCB2B22D2229CBE")
 }
 
 rule fake_king_games: fake android
 {
 	condition:
-		(androguard.app_name("AlphaBetty Saga")
-		or androguard.app_name("Candy Crush Soda Saga")
-		or androguard.app_name("Candy Crush Saga")
-		or androguard.app_name("Farm Heroes Saga")
-		or androguard.app_name("Pet Rescue Saga")
-		or androguard.app_name("Bubble Witch 2 Saga")
-		or androguard.app_name("Scrubby Dubby Saga")
-		or androguard.app_name("Diamond Digger Saga")
-		or androguard.app_name("Papa Pear Saga")
-		or androguard.app_name("Pyramid Solitaire Saga")
-		or androguard.app_name("Bubble Witch Saga")
-		or androguard.app_name("King Challenge"))
-		and not androguard.certificate.sha1("9E93B3336C767C3ABA6FCC4DEADA9F179EE4A05B")
+		(hydradragon.app_name("AlphaBetty Saga")
+		or hydradragon.app_name("Candy Crush Soda Saga")
+		or hydradragon.app_name("Candy Crush Saga")
+		or hydradragon.app_name("Farm Heroes Saga")
+		or hydradragon.app_name("Pet Rescue Saga")
+		or hydradragon.app_name("Bubble Witch 2 Saga")
+		or hydradragon.app_name("Scrubby Dubby Saga")
+		or hydradragon.app_name("Diamond Digger Saga")
+		or hydradragon.app_name("Papa Pear Saga")
+		or hydradragon.app_name("Pyramid Solitaire Saga")
+		or hydradragon.app_name("Bubble Witch Saga")
+		or hydradragon.app_name("King Challenge"))
+		and not hydradragon.certificate.sha1("9E93B3336C767C3ABA6FCC4DEADA9F179EE4A05B")
 }
 
 rule fake_market: fake android
@@ -306,7 +306,7 @@ rule fake_market: fake android
 		reference = "https://koodous.com/"
 
 	condition:
-		androguard.package_name("com.minitorrent.kimill") 
+		hydradragon.package_name("com.minitorrent.kimill") 
 }
 
 rule fake_minecraft: fake android
@@ -315,9 +315,9 @@ rule fake_minecraft: fake android
 		author = "https://twitter.com/plutec_net"
 		reference = "https://koodous.com/"
 	condition:
-		( androguard.app_name("Minecraft: Pocket Edition") or 
-			androguard.app_name("Minecraft - Pocket Edition") )
-		and not androguard.package_name("com.mojang.minecraftpe")
+		( hydradragon.app_name("Minecraft: Pocket Edition") or 
+			hydradragon.app_name("Minecraft - Pocket Edition") )
+		and not hydradragon.package_name("com.mojang.minecraftpe")
 }
 
 rule fake_whatsapp: fake
@@ -326,8 +326,8 @@ rule fake_whatsapp: fake
 		  author = "https://twitter.com/Diviei"
 		  reference = "https://koodous.com/"
 	condition:
-		androguard.app_name("WhatsApp") and
-		not androguard.certificate.sha1("38A0F7D505FE18FEC64FBF343ECAAAF310DBD799")
+		hydradragon.app_name("WhatsApp") and
+		not hydradragon.certificate.sha1("38A0F7D505FE18FEC64FBF343ECAAAF310DBD799")
 }
 
 
@@ -439,18 +439,18 @@ rule hacking_team : stcert android
 
 	condition:
 		(any of ($string_a_*) and any of ($string_b_*) and $string_c and $string_d) or
-		androguard.certificate.sha1("B1BC968BD4F49D622AA89A81F2150152A41D829C") or 	  
-		androguard.certificate.sha1("3FEC88BA49773680E2A3040483806F56E6E8502E") or 
-		androguard.certificate.sha1("B0A4A4880FA5345D6B3B00C0C588A39815D3872E") or 
-		androguard.certificate.sha1("EC2184676D4AE153E63987326666BA0C554A4A60") or 
-		androguard.certificate.sha1("A7394CBAB09D35C69DA7FABB1A7870BE987A5F77")	or
-		androguard.certificate.sha1("A1131C7F816D65670567D6C7041F30E380754022") or
-		androguard.certificate.sha1("4E40663CC29C1FE7A436810C79CAB8F52474133B") or
-		androguard.certificate.sha1("159B4F6C03D43F27339E06ABFD2DE8D8D65516BC") or
-		androguard.certificate.sha1("3EEE4E45B174405D64F877EFC7E5905DCCD73816") or
-		androguard.certificate.sha1("9CE815802A672B75C078D920A5D506BBBAC0D5C9") or
-		androguard.certificate.sha1("C4CF31DBEF79393FD2AD617E79C27BFCF19EFBB3") or
-		androguard.certificate.sha1("2125821BC97CF4B7591E5C771C06C9C96D24DF8F")
+		hydradragon.certificate.sha1("B1BC968BD4F49D622AA89A81F2150152A41D829C") or 	  
+		hydradragon.certificate.sha1("3FEC88BA49773680E2A3040483806F56E6E8502E") or 
+		hydradragon.certificate.sha1("B0A4A4880FA5345D6B3B00C0C588A39815D3872E") or 
+		hydradragon.certificate.sha1("EC2184676D4AE153E63987326666BA0C554A4A60") or 
+		hydradragon.certificate.sha1("A7394CBAB09D35C69DA7FABB1A7870BE987A5F77")	or
+		hydradragon.certificate.sha1("A1131C7F816D65670567D6C7041F30E380754022") or
+		hydradragon.certificate.sha1("4E40663CC29C1FE7A436810C79CAB8F52474133B") or
+		hydradragon.certificate.sha1("159B4F6C03D43F27339E06ABFD2DE8D8D65516BC") or
+		hydradragon.certificate.sha1("3EEE4E45B174405D64F877EFC7E5905DCCD73816") or
+		hydradragon.certificate.sha1("9CE815802A672B75C078D920A5D506BBBAC0D5C9") or
+		hydradragon.certificate.sha1("C4CF31DBEF79393FD2AD617E79C27BFCF19EFBB3") or
+		hydradragon.certificate.sha1("2125821BC97CF4B7591E5C771C06C9C96D24DF8F")
 		//97257C6D8F6DA60EA27D2388D9AE252657FF3304 this certification could be stolen
 		//03EA873D5D13707B0C278A0055E452416054E27B this certification could be stolen
 		//B8D5E3F0BCAD2EB03BB34AEE2B3F63FC5162C56B this certification could be stolen
@@ -553,7 +553,7 @@ rule mobidash : advertising
 		$b = "IDATx"
 
 	condition:
-		($a or $b) and androguard.activity(/mobi.dash.*/)
+		($a or $b) and hydradragon.activity(/mobi.dash.*/)
 }
 
 rule fraudulents_2 : certificates android
@@ -563,12 +563,12 @@ rule fraudulents_2 : certificates android
 		author = "https://twitter.com/fdrg21"
 
 	condition:
-		androguard.certificate.sha1("A5D9C9A40A3786D631210E8FCB9CF7A1BC5B3062") or
-		androguard.certificate.sha1("B4142B617997345809736842147F97F46059FDE3") or
-		androguard.certificate.sha1("950A545EA156A0E44B3BAB5F432DCD35005A9B70") or
-		androguard.certificate.sha1("DE18FA0C68E6C9E167262F1F4ED984A5F00FD78C") or
-		androguard.certificate.sha1("81E8E202C539F7AEDF6138804BE870338F81B356") or
-		androguard.certificate.sha1("5A051047F2434DDB2CAA65898D9B19ED9665F759")
+		hydradragon.certificate.sha1("A5D9C9A40A3786D631210E8FCB9CF7A1BC5B3062") or
+		hydradragon.certificate.sha1("B4142B617997345809736842147F97F46059FDE3") or
+		hydradragon.certificate.sha1("950A545EA156A0E44B3BAB5F432DCD35005A9B70") or
+		hydradragon.certificate.sha1("DE18FA0C68E6C9E167262F1F4ED984A5F00FD78C") or
+		hydradragon.certificate.sha1("81E8E202C539F7AEDF6138804BE870338F81B356") or
+		hydradragon.certificate.sha1("5A051047F2434DDB2CAA65898D9B19ED9665F759")
 		
 }
 
@@ -580,7 +580,7 @@ rule leadbolt : advertising
 		description = "Leadbolt"
 		
 	condition:
-		androguard.url(/http:\/\/ad.leadbolt.net/)
+		hydradragon.url(/http:\/\/ad.leadbolt.net/)
 }
 
 rule ransomware : svpeng android
@@ -648,9 +648,9 @@ rule smsfraud : ganga android
 		$string_a_2 = "2e6081a2-a063-45c7-ab90-5db596e42c7c"
 
 	condition:
-		androguard.package_name("com.yr.sx") or
+		hydradragon.package_name("com.yr.sx") or
 		all of ($string_a_*) or
-		androguard.activity(/com.snowfish.cn.ganga.offline.helper.SFGameSplashActivity/)
+		hydradragon.activity(/com.snowfish.cn.ganga.offline.helper.SFGameSplashActivity/)
 		
 		
 }
@@ -670,7 +670,7 @@ rule sms_fraud : MSACM32 android
 
 	condition:
 		all of ($string_*) and
-		androguard.permission(/android.permission.SEND_SMS/)
+		hydradragon.permission(/android.permission.SEND_SMS/)
 		
 }
 
@@ -690,7 +690,7 @@ rule sms_fraud_gen : generic android
 
 	condition:
 		$a and $b and $c and
-		androguard.permission(/android.permission.SEND_SMS/)
+		hydradragon.permission(/android.permission.SEND_SMS/)
 }
 
 rule smsfraud_apk : android
@@ -702,7 +702,7 @@ rule smsfraud_apk : android
 		sample = "79b35a99f16de6912d6193f06361ac8bb75ea3a067f3dbc1df055418824f813c"
 
 	condition:
-		androguard.certificate.sha1("9E1B8719D80656E9EADAAB4251B2CFB4C8188835")
+		hydradragon.certificate.sha1("9E1B8719D80656E9EADAAB4251B2CFB4C8188835")
 		
 }
 
@@ -715,7 +715,7 @@ rule tinhvan : android
 		sample = "0f7e995ff7075af2d0f8d60322975d610e888884922a89fda9a61c228374c5c5"
 
 	condition:
-		androguard.certificate.sha1("0DFBBDB7735517748C3DEF3B6DEC2A800182D1D5")
+		hydradragon.certificate.sha1("0DFBBDB7735517748C3DEF3B6DEC2A800182D1D5")
 		
 }
 
@@ -747,10 +747,10 @@ rule Android_AliPay_smsStealer : android
 		$str_4 = "mPhoneNumber"
 
 	condition:
-		androguard.certificate.sha1("0CDFC700D0BDDC3EA50D71B54594BF3711D0F5B2") or
-		androguard.permission(/android.permission.RECEIVE_SMS/) and
-		androguard.permission(/android.permission.INTERNET/) and
-		androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/) and 		
+		hydradragon.certificate.sha1("0CDFC700D0BDDC3EA50D71B54594BF3711D0F5B2") or
+		hydradragon.permission(/android.permission.RECEIVE_SMS/) and
+		hydradragon.permission(/android.permission.INTERNET/) and
+		hydradragon.permission(/android.permission.RECEIVE_BOOT_COMPLETED/) and 		
 		all of ($str_*)
 }
 
@@ -765,7 +765,7 @@ rule coudw: amtrckr
 		family = "coudw"
 
 	condition:
-		androguard.url(/s\.cloudsota\.com/)
+		hydradragon.url(/s\.cloudsota\.com/)
 }
 
 rule z3core: amtrckr
@@ -774,7 +774,7 @@ rule z3core: amtrckr
 		family = "z3core"
 
 	condition:
-		androguard.url(/lexsmilefux\.link/)
+		hydradragon.url(/lexsmilefux\.link/)
 }
 
 rule gtalocker: amtrckr
@@ -783,7 +783,7 @@ rule gtalocker: amtrckr
 		family = "gtalocker"
 
 	condition:
-		androguard.url(/niktoegoneyznaet0kol\.pw/)
+		hydradragon.url(/niktoegoneyznaet0kol\.pw/)
 }
 
 rule marcher: amtrckr
@@ -792,19 +792,19 @@ rule marcher: amtrckr
 		family = "marcher"
 
 	condition:
-		androguard.url(/104\.238\.176\.9/) or 
-		androguard.url(/golioni\.tk/) or 
-		androguard.url(/poloclubs\.tk/) or 
-		androguard.url(/thejcb\.ru/) or 
-		androguard.url(/shgt\.tk/) or 
-		androguard.url(/pologt\.tk/) or 
-		androguard.url(/108\.61\.211\.219/) or 
-		androguard.url(/vipcoon\.com/) or 
-		androguard.url(/firenzonne\.com/) or 
-		androguard.url(/extgta\.tk/) or 
-		androguard.url(/manaclubs\.tk/) or 
-		androguard.url(/151\.248\.126\.183/) or 
-		androguard.url(/188\.209\.49\.198/)
+		hydradragon.url(/104\.238\.176\.9/) or 
+		hydradragon.url(/golioni\.tk/) or 
+		hydradragon.url(/poloclubs\.tk/) or 
+		hydradragon.url(/thejcb\.ru/) or 
+		hydradragon.url(/shgt\.tk/) or 
+		hydradragon.url(/pologt\.tk/) or 
+		hydradragon.url(/108\.61\.211\.219/) or 
+		hydradragon.url(/vipcoon\.com/) or 
+		hydradragon.url(/firenzonne\.com/) or 
+		hydradragon.url(/extgta\.tk/) or 
+		hydradragon.url(/manaclubs\.tk/) or 
+		hydradragon.url(/151\.248\.126\.183/) or 
+		hydradragon.url(/188\.209\.49\.198/)
 }
 
 rule lenovo_reaper: amtrckr
@@ -813,7 +813,7 @@ rule lenovo_reaper: amtrckr
 		family = "lenovo_reaper"
 
 	condition:
-		androguard.url(/uefsr\.lenovomm\.com/)
+		hydradragon.url(/uefsr\.lenovomm\.com/)
 }
 
 rule unknown_1: amtrckr
@@ -822,10 +822,10 @@ rule unknown_1: amtrckr
 		family = "unknown"
 
 	condition:
-		androguard.url(/222\.76\.213\.20/) or 
-		androguard.url(/103\.38\.42\.236/) or 
-		androguard.url(/103\.243\.181\.41/) or 
-		androguard.url(/123\.1\.157\.4/)
+		hydradragon.url(/222\.76\.213\.20/) or 
+		hydradragon.url(/103\.38\.42\.236/) or 
+		hydradragon.url(/103\.243\.181\.41/) or 
+		hydradragon.url(/123\.1\.157\.4/)
 }
 
 rule jagonca: amtrckr
@@ -834,8 +834,8 @@ rule jagonca: amtrckr
 		family = "jagonca"
 
 	condition:
-		androguard.url(/abra-k0dabra\.com/) or 
-		androguard.url(/heibe-titten\.com/)
+		hydradragon.url(/abra-k0dabra\.com/) or 
+		hydradragon.url(/heibe-titten\.com/)
 }
 
 rule thoughtcrime: amtrckr
@@ -844,11 +844,11 @@ rule thoughtcrime: amtrckr
 		family = "thoughtcrime"
 
 	condition:
-		androguard.url(/losbalonazos\.com/) or 
-		androguard.url(/www\.oguhtell\.ch/) or 
-		androguard.url(/szaivert-numis\.at/) or 
-		androguard.url(/edda-mally\.at/) or 
-		androguard.url(/clubk-ginza\.net/)
+		hydradragon.url(/losbalonazos\.com/) or 
+		hydradragon.url(/www\.oguhtell\.ch/) or 
+		hydradragon.url(/szaivert-numis\.at/) or 
+		hydradragon.url(/edda-mally\.at/) or 
+		hydradragon.url(/clubk-ginza\.net/)
 }
 
 rule slocker: amtrckr
@@ -857,7 +857,7 @@ rule slocker: amtrckr
 		family = "slocker"
 
 	condition:
-		androguard.url(/aerofigg\.org/)
+		hydradragon.url(/aerofigg\.org/)
 }
 
 rule infostealer: amtrckr
@@ -866,7 +866,7 @@ rule infostealer: amtrckr
 		family = "infostealer"
 
 	condition:
-		androguard.url(/koko02\.ru/)
+		hydradragon.url(/koko02\.ru/)
 }
 
 rule pornlocker: amtrckr
@@ -875,8 +875,8 @@ rule pornlocker: amtrckr
 		family = "pornlocker"
 
 	condition:
-		androguard.url(/playmarketcheck\.com/) or 
-		androguard.url(/pornigy\.biz/)
+		hydradragon.url(/playmarketcheck\.com/) or 
+		hydradragon.url(/pornigy\.biz/)
 }
 
 rule droidian: amtrckr
@@ -885,7 +885,7 @@ rule droidian: amtrckr
 		family = "droidian"
 
 	condition:
-		androguard.url(/z0\.tkurd\.net/)
+		hydradragon.url(/z0\.tkurd\.net/)
 }
 
 rule androrat: amtrckr
@@ -894,160 +894,160 @@ rule androrat: amtrckr
 		family = "androrat"
 
 	condition:
-		androguard.url(/toyman6699\.no-ip\.info/) or 
-		androguard.url(/aerror\.no-ip\.biz/) or 
-		androguard.url(/androrat\.servegame\.com/) or 
-		androguard.url(/197\.35\.22\.37/) or 
-		androguard.url(/androrat1\.no-ip\.biz/) or 
-		androguard.url(/151\.72\.17\.61/) or 
-		androguard.url(/qwerty1212\.ddns\.net/) or 
-		androguard.url(/recycled\.no-ip\.org/) or 
-		androguard.url(/gert44\.duckdns\.org/) or 
-		androguard.url(/78\.169\.63\.163/) or 
-		androguard.url(/hash0r\.no-ip\.biz/) or 
-		androguard.url(/alpheron\.duckdns\.org/) or 
-		androguard.url(/cricbot\.no-ip\.info/) or 
-		androguard.url(/hazhar77\.no-ip\.biz/) or 
-		androguard.url(/aleem\.top7@gmail\.com/) or 
-		androguard.url(/murryapplicazione\.no-ip\.org/) or 
-		androguard.url(/helloandroid\.no-ip\.org/) or 
-		androguard.url(/79\.170\.54\.154/) or 
-		androguard.url(/mohammad2002\.no-ip\.biz/) or 
-		androguard.url(/1756mostacc\.ddns\.net/) or 
-		androguard.url(/shakaky\.ddns\.net/) or 
-		androguard.url(/asadhashmi\.ddns\.net/) or 
-		androguard.url(/174\.127\.99\.232/) or 
-		androguard.url(/109\.95\.56\.22/) or 
-		androguard.url(/dagohack\.no-ip\.me/) or 
-		androguard.url(/pruebasernesto\.ddns\.net/) or 
-		androguard.url(/zola123\.no-ip\.biz/) or 
-		androguard.url(/mikestar\.no-ip\.biz/) or 
-		androguard.url(/132\.72\.81\.164/) or 
-		androguard.url(/zongkahani\.no-ip\.biz/) or 
-		androguard.url(/florian-pc\.ksueyuj0mtxpt6gn\.myfritz\.net/) or 
-		androguard.url(/kontolanime\.no-ip\.biz/) or 
-		androguard.url(/41\.143\.69\.230/) or 
-		androguard.url(/gentel901\.no-ip\.org/) or 
-		androguard.url(/anonimousdre180\.ddns\.net/) or 
-		androguard.url(/sajadianh\.ddns\.net/) or 
-		androguard.url(/195\.2\.239\.147/) or 
-		androguard.url(/vipmustafa\.no-ip\.info/) or 
-		androguard.url(/alihoseini\.no-ip\.biz/) or 
-		androguard.url(/aymen1852\.ddns\.net/) or 
-		androguard.url(/danialmostafaei\.no-ip\.biz/) or 
-		androguard.url(/100\.1\.254\.38/) or 
-		androguard.url(/sabbah\.duckdns\.org/) or 
-		androguard.url(/89\.95\.11\.159/) or 
-		androguard.url(/telegram-tools\.no-ip\.biz/) or 
-		androguard.url(/myonline\.no-ip\.biz/) or 
-		androguard.url(/84\.241\.6\.106/) or 
-		androguard.url(/linonymousami\.no-ip\.org/) or 
-		androguard.url(/alldebrid\.duckdns\.org/) or 
-		androguard.url(/187\.180\.186\.181/) or 
-		androguard.url(/411022356/) or 
-		androguard.url(/93\.82\.129\.5/) or 
-		androguard.url(/androjan\.ddns\.net/) or 
-		androguard.url(/adelxxbx\.no-ip\.biz/) or 
-		androguard.url(/r3cxw\.ddns\.net/) or 
-		androguard.url(/matgio\.duckdns\.org/) or 
-		androguard.url(/glaive24\.no-ip\.biz/) or 
-		androguard.url(/redcode\.ddns\.net/) or 
-		androguard.url(/151\.56\.227\.79/) or 
-		androguard.url(/shahabhacker\.ddns\.net/) or 
-		androguard.url(/186\.81\.50\.145/) or 
-		androguard.url(/kasofe123123aa\.no-ip\.biz/) or 
-		androguard.url(/tanha\.sit@gmail\.com/) or 
-		androguard.url(/persir\.no-ip\.biz/) or 
-		androguard.url(/moha55\.no-ip\.biz/) or 
-		androguard.url(/androidupdate\.ddns\.net/) or 
-		androguard.url(/charifo1310tok\.no-ip\.biz/) or 
-		androguard.url(/securepurpose\.no-ip\.info/) or 
-		androguard.url(/vpn0\.ddns\.net/) or 
-		androguard.url(/usa20002015\.ddns\.net/) or 
-		androguard.url(/duyguseliberkay\.no-ip\.biz/) or 
-		androguard.url(/miltin2\.no-ip\.org/) or 
-		androguard.url(/droidjack228\.ddns\.net/) or 
-		androguard.url(/mjhooollltuuu\.no-ip\.biz/) or 
-		androguard.url(/nexmopro830\.ddns\.net/) or 
-		androguard.url(/rustyash\.no-ip\.biz/) or 
-		androguard.url(/atsizinoglu\.duckdns\.org/) or 
-		androguard.url(/goog2\.no-ip\.biz/) or 
-		androguard.url(/testan\.ddns\.net/) or 
-		androguard.url(/androrat\.zapto\.org/) or 
-		androguard.url(/blackghostdc\.duckdns\.org/) or 
-		androguard.url(/191\.239\.107\.56/) or 
-		androguard.url(/kalinne\.ddns\.net/) or 
-		androguard.url(/hackcam\.zapto\.org/) or 
-		androguard.url(/andro0161\.no-ip\.info/) or 
-		androguard.url(/replace\.duckdns\.org/) or 
-		androguard.url(/46\.223\.99\.222/) or 
-		androguard.url(/karasqlee9\.no-ip\.org/) or 
-		androguard.url(/kalizinho\.no-ip\.org/) or 
-		androguard.url(/141\.255\.144\.72/) or 
-		androguard.url(/84\.101\.0\.49/) or 
-		androguard.url(/msupdate\.myvnc\.com/) or 
-		androguard.url(/zal75zk\.ddns\.net/) or 
-		androguard.url(/nassahsliman\.ddns\.net/) or 
-		androguard.url(/mohsenfaz\.ddns\.net/) or 
-		androguard.url(/saiber-far68\.ddns\.net/) or 
-		androguard.url(/106\.219\.57\.228/) or 
-		androguard.url(/android\.no-ip\.org/) or 
-		androguard.url(/161\.202\.108\.108/) or 
-		androguard.url(/hamker\.ddns\.net/) or 
-		androguard.url(/92\.243\.68\.167/) or 
-		androguard.url(/vikas\.no-ip\.biz/) or 
-		androguard.url(/68\.189\.1\.254/) or 
-		androguard.url(/bmt96\.noip\.me/) or 
-		androguard.url(/newxor2\.no-ip\.org/) or 
-		androguard.url(/2\.190\.167\.83/) or 
-		androguard.url(/hackme\.no-ip\.org/) or 
-		androguard.url(/mohammedwasib\.ddns\.net/) or 
-		androguard.url(/24\.172\.28\.155/) or 
-		androguard.url(/120\.0\.0\.1/) or 
-		androguard.url(/simbabweratte\.hopto\.org/) or 
-		androguard.url(/androrat143\.no-ip\.biz/) or 
-		androguard.url(/222\.168\.1\.2/) or 
-		androguard.url(/189\.174\.125\.60/) or 
-		androguard.url(/suckmordecock\.duckdns\.org/) or 
-		androguard.url(/201\.124\.95\.7/) or 
-		androguard.url(/svn-01\.ddns\.net/) or 
-		androguard.url(/jNkey\.ddns\.net/) or 
-		androguard.url(/131\.117\.235\.35/) or 
-		androguard.url(/justarat\.noip\.me/) or 
-		androguard.url(/dangerlove\.no-ip\.biz/) or 
-		androguard.url(/bahoom\.no-ip\.biz/) or 
-		androguard.url(/183\.82\.99\.133/) or 
-		androguard.url(/hatam\.no-ip\.org/) or 
-		androguard.url(/37\.239\.8\.89/) or 
-		androguard.url(/c1\.no-ip\.biz/) or 
-		androguard.url(/samy777\.no-ip\.biz/) or 
-		androguard.url(/juanblackhak\.ddns\.net/) or 
-		androguard.url(/sherlockholmes\.duckdns\.org/) or 
-		androguard.url(/martin123456\.no-ip\.org/) or 
-		androguard.url(/androratbtas\.no-ip\.info/) or 
-		androguard.url(/servidor23\.ddns\.net/) or 
-		androguard.url(/xyz2145\.ddns\.net/) or 
-		androguard.url(/war10ck\.serveftp\.com/) or 
-		androguard.url(/androrat1226\.ddns\.net/) or 
-		androguard.url(/anonsa\.ddns\.net/) or 
-		androguard.url(/dogecoinspeed\.zapto\.org/) or 
-		androguard.url(/61\.131\.121\.195/) or 
-		androguard.url(/invisibleghost\.no-ip\.biz/) or 
-		androguard.url(/elgen1\.no-ip\.biz/) or 
-		androguard.url(/habbo\.no-ip\.org/) or 
-		androguard.url(/thekillers\.ddns\.net/) or 
-		androguard.url(/94\.212\.118\.115/) or 
-		androguard.url(/41\.38\.56\.81/) or 
-		androguard.url(/misty255\.no-ip\.org/) or 
-		androguard.url(/volnado\.sytes\.net/) or 
-		androguard.url(/haiderhacer12\.no-ip\.biz/) or 
-		androguard.url(/asosha4ed\.no-ip\.biz/) or 
-		androguard.url(/losever2\.no-ip\.biz/) or 
-		androguard.url(/80\.136\.103\.51/) or 
-		androguard.url(/drrazikhan\.no-ip\.info/) or 
-		androguard.url(/makarand\.no-ip\.org/) or 
-		androguard.url(/isamdonita\.no-ip\.org/) or 
-		androguard.url(/anagliz\.ddns\.net/)
+		hydradragon.url(/toyman6699\.no-ip\.info/) or 
+		hydradragon.url(/aerror\.no-ip\.biz/) or 
+		hydradragon.url(/androrat\.servegame\.com/) or 
+		hydradragon.url(/197\.35\.22\.37/) or 
+		hydradragon.url(/androrat1\.no-ip\.biz/) or 
+		hydradragon.url(/151\.72\.17\.61/) or 
+		hydradragon.url(/qwerty1212\.ddns\.net/) or 
+		hydradragon.url(/recycled\.no-ip\.org/) or 
+		hydradragon.url(/gert44\.duckdns\.org/) or 
+		hydradragon.url(/78\.169\.63\.163/) or 
+		hydradragon.url(/hash0r\.no-ip\.biz/) or 
+		hydradragon.url(/alpheron\.duckdns\.org/) or 
+		hydradragon.url(/cricbot\.no-ip\.info/) or 
+		hydradragon.url(/hazhar77\.no-ip\.biz/) or 
+		hydradragon.url(/aleem\.top7@gmail\.com/) or 
+		hydradragon.url(/murryapplicazione\.no-ip\.org/) or 
+		hydradragon.url(/helloandroid\.no-ip\.org/) or 
+		hydradragon.url(/79\.170\.54\.154/) or 
+		hydradragon.url(/mohammad2002\.no-ip\.biz/) or 
+		hydradragon.url(/1756mostacc\.ddns\.net/) or 
+		hydradragon.url(/shakaky\.ddns\.net/) or 
+		hydradragon.url(/asadhashmi\.ddns\.net/) or 
+		hydradragon.url(/174\.127\.99\.232/) or 
+		hydradragon.url(/109\.95\.56\.22/) or 
+		hydradragon.url(/dagohack\.no-ip\.me/) or 
+		hydradragon.url(/pruebasernesto\.ddns\.net/) or 
+		hydradragon.url(/zola123\.no-ip\.biz/) or 
+		hydradragon.url(/mikestar\.no-ip\.biz/) or 
+		hydradragon.url(/132\.72\.81\.164/) or 
+		hydradragon.url(/zongkahani\.no-ip\.biz/) or 
+		hydradragon.url(/florian-pc\.ksueyuj0mtxpt6gn\.myfritz\.net/) or 
+		hydradragon.url(/kontolanime\.no-ip\.biz/) or 
+		hydradragon.url(/41\.143\.69\.230/) or 
+		hydradragon.url(/gentel901\.no-ip\.org/) or 
+		hydradragon.url(/anonimousdre180\.ddns\.net/) or 
+		hydradragon.url(/sajadianh\.ddns\.net/) or 
+		hydradragon.url(/195\.2\.239\.147/) or 
+		hydradragon.url(/vipmustafa\.no-ip\.info/) or 
+		hydradragon.url(/alihoseini\.no-ip\.biz/) or 
+		hydradragon.url(/aymen1852\.ddns\.net/) or 
+		hydradragon.url(/danialmostafaei\.no-ip\.biz/) or 
+		hydradragon.url(/100\.1\.254\.38/) or 
+		hydradragon.url(/sabbah\.duckdns\.org/) or 
+		hydradragon.url(/89\.95\.11\.159/) or 
+		hydradragon.url(/telegram-tools\.no-ip\.biz/) or 
+		hydradragon.url(/myonline\.no-ip\.biz/) or 
+		hydradragon.url(/84\.241\.6\.106/) or 
+		hydradragon.url(/linonymousami\.no-ip\.org/) or 
+		hydradragon.url(/alldebrid\.duckdns\.org/) or 
+		hydradragon.url(/187\.180\.186\.181/) or 
+		hydradragon.url(/411022356/) or 
+		hydradragon.url(/93\.82\.129\.5/) or 
+		hydradragon.url(/androjan\.ddns\.net/) or 
+		hydradragon.url(/adelxxbx\.no-ip\.biz/) or 
+		hydradragon.url(/r3cxw\.ddns\.net/) or 
+		hydradragon.url(/matgio\.duckdns\.org/) or 
+		hydradragon.url(/glaive24\.no-ip\.biz/) or 
+		hydradragon.url(/redcode\.ddns\.net/) or 
+		hydradragon.url(/151\.56\.227\.79/) or 
+		hydradragon.url(/shahabhacker\.ddns\.net/) or 
+		hydradragon.url(/186\.81\.50\.145/) or 
+		hydradragon.url(/kasofe123123aa\.no-ip\.biz/) or 
+		hydradragon.url(/tanha\.sit@gmail\.com/) or 
+		hydradragon.url(/persir\.no-ip\.biz/) or 
+		hydradragon.url(/moha55\.no-ip\.biz/) or 
+		hydradragon.url(/androidupdate\.ddns\.net/) or 
+		hydradragon.url(/charifo1310tok\.no-ip\.biz/) or 
+		hydradragon.url(/securepurpose\.no-ip\.info/) or 
+		hydradragon.url(/vpn0\.ddns\.net/) or 
+		hydradragon.url(/usa20002015\.ddns\.net/) or 
+		hydradragon.url(/duyguseliberkay\.no-ip\.biz/) or 
+		hydradragon.url(/miltin2\.no-ip\.org/) or 
+		hydradragon.url(/droidjack228\.ddns\.net/) or 
+		hydradragon.url(/mjhooollltuuu\.no-ip\.biz/) or 
+		hydradragon.url(/nexmopro830\.ddns\.net/) or 
+		hydradragon.url(/rustyash\.no-ip\.biz/) or 
+		hydradragon.url(/atsizinoglu\.duckdns\.org/) or 
+		hydradragon.url(/goog2\.no-ip\.biz/) or 
+		hydradragon.url(/testan\.ddns\.net/) or 
+		hydradragon.url(/androrat\.zapto\.org/) or 
+		hydradragon.url(/blackghostdc\.duckdns\.org/) or 
+		hydradragon.url(/191\.239\.107\.56/) or 
+		hydradragon.url(/kalinne\.ddns\.net/) or 
+		hydradragon.url(/hackcam\.zapto\.org/) or 
+		hydradragon.url(/andro0161\.no-ip\.info/) or 
+		hydradragon.url(/replace\.duckdns\.org/) or 
+		hydradragon.url(/46\.223\.99\.222/) or 
+		hydradragon.url(/karasqlee9\.no-ip\.org/) or 
+		hydradragon.url(/kalizinho\.no-ip\.org/) or 
+		hydradragon.url(/141\.255\.144\.72/) or 
+		hydradragon.url(/84\.101\.0\.49/) or 
+		hydradragon.url(/msupdate\.myvnc\.com/) or 
+		hydradragon.url(/zal75zk\.ddns\.net/) or 
+		hydradragon.url(/nassahsliman\.ddns\.net/) or 
+		hydradragon.url(/mohsenfaz\.ddns\.net/) or 
+		hydradragon.url(/saiber-far68\.ddns\.net/) or 
+		hydradragon.url(/106\.219\.57\.228/) or 
+		hydradragon.url(/android\.no-ip\.org/) or 
+		hydradragon.url(/161\.202\.108\.108/) or 
+		hydradragon.url(/hamker\.ddns\.net/) or 
+		hydradragon.url(/92\.243\.68\.167/) or 
+		hydradragon.url(/vikas\.no-ip\.biz/) or 
+		hydradragon.url(/68\.189\.1\.254/) or 
+		hydradragon.url(/bmt96\.noip\.me/) or 
+		hydradragon.url(/newxor2\.no-ip\.org/) or 
+		hydradragon.url(/2\.190\.167\.83/) or 
+		hydradragon.url(/hackme\.no-ip\.org/) or 
+		hydradragon.url(/mohammedwasib\.ddns\.net/) or 
+		hydradragon.url(/24\.172\.28\.155/) or 
+		hydradragon.url(/120\.0\.0\.1/) or 
+		hydradragon.url(/simbabweratte\.hopto\.org/) or 
+		hydradragon.url(/androrat143\.no-ip\.biz/) or 
+		hydradragon.url(/222\.168\.1\.2/) or 
+		hydradragon.url(/189\.174\.125\.60/) or 
+		hydradragon.url(/suckmordecock\.duckdns\.org/) or 
+		hydradragon.url(/201\.124\.95\.7/) or 
+		hydradragon.url(/svn-01\.ddns\.net/) or 
+		hydradragon.url(/jNkey\.ddns\.net/) or 
+		hydradragon.url(/131\.117\.235\.35/) or 
+		hydradragon.url(/justarat\.noip\.me/) or 
+		hydradragon.url(/dangerlove\.no-ip\.biz/) or 
+		hydradragon.url(/bahoom\.no-ip\.biz/) or 
+		hydradragon.url(/183\.82\.99\.133/) or 
+		hydradragon.url(/hatam\.no-ip\.org/) or 
+		hydradragon.url(/37\.239\.8\.89/) or 
+		hydradragon.url(/c1\.no-ip\.biz/) or 
+		hydradragon.url(/samy777\.no-ip\.biz/) or 
+		hydradragon.url(/juanblackhak\.ddns\.net/) or 
+		hydradragon.url(/sherlockholmes\.duckdns\.org/) or 
+		hydradragon.url(/martin123456\.no-ip\.org/) or 
+		hydradragon.url(/androratbtas\.no-ip\.info/) or 
+		hydradragon.url(/servidor23\.ddns\.net/) or 
+		hydradragon.url(/xyz2145\.ddns\.net/) or 
+		hydradragon.url(/war10ck\.serveftp\.com/) or 
+		hydradragon.url(/androrat1226\.ddns\.net/) or 
+		hydradragon.url(/anonsa\.ddns\.net/) or 
+		hydradragon.url(/dogecoinspeed\.zapto\.org/) or 
+		hydradragon.url(/61\.131\.121\.195/) or 
+		hydradragon.url(/invisibleghost\.no-ip\.biz/) or 
+		hydradragon.url(/elgen1\.no-ip\.biz/) or 
+		hydradragon.url(/habbo\.no-ip\.org/) or 
+		hydradragon.url(/thekillers\.ddns\.net/) or 
+		hydradragon.url(/94\.212\.118\.115/) or 
+		hydradragon.url(/41\.38\.56\.81/) or 
+		hydradragon.url(/misty255\.no-ip\.org/) or 
+		hydradragon.url(/volnado\.sytes\.net/) or 
+		hydradragon.url(/haiderhacer12\.no-ip\.biz/) or 
+		hydradragon.url(/asosha4ed\.no-ip\.biz/) or 
+		hydradragon.url(/losever2\.no-ip\.biz/) or 
+		hydradragon.url(/80\.136\.103\.51/) or 
+		hydradragon.url(/drrazikhan\.no-ip\.info/) or 
+		hydradragon.url(/makarand\.no-ip\.org/) or 
+		hydradragon.url(/isamdonita\.no-ip\.org/) or 
+		hydradragon.url(/anagliz\.ddns\.net/)
 }
 
 rule sandrorat: amtrckr
@@ -1056,307 +1056,307 @@ rule sandrorat: amtrckr
 		family = "sandrorat"
 
 	condition:
-		androguard.url(/tak\.no-ip\.info/) or 
-		androguard.url(/maskaralama\.ddns\.net/) or 
-		androguard.url(/sondres1\.ddns\.net/) or 
-		androguard.url(/toyman6699\.no-ip\.info/) or 
-		androguard.url(/appmarket\.servehttp\.com/) or 
-		androguard.url(/31\.210\.117\.132/) or 
-		androguard.url(/freeann\.sytes\.net/) or 
-		androguard.url(/changyu231\.ddns\.net/) or 
-		androguard.url(/mohammed22468\.no-ip\.biz/) or 
-		androguard.url(/oneriakosa\.ddns\.net/) or 
-		androguard.url(/46\.186\.155\.219/) or 
-		androguard.url(/jockerhackerxnxx\.ddns\.net/) or 
-		androguard.url(/41\.251\.251\.7/) or 
-		androguard.url(/megalol\.chickenkiller\.com/) or 
-		androguard.url(/188\.166\.76\.144/) or 
-		androguard.url(/injectman\.no-ip\.info/) or 
-		androguard.url(/aasxzxdsc12324\.no-ip\.biz/) or 
-		androguard.url(/magemankoktelam\.ddns\.net/) or 
-		androguard.url(/alfazaai99\.ddns\.net/) or 
-		androguard.url(/dantehack\.zapto\.org/) or 
-		androguard.url(/droidjack1\.sytes\.net/) or 
-		androguard.url(/th3expert\.3utilities\.com/) or 
-		androguard.url(/mohamed46565656\.no-ip\.biz/) or 
-		androguard.url(/chrisfo\.no-ip\.org/) or 
-		androguard.url(/hazhar77\.no-ip\.biz/) or 
-		androguard.url(/31\.146\.202\.169/) or 
-		androguard.url(/njesra\.ddns\.net/) or 
-		androguard.url(/yorkiepet\.ddns\.net/) or 
-		androguard.url(/mrgnet\.ddns\.net/) or 
-		androguard.url(/droy\.zapto\.org/) or 
-		androguard.url(/93\.104\.213\.217/) or 
-		androguard.url(/amarok58\.no-ip\.biz/) or 
-		androguard.url(/server4update\.serveftp\.com/) or 
-		androguard.url(/zaliminxx\.duckdns\.org/) or 
-		androguard.url(/anonymo9s\.ddns\.net/) or 
-		androguard.url(/htmp\.sytes\.net/) or 
-		androguard.url(/khalid-2016\.noip\.me/) or 
-		androguard.url(/mahasiswa\.no-ip\.biz/) or 
-		androguard.url(/mamal9921\.ddns\.net/) or 
-		androguard.url(/kaddress\.ddns\.net/) or 
-		androguard.url(/sharmayash\.no-ip\.biz/) or 
-		androguard.url(/RATForAndroid\.ddns\.net/) or 
-		androguard.url(/shabbushah\.duckdns\.org/) or 
-		androguard.url(/osammer0asmam3a\.ddns\.net/) or 
-		androguard.url(/themayhen23\.no-ip\.org/) or 
-		androguard.url(/wxf2009817\.f3322\.net/) or 
-		androguard.url(/miioolinase\.ddns\.net/) or 
-		androguard.url(/motoshi\.zapto\.org/) or 
-		androguard.url(/88\.150\.149\.91/) or 
-		androguard.url(/info\.bounceme\.net/) or 
-		androguard.url(/samira\.no-ip\.biz/) or 
-		androguard.url(/31\.210\.69\.156/) or 
-		androguard.url(/93\.79\.212\.194/) or 
-		androguard.url(/futurasky\.no-ip\.biz/) or 
-		androguard.url(/rat\.capsulelab\.us/) or 
-		androguard.url(/fruby\.zapto\.org/) or 
-		androguard.url(/iraqn6777\.ddns\.net/) or 
-		androguard.url(/samsung\.apps\.linkpc\.net/) or 
-		androguard.url(/eldiablo\.no-ip\.biz/) or 
-		androguard.url(/system32\.com/) or 
-		androguard.url(/haker33sadekgafer\.no-ip\.biz/) or 
-		androguard.url(/droidjack258\.bounceme\.net/) or 
-		androguard.url(/cardangi\.no-ip\.org/) or 
-		androguard.url(/fazoro66\.ddns\.net/) or 
-		androguard.url(/androidalbums\.ddns\.net/) or 
-		androguard.url(/tedy1993\.ddns\.net/) or 
-		androguard.url(/109\.73\.68\.114/) or 
-		androguard.url(/alaa-1982\.no-ip\.biz/) or 
-		androguard.url(/facrbook\.redirectme\.net/) or 
-		androguard.url(/androidan\.ddns\.net/) or 
-		androguard.url(/learnxea\.duckdns\.org/) or 
-		androguard.url(/audreysaradin\.no-ip\.org/) or 
-		androguard.url(/178\.124\.182\.38/) or 
-		androguard.url(/mobiles0ft\.no-ip\.org/) or 
-		androguard.url(/cybercrysis\.ddns\.net/) or 
-		androguard.url(/playstore\.ddns\.net/) or 
-		androguard.url(/blind1234\.ddns\.net/) or 
-		androguard.url(/chanks\.no-ip\.biz/) or 
-		androguard.url(/lomo\.com/) or 
-		androguard.url(/ayadd19\.no-ip\.org/) or 
-		androguard.url(/bitoandroid\.no-ip\.info/) or 
-		androguard.url(/androidtool\.ddns\.net/) or 
-		androguard.url(/authd\.ddns\.net/) or 
-		androguard.url(/carapuce-2015\.no-ip\.biz/) or 
-		androguard.url(/aliyusef6\.no-ip\.biz/) or 
-		androguard.url(/bannding\.ddns\.net/) or 
-		androguard.url(/momen-swesi\.no-ip\.biz/) or 
-		androguard.url(/wogusnb\.no-ip\.info/) or 
-		androguard.url(/noussa\.no-ip\.biz/) or 
-		androguard.url(/droidjackv5\.ddns\.net/) or 
-		androguard.url(/alanbkey\.no-ip\.org/) or 
-		androguard.url(/androidrat21\.ddns\.net/) or 
-		androguard.url(/diceedicee\.ddns\.net/) or 
-		androguard.url(/178\.20\.230\.44/) or 
-		androguard.url(/strateg\.ddns\.net/) or 
-		androguard.url(/hasn9999\.ddns\.net/) or 
-		androguard.url(/anonymousip\.no-ip\.org/) or 
-		androguard.url(/fucks\.ddns\.net/) or 
-		androguard.url(/shahidsajan\.no-ip\.biz/) or 
-		androguard.url(/spicymemes\.duckdns\.org/) or 
-		androguard.url(/hackermoqtada\.no-ip\.biz/) or 
-		androguard.url(/andro\.no-ip\.biz/) or 
-		androguard.url(/goggle\.sytes\.net/) or 
-		androguard.url(/anonymous666\.zapto\.org/) or 
-		androguard.url(/dnsdynamic\.org/) or 
-		androguard.url(/jomo\.zapto\.org/) or 
-		androguard.url(/adobflash\.hopto\.org/) or 
-		androguard.url(/iqram85spy\.ddns\.net/) or 
-		androguard.url(/moussa-hak\.no-ip\.biz/) or 
-		androguard.url(/williettinger\.cc/) or 
-		androguard.url(/usa2222\.ddns\.net/) or 
-		androguard.url(/22134520\.ddns\.net/) or 
-		androguard.url(/android1\.ddns\.net/) or 
-		androguard.url(/109\.122\.41\.237/) or 
-		androguard.url(/droidjack\.hopto\.org/) or 
-		androguard.url(/randsnaira\.dnsdynamic\.com/) or 
-		androguard.url(/egytiger\.myftp\.org/) or 
-		androguard.url(/hehe\.duckdns\.org/) or 
-		androguard.url(/seven1\.ddns\.net/) or 
-		androguard.url(/younix\.ddns\.net/) or 
-		androguard.url(/huntergold\.no-ip\.biz/) or 
-		androguard.url(/151\.246\.230\.21/) or 
-		androguard.url(/xos1982\.ddns\.net/) or 
-		androguard.url(/85\.136\.243\.80/) or 
-		androguard.url(/yelp01\.f3322\.org/) or 
-		androguard.url(/teolandia\.no-ip\.biz/) or 
-		androguard.url(/jokerbabel\.no-ip\.biz/) or 
-		androguard.url(/cccamd\.myftp\.biz/) or 
-		androguard.url(/109\.165\.69\.25/) or 
-		androguard.url(/googles\.servemp3\.com/) or 
-		androguard.url(/vb\.blogsyte\.com/) or 
-		androguard.url(/karrarhuseein82\.ddns\.net/) or 
-		androguard.url(/applecenikosmos\.hldns\.ru/) or 
-		androguard.url(/dadadadadaprivet\.ddns\.net/) or 
-		androguard.url(/1349874791\.gnway\.cc/) or 
-		androguard.url(/bapforall\.ddns\.net/) or 
-		androguard.url(/mahamadmahmod\.ddns\.net/) or 
-		androguard.url(/nademhack\.no-ip\.org/) or 
-		androguard.url(/42\.236\.159\.93/) or 
-		androguard.url(/myaw\.no-ip\.biz/) or 
-		androguard.url(/msn-web\.ddnsking\.com/) or 
-		androguard.url(/draagon\.ddns\.net/) or 
-		androguard.url(/winlogen\.duckdns\.org/) or 
-		androguard.url(/albash2222\.ddns\.net/) or 
-		androguard.url(/82\.223\.31\.121/) or 
-		androguard.url(/ahmed2012\.dynu\.com/) or 
-		androguard.url(/188\.3\.13\.98/) or 
-		androguard.url(/hardik\.no-ip\.info/) or 
-		androguard.url(/asdqqq\.bounceme\.net/) or 
-		androguard.url(/test\.no-ip\.org/) or 
-		androguard.url(/housam\.linkpc\.net/) or 
-		androguard.url(/evilcasper\.ddns\.net/) or 
-		androguard.url(/kilasx\.ddns\.net/) or 
-		androguard.url(/pars\.ddns\.net/) or 
-		androguard.url(/noiphackk\.ddns\.net/) or 
-		androguard.url(/hack1111\.noip\.me/) or 
-		androguard.url(/hackhack2016\.no-ip\.info/) or 
-		androguard.url(/haxor\.hopto\.org/) or 
-		androguard.url(/zokor-zokor\.ddns\.net/) or 
-		androguard.url(/xzoro2016\.no-ip\.info/) or 
-		androguard.url(/81\.177\.33\.218/) or 
-		androguard.url(/momo2015\.duckdns\.org/) or 
-		androguard.url(/pimpdaddy\.myq-see\.com/) or 
-		androguard.url(/scropion20078\.no-ip\.biz/) or 
-		androguard.url(/106\.51\.163\.232/) or 
-		androguard.url(/fuckyou\.duckdns\.org/) or 
-		androguard.url(/zakifr\.no-ip\.biz/) or 
-		androguard.url(/microsoft-office\.ddns\.net/) or 
-		androguard.url(/2\.25\.171\.244/) or 
-		androguard.url(/85\.202\.29\.79/) or 
-		androguard.url(/mariorossi2013\.homepc\.it/) or 
-		androguard.url(/hackcam\.zapto\.org/) or 
-		androguard.url(/mokhter222029\.ddns\.net/) or 
-		androguard.url(/win32\.ddns\.net/) or 
-		androguard.url(/ggwasgeht\.ddns\.net/) or 
-		androguard.url(/dexonic\.duckdns\.org/) or 
-		androguard.url(/coxiamigo\.myq-see\.com/) or 
-		androguard.url(/hamidoranis\.no-ip\.biz/) or 
-		androguard.url(/ospr\.publicvm\.com/) or 
-		androguard.url(/karasqlee9\.no-ip\.org/) or 
-		androguard.url(/hax\.no-ip\.info/) or 
-		androguard.url(/haa7aah\.no-ip\.biz/) or 
-		androguard.url(/omar\.no-ip\.biz/) or 
-		androguard.url(/yuosaf1993\.ddns\.net/) or 
-		androguard.url(/88\.164\.37\.97/) or 
-		androguard.url(/88\.247\.226\.120/) or 
-		androguard.url(/indusv00\.duckdns\.org/) or 
-		androguard.url(/andver18\.no-ip\.biz/) or 
-		androguard.url(/unknownuser\.no-ip\.biz/) or 
-		androguard.url(/nassahsliman\.ddns\.net/) or 
-		androguard.url(/gcafegood\.noip\.me/) or 
-		androguard.url(/rockrock\.ddns\.net/) or 
-		androguard.url(/188\.24\.119\.27/) or 
-		androguard.url(/93\.157\.235\.248/) or 
-		androguard.url(/komplevit-rat\.ddns\.net/) or 
-		androguard.url(/pianotiles2\.ddns\.net/) or 
-		androguard.url(/tobytori18\.myftp\.org/) or 
-		androguard.url(/105\.106\.49\.154/) or 
-		androguard.url(/moonmar10\.no-ip\.biz/) or 
-		androguard.url(/100009755836320\.no-ip\.biz/) or 
-		androguard.url(/villevalo\.chickenkiller\.com/) or 
-		androguard.url(/samoomalik\.no-ip\.biz/) or 
-		androguard.url(/foxfeline\.no-ip\.org/) or 
-		androguard.url(/kskdt\.ddns\.net/) or 
-		androguard.url(/fati43030\.no-ip\.biz/) or 
-		androguard.url(/shop10\.ddns\.net/) or 
-		androguard.url(/fairylow\.no-ip\.biz/) or 
-		androguard.url(/a\.tomx\.xyz/) or 
-		androguard.url(/r90\.no-ip\.biz/) or 
-		androguard.url(/46\.45\.207\.81/) or 
-		androguard.url(/warrirrs\.no-ip\.org/) or 
-		androguard.url(/azert123\.ddns\.net/) or 
-		androguard.url(/soso\.noip\.us/) or 
-		androguard.url(/sniperyakub\.ddns\.net/) or 
-		androguard.url(/baby\.webhop\.me/) or 
-		androguard.url(/zero228\.ddns\.net/) or 
-		androguard.url(/reddemon\.ddns\.net/) or 
-		androguard.url(/viagra\.jumpingcrab\.com/) or 
-		androguard.url(/domira\.ddns\.net/) or 
-		androguard.url(/alkingahmed555\.ddns\.net/) or 
-		androguard.url(/mahdi3141\.ddns\.net/) or 
-		androguard.url(/somenormalguy\.duckdns\.org/) or 
-		androguard.url(/shoo2018\.no-ip\.org/) or 
-		androguard.url(/goldeneagle1112\.ddns\.net/) or 
-		androguard.url(/hardstyleraver\.no-ip\.org/) or 
-		androguard.url(/79\.141\.163\.20/) or 
-		androguard.url(/mezoo32\.no-ip\.biz/) or 
-		androguard.url(/islam2020libya\.no-ip\.biz/) or 
-		androguard.url(/kingdom\.no-ip\.biz/) or 
-		androguard.url(/x300x300xx\.no-ip\.org/) or 
-		androguard.url(/puplicdsl\.ddns\.net/) or 
-		androguard.url(/teda11\.zapto\.org/) or 
-		androguard.url(/testsss\.ddns\.net/) or 
-		androguard.url(/185\.32\.221\.23/) or 
-		androguard.url(/topmax\.myq-see\.com/) or 
-		androguard.url(/sarasisi\.no-ip\.org/) or 
-		androguard.url(/dodee97dodee\.ddns\.net/) or 
-		androguard.url(/kararkarar0780\.ddns\.net/) or 
-		androguard.url(/darweshfis\.no-ip\.org/) or 
-		androguard.url(/jastn\.ddns\.net/) or 
-		androguard.url(/flashplayerxx\.no-ip\.org/) or 
-		androguard.url(/thaer\.no-ip\.biz/) or 
-		androguard.url(/elisou19\.ddns\.net/) or 
-		androguard.url(/dkms\.ddns\.net/) or 
-		androguard.url(/aaaa\.com/) or 
-		androguard.url(/liquidixen\.ddns\.net/) or 
-		androguard.url(/moep004\.no-ip\.org/) or 
-		androguard.url(/aaaaaaaaaabbbbb\.hopto\.org/) or 
-		androguard.url(/rok13198666\.no-ip\.biz/) or 
-		androguard.url(/1337ace\.ddns\.net/) or 
-		androguard.url(/droidjack33\.no-ip\.biz/) or 
-		androguard.url(/abdouoahmed\.ddns\.net/) or 
-		androguard.url(/bambi\.no-ip\.biz/) or 
-		androguard.url(/e777kx47\.ddns\.net/) or 
-		androguard.url(/shanks\.no-ip\.biz/) or 
-		androguard.url(/black1990\.ddns\.net/) or 
-		androguard.url(/brave-hacker\.no-ip\.org/) or 
-		androguard.url(/ala6a\.no-ip\.biz/) or 
-		androguard.url(/sarahwygan\.no-ip\.biz/) or 
-		androguard.url(/khantac\.ddns\.net/) or 
-		androguard.url(/107\.151\.193\.126/) or 
-		androguard.url(/madov-matrix25\.no-ip\.org/) or 
-		androguard.url(/93\.185\.151\.217/) or 
-		androguard.url(/203\.189\.232\.237/) or 
-		androguard.url(/zxczxczxc\.ddns\.net/) or 
-		androguard.url(/07726657423zaion\.no-ip\.biz/) or 
-		androguard.url(/amran-pc\.no-ip\.biz/) or 
-		androguard.url(/myfrenid2x\.zapto\.org/) or 
-		androguard.url(/winserver\.dlinkddns\.com/) or 
-		androguard.url(/mzgerges\.no-ip\.biz/) or 
-		androguard.url(/cjbks0u0\.no-ip\.org/) or 
-		androguard.url(/silenthunter3021\.no-ip\.org/) or 
-		androguard.url(/engrid\.no-ip\.biz/) or 
-		androguard.url(/137\.0\.0\.1/) or 
-		androguard.url(/snopi\.no-ip\.biz/) or 
-		androguard.url(/hhamokcha\.ddns\.net/) or 
-		androguard.url(/clashdroid\.no-ip\.biz/) or 
-		androguard.url(/jkgytgasjg12\.serveftp\.com/) or 
-		androguard.url(/owsen\.ddns\.net/) or 
-		androguard.url(/thegangsterrap\.noip\.me/) or 
-		androguard.url(/81\.4\.104\.129/) or 
-		androguard.url(/droid\.deutsche-db-bank\.ru/) or 
-		androguard.url(/gold5000\.ddns\.net/) or 
-		androguard.url(/hassanabd1233\.ddns\.net/) or 
-		androguard.url(/love2014\.ddns\.net/) or 
-		androguard.url(/bassamzeyad\.ddns\.net/) or 
-		androguard.url(/denishul\.hldns\.ru/) or 
-		androguard.url(/hacker-81\.no-ip\.biz/) or 
-		androguard.url(/noipjajaja\.ddns\.net/) or 
-		androguard.url(/41\.38\.56\.81/) or 
-		androguard.url(/tataline\.hopto\.org/) or 
-		androguard.url(/abedjaradat1177\.no-ip\.org/) or 
-		androguard.url(/voda\.no-ip\.org/) or 
-		androguard.url(/mohamednjrat111\.no-ip\.biz/) or 
-		androguard.url(/hakeerali2\.ddns\.net/) or 
-		androguard.url(/5\.189\.137\.186/) or 
-		androguard.url(/79\.137\.223\.139/) or 
-		androguard.url(/makarand\.no-ip\.org/) or 
-		androguard.url(/mehost\.ddns\.net/) or 
-		androguard.url(/xmohcine\.ddns\.net/) or 
-		androguard.url(/alabama192837\.no-ip\.org/)
+		hydradragon.url(/tak\.no-ip\.info/) or 
+		hydradragon.url(/maskaralama\.ddns\.net/) or 
+		hydradragon.url(/sondres1\.ddns\.net/) or 
+		hydradragon.url(/toyman6699\.no-ip\.info/) or 
+		hydradragon.url(/appmarket\.servehttp\.com/) or 
+		hydradragon.url(/31\.210\.117\.132/) or 
+		hydradragon.url(/freeann\.sytes\.net/) or 
+		hydradragon.url(/changyu231\.ddns\.net/) or 
+		hydradragon.url(/mohammed22468\.no-ip\.biz/) or 
+		hydradragon.url(/oneriakosa\.ddns\.net/) or 
+		hydradragon.url(/46\.186\.155\.219/) or 
+		hydradragon.url(/jockerhackerxnxx\.ddns\.net/) or 
+		hydradragon.url(/41\.251\.251\.7/) or 
+		hydradragon.url(/megalol\.chickenkiller\.com/) or 
+		hydradragon.url(/188\.166\.76\.144/) or 
+		hydradragon.url(/injectman\.no-ip\.info/) or 
+		hydradragon.url(/aasxzxdsc12324\.no-ip\.biz/) or 
+		hydradragon.url(/magemankoktelam\.ddns\.net/) or 
+		hydradragon.url(/alfazaai99\.ddns\.net/) or 
+		hydradragon.url(/dantehack\.zapto\.org/) or 
+		hydradragon.url(/droidjack1\.sytes\.net/) or 
+		hydradragon.url(/th3expert\.3utilities\.com/) or 
+		hydradragon.url(/mohamed46565656\.no-ip\.biz/) or 
+		hydradragon.url(/chrisfo\.no-ip\.org/) or 
+		hydradragon.url(/hazhar77\.no-ip\.biz/) or 
+		hydradragon.url(/31\.146\.202\.169/) or 
+		hydradragon.url(/njesra\.ddns\.net/) or 
+		hydradragon.url(/yorkiepet\.ddns\.net/) or 
+		hydradragon.url(/mrgnet\.ddns\.net/) or 
+		hydradragon.url(/droy\.zapto\.org/) or 
+		hydradragon.url(/93\.104\.213\.217/) or 
+		hydradragon.url(/amarok58\.no-ip\.biz/) or 
+		hydradragon.url(/server4update\.serveftp\.com/) or 
+		hydradragon.url(/zaliminxx\.duckdns\.org/) or 
+		hydradragon.url(/anonymo9s\.ddns\.net/) or 
+		hydradragon.url(/htmp\.sytes\.net/) or 
+		hydradragon.url(/khalid-2016\.noip\.me/) or 
+		hydradragon.url(/mahasiswa\.no-ip\.biz/) or 
+		hydradragon.url(/mamal9921\.ddns\.net/) or 
+		hydradragon.url(/kaddress\.ddns\.net/) or 
+		hydradragon.url(/sharmayash\.no-ip\.biz/) or 
+		hydradragon.url(/RATForAndroid\.ddns\.net/) or 
+		hydradragon.url(/shabbushah\.duckdns\.org/) or 
+		hydradragon.url(/osammer0asmam3a\.ddns\.net/) or 
+		hydradragon.url(/themayhen23\.no-ip\.org/) or 
+		hydradragon.url(/wxf2009817\.f3322\.net/) or 
+		hydradragon.url(/miioolinase\.ddns\.net/) or 
+		hydradragon.url(/motoshi\.zapto\.org/) or 
+		hydradragon.url(/88\.150\.149\.91/) or 
+		hydradragon.url(/info\.bounceme\.net/) or 
+		hydradragon.url(/samira\.no-ip\.biz/) or 
+		hydradragon.url(/31\.210\.69\.156/) or 
+		hydradragon.url(/93\.79\.212\.194/) or 
+		hydradragon.url(/futurasky\.no-ip\.biz/) or 
+		hydradragon.url(/rat\.capsulelab\.us/) or 
+		hydradragon.url(/fruby\.zapto\.org/) or 
+		hydradragon.url(/iraqn6777\.ddns\.net/) or 
+		hydradragon.url(/samsung\.apps\.linkpc\.net/) or 
+		hydradragon.url(/eldiablo\.no-ip\.biz/) or 
+		hydradragon.url(/system32\.com/) or 
+		hydradragon.url(/haker33sadekgafer\.no-ip\.biz/) or 
+		hydradragon.url(/droidjack258\.bounceme\.net/) or 
+		hydradragon.url(/cardangi\.no-ip\.org/) or 
+		hydradragon.url(/fazoro66\.ddns\.net/) or 
+		hydradragon.url(/androidalbums\.ddns\.net/) or 
+		hydradragon.url(/tedy1993\.ddns\.net/) or 
+		hydradragon.url(/109\.73\.68\.114/) or 
+		hydradragon.url(/alaa-1982\.no-ip\.biz/) or 
+		hydradragon.url(/facrbook\.redirectme\.net/) or 
+		hydradragon.url(/androidan\.ddns\.net/) or 
+		hydradragon.url(/learnxea\.duckdns\.org/) or 
+		hydradragon.url(/audreysaradin\.no-ip\.org/) or 
+		hydradragon.url(/178\.124\.182\.38/) or 
+		hydradragon.url(/mobiles0ft\.no-ip\.org/) or 
+		hydradragon.url(/cybercrysis\.ddns\.net/) or 
+		hydradragon.url(/playstore\.ddns\.net/) or 
+		hydradragon.url(/blind1234\.ddns\.net/) or 
+		hydradragon.url(/chanks\.no-ip\.biz/) or 
+		hydradragon.url(/lomo\.com/) or 
+		hydradragon.url(/ayadd19\.no-ip\.org/) or 
+		hydradragon.url(/bitoandroid\.no-ip\.info/) or 
+		hydradragon.url(/androidtool\.ddns\.net/) or 
+		hydradragon.url(/authd\.ddns\.net/) or 
+		hydradragon.url(/carapuce-2015\.no-ip\.biz/) or 
+		hydradragon.url(/aliyusef6\.no-ip\.biz/) or 
+		hydradragon.url(/bannding\.ddns\.net/) or 
+		hydradragon.url(/momen-swesi\.no-ip\.biz/) or 
+		hydradragon.url(/wogusnb\.no-ip\.info/) or 
+		hydradragon.url(/noussa\.no-ip\.biz/) or 
+		hydradragon.url(/droidjackv5\.ddns\.net/) or 
+		hydradragon.url(/alanbkey\.no-ip\.org/) or 
+		hydradragon.url(/androidrat21\.ddns\.net/) or 
+		hydradragon.url(/diceedicee\.ddns\.net/) or 
+		hydradragon.url(/178\.20\.230\.44/) or 
+		hydradragon.url(/strateg\.ddns\.net/) or 
+		hydradragon.url(/hasn9999\.ddns\.net/) or 
+		hydradragon.url(/anonymousip\.no-ip\.org/) or 
+		hydradragon.url(/fucks\.ddns\.net/) or 
+		hydradragon.url(/shahidsajan\.no-ip\.biz/) or 
+		hydradragon.url(/spicymemes\.duckdns\.org/) or 
+		hydradragon.url(/hackermoqtada\.no-ip\.biz/) or 
+		hydradragon.url(/andro\.no-ip\.biz/) or 
+		hydradragon.url(/goggle\.sytes\.net/) or 
+		hydradragon.url(/anonymous666\.zapto\.org/) or 
+		hydradragon.url(/dnsdynamic\.org/) or 
+		hydradragon.url(/jomo\.zapto\.org/) or 
+		hydradragon.url(/adobflash\.hopto\.org/) or 
+		hydradragon.url(/iqram85spy\.ddns\.net/) or 
+		hydradragon.url(/moussa-hak\.no-ip\.biz/) or 
+		hydradragon.url(/williettinger\.cc/) or 
+		hydradragon.url(/usa2222\.ddns\.net/) or 
+		hydradragon.url(/22134520\.ddns\.net/) or 
+		hydradragon.url(/android1\.ddns\.net/) or 
+		hydradragon.url(/109\.122\.41\.237/) or 
+		hydradragon.url(/droidjack\.hopto\.org/) or 
+		hydradragon.url(/randsnaira\.dnsdynamic\.com/) or 
+		hydradragon.url(/egytiger\.myftp\.org/) or 
+		hydradragon.url(/hehe\.duckdns\.org/) or 
+		hydradragon.url(/seven1\.ddns\.net/) or 
+		hydradragon.url(/younix\.ddns\.net/) or 
+		hydradragon.url(/huntergold\.no-ip\.biz/) or 
+		hydradragon.url(/151\.246\.230\.21/) or 
+		hydradragon.url(/xos1982\.ddns\.net/) or 
+		hydradragon.url(/85\.136\.243\.80/) or 
+		hydradragon.url(/yelp01\.f3322\.org/) or 
+		hydradragon.url(/teolandia\.no-ip\.biz/) or 
+		hydradragon.url(/jokerbabel\.no-ip\.biz/) or 
+		hydradragon.url(/cccamd\.myftp\.biz/) or 
+		hydradragon.url(/109\.165\.69\.25/) or 
+		hydradragon.url(/googles\.servemp3\.com/) or 
+		hydradragon.url(/vb\.blogsyte\.com/) or 
+		hydradragon.url(/karrarhuseein82\.ddns\.net/) or 
+		hydradragon.url(/applecenikosmos\.hldns\.ru/) or 
+		hydradragon.url(/dadadadadaprivet\.ddns\.net/) or 
+		hydradragon.url(/1349874791\.gnway\.cc/) or 
+		hydradragon.url(/bapforall\.ddns\.net/) or 
+		hydradragon.url(/mahamadmahmod\.ddns\.net/) or 
+		hydradragon.url(/nademhack\.no-ip\.org/) or 
+		hydradragon.url(/42\.236\.159\.93/) or 
+		hydradragon.url(/myaw\.no-ip\.biz/) or 
+		hydradragon.url(/msn-web\.ddnsking\.com/) or 
+		hydradragon.url(/draagon\.ddns\.net/) or 
+		hydradragon.url(/winlogen\.duckdns\.org/) or 
+		hydradragon.url(/albash2222\.ddns\.net/) or 
+		hydradragon.url(/82\.223\.31\.121/) or 
+		hydradragon.url(/ahmed2012\.dynu\.com/) or 
+		hydradragon.url(/188\.3\.13\.98/) or 
+		hydradragon.url(/hardik\.no-ip\.info/) or 
+		hydradragon.url(/asdqqq\.bounceme\.net/) or 
+		hydradragon.url(/test\.no-ip\.org/) or 
+		hydradragon.url(/housam\.linkpc\.net/) or 
+		hydradragon.url(/evilcasper\.ddns\.net/) or 
+		hydradragon.url(/kilasx\.ddns\.net/) or 
+		hydradragon.url(/pars\.ddns\.net/) or 
+		hydradragon.url(/noiphackk\.ddns\.net/) or 
+		hydradragon.url(/hack1111\.noip\.me/) or 
+		hydradragon.url(/hackhack2016\.no-ip\.info/) or 
+		hydradragon.url(/haxor\.hopto\.org/) or 
+		hydradragon.url(/zokor-zokor\.ddns\.net/) or 
+		hydradragon.url(/xzoro2016\.no-ip\.info/) or 
+		hydradragon.url(/81\.177\.33\.218/) or 
+		hydradragon.url(/momo2015\.duckdns\.org/) or 
+		hydradragon.url(/pimpdaddy\.myq-see\.com/) or 
+		hydradragon.url(/scropion20078\.no-ip\.biz/) or 
+		hydradragon.url(/106\.51\.163\.232/) or 
+		hydradragon.url(/fuckyou\.duckdns\.org/) or 
+		hydradragon.url(/zakifr\.no-ip\.biz/) or 
+		hydradragon.url(/microsoft-office\.ddns\.net/) or 
+		hydradragon.url(/2\.25\.171\.244/) or 
+		hydradragon.url(/85\.202\.29\.79/) or 
+		hydradragon.url(/mariorossi2013\.homepc\.it/) or 
+		hydradragon.url(/hackcam\.zapto\.org/) or 
+		hydradragon.url(/mokhter222029\.ddns\.net/) or 
+		hydradragon.url(/win32\.ddns\.net/) or 
+		hydradragon.url(/ggwasgeht\.ddns\.net/) or 
+		hydradragon.url(/dexonic\.duckdns\.org/) or 
+		hydradragon.url(/coxiamigo\.myq-see\.com/) or 
+		hydradragon.url(/hamidoranis\.no-ip\.biz/) or 
+		hydradragon.url(/ospr\.publicvm\.com/) or 
+		hydradragon.url(/karasqlee9\.no-ip\.org/) or 
+		hydradragon.url(/hax\.no-ip\.info/) or 
+		hydradragon.url(/haa7aah\.no-ip\.biz/) or 
+		hydradragon.url(/omar\.no-ip\.biz/) or 
+		hydradragon.url(/yuosaf1993\.ddns\.net/) or 
+		hydradragon.url(/88\.164\.37\.97/) or 
+		hydradragon.url(/88\.247\.226\.120/) or 
+		hydradragon.url(/indusv00\.duckdns\.org/) or 
+		hydradragon.url(/andver18\.no-ip\.biz/) or 
+		hydradragon.url(/unknownuser\.no-ip\.biz/) or 
+		hydradragon.url(/nassahsliman\.ddns\.net/) or 
+		hydradragon.url(/gcafegood\.noip\.me/) or 
+		hydradragon.url(/rockrock\.ddns\.net/) or 
+		hydradragon.url(/188\.24\.119\.27/) or 
+		hydradragon.url(/93\.157\.235\.248/) or 
+		hydradragon.url(/komplevit-rat\.ddns\.net/) or 
+		hydradragon.url(/pianotiles2\.ddns\.net/) or 
+		hydradragon.url(/tobytori18\.myftp\.org/) or 
+		hydradragon.url(/105\.106\.49\.154/) or 
+		hydradragon.url(/moonmar10\.no-ip\.biz/) or 
+		hydradragon.url(/100009755836320\.no-ip\.biz/) or 
+		hydradragon.url(/villevalo\.chickenkiller\.com/) or 
+		hydradragon.url(/samoomalik\.no-ip\.biz/) or 
+		hydradragon.url(/foxfeline\.no-ip\.org/) or 
+		hydradragon.url(/kskdt\.ddns\.net/) or 
+		hydradragon.url(/fati43030\.no-ip\.biz/) or 
+		hydradragon.url(/shop10\.ddns\.net/) or 
+		hydradragon.url(/fairylow\.no-ip\.biz/) or 
+		hydradragon.url(/a\.tomx\.xyz/) or 
+		hydradragon.url(/r90\.no-ip\.biz/) or 
+		hydradragon.url(/46\.45\.207\.81/) or 
+		hydradragon.url(/warrirrs\.no-ip\.org/) or 
+		hydradragon.url(/azert123\.ddns\.net/) or 
+		hydradragon.url(/soso\.noip\.us/) or 
+		hydradragon.url(/sniperyakub\.ddns\.net/) or 
+		hydradragon.url(/baby\.webhop\.me/) or 
+		hydradragon.url(/zero228\.ddns\.net/) or 
+		hydradragon.url(/reddemon\.ddns\.net/) or 
+		hydradragon.url(/viagra\.jumpingcrab\.com/) or 
+		hydradragon.url(/domira\.ddns\.net/) or 
+		hydradragon.url(/alkingahmed555\.ddns\.net/) or 
+		hydradragon.url(/mahdi3141\.ddns\.net/) or 
+		hydradragon.url(/somenormalguy\.duckdns\.org/) or 
+		hydradragon.url(/shoo2018\.no-ip\.org/) or 
+		hydradragon.url(/goldeneagle1112\.ddns\.net/) or 
+		hydradragon.url(/hardstyleraver\.no-ip\.org/) or 
+		hydradragon.url(/79\.141\.163\.20/) or 
+		hydradragon.url(/mezoo32\.no-ip\.biz/) or 
+		hydradragon.url(/islam2020libya\.no-ip\.biz/) or 
+		hydradragon.url(/kingdom\.no-ip\.biz/) or 
+		hydradragon.url(/x300x300xx\.no-ip\.org/) or 
+		hydradragon.url(/puplicdsl\.ddns\.net/) or 
+		hydradragon.url(/teda11\.zapto\.org/) or 
+		hydradragon.url(/testsss\.ddns\.net/) or 
+		hydradragon.url(/185\.32\.221\.23/) or 
+		hydradragon.url(/topmax\.myq-see\.com/) or 
+		hydradragon.url(/sarasisi\.no-ip\.org/) or 
+		hydradragon.url(/dodee97dodee\.ddns\.net/) or 
+		hydradragon.url(/kararkarar0780\.ddns\.net/) or 
+		hydradragon.url(/darweshfis\.no-ip\.org/) or 
+		hydradragon.url(/jastn\.ddns\.net/) or 
+		hydradragon.url(/flashplayerxx\.no-ip\.org/) or 
+		hydradragon.url(/thaer\.no-ip\.biz/) or 
+		hydradragon.url(/elisou19\.ddns\.net/) or 
+		hydradragon.url(/dkms\.ddns\.net/) or 
+		hydradragon.url(/aaaa\.com/) or 
+		hydradragon.url(/liquidixen\.ddns\.net/) or 
+		hydradragon.url(/moep004\.no-ip\.org/) or 
+		hydradragon.url(/aaaaaaaaaabbbbb\.hopto\.org/) or 
+		hydradragon.url(/rok13198666\.no-ip\.biz/) or 
+		hydradragon.url(/1337ace\.ddns\.net/) or 
+		hydradragon.url(/droidjack33\.no-ip\.biz/) or 
+		hydradragon.url(/abdouoahmed\.ddns\.net/) or 
+		hydradragon.url(/bambi\.no-ip\.biz/) or 
+		hydradragon.url(/e777kx47\.ddns\.net/) or 
+		hydradragon.url(/shanks\.no-ip\.biz/) or 
+		hydradragon.url(/black1990\.ddns\.net/) or 
+		hydradragon.url(/brave-hacker\.no-ip\.org/) or 
+		hydradragon.url(/ala6a\.no-ip\.biz/) or 
+		hydradragon.url(/sarahwygan\.no-ip\.biz/) or 
+		hydradragon.url(/khantac\.ddns\.net/) or 
+		hydradragon.url(/107\.151\.193\.126/) or 
+		hydradragon.url(/madov-matrix25\.no-ip\.org/) or 
+		hydradragon.url(/93\.185\.151\.217/) or 
+		hydradragon.url(/203\.189\.232\.237/) or 
+		hydradragon.url(/zxczxczxc\.ddns\.net/) or 
+		hydradragon.url(/07726657423zaion\.no-ip\.biz/) or 
+		hydradragon.url(/amran-pc\.no-ip\.biz/) or 
+		hydradragon.url(/myfrenid2x\.zapto\.org/) or 
+		hydradragon.url(/winserver\.dlinkddns\.com/) or 
+		hydradragon.url(/mzgerges\.no-ip\.biz/) or 
+		hydradragon.url(/cjbks0u0\.no-ip\.org/) or 
+		hydradragon.url(/silenthunter3021\.no-ip\.org/) or 
+		hydradragon.url(/engrid\.no-ip\.biz/) or 
+		hydradragon.url(/137\.0\.0\.1/) or 
+		hydradragon.url(/snopi\.no-ip\.biz/) or 
+		hydradragon.url(/hhamokcha\.ddns\.net/) or 
+		hydradragon.url(/clashdroid\.no-ip\.biz/) or 
+		hydradragon.url(/jkgytgasjg12\.serveftp\.com/) or 
+		hydradragon.url(/owsen\.ddns\.net/) or 
+		hydradragon.url(/thegangsterrap\.noip\.me/) or 
+		hydradragon.url(/81\.4\.104\.129/) or 
+		hydradragon.url(/droid\.deutsche-db-bank\.ru/) or 
+		hydradragon.url(/gold5000\.ddns\.net/) or 
+		hydradragon.url(/hassanabd1233\.ddns\.net/) or 
+		hydradragon.url(/love2014\.ddns\.net/) or 
+		hydradragon.url(/bassamzeyad\.ddns\.net/) or 
+		hydradragon.url(/denishul\.hldns\.ru/) or 
+		hydradragon.url(/hacker-81\.no-ip\.biz/) or 
+		hydradragon.url(/noipjajaja\.ddns\.net/) or 
+		hydradragon.url(/41\.38\.56\.81/) or 
+		hydradragon.url(/tataline\.hopto\.org/) or 
+		hydradragon.url(/abedjaradat1177\.no-ip\.org/) or 
+		hydradragon.url(/voda\.no-ip\.org/) or 
+		hydradragon.url(/mohamednjrat111\.no-ip\.biz/) or 
+		hydradragon.url(/hakeerali2\.ddns\.net/) or 
+		hydradragon.url(/5\.189\.137\.186/) or 
+		hydradragon.url(/79\.137\.223\.139/) or 
+		hydradragon.url(/makarand\.no-ip\.org/) or 
+		hydradragon.url(/mehost\.ddns\.net/) or 
+		hydradragon.url(/xmohcine\.ddns\.net/) or 
+		hydradragon.url(/alabama192837\.no-ip\.org/)
 }
 
 rule ibanking: amtrckr
@@ -1365,8 +1365,8 @@ rule ibanking: amtrckr
 		family = "ibanking"
 
 	condition:
-		androguard.url(/www\.irmihan\.ir/) or 
-		androguard.url(/emberaer\.com/)
+		hydradragon.url(/www\.irmihan\.ir/) or 
+		hydradragon.url(/emberaer\.com/)
 }
 
 rule Android_AVITOMMS_Variant
@@ -1378,9 +1378,9 @@ rule Android_AVITOMMS_Variant
 		source = "https://blog.avast.com/android-banker-trojan-preys-on-credit-card-information"
 
 	condition:
-		(androguard.receiver(/AlarmReceiverKnock/) and 
-		 androguard.receiver(/BootReciv/) and 
-		 androguard.receiver(/AlarmReceiverAdm/))
+		(hydradragon.receiver(/AlarmReceiverKnock/) and 
+		 hydradragon.receiver(/BootReciv/) and 
+		 hydradragon.receiver(/AlarmReceiverAdm/))
 		
 }
 
@@ -1393,12 +1393,12 @@ rule Android_AVITOMMS_Rule2
 		source = "https://blog.avast.com/android-banker-trojan-preys-on-credit-card-information"
 
 	condition:
-		androguard.service(/IMService/) and 
-		androguard.receiver(/BootReciv/) and 
-		androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/i) and 
-		androguard.permission(/android.permission.KILL_BACKGROUND_PROCESSES/i) and 
-		androguard.permission(/android.permission.SEND_SMS/i) and
-		androguard.permission(/android.permission.INTERNET/i)
+		hydradragon.service(/IMService/) and 
+		hydradragon.receiver(/BootReciv/) and 
+		hydradragon.permission(/android.permission.RECEIVE_BOOT_COMPLETED/i) and 
+		hydradragon.permission(/android.permission.KILL_BACKGROUND_PROCESSES/i) and 
+		hydradragon.permission(/android.permission.SEND_SMS/i) and
+		hydradragon.permission(/android.permission.INTERNET/i)
 }
 
 
@@ -1413,11 +1413,11 @@ rule backdoor: dropper
 		source = "https://koodous.com/rulesets/1765"
 
 	condition:
-		androguard.url("http://sys.wksnkys7.com") 
-		or androguard.url("http://sys.hdyfhpoi.com") 
-		or androguard.url("http://sys.syllyq1n.com") 
-		or androguard.url("http://sys.aedxdrcb.com")
-		or androguard.url("http://sys.aedxdrcb.com")
+		hydradragon.url("http://sys.wksnkys7.com") 
+		or hydradragon.url("http://sys.hdyfhpoi.com") 
+		or hydradragon.url("http://sys.syllyq1n.com") 
+		or hydradragon.url("http://sys.aedxdrcb.com")
+		or hydradragon.url("http://sys.aedxdrcb.com")
 }
 
 rule koodous : official
@@ -1431,7 +1431,7 @@ rule koodous : official
 
 	condition:
 		$str_1 and 
-		androguard.receiver(/\.AppBoot$/)		
+		hydradragon.receiver(/\.AppBoot$/)		
 }
 
 
@@ -1444,8 +1444,8 @@ rule Android_BadMirror
 		source = "https://blog.fortinet.com/post/badmirror-new-android-malware-family-spotted-by-sherlockdroid"
 
 	condition:
-		androguard.service(/SimInsService/i) and
-        androguard.permission(/android.permission.READ_PHONE_STATE/i)
+		hydradragon.service(/SimInsService/i) and
+        hydradragon.permission(/android.permission.READ_PHONE_STATE/i)
 }
 
 rule Banker_Acecard
@@ -1458,7 +1458,7 @@ strings:
 $str_1 = "Cardholder name"
 $str_2 = "instagram.php"
 condition:
-((androguard.package_name("starter.fl") and androguard.service("starter.CosmetiqFlServicesCallHeadlessSmsSendService")) or androguard.package_name("cosmetiq.fl") or all of ($str_*)) and androguard.permissions_number > 19
+((hydradragon.package_name("starter.fl") and hydradragon.service("starter.CosmetiqFlServicesCallHeadlessSmsSendService")) or hydradragon.package_name("cosmetiq.fl") or all of ($str_*)) and hydradragon.permissions_number > 19
 }
 
 rule Android_Clicker_G
@@ -1471,7 +1471,7 @@ rule Android_Clicker_G
 	strings:
 		$a = "upd.php?text="
 	condition:
-		androguard.receiver(/MyBroadCastReceiver/i) and $a
+		hydradragon.receiver(/MyBroadCastReceiver/i) and $a
 }
 
 rule Android_Copy9
@@ -1483,8 +1483,8 @@ rule Android_Copy9
 		source = "http://copy9.com/"
 
 	condition:
-		androguard.service(/com.ispyoo/i) and
-        androguard.receiver(/com.ispyoo/i)
+		hydradragon.service(/com.ispyoo/i) and
+        hydradragon.receiver(/com.ispyoo/i)
 }
 
 rule Android_DeathRing
@@ -1496,8 +1496,8 @@ rule Android_DeathRing
 		source = "https://blog.lookout.com/blog/2014/12/04/deathring/"
 
 	condition:
-		androguard.service(/MainOsService/i) and
-        androguard.receiver(/ApkUninstallReceiver/i)
+		hydradragon.service(/MainOsService/i) and
+        hydradragon.receiver(/ApkUninstallReceiver/i)
 }
 
 rule Android_Dogspectus_rswm
@@ -1514,18 +1514,18 @@ rule Android_Dogspectus_rswm
 		
 		
 	condition:
-		(androguard.package_name("net.prospectus") and
-		 androguard.app_name("System update")) or
+		(hydradragon.package_name("net.prospectus") and
+		 hydradragon.app_name("System update")) or
 		 
-		androguard.certificate.sha1("180ADFC5DE49C0D7F643BD896E9AAC4B8941E44E") or
+		hydradragon.certificate.sha1("180ADFC5DE49C0D7F643BD896E9AAC4B8941E44E") or
 		
-		(androguard.activity(/Loganberry/i) or 
-		androguard.activity("net.prospectus.pu") or 
-		androguard.activity("PanickedActivity")) or 
+		(hydradragon.activity(/Loganberry/i) or 
+		hydradragon.activity("net.prospectus.pu") or 
+		hydradragon.activity("PanickedActivity")) or 
 		
-		(androguard.permission(/android.permission.INTERNET/) and
-		 androguard.permission(/android.permission.WAKE_LOCK/) and 
-		 androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/) and
+		(hydradragon.permission(/android.permission.INTERNET/) and
+		 hydradragon.permission(/android.permission.WAKE_LOCK/) and 
+		 hydradragon.permission(/android.permission.RECEIVE_BOOT_COMPLETED/) and
 		 all of ($str_*))
 		 	
 		
@@ -1540,8 +1540,8 @@ rule Android_Dendroid
 		source = "https://blog.lookout.com/blog/2014/03/06/dendroid/"
 
 	condition:
-		androguard.service(/com.connect/i) and
-        androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/i)
+		hydradragon.service(/com.connect/i) and
+        hydradragon.permission(/android.permission.RECEIVE_BOOT_COMPLETED/i)
 }
 
 
@@ -1554,10 +1554,10 @@ rule Android_Dogspectus
 		source = "https://www.bluecoat.com/security-blog/2016-04-25/android-exploit-delivers-dogspectus-ransomware"
 
 	condition:
-		androguard.activity(/PanickedActivity/i) and 
-		androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/i) and 
-		androguard.permission(/android.permission.INTERNET/i) and
-		androguard.permission(/android.permission.WAKE_LOCK/i)
+		hydradragon.activity(/PanickedActivity/i) and 
+		hydradragon.permission(/android.permission.RECEIVE_BOOT_COMPLETED/i) and 
+		hydradragon.permission(/android.permission.INTERNET/i) and
+		hydradragon.permission(/android.permission.WAKE_LOCK/i)
 }
 
 rule Android_FakeBank_Fanta
@@ -1569,10 +1569,10 @@ rule Android_FakeBank_Fanta
 		source = "https://blog.trendmicro.com/trendlabs-security-intelligence/fake-bank-app-phishes-credentials-locks-users-out/"
 
 	condition:
-		androguard.service(/SocketService/i) and 
-		androguard.receiver(/MyAdmin/i) and 
-		androguard.receiver(/Receiver/i) and 
-		androguard.receiver(/NetworkChangeReceiver/i)
+		hydradragon.service(/SocketService/i) and 
+		hydradragon.receiver(/MyAdmin/i) and 
+		hydradragon.receiver(/Receiver/i) and 
+		hydradragon.receiver(/NetworkChangeReceiver/i)
 		
 }
 
@@ -1590,10 +1590,10 @@ rule Andr_fake_mario
 		$str_3 = "enableCheats"
 
 	condition:
-		androguard.certificate.sha1("9AD4E60648B116006E76542BD701F14D8E2C385F") or 
-		androguard.package_name("com.ms.cjml") or
-		(androguard.permission(/android.permission.INTERNET/) and
-		androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/) and
+		hydradragon.certificate.sha1("9AD4E60648B116006E76542BD701F14D8E2C385F") or 
+		hydradragon.package_name("com.ms.cjml") or
+		(hydradragon.permission(/android.permission.INTERNET/) and
+		hydradragon.permission(/android.permission.RECEIVE_BOOT_COMPLETED/) and
 		all of ($str_*))
 		
 }
@@ -1630,9 +1630,9 @@ rule Android_Godlike
 	strings:
 		$a = "libgodlikelib.so"
 	condition:
-		(androguard.service(/godlike\.s/i) and
-		androguard.service(/godlike\.g/i) and
-        androguard.receiver(/godlike\.e/i)) or
+		(hydradragon.service(/godlike\.s/i) and
+		hydradragon.service(/godlike\.g/i) and
+        hydradragon.receiver(/godlike\.e/i)) or
 		$a
 		}
 
@@ -1650,8 +1650,8 @@ rule Android_Godlike_2
 		$a_3 = "libr.so"
 		$a_4 = "libpl_droidsonroids_gif.so"
 	condition:
-		(androguard.service(/FastInstallService/i) and
-		androguard.service(/DownloadService/i)) and 
+		(hydradragon.service(/FastInstallService/i) and
+		hydradragon.service(/DownloadService/i)) and 
 		any of ($a_*)
 }
 
@@ -1719,14 +1719,14 @@ rule libyan_scorpions
 		$domain_5 = "sara2011.no-ip.biz" ascii wide nocase
 
 	condition:
-		androguard.url(/41\.208\.110\.46/) or hydradragon.network.host(/41\.208\.110\.46/) or
-		androguard.url(/winmeif.myq-see.com/i) or hydradragon.network.dns_lookup(/winmeif.myq-see.com/i) or
-		androguard.url(/wininit.myq-see.com/i) or hydradragon.network.dns_lookup(/wininit.myq-see.com/i) or
-		androguard.url(/samsung.ddns.me/i) or hydradragon.network.dns_lookup(/samsung.ddns.me/i) or
-		androguard.url(/collge.myq-see.com/i) or hydradragon.network.dns_lookup(/collge.myq-see.com/i) or
-		androguard.url(/sara2011.no-ip.biz/i) or hydradragon.network.dns_lookup(/sara2011.no-ip.biz/i) or
+		hydradragon.url(/41\.208\.110\.46/) or hydradragon.network.host(/41\.208\.110\.46/) or
+		hydradragon.url(/winmeif.myq-see.com/i) or hydradragon.network.dns_lookup(/winmeif.myq-see.com/i) or
+		hydradragon.url(/wininit.myq-see.com/i) or hydradragon.network.dns_lookup(/wininit.myq-see.com/i) or
+		hydradragon.url(/samsung.ddns.me/i) or hydradragon.network.dns_lookup(/samsung.ddns.me/i) or
+		hydradragon.url(/collge.myq-see.com/i) or hydradragon.network.dns_lookup(/collge.myq-see.com/i) or
+		hydradragon.url(/sara2011.no-ip.biz/i) or hydradragon.network.dns_lookup(/sara2011.no-ip.biz/i) or
 		any of ($domain_*) or any of ($ip_*) or
-		androguard.certificate.sha1("DFFDD3C42FA06BCEA9D65B8A2E980851383BD1E3")
+		hydradragon.certificate.sha1("DFFDD3C42FA06BCEA9D65B8A2E980851383BD1E3")
 		
 }
 
@@ -1758,7 +1758,7 @@ rule Installer: banker android
 		description = "Applications with Installer as an application name"
 
 	condition:
-		androguard.package_name("Jk7H.PwcD")
+		hydradragon.package_name("Jk7H.PwcD")
 }
 
 rule towelhacking_behaviour
@@ -1770,9 +1770,9 @@ rule towelhacking_behaviour
 
 
 	condition:
-		androguard.certificate.sha1("180ADFC5DE49C0D7F643BD896E9AAC4B8941E44E") or 
-		( androguard.activity(/net.prospectus.*/i) and androguard.permission(/android.permission.WRITE_CONTACT/) and
-		androguard.permission(/android.permission.ACCESS_COARSE_UPDATES/))
+		hydradragon.certificate.sha1("180ADFC5DE49C0D7F643BD896E9AAC4B8941E44E") or 
+		( hydradragon.activity(/net.prospectus.*/i) and hydradragon.permission(/android.permission.WRITE_CONTACT/) and
+		hydradragon.permission(/android.permission.ACCESS_COARSE_UPDATES/))
 		
 }
 
@@ -1893,16 +1893,16 @@ rule android_mazarBot_z: android
 		$str_6 = "unstop all numbers"
 		
 	condition:		
-		androguard.certificate.sha1("50FD99C06C2EE360296DCDA9896AD93CAE32266B") or
+		hydradragon.certificate.sha1("50FD99C06C2EE360296DCDA9896AD93CAE32266B") or
 		
-		(androguard.package_name("com.mazar") and
-		androguard.activity(/\.DevAdminDisabler/) and 
-		androguard.receiver(/\.DevAdminReceiver/) and 
-		androguard.service(/\.WorkerService/i)) or 
+		(hydradragon.package_name("com.mazar") and
+		hydradragon.activity(/\.DevAdminDisabler/) and 
+		hydradragon.receiver(/\.DevAdminReceiver/) and 
+		hydradragon.service(/\.WorkerService/i)) or 
 		
-		androguard.permission(/android.permission.INTERNET/) and
-		androguard.permission(/android.permission.SEND_SMS/) and
-		androguard.permission(/android.permission.CALL_PHONE/) and
+		hydradragon.permission(/android.permission.INTERNET/) and
+		hydradragon.permission(/android.permission.SEND_SMS/) and
+		hydradragon.permission(/android.permission.CALL_PHONE/) and
 		all of ($str_*)
 }
 
@@ -1920,7 +1920,7 @@ $s5 = "Lcom/metasploit/stage/a;"
 $s6 = "Lcom/metasploit/stage/c;"
 $s7 = "Lcom/metasploit/stage/b;"
 condition:
-androguard.package_name("com.metasploit.stage") or any of them
+hydradragon.package_name("com.metasploit.stage") or any of them
 }
 
 
@@ -1935,9 +1935,9 @@ rule Android_OmniRat
 	strings:
 		$a = "android.engine.apk"
 	condition:
-		(androguard.activity(/com.app.MainActivity/i) and 
-		 androguard.permission(/android.permission.WRITE_EXTERNAL_STORAGE/i) and 
-		 androguard.package_name(/com.app/i)) and $a
+		(hydradragon.activity(/com.app.MainActivity/i) and 
+		 hydradragon.permission(/android.permission.WRITE_EXTERNAL_STORAGE/i) and 
+		 hydradragon.package_name(/com.app/i)) and $a
 }
 
 
@@ -1957,11 +1957,11 @@ rule android_overlayer
 		$str_6 = "filter2" 
 
 	condition:
-		androguard.certificate.sha1("6994ED892E7F0019BCA74B5847C6D5113391D127") or 
+		hydradragon.certificate.sha1("6994ED892E7F0019BCA74B5847C6D5113391D127") or 
 		
-		(androguard.permission(/android.permission.INTERNET/) and
-		androguard.permission(/android.permission.READ_SMS/) and
-		androguard.permission(/android.permission.READ_PHONE_STATE/) and 
+		(hydradragon.permission(/android.permission.INTERNET/) and
+		hydradragon.permission(/android.permission.READ_SMS/) and
+		hydradragon.permission(/android.permission.READ_PHONE_STATE/) and 
 		all of ($str_*))
 }
 
@@ -1981,10 +1981,10 @@ rule Android_pinkLocker : android
 		$str_4 = "res/xml/device_admin_sample.xmlPK" 
 
 	condition:
-		androguard.url(/lineout\.pw/) or 
-		androguard.certificate.sha1("D88B53449F6CAC93E65CA5E224A5EAD3E990921E") or
-		androguard.permission(/android.permission.INTERNET/) and
-		androguard.permission(/android.permission.DISABLE_KEYGUARD/) and
+		hydradragon.url(/lineout\.pw/) or 
+		hydradragon.certificate.sha1("D88B53449F6CAC93E65CA5E224A5EAD3E990921E") or
+		hydradragon.permission(/android.permission.INTERNET/) and
+		hydradragon.permission(/android.permission.DISABLE_KEYGUARD/) and
 		all of ($str_*)
 		
 }
@@ -2020,12 +2020,12 @@ rule bankbot_polish_banks : banker
 
     condition:
         all of ($s*) and 1 of ($bank*) and 
-        androguard.permission(/android.permission.INTERNET/) and 
-        androguard.permission(/android.permission.WAKE_LOCK/) and
-        androguard.permission(/android.permission.READ_EXTERNAL_STORAGE/) and
-        androguard.permission(/android.permission.RECEIVE_MMS/) and
-        androguard.permission(/android.permission.READ_SMS/) and
-        androguard.permission(/android.permission.RECEIVE_SMS/)
+        hydradragon.permission(/android.permission.INTERNET/) and 
+        hydradragon.permission(/android.permission.WAKE_LOCK/) and
+        hydradragon.permission(/android.permission.READ_EXTERNAL_STORAGE/) and
+        hydradragon.permission(/android.permission.RECEIVE_MMS/) and
+        hydradragon.permission(/android.permission.READ_SMS/) and
+        hydradragon.permission(/android.permission.RECEIVE_SMS/)
 }
 
 
@@ -2044,7 +2044,7 @@ rule trojan: pornClicker
 		$api = "http://mayis24.4tubetv.xyz/dmr/ya"
 		
 	condition:
-		($a and $b and $c and $api) or androguard.url(/mayis24\.4tubetv\.xyz/)
+		($a and $b and $c and $api) or hydradragon.url(/mayis24\.4tubetv\.xyz/)
 }
 
 rule Android_RuMMS
@@ -2057,11 +2057,11 @@ rule Android_RuMMS
 		source = "https://www.fireeye.com/blog/threat-research/2016/04/rumms-android-malware.html"
 
 	condition:
-		androguard.package_name("org.starsizew") or
-		androguard.package_name("com.tvone.untoenynh") or
-		androguard.package_name("org.zxformat") and
-		androguard.permission(/android.permission.RECEIVE_SMS/) and
-		androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/)
+		hydradragon.package_name("org.starsizew") or
+		hydradragon.package_name("com.tvone.untoenynh") or
+		hydradragon.package_name("org.zxformat") and
+		hydradragon.permission(/android.permission.RECEIVE_SMS/) and
+		hydradragon.permission(/android.permission.RECEIVE_BOOT_COMPLETED/)
 		
 }
 
@@ -2074,12 +2074,12 @@ rule Android_RuMMS_0
 		source = "https://www.fireeye.com/blog/threat-research/2016/04/rumms-android-malware.html"
 
 	condition:
-		(androguard.service(/\.Tb/) and 
-		 androguard.service(/\.Ad/) and 
-		 androguard.receiver(/\.Ac/) and 
-		 androguard.receiver(/\.Ma/)) or
-        (androguard.url(/http\:\/\/37\.1\.207/) and 
-		 androguard.url(/\/api\/\?id\=7/))
+		(hydradragon.service(/\.Tb/) and 
+		 hydradragon.service(/\.Ad/) and 
+		 hydradragon.receiver(/\.Ac/) and 
+		 hydradragon.receiver(/\.Ma/)) or
+        (hydradragon.url(/http\:\/\/37\.1\.207/) and 
+		 hydradragon.url(/\/api\/\?id\=7/))
 		
 }
 
@@ -2092,7 +2092,7 @@ rule SandroRat
 		source = "https://blogs.mcafee.com/mcafee-labs/sandrorat-android-rat-targeting-polish-banking-users-via-e-mail-phishing/"
 
 	condition:
-		androguard.activity(/net.droidjack.server/i) 
+		hydradragon.activity(/net.droidjack.server/i) 
 }
 
 rule andr_sk_bank
@@ -2111,11 +2111,11 @@ rule andr_sk_bank
 		$str_5 = "com.ahnlab.v3mobileplus"
 
 	condition:
-		androguard.package_name("com.qbjkyd.rhsxa") or
-		androguard.certificate.sha1("543382EDDAFC05B435F13BBE97037BB335C2948B") or
-		(androguard.permission(/android.permission.RECEIVE_SMS/) and
-		androguard.permission(/android.permission.INTERNET/) and 
-		androguard.permission(/android.permission.RECEIVE_BOOT_COMPLETED/) and 
+		hydradragon.package_name("com.qbjkyd.rhsxa") or
+		hydradragon.certificate.sha1("543382EDDAFC05B435F13BBE97037BB335C2948B") or
+		(hydradragon.permission(/android.permission.RECEIVE_SMS/) and
+		hydradragon.permission(/android.permission.INTERNET/) and 
+		hydradragon.permission(/android.permission.RECEIVE_BOOT_COMPLETED/) and 
 		all of ($str_*))
 }
 
@@ -2197,7 +2197,7 @@ rule spyAgent
 		$cc_alt7 = "http://ksa-sef.com/Hack%20Mobaile/addInconingLogs.php"
 
 	condition:
-		androguard.url(/ksa-sef\.com/) or ($phone and $caption) or ($cc and $cc_alt and $cc_alt2 and $cc_alt3 and $cc_alt4 and $cc_alt5 and $cc_alt6 and $cc_alt7)
+		hydradragon.url(/ksa-sef\.com/) or ($phone and $caption) or ($cc and $cc_alt and $cc_alt2 and $cc_alt3 and $cc_alt4 and $cc_alt5 and $cc_alt6 and $cc_alt7)
 		
 }
 
@@ -2237,8 +2237,8 @@ rule spynote_variants
         $str_4 = "screamHacker" 
         $str_5 = "screamon"
     condition:
-        androguard.package_name("dell.scream.application") or 
-        androguard.certificate.sha1("219D542F901D8DB85C729B0F7AE32410096077CB") or
+        hydradragon.package_name("dell.scream.application") or 
+        hydradragon.certificate.sha1("219D542F901D8DB85C729B0F7AE32410096077CB") or
         all of ($str_*)
 }
 
@@ -2256,9 +2256,9 @@ rule android_spywaller : android
 		$str_4 = "android.intent.action.START_GOOGLE_SERVICE"
 
 	condition:
-		androguard.certificate.sha1("165F84B05BD33DA1BA0A8E027CEF6026B7005978") or
-		androguard.permission(/android.permission.INTERNET/) and
-		androguard.permission(/android.permission.READ_PHONE_STATE/) and 
+		hydradragon.certificate.sha1("165F84B05BD33DA1BA0A8E027CEF6026B7005978") or
+		hydradragon.permission(/android.permission.INTERNET/) and
+		hydradragon.permission(/android.permission.READ_PHONE_STATE/) and 
 		all of ($str_*)
 }
 
@@ -2282,9 +2282,9 @@ rule Android_Switcher
 
 
 	condition:
-		androguard.certificate.sha1("2421686AE7D976D19AB72DA1BDE273C537D2D4F9") or 
-		(androguard.permission(/android.permission.INTERNET/) and
-		androguard.permission(/android.permission.ACCESS_WIFI_STATE/) and 
+		hydradragon.certificate.sha1("2421686AE7D976D19AB72DA1BDE273C537D2D4F9") or 
+		(hydradragon.permission(/android.permission.INTERNET/) and
+		hydradragon.permission(/android.permission.ACCESS_WIFI_STATE/) and 
 		($dns_2 or $dns_3 or $dns_4) and all of ($str_*))
 }
 
@@ -2344,17 +2344,17 @@ rule andr_tordow
 		author = "https://twitter.com/5h1vang"
 
 	condition:
-		androguard.package_name("com.di2.two") or		
-		(androguard.activity(/API2Service/i) and
-		androguard.activity(/CryptoUtil/i) and
-		androguard.activity(/Loader/i) and
-		androguard.activity(/Logger/i) and 
-		androguard.permission(/android.permission.INTERNET/)) or
+		hydradragon.package_name("com.di2.two") or		
+		(hydradragon.activity(/API2Service/i) and
+		hydradragon.activity(/CryptoUtil/i) and
+		hydradragon.activity(/Loader/i) and
+		hydradragon.activity(/Logger/i) and 
+		hydradragon.permission(/android.permission.INTERNET/)) or
 		
 		//Certificate check based on @stevenchan's comment
-		androguard.certificate.sha1("78F162D2CC7366754649A806CF17080682FE538C") or
-		androguard.certificate.sha1("BBA26351CE41ACBE5FA84C9CF331D768CEDD768F") or
-		androguard.certificate.sha1("0B7C3BC97B6D7C228F456304F5E1B75797B7265E")
+		hydradragon.certificate.sha1("78F162D2CC7366754649A806CF17080682FE538C") or
+		hydradragon.certificate.sha1("BBA26351CE41ACBE5FA84C9CF331D768CEDD768F") or
+		hydradragon.certificate.sha1("0B7C3BC97B6D7C228F456304F5E1B75797B7265E")
 }
 
 rule Android_Triada : android
@@ -2370,9 +2370,9 @@ rule Android_Triada : android
 		$string_1 = "android/system/PopReceiver"
 	condition:
 		all of ($string_*) and
-		androguard.permission(/android.permission.KILL_BACKGROUND_PROCESSES/) and
-		androguard.permission(/android.permission.SYSTEM_ALERT_WINDOW/) and
-		androguard.permission(/android.permission.GET_TASKS/)
+		hydradragon.permission(/android.permission.KILL_BACKGROUND_PROCESSES/) and
+		hydradragon.permission(/android.permission.SYSTEM_ALERT_WINDOW/) and
+		hydradragon.permission(/android.permission.GET_TASKS/)
 }
 
 rule Trojan_Dendroid
@@ -2395,7 +2395,7 @@ rule Trojan_Droidjack
 meta:
 author = "https://twitter.com/SadFud75"
 condition:
-androguard.package_name("net.droidjack.server") or androguard.activity(/net.droidjack.server/i)
+hydradragon.package_name("net.droidjack.server") or hydradragon.activity(/net.droidjack.server/i)
 }
 
 rule VikingBotnet
@@ -2417,7 +2417,7 @@ rule VikingBotnet
 
 // ── rootkit behavior detection ──────────────────────────────────────────────
 //
-// Leverages the androguard.rootkit_behavior() function, which returns 1 when
+// Leverages the hydradragon.rootkit_behavior() function, which returns 1 when
 // an APK declares no MAIN/LAUNCHER activity (hidden from the app drawer) AND
 // requests at least one high-privilege / persistence permission (device admin,
 // accessibility service, overlay, boot-completed, etc.).  Alone each signal is
@@ -2429,10 +2429,10 @@ rule hidden_icon_rootkit : android rootkit
 	meta:
 		author = "Emirhan Ucan"
 		description = "App has no launcher icon and requests suspicious permissions — stealth-rootkit pattern"
-		reference = "androguard.rootkit_behavior()"
+		reference = "hydradragon.rootkit_behavior()"
 
 	condition:
-		androguard.rootkit_behavior() == 1
+		hydradragon.rootkit_behavior() == 1
 }
 
 // ── high-entropy packed rootkit (APK scan) ───────────────────────────────────
@@ -2440,8 +2440,8 @@ rule hidden_icon_rootkit : android rootkit
 // Combines three static signals that together strongly indicate a packed,
 // stealthy, device-admin-abusing payload:
 //   1. math.entropy(0, filesize) > 7.0  — APK is packed/encrypted
-//   2. androguard.device_admin_permission() == 1  — requests device admin
-//   3. androguard.rootkit_behavior() == 1  — no launcher icon + suspicious perms
+//   2. hydradragon.device_admin_permission() == 1  — requests device admin
+//   3. hydradragon.rootkit_behavior() == 1  — no launcher icon + suspicious perms
 //
 // math.entropy is available because this rule runs in the APK scan path where
 // YARA-X scans the actual file bytes (not just HIPS metadata).
@@ -2451,10 +2451,10 @@ rule packed_device_admin_rootkit : android rootkit trojan
 	meta:
 		author = "Emirhan Ucan"
 		description = "High-entropy (packed) APK that requests device admin and hides its launcher icon — stealth-rootkit pattern"
-		reference = "math.entropy() + androguard.device_admin_permission() + androguard.rootkit_behavior()"
+		reference = "math.entropy() + hydradragon.device_admin_permission() + hydradragon.rootkit_behavior()"
 
 	condition:
 		math.entropy(0, filesize) > 7.0 and
-		androguard.device_admin_permission() == 1 and
-		androguard.rootkit_behavior() == 1
+		hydradragon.device_admin_permission() == 1 and
+		hydradragon.rootkit_behavior() == 1
 }

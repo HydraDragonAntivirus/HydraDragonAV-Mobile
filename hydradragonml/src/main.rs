@@ -100,7 +100,8 @@ fn main() {
 
     let model_bytes = std::fs::read(&args.model).expect("cannot read model file");
     let vocab_bytes = std::fs::read(&args.vocab).expect("cannot read vocab file");
-    let mut model = Model::load(&model_bytes, &vocab_bytes)
+    let device = burn_wgpu::WgpuDevice::default();
+    let mut model = Model::load(&model_bytes, &vocab_bytes, device)
         .unwrap_or_else(|e| {
             eprintln!("ERROR: failed to load model: {e}");
             std::process::exit(1);

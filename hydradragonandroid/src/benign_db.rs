@@ -84,6 +84,23 @@ impl BenignDb {
         false
     }
 
+    /// Highest estimated Jaccard similarity between `tokens` and any stored
+    /// signature for `package_name` (0.0 if the package is unknown). Exposed
+    /// so the ML engine can use benign-DB similarity as a numerical feature,
+    /// not just the boolean `is_known_benign` gate.
+    pub fn max_jaccard(
+        &self,
+        package_name: &str,
+        tokens: &std::collections::HashSet<u64>,
+    ) -> f32 {
+        let stored = match self.sigs.get(package_name) {
+            Some(v) => v,
+            None => return 0.0,
+        };
+        let query = compute_sig(tokens);
+        stored.iter().map(|s| jaccard(&query, s)).fold(0.0_f32, f32::max)
+    }
+
     /// Number of packages in the database.
     pub fn package_count(&self) -> usize {
         self.sigs.len()

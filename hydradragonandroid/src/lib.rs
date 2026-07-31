@@ -19,6 +19,7 @@ use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
 
 use hydradragonclamav::{Engine as ClamavEngine, is_apk_zip, is_text_like, ScanOptions};
+use hydradragonml::features::EngineFeatures;
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 use base64::Engine as Base64Engine;
@@ -589,9 +590,10 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 let mut report = String::new();
                 let model_bytes = files.get(MODEL_ONNX);
                 let vocab_bytes = files.get(VOCAB_JSON);
+                let device = burn_wgpu::WgpuDevice::default();
                 let model = match model_bytes.zip(vocab_bytes).and_then(|(m, v)| {
                     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Option<Model> {
-                        hydradragonml::Model::load(m, v).ok()
+                        hydradragonml::Model::load(m, v, device).ok()
                     }))
                     .ok()
                     .flatten()
@@ -824,6 +826,7 @@ fn run_ml_on_mmap(
     data: &[u8],
     path: &str,
     fmt: Option<&'static str>,
+    engine_features: &EngineFeatures,
 ) -> (bool, f32, Vec<(String, Vec<String>)>) {
     if skip_by_size(data) {
         return (false, 0.0, Vec::new());
@@ -835,7 +838,7 @@ fn run_ml_on_mmap(
     if !is_apk_zip(data) {
         return (false, 0.0, Vec::new());
     }
-    match model.scan(data) {
+    match model.scan_with_features(data, engine_features) {
         Some(r) => {
             let lineages = if r.malicious {
                 vec![(path.to_string(), Vec::new())]
@@ -846,6 +849,253 @@ fn run_ml_on_mmap(
         }
         None => (false, 0.0, Vec::new()),
     }
+}
+
+/// Aggregate every engine analysis result that has already been computed for
+/// this APK (DEX static analysis, native emulation, manifest, URLs/IPs,
+/// TLSH, certificate, benign DB, media hidden-data) into the `EngineFeatures`
+/// vector consumed by the Burn classifier. Runs once per file, after Phase 2,
+/// so the ML thread can reuse one feature vector for every buffer in the APK.
+#[allow(clippy::too_many_arguments)]
+fn build_engine_features(
+    engine: &Engine,
+    buffers: &[Buf],
+    dex_scans: &[Option<dex_scan::DexScan>],
+    emulated: &[emulate::EmulationResult],
+    perm_count: usize,
+) -> EngineFeatures {
+    use dex_analysis::Severity;
+
+    let mut feats = EngineFeatures::default();
+
+    // ── DEX static analysis ──────────────────────────────────────────────
+    for ds in dex_scans.iter().flatten() {
+        feats.dex_string_count += ds.text.lines().count() as f32;
+        feats.dex_api_call_count += ds.api_calls.len() as f32;
+        let mut classes: std::collections::HashSet<&str> = std::collections::HashSet::new();
+        for call in &ds.api_calls {
+            // api_calls are "Lpkg/Cls;->method(params)return\tcount"; the
+            // class descriptor is the part before "->".
+            if let Some(cls) = call.split("->").next() {
+                classes.insert(cls.trim());
+            }
+        }
+        feats.dex_class_count += classes.len() as f32;
+        for f in &ds.findings {
+            match f.severity {
+                Severity::High => feats.dex_finding_high += 1.0,
+                Severity::Critical => feats.dex_finding_critical += 1.0,
+                _ => {}
+            }
+        }
+    }
+
+    // ── Native code emulation (ELF) ──────────────────────────────────────
+    for (i, r) in emulated.iter().enumerate() {
+        if r.strings.is_empty() && r.api_calls.is_empty() {
+            continue;
+        }
+        // Only ELF buffers get non-default EmulationResults (see the emulation
+        // thread in run_full_apk_scan), so a populated result = one ELF.
+        let _ = buffers.get(i);
+        feats.elf_count += 1.0;
+        feats.elf_emulated_strings += r.strings.len() as f32;
+        for call in &r.api_calls {
+            let name = call.name.as_str();
+            if matches!(
+                name,
+                "socket" | "connect" | "send" | "sendto" | "recv" | "recvfrom"
+                    | "gethostbyname" | "getaddrinfo" | "inet_addr" | "inet_pton"
+            ) {
+                feats.elf_network_calls += 1.0;
+            } else if matches!(
+                name,
+                "open" | "open64" | "fopen" | "creat" | "unlink" | "remove" | "rename"
+            ) {
+                feats.elf_file_calls += 1.0;
+            } else if matches!(
+                name,
+                "system" | "popen" | "execve" | "execl" | "execvp" | "fork" | "vfork"
+                    | "dlopen" | "dlsym"
+            ) {
+                feats.elf_exec_calls += 1.0;
+            } else if matches!(name, "ptrace" | "kill") {
+                feats.elf_anti_debug += 1.0;
+            }
+        }
+    }
+
+    // ── Manifest ─────────────────────────────────────────────────────────
+    feats.manifest_dangerous_permissions = perm_count as f32;
+    if let Some(manifest) = buffers.iter().find_map(|b| parse_manifest(&b.data)) {
+        feats.manifest_total_permissions = manifest.permissions.len() as f32;
+        feats.manifest_activities = manifest.activities.len() as f32;
+        feats.manifest_services = manifest.services.len() as f32;
+        feats.manifest_receivers = manifest.receivers.len() as f32;
+        feats.manifest_min_sdk = manifest.min_sdk.unwrap_or(0) as f32;
+        feats.manifest_target_sdk = manifest.target_sdk.unwrap_or(0) as f32;
+    }
+
+    // ── URLs & IPs from DEX strings + emulated strings ───────────────────
+    let mut text_parts: Vec<Vec<u8>> = Vec::new();
+    for ds in dex_scans.iter().flatten() {
+        text_parts.push(ds.text.as_bytes().to_vec());
+    }
+    text_parts.extend(emulated_strings_from(emulated));
+    for part in text_parts {
+        for line in part.split(|&b| b == b'\n') {
+            let s = String::from_utf8_lossy(line);
+            let s = s.trim();
+            if s.starts_with("http://") || s.starts_with("https://") {
+                if let Some(scanner) = &engine.url_scanner {
+                    if let Some(cat) = scanner.scan_url_only(s) {
+                        if cat.contains("PHISHING") {
+                            feats.url_phishing_count += 1.0;
+                        } else {
+                            feats.url_malicious_count += 1.0;
+                        }
+                    }
+                }
+            }
+            // IPv4 dotted-quad literals checked against the IP blocklists.
+            if let Some(scanner) = &engine.ip_scanner {
+                for ip in extract_ipv4(s) {
+                    if scanner.scan(&ip).is_some() {
+                        feats.ip_malicious_count += 1.0;
+                    }
+                }
+            }
+        }
+    }
+
+    // ── TLSH (nearest known-malware distance per buffer type) ────────────
+    let mut min_dist = i32::MAX;
+    for b in buffers {
+        if skip_by_size(&b.data) {
+            continue;
+        }
+        let db = if b.data.starts_with(b"\x7fELF") {
+            Some(&engine.tlsh_db_elf[..])
+        } else if b.data.starts_with(b"dex\n") {
+            Some(&engine.tlsh_db_dex[..])
+        } else if is_apk_zip(&b.data) {
+            Some(&engine.tlsh_db_apk[..])
+        } else {
+            None
+        };
+        if let Some(db) = db {
+            if let Some(dist) = tlsh_nearest(db, &b.data) {
+                if dist < min_dist {
+                    min_dist = dist;
+                }
+            }
+        }
+    }
+    feats.tlsh_min_distance = if min_dist != i32::MAX {
+        min_dist as f32
+    } else {
+        200.0 // no similarity to any known-malware digest → feature ~0.0
+    };
+
+    // ── Certificate / testkey signing ────────────────────────────────────
+    if riskware::is_testkey_detection_enabled() {
+        if let Some(cert) = extract_certificate(buffers) {
+            if riskware::check_testkey(&cert.sha1, &cert.subject, &cert.issuer) {
+                feats.is_testkey = 1.0;
+            }
+        }
+    }
+
+    // ── Benign DB (content-based MinHash Jaccard) ────────────────────────
+    if let Some(bdb) = &engine.benign_db {
+        for b in buffers {
+            if b.data.starts_with(b"PK\x03\x04") || is_apk_zip(&b.data) {
+                if let Some(pkg) = axml_package(&b.data) {
+                    if let Some(feats_minhash) = hydradragonml::features::extract_minhash(&b.data) {
+                        let j = bdb.max_jaccard(&pkg, &feats_minhash.tokens);
+                        if j > feats.benign_jaccard {
+                            feats.benign_jaccard = j;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Media hidden/polyglot data ───────────────────────────────────────
+    for b in buffers {
+        if media_scan::has_hidden_data(&b.data) || has_polyglot_or_hidden_data(&b.data) {
+            feats.media_hidden_count += 1.0;
+        }
+    }
+
+    feats
+}
+
+/// Decoded-string slices from the emulation results, re-joined the same way
+/// the emulation pass builds `emulated_strings` (strings + API-call names,
+/// '\n'-separated) so URL/IP extraction sees the identical content.
+fn emulated_strings_from(emulated: &[emulate::EmulationResult]) -> Vec<Vec<u8>> {
+    let mut out = Vec::new();
+    for r in emulated {
+        if r.strings.is_empty() && r.api_calls.is_empty() {
+            continue;
+        }
+        let mut joined: Vec<u8> = Vec::new();
+        if !r.strings.is_empty() {
+            joined.extend(r.strings.join("\n").into_bytes());
+        }
+        if !r.api_calls.is_empty() {
+            if !joined.is_empty() {
+                joined.push(b'\n');
+            }
+            joined.extend(
+                r.api_calls
+                    .iter()
+                    .map(|a| a.name.clone())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+                    .into_bytes(),
+            );
+        }
+        if !joined.is_empty() {
+            out.push(joined);
+        }
+    }
+    out
+}
+
+/// Extract IPv4 dotted-quad literals from a string (no validation of octet
+/// range beyond 0-255 — the blocklist lookups are textual anyway).
+fn extract_ipv4(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i + 7 <= bytes.len() {
+        if bytes[i].is_ascii_digit() {
+            let mut j = i;
+            while j < bytes.len() && (bytes[j].is_ascii_digit() || bytes[j] == b'.') {
+                j += 1;
+            }
+            let cand = &s[i..j];
+            let parts: Vec<&str> = cand.split('.').collect();
+            if parts.len() == 4 {
+                let valid = parts.iter().all(|p| {
+                    !p.is_empty()
+                        && p.len() <= 3
+                        && p.bytes().all(|b| b.is_ascii_digit())
+                        && p.parse::<u32>().map_or(false, |n| n <= 255)
+                });
+                if valid {
+                    out.push(cand.to_string());
+                    i = j;
+                    continue;
+                }
+            }
+        }
+        i += 1;
+    }
+    out
 }
 
 /// Parse a TLSH database file (one T1 digest per line) into a Vec of digests.
@@ -2530,6 +2780,11 @@ fn run_scan(
     let module_meta_ref = &module_meta[..];
     let emulated_ref = &emulated;
 
+    // Aggregate every engine result computed in Phase 2 (DEX static analysis,
+    // native emulation, manifest, URLs/IPs, TLSH, certificate, benign DB,
+    // media hidden-data) into the Burn classifier's EngineFeatures vector.
+    let engine_features = build_engine_features(engine_ref, buffers_ref, &dex_scans, &emulated, perm_count);
+
     // Precompute the set of buffers eligible for ClamAV/YARA content scanning
     // once, up front. The gating (size/relevance/media/executable checks) and
     // the per-video metadata extraction used to be recomputed inline inside a
@@ -2731,7 +2986,7 @@ fn run_scan(
                     };
                     let t0 = std::time::Instant::now();
                     let (mal, conf, lineages) = match std::panic::catch_unwind(
-                        std::panic::AssertUnwindSafe(|| run_ml_on_mmap(model, &b.data, &obj_path, b.fmt)),
+                        std::panic::AssertUnwindSafe(|| run_ml_on_mmap(model, &b.data, &obj_path, b.fmt, &engine_features)),
                     ) {
                         Ok(r) => r,
                         Err(_) => {
