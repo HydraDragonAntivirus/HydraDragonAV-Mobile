@@ -53,6 +53,9 @@ public final class NativeScanner {
     static {
         boolean loaded;
         try {
+            try {
+                System.loadLibrary("c++_shared");
+            } catch (Throwable ignored) {}
             System.loadLibrary("hydradragonandroid");
             loaded = true;
         } catch (Throwable t) {
