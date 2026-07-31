@@ -1764,7 +1764,7 @@ checksum = "abd57806937c9cc163efc8ea3910e00a62e2aeb0b8119f1793a978088f8f6b04"
 [[package]]
 name = "dex-analysis"
 version = "0.1.0"
-source = "git+https://github.com/HydraDragonAntivirus/dex-parser-analyzer?branch=main#44891217b48b3febf100f6928032c591093112f8"
+source = "git+https://github.com/HydraDragonAntivirus/dex-parser-analyzer?branch=main#2ab71e2f6331e7bdaee179cbf9ae3429cc4df9d0"
 dependencies = [
  "aho-corasick",
  "dex-core",
@@ -1781,7 +1781,7 @@ dependencies = [
 [[package]]
 name = "dex-core"
 version = "0.1.0"
-source = "git+https://github.com/HydraDragonAntivirus/dex-parser-analyzer?branch=main#44891217b48b3febf100f6928032c591093112f8"
+source = "git+https://github.com/HydraDragonAntivirus/dex-parser-analyzer?branch=main#2ab71e2f6331e7bdaee179cbf9ae3429cc4df9d0"
 dependencies = [
  "bitflags 2.13.1",
  "nom 7.1.3",
