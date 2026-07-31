@@ -27,8 +27,8 @@ hydradragonxorfilter = { path = "../hydradragonxorfilter" }
 # Zero-copy DEX parser + static analysis: decode each classes*.dex string pool
 # (strings + method/class/field names) to scan it, and surface High/Critical
 # static-analysis findings.
-dex-core = { git = "https://github.com/FossRust/dex-parser-analyzer", branch = "main" }
-dex-analysis = { git = "https://github.com/FossRust/dex-parser-analyzer", branch = "main" }
+dex-core = { git = "https://github.com/HydraDragonAntivirus/dex-parser-analyzer", branch = "main" }
+dex-analysis = { git = "https://github.com/HydraDragonAntivirus/dex-parser-analyzer", branch = "main" }
 # Reads whitelist_packages.db (same file Java's ScanEngine.loadPackageWhitelist
 # loads) so a nested APK buffer whose package+md5 EXACTLY matches an
 # NSRL-known-good row skips the heavy clamav/YARA/ML/TLSH pass instead of

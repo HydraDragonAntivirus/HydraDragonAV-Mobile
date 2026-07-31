@@ -296,9 +296,13 @@ fn engine_features_from_apk(apk: &[u8]) -> EngineFeatures {
         } else if name.ends_with(".dex") {
             let mut buf = Vec::new();
             if entry.by_ref().take(8 * 1024 * 1024).read_to_end(&mut buf).is_ok() {
-                feats.dex_string_count += count_ascii_strings(&buf) as f32;
-                feats.dex_api_call_count += count_substring(&buf, b"->") as f32;
-                feats.dex_class_count += count_class_descriptors(&buf) as f32;
+                if let Some((strings, api_calls, classes, high, critical)) = dex_features(&buf) {
+                    feats.dex_string_count += strings as f32;
+                    feats.dex_api_call_count += api_calls as f32;
+                    feats.dex_class_count += classes as f32;
+                    feats.dex_finding_high += high;
+                    feats.dex_finding_critical += critical;
+                }
             }
         }
     }
@@ -318,48 +322,75 @@ fn engine_features_from_apk(apk: &[u8]) -> EngineFeatures {
     feats
 }
 
-fn count_ascii_strings(data: &[u8]) -> usize {
-    let mut count = 0usize;
-    let mut run = 0usize;
-    for &b in data {
-        let printable = (0x20..0x7f).contains(&b);
-        if printable {
-            run += 1;
-        } else {
-            if run >= features::MIN_STR_LEN {
-                count += 1;
-            }
-            run = 0;
-        }
-    }
-    if run >= features::MIN_STR_LEN {
-        count += 1;
-    }
-    count
-}
+/// Parse one DEX buffer with the real FossRust DEX analyzer (the same
+/// `dex_scan` the Android engine uses at serving time) and reduce it to the
+/// five DEX feature signals. Returns
+/// `(string_count, api_call_count, class_count, high_findings, critical_findings)`.
+fn dex_features(buf: &[u8]) -> Option<(usize, usize, usize, f32, f32)> {
+    use dex_analysis::{analyze_dex, AnalysisConfig, Severity};
+    use dex_core::{graphs, parse_dex, semantics};
 
-fn count_substring(data: &[u8], needle: &[u8]) -> usize {
-    data.windows(needle.len()).filter(|w| w == &needle).count()
-}
-
-/// Count `Lcom/foo/Bar;` class descriptors in the DEX string blob.
-fn count_class_descriptors(data: &[u8]) -> usize {
-    let mut count = 0usize;
-    let mut i = 0usize;
-    while i + 1 < data.len() {
-        if data[i] == b'L' {
-            let mut j = i + 1;
-            while j < data.len() && (data[j].is_ascii_alphanumeric() || b"/$".contains(&data[j])) {
-                j += 1;
-            }
-            if j < data.len() && data[j] == b';' && j - i > 3 {
-                count += 1;
-                i = j;
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let dex = parse_dex(buf).ok()?;
+        let mut text = String::new();
+        for s in dex.strings() {
+            text.push_str(s);
+            text.push('\n');
+            if text.len() >= 8 * 1024 * 1024 {
+                break;
             }
         }
-        i += 1;
-    }
-    count
+        let string_count = text.lines().count();
+
+        let mut high = 0usize;
+        let mut critical = 0usize;
+        // Static analysis is best-effort: a panic on an exotic DEX buffer
+        // must not drop the string/api/class counts.
+        let findings_ok = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let report = analyze_dex(&dex, &AnalysisConfig::default());
+            for f in report.findings.iter().take(64) {
+                match f.severity {
+                    Severity::High => high += 1,
+                    Severity::Critical => critical += 1,
+                    _ => {}
+                }
+            }
+        }));
+        let _ = findings_ok;
+
+        let mut api_counts: std::collections::HashMap<String, u32> =
+            std::collections::HashMap::new();
+        if let Ok(xrefs) = graphs::build_xrefs(&dex) {
+            for (_, callee_idx) in &xrefs.method_calls {
+                if api_counts.len() >= 4096 {
+                    break;
+                }
+                let midx = dex_core::format::MethodIdx::new(*callee_idx);
+                if let Ok(sig) = semantics::pretty_method(&dex, midx) {
+                    *api_counts.entry(sig).or_insert(0) += 1;
+                }
+            }
+        }
+        let api_call_count = api_counts.len();
+
+        let mut classes: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for sig in api_counts.keys() {
+            if let Some(cls) = sig.split("->").next() {
+                classes.insert(cls.trim().to_string());
+            }
+        }
+        let class_count = classes.len();
+
+        Some((
+            string_count,
+            api_call_count,
+            class_count,
+            high as f32,
+            critical as f32,
+        ))
+    }))
+    .ok()
+    .flatten()
 }
 
 // ── minimal AXML manifest parsing (subset of the Android crate's parser) ────

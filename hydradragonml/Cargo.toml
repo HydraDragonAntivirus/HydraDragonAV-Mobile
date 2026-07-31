@@ -15,6 +15,10 @@ burn-autodiff = "0.21"
 burn-train = "0.21"
 burn-dataset = "0.21"
 tempfile = "3"
+# DEX string pool + static analysis, mirroring the Android engine's
+# `dex_scan` so training features match serving features.
+dex-core = { git = "https://github.com/HydraDragonAntivirus/dex-parser-analyzer", branch = "main" }
+dex-analysis = { git = "https://github.com/HydraDragonAntivirus/dex-parser-analyzer", branch = "main" }
 
 [lib]
 name = "hydradragonml"

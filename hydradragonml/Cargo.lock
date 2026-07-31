@@ -1353,7 +1353,7 @@ dependencies = [
  "float-ord",
  "log",
  "num",
- "petgraph",
+ "petgraph 0.8.3",
  "smallvec",
  "stable-vec",
  "type-map",
@@ -1760,6 +1760,39 @@ name = "deunicode"
 version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abd57806937c9cc163efc8ea3910e00a62e2aeb0b8119f1793a978088f8f6b04"
+
+[[package]]
+name = "dex-analysis"
+version = "0.1.0"
+source = "git+https://github.com/HydraDragonAntivirus/dex-parser-analyzer?branch=main#44891217b48b3febf100f6928032c591093112f8"
+dependencies = [
+ "aho-corasick",
+ "dex-core",
+ "once_cell",
+ "petgraph 0.6.5",
+ "regex",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "thiserror 1.0.69",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "dex-core"
+version = "0.1.0"
+source = "git+https://github.com/HydraDragonAntivirus/dex-parser-analyzer?branch=main#44891217b48b3febf100f6928032c591093112f8"
+dependencies = [
+ "bitflags 2.13.1",
+ "nom 7.1.3",
+ "once_cell",
+ "petgraph 0.6.5",
+ "serde",
+ "simd_cesu8",
+ "smallvec",
+ "thiserror 1.0.69",
+ "zip 0.6.6",
+]
 
 [[package]]
 name = "digest"
@@ -2759,10 +2792,12 @@ dependencies = [
  "burn-dataset",
  "burn-train",
  "burn-wgpu",
+ "dex-analysis",
+ "dex-core",
  "serde_json",
  "tempfile",
  "walkdir",
- "zip",
+ "zip 2.4.2",
 ]
 
 [[package]]
@@ -3943,6 +3978,18 @@ dependencies = [
 
 [[package]]
 name = "petgraph"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4c5cc86750666a3ed20bdaf5ca2a0344f9c67674cae0515bec2da16fbaa47db"
+dependencies = [
+ "fixedbitset 0.4.2",
+ "indexmap",
+ "serde",
+ "serde_derive",
+]
+
+[[package]]
+name = "petgraph"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8701b58ea97060d5e5b155d383a69952a60943f0e6dfe30b04c287beb0b27455"
@@ -4891,6 +4938,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-wasm-bindgen"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8302e169f0eddcc139c70f139d19d6467353af16f9fce27e8c30158036a1e16b"
+dependencies = [
+ "js-sys",
+ "serde",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "serde_bytes"
 version = "0.11.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5044,6 +5102,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
 
 [[package]]
+name = "simd_cesu8"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11031e251abf8611c80f460e19dbdeb54a66db918e49c65a7065b46ac7aec520"
+dependencies = [
+ "rustc_version",
+ "simdutf8",
+]
+
+[[package]]
 name = "simd_helpers"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5051,6 +5119,12 @@ checksum = "95890f873bec569a0362c235787f3aca6e1e887302ba4840839bcc6459c42da6"
 dependencies = [
  "quote",
 ]
+
+[[package]]
+name = "simdutf8"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
 
 [[package]]
 name = "siphasher"
@@ -6043,6 +6117,8 @@ dependencies = [
  "cfg-if",
  "once_cell",
  "rustversion",
+ "serde",
+ "serde_json",
  "wasm-bindgen-macro",
  "wasm-bindgen-shared",
 ]
@@ -6761,6 +6837,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "zip"
+version = "0.6.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "760394e246e4c28189f19d488c058bf16f564016aefac5d32bb1f3b51d5e9261"
+dependencies = [
+ "byteorder",
+ "crc32fast",
+ "crossbeam-utils",
+ "flate2",
 ]
 
 [[package]]

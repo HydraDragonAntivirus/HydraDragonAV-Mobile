@@ -2300,7 +2300,7 @@ checksum = "abd57806937c9cc163efc8ea3910e00a62e2aeb0b8119f1793a978088f8f6b04"
 [[package]]
 name = "dex-analysis"
 version = "0.1.0"
-source = "git+https://github.com/FossRust/dex-parser-analyzer?branch=main#3005252f26b471f4d93d6d37d91c2eb103c6a666"
+source = "git+https://github.com/HydraDragonAntivirus/dex-parser-analyzer?branch=main#44891217b48b3febf100f6928032c591093112f8"
 dependencies = [
  "aho-corasick",
  "dex-core",
@@ -2317,7 +2317,7 @@ dependencies = [
 [[package]]
 name = "dex-core"
 version = "0.1.0"
-source = "git+https://github.com/FossRust/dex-parser-analyzer?branch=main#3005252f26b471f4d93d6d37d91c2eb103c6a666"
+source = "git+https://github.com/HydraDragonAntivirus/dex-parser-analyzer?branch=main#44891217b48b3febf100f6928032c591093112f8"
 dependencies = [
  "bitflags 2.13.1",
  "nom 7.1.3",
@@ -3581,6 +3581,8 @@ dependencies = [
  "burn-dataset",
  "burn-train",
  "burn-wgpu",
+ "dex-analysis",
+ "dex-core",
  "serde_json",
  "tempfile",
  "walkdir",

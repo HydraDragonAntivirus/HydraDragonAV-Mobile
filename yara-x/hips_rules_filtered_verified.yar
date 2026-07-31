@@ -1,5 +1,4 @@
 import "hydradragon"
-import "androguard"
 import "math"
 
 // -- UI Spam ------------------------------------------------------------------
@@ -490,7 +489,7 @@ rule Android_Murder_Back_Look_Win : android adware
     category    = "adware"
     suggestion  = "uninstall"
   condition:
-    androguard.package_name(/com\.murder\.back\.look\.win/)
+    hydradragon.package_name(/com\.murder\.back\.look\.win/)
 }
 
 rule Android_Aggressive_Adware_Launcher_Hijack : android adware
@@ -522,12 +521,12 @@ rule Android_Aggressive_Adware_Launcher_Hijack : android adware
     $ag_fullscr  = "FullScreenAdActivity"
     $ag_overlay  = "OverlayAd"
   condition:
-    androguard.activity(/android\.intent\.category\.HOME/) and
+    hydradragon.activity(/android\.intent\.category\.HOME/) and
     (2 of ($ad_*) or 1 of ($ag_*)) and
     (
-      androguard.permission(/android\.permission\.SYSTEM_ALERT_WINDOW/) or
-      androguard.permission(/android\.permission\.RECEIVE_BOOT_COMPLETED/) or
-      androguard.permission(/android\.permission\.FOREGROUND_SERVICE/)
+      hydradragon.permission(/android\.permission\.SYSTEM_ALERT_WINDOW/) or
+      hydradragon.permission(/android\.permission\.RECEIVE_BOOT_COMPLETED/) or
+      hydradragon.permission(/android\.permission\.FOREGROUND_SERVICE/)
     )
 }
 
@@ -558,7 +557,7 @@ rule Android_Launcher_Hijack_Hidden_Ads : android adware
     $inj_alarm   = "android/app/AlarmManager;->setRepeating"
     $inj_setcomp = "android/content/pm/PackageManager;->setComponentEnabledSetting"
   condition:
-    androguard.package_name(/./) and
+    hydradragon.package_name(/./) and
     $home and $default_cat and
     (2 of ($net_*) or 2 of ($inj_*))
 }

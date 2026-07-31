@@ -8,4 +8,4 @@ edition = "2024"
 # loads on 16 KB-page Android (no JIT mprotect) and across all ABIs. MUST match
 # the feature used by hydradragonclamav on-device (serialized module is backend-
 # specific).
-yara-x = { git = "https://github.com/HydraDragonAntivirus/yara-x", features = ["pulley", "hydradragon-module", "androguard-module", "dex-module"] }
+yara-x = { git = "https://github.com/HydraDragonAntivirus/yara-x", features = ["pulley", "hydradragon-module", "dex-module"] }
