@@ -28,6 +28,7 @@ use base64::Engine as Base64Engine;
 mod asset_reader;
 mod dex_scan;
 mod elf;
+mod tlsh_db;
 #[cfg(target_os = "android")]
 #[path = "emulate.rs"]
 mod emulate;
@@ -118,15 +119,15 @@ const TLSH_DB_DEX: &str = "malware_tlsh_dex.txt";
 /// buffer on the native heap; binary-fuse encodings are far smaller than the
 /// equivalent quotient filter, so the whitelist stays modest in RAM.
 const WHITELIST_XF: &str = "whitelist.xf";
-/// Same whitelist_packages.db Java's ScanEngine.loadPackageWhitelist reads
-/// (table whitelist_package: key TEXT, md5 TEXT, ...). Loaded once at init into
-/// an owned key->md5 map so a nested APK buffer whose package name AND md5
-/// exactly match a row can skip the heavy scan below instead of Rust redoing
-/// work Java's whitelist already vouches for. Matching BOTH fields (not just
-/// the package name) keeps this safe against a spoofed package name — only an
-/// exact known-good file is skipped, and only that one buffer: a sibling
-/// non-whitelisted file/APK inside the same archive is scanned normally.
-const WHITELIST_PACKAGES_DB: &str = "whitelist_packages.db";
+/// Same whitelist_packages.csv Java's ScanEngine.loadPackageWhitelist reads
+/// (CSV: "key,md5" per line). Loaded once at init into an owned key->md5 map so
+/// a nested APK buffer whose package name AND md5 exactly match a row can skip
+/// the heavy scan below instead of Rust redoing work Java's whitelist already
+/// vouches for. Matching BOTH fields (not just the package name) keeps this
+/// safe against a spoofed package name — only an exact known-good file is
+/// skipped, and only that one buffer: a sibling non-whitelisted file/APK
+/// inside the same archive is scanned normally.
+const WHITELIST_PACKAGES_DB: &str = "whitelist_packages.csv";
 const BENIGN_SIGNATURES: &str = "benign_signatures.bin";
 
 /// A scanned buffer whose TLSH distance to a known-malware digest is at or below
@@ -143,12 +144,13 @@ struct Engine {
     /// all in one pass. `None` if no clamav DB was bundled.
     clamav: Option<ClamavEngine>,
     model: Option<Model>,
-    /// Known-malware TLSH digests for ELF (.so) files.
-    tlsh_db_elf: Vec<tlsh_rs::TlshDigest>,
+    /// Known-malware TLSH digests for ELF (.so) files, flat [u8; 35] form
+    /// (see tlsh_db.rs) — no per-digest heap allocations.
+    tlsh_db_elf: Vec<tlsh_db::TlshFlat>,
     /// Known-malware TLSH digests for APK (ZIP) files.
-    tlsh_db_apk: Vec<tlsh_rs::TlshDigest>,
+    tlsh_db_apk: Vec<tlsh_db::TlshFlat>,
     /// Known-malware TLSH digests for DEX files.
-    tlsh_db_dex: Vec<tlsh_rs::TlshDigest>,
+    tlsh_db_dex: Vec<tlsh_db::TlshFlat>,
     /// NSRL known-good SHA-256 whitelist (Binary-Fuse xor filter).
     whitelist: Option<XorFilter>,
     /// NSRL known-good package -> md5 map, read from whitelist_packages.db.
@@ -168,7 +170,7 @@ static JAVA_VM: OnceLock<jni::JavaVM> = OnceLock::new();
 /// `RwLock` (not a bare `Engine`) so a freshly auto-generated rule can be
 /// hot-added to the LIVE engine mid-session (write lock, brief) — see
 /// `nativeLearnRule` — instead of only taking effect after the next process
-/// restart reloads `generated_rules/*.yar` in `do_init`.
+/// restart reloads `generated_rules/*.yar` in `do_init_from_assets`.
 static ENGINE: OnceLock<std::sync::RwLock<Engine>> = OnceLock::new();
 
 /// Java-side "Native code emulation" Settings toggle (DetectionCategories.
@@ -233,12 +235,20 @@ static VPN_SCAN_ENABLED: std::sync::atomic::AtomicBool =
 static VPN_RULES_READY: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
-/// Every bundled asset file read at init time, kept for lazy loading
-/// (avoids filesystem access).
-static ASSET_FILES: OnceLock<std::collections::HashMap<String, Vec<u8>>> =
-    OnceLock::new();
+/// Asset map read at init time. Held ONLY while `do_init_from_assets` runs;
+/// dropped as soon as the engine is built so the ~200 MB of raw asset bytes
+/// are released back to the OS instead of staying pinned for the process
+/// lifetime. Lazy consumers (VPN Suricata rules) re-read their file on demand
+/// via `asset_reader::read_file_bytes` from the AAssetManager.
+static ASSET_FILES: std::sync::Mutex<Option<std::collections::HashMap<String, Vec<u8>>>> =
+    std::sync::Mutex::new(None);
 
-/// Base directory path, set once during do_init(), so generated_rule loading
+/// Asset subdirectory the engine was loaded from (e.g. "scan"), stored so
+/// lazy re-reads (`load_vpn_rules`) can build the full relative asset path.
+static ASSET_DIR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+/// Base directory path, set once during native-init (`do_init_from_assets`),
+/// so generated_rule loading
 /// knows where to find the writable rules directory.
 static INIT_DIR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
@@ -451,9 +461,9 @@ fn json_escape(s: &str) -> String {
 }
 
 /// Human-readable record of what loaded (and what failed) during the last
-/// `do_init`, so the Java side can log/show the ROOT CAUSE when native scanning
-/// silently does nothing (clamav DB unparsable, model format mismatch, .yrc
-/// version mismatch, …) instead of swallowing it.
+/// `do_init_from_assets`, so the Java side can log/show the ROOT CAUSE when
+/// native scanning silently does nothing (clamav DB unparsable, model format
+/// mismatch, .yrc version mismatch, …) instead of swallowing it.
 static INIT_STATUS: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
 
 fn set_status(s: String) {
@@ -647,10 +657,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
 
             let whitelist_handle = s.spawn(move || {
                 let t_wl = std::time::Instant::now();
-                let whitelist = match files.get(WHITELIST_XF) {
-                    Some(bytes) => hydradragonxorfilter::XorFilter::from_bytes(bytes),
-                    None => None,
-                };
+                let whitelist = load_whitelist_xor(files);
                 let wl_ms = t_wl.elapsed().as_millis();
                 (whitelist, format!(" whitelist={wl_ms}ms"))
             });
@@ -669,7 +676,8 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
             let url_handle = s.spawn(move || {
                 let t_url = std::time::Instant::now();
                 let url_scanner = std::panic::catch_unwind(|| {
-                    url_scan::UrlScanner::load_from_assets(files)
+                    let dir = ASSET_DIR.get().map(String::as_str).unwrap_or("scan");
+                    url_scan::UrlScanner::load_from_assets(dir, files)
                 })
                 .ok()
                 .flatten();
@@ -680,7 +688,8 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
             let ip_handle = s.spawn(move || {
                 let t_ip = std::time::Instant::now();
                 let ip_scanner = std::panic::catch_unwind(|| {
-                    ip_scan::IpScanner::from_bytes_map(files)
+                    let dir = ASSET_DIR.get().map(String::as_str).unwrap_or("scan");
+                    ip_scan::IpScanner::from_bytes_map(dir, files)
                 })
                 .ok()
                 .flatten();
@@ -766,39 +775,62 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
     }
 }
 
-/// Load `key -> md5` from pre-read whitelist_packages.db bytes.
-/// Writes to a temp file (rusqlite needs a path) then removes it immediately
-/// after reading into the HashMap. One 17 MB write per process lifetime.
+/// Load `key -> md5` from pre-read whitelist_packages.csv bytes.
+/// Format: one "key,md5" per line (RFC-4180: fields with commas/quotes are
+/// quoted). Produced by gen_whitelist_packages.py. Key is the NSRL
+/// "id^^name" package string; md5 is the whole-APK MD5 (lowercased).
 fn load_package_whitelist_from_bytes(bytes: &[u8]) -> std::collections::HashMap<String, String> {
     let mut out = std::collections::HashMap::new();
-    let tmp_dir = std::env::temp_dir();
-    let tmp_path = tmp_dir.join("hydra_wl_pkg.db");
-    if std::fs::write(&tmp_path, bytes).is_err() {
-        return out;
-    }
-    if let Ok(conn) = rusqlite::Connection::open_with_flags(
-        &tmp_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    ) {
-        if let Ok(mut stmt) = conn.prepare(
-            "SELECT key, md5 FROM whitelist_package WHERE md5 IS NOT NULL",
-        ) {
-            if let Ok(rows) = stmt.query_map([], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-            }) {
-                for row in rows.flatten() {
-                    out.insert(row.0, row.1.to_lowercase());
-                }
-            }
+    let text = String::from_utf8_lossy(bytes);
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
         }
+        // Split on the FIRST comma only; the key may itself contain commas
+        // (it is quoted then). md5 is a 32-char hex string, never quoted.
+        let (key_field, md5_field) = match line.find(',') {
+            Some(comma) => (&line[..comma], &line[comma + 1..]),
+            None => (line, ""),
+        };
+        let key = unquote_csv_field(key_field);
+        if key.is_empty() || md5_field.trim().is_empty() {
+            continue;
+        }
+        out.insert(key, md5_field.trim().to_ascii_lowercase());
     }
-    let _ = std::fs::remove_file(&tmp_path);
     out
 }
 
-#[allow(dead_code)]
-fn do_init(_dir: &str, _load_auto_rules: bool) -> Engine {
-    panic!("do_init is dead code; use do_init_from_assets instead");
+/// Unwrap one RFC-4180 CSV field: strips surrounding double quotes and
+/// unescapes "" -> ".
+fn unquote_csv_field(field: &str) -> String {
+    let field = field.trim();
+    if field.len() >= 2 && field.starts_with('"') && field.ends_with('"') {
+        let inner = &field[1..field.len() - 1];
+        inner.replace("\"\"", "\"")
+    } else {
+        field.to_string()
+    }
+}
+
+/// Load the NSRL SHA-256 whitelist xor filter, PREFERRING a zero-copy view
+/// straight into the APK's stored (noCompress) `.xf` asset data
+/// (`AAsset_getBuffer`) so the ~114 MB fingerprint array is file-backed page
+/// cache (evictable under memory pressure) instead of an anonymous heap copy
+/// pinned for the whole process lifetime. Falls back to a heap copy only when
+/// the asset is compressed/absent (getBuffer returns NULL).
+fn load_whitelist_xor(
+    files: &std::collections::HashMap<String, Vec<u8>>,
+) -> Option<XorFilter> {
+    let dir = ASSET_DIR.get().map(String::as_str).unwrap_or("scan");
+    let relative = format!("{dir}/{WHITELIST_XF}");
+    match asset_reader::open_asset_buffer(&relative) {
+        // SAFETY: the AAsset handle stays open for the filter's whole lifetime
+        // (it moves into the filter's backing), and the buffer is immutable.
+        Some(buf) => unsafe { XorFilter::from_asset_buffer(buf.ptr, buf.len, buf.asset) },
+        None => files.get(WHITELIST_XF).and_then(|b| XorFilter::from_owned(b.clone())),
+    }
 }
 
 /// Whether `buf` should be skipped by every scan pass: too small (<=12 bytes,
@@ -1109,17 +1141,18 @@ fn extract_ipv4(s: &str) -> Vec<String> {
     out
 }
 
-/// Parse a TLSH database file (one T1 digest per line) into a Vec of digests.
-/// Returns an empty Vec if `bytes` is None (file not found).
-fn load_tlsh_file(bytes: Option<&[u8]>) -> Vec<tlsh_rs::TlshDigest> {
+/// Parse a TLSH database file (one T1 digest per line) into a flat Vec of
+/// [u8; 35] digests (see tlsh_db.rs). Returns an empty Vec if `bytes` is
+/// None (file not found).
+fn load_tlsh_file(bytes: Option<&[u8]>) -> Vec<tlsh_db::TlshFlat> {
     match bytes {
         Some(bytes) => {
             let text = String::from_utf8_lossy(bytes);
-            let mut out = Vec::new();
+            let mut out = Vec::with_capacity(text.lines().count());
             for line in text.lines() {
                 let line = line.trim();
                 if line.is_empty() { continue; }
-                if let Ok(d) = line.parse::<tlsh_rs::TlshDigest>() {
+                if let Some(d) = tlsh_db::TlshFlat::parse(line) {
                     out.push(d);
                 }
             }
@@ -1592,14 +1625,15 @@ fn has_polyglot_or_hidden_data(data: &[u8]) -> bool {
 
 /// Smallest TLSH distance from `buf` to any digest in `db`, or None when
 /// `buf` is too small/low-variance to hash or nothing is close enough.
-fn tlsh_nearest(db: &[tlsh_rs::TlshDigest], buf: &[u8]) -> Option<i32> {
+fn tlsh_nearest(db: &[tlsh_db::TlshFlat], buf: &[u8]) -> Option<i32> {
     if db.is_empty() {
         return None;
     }
     let digest = tlsh_rs::hash_bytes(buf).ok()?;
+    let flat = tlsh_db::TlshFlat::from_tlsh_rs(&digest)?;
     let mut best = i32::MAX;
     for known in db {
-        let d = digest.diff(known);
+        let d = flat.diff(known);
         if d < best {
             best = d;
             if best == 0 {
@@ -1711,13 +1745,29 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
                     android_log("native-init FAILED — no assets read");
                     return;
                 }
-                let _ = ASSET_FILES.set(files);
-                let asset_files = ASSET_FILES.get().unwrap();
+                let _ = ASSET_DIR.set(asset_dir);
+                // Only the raw bytes needed to BUILD the engine are kept in
+                // ASSET_FILES; the map is dropped once do_init_from_assets
+                // returns. Lazy consumers re-read from the AAssetManager.
+                if let Ok(mut g) = ASSET_FILES.lock() {
+                    *g = Some(files);
+                }
                 // files_dir is the writable path for generated_rules/
                 let _ = INIT_DIR.set(files_dir);
-                let engine = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    do_init_from_assets(asset_files, load_auto_rules)
-                })) {
+                let engine = {
+                    let guard = ASSET_FILES.lock().unwrap();
+                    let asset_files = guard.as_ref().unwrap();
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        do_init_from_assets(asset_files, load_auto_rules)
+                    }))
+                };
+                // Release the raw asset bytes now that every component parsed
+                // its input: this frees ~200 MB of anonymous heap that was
+                // previously pinned for the whole process lifetime.
+                if let Ok(mut g) = ASSET_FILES.lock() {
+                    *g = None;
+                }
+                let engine = match engine {
                     Ok(e) => e,
                     Err(_) => {
                         android_log(&format!("native-init PANIC: {}", last_panic()));
@@ -1915,7 +1965,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 /// ScanEngine.saveGeneratedRule) into the LIVE engine via a brief write lock,
 /// so a family this device just caught is detected by every scan for the
 /// REST OF THIS SESSION too — not only after the next process restart, which
-/// already reloads every past `generated_rules/*.yar` file from `do_init`.
+/// already reloads every past `generated_rules/*.yar` file from `do_init_from_assets`.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeLearnRule<'local>(
     mut env: EnvUnowned<'local>,
@@ -2008,19 +2058,23 @@ fn native_memory_report() -> String {
     let _ = writeln!(out, "PROCESS  RSS={} VmSize={}", human(rss_kb * 1024), human(vsize_kb * 1024));
 
     // ── raw asset bytes retained by ASSET_FILES, grouped per component ────
-    if let Some(files) = ASSET_FILES.get() {
-        let mut total = 0usize;
-        let mut by_cat: std::collections::BTreeMap<&'static str, usize> = Default::default();
-        for (name, bytes) in files.iter() {
-            *by_cat.entry(asset_category(name)).or_insert(0) += bytes.len();
-            total += bytes.len();
+    // ASSET_FILES is dropped right after init, so this is normally "not held".
+    let asset_guard = ASSET_FILES.lock().ok();
+    if let Some(guard) = asset_guard.as_ref() {
+        if let Some(files) = guard.as_ref() {
+            let mut total = 0usize;
+            let mut by_cat: std::collections::BTreeMap<&'static str, usize> = Default::default();
+            for (name, bytes) in files.iter() {
+                *by_cat.entry(asset_category(name)).or_insert(0) += bytes.len();
+                total += bytes.len();
+            }
+            let _ = writeln!(out, "ASSETS  total={} across {} files", human(total), files.len());
+            for (cat, n) in by_cat {
+                let _ = writeln!(out, "   {:<24} {}", cat, human(n));
+            }
+        } else {
+            out.push_str("ASSETS  not held (released after init)\n");
         }
-        let _ = writeln!(out, "ASSETS  total={} across {} files", human(total), files.len());
-        for (cat, n) in by_cat {
-            let _ = writeln!(out, "   {:<24} {}", cat, human(n));
-        }
-    } else {
-        out.push_str("ASSETS  not loaded\n");
     }
 
     // ── parsed in-memory structures (measured, not guessed) ───────────────
@@ -2029,7 +2083,7 @@ fn native_memory_report() -> String {
     if let Some(engine) = ENGINE.get().and_then(|l| l.try_read().ok()) {
         let tlsh_digests =
             engine.tlsh_db_elf.capacity() + engine.tlsh_db_apk.capacity() + engine.tlsh_db_dex.capacity();
-        let tlsh_bytes = tlsh_digests * std::mem::size_of::<tlsh_rs::TlshDigest>();
+        let tlsh_bytes = tlsh_digests * std::mem::size_of::<tlsh_db::TlshFlat>();
         let pkg_wl: usize = engine
             .package_whitelist
             .iter()
@@ -2242,13 +2296,22 @@ fn load_vpn_rules() -> bool {
     if VPN_RULES_LOADED.load(std::sync::atomic::Ordering::Relaxed) {
         return VPN_RULES_READY.load(std::sync::atomic::Ordering::Relaxed);
     }
-    let Some(asset_files) = ASSET_FILES.get() else {
-        rust_timing_log!("SuricataEngine: assets not loaded yet");
-        VPN_RULES_LOADED.store(true, std::sync::atomic::Ordering::Relaxed);
-        return false;
+    // emerging-all.rules (~44 MB) is deliberately NOT read during native-init
+    // (ASSET_FILES is dropped right after the engine is built). It is fetched
+    // on demand here, parsed, and the raw bytes released again — so the rule
+    // text only ever occupies RAM while VPN scanning is actually in use.
+    #[cfg(target_os = "android")]
+    let rules_bytes: Option<Vec<u8>> = {
+        let relative = ASSET_DIR
+            .get()
+            .map(|dir| format!("{dir}/emerging-all.rules"))
+            .unwrap_or_else(|| "scan/emerging-all.rules".to_string());
+        asset_reader::read_file_bytes(&relative)
     };
-    let ok = match asset_files.get("emerging-all.rules") {
-        Some(rules_bytes) => suricata_scan::RuleEngine::init(rules_bytes),
+    #[cfg(not(target_os = "android"))]
+    let rules_bytes: Option<Vec<u8>> = None;
+    let ok = match rules_bytes {
+        Some(bytes) => suricata_scan::RuleEngine::init(&bytes),
         None => {
             rust_timing_log!("SuricataEngine: emerging-all.rules not found in assets");
             false

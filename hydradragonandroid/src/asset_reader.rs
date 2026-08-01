@@ -19,6 +19,7 @@ unsafe extern "C" {
         dirname: *const std::os::raw::c_char,
     ) -> *mut std::ffi::c_void;
     fn AAsset_getLength(asset: *mut std::ffi::c_void) -> usize;
+    fn AAsset_getBuffer(asset: *mut std::ffi::c_void) -> *const std::ffi::c_void;
     fn AAsset_read(
         asset: *mut std::ffi::c_void,
         buf: *mut std::ffi::c_void,
@@ -66,6 +67,44 @@ pub fn read_file_bytes(relative_path: &str) -> Option<Vec<u8>> {
             buf.truncate(read as usize);
         }
         Some(buf)
+    }
+}
+
+/// A zero-copy view of an asset opened with `AASSET_MODE_BUFFER`: the
+/// `ptr`/`len` point directly into the APK's stored (uncompressed) data, NOT
+/// into a heap copy. `AAsset_getBuffer` only succeeds for assets listed under
+/// `noCompress` in the APK (see `androidResources.noCompress` in
+/// app/build.gradle); for compressed assets it returns NULL.
+pub struct AssetBuffer {
+    /// The open AAsset handle. Must stay open for as long as `ptr` is used;
+    /// callers move it into the long-lived consumer (e.g. `XorFilter`).
+    pub asset: *mut std::ffi::c_void,
+    pub ptr: *const u8,
+    pub len: usize,
+}
+
+/// Open `relative_path` with `AASSET_MODE_BUFFER` and return a zero-copy
+/// pointer into its data. Returns `None` when the asset is missing or stored
+/// compressed (getBuffer returns NULL), in which case the asset is closed and
+/// the caller should fall back to [`read_file_bytes`].
+pub fn open_asset_buffer(relative_path: &str) -> Option<AssetBuffer> {
+    let mgr = AASSET_MANAGER.load(Ordering::Relaxed);
+    if mgr.is_null() {
+        return None;
+    }
+    unsafe {
+        let c_path = std::ffi::CString::new(relative_path).ok()?;
+        let asset = AAssetManager_open(mgr, c_path.as_ptr(), AASSET_MODE_BUFFER);
+        if asset.is_null() {
+            return None;
+        }
+        let ptr = AAsset_getBuffer(asset);
+        let len = AAsset_getLength(asset);
+        if ptr.is_null() {
+            AAsset_close(asset);
+            return None;
+        }
+        Some(AssetBuffer { asset, ptr: ptr as *const u8, len })
     }
 }
 

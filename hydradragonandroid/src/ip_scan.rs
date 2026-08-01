@@ -22,15 +22,30 @@ const CATS: &[(&str, &str)] = &[
 ];
 
 impl IpScanner {
-    /// Load from a pre-read HashMap of filename → bytes (AAssetManager path).
-    pub fn from_bytes_map(files: &std::collections::HashMap<String, Vec<u8>>) -> Option<IpScanner> {
+    /// Load from pre-read files, PREFERRING a zero-copy view straight into the
+    /// APK's stored (noCompress) asset data (`AAsset_getBuffer`) so the filter
+    /// fingerprints are file-backed, not an anonymous heap copy. Falls back to
+    /// the `files` map only when the asset is compressed/absent.
+    pub fn from_bytes_map(
+        asset_dir: &str,
+        files: &std::collections::HashMap<String, Vec<u8>>,
+    ) -> Option<IpScanner> {
         let mut filters = Vec::new();
         for &(stem, category) in CATS {
             let xf_name = format!("{stem}.xf");
-            if let Some(bytes) = files.get(&xf_name) {
-                if let Some(filter) = XorFilter::from_bytes(bytes) {
-                    filters.push(CatFilter { category, filter });
-                }
+            let relative = format!("{asset_dir}/{xf_name}");
+            let filter = match crate::asset_reader::open_asset_buffer(&relative) {
+                // SAFETY: the AAsset handle stays open for the filter's whole
+                // lifetime (it moves into the filter's backing).
+                Some(buf) => unsafe {
+                    XorFilter::from_asset_buffer(buf.ptr, buf.len, buf.asset)
+                },
+                None => files
+                    .get(&xf_name)
+                    .and_then(|b| XorFilter::from_owned(b.clone())),
+            };
+            if let Some(filter) = filter {
+                filters.push(CatFilter { category, filter });
             }
         }
         if filters.is_empty() {

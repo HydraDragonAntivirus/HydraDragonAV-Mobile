@@ -6,12 +6,7 @@ description = "Shared binary-fuse (xor) filter container: built offline by xorfi
 license = "GPL-2.0-or-later"
 
 [dependencies]
-# Binary Fuse filters (Bf8/Bf16/Bf32). `bitcode` lets us (de)serialize the
-# filter directly via bitcode::encode/decode.
-jdb_xorf = { version = "0.13", features = ["bitcode"] }
-# Compact, deterministic on-disk encoding of the filter, identical on the x86
-# build host and the arm64 device.
-bitcode = "0.6"
-# mmap the filter file on-device so the file bytes are paged in from the OS page
-# cache during decode instead of going through a heap copy of the whole file.
-memmap2 = "0.9"
+# Binary Fuse filters (Bf8/Bf16/Bf32). The `bitcode` feature is only used by
+# the crate's own benches/examples — our on-disk format (v2) is a plain
+# repr(C)-style header, so it is left disabled.
+jdb_xorf = { version = "0.13" }

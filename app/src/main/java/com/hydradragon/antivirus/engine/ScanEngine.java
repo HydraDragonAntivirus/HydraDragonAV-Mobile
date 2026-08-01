@@ -493,29 +493,30 @@ public class ScanEngine {
     }
 
     private void loadPackageWhitelist() {
-        // Known-good NSRL package keys (whitelist_packages.db, table
-        // whitelist_package, column "key" = package_id^^file_name) into an exact
-        // HashSet. Only clears an app WITH a trusted-store install (spoofable
-        // alone). The SHA-256 hash whitelist is separate and lives natively
-        // (xor filter) — see NativeScanner.isHashWhitelisted.
-        // Lives under assets/scan/ (not the assets root) so NativeScanner.init()
-        // also copies it into the "hydra-scan" dir the Rust engine reads at
-        // nativeInit — the same DB file backs both the Java package check here
-        // AND the Rust exact-file skip check in NativeScanner_nativeScanApk.
-        java.io.File dbFile = new java.io.File(context.getNoBackupFilesDir(), "whitelist_packages.db");
-        try {
-            if (!dbFile.exists()) {
-                try (InputStream in = context.getAssets().open("scan/whitelist_packages.db");
-                     java.io.OutputStream out = new java.io.FileOutputStream(dbFile)) {
-                    byte[] buf = new byte[64 * 1024];
-                    int n;
-                    while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+        // Known-good NSRL package keys (whitelist_packages.csv, one "key,md5"
+        // per line) into an exact HashSet of the "key" field (package_id^^
+        // file_name). Only clears an app WITH a trusted-store install
+        // (spoofable alone). The SHA-256 hash whitelist is separate and lives
+        // natively (xor filter) — see NativeScanner.isHashWhitelisted.
+        // Lives under assets/scan/ (not the assets root) so the same CSV also
+        // backs the Rust exact-file skip check in
+        // NativeScanner_nativeScanApk.
+        try (InputStream in = context.getAssets().open("scan/whitelist_packages.csv")) {
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty()) continue;
+                // First comma separates key from md5; the key may itself be
+                // quoted (RFC-4180) if it contains a comma — strip the quotes.
+                int comma = line.indexOf(',');
+                if (comma <= 0) continue;
+                String key = line.substring(0, comma);
+                if (key.length() >= 2 && key.charAt(0) == '"'
+                        && key.charAt(key.length() - 1) == '"') {
+                    key = key.substring(1, key.length() - 1).replace("\"\"", "\"");
                 }
-            }
-            try (android.database.sqlite.SQLiteDatabase db = android.database.sqlite.SQLiteDatabase.openDatabase(
-                    dbFile.getAbsolutePath(), null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY);
-                 android.database.Cursor c = db.rawQuery("SELECT key FROM whitelist_package", null)) {
-                while (c.moveToNext()) whitelistPackages.add(c.getString(0));
+                whitelistPackages.add(key);
             }
         } catch (Exception e) { /* missing — package whitelist disabled */ }
     }

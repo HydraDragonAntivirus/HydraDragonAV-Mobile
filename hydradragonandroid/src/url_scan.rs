@@ -13,6 +13,23 @@
 
 use std::collections::HashSet;
 
+/// Load one `.xf` filter, preferring a zero-copy view into the APK's stored
+/// (noCompress) asset data. `AAsset_getBuffer` returns NULL for compressed
+/// assets, so fall back to a heap copy from the pre-read `files` map then.
+fn load_xor_filter(
+    asset_dir: &str,
+    xf_name: &str,
+    files: &std::collections::HashMap<String, Vec<u8>>,
+) -> Option<hydradragonxorfilter::XorFilter> {
+    let relative = format!("{asset_dir}/{xf_name}");
+    match crate::asset_reader::open_asset_buffer(&relative) {
+        // SAFETY: the AAsset handle stays open for the filter's whole lifetime
+        // (it moves into the filter's backing), and the buffer is immutable.
+        Some(buf) => unsafe { hydradragonxorfilter::XorFilter::from_asset_buffer(buf.ptr, buf.len, buf.asset) },
+        None => files.get(xf_name).and_then(|b| hydradragonxorfilter::XorFilter::from_owned(b.clone())),
+    }
+}
+
 /// One category filter: its label, whether it's a URL filter (full URL) vs a
 /// domain filter (registrable domain), and the Binary-Fuse xor filter.
 struct CatFilter {
@@ -39,15 +56,21 @@ const CATS: &[(&str, &str, bool)] = &[
 ];
 
 impl UrlScanner {
-    /// Load from a pre-read HashMap of filename → bytes (AAssetManager path).
-    pub fn load_from_assets(files: &std::collections::HashMap<String, Vec<u8>>) -> Option<UrlScanner> {
+    /// Load from pre-read files, PREFERRING a zero-copy view straight into the
+    /// APK's stored (noCompress) asset data (`AAsset_getBuffer`) so the filter
+    /// fingerprints are file-backed, not an anonymous heap copy. Falls back to
+    /// the `files` map only when the asset is compressed/absent (getBuffer
+    /// returns NULL).
+    pub fn load_from_assets(
+        asset_dir: &str,
+        files: &std::collections::HashMap<String, Vec<u8>>,
+    ) -> Option<UrlScanner> {
         let mut filters = Vec::new();
         for &(stem, category, is_url) in CATS {
             let xf_name = format!("{stem}.xf");
-            if let Some(bytes) = files.get(&xf_name) {
-                if let Some(filter) = hydradragonxorfilter::XorFilter::from_bytes(bytes) {
-                    filters.push(CatFilter { category, is_url, filter });
-                }
+            let filter = load_xor_filter(asset_dir, &xf_name, files);
+            if let Some(filter) = filter {
+                filters.push(CatFilter { category, is_url, filter });
             }
         }
         if filters.is_empty() {

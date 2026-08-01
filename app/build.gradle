@@ -84,6 +84,14 @@ android {
         viewBinding true
     }
 
+    androidResources {
+        // Keep binary-fuse (.xf) filters stored UNCOMPRESSED in the APK so the
+        // native scanner can point XorFilter straight into the asset data via
+        // AAsset_getBuffer (file-backed page cache, no ~114 MB heap copy).
+        // Compressed assets make getBuffer return NULL and force a heap copy.
+        noCompress += [".xf"]
+    }
+
     packagingOptions {
         resources {
             excludes += ['/META-INF/{AL2.0,LGPL2.1}', '*.proto']
