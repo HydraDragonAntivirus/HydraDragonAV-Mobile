@@ -4,8 +4,8 @@ use hydradragonclamav::Engine;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        eprintln!("usage: yarawarm <scan_assets_dir>");
+    if args.len() < 3 {
+        eprintln!("usage: yarawarm <scan_assets_dir> <apk_path>");
         std::process::exit(2);
     }
     let base = std::path::Path::new(&args[1]);
@@ -23,27 +23,27 @@ fn main() {
         "androguard.yrc",
         "hips_rules_filtered_verified.yrc",
     ] {
-        let t0 = Instant::now();
         let p = base.join(name);
-        let added = if p.exists() {
-            c.add_compiled_yara_file(&p).is_some()
-        } else {
-            false
-        };
-        println!("load {name}: {}ms added={added}", t0.elapsed().as_millis());
+        if p.exists() {
+            c.add_compiled_yara_file(&p);
+        }
     }
 
-    let data = b"hello world this is a scan test buffer".to_vec();
-    let opts = hydradragonclamav::ScanOptions::default();
+    let apk = std::fs::read(&args[2]).expect("read apk");
+    println!("apk bytes: {} MB", apk.len() / (1024 * 1024));
+
+    // Warm each ruleset's scanner once (automaton build), on the current thread.
     let names: Vec<String> = c.yara.iter().map(|y| y.name.clone()).collect();
+    let tiny = b"hello".to_vec();
     for name in &names {
         let t0 = Instant::now();
-        let r = c.scan_bytes_named(&data, "test", opts, &[]);
-        println!("first-scan {}: {}ms ({} matches)", name, t0.elapsed().as_millis(), r.len());
+        let _ = c.scan_bytes_named(&tiny, "test", hydradragonclamav::ScanOptions::default(), &[]);
+        println!("warm {}: {}ms", name, t0.elapsed().as_millis());
     }
-    for name in &names {
-        let t0 = Instant::now();
-        let r = c.scan_bytes_named(&data, "test", opts, &[]);
-        println!("warm-scan {}: {}ms ({} matches)", name, t0.elapsed().as_millis(), r.len());
-    }
+
+    // Now scan the FULL APK as a single buffer with all rulesets — this is the
+    // per-buffer cost the device pays for each of its 16 extracted buffers.
+    let t0 = Instant::now();
+    let r = c.scan_bytes_named(&apk, &args[2], hydradragonclamav::ScanOptions::default(), &[]);
+    println!("full-apk 1-buffer scan: {}ms ({} matches)", t0.elapsed().as_millis(), r.len());
 }
