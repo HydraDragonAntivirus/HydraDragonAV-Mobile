@@ -1,0 +1,7 @@
+# Host (x86_64-pc-windows-msvc) builds use lld-link instead of link.exe.
+# link.exe hits its PDB-file-handle limit (LNK1318; LIMIT (12)) when linking
+# the test binary because of the large wgpu/yara-x dependency graph. lld-link
+# has no such limit and produces the same output for unit tests on Windows.
+# Android cross-builds (cargo-ndk) use the NDK toolchain and are unaffected.
+[target.x86_64-pc-windows-msvc]
+linker = "lld-link"
