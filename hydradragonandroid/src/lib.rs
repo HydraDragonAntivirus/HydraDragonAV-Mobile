@@ -134,7 +134,7 @@ const BENIGN_SIGNATURES: &str = "benign_signatures.bin";
 /// identical, <30 very close, <70 related (per the TLSH paper).
 /// Made mutable via an atomic so the user's Settings slider (anti_fp_tlsh_threshold)
 /// takes effect immediately without an engine restart.
-static TLSH_THRESHOLD: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(40);
+static TLSH_THRESHOLD: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(30);
 
 struct Engine {
     /// ClamAV engine: loaded from the bundled signature DB with the compiled
