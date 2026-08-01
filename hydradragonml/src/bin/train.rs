@@ -18,14 +18,14 @@ use burn::module::AutodiffModule;
 use burn::nn::loss::BinaryCrossEntropyLossConfig;
 use burn::optim::{AdamConfig, GradientsParams, Optimizer};
 use burn::tensor::{Float, Int, Tensor, TensorData};
+use burn::backend::Cpu;
 use burn_autodiff::Autodiff;
-use burn_wgpu::{Wgpu, WgpuDevice};
 use hydradragonml::features::{self, EngineFeatures, Tokenizer};
 use hydradragonml::model::ApkClassifier;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-type B = Autodiff<Wgpu>;
+type B = Autodiff<Cpu<f32>>;
 
 struct Args {
     benign: PathBuf,
@@ -146,7 +146,7 @@ fn main() {
     let valid: Vec<Sample> = samples.split_off(samples.len() - n_valid);
     eprintln!("Train: {}, Valid: {}", samples.len(), valid.len());
 
-    let device = WgpuDevice::default();
+    let device = burn::backend::cpu::CpuDevice::default();
     let model = ApkClassifier::<B>::new(&device);
 
     let mut optim = AdamConfig::new().init();
@@ -492,7 +492,7 @@ fn axml_len16(d: &[u8], o: usize) -> Option<(usize, usize)> {
 fn forward_loss(
     model: &ApkClassifier<B>,
     loss_fn: &burn::nn::loss::BinaryCrossEntropyLoss<B>,
-    device: &WgpuDevice,
+    device: &burn::backend::cpu::CpuDevice,
     rows: &[Vec<i64>],
     feats: &[f32],
     labels: &[i64],
@@ -534,7 +534,7 @@ struct ValidMetrics {
 fn evaluate(
     model: &ApkClassifier<B>,
     loss_fn: &burn::nn::loss::BinaryCrossEntropyLoss<B>,
-    device: &WgpuDevice,
+    device: &burn::backend::cpu::CpuDevice,
     valid: &[Sample],
 ) -> ValidMetrics {
     let mut m = ValidMetrics::default();
@@ -560,15 +560,15 @@ fn evaluate(
         let labels: Vec<i64> = chunk.iter().map(|s| s.label).collect();
 
         // Evaluate on the plain (non-autodiff) backend in mini-batches.
-        let token_tensor = Tensor::<Wgpu, 2, Int>::from_data(
+        let token_tensor = Tensor::<Cpu<f32>, 2, Int>::from_data(
             TensorData::new(padded, [n, max_len]),
             device,
         );
-        let feat_tensor = Tensor::<Wgpu, 2, Float>::from_data(
+        let feat_tensor = Tensor::<Cpu<f32>, 2, Float>::from_data(
             TensorData::new(feats, [n, features::ENGINE_FEATURE_COUNT]),
             device,
         );
-        let label_tensor = Tensor::<Wgpu, 1, Int>::from_data(
+        let label_tensor = Tensor::<Cpu<f32>, 1, Int>::from_data(
             TensorData::new(labels.clone(), [n]),
             device,
         );

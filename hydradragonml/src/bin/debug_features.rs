@@ -19,7 +19,7 @@ fn main() {
         }
     };
 
-    let device = burn_wgpu::WgpuDevice::default();
+    let device = burn::backend::cpu::CpuDevice::default();
     let model = match hydradragonml::Model::load(&model_bytes, &vocab_bytes, device) {
         Ok(m) => m,
         Err(e) => {

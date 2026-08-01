@@ -604,7 +604,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 let mut report = String::new();
                 let model_bytes = files.get(MODEL_MPK);
                 let vocab_bytes = files.get(VOCAB_JSON);
-                let device = burn_wgpu::WgpuDevice::default();
+                let device = burn::backend::cpu::CpuDevice::default();
                 let model = match model_bytes.zip(vocab_bytes) {
                     Some((m, v)) => {
                         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {

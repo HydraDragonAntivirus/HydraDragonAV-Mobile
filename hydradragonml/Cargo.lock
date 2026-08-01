@@ -391,13 +391,13 @@ checksum = "39474be398d30e08681f1f6a8ff446b1e4f1403b5cf7749649a8871fd5945f3a"
 dependencies = [
  "burn-autodiff",
  "burn-core",
+ "burn-cpu",
  "burn-dispatch",
  "burn-nn",
  "burn-optim",
  "burn-std",
  "burn-train",
  "burn-vision",
- "burn-wgpu",
 ]
 
 [[package]]
@@ -467,6 +467,17 @@ dependencies = [
  "serde_json",
  "spin",
  "uuid",
+]
+
+[[package]]
+name = "burn-cpu"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "681478c5438ab6c753a55b85f5b42e5bd4c1f69a8564f2afa2f698ac396ba556"
+dependencies = [
+ "burn-backend",
+ "burn-cubecl",
+ "cubecl",
 ]
 
 [[package]]
@@ -552,7 +563,7 @@ checksum = "c2087b9e12323e0d25cc0ebdccfee40427dfdec4a23fa6d3f49ba2aa1f94ac17"
 dependencies = [
  "burn-autodiff",
  "burn-backend",
- "burn-wgpu",
+ "burn-cpu",
  "paste",
 ]
 
@@ -720,18 +731,6 @@ dependencies = [
  "num-traits",
  "paste",
  "serde",
-]
-
-[[package]]
-name = "burn-wgpu"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6eb009254af15922cb37814f3b3b61043046193ba2fde97c3879a25fbd51a92e"
-dependencies = [
- "burn-backend",
- "burn-cubecl",
- "burn-fusion",
- "cubecl",
 ]
 
 [[package]]
@@ -2758,7 +2757,6 @@ dependencies = [
  "burn-autodiff",
  "burn-dataset",
  "burn-train",
- "burn-wgpu",
  "serde_json",
  "tempfile",
  "walkdir",

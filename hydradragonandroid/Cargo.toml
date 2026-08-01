@@ -12,7 +12,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 hydradragonclamav = { path = "../hydradragonclamav" }
 hydradragonml = { path = "../hydradragonml" }
-burn-wgpu = "0.21"
+burn = { version = "0.21", default-features = false, features = ["cpu"] }
 hydradragonextractor = { path = "../hydradragonextractor" }
 md-5 = "0.11"
 jni = "0.22"
