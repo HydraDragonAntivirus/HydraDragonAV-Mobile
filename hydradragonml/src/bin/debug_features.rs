@@ -19,7 +19,7 @@ fn main() {
         }
     };
 
-    let device = burn::backend::cpu::CpuDevice::default();
+    let device = burn::backend::ndarray::NdArrayDevice::default();
     let model = match hydradragonml::Model::load(&model_bytes, &vocab_bytes, device) {
         Ok(m) => m,
         Err(e) => {

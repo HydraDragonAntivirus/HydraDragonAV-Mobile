@@ -104,7 +104,7 @@ fn main() {
 
     let model_bytes = std::fs::read(&args.model).expect("cannot read model file");
     let vocab_bytes = std::fs::read(&args.vocab).expect("cannot read vocab file");
-    let device = burn::backend::cpu::CpuDevice::default();
+    let device = burn::backend::ndarray::NdArrayDevice::default();
     let mut model = Model::load(&model_bytes, &vocab_bytes, device)
         .unwrap_or_else(|e| {
             eprintln!("ERROR: failed to load model: {e}");

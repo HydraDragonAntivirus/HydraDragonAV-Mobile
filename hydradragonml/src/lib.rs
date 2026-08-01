@@ -1,19 +1,19 @@
 pub mod features;
 pub mod model;
 
-use burn::backend::Cpu;
+use burn::backend::NdArray;
 use burn::tensor::{Float, Int, Tensor};
 
 pub const DEFAULT_CONFIDENCE_THRESHOLD: f32 = 0.95;
 pub const SUSPICIOUS_THRESHOLD: f32 = 0.90;
 
-type B = Cpu<f32>;
+type B = NdArray<f32>;
 
 pub struct Model {
     classifier: model::ApkClassifier<B>,
     tokenizer: features::Tokenizer,
     confidence_threshold: f32,
-    device: burn::backend::cpu::CpuDevice,
+    device: burn::backend::ndarray::NdArrayDevice,
 }
 
 #[derive(Debug)]
@@ -27,7 +27,7 @@ impl Model {
     pub fn load(
         model_bytes: &[u8],
         vocab_bytes: &[u8],
-        device: burn::backend::cpu::CpuDevice,
+        device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let tokenizer = features::Tokenizer::load_json(vocab_bytes)
             .ok_or("failed to parse vocab.json")?;
@@ -48,7 +48,7 @@ impl Model {
     pub fn load_from_path(
         model_path: &str,
         vocab_bytes: &[u8],
-        device: burn::backend::cpu::CpuDevice,
+        device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let tokenizer = features::Tokenizer::load_json(vocab_bytes)
             .ok_or("failed to parse vocab.json")?;

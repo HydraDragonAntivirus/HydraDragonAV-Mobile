@@ -222,6 +222,16 @@ static SCAN_RELEVANT_ONLY: std::sync::atomic::AtomicBool =
 static SCAN_MEDIA_ENABLED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
+/// Settings toggle (AutoRuleGeneration) for the yarGen-style self-learned rule
+/// builder (generate_yara_rule in run_scan). When off, a malicious verdict no
+/// longer spends the ~10s+ DEX-string harvesting cost building an auto rule —
+/// the JSON simply omits generated_rule. The manual "generate signature for
+/// this UNKNOWN app" flow (generateRuleForApp, zero_trust=true) is NOT gated
+/// here: the user explicitly asked for it. Set via nativeSetAutoRuleGenEnabled.
+/// Default off (opt-in from Settings).
+static AUTO_RULE_GEN_ENABLED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 /// Whether the Suricata rule engine has been initialised (set once on first
 /// nativeEnableVpnScan(true) call). The suricata_scan::RuleEngine uses its
 /// own OnceLock internally; this flag avoids re-triggering it on every call.
@@ -604,7 +614,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 let mut report = String::new();
                 let model_bytes = files.get(MODEL_MPK);
                 let vocab_bytes = files.get(VOCAB_JSON);
-                let device = burn::backend::cpu::CpuDevice::default();
+                let device = burn::backend::ndarray::NdArrayDevice::default();
                 let model = match model_bytes.zip(vocab_bytes) {
                     Some((m, v)) => {
                         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -1814,6 +1824,18 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     enabled: jboolean,
 ) {
     NATIVE_EMULATION_ENABLED.store(enabled != JNI_FALSE, Ordering::Relaxed);
+}
+
+/// `void nativeSetAutoRuleGenEnabled(boolean enabled)` — Settings toggle for the
+/// yarGen-style self-learned YARA rule builder (see AUTO_RULE_GEN_ENABLED).
+/// Applied immediately; no engine reinit or app restart needed.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetAutoRuleGenEnabled(
+    _env: EnvUnowned,
+    _class: JClass,
+    enabled: jboolean,
+) {
+    AUTO_RULE_GEN_ENABLED.store(enabled != JNI_FALSE, Ordering::Relaxed);
 }
 
 /// `void nativeSetRiskwareTestKeyEnabled(boolean enabled)` — Settings toggle
@@ -3427,8 +3449,12 @@ fn run_scan(
     // package-name/network reruns of the same family. Built for a malicious
     // verdict OR (Java's) Zero Trust Mode — Zero Trust never treats "nothing
     // matched" as "nothing worth cataloguing"; the rule is then based on the
-    // sample's own strings/package rather than a named detection.
-    let generated_rule = if malicious || zero_trust {
+    // sample's own strings/package rather than a named detection. The Auto
+    // Rule Generator setting gates only the malicious path (the manual
+    // zero_trust=true "ask to generate a signature" flow is explicitly
+    // requested by the user, so it always builds).
+    let auto_rule_gen = AUTO_RULE_GEN_ENABLED.load(Ordering::Relaxed);
+    let generated_rule = if (malicious && auto_rule_gen) || zero_trust {
         generate_yara_rule(&scoped_file_hash, &packages, &detections, &dex_scans, scoped_entry_idx)
     } else {
         None

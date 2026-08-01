@@ -84,6 +84,19 @@ public final class NativeScanner {
 
     private static native void nativeSetEmulationEnabled(boolean enabled);
 
+    /** Settings toggle for the yarGen-style self-learned YARA rule builder
+     *  (AutoRuleGeneration). When off, a malicious verdict no longer spends
+     *  the DEX-string-harvesting cost building an auto rule — native returns
+     *  no {@code generated_rule} in the scan JSON. The manual "generate a
+     *  signature for this UNKNOWN app" flow always builds (user-requested).
+     *  Applied immediately; no engine reinit or app restart needed. */
+    private static native void nativeSetAutoRuleGenEnabled(boolean enabled);
+
+    public static void setAutoRuleGenEnabled(boolean enabled) {
+        if (!LIB_LOADED) return;
+        try { nativeSetAutoRuleGenEnabled(enabled); } catch (Throwable ignore) { }
+    }
+
     private static native void nativeSetMaxScanSizeMb(int maxMb);
 
     private static native void nativeSetMaxTextScanBytes(int maxBytes);
@@ -494,6 +507,7 @@ public final class NativeScanner {
             }
             setEmulationEnabled(com.hydradragon.antivirus.engine.DetectionCategories.isEnabled(
                 context, com.hydradragon.antivirus.engine.DetectionCategories.NATIVE_EMULATION));
+            setAutoRuleGenEnabled(com.hydradragon.antivirus.engine.AutoRuleGeneration.isEnabled(context));
             setMaxScanSizeMb(com.hydradragon.antivirus.engine.MaxScanFileSize.getMaxMb(context));
             setMaxTextScanBytes(com.hydradragon.antivirus.engine.MaxTextScanBytes.getMaxBytes(context));
             setMaxArchiveSizeMb(com.hydradragon.antivirus.engine.MaxArchiveSize.getMaxMb(context));

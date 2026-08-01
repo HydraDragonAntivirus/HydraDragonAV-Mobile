@@ -360,6 +360,7 @@ public class SettingsFragment extends Fragment {
         boolean autoRuleGen = com.hydradragon.antivirus.engine.AutoRuleGeneration.isEnabled(requireContext());
         addToggle(cardPrem, getString(R.string.auto_rule_gen_toggle), autoRuleGen, (btn, on) -> {
             com.hydradragon.antivirus.engine.AutoRuleGeneration.setEnabled(requireContext(), on);
+            com.hydradragon.antivirus.engine.NativeScanner.setAutoRuleGenEnabled(on);
             Toast.makeText(getContext(), on
                 ? getString(R.string.auto_rule_gen_on_toast)
                 : getString(R.string.auto_rule_gen_off_toast), Toast.LENGTH_LONG).show();
