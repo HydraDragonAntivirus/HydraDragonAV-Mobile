@@ -412,9 +412,20 @@ public class GuardService extends Service {
         backgroundScanEngine = new ScanEngine(this, aiEngine);
         backgroundScanEngine.setBackgroundScan(true);
         backgroundScanEngine.setCallback(new ScanEngine.ScanCallback() {
-            @Override public void onProgress(int c, int t, String p) { }
+            @Override public void onProgress(int c, int t, String p) {
+                // A background scan adopted by the user's ScanFragment
+                // (see ScanEngine.scanAllApps's adopt path) runs on THIS engine —
+                // forward its progress so the scan page keeps updating.
+                if (backgroundScanEngine.isBackgroundScan()) return;
+                ScanEngine.ScanCallback ui = uiScanCallback;
+                if (ui != null) ui.onProgress(c, t, p);
+            }
             @Override public void onThreatFound(ThreatResult threat) {
-                ThreatLogger.logThreat(GuardService.this, threat, "BACKGROUND SCAN");
+                try {
+                    ThreatLogger.logThreat(GuardService.this, threat, "BACKGROUND SCAN");
+                } catch (Throwable t) {
+                    Log.e(TAG, "ThreatLogger.logThreat failed", t);
+                }
                 String pkg = threat.getPackageName();
                 if (pkg != null && !pkg.isEmpty()) {
                     com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(pkg, "SCAN_MALWARE");
@@ -425,16 +436,54 @@ public class GuardService extends Service {
                             com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(
                                 GuardService.this, threat);
                         } else {
+                            // Never throw up the full-screen "malware found" page
+                            // mid-scan (isFromScan=true): the threat is shown in the
+                            // scan result once the scan completes instead.
                             com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(
-                                GuardService.this, threat);
+                                GuardService.this, threat, true);
                         }
                     } catch (Throwable t) {
                         Log.e(TAG, "background auto-kill failed", t);
                     }
                 }
+                boolean adopted = !backgroundScanEngine.isBackgroundScan();
+                if (adopted) {
+                    // This background scan was adopted by the user (ScanFragment
+                    // started a scan of the same type) — forward its threats to
+                    // the attached UI so they appear in the scan result list.
+                    ScanEngine.ScanCallback ui = uiScanCallback;
+                    synchronized (pendingUiThreats) {
+                        pendingUiThreats.add(threat);
+                    }
+                    if (ui != null && backgroundScanEngine.isScanRunning()) {
+                        java.util.List<ThreatResult> batch = consumePendingUiThreats();
+                        for (ThreatResult t : batch) ui.onThreatFound(t);
+                    }
+                } else {
+                    // Purely background scan: no full-screen popup, but the user
+                    // is still informed via a notification (non-intrusive).
+                    try {
+                        sendThreatNotification(threat);
+                    } catch (Throwable t) {
+                        Log.e(TAG, "sendThreatNotification failed", t);
+                    }
+                }
             }
-            @Override public void onScanComplete(com.hydradragon.antivirus.model.ScanResult r) { }
-            @Override public void onError(String e) { }
+            @Override public void onScanComplete(com.hydradragon.antivirus.model.ScanResult r) {
+                if (backgroundScanEngine.isBackgroundScan()) return;
+                pendingUiScanResult = r;
+                ScanEngine.ScanCallback ui = uiScanCallback;
+                if (ui != null) {
+                    ui.onScanComplete(r);
+                    pendingUiScanResult = null;
+                }
+            }
+            @Override public void onError(String e) {
+                if (backgroundScanEngine.isBackgroundScan()) return;
+                pendingUiScanResult = null;
+                ScanEngine.ScanCallback ui = uiScanCallback;
+                if (ui != null) ui.onError(e);
+            }
         });
         networkMonitor = new NetworkMonitor(this);
         processDetector = new ProcessDetector(this);
