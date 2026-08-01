@@ -13,7 +13,3 @@ pub struct AssetBuffer {
 pub fn open_asset_buffer(_relative_path: &str) -> Option<AssetBuffer> {
     None
 }
-
-pub fn read_file_bytes(_relative_path: &str) -> Option<Vec<u8>> {
-    None
-}

@@ -30,6 +30,7 @@ mod asset_reader;
 #[path = "asset_reader_stub.rs"]
 mod asset_reader;
 mod dex_scan;
+#[cfg(target_os = "android")]
 mod elf;
 mod tlsh_db;
 #[cfg(target_os = "android")]
