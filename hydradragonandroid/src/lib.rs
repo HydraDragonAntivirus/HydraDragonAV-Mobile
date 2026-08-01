@@ -2768,6 +2768,7 @@ fn run_scan(
     // Phase 2: collect all whitelist data, build skip_heavy, run fast passes
     // (DEX, permissions, androguard). Heavy passes (ClamAV, ML, emulation,
     // TLSH) are run here.
+    let t_phase2 = std::time::Instant::now();
     let perm_count;
     let packages;
     let hashes;
@@ -2942,6 +2943,8 @@ fn run_scan(
             }
         }
     }
+    let phase2_ms = t_phase2.elapsed().as_millis();
+    rust_timing_log!("{path} :: phase2_ms={phase2_ms}ms (whitelist/hashes/androguard/skip_heavy)");
 
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
     // (ML, ClamAV, YARA, TLSH) and return immediately.
@@ -3072,6 +3075,7 @@ fn run_scan(
     };
     let scan_items_ref = &scan_items;
 
+    let t_scope = std::time::Instant::now();
     std::thread::scope(|s| {
         // Thread 1: Phase 3 YARA rescan + emulation signal
         s.spawn(|| {
@@ -3295,6 +3299,8 @@ fn run_scan(
             let _ = tlsh_ms_out.lock().map(|mut o| *o = t_tlsh.elapsed().as_millis());
         });
     });
+    let scope_ms = t_scope.elapsed().as_millis();
+    rust_timing_log!("{path} :: phase3_scope_ms={scope_ms}ms (wall, all engines combined)");
 
     // ── Merge results ────────────────────────────────────────────
     let scan_timing = scan_timing.into_inner().unwrap_or_default();
@@ -3399,10 +3405,12 @@ fn run_scan(
         ("extract", extract_ms),
         ("dex", dex_ms),
         ("emulate", emulate_ms),
+        ("phase2", phase2_ms),
         ("clamav", clamav_ms),
         ("yara", yara_total_ms),
         ("ml", ml_ms),
         ("tlsh", tlsh_ms),
+        ("scope", scope_ms),
     ];
     let slowest = stages.iter().max_by_key(|(_, ms)| *ms);
     let mut breakdown = stages
