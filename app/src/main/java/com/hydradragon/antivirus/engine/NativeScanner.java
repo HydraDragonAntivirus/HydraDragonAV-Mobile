@@ -200,6 +200,9 @@ public final class NativeScanner {
     /** Diagnostics: what loaded / failed during the last nativeInit. */
     private static native String nativeStatus();
 
+    /** Diagnostics: what's holding memory on the native heap (debug panel). */
+    private static native String nativeMemoryReport();
+
     private static native boolean nativeIsHashWhitelisted(String md5);
     private static native boolean nativeIsHashWhitelistedForFile(String path, String md5);
 
@@ -434,6 +437,12 @@ public final class NativeScanner {
     public static String status() {
         if (!LIB_LOADED) return "native lib not loaded (.so missing for this ABI)";
         try { return nativeStatus(); } catch (Throwable t) { return "status error: " + t; }
+    }
+
+    /** Public: debug memory report — what's holding memory on the native heap. */
+    public static String memoryReport() {
+        if (!LIB_LOADED) return "native lib not loaded (.so missing for this ABI)";
+        try { return nativeMemoryReport(); } catch (Throwable t) { return "memory report error: " + t; }
     }
 
     /**

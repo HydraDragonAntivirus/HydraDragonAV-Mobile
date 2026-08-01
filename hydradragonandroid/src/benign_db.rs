@@ -84,6 +84,16 @@ impl BenignDb {
         false
     }
 
+    /// Estimated heap footprint of the parsed in-memory DB (package names +
+    /// stored MinHash vectors), in bytes. Debug diagnostics only.
+    pub fn heap_bytes(&self) -> usize {
+        let mut n = 0usize;
+        for (pkg, sigs) in self.sigs.iter() {
+            n += pkg.len() + std::mem::size_of::<Sig>() * sigs.capacity();
+        }
+        n
+    }
+
     /// Highest estimated Jaccard similarity between `tokens` and any stored
     /// signature for `package_name` (0.0 if the package is unknown). Exposed
     /// so the ML engine can use benign-DB similarity as a numerical feature,

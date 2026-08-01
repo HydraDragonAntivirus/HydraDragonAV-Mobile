@@ -591,21 +591,32 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 let model_bytes = files.get(MODEL_ONNX);
                 let vocab_bytes = files.get(VOCAB_JSON);
                 let device = burn_wgpu::WgpuDevice::default();
-                let model = match model_bytes.zip(vocab_bytes).and_then(|(m, v)| {
-                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Option<Model> {
-                        hydradragonml::Model::load(m, v, device).ok()
-                    }))
-                    .ok()
-                    .flatten()
-                }) {
-                    Some(m) => {
-                        let model_ms = t_model.elapsed().as_millis();
-                        rust_timing_log!("init :: model={model_ms}ms");
-                        report.push_str(&format!(" model=ok({model_ms}ms)"));
-                        Some(m)
+                let model = match model_bytes.zip(vocab_bytes) {
+                    Some((m, v)) => {
+                        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            hydradragonml::Model::load(m, v, device)
+                        }));
+                        match result {
+                            Ok(Ok(m)) => {
+                                let model_ms = t_model.elapsed().as_millis();
+                                rust_timing_log!("init :: model={model_ms}ms");
+                                report.push_str(&format!(" model=ok({model_ms}ms)"));
+                                Some(m)
+                            }
+                            Ok(Err(e)) => {
+                                rust_timing_log!("init :: model=ERR: {e}");
+                                report.push_str(" model=ERR");
+                                None
+                            }
+                            Err(_) => {
+                                rust_timing_log!("init :: model=PANIC: {}", last_panic());
+                                report.push_str(" model=ERR(panic)");
+                                None
+                            }
+                        }
                     }
                     None => {
-                        report.push_str(" model=ERR");
+                        report.push_str(" model=ERR(no assets)");
                         None
                     }
                 };
@@ -1717,6 +1728,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
                 if ok {
                     let _ = ENGINE.set(std::sync::RwLock::new(engine));
                     android_log("native-init completed");
+                    rust_timing_log!("mem :: {}", native_memory_report().replace('\n', " | "));
                 } else {
                     android_log("native-init FAILED — no clamav or model");
                 }
@@ -1925,6 +1937,129 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
     }).resolve::<LogErrorAndDefault>()
 }
 
+/// Attribute an asset filename to the engine component that consumes it.
+fn asset_category(name: &str) -> &'static str {
+    if name == MODEL_ONNX || name == VOCAB_JSON {
+        "ml model"
+    } else if name.ends_with(".yrc") {
+        "yara rules"
+    } else if name.starts_with("malware_tlsh_") {
+        "tlsh dbs"
+    } else if name == WHITELIST_XF {
+        "nsrl whitelist"
+    } else if name == WHITELIST_PACKAGES_DB {
+        "pkg whitelist db"
+    } else if name == BENIGN_SIGNATURES {
+        "benign db"
+    } else if name == "emerging-all.rules" {
+        "vpn suricata rules"
+    } else if name == "public_suffixes.txt" {
+        "url psl"
+    } else if name.ends_with(".xf") {
+        if name.starts_with("ip") { "ip xor filters" } else { "url xor filters" }
+    } else if is_clamav_sig_asset(name) {
+        "clamav signatures"
+    } else {
+        "other"
+    }
+}
+
+/// Whether `name` is a ClamAV signature-database asset (parsed by
+/// `hydradragonclamav::Database::from_bytes_map`).
+fn is_clamav_sig_asset(name: &str) -> bool {
+    const SIG_EXTS: &[&str] = &[
+        "hdb", "hsb", "hdu", "hsu", "ndb", "ndu", "ldb", "ldu", "sdb", "db",
+        "mdb", "cvd", "cld", "cud", "cbc", "cbd", "fp", "ign", "ign2", "crb",
+        "idb", "info", "cfg",
+    ];
+    let Some(ext) = name.rsplit('.').next() else { return false };
+    SIG_EXTS.iter().any(|&e| e.eq_ignore_ascii_case(ext))
+}
+
+/// Debug diagnostics: what is holding memory on the native heap. Reads
+/// `/proc/self/status` for process-level RSS/VmSize, attributes the raw asset
+/// bytes retained in `ASSET_FILES` by component, and reports the measured
+/// parsed-buffer footprints. Exposed via `nativeMemoryReport()`.
+fn native_memory_report() -> String {
+    use std::fmt::Write as _;
+
+    fn human(b: usize) -> String {
+        if b >= 1024 * 1024 {
+            format!("{:.2} MB", b as f64 / (1024.0 * 1024.0))
+        } else {
+            format!("{:.1} KB", b as f64 / 1024.0)
+        }
+    }
+
+    let mut out = String::with_capacity(1024);
+
+    // ── process-level memory (Linux/Android: /proc/self/status) ──────────
+    let mut rss_kb = 0usize;
+    let mut vsize_kb = 0usize;
+    if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
+        for line in status.lines() {
+            if let Some(rest) = line.strip_prefix("VmRSS:") {
+                rss_kb = rest.split_whitespace().next().and_then(|v| v.parse().ok()).unwrap_or(0);
+            } else if let Some(rest) = line.strip_prefix("VmSize:") {
+                vsize_kb = rest.split_whitespace().next().and_then(|v| v.parse().ok()).unwrap_or(0);
+            }
+        }
+    }
+    let _ = writeln!(out, "PROCESS  RSS={} VmSize={}", human(rss_kb * 1024), human(vsize_kb * 1024));
+
+    // ── raw asset bytes retained by ASSET_FILES, grouped per component ────
+    if let Some(files) = ASSET_FILES.get() {
+        let mut total = 0usize;
+        let mut by_cat: std::collections::BTreeMap<&'static str, usize> = Default::default();
+        for (name, bytes) in files.iter() {
+            *by_cat.entry(asset_category(name)).or_insert(0) += bytes.len();
+            total += bytes.len();
+        }
+        let _ = writeln!(out, "ASSETS  total={} across {} files", human(total), files.len());
+        for (cat, n) in by_cat {
+            let _ = writeln!(out, "   {:<24} {}", cat, human(n));
+        }
+    } else {
+        out.push_str("ASSETS  not loaded\n");
+    }
+
+    // ── parsed in-memory structures (measured, not guessed) ───────────────
+    // try_read: this runs on the UI thread (debug panel); never block on an
+    // in-flight scan that holds the read lock.
+    if let Some(engine) = ENGINE.get().and_then(|l| l.try_read().ok()) {
+        let tlsh_digests =
+            engine.tlsh_db_elf.capacity() + engine.tlsh_db_apk.capacity() + engine.tlsh_db_dex.capacity();
+        let tlsh_bytes = tlsh_digests * std::mem::size_of::<tlsh_rs::TlshDigest>();
+        let pkg_wl: usize = engine
+            .package_whitelist
+            .iter()
+            .map(|(k, v)| k.len() + 1 + v.len() + 32)
+            .sum();
+        let benign = engine.benign_db.as_ref().map(|b| b.heap_bytes()).unwrap_or(0);
+        let _ = writeln!(out, "PARSED  tlsh_digests={tlsh_digests} {}", human(tlsh_bytes));
+        let _ = writeln!(out, "PARSED  pkg_whitelist_entries={} {}", engine.package_whitelist.len(), human(pkg_wl));
+        let _ = writeln!(out, "PARSED  benign_db {}", human(benign));
+        let _ = writeln!(out, "PARSED  clamav_engine_struct {}", human(std::mem::size_of_val(&engine.clamav)));
+        let _ = writeln!(out, "PARSED  model_struct {}", human(std::mem::size_of_val(&engine.model)));
+        let _ = writeln!(out, "PARSED  whitelist_filter_struct {}", human(std::mem::size_of_val(&engine.whitelist)));
+        let _ = writeln!(out, "PARSED  url_scanner_struct {}", human(std::mem::size_of_val(&engine.url_scanner)));
+        let _ = writeln!(out, "PARSED  ip_scanner_struct {}", human(std::mem::size_of_val(&engine.ip_scanner)));
+    } else {
+        out.push_str("PARSED  engine not initialised\n");
+    }
+
+    // ── scan result cache ─────────────────────────────────────────────────
+    if let Ok(cache) = SCAN_CACHE.try_lock() {
+        let count = cache.as_ref().map(|c| c.map.len()).unwrap_or(0);
+        let bytes: usize = cache.as_ref().map(|c| {
+            c.map.iter().map(|(k, e)| k.len() + e.json.len() + 64).sum()
+        }).unwrap_or(0);
+        let _ = writeln!(out, "CACHE   scan_cache_entries={count} {}", human(bytes));
+    }
+
+    out
+}
+
 /// `String nativeStatus()` — what loaded / failed during init (diagnostics).
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeStatus(
@@ -1933,6 +2068,20 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 ) -> jstring {
     env.with_env(|env| -> jni::errors::Result<_> {
         let s = INIT_STATUS.lock().map(|g| g.clone()).unwrap_or_default();
+        env.new_string(&s).map(|j| j.into_raw())
+    }).resolve::<LogErrorAndDefault>()
+}
+
+/// `String nativeMemoryReport()` — debug diagnostics: what's holding memory on
+/// the native heap (process RSS/VmSize, per-component asset bytes, parsed
+/// buffer footprints). Backs the dashboard's debug memory panel.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeMemoryReport(
+    mut env: EnvUnowned,
+    _class: JClass,
+) -> jstring {
+    env.with_env(|env| -> jni::errors::Result<_> {
+        let s = native_memory_report();
         env.new_string(&s).map(|j| j.into_raw())
     }).resolve::<LogErrorAndDefault>()
 }

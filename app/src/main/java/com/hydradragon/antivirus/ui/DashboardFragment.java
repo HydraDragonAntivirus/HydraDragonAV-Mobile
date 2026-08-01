@@ -267,7 +267,11 @@ public class DashboardFragment extends Fragment {
                         if (am == null) throw new Exception();
                         android.os.Debug.MemoryInfo mi = am.getProcessMemoryInfo(new int[]{pid})[0];
                         int pssKb = mi.getTotalPss();
-                        tvMemoryInfo.setText(pssKb / 1024 + " MB PSS");
+                        String txt = pssKb / 1024 + " MB PSS";
+                        if (com.hydradragon.antivirus.BuildConfig.DEBUG) {
+                            txt += "\n" + com.hydradragon.antivirus.engine.NativeScanner.memoryReport();
+                        }
+                        tvMemoryInfo.setText(txt);
                     } catch (Throwable ignored) {
                         tvMemoryInfo.setText("—");
                     }
