@@ -13,7 +13,7 @@
 //!   - emerging-all.rules parsed at runtime via suricata_scan::RuleEngine
 //!
 //! ML model:
-//!   - model.onnx
+//!   - model.mpk
 
 use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
@@ -108,7 +108,7 @@ const MODULE_DEPENDENT_YRC: &[&str] = &[
 /// suricata_scan::RuleEngine::get() when nativeEnableVpnScan(true) is called.
 /// Parses emerging-all.rules at runtime and builds a daachorse double-array
 /// automaton for hex-pattern matching.
-const MODEL_ONNX: &str = "model.onnx";
+const MODEL_MPK: &str = "model.mpk";
 const VOCAB_JSON: &str = "vocab.json";
 /// Per-type malware TLSH similarity databases (one T1 digest per line), built
 /// from the MalwareBazaar dump separated by file type (`gen_tlsh_db.py`).
@@ -602,7 +602,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
             let model_handle = s.spawn(move || {
                 let t_model = std::time::Instant::now();
                 let mut report = String::new();
-                let model_bytes = files.get(MODEL_ONNX);
+                let model_bytes = files.get(MODEL_MPK);
                 let vocab_bytes = files.get(VOCAB_JSON);
                 let device = burn_wgpu::WgpuDevice::default();
                 let model = match model_bytes.zip(vocab_bytes) {
@@ -1993,7 +1993,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 
 /// Attribute an asset filename to the engine component that consumes it.
 fn asset_category(name: &str) -> &'static str {
-    if name == MODEL_ONNX || name == VOCAB_JSON {
+    if name == MODEL_MPK || name == VOCAB_JSON {
         "ml model"
     } else if name.ends_with(".yrc") {
         "yara rules"
