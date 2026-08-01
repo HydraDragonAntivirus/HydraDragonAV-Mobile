@@ -26,6 +26,9 @@ use base64::Engine as Base64Engine;
 
 #[cfg(target_os = "android")]
 mod asset_reader;
+#[cfg(not(target_os = "android"))]
+#[path = "asset_reader_stub.rs"]
+mod asset_reader;
 mod dex_scan;
 mod elf;
 mod tlsh_db;
