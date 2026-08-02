@@ -2944,7 +2944,7 @@ fn run_scan(
         }
     }
     let phase2_ms = t_phase2.elapsed().as_millis();
-    rust_timing_log!("{path} :: phase2_ms={phase2_ms}ms (whitelist/hashes/androguard/skip_heavy)");
+    rust_timing_log!("{path} :: phase2_ms={phase2_ms}ms (whitelist/hashes/hydradragon/skip_heavy)");
 
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
     // (ML, ClamAV, YARA, TLSH) and return immediately.
