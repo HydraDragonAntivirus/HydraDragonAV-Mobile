@@ -20,7 +20,7 @@ fn main() {
         "clean_rules_filtered_verified.yrc",
         "valhalla-rules_filtered_verified.yrc",
         "machine_learning_apk.yrc",
-        "androguard.yrc",
+        "hydradragon.yrc",
         "hips_rules_filtered_verified.yrc",
     ] {
         let p = base.join(name);

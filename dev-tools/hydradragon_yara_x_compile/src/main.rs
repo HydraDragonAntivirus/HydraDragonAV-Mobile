@@ -65,7 +65,7 @@ fn main() {
     // Skip the raw full ruleset `<base>.yar` when a curated `<base>_filtered*.yar`
     // exists — those raw files (AndroidOS.yar, clean_rules.yar, valhalla-rules.yar)
     // produce huge .yrc and are never shipped; only their filtered variants are.
-    // Files with no filtered sibling (machine_learning_apk.yar, androguard.yar)
+    // Files with no filtered sibling (machine_learning_apk.yar, hydradragon.yar)
     // are still compiled.
     let filtered_bases: std::collections::HashSet<String> = yar_files
         .iter()

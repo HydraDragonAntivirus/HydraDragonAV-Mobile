@@ -473,7 +473,7 @@ rule HIPS_Adware_Multiple_Ad_Network_Connections
     hydradragon.url(/(?i)(applovin\.com|unityads\.unity3d\.com|ironsource\.com|adcolony\.com|tapjoy\.com|startappservice\.com|chartboost\.com)/) >= 1
 }
 
-// -- Static Adware / Launcher Hijack (androguard module) ----------------------
+// -- Static Adware / Launcher Hijack (hydradragon module) ----------------------
 // These rules fire during APK static scan using manifest and DEX analysis.
 // Specifically targets apps that hijack the home screen and show ads even
 // when claiming to be ad-free (e.g. com.murder.back.look.win).

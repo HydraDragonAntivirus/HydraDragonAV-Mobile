@@ -478,7 +478,7 @@ impl Engine {
     /// Run only YARA-x rules (skip ClamAV signatures + phishing heuristic).
     /// Used by the streaming extract+scan pipeline where ClamAV was already
     /// run per-buffer during extraction, and only module_meta-dependent YARA
-    /// rules need a second pass after Phase 2 builds androguard/hydradragon
+    /// rules need a second pass after Phase 2 builds hydradragon
     /// module metadata.
     pub fn scan_yara_only_with_breakdown(
         &self,
@@ -582,7 +582,7 @@ impl Engine {
             && crate::yara_scan::is_target_allowed(confident_target)
         {
             for yara in &self.yara {
-                // Module-dependent rulesets (androguard/hips) can't evaluate
+                // Module-dependent rulesets (hydradragon/hips) can't evaluate
                 // without their JSON metadata, which only exists AFTER the
                 // streaming extract pass. Skip them here when no metadata is
                 // present — Phase 3 rescans them exactly once with metadata.

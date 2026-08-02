@@ -9,7 +9,7 @@ import java.util.Map;
  * Live network activity observed on the device (continuously, by the DNS
  * Web-Shield VPN), attributed to the app that made each request and fed to the
  * YARA-X {@code hydradragon} module as a JSON report when THAT app is scanned.
- * This is the dynamic-analysis counterpart to the static androguard report:
+ * This is the dynamic-analysis counterpart to the static hydradragon report:
  * rules can match what a specific app actually connects to, e.g.
  * {@code hydradragon.network.dns_lookup(/evil\.com/)} or
  * {@code hydradragon.url(/badpath/)}.

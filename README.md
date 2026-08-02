@@ -86,7 +86,7 @@ In short: a security product that asks the user to first grant it debug-shell re
 
 ## ⚙️ How to Build & Install
 
-1. Clone the repository (submodules included — the native engine vendors a custom [YARA-X fork](https://github.com/Siradankullanici/yara-x) with `hydradragon`/`androguard` scanning modules):
+1. Clone the repository (submodules included — the native engine vendors a custom [YARA-X fork](https://github.com/Siradankullanici/yara-x) with the `hydradragon` scanning module):
    ```bash
    git clone --recurse-submodules https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile.git
    cd HydraDragonAV-Mobile

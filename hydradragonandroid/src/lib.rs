@@ -6,7 +6,7 @@
 //!   - clean_rules_filtered_verified.yrc
 //!   - valhalla-rules_filtered_verified.yrc
 //!   - machine_learning_apk.yrc
-//!   - androguard.yrc
+//!   - hydradragon.yrc
 //!   - hips_rules_filtered_verified.yrc
 //!
 //! Suricata-format rule engine initialised on-demand when VPN starts:
@@ -98,10 +98,10 @@ const YRC_FILES: &[&str] = &[
     "valhalla-rules_filtered_verified.yrc",
     "machine_learning_apk.yrc",
 ];
-/// YARA rulesets that depend on Phase 2 module metadata (androguard, hydradragon).
+/// YARA rulesets that depend on Phase 2 module metadata (hydradragon).
 /// These are rescanned once module_meta is available.
 const MODULE_DEPENDENT_YRC: &[&str] = &[
-    "androguard.yrc",
+    "hydradragon.yrc",
     "hips_rules_filtered_verified.yrc",
 ];
 /// Suricata-format rule engine for VPN packet scan — loaded lazily via
@@ -2766,13 +2766,13 @@ fn run_scan(
     let extract_ms = t_extract.elapsed().as_millis();
 
     // Phase 2: collect all whitelist data, build skip_heavy, run fast passes
-    // (DEX, permissions, androguard). Heavy passes (ClamAV, ML, emulation,
+    // (DEX, permissions, hydradragon). Heavy passes (ClamAV, ML, emulation,
     // TLSH) are run here.
     let t_phase2 = std::time::Instant::now();
     let perm_count;
     let packages;
     let hashes;
-    let androguard_json;
+    let hydradragon_manifest;
     let skip_heavy: Vec<bool>;
     let mut dex_scans: Vec<Option<dex_scan::DexScan>> = Vec::new();
     let mut dex_ms: u128 = 0;
@@ -2789,8 +2789,8 @@ fn run_scan(
         packages = collect_packages(&buffers);
         // MD5 of each APK/zip buffer for the hash-keyed whitelist.
         hashes = collect_apk_hashes(&buffers, file_md5);
-        // androguard JSON report (manifest + URL sweep).
-        androguard_json = build_androguard_json(&buffers, &[]);
+        // hydradragon JSON report (manifest + URL sweep).
+        hydradragon_manifest = build_hydradragon_json(&buffers, &[]);
 
         // Per-buffer whitelist check.
         let mut apk_md5_to_pkg = std::collections::HashMap::new();
@@ -2929,14 +2929,16 @@ fn run_scan(
             })
             .collect();
 
-        // Merge DEX findings into hydradragon meta.
-        hydradragon_meta = merge_dex_findings(hydradragon, &dex_scans);
+        // Merge DEX findings into hydradragon meta (single module JSON:
+        // manifest report + URL sweep + DEX findings).
+        hydradragon_meta = merge_dex_findings(
+            hydradragon,
+            &dex_scans,
+            hydradragon_manifest.as_deref(),
+        );
 
         // Build module metadata.
         module_meta = Vec::new();
-        if let Some(j) = androguard_json.as_deref() {
-            module_meta.push(("androguard", j.as_bytes()));
-        }
         if let Some(h) = hydradragon_meta.as_deref() {
             if !h.is_empty() {
                 module_meta.push(("hydradragon", h));
@@ -3452,7 +3454,7 @@ fn run_scan(
         None => file_hash.clone(),
     };
     // yarGen-style auto-generated rule — strings come from this sample's own
-    // DEX string pool. References the androguard and hydradragon modules in
+    // DEX string pool. References the hydradragon module in
     // its condition, not just literal strings, so it also fires on
     // package-name/network reruns of the same family. Built for a malicious
     // verdict OR (Java's) Zero Trust Mode — Zero Trust never treats "nothing
@@ -3574,8 +3576,8 @@ fn run_scan(
 /// Mode is on (so an unmatched/"unknown" sample is catalogued too, not just a
 /// confirmed-bad one) — `detections` may be empty in the Zero Trust case, in
 /// which case the rule is based on the sample's own strings/package instead
-/// of a named detection. `import`s the androguard and hydradragon modules and
-/// references them in the condition (package name / network) rather than
+/// of a named detection. `import`s the hydradragon module and
+/// references it in the condition (package name / network) rather than
 /// relying on literal strings alone.
 fn generate_yara_rule(
     file_hash: &str,
@@ -3646,7 +3648,7 @@ fn generate_yara_rule(
 
     let rule_name = format!("auto_{}", file_hash);
     let mut out = String::new();
-    out.push_str("import \"androguard\"\nimport \"hydradragon\"\n\n");
+    out.push_str("import \"hydradragon\"\n\n");
     out.push_str(&format!("rule {} {{\n", rule_name));
     out.push_str("  meta:\n");
     out.push_str("    generator = \"hydradragon-autogen (yarGen-style)\"\n");
@@ -3673,7 +3675,7 @@ fn generate_yara_rule(
     // Package names: OR'd inside one group (an app has one package name)
     if !packages.is_empty() {
         let pkg_or: Vec<String> = packages.iter().map(|p| {
-            format!("androguard.package_name(\"{}\")", p.replace('"', "'"))
+            format!("hydradragon.package_name(\"{}\")", p.replace('"', "'"))
         }).collect();
         if pkg_or.len() == 1 {
             groups.push(pkg_or.into_iter().next().unwrap());
@@ -3685,7 +3687,7 @@ fn generate_yara_rule(
         let threshold = strings.len().min(6).max(1);
         groups.push(format!("{} of them", threshold));
     }
-    groups.push("androguard.rootkit_behavior() == 1".to_string());
+    groups.push("hydradragon.rootkit_behavior() == 1".to_string());
     if has_launcher_hijack {
         groups.push(r#"hydradragon.api_call(/clearPackagePreferredActivities|addPreferredActivity|createRequestRoleIntent/) > 0"#.to_string());
     }
@@ -3725,10 +3727,10 @@ fn generate_yara_rule(
     if !hips_groups.is_empty() {
         let hips_cond = hips_groups.join(" or\n        ");
         let pkg_prefix = if packages.len() == 1 {
-            format!("androguard.package_name(\"{}\")", packages[0].replace('"', "'"))
+            format!("hydradragon.package_name(\"{}\")", packages[0].replace('"', "'"))
         } else {
             let pkg_ors: Vec<String> = packages.iter().map(|p| {
-                format!("androguard.package_name(\"{}\")", p.replace('"', "'"))
+                format!("hydradragon.package_name(\"{}\")", p.replace('"', "'"))
             }).collect();
             format!("({})", pkg_ors.join(" or "))
         };
@@ -3976,6 +3978,7 @@ fn axml_package(data: &[u8]) -> Option<String> {
 fn merge_dex_findings(
     hydradragon: Option<&[u8]>,
     dex_scans: &[Option<dex_scan::DexScan>],
+    manifest_report: Option<&str>,
 ) -> Option<Vec<u8>> {
     let findings: Vec<serde_json::Value> = dex_scans
         .iter()
@@ -4015,6 +4018,15 @@ fn merge_dex_findings(
         .and_then(|h| serde_json::from_slice(h).ok())
         .filter(serde_json::Value::is_object)
         .unwrap_or_else(|| serde_json::json!({}));
+    if let Some(rep) = manifest_report {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(rep) {
+            if let serde_json::Value::Object(obj) = v {
+                for (k, val) in obj {
+                    root[k] = val;
+                }
+            }
+        }
+    }
     if !findings.is_empty() {
         root["dex_findings"] = serde_json::Value::Array(findings);
     }
@@ -4029,13 +4041,13 @@ fn merge_dex_findings(
     }
 }
 
-// ── androguard report producer ──────────────────────────────────────────────
-// Builds the JSON report consumed by the YARA-X `androguard` module
-// (set_module_metadata("androguard", ...)). Mirrors the keys the original
+// ── hydradragon report producer ─────────────────────────────────────────────
+// Builds the JSON report consumed by the YARA-X `hydradragon` module
+// (set_module_metadata("hydradragon", ...)). Mirrors the keys the original
 // Koodous module read: package_name, app_name, activities, services, receivers,
 // permissions, urls, min/max/target_sdk_version, certificate{subjectDN,
 // IssuerDN, sha1}. Parsed straight from the binary AndroidManifest.xml plus a
-// URL sweep of the decompressed buffers — no androguard/Python dependency.
+// URL sweep of the decompressed buffers — no androguard dependency.
 //
 // NOTE: `certificate.*` requires parsing the PKCS#7 signature block (X.509),
 // which isn't available here yet, so it is emitted empty (rules using
@@ -4086,7 +4098,7 @@ fn axml_find_attr(
     None
 }
 
-/// Parse a binary AndroidManifest.xml into the fields androguard exposes.
+/// Parse a binary AndroidManifest.xml into the fields hydradragon exposes.
 struct Manifest {
     package: Option<String>,
     app_name: Option<String>,
@@ -4096,7 +4108,7 @@ struct Manifest {
     receivers: Vec<String>,
     /// The activity with an enabled MAIN/LAUNCHER intent-filter, if any —
     /// `None` means the app declares no way to be opened from the home
-    /// screen/app drawer (feeds `androguard.rootkit_behavior()` in yara-x).
+    /// screen/app drawer (feeds `hydradragon.rootkit_behavior()` in yara-x).
     main_activity: Option<String>,
     min_sdk: Option<i64>,
     max_sdk: Option<i64>,
@@ -4276,9 +4288,9 @@ fn push_component(data: &[u8], strings: &[String], off: usize, out: &mut Vec<Str
     }
 }
 
-/// Build the androguard JSON report for the scanned APK, or None if no binary
+/// Build the hydradragon JSON report for the scanned APK, or None if no binary
 /// AndroidManifest.xml is reachable in the buffers (not an APK).
-fn build_androguard_json(buffers: &[Buf], urls: &[String]) -> Option<String> {
+fn build_hydradragon_json(buffers: &[Buf], urls: &[String]) -> Option<String> {
     let manifest = buffers.iter().find_map(|b| parse_manifest(&b.data))?;
     let cert = extract_certificate(buffers);
 
@@ -4779,7 +4791,7 @@ fn collect_buffers(
     // Streaming ClamAV+YARA detections and timing, accumulated per-buffer as
     // extraction proceeds. These are merged into the final result in Phase 3;
     // module_meta is empty during streaming, so module-dependent YARA rules
-    // do not match here — they require androguard/hydradragon metadata from
+    // do not match here — they require hydradragon metadata from
     // Phase 2.
     let streaming_dets: Mutex<Vec<(String, String, Vec<String>)>> = Mutex::new(Vec::new());
     let streaming_timing: Mutex<hydradragonclamav::scanner::TimingBreakdown> = Mutex::new(Default::default());

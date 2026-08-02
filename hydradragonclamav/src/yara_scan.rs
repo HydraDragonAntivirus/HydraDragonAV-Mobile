@@ -39,11 +39,11 @@ pub fn is_target_allowed(target: Option<u32>) -> bool {
     matches!(target, Some(t) if ALLOWED_TARGETS.contains(&t))
 }
 
-/// Ruleset names that depend on module metadata (androguard/hydradragon JSON
-/// reports) built only AFTER the streaming extract pass. These are skipped
-/// during streaming (their module functions can't evaluate without metadata)
-/// and scanned exactly once in the Phase 3 module-metadata rescan.
-const MODULE_DEPENDENT_NAMES: [&str; 2] = ["androguard.yrc", "hips_rules_filtered_verified.yrc"];
+/// Ruleset names that depend on module metadata (hydradragon JSON report) built
+/// only AFTER the streaming extract pass. These are skipped during streaming
+/// (their module functions can't evaluate without metadata) and scanned exactly
+/// once in the Phase 3 module-metadata rescan.
+const MODULE_DEPENDENT_NAMES: [&str; 2] = ["hydradragon.yrc", "hips_rules_filtered_verified.yrc"];
 
 /// A compiled YARA ruleset ready for scanning.
 /// `rules` is boxed so its address is stable even when the containing `Vec<YaraEngine>`
@@ -53,7 +53,7 @@ const MODULE_DEPENDENT_NAMES: [&str; 2] = ["androguard.yrc", "hips_rules_filtere
 pub struct YaraEngine {
     id: u64,
     pub name: String,
-    /// True if this ruleset references the androguard/hydradragon modules and
+    /// True if this ruleset references the hydradragon module and
     /// therefore only produces meaningful results once module metadata exists.
     pub module_dependent: bool,
     rules: Box<yara_x::Rules>,
@@ -129,9 +129,8 @@ impl YaraEngine {
                 scanner
             });
 
-            // Feed any per-module JSON reports (androguard manifest report,
-            // hydradragon live-network report, ...) so those modules'
-            // functions can query them.
+            // Feed any per-module JSON report (hydradragon manifest/DEX/network
+            // report) so its functions can query them.
             let results = if module_meta.is_empty() {
                 match scanner.scan(data) {
                     Ok(r) => r,

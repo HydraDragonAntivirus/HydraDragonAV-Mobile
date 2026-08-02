@@ -607,7 +607,7 @@ public final class NativeScanner {
         /** Non-null if the native scan errored. */
         public String error;
         /** yarGen-style auto-generated YARA rule text for THIS malicious sample
-         *  (androguard/hydradragon-aware condition, no whitelist-DB string
+         *  (hydradragon-aware condition, no whitelist-DB string
          *  filtering), or null for a clean scan / when nothing was extractable. */
         public String generatedRule;
         public String path;
