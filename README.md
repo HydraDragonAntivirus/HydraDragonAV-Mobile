@@ -120,3 +120,6 @@ The on-device detection assets are generated offline from public threat-intel an
 - **`dataset/malware/`** — malware samples (stored separately, not in this repo. Link: https://drive.google.com/file/d/1Il2bvcjxmc0w-XirL27R0_bKpznIeIiG Password: infected).
 - **yarGen (YARA rule generation) dataset: https://drive.google.com/file/d/1BrLoMNzz2pJB886A6JfEqFris_c7Ua8o**
 - Note: yarGen contains data2 = PE benign dataset javascript = javascript benign dataset android = andorid benign dataset
+
+## Donate: 
+- **For donate Yusif Musayev HydraDragonAV-Mobile creator go to here: https://boosty.to/yusif_musayev**
