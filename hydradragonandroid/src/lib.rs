@@ -3236,7 +3236,14 @@ fn run_scan(
             let start = worker * chunk;
             let end = (start + chunk).min(n_items);
             if start >= end { continue; }
-            s.spawn(|| {
+            // Loop-locals (start/end) and shared refs must be copied into each
+            // worker closure; `move` grabs the Copy bindings by value.
+            let yara_dets = &yara_dets;
+            let scan_timing = &scan_timing;
+            let scan_items_ref = scan_items_ref;
+            let buffers_ref = buffers_ref;
+            let engine_ref = engine_ref;
+            s.spawn(move || {
                 let mut local_dets: Vec<(String, String, Vec<String>)> = Vec::new();
                 for item in &scan_items_ref[start..end] {
                     let b = &buffers_ref[item.idx];
