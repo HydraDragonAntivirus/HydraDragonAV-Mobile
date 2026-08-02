@@ -3224,61 +3224,57 @@ fn run_scan(
             let _ = emu_strings_slot.lock().map(|mut e| *e = Some(emulated_strings));
         });
 
-        // Thread 2: ClamAV signatures + phishing (no YARA — that runs on
-        // Thread 5 concurrently). Also carries the steganography/polyglot
-        // heuristics that were previously bundled with this pass.
-        s.spawn(|| {
-            if let Some(clamav) = &engine_ref.clamav {
-                for item in scan_items_ref {
+        // Thread 2+5 merged into a worker pool: ClamAV signatures + phishing AND
+        // YARA-x rulesets both run per-buffer. Instead of two single-threaded
+        // passes that each used one core (wall ≈ clamav + yara serialized at
+        // ~45s), scan_items is chunked across worker_count() threads so all
+        // cores are busy. Steganography/polyglot heuristics ride along.
+        let num_workers = worker_count();
+        let n_items = scan_items_ref.len();
+        let chunk = (n_items + num_workers - 1) / num_workers;
+        for worker in 0..num_workers {
+            let start = worker * chunk;
+            let end = (start + chunk).min(n_items);
+            if start >= end { continue; }
+            s.spawn(|| {
+                let mut local_dets: Vec<(String, String, Vec<String>)> = Vec::new();
+                for item in &scan_items_ref[start..end] {
                     let b = &buffers_ref[item.idx];
-                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        let (matches, bt) = clamav.scan_clamav_only_with_breakdown(
-                            &item.data, &item.obj_path, Default::default(), &[],
-                        );
-                        if let Ok(mut yg) = yara_dets.lock() {
-                            for m in &matches {
-                                yg.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
+                    if let Some(clamav) = &engine_ref.clamav {
+                        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            let (matches, bt) = clamav.scan_clamav_only_with_breakdown(
+                                &item.data, &item.obj_path, Default::default(), &[],
+                            );
+                            if let Ok(mut st) = scan_timing.lock() {
+                                st.accumulate(bt);
                             }
-                        }
-                        if let Ok(mut st) = scan_timing.lock() {
-                            st.accumulate(bt);
-                        }
-                    }));
-                    if item.is_vid && media_scan::has_hidden_data(&b.data) {
-                        if let Ok(mut yg) = yara_dets.lock() {
-                            yg.push(("HDR.Media.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
-                        }
-                    } else if has_polyglot_or_hidden_data(&b.data) {
-                        if let Ok(mut yg) = yara_dets.lock() {
-                            yg.push(("HDR.Image.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
+                            for m in &matches {
+                                local_dets.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
+                            }
+                            let (ymatches, ybt) = clamav.scan_yara_only_with_breakdown(
+                                &item.data, &item.obj_path, &[],
+                            );
+                            if let Ok(mut st) = scan_timing.lock() {
+                                st.accumulate(ybt);
+                            }
+                            for m in &ymatches {
+                                local_dets.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
+                            }
+                        }));
+                        if item.is_vid && media_scan::has_hidden_data(&b.data) {
+                            local_dets.push(("HDR.Media.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
+                        } else if has_polyglot_or_hidden_data(&b.data) {
+                            local_dets.push(("HDR.Image.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
                         }
                     }
                 }
-            }
-        });
-
-        // Thread 5: YARA-x rulesets (non-module-dependent) — runs concurrently
-        // with the ClamAV pass on Thread 2 instead of sequentially after it.
-        s.spawn(|| {
-            if let Some(clamav) = &engine_ref.clamav {
-                for item in scan_items_ref {
-                    let b = &buffers_ref[item.idx];
-                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        let (matches, bt) = clamav.scan_yara_only_with_breakdown(
-                            &item.data, &item.obj_path, &[],
-                        );
-                        if let Ok(mut yg) = yara_dets.lock() {
-                            for m in &matches {
-                                yg.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
-                            }
-                        }
-                        if let Ok(mut st) = scan_timing.lock() {
-                            st.accumulate(bt);
-                        }
-                    }));
+                if !local_dets.is_empty() {
+                    if let Ok(mut yg) = yara_dets.lock() {
+                        yg.extend(local_dets);
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Thread 3: ML inference
         s.spawn(|| {
