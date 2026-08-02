@@ -1636,8 +1636,8 @@ fn tlsh_nearest(db: &[tlsh_db::TlshFlat], buf: &[u8]) -> Option<i32> {
     if db.is_empty() {
         return None;
     }
-    let digest = tlsh_rs::hash_bytes(buf).ok()?;
-    let flat = tlsh_db::TlshFlat::from_tlsh_rs(&digest)?;
+    let digest = tlsh::hash_buf(buf).ok()?;
+    let flat = tlsh_db::TlshFlat::from_tlsh_str(&digest.to_string())?;
     let mut best = i32::MAX;
     for known in db {
         let d = flat.diff(known);

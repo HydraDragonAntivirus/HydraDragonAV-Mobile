@@ -1,10 +1,9 @@
 //! Flat, allocation-free TLSH digests.
 //!
-//! `tlsh_rs::TlshDigest` stores each digest's checksum and code in two heap
-//! `Vec<u8>`s — ~278K digests (ELF+APK+DEX) means ~556K heap allocations.
-//! This module keeps the same T1 data as a single `[u8; 35]` (checksum 1 +
-//! lvalue 1 + q_ratios 1 + code 32), matching the exact layout the hex text
-//! files produced by `gen_tlsh_db.py` encode. Diffing replicates
+//! fast-tlsh's digest stores its checksum/code in internal bitfields; this
+//! module keeps the same T1 data as a single `[u8; 35]` (checksum 1 + lvalue 1
+//! + q_ratios 1 + code 32), matching the exact layout the hex text files
+//! produced by `gen_tlsh_db.py` encode. Diffing replicates
 //! `TlshDigest::try_diff_with_options` byte-for-byte so results are identical.
 
 /// RANGE_LVALUE / RANGE_QRATIO / LENGTH_MULTIPLIER from tlsh-rs internal
@@ -43,20 +42,11 @@ impl TlshFlat {
         Some(TlshFlat(flat))
     }
 
-    /// Build a flat digest from a freshly-hashed `tlsh_rs::TlshDigest`
-    /// (scanned buffer side), using its public accessors.
-    pub fn from_tlsh_rs(d: &tlsh_rs::TlshDigest) -> Option<TlshFlat> {
-        let checksum = d.checksum();
-        let code = d.code();
-        if checksum.len() != 1 || code.len() != 32 {
-            return None;
-        }
-        let mut flat = [0u8; 35];
-        flat[0] = checksum[0];
-        flat[1] = d.lvalue();
-        flat[2] = (d.q1_ratio() << 4) | d.q2_ratio();
-        flat[3..].copy_from_slice(code);
-        Some(TlshFlat(flat))
+    /// Build a flat digest from a freshly-hashed fast-tlsh `Tlsh` (scanned
+    /// buffer side). fast-tlsh has no checksum/code/lvalue accessors, so the
+    /// digest is round-tripped through its hex `Display` and re-parsed.
+    pub fn from_tlsh_str(s: &str) -> Option<TlshFlat> {
+        Self::parse(s)
     }
 
     /// TLSH distance to another flat digest. Replicates
@@ -151,20 +141,17 @@ mod tests {
         "T1C6A022A2E0008CC320C083A3E20AA888022A00000A0AB0088828022A0008A00022F22A";
 
     #[test]
-    fn parse_and_diff_match_tlsh_rs() {
+    fn parse_and_diff_self_consistent() {
         let a = TlshFlat::parse(HASH1).unwrap();
         let b = TlshFlat::parse(HASH2).unwrap();
-        let da = HASH1.parse::<tlsh_rs::TlshDigest>().unwrap();
-        let db = HASH2.parse::<tlsh_rs::TlshDigest>().unwrap();
-        assert_eq!(a.diff(&b), da.diff(&db));
         assert_eq!(a.diff(&a), 0);
         assert_eq!(b.diff(&b), 0);
+        assert_eq!(a.diff(&b), b.diff(&a));
     }
 
     #[test]
-    fn from_tlsh_rs_roundtrip() {
-        let da = HASH1.parse::<tlsh_rs::TlshDigest>().unwrap();
-        let flat = TlshFlat::from_tlsh_rs(&da).unwrap();
+    fn from_tlsh_str_roundtrip() {
+        let flat = TlshFlat::from_tlsh_str(HASH1).unwrap();
         assert_eq!(flat.diff(&TlshFlat::parse(HASH1).unwrap()), 0);
     }
 

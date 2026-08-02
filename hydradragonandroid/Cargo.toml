@@ -17,8 +17,10 @@ hydradragonextractor = { path = "../hydradragonextractor" }
 md-5 = "0.11"
 jni = "0.22"
 # Pure-Rust TLSH fuzzy hashing for malware-similarity detection against the
-# MalwareBazaar (apk/elf/so/dex) TLSH database.
-tlsh-rs = "0.1.0"
+# MalwareBazaar (apk/elf/so/dex) TLSH database. fast-tlsh is TLSH-compatible
+# but notably faster: SIMD-friendly diff tables and a ~50% faster generator
+# ("double update" optimization) vs the reference tlsh-rs implementation.
+fast-tlsh = "0.1.10"
 # Binary-Fuse (xor) filters for the hash whitelist and the URL/domain blocklists.
 # Smaller and faster to query than the previous quotient filter; the shared crate
 # holds the key derivation + on-disk format so the `.xf` built offline by
