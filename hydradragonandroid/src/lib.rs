@@ -3302,7 +3302,10 @@ fn run_scan(
         });
     });
     let scope_ms = t_scope.elapsed().as_millis();
-    rust_timing_log!("{path} :: phase3_scope_ms={scope_ms}ms (wall, all engines combined)");
+    rust_timing_log!(
+        "{path} :: phase3_scope_ms={scope_ms}ms (wall, all engines combined, workers={})",
+        worker_count()
+    );
 
     // ── Merge results ────────────────────────────────────────────
     let scan_timing = scan_timing.into_inner().unwrap_or_default();
