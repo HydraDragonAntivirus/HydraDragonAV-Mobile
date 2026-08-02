@@ -3224,59 +3224,60 @@ fn run_scan(
             let _ = emu_strings_slot.lock().map(|mut e| *e = Some(emulated_strings));
         });
 
-        // ClamAV signatures + phishing AND YARA-x rulesets run per-buffer, each
-        // on its own scope thread so every buffer's scan overlaps every other
-        // (max parallelism; the scope joins them all before returning).
-        // Steganography/polyglot heuristics ride along.
-        for item in scan_items_ref.iter() {
-            let item = item;
+        // Thread 2+5 merged into a worker pool: ClamAV signatures + phishing AND
+        // YARA-x rulesets both run per-buffer. Instead of two single-threaded
+        // passes that each used one core (wall ≈ clamav + yara serialized at
+        // ~45s), scan_items is chunked across worker_count() threads so all
+        // cores are busy. Steganography/polyglot heuristics ride along.
+        let num_workers = worker_count();
+        let n_items = scan_items_ref.len();
+        let chunk = (n_items + num_workers - 1) / num_workers;
+        for worker in 0..num_workers {
+            let start = worker * chunk;
+            let end = (start + chunk).min(n_items);
+            if start >= end { continue; }
+            // Loop-locals (start/end) and shared refs must be copied into each
+            // worker closure; `move` grabs the Copy bindings by value.
             let yara_dets = &yara_dets;
             let scan_timing = &scan_timing;
+            let scan_items_ref = scan_items_ref;
             let buffers_ref = buffers_ref;
             let engine_ref = engine_ref;
             s.spawn(move || {
-                let b = &buffers_ref[item.idx];
-                if let Some(clamav) = &engine_ref.clamav {
-                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        let (matches, bt) = clamav.scan_clamav_only_with_breakdown(
-                            &item.data, &item.obj_path, Default::default(), &[],
-                        );
-                        if let Ok(mut st) = scan_timing.lock() {
-                            st.accumulate(bt);
-                        }
-                        if !matches.is_empty() {
-                            let mut local_dets = Vec::new();
+                let mut local_dets: Vec<(String, String, Vec<String>)> = Vec::new();
+                for item in &scan_items_ref[start..end] {
+                    let b = &buffers_ref[item.idx];
+                    if let Some(clamav) = &engine_ref.clamav {
+                        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            let (matches, bt) = clamav.scan_clamav_only_with_breakdown(
+                                &item.data, &item.obj_path, Default::default(), &[],
+                            );
+                            if let Ok(mut st) = scan_timing.lock() {
+                                st.accumulate(bt);
+                            }
                             for m in &matches {
                                 local_dets.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
                             }
-                            if let Ok(mut yg) = yara_dets.lock() {
-                                yg.extend(local_dets);
+                            let (ymatches, ybt) = clamav.scan_yara_only_with_breakdown(
+                                &item.data, &item.obj_path, &[],
+                            );
+                            if let Ok(mut st) = scan_timing.lock() {
+                                st.accumulate(ybt);
                             }
-                        }
-                        let (ymatches, ybt) = clamav.scan_yara_only_with_breakdown(
-                            &item.data, &item.obj_path, &[],
-                        );
-                        if let Ok(mut st) = scan_timing.lock() {
-                            st.accumulate(ybt);
-                        }
-                        if !ymatches.is_empty() {
-                            let mut local_dets = Vec::new();
                             for m in &ymatches {
                                 local_dets.push((m.name.clone(), m.object_path.clone(), b.apk_lineage.clone()));
                             }
-                            if let Ok(mut yg) = yara_dets.lock() {
-                                yg.extend(local_dets);
-                            }
+                        }));
+                        if item.is_vid && media_scan::has_hidden_data(&b.data) {
+                            local_dets.push(("HDR.Media.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
+                        } else if has_polyglot_or_hidden_data(&b.data) {
+                            local_dets.push(("HDR.Image.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
                         }
-                    }));
-                    if item.is_vid && media_scan::has_hidden_data(&b.data) {
-                        if let Ok(mut yg) = yara_dets.lock() {
-                            yg.push(("HDR.Media.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
-                        }
-                    } else if has_polyglot_or_hidden_data(&b.data) {
-                        if let Ok(mut yg) = yara_dets.lock() {
-                            yg.push(("HDR.Image.Steganography".to_string(), item.obj_path.clone(), b.apk_lineage.clone()));
-                        }
+                    }
+                }
+                if !local_dets.is_empty() {
+                    if let Ok(mut yg) = yara_dets.lock() {
+                        yg.extend(local_dets);
                     }
                 }
             });
