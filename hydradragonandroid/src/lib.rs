@@ -3316,54 +3316,38 @@ fn run_scan(
             let _ = ml_out.lock().map(|mut o| { *o = (ml_mal, ml_prob, ml_lin, ml_time); });
         });
 
-        // Thread 4: TLSH (parallel inside, single worker launches its own scope)
+        // Thread 4: TLSH. Runs single-threaded on this scope worker (no nested
+        // inner scope): the outer scope already overlaps it with the dominant
+        // ClamAV/YARA wall time, and the nested worker scope only oversubscribed
+        // the device cores and added context-switch overhead.
         s.spawn(|| {
             let t_tlsh = std::time::Instant::now();
-            let n = buffers_ref.len();
-            let num_workers = worker_count();
-            let inner_results = std::sync::Mutex::new(Vec::new());
-            let inner_ref = &inner_results;
-            let chunk_size = (n + num_workers - 1) / num_workers;
-            std::thread::scope(|s2| {
-                for worker in 0..num_workers {
-                    let start = worker * chunk_size;
-                    let end = (start + chunk_size).min(n);
-                    if start >= end { continue; }
-                    s2.spawn(move || {
-                        let mut local_dets = Vec::new();
-                        for i in start..end {
-                            let b = &buffers_ref[i];
-                            if skip_by_size(&b.data) { continue; }
-                            let db = if b.data.starts_with(b"\x7fELF") {
-                                Some(&engine_ref.tlsh_db_elf)
-                            } else if b.data.starts_with(b"dex\n") {
-                                Some(&engine_ref.tlsh_db_dex)
-                            } else if is_apk_zip(&b.data) {
-                                Some(&engine_ref.tlsh_db_apk)
-                            } else {
-                                None
-                            };
-                                if let Some(db) = db {
-                                if let Some(dist) = tlsh_nearest(db, &b.data) {
-                                    let obj_path = if b.entry_name.is_none() {
-                                        path_ref.to_string()
-                                    } else {
-                                        match &b.entry_name {
-                                            Some(entry) => format!("{path_ref}!/{entry}"),
-                                            None => format!("{path_ref}!/unnamed_{i}"),
-                                        }
-                                    };
-                                    local_dets.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
-                                }
+            let mut tlsh_dets: Vec<(String, String, Vec<String>)> = Vec::new();
+            for (i, b) in buffers_ref.iter().enumerate() {
+                if skip_by_size(&b.data) { continue; }
+                let db = if b.data.starts_with(b"\x7fELF") {
+                    Some(&engine_ref.tlsh_db_elf)
+                } else if b.data.starts_with(b"dex\n") {
+                    Some(&engine_ref.tlsh_db_dex)
+                } else if is_apk_zip(&b.data) {
+                    Some(&engine_ref.tlsh_db_apk)
+                } else {
+                    None
+                };
+                if let Some(db) = db {
+                    if let Some(dist) = tlsh_nearest(db, &b.data) {
+                        let obj_path = if b.entry_name.is_none() {
+                            path_ref.to_string()
+                        } else {
+                            match &b.entry_name {
+                                Some(entry) => format!("{path_ref}!/{entry}"),
+                                None => format!("{path_ref}!/unnamed_{i}"),
                             }
-                        }
-                        if !local_dets.is_empty() {
-                            let _ = inner_ref.lock().map(|mut r| r.extend(local_dets));
-                        }
-                    });
+                        };
+                        tlsh_dets.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
+                    }
                 }
-            });
-            let tlsh_dets = inner_results.into_inner().unwrap_or_default();
+            }
             let _ = tlsh_out.lock().map(|mut o| *o = tlsh_dets);
             let _ = tlsh_ms_out.lock().map(|mut o| *o = t_tlsh.elapsed().as_millis());
         });
