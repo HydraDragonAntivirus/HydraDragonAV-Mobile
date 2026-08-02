@@ -420,7 +420,7 @@
     <string name="scan_system_on_toast">システムファイルスキャン有効 — 正規のシステムアプリにフラグが付く可能性があります</string>
     <string name="scan_system_off_toast">システムファイルスキャン無効 — システムアプリはスキップされます</string>
     <string name="clear_scan_cache_btn">スキャンキャッシュをクリア</string>
-    <string name="cache_session">Scan Cache</string>
+    <string name="cache_session">スキャンキャッシュ</string>
     <string name="cache_cleared">選択したキャッシュをクリアしました</string>
     <string name="scan_cancelled">スキャンがキャンセルされました</string>
 

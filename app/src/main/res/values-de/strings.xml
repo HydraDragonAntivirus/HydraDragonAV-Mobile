@@ -420,7 +420,7 @@ Du kannst dies später in den Einstellungen aktivieren.</string>
     <string name="scan_system_on_toast">Systemdateiscan aktiviert — kann legitime System-Apps markieren</string>
     <string name="scan_system_off_toast">Systemdateiscan deaktiviert — System-Apps werden übersprungen</string>
     <string name="clear_scan_cache_btn">Scan-Cache leeren</string>
-    <string name="cache_session">Scan Cache</string>
+    <string name="cache_session">Scan-Cache</string>
     <string name="cache_cleared">Ausgewählte Caches gelöscht</string>
     <string name="scan_cancelled">Scan abgebrochen</string>
 

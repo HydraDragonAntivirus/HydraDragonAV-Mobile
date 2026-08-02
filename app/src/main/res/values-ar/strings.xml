@@ -420,7 +420,7 @@
     <string name="scan_system_on_toast">تم تفعيل مسح ملفات النظام — قد يتم وضع علامة على تطبيقات النظام المشروعة</string>
     <string name="scan_system_off_toast">تم تعطيل مسح ملفات النظام — سيتم تخطي تطبيقات النظام</string>
     <string name="clear_scan_cache_btn">مسح ذاكرة التخزين المؤقت للفحص</string>
-    <string name="cache_session">Scan Cache</string>
+    <string name="cache_session">ذاكرة التخزين المؤقت للفحص</string>
     <string name="cache_cleared">تم مسح ذاكرات التخزين المؤقت المحددة</string>
     <string name="scan_cancelled">تم إلغاء الفحص</string>
 

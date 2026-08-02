@@ -420,7 +420,7 @@
     <string name="scan_system_on_toast">सिस्टम फ़ाइल स्कैनिंग सक्षम — वैध सिस्टम ऐप्स को फ़्लैग कर सकता है</string>
     <string name="scan_system_off_toast">सिस्टम फ़ाइल स्कैनिंग अक्षम — सिस्टम ऐप्स छोड़ दिए जाएंगे</string>
     <string name="clear_scan_cache_btn">स्कैन कैश साफ़ करें</string>
-    <string name="cache_session">Scan Cache</string>
+    <string name="cache_session">स्कैन कैश</string>
     <string name="cache_cleared">चयनित कैश साफ़ हो गए</string>
     <string name="scan_cancelled">स्कैन रद्द कर दिया गया</string>
 

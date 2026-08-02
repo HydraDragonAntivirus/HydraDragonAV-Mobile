@@ -420,7 +420,7 @@ Bạn có thể bật tính năng này sau từ Cài đặt.</string>
     <string name="scan_system_on_toast">Đã bật quét tệp hệ thống — có thể gắn cờ các ứng dụng hệ thống hợp pháp</string>
     <string name="scan_system_off_toast">Đã tắt quét tệp hệ thống — các ứng dụng hệ thống sẽ bị bỏ qua</string>
     <string name="clear_scan_cache_btn">Xóa Bộ Nhớ Đệm Quét</string>
-    <string name="cache_session">Scan Cache</string>
+    <string name="cache_session">Bộ nhớ đệm quét</string>
     <string name="cache_cleared">Đã xóa các bộ nhớ đệm đã chọn</string>
     <string name="scan_cancelled">Đã hủy quét</string>
 

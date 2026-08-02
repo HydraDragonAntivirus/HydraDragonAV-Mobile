@@ -420,7 +420,7 @@ Je kunt dit later inschakelen via Instellingen.</string>
     <string name="scan_system_on_toast">Systeembestandsscan ingeschakeld — kan legitieme systeem-apps markeren</string>
     <string name="scan_system_off_toast">Systeembestandsscan uitgeschakeld — systeem-apps worden overgeslagen</string>
     <string name="clear_scan_cache_btn">Scan-Cache Wissen</string>
-    <string name="cache_session">Scan Cache</string>
+    <string name="cache_session">Scancache</string>
     <string name="cache_cleared">Geselecteerde caches gewist</string>
     <string name="scan_cancelled">Scan geannuleerd</string>
 

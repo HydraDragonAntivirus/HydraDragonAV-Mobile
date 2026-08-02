@@ -420,7 +420,7 @@
     <string name="scan_system_on_toast">Сканирование системных файлов включено — может помечать легитимные системные приложения</string>
     <string name="scan_system_off_toast">Сканирование системных файлов отключено — системные приложения будут пропущены</string>
     <string name="clear_scan_cache_btn">Очистить кэш сканирования</string>
-    <string name="cache_session">Scan Cache</string>
+    <string name="cache_session">Кэш сканирования</string>
     <string name="cache_cleared">Выбранные кэши очищены</string>
     <string name="scan_cancelled">Сканирование отменено</string>
 

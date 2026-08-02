@@ -420,7 +420,7 @@
     <string name="scan_system_on_toast">اسکن فایل‌های سیستم فعال شد — ممکن است برنامه‌های سیستمی قانونی را پرچم‌گذاری کند</string>
     <string name="scan_system_off_toast">اسکن فایل‌های سیستم غیرفعال شد — برنامه‌های سیستمی رد خواهند شد</string>
     <string name="clear_scan_cache_btn">پاک کردن حافظه نهان اسکن</string>
-    <string name="cache_session">Scan Cache</string>
+    <string name="cache_session">کش اسکن</string>
     <string name="cache_cleared">حافظه‌های نهان انتخاب شده پاک شدند</string>
     <string name="scan_cancelled">اسکن لغو شد</string>
 

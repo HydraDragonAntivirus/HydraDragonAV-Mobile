@@ -420,7 +420,7 @@
     <string name="scan_system_on_toast">เปิดใช้งานการสแกนไฟล์ระบบ — อาจแจ้งเตือนแอประบบที่ถูกต้อง</string>
     <string name="scan_system_off_toast">ปิดใช้งานการสแกนไฟล์ระบบ — แอประบบจะถูกข้าม</string>
     <string name="clear_scan_cache_btn">ล้างแคชการสแกน</string>
-    <string name="cache_session">Scan Cache</string>
+    <string name="cache_session">แคชการสแกน</string>
     <string name="cache_cleared">ล้างแคชที่เลือกแล้ว</string>
     <string name="scan_cancelled">การสแกนถูกยกเลิก</string>
 
