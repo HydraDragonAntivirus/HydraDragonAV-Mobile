@@ -4,7 +4,7 @@
 //! At scan time we compute a 64-value MinHash signature from the APK's raw
 //! token set, then look up the package name in the database.  If any stored
 //! signature for that package has estimated Jaccard similarity ≥ THRESHOLD,
-//! the APK is declared KNOWN_BENIGN and heavy scanning (ClamAV, ML, TLSH)
+//! the APK is declared KNOWN_BENIGN and heavy scanning (ClamAV, ML)
 //! is skipped.
 //!
 //! MinHash permutation: h_i(token) = (token XOR i) * FNV_PRIME   (mod 2^64)

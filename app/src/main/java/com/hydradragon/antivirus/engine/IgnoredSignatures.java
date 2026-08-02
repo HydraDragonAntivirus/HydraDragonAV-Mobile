@@ -10,7 +10,7 @@ import java.util.TreeSet;
 
 /**
  * User-maintained list of detection/signature NAMES (e.g. "PUA.SomeAdware",
- * "YARA-X.auto_2b891fca...", "ML", "TLSH.Malware/dist=12") to suppress engine-
+ * "YARA-X.auto_2b891fca...", "ML") to suppress engine-
  * wide — not just for one app (that's {@link UserDecisions#allowThreat}), but
  * for every future scan hit carrying that exact signature name, on any app.
  * Editable from Settings (type a name directly) as well as from the "ignore

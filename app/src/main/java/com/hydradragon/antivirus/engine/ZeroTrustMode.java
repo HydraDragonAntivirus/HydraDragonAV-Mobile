@@ -4,7 +4,7 @@ import android.content.Context;
 
 /**
  * Default-deny posture: when NONE of the detectors (ClamAV/YARA signatures,
- * the ML model, TLSH fuzzy-malware matching, DEX static analysis, dangerous
+ * the ML model, DEX static analysis, dangerous
  * permissions, behaviour, screen-text/OCR) flag anything, a normal scan
  * reports the app as clean. With Zero Trust Mode on, an unmatched app is
  * instead reported SUSPICIOUS ("unverified", not "safe") with a full dump of

@@ -32,7 +32,6 @@ mod asset_reader;
 mod dex_scan;
 #[cfg(target_os = "android")]
 mod elf;
-mod tlsh_db;
 #[cfg(target_os = "android")]
 #[path = "emulate.rs"]
 mod emulate;
@@ -110,14 +109,6 @@ const MODULE_DEPENDENT_YRC: &[&str] = &[
 /// automaton for hex-pattern matching.
 const MODEL_MPK: &str = "model.mpk";
 const VOCAB_JSON: &str = "vocab.json";
-/// Per-type malware TLSH similarity databases (one T1 digest per line), built
-/// from the MalwareBazaar dump separated by file type (`gen_tlsh_db.py`).
-/// Each type is stored in its own file so the scanner only compares a buffer
-/// against digests of the same type (ELF vs ELF, APK vs APK, DEX vs DEX),
-/// avoiding cross-type false matches and reducing per-buffer scan time.
-const TLSH_DB_ELF: &str = "malware_tlsh_elf.txt";
-const TLSH_DB_APK: &str = "malware_tlsh_apk.txt";
-const TLSH_DB_DEX: &str = "malware_tlsh_dex.txt";
 /// NSRL known-good SHA-256 whitelist as a serialized Binary-Fuse (xor) filter
 /// (built offline by `xorfilter_writer`). Decoded once at init into an owned
 /// buffer on the native heap; binary-fuse encodings are far smaller than the
@@ -141,13 +132,6 @@ struct Engine {
     /// all in one pass. `None` if no clamav DB was bundled.
     clamav: Option<ClamavEngine>,
     model: Option<Model>,
-    /// Known-malware TLSH digests for ELF (.so) files, flat [u8; 35] form
-    /// (see tlsh_db.rs) — no per-digest heap allocations.
-    tlsh_db_elf: Vec<tlsh_db::TlshFlat>,
-    /// Known-malware TLSH digests for APK (ZIP) files.
-    tlsh_db_apk: Vec<tlsh_db::TlshFlat>,
-    /// Known-malware TLSH digests for DEX files.
-    tlsh_db_dex: Vec<tlsh_db::TlshFlat>,
     /// NSRL known-good SHA-256 whitelist (Binary-Fuse xor filter).
     whitelist: Option<XorFilter>,
     /// NSRL known-good package -> md5 map, read from whitelist_packages.db.
@@ -493,7 +477,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
         })
     }).flatten();
 
-    let (clamav_out, model_out, tlsh_elf_out, tlsh_apk_out, tlsh_dex_out, whitelist_out, pkg_out, url_out, ip_out, benign_out) =
+    let (clamav_out, model_out, whitelist_out, pkg_out, url_out, ip_out, benign_out) =
         std::thread::scope(|s| {
             let clamav_handle = s.spawn(move || {
                 let t_db = std::time::Instant::now();
@@ -640,28 +624,6 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 (model, report)
             });
 
-            let tlsh_elf_handle = s.spawn(move || {
-                let t = std::time::Instant::now();
-                let db = load_tlsh_file(files.get(TLSH_DB_ELF).map(|v| &v[..]));
-                let n = db.len();
-                let ms = t.elapsed().as_millis();
-                (db, format!(" tlsh_elf={n}({ms}ms)"))
-            });
-            let tlsh_apk_handle = s.spawn(move || {
-                let t = std::time::Instant::now();
-                let db = load_tlsh_file(files.get(TLSH_DB_APK).map(|v| &v[..]));
-                let n = db.len();
-                let ms = t.elapsed().as_millis();
-                (db, format!(" tlsh_apk={n}({ms}ms)"))
-            });
-            let tlsh_dex_handle = s.spawn(move || {
-                let t = std::time::Instant::now();
-                let db = load_tlsh_file(files.get(TLSH_DB_DEX).map(|v| &v[..]));
-                let n = db.len();
-                let ms = t.elapsed().as_millis();
-                (db, format!(" tlsh_dex={n}({ms}ms)"))
-            });
-
             let whitelist_handle = s.spawn(move || {
                 let t_wl = std::time::Instant::now();
                 let whitelist = load_whitelist_xor(files);
@@ -723,15 +685,6 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 model_handle.join().unwrap_or_else(|_| {
                     (None, format!(" model=PANIC({})", last_panic()))
                 }),
-                tlsh_elf_handle.join().unwrap_or_else(|_| {
-                    (Vec::new(), format!(" tlsh_elf=PANIC({})", last_panic()))
-                }),
-                tlsh_apk_handle.join().unwrap_or_else(|_| {
-                    (Vec::new(), format!(" tlsh_apk=PANIC({})", last_panic()))
-                }),
-                tlsh_dex_handle.join().unwrap_or_else(|_| {
-                    (Vec::new(), format!(" tlsh_dex=PANIC({})", last_panic()))
-                }),
                 whitelist_handle.join().unwrap_or_else(|_| {
                     (None, format!(" whitelist=PANIC({})", last_panic()))
                 }),
@@ -752,9 +705,6 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
 
     let (clamav, clamav_report) = clamav_out;
     let (model, model_report) = model_out;
-    let (tlsh_db_elf, tlsh_elf_report) = tlsh_elf_out;
-    let (tlsh_db_apk, tlsh_apk_report) = tlsh_apk_out;
-    let (tlsh_db_dex, tlsh_dex_report) = tlsh_dex_out;
     let (whitelist, whitelist_report) = whitelist_out;
     let (package_whitelist, pkg_report) = pkg_out;
     let (url_scanner, url_report) = url_out;
@@ -762,7 +712,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
     let (benign_db, benign_report) = benign_out;
 
     let report = format!(
-        "{clamav_report}{model_report}{tlsh_elf_report}{tlsh_apk_report}{tlsh_dex_report}{whitelist_report}{pkg_report}{url_report}{ip_report}{benign_report}"
+        "{clamav_report}{model_report}{whitelist_report}{pkg_report}{url_report}{ip_report}{benign_report}"
     );
 
     let total_ms = t0.elapsed().as_millis();
@@ -771,9 +721,6 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
     Engine {
         clamav,
         model,
-        tlsh_db_elf,
-        tlsh_db_apk,
-        tlsh_db_dex,
         whitelist,
         package_whitelist,
         benign_db,
@@ -851,7 +798,7 @@ fn skip_by_size(buf: &[u8]) -> bool {
 /// cgroup-v2 CPU-quota files under `/sys/fs/cgroup` on Android, which the app
 /// sandbox is denied `search` on — each call emits an SELinux `avc: denied
 /// { search } … cgroup2` audit line. This is called once per file for the
-/// collect_buffers pool and the TLSH pool; the value can't change over a
+/// collect_buffers pool; the value can't change over a
 /// process's lifetime, so resolve it once and reuse the cached value to avoid
 /// both the repeated probe cost and the logcat AVC spam.
 fn worker_count() -> usize {
@@ -903,7 +850,7 @@ fn run_ml_on_mmap(
 
 /// Aggregate every engine analysis result that has already been computed for
 /// this APK (DEX static analysis, native emulation, manifest, URLs/IPs,
-/// TLSH, certificate, benign DB, media hidden-data) into the `EngineFeatures`
+/// certificate, benign DB, media hidden-data) into the `EngineFeatures`
 /// vector consumed by the Burn classifier. Runs once per file, after Phase 2,
 /// so the ML thread can reuse one feature vector for every buffer in the APK.
 #[allow(clippy::too_many_arguments)]
@@ -1018,35 +965,6 @@ fn build_engine_features(
         }
     }
 
-    // ── TLSH (nearest known-malware distance per buffer type) ────────────
-    let mut min_dist = i32::MAX;
-    for b in buffers {
-        if skip_by_size(&b.data) {
-            continue;
-        }
-        let db = if b.data.starts_with(b"\x7fELF") {
-            Some(&engine.tlsh_db_elf[..])
-        } else if b.data.starts_with(b"dex\n") {
-            Some(&engine.tlsh_db_dex[..])
-        } else if is_apk_zip(&b.data) {
-            Some(&engine.tlsh_db_apk[..])
-        } else {
-            None
-        };
-        if let Some(db) = db {
-            if let Some(dist) = tlsh_nearest(db, &b.data) {
-                if dist < min_dist {
-                    min_dist = dist;
-                }
-            }
-        }
-    }
-    feats.tlsh_min_distance = if min_dist != i32::MAX {
-        min_dist as f32
-    } else {
-        200.0 // no similarity to any known-malware digest → feature ~0.0
-    };
-
     // ── Certificate / testkey signing ────────────────────────────────────
     if riskware::is_testkey_detection_enabled() {
         if let Some(cert) = extract_certificate(buffers) {
@@ -1148,30 +1066,6 @@ fn extract_ipv4(s: &str) -> Vec<String> {
     out
 }
 
-/// Parse a TLSH database file (one T1 digest per line) into a flat Vec of
-/// [u8; 35] digests (see tlsh_db.rs). Returns an empty Vec if `bytes` is
-/// None (file not found).
-fn load_tlsh_file(bytes: Option<&[u8]>) -> Vec<tlsh_db::TlshFlat> {
-    match bytes {
-        Some(bytes) => {
-            let text = String::from_utf8_lossy(bytes);
-            let mut out = Vec::with_capacity(text.lines().count());
-            for line in text.lines() {
-                let line = line.trim();
-                if line.is_empty() { continue; }
-                if let Some(d) = tlsh_db::TlshFlat::parse(line) {
-                    out.push(d);
-                }
-            }
-            out
-        }
-        None => Vec::new(),
-    }
-}
-
-/// Whether `buf` is a file type we have a per-type TLSH malware database for
-/// (ELF .so, APK/ZIP, or DEX) — so we only fuzzy-compare relevant buffers,
-/// not every PNG/XML resource in an APK.
 /// Whether the first 256 bytes look like human-readable text (ASCII or UTF-8).
 /// Returns true when ≥90% of the sample bytes are either ASCII printable,
 /// whitespace, or valid UTF-8 multi-byte sequence bytes.
@@ -1630,28 +1524,6 @@ fn has_polyglot_or_hidden_data(data: &[u8]) -> bool {
     false
 }
 
-/// Smallest TLSH distance from `buf` to any digest in `db`, or None when
-/// `buf` is too small/low-variance to hash or nothing is close enough.
-fn tlsh_nearest(db: &[tlsh_db::TlshFlat], buf: &[u8]) -> Option<i32> {
-    if db.is_empty() {
-        return None;
-    }
-    let digest = tlsh::hash_buf(buf).ok()?;
-    let flat = tlsh_db::TlshFlat::from_tlsh_str(&digest.to_string())?;
-    let mut best = i32::MAX;
-    for known in db {
-        let d = flat.diff(known);
-        if d < best {
-            best = d;
-            if best == 0 {
-                break;
-            }
-        }
-    }
-    const THRESHOLD: i32 = 30;
-    (best <= THRESHOLD).then_some(best)
-}
-
 /// Run `f` on a thread with a LARGE stack and return its result. yara_x's rule
 /// deserialization (and clamav matching) can recurse deeply — far past the ~1 MB
 /// stack of the JNI/app thread, which causes a stack overflow that aborts the
@@ -1731,7 +1603,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
                 // This spawn() happens on the app's main thread (Application.onCreate),
                 // so by default the new thread inherits its scheduler priority too —
                 // fine for the JNI call itself, but this closure then burns ~8s of CPU
-                // decompressing/parsing ClamAV+YARA+ML+TLSH data, starving the UI
+                // decompressing/parsing ClamAV+YARA+ML data, starving the UI
                 // thread of cycles at cold start (observed as Choreographer "Skipped
                 // N frames"/HWUI "Davey" and even an ANR in logcat). Nice value 10 ==
                 // Android's ANDROID_PRIORITY_BACKGROUND, the same value ScanEngine.java
@@ -2012,8 +1884,6 @@ fn asset_category(name: &str) -> &'static str {
         "ml model"
     } else if name.ends_with(".yrc") {
         "yara rules"
-    } else if name.starts_with("malware_tlsh_") {
-        "tlsh dbs"
     } else if name == WHITELIST_XF {
         "nsrl whitelist"
     } else if name == WHITELIST_PACKAGES_DB {
@@ -2100,16 +1970,12 @@ fn native_memory_report() -> String {
     // try_read: this runs on the UI thread (debug panel); never block on an
     // in-flight scan that holds the read lock.
     if let Some(engine) = ENGINE.get().and_then(|l| l.try_read().ok()) {
-        let tlsh_digests =
-            engine.tlsh_db_elf.capacity() + engine.tlsh_db_apk.capacity() + engine.tlsh_db_dex.capacity();
-        let tlsh_bytes = tlsh_digests * std::mem::size_of::<tlsh_db::TlshFlat>();
         let pkg_wl: usize = engine
             .package_whitelist
             .iter()
             .map(|(k, v)| k.len() + 1 + v.len() + 32)
             .sum();
         let benign = engine.benign_db.as_ref().map(|b| b.heap_bytes()).unwrap_or(0);
-        let _ = writeln!(out, "PARSED  tlsh_digests={tlsh_digests} {}", human(tlsh_bytes));
         let _ = writeln!(out, "PARSED  pkg_whitelist_entries={} {}", engine.package_whitelist.len(), human(pkg_wl));
         let _ = writeln!(out, "PARSED  benign_db {}", human(benign));
         let _ = writeln!(out, "PARSED  clamav_engine_struct {}", human(std::mem::size_of_val(&engine.clamav)));
@@ -2670,6 +2536,9 @@ fn run_scan(
     // vice-versa), and `err` names WHICH engine + the panic location so the root
     // cause is pinpointed, not just swallowed.
     let mut err: Option<String> = None;
+    // Top-level buffer + its precomputed extractor format, set by the relevance
+    // gate below so collect_buffers doesn't run detect_format twice on the seed.
+    let mut buffers_data: Option<(Vec<u8>, Option<&'static str>)> = None;
     // MD5 of the whole top-level file — computed early so we can skip
     // extraction when the file is whitelisted.
     let file_hash = match file_md5 {
@@ -2698,17 +2567,48 @@ fn run_scan(
     if whitelisted {
         android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
     }
+    // Ultra-cheap top-level relevance gate, BEFORE the extractor worker pool:
+    // a standalone file that is neither text-like, nor DEX, nor ELF, nor an
+    // extractor-recognised archive has nothing a native scan pass acts on —
+    // return clean in ~0 ms instead of paying collect_buffers' thread spawn,
+    // detect_format and EICAR check for a 0-buffer hit (e.g. a 115 KB JPEG).
+    // EICAR is still caught: it is 68 bytes of pure ASCII, so is_text_like
+    // admits it and the exact-match is_eicar path below flags it.
+    if !whitelisted {
+        // Compute the extractor format ONCE here; collect_buffers reuses it for
+        // the top-level buffer instead of re-running detect_format on the same
+        // bytes (see collect_buffers' top_fmt parameter).
+        let top_fmt = hydradragonextractor::detect_format(&apk_bytes);
+        let cheap_relevant = is_text_like(&apk_bytes)
+            || apk_bytes.starts_with(b"dex\n")
+            || apk_bytes.starts_with(b"vdex")
+            || apk_bytes.starts_with(b"\x7fELF")
+            || top_fmt.is_some();
+        if !cheap_relevant {
+            android_log(&format!(
+                "relevance :: {path} not text/DEX/ELF/archive — returning clean without extraction (MD5 {file_hash})"
+            ));
+            return format!(
+                r#"{{"malicious":false,"permissions":0,"packages":[],"hashes":[],"md5":"{}","ml":{{"malicious":false,"probability":0.0}}}}"#,
+                file_hash,
+            );
+        }
+        // Top-level buffer IS relevant — thread its precomputed format into the
+        // extractor so it isn't detected twice.
+        buffers_data = Some((apk_bytes, top_fmt));
+    }
     let t_extract = std::time::Instant::now();
     let (buffers, bomb_dets, mut streaming_dets, streaming_timing) = if whitelisted {
         (Vec::new(), Vec::new(), Vec::new(), hydradragonclamav::scanner::TimingBreakdown::default())
     } else {
-        collect_buffers(apk_bytes, file_md5, path)
+        let (data, top_fmt) = buffers_data.expect("buffers_data set when !whitelisted");
+        collect_buffers(data, file_md5, path, top_fmt)
     };
     let extract_ms = t_extract.elapsed().as_millis();
 
     // Phase 2: collect all whitelist data, build skip_heavy, run fast passes
-    // (DEX, permissions, hydradragon). Heavy passes (ClamAV, ML, emulation,
-    // TLSH) are run here.
+    // (DEX, permissions, hydradragon). Heavy passes (ClamAV, ML, emulation)
+    // are run here.
     let t_phase2 = std::time::Instant::now();
     let perm_count;
     let packages;
@@ -2798,7 +2698,7 @@ fn run_scan(
     rust_timing_log!("{path} :: phase2_ms={phase2_ms}ms (whitelist/hashes/skip_heavy)");
 
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
-    // (ML, ClamAV, YARA, TLSH) and return immediately.
+    // (ML, ClamAV, YARA) and return immediately.
     if skip_heavy.iter().all(|&s| s) {
         if !bomb_dets.is_empty() {
             let bomb_dets_json: Vec<String> = bomb_dets.iter().map(|(n, op, lin)| {
@@ -2851,7 +2751,7 @@ fn run_scan(
     }
 
     // ── Parallel heavy phases ──────────────────────────────────────────
-    // Phase 3 YARA rescan, emulation signal, ML, TLSH, and URL scanning
+    // Phase 3 YARA rescan, emulation signal, ML, and URL scanning
     // all depend on read-only `buffers` / `dex_scans` / `module_meta` etc.
     // Run them concurrently so wall time = slowest phase, not sum of all.
     use std::sync::Mutex;
@@ -2859,8 +2759,6 @@ fn run_scan(
     let yara_dets = Mutex::new(streaming_dets);
     let scan_timing = Mutex::new(streaming_timing);
     let ml_out = Mutex::new((false, 0.0f32, Vec::<(String, Vec<String>)>::new(), 0u128));
-    let tlsh_out = Mutex::new(Vec::<(String, String, Vec<String>)>::new());
-    let tlsh_ms_out = Mutex::new(0u128);
     let _url_out = Mutex::new(Vec::<(String, String, Vec<String>)>::new());
     let err_shared = Mutex::new(None::<String>);
 
@@ -2869,7 +2767,7 @@ fn run_scan(
     let path_ref = path;
 
     // DEX static analysis and native emulation are independent of the ClamAV/
-    // YARA/TLSH passes — run them as Phase-3 scope threads so their wall time
+    // YARA passes — run them as Phase-3 scope threads so their wall time
     // overlaps the dominant engine. Results flow: DEX/EMU producers → Thread 1
     // (module metadata + emulation signal + engine features) → ML via feat_rx.
     // dex_scans / emulated_strings / timings are stashed for post-scope JSON.
@@ -2938,7 +2836,7 @@ fn run_scan(
     let t_scope = std::time::Instant::now();
     std::thread::scope(|s| {
         // Thread 0: DEX static analysis (producer). Independent of ClamAV/
-        // YARA/TLSH, so it runs as a scope thread overlapping their wall time.
+        // YARA, so it runs as a scope thread overlapping their wall time.
         s.spawn(|| {
             let t0 = std::time::Instant::now();
             let scans: Vec<Option<dex_scan::DexScan>> = buffers_ref
@@ -3214,42 +3112,6 @@ fn run_scan(
             }
             let _ = ml_out.lock().map(|mut o| { *o = (ml_mal, ml_prob, ml_lin, ml_time); });
         });
-
-        // Thread 4: TLSH. Runs single-threaded on this scope worker (no nested
-        // inner scope): the outer scope already overlaps it with the dominant
-        // ClamAV/YARA wall time, and the nested worker scope only oversubscribed
-        // the device cores and added context-switch overhead.
-        s.spawn(|| {
-            let t_tlsh = std::time::Instant::now();
-            let mut tlsh_dets: Vec<(String, String, Vec<String>)> = Vec::new();
-            for (i, b) in buffers_ref.iter().enumerate() {
-                if skip_by_size(&b.data) { continue; }
-                let db = if b.data.starts_with(b"\x7fELF") {
-                    Some(&engine_ref.tlsh_db_elf)
-                } else if b.data.starts_with(b"dex\n") {
-                    Some(&engine_ref.tlsh_db_dex)
-                } else if is_apk_zip(&b.data) {
-                    Some(&engine_ref.tlsh_db_apk)
-                } else {
-                    None
-                };
-                if let Some(db) = db {
-                    if let Some(dist) = tlsh_nearest(db, &b.data) {
-                        let obj_path = if b.entry_name.is_none() {
-                            path_ref.to_string()
-                        } else {
-                            match &b.entry_name {
-                                Some(entry) => format!("{path_ref}!/{entry}"),
-                                None => format!("{path_ref}!/unnamed_{i}"),
-                            }
-                        };
-                        tlsh_dets.push((format!("TLSH.Malware/dist={}", dist), obj_path, b.apk_lineage.clone()));
-                    }
-                }
-            }
-            let _ = tlsh_out.lock().map(|mut o| *o = tlsh_dets);
-            let _ = tlsh_ms_out.lock().map(|mut o| *o = t_tlsh.elapsed().as_millis());
-        });
     });
     let scope_ms = t_scope.elapsed().as_millis();
     rust_timing_log!(
@@ -3265,8 +3127,6 @@ fn run_scan(
     let scan_timing = scan_timing.into_inner().unwrap_or_default();
     let mut yara_dets = yara_dets.into_inner().unwrap_or_default();
     let (ml_malicious, ml_probability, ml_lineages, ml_ms) = ml_out.into_inner().unwrap_or_default();
-    let tlsh_dets = tlsh_out.into_inner().unwrap_or_default();
-    let tlsh_ms = tlsh_ms_out.into_inner().unwrap_or_default();
     let _ = err_shared.into_inner().map(|e| { if let Some(e) = e { err = Some(e); } });
 
     let clamav_ms = (scan_timing.clamav_ns / 1_000_000) as u128;
@@ -3284,7 +3144,6 @@ fn run_scan(
 
     let mut detections: Vec<(String, String, Vec<String>)> = bomb_dets;
     detections.append(&mut yara_dets);
-    detections.extend(tlsh_dets);
     for (obj_path, lin) in ml_lineages {
         detections.push(("ML".to_string(), obj_path, lin));
     }
@@ -3368,7 +3227,6 @@ fn run_scan(
         ("clamav", clamav_ms),
         ("yara", yara_total_ms),
         ("ml", ml_ms),
-        ("tlsh", tlsh_ms),
         ("scope", scope_ms),
     ];
     let slowest = stages.iter().max_by_key(|(_, ms)| *ms);
@@ -4658,6 +4516,7 @@ fn collect_buffers(
     data: Vec<u8>,
     top_md5: Option<&str>,
     path: &str,
+    top_fmt: Option<&'static str>,
 ) -> (
     Vec<Buf>,
     Vec<(String, String, Vec<String>)>,
@@ -4673,6 +4532,7 @@ fn collect_buffers(
         depth: usize,
         lineage: Vec<String>,
         entry_name: Option<String>,
+        fmt: Option<&'static str>,
     }
 
     let stack: Mutex<Vec<WorkItem>> = Mutex::new(vec![WorkItem {
@@ -4680,6 +4540,7 @@ fn collect_buffers(
         depth: 0,
         lineage: Vec::new(),
         entry_name: None,
+        fmt: top_fmt,
     }]);
     // Termination detection for the shared work stack: counts items that are
     // either sitting in `stack` or actively being processed by some worker.
@@ -4754,7 +4615,10 @@ fn collect_buffers(
                         }
 
                         let mut lineage = item.lineage;
-                        let fmt = hydradragonextractor::detect_format(&item.buf);
+                        let fmt = match item.fmt {
+                            Some(f) => Some(f),
+                            None => hydradragonextractor::detect_format(&item.buf),
+                        };
                         if item.depth == 0 && SCAN_RELEVANT_ONLY.load(Ordering::Relaxed) && fmt != Some("zip") {
                             // A standalone (loose) EICAR test file is 68 bytes
                             // of text — normally skipped here because it isn't an
@@ -4834,6 +4698,7 @@ fn collect_buffers(
                                                 depth: item.depth + 1,
                                                 lineage: lineage.clone(),
                                                 entry_name,
+                                                fmt: None,
                                             });
                                         }
                                     }

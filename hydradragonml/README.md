@@ -23,7 +23,7 @@ sigmoid confidence. Training and inference both run in Rust; weights ship as a
    `SUSPICIOUS_THRESHOLD` in `lib.rs`).
 
 The engine features (`EngineFeatures`) mirror the signals the Android engine
-extracts during a real scan (DEX/ELF/manifest/URL/IP/TLSH/cert/benign-DB/media/
+extracts during a real scan (DEX/ELF/manifest/URL/IP/cert/benign-DB/media/
 HIPS), normalized to `[0, 1]`. The MinHash pipeline (`features::extract_minhash`)
 is kept for benign-DB lookups and uses FNV-1a hashing (unchanged).
 

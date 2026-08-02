@@ -38,7 +38,6 @@ HydraDragonAV Mobile is a multi-layered Android Antivirus and Security suite com
 - **⚡ Photon Technology:** Ultra-fast, multi-threaded scanning engine utilizing `ConcurrentHashMap` caching to instantly re-verify previously scanned safe applications with zero CPU overhead.
 - **🧠 Native Rust Scan Engine:** A JNI-bridged Rust core (`libhydradragonandroid.so`) does the heavy lifting — YARA-X + ClamAV signature matching, archive extraction (zip/gz/tar/xz/lzma/7z/rar, including nested APKs), AXML manifest parsing, and dangerous-permission counting, all straight from bytes in memory (no temp files required).
 - **🧠 ONNX ML Binary Classifier:** A tract-based ONNX malware/benign classifier scores every scanned APK with a confidence value (0.0–1.0). Trained on both malware and benign datasets for accurate binary classification. A lightweight logistic-regression classifier (`AIEngine`) also scores DEX-level behavior (obfuscation, dynamic loading, crypto/socket/shell APIs, adware SDKs).
-- **🧬 TLSH Fuzzy Hashing:** Compares scanned APK/ELF/DEX files against a MalwareBazaar-derived TLSH digest database to catch samples that are similar-but-not-identical to known malware.
 - **🛡️ Ransomware & Screen-Locker Mitigation:** Real-time on-screen text detection (via Accessibility Service + OCR) recognizes ransom notes and forcefully terminates screen-locking ransomware, in **20 languages**.
 - **📵 SMS Scam & Phishing Detection:** The same multi-language on-screen text scanner catches smishing lures (fake account verification, prize scams, parcel-delivery scams, OTP requests, bank alerts) wherever they're rendered — Messages app, notification previews, or a spoofed WebView — without ever reading your SMS inbox directly.
 - **🖥️ Live Screen OCR:** A MediaProjection-based capture service periodically OCRs the foreground screen and feeds the extracted text into the native threat scanner, catching scams that only ever appear as rendered pixels.
@@ -66,7 +65,7 @@ HydraDragonAV Mobile operates across four core pillars:
 1. **GuardService:** A persistent Foreground Service acting as the brain of the active defense system — watches the Downloads folder in real time and orchestrates scans, monitoring threats 24/7.
 2. **DynamicAnalysisService:** An Accessibility Service that prevents automated UI hijacking (Clickjacking), blocks overlay/notification-spam attacks, and scans on-screen text for ransomware/SMS-scam/phishing wording in 20 languages.
 3. **ScreenCaptureService:** A MediaProjection-based OCR service that periodically captures and reads the foreground screen, feeding extracted text into the native scanner for live threat detection.
-4. **ScanEngine + NativeScanner:** The Java orchestration layer and its Rust-native counterpart (`libhydradragonandroid.so`) — evaluating X.509 certificates, SHA-256/TLSH hashes, dangerous permissions, app install sources, YARA-X/ClamAV signatures, and ML anomaly scores.
+4. **ScanEngine + NativeScanner:** The Java orchestration layer and its Rust-native counterpart (`libhydradragonandroid.so`) — evaluating X.509 certificates, SHA-256 hashes, dangerous permissions, app install sources, YARA-X/ClamAV signatures, and ML anomaly scores.
 
 A local **DnsVpnService** additionally filters DNS lookups against known-malicious domains, and a **NetworkSecurityScanner**/**NetworkMonitor** pair watches live connections for MITM interception, ARP spoofing, and malicious IP/C2 traffic.
 
@@ -79,6 +78,16 @@ Tools like [Shizuku](https://github.com/thedjchi/Shizuku) grant an app ADB-shell
 - **The marginal capability isn't worth the trust model change.** The main draw (a real packet-level firewall, force-stopping arbitrary apps) is already reasonably covered here by `VpnService`-based DNS/domain/IP filtering (Web Shield) without ever requiring the user to authorize shell access to a third-party broker service.
 
 In short: a security product that asks the user to first grant it debug-shell reach is solving its threat model backwards. The app's actual privilege escalation surface is intentionally kept to what Android's public APIs (`AccessibilityService`, `VpnService`, `PackageManager`) allow — nothing that requires ADB, root, or a privileged companion app.
+
+## 🧬 Why Was TLSH Removed?
+
+Early builds shipped a **TLSH fuzzy-hashing** engine that compared every scanned APK/ELF/DEX against a MalwareBazaar-derived digest database. It was removed because it was the slowest, heaviest, and least useful engine in the whole suite:
+
+- **It was the slowest engine by far.** Telemetry showed TLSH consuming ~49 seconds of single-threaded wall time per scan — roughly **92% of the entire scan scope** — while ClamAV (4 workers, accumulated) and YARA-X finished their passes in a fraction of that. The bottleneck wasn't hashing, it was a linear diff search over a ~177K-digest ELF database for every scanned buffer.
+- **It repeated Xvirus's mistake — a fake "100% detection" in tests  but not real World.** Pulling a database from well-known malware-collection sites and matching everything against it produces impressive-looking but meaningless numbers: the detector can only ever re-flag exactly what was already downloaded, giving a false sense of total coverage. In practice TLSH added only ~0.1–0.5% *redundant* detections on real-world samples — everything it flagged was already caught by the ClamAV/YARA-X/ML layers.
+- **It was bloated.** The bundled TLSH reference databases (ELF, APK, DEX) shipped megabytes of digests into the APK for a layer that contributed next to nothing beyond what signature and ML engines already deliver.
+
+The features that actually earn their place — YARA-X + ClamAV signatures, the ML classifier, NSRL whitelisting, emulation, and URL/IP filtering — cover the same ground without the runtime cost or the empty promise of "100%".
 
 *Designed with 💻 by @elnureisayeva1-cloud (creator) & @Siradankullanici (backend development)*
 
@@ -106,7 +115,6 @@ The on-device detection assets are generated offline from public threat-intel an
 
 - **`gen_whitelist_packages.py`** — builds `whitelist_packages.db` (SQLite), a full-detail NSRL Android package whitelist (name, version, manufacturer, OS, hashes) joined from the NSRL RDS database.
 - **`gen_whitelist_apk.py`** — extracts whole-APK NSRL MD5 hashes for the native binary-fuse XOR whitelist filter.
-- **`gen_tlsh_db.py`** — builds a TLSH fuzzy-hash database from MalwareBazaar samples (APK/ELF/SO/DEX) for similarity-based malware detection.
 - **`gen_ip_lists.py`** / **`build_url_xfilters.py`** / **`build_xfilters.sh`** — build the malicious IP/URL/domain filters (XOR-filter based) used by the native IP/URL threat scanners.
 - **`clam_juice.py`** — filters ClamAV signatures to keep only Android-relevant platforms (Andr, Unix, Linux, Email, PUA) plus all Phishing signatures; excludes Win/Osx/Java:
   ```bash

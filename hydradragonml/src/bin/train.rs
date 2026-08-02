@@ -268,7 +268,7 @@ fn collect_apks(dir: &Path, out: &mut Vec<PathBuf>) {
 /// Build the engine-feature vector from raw APK bytes, mirroring the features
 /// the Android engine extracts during a scan (a training-time approximation of
 /// the `EngineFeatures` produced by `build_engine_features` in the Android
-/// crate — fields the trainer cannot compute (emulation, IP/TLSH/cert lookups,
+/// crate — fields the trainer cannot compute (emulation, IP/cert lookups,
 /// benign-DB) are left at their neutral defaults).
 fn engine_features_from_apk(apk: &[u8]) -> EngineFeatures {
     use std::io::Cursor;

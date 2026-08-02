@@ -23,7 +23,6 @@ Before reporting a false positive, **please verify if the file was actually flag
 **Which component flagged it?**
 - [ ] YARA-X Signature Scan
 - [ ] ClamAV Signature Scan
-- [ ] TLSH Fuzzy Hash Matching
 - [ ] ML Anomaly Detection
 - [ ] AIEngine (DEX-level behavioral scoring)
 - [ ] Network Security Scanner

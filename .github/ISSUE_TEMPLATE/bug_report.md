@@ -35,7 +35,7 @@ If applicable, add screenshots or a screen recording to help explain your proble
  - Installation Source: [Google Play / F-Droid / Direct APK / adb install]
 
 **Which component is affected?**
-- [ ] ScanEngine / NativeScanner (Rust engine — YARA-X / ClamAV / ML / TLSH)
+- [ ] ScanEngine / NativeScanner (Rust engine — YARA-X / ClamAV / ML)
 - [ ] GuardService (foreground monitoring / real-time protection)
 - [ ] DynamicAnalysisService (on-screen ransomware/scam detection / clickjacking)
 - [ ] ScreenCaptureService (live screen OCR)

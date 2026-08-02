@@ -22,7 +22,6 @@ Before reporting a false negative, **please verify if the file was actually miss
 **Which component should have detected it?**
 - [ ] YARA-X Signature Scan (native Rust engine)
 - [ ] ClamAV Signature Scan
-- [ ] TLSH Fuzzy Hash Matching
 - [ ] ML Anomaly Detection (MinHash/LSH + Isolation Forest)
 - [ ] AIEngine (DEX-level behavioral scoring)
 - [ ] Network Security Scanner (malicious IP/C2 / MITM / ARP)

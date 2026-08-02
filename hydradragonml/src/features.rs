@@ -7,7 +7,7 @@ pub const MIN_STR_LEN: usize = 5;
 pub const MAX_TOKENS: usize = 4096;
 pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
-pub const ENGINE_FEATURE_COUNT: usize = 26;
+pub const ENGINE_FEATURE_COUNT: usize = 25;
 
 #[derive(Clone, Debug, Default)]
 pub struct EngineFeatures {
@@ -37,8 +37,6 @@ pub struct EngineFeatures {
     pub url_phishing_count: f32,
     // IP
     pub ip_malicious_count: f32,
-    // TLSH
-    pub tlsh_min_distance: f32,
     // Certificate
     pub is_testkey: f32,
     // Benign DB
@@ -73,7 +71,6 @@ impl EngineFeatures {
             (self.url_malicious_count / 20.0).min(1.0),
             (self.url_phishing_count / 20.0).min(1.0),
             (self.ip_malicious_count / 10.0).min(1.0),
-            (1.0 - (self.tlsh_min_distance / 200.0)).clamp(0.0, 1.0),
             self.is_testkey,
             self.benign_jaccard,
             (self.media_hidden_count / 10.0).min(1.0),
