@@ -2772,15 +2772,7 @@ fn run_scan(
     let perm_count;
     let packages;
     let hashes;
-    let hydradragon_manifest;
     let skip_heavy: Vec<bool>;
-    let mut dex_scans: Vec<Option<dex_scan::DexScan>> = Vec::new();
-    let mut dex_ms: u128 = 0;
-    let hydradragon_meta;
-    let mut module_meta: Vec<(&str, &[u8])>;
-    let mut emulated: Vec<emulate::EmulationResult> = Vec::new();
-    let emulated_strings: Vec<Option<Vec<u8>>>;
-    let mut emulate_ms: u128 = 0;
 
     {
         // Dangerous-permission count from the (in-memory) manifest bytes.
@@ -2789,8 +2781,6 @@ fn run_scan(
         packages = collect_packages(&buffers);
         // MD5 of each APK/zip buffer for the hash-keyed whitelist.
         hashes = collect_apk_hashes(&buffers, file_md5);
-        // hydradragon JSON report (manifest + URL sweep).
-        hydradragon_manifest = build_hydradragon_json(&buffers, &[]);
 
         // Per-buffer whitelist check.
         let mut apk_md5_to_pkg = std::collections::HashMap::new();
@@ -2859,94 +2849,12 @@ fn run_scan(
             })
             .collect();
 
-        // DEX static analysis and native-code emulation are independent —
-        // run them in parallel.
-        std::thread::scope(|s| {
-            // Thread 1: DEX static analysis
-            s.spawn(|| {
-                let t0 = std::time::Instant::now();
-                dex_scans = buffers
-                    .iter()
-                    .enumerate()
-                    .map(|(i, b)| {
-                        if !skip_heavy[i] && b.data.starts_with(b"dex\n") {
-                            dex_scan::scan(&b.data)
-                        } else {
-                            None
-                        }
-                    })
-                    .collect();
-                dex_ms = t0.elapsed().as_millis();
-            });
-            // Thread 2: Native code emulation (Unicorn)
-            s.spawn(|| {
-                let t0 = std::time::Instant::now();
-                const MAX_EMULATED_BUFFERS: usize = 8;
-                emulated = if NATIVE_EMULATION_ENABLED
-                    .load(std::sync::atomic::Ordering::Relaxed)
-                {
-                    let mut seen_hashes: std::collections::HashSet<String> = std::collections::HashSet::new();
-                    let mut emulated_count = 0usize;
-                    buffers
-                        .iter()
-                        .enumerate()
-                        .map(|(i, b)| {
-                            if skip_heavy[i] || !b.data.starts_with(b"\x7fELF") {
-                                return emulate::EmulationResult::default();
-                            }
-                            if emulated_count >= MAX_EMULATED_BUFFERS {
-                                return emulate::EmulationResult::default();
-                            }
-                            if !seen_hashes.insert(md5_hex(&b.data)) {
-                                return emulate::EmulationResult::default();
-                            }
-                            emulated_count += 1;
-                            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                emulate::emulate(&b.data)
-                            }))
-                            .unwrap_or_default()
-                        })
-                        .collect()
-                } else {
-                    buffers.iter().map(|_| emulate::EmulationResult::default()).collect()
-                };
-                emulate_ms = t0.elapsed().as_millis();
-            });
-        });
-
-        // Emulated strings — derived from emulated results.
-        emulated_strings = emulated
-            .iter()
-            .map(|r| {
-                let mut parts: Vec<String> = Vec::new();
-                if !r.strings.is_empty() {
-                    parts.push(r.strings.join("\n"));
-                }
-                if !r.api_calls.is_empty() {
-                    parts.push(r.api_calls.iter().map(|a| a.name.clone()).collect::<Vec<_>>().join("\n"));
-                }
-                if parts.is_empty() { None } else { Some(parts.join("\n").into_bytes()) }
-            })
-            .collect();
-
-        // Merge DEX findings into hydradragon meta (single module JSON:
-        // manifest report + URL sweep + DEX findings).
-        hydradragon_meta = merge_dex_findings(
-            hydradragon,
-            &dex_scans,
-            hydradragon_manifest.as_deref(),
-        );
-
-        // Build module metadata.
-        module_meta = Vec::new();
-        if let Some(h) = hydradragon_meta.as_deref() {
-            if !h.is_empty() {
-                module_meta.push(("hydradragon", h));
-            }
-        }
+        // DEX static analysis and native-code emulation moved to Phase 3 so
+        // they overlap the dominant ClamAV/YARA wall time instead of adding
+        // serially here in Phase 2.
     }
     let phase2_ms = t_phase2.elapsed().as_millis();
-    rust_timing_log!("{path} :: phase2_ms={phase2_ms}ms (whitelist/hashes/hydradragon/skip_heavy)");
+    rust_timing_log!("{path} :: phase2_ms={phase2_ms}ms (whitelist/hashes/skip_heavy)");
 
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
     // (ML, ClamAV, YARA, TLSH) and return immediately.
@@ -3020,13 +2928,24 @@ fn run_scan(
     let buffers_ref = &*buffers;
     let engine_ref = engine;
     let path_ref = path;
-    let module_meta_ref = &module_meta[..];
-    let emulated_ref = &emulated;
 
-    // Aggregate every engine result computed in Phase 2 (DEX static analysis,
-    // native emulation, manifest, URLs/IPs, TLSH, certificate, benign DB,
-    // media hidden-data) into the Burn classifier's EngineFeatures vector.
-    let engine_features = build_engine_features(engine_ref, buffers_ref, &dex_scans, &emulated, perm_count);
+    // DEX static analysis and native emulation are independent of the ClamAV/
+    // YARA/TLSH passes — run them as Phase-3 scope threads so their wall time
+    // overlaps the dominant engine. Results flow: DEX/EMU producers → Thread 1
+    // (module metadata + emulation signal + engine features) → ML via feat_rx.
+    // dex_scans / emulated_strings / timings are stashed for post-scope JSON.
+    use std::sync::mpsc;
+    let (dex_tx, dex_rx) = mpsc::channel::<(Vec<Option<dex_scan::DexScan>>, u128)>();
+    let (emu_tx, emu_rx) = mpsc::channel::<(Vec<emulate::EmulationResult>, Vec<Option<Vec<u8>>>, u128)>();
+    let (feat_tx, feat_rx) = mpsc::channel::<EngineFeatures>();
+    // Receiver is Send but not Sync, so scoped threads borrow it via Mutex.
+    let dex_rx = Mutex::new(dex_rx);
+    let emu_rx = Mutex::new(emu_rx);
+    let feat_rx = Mutex::new(feat_rx);
+    let dex_scans_slot = Mutex::new(None::<Vec<Option<dex_scan::DexScan>>>);
+    let emu_strings_slot = Mutex::new(None::<Vec<Option<Vec<u8>>>>);
+    let dex_ms_slot = Mutex::new(0u128);
+    let emu_ms_slot = Mutex::new(0u128);
 
     // Precompute the set of buffers eligible for ClamAV/YARA content scanning
     // once, up front. The gating (size/relevance/media/executable checks) and
@@ -3079,8 +2998,106 @@ fn run_scan(
 
     let t_scope = std::time::Instant::now();
     std::thread::scope(|s| {
-        // Thread 1: Phase 3 YARA rescan + emulation signal
+        // Thread 0: DEX static analysis (producer). Independent of ClamAV/
+        // YARA/TLSH, so it runs as a scope thread overlapping their wall time.
         s.spawn(|| {
+            let t0 = std::time::Instant::now();
+            let scans: Vec<Option<dex_scan::DexScan>> = buffers_ref
+                .iter()
+                .enumerate()
+                .map(|(i, b)| {
+                    if !skip_heavy[i] && b.data.starts_with(b"dex\n") {
+                        dex_scan::scan(&b.data)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            let _ = dex_tx.send((scans, t0.elapsed().as_millis()));
+        });
+
+        // Thread 0b: Native code emulation (Unicorn) — also a producer.
+        s.spawn(|| {
+            let t0 = std::time::Instant::now();
+            const MAX_EMULATED_BUFFERS: usize = 8;
+            let emulated: Vec<emulate::EmulationResult> = if NATIVE_EMULATION_ENABLED
+                .load(std::sync::atomic::Ordering::Relaxed)
+            {
+                let mut seen_hashes: std::collections::HashSet<String> = std::collections::HashSet::new();
+                let mut emulated_count = 0usize;
+                buffers_ref
+                    .iter()
+                    .enumerate()
+                    .map(|(i, b)| {
+                        if skip_heavy[i] || !b.data.starts_with(b"\x7fELF") {
+                            return emulate::EmulationResult::default();
+                        }
+                        if emulated_count >= MAX_EMULATED_BUFFERS {
+                            return emulate::EmulationResult::default();
+                        }
+                        if !seen_hashes.insert(md5_hex(&b.data)) {
+                            return emulate::EmulationResult::default();
+                        }
+                        emulated_count += 1;
+                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            emulate::emulate(&b.data)
+                        }))
+                        .unwrap_or_default()
+                    })
+                    .collect()
+            } else {
+                buffers_ref.iter().map(|_| emulate::EmulationResult::default()).collect()
+            };
+            // Emulated strings — derived from emulated results.
+            let emulated_strings: Vec<Option<Vec<u8>>> = emulated
+                .iter()
+                .map(|r| {
+                    let mut parts: Vec<String> = Vec::new();
+                    if !r.strings.is_empty() {
+                        parts.push(r.strings.join("\n"));
+                    }
+                    if !r.api_calls.is_empty() {
+                        parts.push(r.api_calls.iter().map(|a| a.name.clone()).collect::<Vec<_>>().join("\n"));
+                    }
+                    if parts.is_empty() { None } else { Some(parts.join("\n").into_bytes()) }
+                })
+                .collect();
+            let _ = emu_tx.send((emulated, emulated_strings, t0.elapsed().as_millis()));
+        });
+
+        // Thread 1: Phase 3 YARA rescan + emulation signal + engine features
+        s.spawn(|| {
+            // Wait for the DEX/EMU producers (fast) so we can build the merged
+            // module metadata and the Burn feature vector here on the thread
+            // that already consumes them, instead of serially pre-scope.
+            let (dex_scans, dex_ms) = dex_rx.lock().ok().and_then(|rx| rx.recv().ok()).unwrap_or((Vec::new(), 0));
+            let (emulated, emulated_strings, emulate_ms) = emu_rx.lock().ok().and_then(|rx| rx.recv().ok()).unwrap_or((Vec::new(), Vec::new(), 0));
+            let _ = dex_ms_slot.lock().map(|mut d| *d = dex_ms);
+            let _ = emu_ms_slot.lock().map(|mut e| *e = emulate_ms);
+            // Aggregate DEX/emulation/manifest results into the feature vector
+            // the ML thread consumes (overlaps the rest of this thread).
+            let engine_features = build_engine_features(engine_ref, buffers_ref, &dex_scans, &emulated, perm_count);
+            let _ = feat_tx.send(engine_features);
+
+            // Build the merged hydradragon module metadata (manifest + URL
+            // sweep + DEX findings) here on Phase-3 Thread 1 so its cost
+            // overlaps with the dominant YARA rescan wall time instead of
+            // running serially in Phase 2 before the scope.
+            let hydradragon_manifest = build_hydradragon_json(buffers_ref, &[]);
+            let merged_hydradragon =
+                merge_dex_findings(hydradragon.as_deref(), &dex_scans, hydradragon_manifest.as_deref());
+            let module_meta_ref: &[(&str, &[u8])];
+            let module_meta_vec;
+            module_meta_ref = match &merged_hydradragon {
+                Some(h) if !h.is_empty() => {
+                    module_meta_vec = vec![("hydradragon", &h[..])];
+                    &module_meta_vec[..]
+                }
+                _ => {
+                    module_meta_vec = Vec::new();
+                    &module_meta_vec[..]
+                }
+            };
             let mut rescan_timing = hydradragonclamav::scanner::TimingBreakdown::default();
             if let Some(clamav) = &engine_ref.clamav {
                 if !module_meta_ref.is_empty() {
@@ -3135,7 +3152,7 @@ fn run_scan(
             }
             // Emulation signal
             for (i, b) in buffers_ref.iter().enumerate() {
-                if emulated_ref[i].api_calls.is_empty() {
+                if emulated[i].api_calls.is_empty() {
                     continue;
                 }
                 let base_path = if buffers_ref[i].entry_name.is_none() {
@@ -3147,7 +3164,7 @@ fn run_scan(
                     }
                 };
                 let mut seen_apis = std::collections::HashSet::new();
-                for call in &emulated_ref[i].api_calls {
+                for call in &emulated[i].api_calls {
                     if !seen_apis.insert(call.name.clone()) { continue; }
                     if let Ok(mut yg) = yara_dets.lock() {
                         yg.push((
@@ -3158,6 +3175,10 @@ fn run_scan(
                     }
                 }
             }
+            // Hand the DEX scan results + emulated strings to the main thread
+            // (post-scope) for URL scanning / severe-finding / rule generation.
+            let _ = dex_scans_slot.lock().map(|mut d| *d = Some(dex_scans));
+            let _ = emu_strings_slot.lock().map(|mut e| *e = Some(emulated_strings));
         });
 
         // Thread 2: ClamAV signatures + phishing (no YARA — that runs on
@@ -3223,6 +3244,9 @@ fn run_scan(
             let mut ml_lin = Vec::<(String, Vec<String>)>::new();
             let mut ml_time = 0u128;
             if let Some(model) = &engine_ref.model {
+                // Engine features are built on Thread 1 once DEX/emulation are
+                // ready; receive them instead of recomputing here.
+                let engine_features = feat_rx.lock().ok().and_then(|rx| rx.recv().ok()).unwrap_or_default();
                 for (i, b) in buffers_ref.iter().enumerate() {
                     let obj_path = match &b.entry_name {
                         Some(entry) => format!("{path_ref}!/{entry}"),
@@ -3308,6 +3332,10 @@ fn run_scan(
     );
 
     // ── Merge results ────────────────────────────────────────────
+    let dex_scans = dex_scans_slot.into_inner().unwrap_or_default().unwrap_or_default();
+    let emulated_strings = emu_strings_slot.into_inner().unwrap_or_default().unwrap_or_default();
+    let dex_ms = dex_ms_slot.into_inner().unwrap_or_default();
+    let emulate_ms = emu_ms_slot.into_inner().unwrap_or_default();
     let scan_timing = scan_timing.into_inner().unwrap_or_default();
     let mut yara_dets = yara_dets.into_inner().unwrap_or_default();
     let (ml_malicious, ml_probability, ml_lineages, ml_ms) = ml_out.into_inner().unwrap_or_default();
