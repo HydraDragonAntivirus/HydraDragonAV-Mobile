@@ -2946,6 +2946,10 @@ fn run_scan(
     let emu_strings_slot = Mutex::new(None::<Vec<Option<Vec<u8>>>>);
     let dex_ms_slot = Mutex::new(0u128);
     let emu_ms_slot = Mutex::new(0u128);
+    // Post-scope JSON used to hash every entry (MD5 + TLSH, up to 1024 buffers)
+    // for the Anti-FP cache. Hashing every buffer serially after the engines
+    // finish added wall time, so a scope thread computes it concurrently.
+    let entry_hashes_slot = Mutex::new(None::<(Vec<String>, Vec<String>)>);
 
     // Precompute the set of buffers eligible for ClamAV/YARA content scanning
     // once, up front. The gating (size/relevance/media/executable checks) and
@@ -3063,6 +3067,45 @@ fn run_scan(
                 })
                 .collect();
             let _ = emu_tx.send((emulated, emulated_strings, t0.elapsed().as_millis()));
+        });
+
+        // Thread 0c: Per-entry MD5 + TLSH hashing for the Anti-FP cache — pure
+        // CPU on read-only buffers, so it overlaps the dominant engine pass.
+        // MD5 is collected only for APK entries and TLSH only for ELF/APK/DEX
+        // entries (the types the Anti-FP cache actually fuzzy-matches); hashing
+        // every resource/XML/png in an APK is wasted CPU.
+        s.spawn(|| {
+            let mut entry_md5_pairs: Vec<String> = Vec::new();
+            let mut entry_tlsh_pairs: Vec<String> = Vec::new();
+            for b in buffers_ref.iter() {
+                if b.entry_name.is_none() { continue; }
+                let Some(entry) = b.entry_name.as_ref() else { continue };
+                if entry.is_empty() { continue; }
+                let is_apk = is_apk_zip(&b.data);
+                if is_apk {
+                    let md5 = md5_hex(&b.data);
+                    entry_md5_pairs.push(format!(
+                        r#""{}":"{}""#,
+                        json_escape(entry),
+                        md5,
+                    ));
+                }
+                if is_apk || b.data.starts_with(b"\x7fELF") || b.data.starts_with(b"dex\n") {
+                    let tlsh = tlsh_rs::hash_bytes(&b.data)
+                        .ok()
+                        .map(|d| d.to_string())
+                        .unwrap_or_default();
+                    if !tlsh.is_empty() {
+                        entry_tlsh_pairs.push(format!(
+                            r#""{}":"{}""#,
+                            json_escape(entry),
+                            tlsh,
+                        ));
+                    }
+                }
+                if entry_md5_pairs.len() >= 1024 { break; }
+            }
+            let _ = entry_hashes_slot.lock().map(|mut s| *s = Some((entry_md5_pairs, entry_tlsh_pairs)));
         });
 
         // Thread 1: Phase 3 YARA rescan + emulation signal + engine features
@@ -3531,32 +3574,11 @@ fn run_scan(
     // entry name (relative path within the APK) to its MD5 and TLSH so Java
     // can suppress detections whose entry content matches a known-good
     // whitelisted APK's entry. Only MD5 is used for exact match; TLSH is
-    // used for similarity matching.
-    let mut entry_md5_pairs: Vec<String> = Vec::new();
-    let mut entry_tlsh_pairs: Vec<String> = Vec::new();
-    for b in buffers.iter() {
-        if b.entry_name.is_none() { continue; }
-        let Some(ref entry) = b.entry_name else { continue };
-        if entry.is_empty() { continue; }
-        let md5 = md5_hex(&b.data);
-        entry_md5_pairs.push(format!(
-            r#""{}":"{}""#,
-            json_escape(entry),
-            md5,
-        ));
-        let tlsh = tlsh_rs::hash_bytes(&b.data)
-            .ok()
-            .map(|d| d.to_string())
-            .unwrap_or_default();
-        if !tlsh.is_empty() {
-            entry_tlsh_pairs.push(format!(
-                r#""{}":"{}""#,
-                json_escape(entry),
-                tlsh,
-            ));
-        }
-        if entry_md5_pairs.len() >= 1024 { break; }
-    }
+    // used for similarity matching. Computed concurrently on a scope thread
+    // (Thread 0c) so the hashing overlaps the engine passes instead of
+    // running serially here after the scope.
+    let (entry_md5_pairs, entry_tlsh_pairs) =
+        entry_hashes_slot.into_inner().unwrap_or_default().unwrap_or_default();
     let entry_md5s_json = if entry_md5_pairs.is_empty() {
         "{}".to_string()
     } else {
