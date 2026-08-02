@@ -2746,15 +2746,17 @@ fn run_scan(
         }
     }
 
-    // TLSH of the whole top-level file — computed early while `mmap` is still
-    // available (before collect_buffers consumes it). Used in the skip_heavy
-    // early-return and in the final result JSON.
-    let file_tlsh = tlsh_rs::hash_bytes(&apk_bytes)
-        .ok()
-        .map(|d| d.to_string())
-        .unwrap_or_default();
-    // ML inference runs in Phase 3 parallel scope.
+    // Whole-file TLSH (`file_tlsh`) is now computed on a Phase-3 scope thread
+    // from the top-level buffer (lib.rs Thread 0c), overlapping the engine
+    // passes, instead of hashing the whole APK serially before extraction.
+    // The only exception is the whole-file whitelist fast path below, which
+    // skips the scope entirely and must hash here while `apk_bytes` is alive.
+    let mut file_tlsh: String = String::new();
     if whitelisted {
+        file_tlsh = tlsh_rs::hash_bytes(&apk_bytes)
+            .ok()
+            .map(|d| d.to_string())
+            .unwrap_or_default();
         android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
     }
     let t_extract = std::time::Instant::now();
@@ -2859,6 +2861,16 @@ fn run_scan(
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
     // (ML, ClamAV, YARA, TLSH) and return immediately.
     if skip_heavy.iter().all(|&s| s) {
+        // The scope never runs here, so the whole-file TLSH wouldn't be
+        // computed on Thread 0c. Hash the top-level buffer on demand (the
+        // whole-file whitelist fast path already filled `file_tlsh`).
+        if file_tlsh.is_empty() {
+            file_tlsh = buffers
+                .iter()
+                .find(|b| b.entry_name.is_none())
+                .and_then(|b| tlsh_rs::hash_bytes(&b.data).ok().map(|d| d.to_string()))
+                .unwrap_or_default();
+        }
         let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
         if !bomb_dets.is_empty() {
             let bomb_dets_json: Vec<String> = bomb_dets.iter().map(|(n, op, lin)| {
@@ -2950,6 +2962,10 @@ fn run_scan(
     // for the Anti-FP cache. Hashing every buffer serially after the engines
     // finish added wall time, so a scope thread computes it concurrently.
     let entry_hashes_slot = Mutex::new(None::<(Vec<String>, Vec<String>)>);
+    // Whole-file TLSH — computed on a scope thread from the top-level buffer so
+    // it overlaps the engine passes instead of hashing the whole APK serially
+    // before extraction.
+    let file_tlsh_slot = Mutex::new(None::<String>);
 
     // Precompute the set of buffers eligible for ClamAV/YARA content scanning
     // once, up front. The gating (size/relevance/media/executable checks) and
@@ -3075,6 +3091,15 @@ fn run_scan(
         // entries (the types the Anti-FP cache actually fuzzy-matches); hashing
         // every resource/XML/png in an APK is wasted CPU.
         s.spawn(|| {
+            // Whole-file TLSH: hash the top-level (unnamed) buffer here so this
+            // ~10-20s hash of a large APK overlaps the engine passes instead of
+            // running serially before extraction.
+            let whole_file_tlsh = buffers_ref
+                .iter()
+                .find(|b| b.entry_name.is_none())
+                .and_then(|b| tlsh_rs::hash_bytes(&b.data).ok().map(|d| d.to_string()))
+                .unwrap_or_default();
+            let _ = file_tlsh_slot.lock().map(|mut s| *s = Some(whole_file_tlsh));
             let mut entry_md5_pairs: Vec<String> = Vec::new();
             let mut entry_tlsh_pairs: Vec<String> = Vec::new();
             for b in buffers_ref.iter() {
@@ -3566,6 +3591,12 @@ fn run_scan(
     // running serially here after the scope.
     let (entry_md5_pairs, entry_tlsh_pairs) =
         entry_hashes_slot.into_inner().unwrap_or_default().unwrap_or_default();
+
+    // Whole-file TLSH computed concurrently on Thread 0c from the top-level
+    // buffer. The whole-file-whitelist fast path already filled it inline.
+    if file_tlsh.is_empty() {
+        file_tlsh = file_tlsh_slot.into_inner().unwrap_or_default().unwrap_or_default();
+    }
     let entry_md5s_json = if entry_md5_pairs.is_empty() {
         "{}".to_string()
     } else {
@@ -3577,8 +3608,7 @@ fn run_scan(
         format!("{{{}}}", entry_tlsh_pairs.join(","))
     };
 
-    // TLSH of the whole top-level file reflects `file_tlsh` computed early
-    // (before collect_buffers consumed mmap).
+    // TLSH of the whole top-level file, computed concurrently on Thread 0c.
     let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
 
     let err_json = match err {
