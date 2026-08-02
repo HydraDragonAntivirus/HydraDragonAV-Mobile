@@ -393,12 +393,6 @@ Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
 
     <string name="disable_secure_flag_toggle">Izinkan perekaman layar</string>
 
-    <string name="anti_fn_enabled_toggle">Anti-FN — mengingat sidik jari TLSH yang terkonfirmasi berbahaya untuk menangkap varian yang berganti nama/dikemas ulang</string>
-    <string name="anti_fn_on_toast">Anti-FN AKTIF — deteksi yang terkonfirmasi di-cache</string>
-    <string name="anti_fn_off_toast">Anti-FN NONAKTIF — cache dibersihkan</string>
-    <string name="anti_fn_tlsh_threshold_btn">Ambang Kemiripan TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">Ambang jarak TLSH (1-200). Lebih rendah = lebih ketat, lebih tinggi = peningkatan deteksi lebih agresif. Default: 30</string>
-    <string name="anti_fn_tlsh_threshold_saved">Ambang TLSH diatur ke %1$d</string>
     <string name="save_auto_rules_toggle">Simpan Aturan yang Dibuat Otomatis</string>
     <string name="save_auto_rules_on_toast">Simpan Aturan Otomatis AKTIF: aturan YARA yang dipelajari otomatis akan ditulis ke disk dan dimuat ulang saat peluncuran aplikasi berikutnya</string>
     <string name="save_auto_rules_off_toast">Simpan Aturan Otomatis NONAKTIF: aturan masih digunakan sesi ini tetapi tidak akan disimpan setelah restart</string>
@@ -408,13 +402,6 @@ Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
     <string name="overlay_request_title">Allow Overlay Permission?</string>
     <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
     <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
-    <string name="knowledge_db_header">BASIS PENGETAHUAN</string>
-    <string name="knowledge_db_export_btn">📤 Ekspor Cache — bagikan cache anti-FP/FN Anda untuk membantu orang lain</string>
-    <string name="knowledge_db_import_btn">📥 Impor Cache — muat cache anti-FP/FN bersama dari pengguna lain</string>
-    <string name="knowledge_db_exported">Basis pengetahuan diekspor — %1$d entri dibagikan</string>
-    <string name="knowledge_db_imported">Basis pengetahuan diimpor — %1$d entri baru ditambahkan</string>
-    <string name="knowledge_db_export_failed">Gagal mengekspor basis pengetahuan</string>
-    <string name="knowledge_db_import_failed">Gagal mengimpor basis pengetahuan — file mungkin rusak atau dari versi yang tidak kompatibel</string>
     <string name="net_traffic_export_btn">📤 Ekspor Log Lalu Lintas</string>
     <string name="net_traffic_import_btn">📥 Impor Log Lalu Lintas</string>
     <string name="net_traffic_exported">Log lalu lintas diekspor — %1$d peristiwa</string>
@@ -434,7 +421,6 @@ Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
     <string name="scan_system_off_toast">Pemindaian file sistem dinonaktifkan — aplikasi sistem akan dilewati</string>
     <string name="clear_scan_cache_btn">Hapus Cache Pindai</string>
     <string name="cache_session">Scan Cache</string>
-    <string name="cache_anti_fn">Cache Anti-FN (negatif palsu)</string>
     <string name="cache_cleared">Cache yang dipilih telah dibersihkan</string>
     <string name="scan_cancelled">Pemindaian dibatalkan</string>
 

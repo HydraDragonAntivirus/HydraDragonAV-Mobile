@@ -240,10 +240,6 @@ public final class NativeScanner {
 
     private static native String nativeScanHips(String hipsJson);
 
-    private static native void nativeSetTlshThreshold(int threshold);
-
-    private static native int nativeTlshDiff(String tlsh1, String tlsh2);
-
     // ── VPN packet scan ─────────────────────────────────────────────────
 
     private static native boolean nativeEnableVpnScan(boolean enable);
@@ -275,21 +271,6 @@ public final class NativeScanner {
             String r = nativeScanPackets(packetsJson);
             return (r == null || r.isEmpty()) ? null : r;
         } catch (Throwable t) { return null; }
-    }
-
-    /** Push the user's TLSH similarity threshold into the native engine so the
-     *  `tlsh_nearest` malware-similarity pass uses it immediately. Clamped
-     *  1-200 natively. */
-    public static void setTlshThreshold(int threshold) {
-        if (!LIB_LOADED) return;
-        try { nativeSetTlshThreshold(threshold); } catch (Throwable ignore) { }
-    }
-
-    /** TLSH diff distance between two hashes, or -1 on error. */
-    public static int tlshDiff(String tlsh1, String tlsh2) {
-        if (!LIB_LOADED || tlsh1 == null || tlsh2 == null
-                || tlsh1.isEmpty() || tlsh2.isEmpty()) return -1;
-        try { return nativeTlshDiff(tlsh1, tlsh2); } catch (Throwable t) { return -1; }
     }
 
     /** Result of a HIPS behavioral scan. */
@@ -517,8 +498,6 @@ public final class NativeScanner {
                 .getBoolean("scan_relevant_only_enabled", true));
             setScanMediaEnabled(context.getSharedPreferences("hydra_prefs", 0)
                 .getBoolean("scan_media_enabled", false));
-            setTlshThreshold(context.getSharedPreferences("hydra_prefs", 0)
-                .getInt("anti_fn_tlsh_threshold", 30));
         }
         Log.i(TAG, "native init " + (isReady() ? "ok" : "background") + " | " + status());
         return isReady();
@@ -592,16 +571,6 @@ public final class NativeScanner {
         }
         /** MD5 (lowercase hex) of the whole scanned file — its "main hash". */
         public String md5;
-        /** TLSH of the whole scanned file (its "main hash", mirrors {@link #md5}).
-         *  Used by the Anti-FN cache to match a repackaged/renamed variant of a
-         *  previously-caught top-level (non-archive) malicious file. */
-        public String fileTlsh;
-        /** Per-entry MD5 map: entry_name -> md5 (from native verdict entry_md5s).
-         *  Used by the Anti-FP cache to check individual zip entry hashes. */
-        public final java.util.HashMap<String, String> entryMd5s = new java.util.HashMap<>();
-        /** Per-entry TLSH map: entry_name -> tlsh (from native verdict entry_tlshs).
-         *  Used by the Anti-FP cache for TLSH similarity matching. */
-        public final java.util.HashMap<String, String> entryTlshs = new java.util.HashMap<>();
         /** Non-null ClamAV target number if the file type was skipped (PE/OLE2/…). */
         public Integer skippedTarget;
         /** Non-null if the native scan errored. */
@@ -684,10 +653,6 @@ public final class NativeScanner {
             if (o.has("md5") && !o.isNull("md5")) {
                 v.md5 = o.optString("md5", null);
             }
-            if (o.has("file_tlsh") && !o.isNull("file_tlsh")) {
-                String ft = o.optString("file_tlsh", null);
-                if (ft != null && !ft.isEmpty()) v.fileTlsh = ft;
-            }
             if (o.has("skipped") && !o.isNull("skipped")) {
                 v.skippedTarget = o.optInt("skipped");
             }
@@ -717,26 +682,6 @@ public final class NativeScanner {
             }
             if (o.has("generated_rule") && !o.isNull("generated_rule")) {
                 v.generatedRule = o.optString("generated_rule", null);
-            }
-            JSONObject em = o.optJSONObject("entry_md5s");
-            if (em != null) {
-                for (java.util.Iterator<String> it = em.keys(); it.hasNext();) {
-                    String key = it.next();
-                    String val = em.optString(key, null);
-                    if (key != null && val != null && !key.isEmpty() && !val.isEmpty()) {
-                        v.entryMd5s.put(key, val);
-                    }
-                }
-            }
-            JSONObject et = o.optJSONObject("entry_tlshs");
-            if (et != null) {
-                for (java.util.Iterator<String> it = et.keys(); it.hasNext();) {
-                    String key = it.next();
-                    String val = et.optString(key, null);
-                    if (key != null && val != null && !key.isEmpty() && !val.isEmpty()) {
-                        v.entryTlshs.put(key, val);
-                    }
-                }
             }
             JSONObject ml = o.optJSONObject("ml");
             if (ml != null) {

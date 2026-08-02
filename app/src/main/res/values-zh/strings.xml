@@ -393,12 +393,6 @@
 
     <string name="disable_secure_flag_toggle">允许屏幕录制</string>
 
-    <string name="anti_fn_enabled_toggle">Anti-FN — 记住已确认的恶意TLSH指纹，以捕获重命名或重新打包的变体</string>
-    <string name="anti_fn_on_toast">Anti-FN 已开启 — 已确认的检测结果已被缓存</string>
-    <string name="anti_fn_off_toast">Anti-FN 已关闭 — 缓存已清空</string>
-    <string name="anti_fn_tlsh_threshold_btn">TLSH 相似度阈值</string>
-    <string name="anti_fn_tlsh_threshold_hint">TLSH 距离阈值（1-200）。越低越严格，越高越积极提升检测。默认值：30</string>
-    <string name="anti_fn_tlsh_threshold_saved">TLSH 阈值已设置为 %1$d</string>
     <string name="save_auto_rules_toggle">保存自动生成的规则</string>
     <string name="save_auto_rules_on_toast">保存自动生成规则 开：自动学习的 YARA 规则将写入磁盘，并在下次启动应用时重新加载</string>
     <string name="save_auto_rules_off_toast">保存自动生成规则 关：规则在本次会话中仍会使用，但重启后将不会保留</string>
@@ -408,13 +402,6 @@
     <string name="overlay_request_title">Allow Overlay Permission?</string>
     <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
     <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
-    <string name="knowledge_db_header">知识数据库</string>
-    <string name="knowledge_db_export_btn">📤 导出缓存 — 分享您的 anti-FP/FN 缓存以帮助他人</string>
-    <string name="knowledge_db_import_btn">📥 导入缓存 — 从其他用户加载共享的 anti-FP/FN 缓存</string>
-    <string name="knowledge_db_exported">知识数据库已导出 — 分享了 %1$d 个条目</string>
-    <string name="knowledge_db_imported">知识数据库已导入 — 添加了 %1$d 个新条目</string>
-    <string name="knowledge_db_export_failed">导出知识数据库失败</string>
-    <string name="knowledge_db_import_failed">导入知识数据库失败 — 文件可能已损坏或来自不兼容的版本</string>
     <string name="net_traffic_export_btn">📤 导出流量日志</string>
     <string name="net_traffic_import_btn">📥 导入流量日志</string>
     <string name="net_traffic_exported">流量日志已导出 — %1$d 个事件</string>
@@ -434,7 +421,6 @@
     <string name="scan_system_off_toast">系统文件扫描已禁用 — 系统应用将被跳过</string>
     <string name="clear_scan_cache_btn">清除扫描缓存</string>
     <string name="cache_session">Scan Cache</string>
-    <string name="cache_anti_fn">反漏报缓存（漏报）</string>
     <string name="cache_cleared">已清除选定的缓存</string>
     <string name="scan_cancelled">扫描已取消</string>
 

@@ -393,12 +393,6 @@ Je kunt dit later inschakelen via Instellingen.</string>
 
     <string name="disable_secure_flag_toggle">Schermopname toestaan</string>
 
-    <string name="anti_fn_enabled_toggle">Anti-FN — onthoudt bevestigd kwaadaardige TLSH-vingerafdrukken om hernoemde/herverpakte varianten te herkennen</string>
-    <string name="anti_fn_on_toast">Anti-FN AAN — bevestigde detecties worden gecachet</string>
-    <string name="anti_fn_off_toast">Anti-FN UIT — cache gewist</string>
-    <string name="anti_fn_tlsh_threshold_btn">TLSH-gelijkenisdrempel</string>
-    <string name="anti_fn_tlsh_threshold_hint">TLSH-afstandsdrempel (1-200). Lager = strenger, hoger = agressievere detectie-upgrade. Standaard: 30</string>
-    <string name="anti_fn_tlsh_threshold_saved">TLSH-drempel ingesteld op %1$d</string>
     <string name="save_auto_rules_toggle">Automatisch gegenereerde regels opslaan</string>
     <string name="save_auto_rules_on_toast">Automatisch gegenereerde regels opslaan AAN: automatisch geleerde YARA-regels worden naar schijf geschreven en bij de volgende start opnieuw geladen</string>
     <string name="save_auto_rules_off_toast">Automatisch gegenereerde regels opslaan UIT: regels worden nog steeds in deze sessie gebruikt maar worden NA een herstart NIET bewaard</string>
@@ -408,13 +402,6 @@ Je kunt dit later inschakelen via Instellingen.</string>
     <string name="overlay_request_title">Allow Overlay Permission?</string>
     <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
     <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
-    <string name="knowledge_db_header">KENNISDATABASE</string>
-    <string name="knowledge_db_export_btn">📤 Cache exporteren — deel uw anti-FP/FN-cache om anderen te helpen</string>
-    <string name="knowledge_db_import_btn">📥 Cache importeren — gedeelde anti-FP/FN-cache van een andere gebruiker laden</string>
-    <string name="knowledge_db_exported">Kennisdatabase geëxporteerd — %1$d vermeldingen gedeeld</string>
-    <string name="knowledge_db_imported">Kennisdatabase geïmporteerd — %1$d nieuwe vermeldingen toegevoegd</string>
-    <string name="knowledge_db_export_failed">Exporteren van kennisdatabase mislukt</string>
-    <string name="knowledge_db_import_failed">Importeren van kennisdatabase mislukt — bestand is mogelijk beschadigd of van een incompatibele versie</string>
     <string name="net_traffic_export_btn">📤 Verkeerslogboek exporteren</string>
     <string name="net_traffic_import_btn">📥 Verkeerslogboek importeren</string>
     <string name="net_traffic_exported">Verkeerslogboek geëxporteerd — %1$d gebeurtenissen</string>
@@ -434,7 +421,6 @@ Je kunt dit later inschakelen via Instellingen.</string>
     <string name="scan_system_off_toast">Systeembestandsscan uitgeschakeld — systeem-apps worden overgeslagen</string>
     <string name="clear_scan_cache_btn">Scan-Cache Wissen</string>
     <string name="cache_session">Scan Cache</string>
-    <string name="cache_anti_fn">Anti-FN-Cache (valse negatieven)</string>
     <string name="cache_cleared">Geselecteerde caches gewist</string>
     <string name="scan_cancelled">Scan geannuleerd</string>
 

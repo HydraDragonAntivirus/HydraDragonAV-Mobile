@@ -85,31 +85,6 @@ public class SettingsFragment extends Fragment {
                 pendingExportRuleFile = null;
             });
 
-    private final androidx.activity.result.ActivityResultLauncher<String> knowledgeExportLauncher =
-        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
-            uri -> {
-                if (uri == null) return;
-                try {
-                    com.hydradragon.antivirus.engine.KnowledgeDatabase.exportCache(requireContext(), uri);
-                    Toast.makeText(getContext(), getString(R.string.knowledge_db_exported, 0), Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    Toast.makeText(getContext(), getString(R.string.knowledge_db_export_failed), Toast.LENGTH_SHORT).show();
-                }
-            });
-
-    private final androidx.activity.result.ActivityResultLauncher<String> knowledgeImportLauncher =
-        registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.GetContent(),
-            uri -> {
-                if (uri == null) return;
-                try {
-                    int count = com.hydradragon.antivirus.engine.KnowledgeDatabase.importCache(requireContext(), uri);
-                    Toast.makeText(getContext(),
-                        getString(R.string.knowledge_db_imported, count), Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    Toast.makeText(getContext(), getString(R.string.knowledge_db_import_failed), Toast.LENGTH_SHORT).show();
-                }
-            });
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup p, @Nullable Bundle s) {
@@ -393,7 +368,7 @@ public class SettingsFragment extends Fragment {
         boolean scanCache = prefs().getBoolean("scan_cache_enabled", true);
         addToggle(cardPrem, getString(R.string.scan_cache_toggle), scanCache, (btn, on) -> {
             prefs().edit().putBoolean("scan_cache_enabled", on).apply();
-            if (!on) com.hydradragon.antivirus.engine.ScanEngine.clearCache(requireContext());
+            if (!on) com.hydradragon.antivirus.engine.ScanEngine.clearCache();
             Toast.makeText(getContext(), on
                 ? getString(R.string.scan_cache_on_toast)
                 : getString(R.string.scan_cache_off_toast), Toast.LENGTH_SHORT).show();
@@ -415,24 +390,6 @@ public class SettingsFragment extends Fragment {
                 ? getString(R.string.scan_system_on_toast)
                 : getString(R.string.scan_system_off_toast), Toast.LENGTH_LONG).show();
         });
-
-        boolean antiFn = prefs().getBoolean("anti_fn_enabled", true);
-        addToggle(cardPrem, getString(R.string.anti_fn_enabled_toggle), antiFn, (btn, on) -> {
-            prefs().edit().putBoolean("anti_fn_enabled", on).apply();
-            if (!on) {
-                // Clear the cache when disabled
-                com.hydradragon.antivirus.engine.AntiFnCache cache =
-                    new com.hydradragon.antivirus.engine.AntiFnCache(requireContext());
-                cache.clear();
-            }
-            Toast.makeText(getContext(), on
-                ? getString(R.string.anti_fn_on_toast)
-                : getString(R.string.anti_fn_off_toast), Toast.LENGTH_SHORT).show();
-        });
-
-        int antiFnTlshThresh = prefs().getInt("anti_fn_tlsh_threshold", 30);
-        addBtn("🔀  " + getString(R.string.anti_fn_tlsh_threshold_btn) + " (" + antiFnTlshThresh + ")", color(R.color.bg_secondary),
-            v -> showAntiFnTlshThresholdDialog());
 
         boolean relevantOnly = prefs().getBoolean("scan_relevant_only_enabled", true);
         addToggle(cardPrem, getString(R.string.scan_relevant_only_toggle), relevantOnly, (btn, on) -> {
@@ -544,13 +501,6 @@ public class SettingsFragment extends Fragment {
         addBtn("🗑  " + getString(R.string.clear_scan_cache_btn), color(R.color.bg_secondary),
             v -> showClearCacheDialog());
 
-        // ── KNOWLEDGE DATABASE ──────────────────────────────────────
-        addHeader(getString(R.string.knowledge_db_header));
-        addBtn("📤  " + getString(R.string.knowledge_db_export_btn), color(R.color.bg_secondary),
-            v -> exportKnowledgeDatabase());
-        addBtn("📥  " + getString(R.string.knowledge_db_import_btn), color(R.color.bg_secondary),
-            v -> importKnowledgeDatabase());
-
         // ── SYSTEM ──────────────────────────────────────────────────
         addHeader(getString(R.string.system));
         addBtn("🧹  " + getString(R.string.bloatware_cleaner), color(R.color.neon_cyan), v -> runCleanup());
@@ -593,7 +543,6 @@ public class SettingsFragment extends Fragment {
         new ResetCategory(R.string.reset_cat_privacy, KEY_SHIELD, "web_shield_decided", KEY_SCREEN_OCR,
             "silent_mode", com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH,
             "disable_secure_flag", "scan_cache_enabled", "detect_zip_bomb_enabled", "scan_relevant_only_enabled",
-            "anti_fn_enabled", "anti_fn_tlsh_threshold",
             "suricata_rule_scan_enabled", "max_text_scan_bytes", "max_archive_size_mb"),
         new ResetCategory(R.string.reset_cat_premium, "zero_trust_mode", "auto_rule_generation",
             "ask_signature_on_remove", "auto_delete_malware_enabled"),
@@ -1239,47 +1188,6 @@ public class SettingsFragment extends Fragment {
         }
     }
 
-    /** TLSH similarity threshold for the Anti-FP cache (1-200, default 40).
-     *  Lower = stricter (only very close matches are suppressed); higher =
-     *  more aggressive (more similar-looking entries are treated as known-good). */
-    /** TLSH similarity threshold for the Anti-FN cache and native scanner (1-200, default 40). */
-    private void showAntiFnTlshThresholdDialog() {
-        LinearLayout box = new LinearLayout(requireContext());
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(48, 24, 48, 0);
-
-        TextView label = new TextView(requireContext());
-        label.setText(getString(R.string.anti_fn_tlsh_threshold_hint));
-        label.setTextColor(color(R.color.text_primary));
-        label.setPadding(0, 0, 0, 16);
-        box.addView(label);
-        android.widget.EditText input = new android.widget.EditText(requireContext());
-        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setText(String.valueOf(prefs().getInt("anti_fn_tlsh_threshold", 30)));
-        box.addView(input);
-
-        new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(getString(R.string.anti_fn_tlsh_threshold_btn))
-            .setView(box)
-            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {
-                int val;
-                try {
-                    val = Integer.parseInt(input.getText().toString().trim());
-                } catch (Exception e) {
-                    val = 40;
-                }
-                val = Math.max(1, Math.min(200, val));
-                prefs().edit().putInt("anti_fn_tlsh_threshold", val).apply();
-                com.hydradragon.antivirus.engine.NativeScanner.setTlshThreshold(val);
-                Toast.makeText(getContext(),
-                    getString(R.string.anti_fn_tlsh_threshold_saved, val),
-                    Toast.LENGTH_SHORT).show();
-                buildUI();
-            })
-            .setNegativeButton(getString(R.string.btn_cancel), null)
-            .show();
-    }
-
     /** Max-file-size-to-scan config (see MaxScanFileSize) — same
      *  EditText-in-AlertDialog pattern as showScanIntervalDialog(). Takes
      *  effect on the NEXT scan (each ScanEngine call site reads it live, no
@@ -1405,9 +1313,8 @@ public class SettingsFragment extends Fragment {
     private void showClearCacheDialog() {
         String[] items = {
             getString(R.string.cache_session),
-            getString(R.string.cache_anti_fn),
         };
-        boolean[] checked = {true, true};
+        boolean[] checked = {true};
         new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(getString(R.string.clear_scan_cache_btn))
             .setMultiChoiceItems(items, checked, (d, which, isChecked) -> checked[which] = isChecked)
@@ -1415,11 +1322,6 @@ public class SettingsFragment extends Fragment {
                 boolean any = false;
                 if (checked[0]) {
                     com.hydradragon.antivirus.engine.ScanEngine.clearCache();
-                    any = true;
-                }
-                if (checked[1]) {
-                    try { new com.hydradragon.antivirus.engine.AntiFnCache(requireContext()).clear(); }
-                    catch (Exception ignore) {}
                     any = true;
                 }
                 if (any) Toast.makeText(getContext(), getString(R.string.cache_cleared), Toast.LENGTH_SHORT).show();
@@ -1529,14 +1431,6 @@ public class SettingsFragment extends Fragment {
             .setView(scroll)
             .setPositiveButton(getString(R.string.btn_close), null)
             .show();
-    }
-
-    private void exportKnowledgeDatabase() {
-        knowledgeExportLauncher.launch("hydradragon_knowledge_db.json");
-    }
-
-    private void importKnowledgeDatabase() {
-        knowledgeImportLauncher.launch("application/json");
     }
 
     /** Generic "type to add / tap to remove" manager, shared by Ignored

@@ -668,9 +668,6 @@ public class ScanFragment extends Fragment {
             android.widget.Toast.LENGTH_LONG).show();
     }
 
-    /** Start an Anti-FP scan: runs a full scan WITH anti-FP cache population
-     *  and detection suppression. This is the only scan type that uses the
-     *  anti-FP cache. */
     /** Stop button: request the engine to abort. The in-flight scan ends at its
      *  next file/app boundary and fires onScanComplete with what was found. */
     private void stopScan() {

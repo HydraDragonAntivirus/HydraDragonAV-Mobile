@@ -94,7 +94,6 @@ public class ScanEngine {
 
     private final Context context;
     private final AIEngine aiEngine;
-    private final AntiFnCache antiFnCache;
     // Process-wide, bounded below the device's core count. GuardService and
     // InstallReceiver each hold their own ScanEngine instance (InstallReceiver
     // creates a brand new one per install broadcast), so a per-instance pool —
@@ -152,19 +151,9 @@ public class ScanEngine {
         if (packageName != null && scanCache != null) scanCache.removePhotonCache(packageName);
     }
 
-    /** Clear all scan caches (in-memory + SQLite) and the anti-FN cache. */
+    /** Clear all scan caches (in-memory + SQLite). */
     public static void clearCache() {
         if (scanCache != null) scanCache.clearAll();
-    }
-
-    /** Clear all scan caches plus the persistent SQLite anti-FN cache. */
-    public static void clearCache(Context context) {
-        if (scanCache != null) scanCache.clearAll();
-        if (context != null) {
-            try {
-                new AntiFnCache(context).clear();
-            } catch (Exception ignore) {}
-        }
     }
 
     private boolean photonCacheEnabled() {
@@ -219,10 +208,6 @@ public class ScanEngine {
      *  {@link #deepNativeScanInstalledApks} to skip the costly native engine
      *  on apps we already trust — their zip-entry hashes are already cached. */
     private final java.util.HashSet<String> whitelistedDuringScan = new java.util.HashSet<>();
-    /** When set, anti-FP cache is populated and checked during scans.
-     *  Only enabled for the dedicated Anti-FP scan option; quick and full
-     *  scans never touch the anti-FP cache. */
-
 
     private volatile boolean isBackgroundScan = false;
 
@@ -378,7 +363,6 @@ public class ScanEngine {
     public ScanEngine(Context context, AIEngine aiEngine) {
         this.context = context;
         this.aiEngine = aiEngine;
-        this.antiFnCache = new AntiFnCache(context);
         if (scanCache == null) scanCache = new ScanCache(context);
         loadPackageWhitelist();
         // Load YARA-X rulesets + ML model into the native engine (non-fatal).
@@ -634,67 +618,7 @@ public class ScanEngine {
             if (isDetectionWhitelisted(d)) continue;
             out.add(d);
         }
-        upsellAntiFnDetections(v, out);
         return out;
-    }
-
-    private void upsellAntiFnDetections(NativeScanner.Verdict v, List<NativeScanner.Verdict.Detection> out) {
-        if (!antiFnCache.isEnabled()) return;
-        java.util.Set<String> covered = new java.util.HashSet<>();
-        boolean topLevelCovered = false;
-        for (NativeScanner.Verdict.Detection d : out) {
-            if (d.objectPath == null) continue;
-            int bang = d.objectPath.indexOf('!');
-            if (bang >= 0 && bang + 1 < d.objectPath.length()) {
-                covered.add(d.objectPath.substring(bang + 1));
-            } else {
-                topLevelCovered = true;
-            }
-        }
-        int tlshThreshold = AntiFnCache.getTlshThreshold(context);
-        for (java.util.Map.Entry<String, String> e : v.entryTlshs.entrySet()) {
-            String entryName = e.getKey();
-            if (covered.contains(entryName)) continue;
-            String fileType = AntiFnCache.detectFileType(entryName);
-            String matched = antiFnCache.findSimilarTlsh(e.getValue(), tlshThreshold, fileType);
-            if (matched != null) {
-                Log.d(TAG, "DETECTION-UPSELLED[anti-FN] entry=" + entryName + " matched=" + matched);
-                out.add(new NativeScanner.Verdict.Detection(
-                    "AntiFN.Suspected: " + matched, v.md5 + "!" + entryName, java.util.Collections.emptyList()));
-            }
-        }
-        if (!topLevelCovered) {
-            String fileType = "apk";
-            String matched = antiFnCache.findSimilarTlsh(v.fileTlsh, tlshThreshold, fileType);
-            if (matched != null) {
-                Log.d(TAG, "DETECTION-UPSELLED[anti-FN] top-level matched=" + matched);
-                out.add(new NativeScanner.Verdict.Detection(
-                    "AntiFN.Suspected: " + matched, v.md5, java.util.Collections.emptyList()));
-            }
-        }
-    }
-
-    private void updateAntiFnCache(NativeScanner.Verdict v, List<NativeScanner.Verdict.Detection> live) {
-        if (!antiFnCache.isEnabled() || live.isEmpty()) return;
-        for (NativeScanner.Verdict.Detection d : live) {
-            String entryName = "";
-            String tlsh;
-            if (d.objectPath != null) {
-                int bang = d.objectPath.indexOf('!');
-                if (bang >= 0 && bang + 1 < d.objectPath.length()) {
-                    entryName = d.objectPath.substring(bang + 1);
-                }
-            }
-            if (!entryName.isEmpty()) {
-                tlsh = v.entryTlshs.get(entryName);
-            } else {
-                tlsh = v.fileTlsh;
-            }
-            if (tlsh != null && !tlsh.isEmpty()) {
-                String fileType = AntiFnCache.detectFileType(entryName.isEmpty() ? null : entryName);
-                antiFnCache.addEntry(tlsh, d.name, fileType);
-            }
-        }
     }
 
     public void setCallback(ScanCallback callback) { this.callback = callback; }
@@ -1201,7 +1125,6 @@ public class ScanEngine {
             // alongside that APK in the same archive is NOT suppressed by the APK's
             // hash. Keep only the detections that survive.
             List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
-            updateAntiFnCache(v, live);
             boolean malicious = !live.isEmpty();
 
             if (!malicious && v.permissions < 25) return true;
@@ -1372,7 +1295,7 @@ public class ScanEngine {
      *  ONLY on NON-whitelisted apps. Whitelisted apps (store+NSRL) were already
      *  processed/cached by {@link #analyzeApp} and tracked in
      *  {@link #whitelistedDuringScan} — skipping them here avoids redundant
-     *  native work (the Anti-FP cache is already populated).
+     *  native work on apps we already trust.
      *  Reports progress so the user sees which APK is being deep-scanned. */
     private void deepNativeScanInstalledApks(List<ApplicationInfo> apps, PackageManager pm,
                                               List<ThreatResult> threats) {
@@ -1419,7 +1342,6 @@ public class ScanEngine {
                 // Per-detection suppression (a hit inside a whitelisted APK is an
                 // FP; a non-APK virus alongside it is not). Nothing survives → skip.
                 List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
-                updateAntiFnCache(v, live);
                 if (cancelRequested) return;
                 if (live.isEmpty()) continue;
                 ThreatResult.Builder b = new ThreatResult.Builder(
@@ -1770,7 +1692,6 @@ public class ScanEngine {
                     // Per-detection whitelist suppression (hit inside a whitelisted
                     // APK = FP; non-APK virus alongside it survives).
                     List<NativeScanner.Verdict.Detection> live = survivingDetections(v);
-                    updateAntiFnCache(v, live);
                     boolean mlMalicious = false;
                     if (!live.isEmpty()) {
                         // Split PUA.* / PUA_* hits (potentially-unwanted) and the

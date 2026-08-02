@@ -393,12 +393,6 @@ Możesz włączyć to później w Ustawieniach.</string>
 
     <string name="disable_secure_flag_toggle">Zezwól na nagrywanie ekranu</string>
 
-    <string name="anti_fn_enabled_toggle">Anti-FN — zapamiętuj potwierdzone złośliwe odciski TLSH, aby wykrywać zmienione/przepakowane warianty</string>
-    <string name="anti_fn_on_toast">Anti-FN WŁ. — potwierdzone wykrycia są buforowane</string>
-    <string name="anti_fn_off_toast">Anti-FN WYŁ. — pamięć podręczna wyczyszczona</string>
-    <string name="anti_fn_tlsh_threshold_btn">Próg Podobieństwa TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">Próg odległości TLSH (1-200). Niższy = bardziej rygorystyczny, wyższy = bardziej agresywne podniesienie wykrywalności. Domyślnie: 30</string>
-    <string name="anti_fn_tlsh_threshold_saved">Próg TLSH ustawiony na %1$d</string>
     <string name="save_auto_rules_toggle">Zapisz automatycznie generowane reguly</string>
     <string name="save_auto_rules_on_toast">Zapisywanie automatycznych regul WLACZONE: automatycznie uczone reguly YARA beda zapisywane na dysku i przeladowywane przy nastepnym uruchomieniu aplikacji</string>
     <string name="save_auto_rules_off_toast">Zapisywanie automatycznych regul WYLACZONE: reguly sa nadal uzywane w tej sesji, ale NIE zostana zachowane po restarcie</string>
@@ -408,13 +402,6 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="overlay_request_title">Allow Overlay Permission?</string>
     <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
     <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
-    <string name="knowledge_db_header">BAZA WIEDZY</string>
-    <string name="knowledge_db_export_btn">📤 Eksportuj pamięć podręczną — udostępnij swoją pamięć podręczną anti-FP/FN, aby pomóc innym</string>
-    <string name="knowledge_db_import_btn">📥 Importuj pamięć podręczną — załaduj udostępnioną pamięć podręczną anti-FP/FN od innego użytkownika</string>
-    <string name="knowledge_db_exported">Baza wiedzy wyeksportowana — %1$d wpisów udostępnionych</string>
-    <string name="knowledge_db_imported">Baza wiedzy zaimportowana — %1$d nowych wpisów dodanych</string>
-    <string name="knowledge_db_export_failed">Nie udało się wyeksportować bazy wiedzy</string>
-    <string name="knowledge_db_import_failed">Nie udało się zaimportować bazy wiedzy — plik może być uszkodzony lub z niekompatybilnej wersji</string>
     <string name="net_traffic_export_btn">📤 Eksportuj dziennik ruchu</string>
     <string name="net_traffic_import_btn">📥 Importuj dziennik ruchu</string>
     <string name="net_traffic_exported">Dziennik ruchu wyeksportowany — %1$d zdarzeń</string>
@@ -434,7 +421,6 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="scan_system_off_toast">Skanowanie plików systemowych wyłączone — aplikacje systemowe zostaną pominięte</string>
     <string name="clear_scan_cache_btn">Wyczyść Pamięć Podręczną Skanowania</string>
     <string name="cache_session">Scan Cache</string>
-    <string name="cache_anti_fn">Pamięć Podręczna Anti-FN (fałszywe negatywy)</string>
     <string name="cache_cleared">Wybrane pamięci podręczne wyczyszczone</string>
     <string name="scan_cancelled">Skanowanie anulowane</string>
 

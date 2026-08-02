@@ -393,12 +393,6 @@ Você pode ativar isso mais tarde nas Configurações.</string>
 
     <string name="disable_secure_flag_toggle">Permitir gravação de tela</string>
 
-    <string name="anti_fn_enabled_toggle">Anti-FN — memorizar impressões digitais TLSH confirmadas como maliciosas para detectar variantes renomeadas/reempacotadas</string>
-    <string name="anti_fn_on_toast">Anti-FN ATIVADO — detecções confirmadas são armazenadas em cache</string>
-    <string name="anti_fn_off_toast">Anti-FN DESATIVADO — cache limpo</string>
-    <string name="anti_fn_tlsh_threshold_btn">Limiar de Similaridade TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">Limiar de distância TLSH (1-200). Menor = mais rigoroso, maior = upgrade de detecção mais agressivo. Padrão: 30</string>
-    <string name="anti_fn_tlsh_threshold_saved">Limiar TLSH definido para %1$d</string>
     <string name="save_auto_rules_toggle">Salvar regras autogeradas</string>
     <string name="save_auto_rules_on_toast">Salvar regras autogeradas ATIVADO: regras YARA aprendidas automaticamente serao gravadas em disco e recarregadas na proxima inicializacao</string>
     <string name="save_auto_rules_off_toast">Salvar regras autogeradas DESATIVADO: as regras ainda sao usadas nesta sessao mas NAO serao mantidas apos reinicializacao</string>
@@ -408,13 +402,6 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="overlay_request_title">Allow Overlay Permission?</string>
     <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
     <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
-    <string name="knowledge_db_header">BANCO DE CONHECIMENTO</string>
-    <string name="knowledge_db_export_btn">📤 Exportar cache — compartilhe seu cache anti-FP/FN para ajudar outros</string>
-    <string name="knowledge_db_import_btn">📥 Importar cache — carregar cache anti-FP/FN compartilhado de outro usuário</string>
-    <string name="knowledge_db_exported">Banco de conhecimento exportado — %1$d entradas compartilhadas</string>
-    <string name="knowledge_db_imported">Banco de conhecimento importado — %1$d novas entradas adicionadas</string>
-    <string name="knowledge_db_export_failed">Falha ao exportar o banco de conhecimento</string>
-    <string name="knowledge_db_import_failed">Falha ao importar o banco de conhecimento — arquivo pode estar corrompido ou de uma versão incompatível</string>
     <string name="net_traffic_export_btn">📤 Exportar registro de tráfego</string>
     <string name="net_traffic_import_btn">📥 Importar registro de tráfego</string>
     <string name="net_traffic_exported">Registro de tráfego exportado — %1$d eventos</string>
@@ -434,7 +421,6 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="scan_system_off_toast">Digitalização de arquivos do sistema desativada — aplicativos do sistema serão ignorados</string>
     <string name="clear_scan_cache_btn">Limpar Cache de Digitalização</string>
     <string name="cache_session">Cache de Digitalização</string>
-    <string name="cache_anti_fn">Cache Anti-FN (falsos negativos)</string>
     <string name="cache_cleared">Caches selecionados limpos</string>
     <string name="scan_cancelled">Verificação cancelada</string>
 

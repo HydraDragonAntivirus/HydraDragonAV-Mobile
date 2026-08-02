@@ -393,12 +393,6 @@
 
     <string name="disable_secure_flag_toggle">السماح بتسجيل الشاشة</string>
 
-    <string name="anti_fn_enabled_toggle">Anti-FN — تذكر الإدخالات المؤكدة كخبيثة TLSH لاكتشاف المتغيرات المعاد تسميتها/إعادة تعبئتها</string>
-    <string name="anti_fn_on_toast">تم تشغيل Anti-FN — يتم تخزين الاكتشافات المؤكدة مؤقتًا</string>
-    <string name="anti_fn_off_toast">تم إيقاف Anti-FN — تم مسح الذاكرة المخبأة</string>
-    <string name="anti_fn_tlsh_threshold_btn">حد تشابه TLSH</string>
-    <string name="anti_fn_tlsh_threshold_hint">حد مسافة TLSH (1-200). القيمة الأقل = أكثر صرامة، القيمة الأعلى = ترقية اكتشاف أكثر عدوانية. الافتراضي: 30</string>
-    <string name="anti_fn_tlsh_threshold_saved">تم تعيين حد TLSH إلى %1$d</string>
     <string name="save_auto_rules_toggle">حفظ القواعد المُنشأة تلقائيًا</string>
     <string name="save_auto_rules_on_toast">حفظ القواعد التلقائية مُفعَّل: سيتم كتابة قواعد YARA المُتعلَّمة تلقائيًا على القرص وإعادة تحميلها عند التشغيل التالي</string>
     <string name="save_auto_rules_off_toast">حفظ القواعد التلقائية مُعطَّل: لا تزال القواعد مُستخدَمة في هذه الجلسة لكنها لن تُحفظ بعد إعادة التشغيل</string>
@@ -408,13 +402,6 @@
     <string name="overlay_request_title">Allow Overlay Permission?</string>
     <string name="overlay_request_msg">HydraDragonAV needs overlay permission to show threat alerts as a popup, even when you are using other apps.</string>
     <string name="overlay_granted_toast">Overlay permission granted — threat alerts can now appear as popups</string>
-    <string name="knowledge_db_header">قاعدة المعرفة</string>
-    <string name="knowledge_db_export_btn">📤 تصدير الذاكرة المخبأة — مشاركة ذاكرة التخزين المؤقت anti-FP/FN لمساعدة الآخرين</string>
-    <string name="knowledge_db_import_btn">📥 استيراد الذاكرة المخبأة — تحميل ذاكرة التخزين المؤقت anti-FP/FN المشتركة من مستخدم آخر</string>
-    <string name="knowledge_db_exported">تم تصدير قاعدة المعرفة — تمت مشاركة %1$d إدخال</string>
-    <string name="knowledge_db_imported">تم استيراد قاعدة المعرفة — تمت إضافة %1$d إدخال جديد</string>
-    <string name="knowledge_db_export_failed">فشل تصدير قاعدة المعرفة</string>
-    <string name="knowledge_db_import_failed">فشل استيراد قاعدة المعرفة — قد يكون الملف تالفًا أو من إصدار غير متوافق</string>
     <string name="net_traffic_export_btn">📤 تصدير سجل حركة المرور</string>
     <string name="net_traffic_import_btn">📥 استيراد سجل حركة المرور</string>
     <string name="net_traffic_exported">تم تصدير سجل حركة المرور — %1$d حدث</string>
@@ -434,7 +421,6 @@
     <string name="scan_system_off_toast">تم تعطيل مسح ملفات النظام — سيتم تخطي تطبيقات النظام</string>
     <string name="clear_scan_cache_btn">مسح ذاكرة التخزين المؤقت للفحص</string>
     <string name="cache_session">Scan Cache</string>
-    <string name="cache_anti_fn">ذاكرة تخزين مؤقت لمضادة FN (سلبيات كاذبة)</string>
     <string name="cache_cleared">تم مسح ذاكرات التخزين المؤقت المحددة</string>
     <string name="scan_cancelled">تم إلغاء الفحص</string>
 

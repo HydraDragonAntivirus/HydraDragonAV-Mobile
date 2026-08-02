@@ -134,13 +134,6 @@ const WHITELIST_XF: &str = "whitelist.xf";
 const WHITELIST_PACKAGES_DB: &str = "whitelist_packages.csv";
 const BENIGN_SIGNATURES: &str = "benign_signatures.bin";
 
-/// A scanned buffer whose TLSH distance to a known-malware digest is at or below
-/// this is flagged as similar. Lower = stricter (fewer FP). TLSH distance: 0 =
-/// identical, <30 very close, <70 related (per the TLSH paper).
-/// Made mutable via an atomic so the user's Settings slider (anti_fp_tlsh_threshold)
-/// takes effect immediately without an engine restart.
-static TLSH_THRESHOLD: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(30);
-
 struct Engine {
     /// ClamAV engine: loaded from the bundled signature DB with the compiled
     /// `.yrc` YARA rulesets added. It does the whole scan — file-type detection,
@@ -1655,8 +1648,8 @@ fn tlsh_nearest(db: &[tlsh_db::TlshFlat], buf: &[u8]) -> Option<i32> {
             }
         }
     }
-    let threshold = TLSH_THRESHOLD.load(std::sync::atomic::Ordering::Relaxed);
-    (best <= threshold).then_some(best)
+    const THRESHOLD: i32 = 30;
+    (best <= THRESHOLD).then_some(best)
 }
 
 /// Run `f` on a thread with a LARGE stack and return its result. yara_x's rule
@@ -2544,50 +2537,6 @@ fn scan_apk(
     }
 }
 
-/// `void nativeSetTlshThreshold(int threshold)` — sets the TLSH similarity
-/// threshold used by `tlsh_nearest` during malware scanning. Applied
-/// immediately; no engine reinit needed. Clamped to 1-200.
-#[unsafe(no_mangle)]
-pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeSetTlshThreshold<'local>(
-    _env: EnvUnowned<'local>,
-    _class: JClass<'local>,
-    threshold: jint,
-) {
-    let t = threshold.max(1).min(200);
-    TLSH_THRESHOLD.store(t, std::sync::atomic::Ordering::Relaxed);
-}
-
-/// `int nativeTlshDiff(String tlsh1, String tlsh2)` — returns the TLSH diff
-/// distance between two hashes, or -1 on error. Used by the Anti-FP cache to
-/// compare a scanned entry's TLSH against known-good TLSH digests.
-#[unsafe(no_mangle)]
-pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativeTlshDiff<'local>(
-    mut env: EnvUnowned<'local>,
-    _class: JClass<'local>,
-    tlsh1: JString<'local>,
-    tlsh2: JString<'local>,
-) -> jint {
-    env.with_env(|env| -> jni::errors::Result<_> {
-        let s1: String = match tlsh1.try_to_string(env) {
-            Ok(s) => s,
-            Err(_) => return Ok(-1),
-        };
-        let s2: String = match tlsh2.try_to_string(env) {
-            Ok(s) => s,
-            Err(_) => return Ok(-1),
-        };
-        let d1 = match s1.parse::<tlsh_rs::TlshDigest>() {
-            Ok(d) => d,
-            Err(_) => return Ok(-1),
-        };
-        let d2 = match s2.parse::<tlsh_rs::TlshDigest>() {
-            Ok(d) => d,
-            Err(_) => return Ok(-1),
-        };
-        Ok(d1.diff(&d2))
-    }).resolve::<LogErrorAndDefault>()
-}
-
 /// Check every emulation-decoded string (see emulate.rs) that looks like a
 /// whole URL against the URL/domain xor filters (`engine.url_scanner`) — a decoded
 /// C2 URL a signature/YARA rule was never written for can still be caught
@@ -2746,17 +2695,7 @@ fn run_scan(
         }
     }
 
-    // Whole-file TLSH (`file_tlsh`) is now computed on a Phase-3 scope thread
-    // from the top-level buffer (lib.rs Thread 0c), overlapping the engine
-    // passes, instead of hashing the whole APK serially before extraction.
-    // The only exception is the whole-file whitelist fast path below, which
-    // skips the scope entirely and must hash here while `apk_bytes` is alive.
-    let mut file_tlsh: String = String::new();
     if whitelisted {
-        file_tlsh = tlsh_rs::hash_bytes(&apk_bytes)
-            .ok()
-            .map(|d| d.to_string())
-            .unwrap_or_default();
         android_log(&format!("whitelist :: skipping extraction for {path} (MD5 {file_hash})"));
     }
     let t_extract = std::time::Instant::now();
@@ -2861,17 +2800,6 @@ fn run_scan(
     // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
     // (ML, ClamAV, YARA, TLSH) and return immediately.
     if skip_heavy.iter().all(|&s| s) {
-        // The scope never runs here, so the whole-file TLSH wouldn't be
-        // computed on Thread 0c. Hash the top-level buffer on demand (the
-        // whole-file whitelist fast path already filled `file_tlsh`).
-        if file_tlsh.is_empty() {
-            file_tlsh = buffers
-                .iter()
-                .find(|b| b.entry_name.is_none())
-                .and_then(|b| tlsh_rs::hash_bytes(&b.data).ok().map(|d| d.to_string()))
-                .unwrap_or_default();
-        }
-        let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
         if !bomb_dets.is_empty() {
             let bomb_dets_json: Vec<String> = bomb_dets.iter().map(|(n, op, lin)| {
                 let hs: Vec<String> = lin.iter().map(|h| format!("\"{}\"", h)).collect();
@@ -2881,20 +2809,19 @@ fn run_scan(
             let pkgs: Vec<String> = packages.iter().map(|p| format!("\"{}\"", json_escape(p))).collect();
             let hs: Vec<String> = hashes.iter().map(|h| format!("\"{}\"", h)).collect();
             return format!(
-                r#"{{"malicious":true,"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0}},"generated_rule":null,"entry_md5s":{{}},"entry_tlshs":{{}}}}"#,
+                r#"{{"malicious":true,"matches":[],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":false,"probability":0.0}},"generated_rule":null}}"#,
                 bomb_dets_json.join(","),
                 perm_count,
                 pkgs.join(","),
                 hs.join(","),
                 file_hash,
-                file_tlsh_json,
             );
         }
         let pkgs: Vec<String> = packages.iter().map(|p| format!("\"{}\"", json_escape(p))).collect();
         let hs: Vec<String> = hashes.iter().map(|h| format!("\"{}\"", h)).collect();
         return format!(
-            r#"{{"malicious":false,"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0}}}}"#,
-            perm_count, pkgs.join(","), hs.join(","), file_hash, file_tlsh_json,
+            r#"{{"malicious":false,"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":false,"probability":0.0}}}}"#,
+            perm_count, pkgs.join(","), hs.join(","), file_hash,
         );
     }
 
@@ -2958,14 +2885,6 @@ fn run_scan(
     let emu_strings_slot = Mutex::new(None::<Vec<Option<Vec<u8>>>>);
     let dex_ms_slot = Mutex::new(0u128);
     let emu_ms_slot = Mutex::new(0u128);
-    // Post-scope JSON used to hash every entry (MD5 + TLSH, up to 1024 buffers)
-    // for the Anti-FP cache. Hashing every buffer serially after the engines
-    // finish added wall time, so a scope thread computes it concurrently.
-    let entry_hashes_slot = Mutex::new(None::<(Vec<String>, Vec<String>)>);
-    // Whole-file TLSH — computed on a scope thread from the top-level buffer so
-    // it overlaps the engine passes instead of hashing the whole APK serially
-    // before extraction.
-    let file_tlsh_slot = Mutex::new(None::<String>);
 
     // Precompute the set of buffers eligible for ClamAV/YARA content scanning
     // once, up front. The gating (size/relevance/media/executable checks) and
@@ -3083,54 +3002,6 @@ fn run_scan(
                 })
                 .collect();
             let _ = emu_tx.send((emulated, emulated_strings, t0.elapsed().as_millis()));
-        });
-
-        // Thread 0c: Per-entry MD5 + TLSH hashing for the Anti-FP cache — pure
-        // CPU on read-only buffers, so it overlaps the dominant engine pass.
-        // MD5 is collected only for APK entries and TLSH only for ELF/APK/DEX
-        // entries (the types the Anti-FP cache actually fuzzy-matches); hashing
-        // every resource/XML/png in an APK is wasted CPU.
-        s.spawn(|| {
-            // Whole-file TLSH: hash the top-level (unnamed) buffer here so this
-            // ~10-20s hash of a large APK overlaps the engine passes instead of
-            // running serially before extraction.
-            let whole_file_tlsh = buffers_ref
-                .iter()
-                .find(|b| b.entry_name.is_none())
-                .and_then(|b| tlsh_rs::hash_bytes(&b.data).ok().map(|d| d.to_string()))
-                .unwrap_or_default();
-            let _ = file_tlsh_slot.lock().map(|mut s| *s = Some(whole_file_tlsh));
-            let mut entry_md5_pairs: Vec<String> = Vec::new();
-            let mut entry_tlsh_pairs: Vec<String> = Vec::new();
-            for b in buffers_ref.iter() {
-                if b.entry_name.is_none() { continue; }
-                let Some(entry) = b.entry_name.as_ref() else { continue };
-                if entry.is_empty() { continue; }
-                let is_apk = is_apk_zip(&b.data);
-                if is_apk {
-                    let md5 = md5_hex(&b.data);
-                    entry_md5_pairs.push(format!(
-                        r#""{}":"{}""#,
-                        json_escape(entry),
-                        md5,
-                    ));
-                }
-                if is_apk || b.data.starts_with(b"\x7fELF") || b.data.starts_with(b"dex\n") {
-                    let tlsh = tlsh_rs::hash_bytes(&b.data)
-                        .ok()
-                        .map(|d| d.to_string())
-                        .unwrap_or_default();
-                    if !tlsh.is_empty() {
-                        entry_tlsh_pairs.push(format!(
-                            r#""{}":"{}""#,
-                            json_escape(entry),
-                            tlsh,
-                        ));
-                    }
-                }
-                if entry_md5_pairs.len() >= 1024 { break; }
-            }
-            let _ = entry_hashes_slot.lock().map(|mut s| *s = Some((entry_md5_pairs, entry_tlsh_pairs)));
         });
 
         // Thread 1: Phase 3 YARA rescan + emulation signal + engine features
@@ -3582,54 +3453,24 @@ fn run_scan(
         .collect::<Vec<_>>()
         .join(",");
 
-    // Per-buffer MD5 + TLSH maps for the Anti-FP cache: maps each buffer's
-    // entry name (relative path within the APK) to its MD5 and TLSH so Java
-    // can suppress detections whose entry content matches a known-good
-    // whitelisted APK's entry. Only MD5 is used for exact match; TLSH is
-    // used for similarity matching. Computed concurrently on a scope thread
-    // (Thread 0c) so the hashing overlaps the engine passes instead of
-    // running serially here after the scope.
-    let (entry_md5_pairs, entry_tlsh_pairs) =
-        entry_hashes_slot.into_inner().unwrap_or_default().unwrap_or_default();
-
-    // Whole-file TLSH computed concurrently on Thread 0c from the top-level
-    // buffer. The whole-file-whitelist fast path already filled it inline.
-    if file_tlsh.is_empty() {
-        file_tlsh = file_tlsh_slot.into_inner().unwrap_or_default().unwrap_or_default();
-    }
-    let entry_md5s_json = if entry_md5_pairs.is_empty() {
-        "{}".to_string()
-    } else {
-        format!("{{{}}}", entry_md5_pairs.join(","))
-    };
-    let entry_tlshs_json = if entry_tlsh_pairs.is_empty() {
-        "{}".to_string()
-    } else {
-        format!("{{{}}}", entry_tlsh_pairs.join(","))
-    };
-
-    // TLSH of the whole top-level file, computed concurrently on Thread 0c.
-    let file_tlsh_json = format!("\"{}\"", json_escape(&file_tlsh));
-
     let err_json = match err {
         Some(e) => format!(",\"error\":\"{}\"", json_escape(&e)),
         None => String::new(),
     };
 
     let result = if malicious || zero_trust {
-        // Full JSON: detections, generated rule, per-entry hashes (needed by
-        // Java's Anti-FP cache and yarGen rule display).
+        // Full JSON: detections and generated rule.
         format!(
-            r#"{{"cached":false,"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":{},"probability":{:.4}}},"generated_rule":{},"entry_md5s":{},"entry_tlshs":{}{}}}"#,
-            malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, ml_malicious, ml_probability, generated_rule_json, entry_md5s_json, entry_tlshs_json, err_json
+            r#"{{"cached":false,"malicious":{},"matches":[{}],"detections":[{}],"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":{},"probability":{:.4}}},"generated_rule":{}{}}}"#,
+            malicious, hits_json, detections_json, perm_count, packages_json, hashes_json, file_hash, ml_malicious, ml_probability, generated_rule_json, err_json
         )
     } else {
         // Clean result: minimal JSON — Java only needs essential fields for
-        // the clean path. No detections, no generated rule, no entry hashes.
+        // the clean path. No detections, no generated rule.
         // This cuts JSON size from ~100KB+ to ~500B for clean scans.
         format!(
-            r#"{{"cached":false,"malicious":false,"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","file_tlsh":{},"ml":{{"malicious":false,"probability":0.0}}{}}}"#,
-            perm_count, packages_json, hashes_json, file_hash, file_tlsh_json, err_json
+            r#"{{"cached":false,"malicious":false,"permissions":{},"packages":[{}],"hashes":[{}],"md5":"{}","ml":{{"malicious":false,"probability":0.0}}{}}}"#,
+            perm_count, packages_json, hashes_json, file_hash, err_json
         )
     };
 
