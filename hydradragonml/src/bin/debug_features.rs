@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use hydradragonml::features::{EngineFeatures, Tokenizer};
 use hydradragonml::Model;
+use hydradragonml::features::{EngineFeatures, Tokenizer};
 
 struct Args {
     apk: PathBuf,
@@ -39,7 +39,9 @@ fn main() {
         Ok(args) => args,
         Err(err) => {
             eprintln!("{err}");
-            eprintln!("Usage: debug-features --apk <file.apk> --model <model.mpk> --vocab <vocab.json>");
+            eprintln!(
+                "Usage: debug-features --apk <file.apk> --model <model.mpk> --vocab <vocab.json>"
+            );
             std::process::exit(2);
         }
     };
