@@ -1,8 +1,6 @@
-use daachorse::{DoubleArrayAhoCorasick, DoubleArrayAhoCorasickBuilder};
+use daachorse::clamav_fast::ClamavFastScanner;
 
-use crate::atomfilter::{
-    AtomFilterDb, ExtSlot, PerTarget, SlotDef, SlotId, SubsigSlot,
-};
+use crate::atomfilter::{AtomFilterDb, ExtSlot, PerTarget, SlotDef, SlotId, SubsigSlot};
 use crate::database::Database;
 use crate::logical::Subsignature;
 use crate::pattern::Pattern;
@@ -32,13 +30,25 @@ fn is_atom_usable_dynamic(a: &[u8], target: u32) -> bool {
     }
 
     let entropy_score = calculate_atom_entropy_score(a);
-    
+
     // For Android APK/DEX targets (target == 0 or specific Android targets):
     // Require higher entropy or longer depth to prevent noise from ZIP/DEX structures.
     let min_required_score = if target == 0 {
-        if len >= 6 { 12 } else if len >= 4 { 16 } else { 20 }
+        if len >= 6 {
+            12
+        } else if len >= 4 {
+            16
+        } else {
+            20
+        }
     } else {
-        if len >= 5 { 10 } else if len >= 4 { 14 } else { 18 }
+        if len >= 5 {
+            10
+        } else if len >= 4 {
+            14
+        } else {
+            18
+        }
     };
 
     entropy_score >= min_required_score
@@ -104,7 +114,11 @@ impl AtomReg {
 fn build_automaton(
     entries: Vec<(Vec<u8>, SlotId)>,
     value_offset: u32,
-) -> (Option<DoubleArrayAhoCorasick<u32>>, Vec<Box<[SlotId]>>, Vec<usize>) {
+) -> (
+    Option<ClamavFastScanner<u32>>,
+    Vec<Box<[SlotId]>>,
+    Vec<usize>,
+) {
     if entries.is_empty() {
         return (None, Vec::new(), Vec::new());
     }
@@ -128,11 +142,8 @@ fn build_automaton(
         pattern_lens.push(bytes.len());
     }
 
-    let pma = DoubleArrayAhoCorasickBuilder::new()
-        .build_with_values(
-            patterns.iter().map(|p| p.as_slice()).zip(values.iter().copied()),
-        )
-        .expect("daachorse automaton build should succeed");
+    let pma = ClamavFastScanner::with_values(patterns.iter().cloned().zip(values.iter().copied()))
+        .expect("ClamavFastScanner build should succeed");
 
     (Some(pma), atom_to_slots, pattern_lens)
 }
@@ -148,8 +159,10 @@ fn partition_by_target(
     let mut result = Vec::with_capacity(specific_targets.len() + 1);
 
     // Full automaton (target 0): ALL entries regardless of target.
-    let full_exact: Vec<(Vec<u8>, SlotId)> = all_exact.iter().map(|(b, s, _)| (b.clone(), *s)).collect();
-    let full_nocase: Vec<(Vec<u8>, SlotId)> = all_nocase.iter().map(|(b, s, _)| (b.clone(), *s)).collect();
+    let full_exact: Vec<(Vec<u8>, SlotId)> =
+        all_exact.iter().map(|(b, s, _)| (b.clone(), *s)).collect();
+    let full_nocase: Vec<(Vec<u8>, SlotId)> =
+        all_nocase.iter().map(|(b, s, _)| (b.clone(), *s)).collect();
     result.push((0, full_exact, full_nocase));
 
     // Per-target automata: only entries whose target matches *or* is 0 (any).
@@ -192,7 +205,9 @@ impl AtomFilterBuilder {
                     let slot_id = slots.len() as SlotId;
                     let threshold = atoms.iter().map(atom_threshold).max().unwrap_or(1);
                     slots.push(SlotDef {
-                        target: crate::atomfilter::SlotTarget::Extended { sig_index: si as u32 },
+                        target: crate::atomfilter::SlotTarget::Extended {
+                            sig_index: si as u32,
+                        },
                         threshold,
                         file_type_target: target,
                     });
@@ -242,12 +257,17 @@ impl AtomFilterBuilder {
         }
 
         // ── Build the Shift-OR prefilter (all atoms) ─────────────────────
-        let all_atoms: Vec<Vec<u8>> = reg.exact.iter().chain(&reg.nocase)
-            .map(|(bytes, _, _)| bytes.clone()).collect();
+        let all_atoms: Vec<Vec<u8>> = reg
+            .exact
+            .iter()
+            .chain(&reg.nocase)
+            .map(|(bytes, _, _)| bytes.clone())
+            .collect();
         let prefilter = daachorse::ClamavMultilevelPrefilter::from_patterns(&all_atoms);
 
         // ── Identify which specific targets are present in the DB ────────
-        let mut specific_targets: Vec<u32> = slots.iter()
+        let mut specific_targets: Vec<u32> = slots
+            .iter()
             .filter_map(|s| {
                 let t = s.file_type_target;
                 (t != 0).then_some(t)
@@ -274,7 +294,8 @@ impl AtomFilterBuilder {
 
             // Build nocase automaton (values after exact entries).
             let nocase_offset = exact_atom_to_slots.len() as u32;
-            let (nocase, nocase_atom_to_slots, nocase_lens) = build_automaton(nocase_entries, nocase_offset);
+            let (nocase, nocase_atom_to_slots, nocase_lens) =
+                build_automaton(nocase_entries, nocase_offset);
 
             // Merge value→slot arrays.
             let mut atom_to_slots = Vec::new();
@@ -297,11 +318,12 @@ impl AtomFilterBuilder {
                 target,
                 exact,
                 nocase,
-                exact_dense: std::sync::OnceLock::new(),
-                nocase_dense: std::sync::OnceLock::new(),
                 atom_to_slots,
                 pattern_lens,
-                slot_to_values: slot_to_values.into_iter().map(|v| v.into_boxed_slice()).collect(),
+                slot_to_values: slot_to_values
+                    .into_iter()
+                    .map(|v| v.into_boxed_slice())
+                    .collect(),
             });
         }
 
@@ -349,8 +371,12 @@ mod tests {
         );
 
         // The full (target=0) automaton must have been built.
-        assert!(afdb.per_target.iter().any(|pt| pt.target == 0 && pt.exact.is_some()),
-            "expected exact automaton for target=0");
+        assert!(
+            afdb.per_target
+                .iter()
+                .any(|pt| pt.target == 0 && pt.exact.is_some()),
+            "expected exact automaton for target=0"
+        );
     }
 
     #[test]

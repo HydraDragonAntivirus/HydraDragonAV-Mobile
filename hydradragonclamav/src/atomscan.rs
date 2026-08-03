@@ -1,7 +1,7 @@
 use crate::atomfilter::{AtomFilterDb, PerTarget, SlotId, SubsigSlot};
 use crate::atomfilter::{ExtSlot, SlotDef};
 use crate::pattern::Pattern;
-use daachorse::DoubleArrayAhoCorasick;
+use daachorse::clamav_fast::ClamavFastScanner;
 
 /// Cached CPU count, capped at 4. `std::thread::available_parallelism()` is not
 /// free on Android: it probes CPU affinity and cgroup-v2 CPU-quota files under
@@ -134,7 +134,8 @@ impl AtomScratch {
         if file_type_target == 0 {
             return &per_target[0];
         }
-        per_target.iter()
+        per_target
+            .iter()
             .find(|pt| pt.target == file_type_target)
             .unwrap_or(&per_target[0])
     }
@@ -147,8 +148,7 @@ impl AtomScratch {
     /// (used to compute the absolute position for inline verification).
     #[allow(clippy::too_many_arguments)]
     fn run_dense_chunk(
-        pma: &DoubleArrayAhoCorasick<u32>,
-        dense: &[u32],
+        pma: &ClamavFastScanner<u32>,
         atom_to_slots: &[Box<[SlotId]>],
         slot_to_values: &[Box<[u32]>],
         slots: &[SlotDef],
@@ -163,62 +163,52 @@ impl AtomScratch {
         verify_results: &mut [bool],
         data_offset: usize,
     ) {
-        let mut state: u32 = 0;
-        for (pos, &byte) in hay.iter().enumerate() {
-            state = unsafe {
-                *dense.get_unchecked(state as usize * 256 + byte as usize)
-            };
-            let mut opt = pma.state_output_pos(state);
-            while let Some(op) = opt {
-                let (len, value) = pma.output_at(op);
-                out_stats.daachorse_matches += 1;
-                let end = pos + 1;
-                let vi = value as usize;
-                if vi < atom_to_slots.len() && value_remaining[vi] != 0 {
-                    let start = end - len as usize;
-                    for &slot_id in atom_to_slots[vi].iter() {
-                        out_stats.inner_iterations += 1;
-                        let st = slot_id as usize;
-                        if (saturated[st >> 6] >> (st & 63)) & 1 == 1 {
-                            out_stats.saturated_skip += 1;
-                            continue;
-                        }
-                        let ft = slots[st].file_type_target;
-                        if ft != 0 && ft != file_type_target {
-                            out_stats.ft_skip += 1;
-                            continue;
-                        }
-                        if counts[st] >= slots[st].threshold {
-                            saturated[st >> 6] |= 1 << (st & 63);
-                            out_stats.saturated_count += 1;
-                            for &ref_vi in slot_to_values[st].iter() {
-                                out_stats.saturated_dec += 1;
-                                let rvi = ref_vi as usize;
-                                if rvi < value_remaining.len() {
-                                    value_remaining[rvi] = value_remaining[rvi].saturating_sub(1);
-                                }
+        for m in pma.find_iter(hay) {
+            out_stats.daachorse_matches += 1;
+            let vi = m.value() as usize;
+            if vi < atom_to_slots.len() && value_remaining[vi] != 0 {
+                let start = m.start();
+                for &slot_id in atom_to_slots[vi].iter() {
+                    out_stats.inner_iterations += 1;
+                    let st = slot_id as usize;
+                    if (saturated[st >> 6] >> (st & 63)) & 1 == 1 {
+                        out_stats.saturated_skip += 1;
+                        continue;
+                    }
+                    let ft = slots[st].file_type_target;
+                    if ft != 0 && ft != file_type_target {
+                        out_stats.ft_skip += 1;
+                        continue;
+                    }
+                    if counts[st] >= slots[st].threshold {
+                        saturated[st >> 6] |= 1 << (st & 63);
+                        out_stats.saturated_count += 1;
+                        for &ref_vi in slot_to_values[st].iter() {
+                            out_stats.saturated_dec += 1;
+                            let rvi = ref_vi as usize;
+                            if rvi < value_remaining.len() {
+                                value_remaining[rvi] = value_remaining[rvi].saturating_sub(1);
                             }
-                            continue;
                         }
-                        counts[st] = counts[st].saturating_add(1);
-                        last_offset[st] = last_offset[st].max(start as u32);
-                        out_stats.incremented += 1;
-                        // Inline verification: if the atom matched at `start`,
-                        // try to verify the full pattern immediately (like
-                        // ClamAV's ac_findmatch). Once verified, the slot
-                        // won't need a separate count_all rescan.
-                        // `abs_start = data_offset + start` is the position
-                        // within the original full data buffer.
-                        if let Some(vctx) = verify_ctx {
-                            if st < verify_results.len() && !verify_results[st] {
-                                if vctx.try_verify(slot_id, data_offset + start, false) {
-                                    verify_results[st] = true;
-                                }
+                        continue;
+                    }
+                    counts[st] = counts[st].saturating_add(1);
+                    last_offset[st] = last_offset[st].max(start as u32);
+                    out_stats.incremented += 1;
+                    // Inline verification: if the atom matched at `start`,
+                    // try to verify the full pattern immediately (like
+                    // ClamAV's ac_findmatch). Once verified, the slot
+                    // won't need a separate count_all rescan.
+                    // `abs_start = data_offset + start` is the position
+                    // within the original full data buffer.
+                    if let Some(vctx) = verify_ctx {
+                        if st < verify_results.len() && !verify_results[st] {
+                            if vctx.try_verify(slot_id, data_offset + start, false) {
+                                verify_results[st] = true;
                             }
                         }
                     }
                 }
-                opt = pma.output_parent(op);
             }
         }
     }
@@ -241,39 +231,37 @@ impl AtomScratch {
         verify_results: &mut [bool],
         data_offset: usize,
     ) {
-        let (pma, dense) = Self::resolve_dense(pt, exact);
-        let (pma, dense) = match (pma, dense) {
-            (Some(p), Some(d)) => (p, d),
+        let pma = Self::resolve_scanner(pt, exact);
+        let pma = match pma {
+            Some(p) => p,
             _ => return,
         };
         let t0 = std::time::Instant::now();
         Self::run_dense_chunk(
-            pma, dense,
-            &pt.atom_to_slots, &pt.slot_to_values,
-            slots, saturated, value_remaining,
-            hay, file_type_target, counts, last_offset,
-            out_stats, verify_ctx, verify_results,
+            pma,
+            &pt.atom_to_slots,
+            &pt.slot_to_values,
+            slots,
+            saturated,
+            value_remaining,
+            hay,
+            file_type_target,
+            counts,
+            last_offset,
+            out_stats,
+            verify_ctx,
+            verify_results,
             data_offset,
         );
         out_stats.daachorse_us = t0.elapsed().as_micros() as u64;
     }
 
-    /// Resolve the dense DFA table for a target (exact or nocase).
-    fn resolve_dense<'b>(pt: &'b PerTarget, exact: bool)
-        -> (Option<&'b DoubleArrayAhoCorasick<u32>>, Option<&'b [u32]>)
-    {
+    /// Resolve the scanner for a target (exact or nocase).
+    fn resolve_scanner<'b>(pt: &'b PerTarget, exact: bool) -> Option<&'b ClamavFastScanner<u32>> {
         if exact {
-            let pma: Option<&'b DoubleArrayAhoCorasick<u32>> = pt.exact.as_ref();
-            let dense: Option<&'b [u32]> = pma.map(|p| {
-                pt.exact_dense.get_or_init(|| p.build_dense_table()).as_slice()
-            });
-            (pma, dense)
+            pt.exact.as_ref()
         } else {
-            let pma: Option<&'b DoubleArrayAhoCorasick<u32>> = pt.nocase.as_ref();
-            let dense: Option<&'b [u32]> = pma.map(|p| {
-                pt.nocase_dense.get_or_init(|| p.build_dense_table()).as_slice()
-            });
-            (pma, dense)
+            pt.nocase.as_ref()
         }
     }
 
@@ -300,19 +288,26 @@ impl AtomScratch {
         // Single-threaded fallback for small buffers or single-core systems.
         if n_threads <= 1 || hay.len() < 256 * 1024 {
             Self::run_dense_automaton(
-                pt, exact, slots,
+                pt,
+                exact,
+                slots,
                 &mut vec![0u64; (counts.len() + 63) / 64],
                 &mut vec![0u32; pt.atom_to_slots.len()],
-                hay, file_type_target,
-                counts, last_offset, out_stats,
-                verify_ctx, verify_results, data_offset,
+                hay,
+                file_type_target,
+                counts,
+                last_offset,
+                out_stats,
+                verify_ctx,
+                verify_results,
+                data_offset,
             );
             return;
         }
 
-        let (pma, dense) = Self::resolve_dense(pt, exact);
-        let (pma, dense) = match (pma, dense) {
-            (Some(p), Some(d)) => (p, d),
+        let pma = Self::resolve_scanner(pt, exact);
+        let pma = match pma {
+            Some(p) => p,
             _ => return,
         };
         let atom_to_slots = &pt.atom_to_slots;
@@ -329,14 +324,17 @@ impl AtomScratch {
         let t0 = std::time::Instant::now();
 
         // Per-thread private output.
-        let mut thread_counts: Vec<Vec<u32>> = (0..n_threads)
-            .map(|_| vec![0u32; counts.len()]).collect();
+        let mut thread_counts: Vec<Vec<u32>> =
+            (0..n_threads).map(|_| vec![0u32; counts.len()]).collect();
         let mut thread_last: Vec<Vec<u32>> = (0..n_threads)
-            .map(|_| vec![u32::MAX; last_offset.len()]).collect();
+            .map(|_| vec![u32::MAX; last_offset.len()])
+            .collect();
         let mut thread_sat: Vec<Vec<u64>> = (0..n_threads)
-            .map(|_| vec![0u64; (counts.len() + 63) / 64]).collect();
+            .map(|_| vec![0u64; (counts.len() + 63) / 64])
+            .collect();
         let mut thread_vr: Vec<Vec<u32>> = (0..n_threads)
-            .map(|_| atom_to_slots.iter().map(|s| s.len() as u32).collect()).collect();
+            .map(|_| atom_to_slots.iter().map(|s| s.len() as u32).collect())
+            .collect();
 
         // Per-thread verify results (only populated when verify_ctx is active).
         let n_slots = counts.len();
@@ -347,7 +345,8 @@ impl AtomScratch {
             (0..n_threads).map(|_| Vec::new()).collect()
         };
 
-        let mut stats: Vec<AutomatonStats> = (0..n_threads).map(|_| AutomatonStats::default()).collect();
+        let mut stats: Vec<AutomatonStats> =
+            (0..n_threads).map(|_| AutomatonStats::default()).collect();
 
         std::thread::scope(|s| {
             let mut count_iter = thread_counts.iter_mut();
@@ -359,7 +358,9 @@ impl AtomScratch {
 
             for tid in 0..n_threads {
                 let chunk_start = tid * chunk_size;
-                if chunk_start >= hay.len() { break; }
+                if chunk_start >= hay.len() {
+                    break;
+                }
                 let chunk_end = (chunk_start + chunk_size + OVERLAP).min(hay.len());
                 let chunk = &hay[chunk_start..chunk_end];
                 // Absolute offset of this chunk's first byte within the
@@ -375,9 +376,19 @@ impl AtomScratch {
 
                 s.spawn(move || {
                     Self::run_dense_chunk(
-                        pma, dense, atom_to_slots, slot_to_values,
-                        slots, sat, vr, chunk, file_type_target,
-                        counts, last, st, verify_ctx, vfy,
+                        pma,
+                        atom_to_slots,
+                        slot_to_values,
+                        slots,
+                        sat,
+                        vr,
+                        chunk,
+                        file_type_target,
+                        counts,
+                        last,
+                        st,
+                        verify_ctx,
+                        vfy,
                         chunk_data_offset,
                     );
                 });
@@ -437,9 +448,15 @@ impl AtomScratch {
         if self.saturated.len() != sat_words {
             self.saturated.resize(sat_words, 0);
         }
-        for c in self.counts.iter_mut() { *c = 0; }
-        for o in self.last_offset.iter_mut() { *o = u32::MAX; }
-        for w in &mut self.saturated { *w = 0; }
+        for c in self.counts.iter_mut() {
+            *c = 0;
+        }
+        for o in self.last_offset.iter_mut() {
+            *o = u32::MAX;
+        }
+        for w in &mut self.saturated {
+            *w = 0;
+        }
 
         // Select target automaton.
         let pt = Self::select_target(&db.per_target, file_type_target);
@@ -463,26 +480,40 @@ impl AtomScratch {
             let n_threads = worker_count();
             if n_threads > 1 && exact_window.len() >= 256 * 1024 {
                 Self::run_dense_parallel(
-                    pt, true, &db.slots,
-                    exact_window, file_type_target,
-                    &mut self.counts, &mut self.last_offset,
-                    &mut exact_stats, verify_ctx, verify_results,
+                    pt,
+                    true,
+                    &db.slots,
+                    exact_window,
+                    file_type_target,
+                    &mut self.counts,
+                    &mut self.last_offset,
+                    &mut exact_stats,
+                    verify_ctx,
+                    verify_results,
                     exact_offset,
                 );
             } else {
                 Self::run_dense_automaton(
-                    pt, true,
+                    pt,
+                    true,
                     &db.slots,
-                    &mut self.saturated, &mut self.value_remaining,
-                    exact_window, file_type_target,
-                    &mut self.counts, &mut self.last_offset,
-                    &mut exact_stats, verify_ctx, verify_results,
+                    &mut self.saturated,
+                    &mut self.value_remaining,
+                    exact_window,
+                    file_type_target,
+                    &mut self.counts,
+                    &mut self.last_offset,
+                    &mut exact_stats,
+                    verify_ctx,
+                    verify_results,
                     exact_offset,
                 );
             }
             if exact_offset > 0 {
                 for o in self.last_offset.iter_mut() {
-                    if *o != u32::MAX { *o += exact_offset as u32; }
+                    if *o != u32::MAX {
+                        *o += exact_offset as u32;
+                    }
                 }
             }
         }
@@ -490,25 +521,41 @@ impl AtomScratch {
         // ── Nocase automaton pass (data_offset = 0) ──────────────────
         if pt.nocase.is_some() {
             let mut lowered = std::mem::take(&mut self.lowered_buf);
-            if data.len() > lowered.len() { lowered.resize(data.len(), 0); }
-            for (i, &b) in data.iter().enumerate() { lowered[i] = b.to_ascii_lowercase(); }
+            if data.len() > lowered.len() {
+                lowered.resize(data.len(), 0);
+            }
+            for (i, &b) in data.iter().enumerate() {
+                lowered[i] = b.to_ascii_lowercase();
+            }
             let n_threads = worker_count();
             if n_threads > 1 && data.len() >= 256 * 1024 {
                 Self::run_dense_parallel(
-                    pt, false, &db.slots,
-                    &lowered[..data.len()], file_type_target,
-                    &mut self.counts, &mut self.last_offset,
-                    &mut nocase_stats, verify_ctx, verify_results,
+                    pt,
+                    false,
+                    &db.slots,
+                    &lowered[..data.len()],
+                    file_type_target,
+                    &mut self.counts,
+                    &mut self.last_offset,
+                    &mut nocase_stats,
+                    verify_ctx,
+                    verify_results,
                     0,
                 );
             } else {
                 Self::run_dense_automaton(
-                    pt, false,
+                    pt,
+                    false,
                     &db.slots,
-                    &mut self.saturated, &mut self.value_remaining,
-                    &lowered[..data.len()], file_type_target,
-                    &mut self.counts, &mut self.last_offset,
-                    &mut nocase_stats, verify_ctx, verify_results,
+                    &mut self.saturated,
+                    &mut self.value_remaining,
+                    &lowered[..data.len()],
+                    file_type_target,
+                    &mut self.counts,
+                    &mut self.last_offset,
+                    &mut nocase_stats,
+                    verify_ctx,
+                    verify_results,
                     0,
                 );
             }
@@ -553,11 +600,20 @@ impl AtomScratch {
             } else {
                 String::from("nocase(none)")
             };
-            eprintln!("[ATOMSCAN] {} {}KB {} {}  exact_window={}",
-                target_label, data.len() / 1024, exact_info, nocase_info, exact_window.len());
+            eprintln!(
+                "[ATOMSCAN] {} {}KB {} {}  exact_window={}",
+                target_label,
+                data.len() / 1024,
+                exact_info,
+                nocase_info,
+                exact_window.len()
+            );
         }
 
-        SlotCounts { counts: &self.counts, last_offset: &self.last_offset }
+        SlotCounts {
+            counts: &self.counts,
+            last_offset: &self.last_offset,
+        }
     }
 
     /// Run the atom sweep only (no inline verification).
@@ -586,7 +642,9 @@ impl AtomScratch {
         verify_ctx: &InlineVerifyCtx,
         verify_results: &mut [bool],
     ) -> SlotCounts<'_> {
-        for r in verify_results.iter_mut() { *r = false; }
+        for r in verify_results.iter_mut() {
+            *r = false;
+        }
         self.scan_impl(db, data, file_type_target, Some(verify_ctx), verify_results)
     }
 }
