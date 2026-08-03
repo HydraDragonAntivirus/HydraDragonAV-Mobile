@@ -73,6 +73,7 @@
     <string name="app_title">آنتی‌ویروس v%1$s</string>
     <string name="developers">Musayev Yusif و Emirhan Uçan</string>
     <string name="developers_header">توسعه‌دهندگان</string>
+    <string name="donation_link">کمک مالی: https://boosty.to/yusif_musayev/single-payment/donation/817954</string>
     <string name="nav_dashboard">داشبورد</string>
     <string name="nav_scan">اسکن</string>
     <string name="nav_network">شبکه</string>

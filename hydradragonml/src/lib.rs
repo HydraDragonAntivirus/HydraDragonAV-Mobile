@@ -118,8 +118,6 @@ mod tests {
             dex_api_call_count: 3000.0,
             manifest_dangerous_permissions: 15.0,
             manifest_target_sdk: 33.0,
-            is_testkey: 1.0,
-            benign_jaccard: 0.9,
             ..Default::default()
         };
         let v = feats.to_vec();

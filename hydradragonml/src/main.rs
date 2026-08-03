@@ -143,7 +143,11 @@ fn main() {
 
         let t0 = Instant::now();
 
-        let result = model.scan(&apk_bytes);
+        // Use the same real content-derived features the on-device engine and
+        // training use — so the test-set metrics reflect actual runtime behaviour.
+        let engine_features = hydradragonml::features::EngineFeatures::extract_from_apk(&apk_bytes)
+            .unwrap_or_default();
+        let result = model.scan_with_features(&apk_bytes, &engine_features);
         let extraction_ok = result.is_some();
 
         let elapsed = t0.elapsed().as_millis();

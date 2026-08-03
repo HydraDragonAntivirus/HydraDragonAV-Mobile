@@ -849,13 +849,15 @@ fn run_ml_on_mmap(
 }
 
 /// Aggregate every engine analysis result that has already been computed for
-/// this APK (DEX static analysis, native emulation, manifest, URLs/IPs,
-/// certificate, benign DB, media hidden-data) into the `EngineFeatures`
-/// vector consumed by the Burn classifier. Runs once per file, after Phase 2,
-/// so the ML thread can reuse one feature vector for every buffer in the APK.
+/// this APK (DEX static analysis, native emulation, manifest) into the
+/// `EngineFeatures` vector consumed by the Burn classifier. Only content-derived
+/// features are used (matching training-time `extract_from_apk`); external
+/// reputation signals are intentionally excluded from the learned model. Runs
+/// once per file, after Phase 2, so the ML thread can reuse one feature vector
+/// for every buffer in the APK.
 #[allow(clippy::too_many_arguments)]
 fn build_engine_features(
-    engine: &Engine,
+    _engine: &Engine,
     buffers: &[Buf],
     dex_scans: &[Option<dex_scan::DexScan>],
     emulated: &[emulate::EmulationResult],
@@ -933,137 +935,7 @@ fn build_engine_features(
         feats.manifest_target_sdk = manifest.target_sdk.unwrap_or(0) as f32;
     }
 
-    // ── URLs & IPs from DEX strings + emulated strings ───────────────────
-    let mut text_parts: Vec<Vec<u8>> = Vec::new();
-    for ds in dex_scans.iter().flatten() {
-        text_parts.push(ds.text.as_bytes().to_vec());
-    }
-    text_parts.extend(emulated_strings_from(emulated));
-    for part in text_parts {
-        for line in part.split(|&b| b == b'\n') {
-            let s = String::from_utf8_lossy(line);
-            let s = s.trim();
-            if s.starts_with("http://") || s.starts_with("https://") {
-                if let Some(scanner) = &engine.url_scanner {
-                    if let Some(cat) = scanner.scan_url_only(s) {
-                        if cat.contains("PHISHING") {
-                            feats.url_phishing_count += 1.0;
-                        } else {
-                            feats.url_malicious_count += 1.0;
-                        }
-                    }
-                }
-            }
-            // IPv4 dotted-quad literals checked against the IP blocklists.
-            if let Some(scanner) = &engine.ip_scanner {
-                for ip in extract_ipv4(s) {
-                    if scanner.scan(&ip).is_some() {
-                        feats.ip_malicious_count += 1.0;
-                    }
-                }
-            }
-        }
-    }
-
-    // ── Certificate / testkey signing ────────────────────────────────────
-    if riskware::is_testkey_detection_enabled() {
-        if let Some(cert) = extract_certificate(buffers) {
-            if riskware::check_testkey(&cert.sha1, &cert.subject, &cert.issuer) {
-                feats.is_testkey = 1.0;
-            }
-        }
-    }
-
-    // ── Benign DB (content-based MinHash Jaccard) ────────────────────────
-    if let Some(bdb) = &engine.benign_db {
-        for b in buffers {
-            if b.data.starts_with(b"PK\x03\x04") || is_apk_zip(&b.data) {
-                if let Some(pkg) = axml_package(&b.data) {
-                    if let Some(feats_minhash) = hydradragonml::features::extract_minhash(&b.data) {
-                        let j = bdb.max_jaccard(&pkg, &feats_minhash.tokens);
-                        if j > feats.benign_jaccard {
-                            feats.benign_jaccard = j;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // ── Media hidden/polyglot data ───────────────────────────────────────
-    for b in buffers {
-        if media_scan::has_hidden_data(&b.data) || has_polyglot_or_hidden_data(&b.data) {
-            feats.media_hidden_count += 1.0;
-        }
-    }
-
     feats
-}
-
-/// Decoded-string slices from the emulation results, re-joined the same way
-/// the emulation pass builds `emulated_strings` (strings + API-call names,
-/// '\n'-separated) so URL/IP extraction sees the identical content.
-fn emulated_strings_from(emulated: &[emulate::EmulationResult]) -> Vec<Vec<u8>> {
-    let mut out = Vec::new();
-    for r in emulated {
-        if r.strings.is_empty() && r.api_calls.is_empty() {
-            continue;
-        }
-        let mut joined: Vec<u8> = Vec::new();
-        if !r.strings.is_empty() {
-            joined.extend(r.strings.join("\n").into_bytes());
-        }
-        if !r.api_calls.is_empty() {
-            if !joined.is_empty() {
-                joined.push(b'\n');
-            }
-            joined.extend(
-                r.api_calls
-                    .iter()
-                    .map(|a| a.name.clone())
-                    .collect::<Vec<_>>()
-                    .join("\n")
-                    .into_bytes(),
-            );
-        }
-        if !joined.is_empty() {
-            out.push(joined);
-        }
-    }
-    out
-}
-
-/// Extract IPv4 dotted-quad literals from a string (no validation of octet
-/// range beyond 0-255 — the blocklist lookups are textual anyway).
-fn extract_ipv4(s: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    let bytes = s.as_bytes();
-    let mut i = 0;
-    while i + 7 <= bytes.len() {
-        if bytes[i].is_ascii_digit() {
-            let mut j = i;
-            while j < bytes.len() && (bytes[j].is_ascii_digit() || bytes[j] == b'.') {
-                j += 1;
-            }
-            let cand = &s[i..j];
-            let parts: Vec<&str> = cand.split('.').collect();
-            if parts.len() == 4 {
-                let valid = parts.iter().all(|p| {
-                    !p.is_empty()
-                        && p.len() <= 3
-                        && p.bytes().all(|b| b.is_ascii_digit())
-                        && p.parse::<u32>().map_or(false, |n| n <= 255)
-                });
-                if valid {
-                    out.push(cand.to_string());
-                    i = j;
-                    continue;
-                }
-            }
-        }
-        i += 1;
-    }
-    out
 }
 
 /// Whether the first 256 bytes look like human-readable text (ASCII or UTF-8).

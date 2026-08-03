@@ -1,30 +1,43 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Read};
 
+pub mod dex;
+pub mod axml;
+pub mod elf;
+
 pub const VOCAB_SIZE: usize = 20000;
 pub const EMBED_DIM: usize = 64;
 pub const MIN_STR_LEN: usize = 5;
 pub const MAX_TOKENS: usize = 4096;
 pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
-pub const ENGINE_FEATURE_COUNT: usize = 25;
+/// Number of engine features fed to the MLP next to the text embeddings.
+///
+/// Only content-derived features that can be computed from the APK itself
+/// (DEX structure, native ELF libraries and AndroidManifest.xml) are used.
+/// External/repuation-style signals (URL/IP blocklists, certificate
+/// test-key flags, benign-DB similarity, media steganography, runtime HIPS
+/// findings) are intentionally NOT part of the learned representation — they
+/// are neither available at training time from a bare APK nor comparable
+/// between training and on-device inference.
+pub const ENGINE_FEATURE_COUNT: usize = 18;
 
 #[derive(Clone, Debug, Default)]
 pub struct EngineFeatures {
-    // DEX
+    // DEX (real structure counts from classes*.dex)
     pub dex_class_count: f32,
     pub dex_string_count: f32,
     pub dex_api_call_count: f32,
     pub dex_finding_high: f32,
     pub dex_finding_critical: f32,
-    // ELF
+    // ELF (real dynamic-symbol/string analysis of lib/**/*.so)
     pub elf_count: f32,
     pub elf_emulated_strings: f32,
     pub elf_network_calls: f32,
     pub elf_file_calls: f32,
     pub elf_exec_calls: f32,
     pub elf_anti_debug: f32,
-    // Manifest
+    // Manifest (real AndroidManifest.xml content)
     pub manifest_dangerous_permissions: f32,
     pub manifest_total_permissions: f32,
     pub manifest_activities: f32,
@@ -32,19 +45,6 @@ pub struct EngineFeatures {
     pub manifest_receivers: f32,
     pub manifest_min_sdk: f32,
     pub manifest_target_sdk: f32,
-    // URL
-    pub url_malicious_count: f32,
-    pub url_phishing_count: f32,
-    // IP
-    pub ip_malicious_count: f32,
-    // Certificate
-    pub is_testkey: f32,
-    // Benign DB
-    pub benign_jaccard: f32,
-    // Media
-    pub media_hidden_count: f32,
-    // HIPS
-    pub hips_findings: f32,
 }
 
 impl EngineFeatures {
@@ -68,14 +68,84 @@ impl EngineFeatures {
             (self.manifest_receivers / 20.0).min(1.0),
             ((self.manifest_min_sdk - 1.0) / 34.0).clamp(0.0, 1.0),
             ((self.manifest_target_sdk - 1.0) / 34.0).clamp(0.0, 1.0),
-            (self.url_malicious_count / 20.0).min(1.0),
-            (self.url_phishing_count / 20.0).min(1.0),
-            (self.ip_malicious_count / 10.0).min(1.0),
-            self.is_testkey,
-            self.benign_jaccard,
-            (self.media_hidden_count / 10.0).min(1.0),
-            (self.hips_findings / 20.0).min(1.0),
         ]
+    }
+
+    /// Builds real, content-derived DEX/ELF/manifest features by scanning the
+    /// actual entries of an APK (a zip archive). This is the single source of
+    /// truth used both at training time and on-device so the learned weights
+    /// and the runtime inference tokenize/feature-ize identically.
+    pub fn extract_from_apk(apk: &[u8]) -> Option<Self> {
+        let reader = Cursor::new(apk);
+        let mut archive = zip::ZipArchive::new(reader).ok()?;
+
+        let mut feats = EngineFeatures::default();
+        let mut saw_any_entry = false;
+
+        for i in 0..archive.len() {
+            let mut entry = match archive.by_index(i) {
+                Ok(e) => e,
+                Err(_) => continue,
+            };
+            let name = entry.name().to_string();
+            let lname = name.to_ascii_lowercase();
+
+            let is_dex = lname.ends_with(".dex");
+            let is_manifest = lname == "androidmanifest.xml";
+            let is_native_lib = lname.starts_with("lib/") && lname.ends_with(".so");
+            if !is_dex && !is_manifest && !is_native_lib {
+                continue;
+            }
+
+            let mut buf = Vec::new();
+            if entry
+                .by_ref()
+                .take(MAX_ENTRY_SCAN as u64)
+                .read_to_end(&mut buf)
+                .is_err()
+            {
+                continue;
+            }
+
+            if is_dex {
+                if let Some(d) = dex::analyze(&buf) {
+                    saw_any_entry = true;
+                    // A single APK can contain multiple classes*.dex files
+                    // (multidex); accumulate real counts across all of them.
+                    feats.dex_class_count += d.class_count as f32;
+                    feats.dex_string_count += d.string_count as f32;
+                    feats.dex_api_call_count += d.api_call_count as f32;
+                    feats.dex_finding_high += d.finding_high as f32;
+                    feats.dex_finding_critical += d.finding_critical as f32;
+                }
+            } else if is_manifest {
+                if let Some(m) = axml::analyze_manifest(&buf) {
+                    saw_any_entry = true;
+                    feats.manifest_dangerous_permissions = m.dangerous_permissions as f32;
+                    feats.manifest_total_permissions = m.total_permissions as f32;
+                    feats.manifest_activities = m.activities as f32;
+                    feats.manifest_services = m.services as f32;
+                    feats.manifest_receivers = m.receivers as f32;
+                    feats.manifest_min_sdk = m.min_sdk as f32;
+                    feats.manifest_target_sdk = m.target_sdk as f32;
+                }
+            } else if is_native_lib {
+                if let Some(e) = elf::analyze(&buf) {
+                    saw_any_entry = true;
+                    feats.elf_count += 1.0;
+                    feats.elf_emulated_strings += e.emulated_strings as f32;
+                    feats.elf_network_calls += e.network_calls as f32;
+                    feats.elf_file_calls += e.file_calls as f32;
+                    feats.elf_exec_calls += e.exec_calls as f32;
+                    feats.elf_anti_debug += e.anti_debug as f32;
+                }
+            }
+        }
+
+        if !saw_any_entry {
+            return None;
+        }
+        Some(feats)
     }
 }
 
@@ -96,7 +166,16 @@ impl Tokenizer {
     }
 
     pub fn tokenize(&self, apk: &[u8]) -> Option<Vec<i64>> {
-        let mut tokens: Vec<i64> = Vec::new();
+        let raw = Self::raw_tokens(apk)?;
+        Some(raw.iter().map(|t| self.vocab.get(t).copied().unwrap_or(0)).collect())
+    }
+
+    /// Extract the same lowercase, delimiter-split subword tokens used at
+    /// inference, WITHOUT mapping to vocabulary ids. This is the token stream
+    /// a vocab builder must count over so training and inference tokenize
+    /// identically (mirrors the old `build_vocab` in the removed train_model.py).
+    pub fn raw_tokens(apk: &[u8]) -> Option<Vec<String>> {
+        let mut tokens: Vec<String> = Vec::new();
         let reader = Cursor::new(apk);
         let mut archive = zip::ZipArchive::new(reader).ok()?;
         let mut has_content = false;
@@ -110,7 +189,7 @@ impl Tokenizer {
                 Err(_) => continue,
             };
             let name = entry.name().to_string();
-            self.sub_tokenize(name.as_str(), &mut tokens);
+            Self::sub_tokenize_raw(name.as_str(), &mut tokens);
 
             let lname = name.to_ascii_lowercase();
             let scan = lname == "androidmanifest.xml"
@@ -131,7 +210,7 @@ impl Tokenizer {
             {
                 continue;
             }
-            self.harvest_strings(&buf, &mut tokens);
+            Self::harvest_strings_raw(&buf, &mut tokens);
         }
 
         if !has_content || tokens.is_empty() {
@@ -140,14 +219,12 @@ impl Tokenizer {
         Some(tokens)
     }
 
-    fn sub_tokenize(&self, text: &str, out: &mut Vec<i64>) {
+    fn sub_tokenize_raw(text: &str, out: &mut Vec<String>) {
         for part in text.split(|c: char| {
             c == '.' || c == '/' || c == ';' || c == ':' || c == '-' || c == '\\' || c == '_'
         }) {
             if part.len() >= 2 {
-                let key = part.to_ascii_lowercase();
-                let id = self.vocab.get(&key).copied().unwrap_or(0);
-                out.push(id);
+                out.push(part.to_ascii_lowercase());
                 if out.len() >= MAX_TOKENS {
                     return;
                 }
@@ -155,7 +232,7 @@ impl Tokenizer {
         }
     }
 
-    fn harvest_strings(&self, data: &[u8], out: &mut Vec<i64>) {
+    fn harvest_strings_raw(data: &[u8], out: &mut Vec<String>) {
         // ASCII runs
         let mut start: Option<usize> = None;
         for (i, &b) in data.iter().enumerate() {
@@ -167,7 +244,7 @@ impl Tokenizer {
             } else if let Some(s) = start.take() {
                 if i - s >= MIN_STR_LEN {
                     if let Ok(text) = std::str::from_utf8(&data[s..i]) {
-                        self.sub_tokenize(text, out);
+                        Self::sub_tokenize_raw(text, out);
                         if out.len() >= MAX_TOKENS {
                             return;
                         }
@@ -178,7 +255,7 @@ impl Tokenizer {
         if let Some(s) = start {
             if data.len() - s >= MIN_STR_LEN {
                 if let Ok(text) = std::str::from_utf8(&data[s..]) {
-                    self.sub_tokenize(text, out);
+                    Self::sub_tokenize_raw(text, out);
                 }
             }
         }
@@ -194,7 +271,7 @@ impl Tokenizer {
             } else {
                 if utf_buf.len() >= MIN_STR_LEN {
                     if let Ok(text) = std::str::from_utf8(&utf_buf) {
-                        self.sub_tokenize(text, out);
+                        Self::sub_tokenize_raw(text, out);
                         if out.len() >= MAX_TOKENS {
                             return;
                         }
@@ -206,7 +283,7 @@ impl Tokenizer {
         }
         if utf_buf.len() >= MIN_STR_LEN {
             if let Ok(text) = std::str::from_utf8(&utf_buf) {
-                self.sub_tokenize(text, out);
+                Self::sub_tokenize_raw(text, out);
             }
         }
     }
@@ -361,5 +438,31 @@ fn insert_minhash_string(s: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
         if lower.starts_with("http://") || lower.starts_with("https://") || lower.contains("://") {
             tokens.insert(token("url:", lower.as_bytes()));
         }
+    }
+}
+
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+    use std::io::Write;
+
+    fn make_test_apk(entries: &[(&str, Vec<u8>)]) -> Vec<u8> {
+        let mut buf = Vec::new();
+        {
+            let cursor = Cursor::new(&mut buf);
+            let mut zip = zip::ZipWriter::new(cursor);
+            for (name, data) in entries {
+                zip.start_file::<_, ()>(*name, zip::write::FileOptions::default()).unwrap();
+                zip.write_all(data).unwrap();
+            }
+            zip.finish().unwrap();
+        }
+        buf
+    }
+
+    #[test]
+    fn extract_from_apk_returns_none_without_relevant_entries() {
+        let apk = make_test_apk(&[("res/layout/main.xml", vec![1, 2, 3])]);
+        assert!(EngineFeatures::extract_from_apk(&apk).is_none());
     }
 }
