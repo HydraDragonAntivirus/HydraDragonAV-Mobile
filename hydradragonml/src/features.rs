@@ -211,17 +211,29 @@ impl Tokenizer {
     }
 
     pub fn tokenize(&self, apk: &[u8]) -> Option<Vec<i64>> {
-        let mut tokens: Vec<i64> = Vec::new();
+        let raw = Self::raw_tokens(apk)?;
+        Some(
+            raw.iter()
+                .map(|token| self.vocab.get(token).copied().unwrap_or(0))
+                .collect(),
+        )
+    }
+
+    /// Extract the same lowercase, delimiter-split subword tokens used at
+    /// inference, without mapping them to vocabulary ids. Used by the
+    /// vocabulary builder to count token frequencies over a corpus.
+    pub fn raw_tokens(apk: &[u8]) -> Option<Vec<String>> {
+        let mut tokens: Vec<String> = Vec::new();
         let mut has_content = false;
 
         for_each_entry(apk, |name, content| {
             if tokens.len() >= MAX_TOKENS {
                 return;
             }
-            self.sub_tokenize(name, &mut tokens);
+            Self::sub_tokenize_raw(name, &mut tokens);
             if !content.is_empty() {
                 has_content = true;
-                self.harvest_strings(content, &mut tokens);
+                Self::harvest_strings_raw(content, &mut tokens);
             }
         })?;
 
@@ -242,6 +254,75 @@ impl Tokenizer {
                 if out.len() >= MAX_TOKENS {
                     return;
                 }
+            }
+        }
+    }
+
+    fn sub_tokenize_raw(text: &str, out: &mut Vec<String>) {
+        for part in text.split(|c: char| {
+            c == '.' || c == '/' || c == ';' || c == ':' || c == '-' || c == '\\' || c == '_'
+        }) {
+            if part.len() >= 2 {
+                out.push(part.to_ascii_lowercase());
+                if out.len() >= MAX_TOKENS {
+                    return;
+                }
+            }
+        }
+    }
+
+    fn harvest_strings_raw(data: &[u8], out: &mut Vec<String>) {
+        // ASCII runs
+        let mut start: Option<usize> = None;
+        for (i, &b) in data.iter().enumerate() {
+            let printable = (0x20..0x7f).contains(&b);
+            if printable {
+                if start.is_none() {
+                    start = Some(i);
+                }
+            } else if let Some(s) = start.take() {
+                if i - s >= MIN_STR_LEN {
+                    if let Ok(text) = std::str::from_utf8(&data[s..i]) {
+                        Self::sub_tokenize_raw(text, out);
+                        if out.len() >= MAX_TOKENS {
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(s) = start {
+            if data.len() - s >= MIN_STR_LEN {
+                if let Ok(text) = std::str::from_utf8(&data[s..]) {
+                    Self::sub_tokenize_raw(text, out);
+                }
+            }
+        }
+
+        // UTF-16LE runs
+        let mut utf_buf: Vec<u8> = Vec::new();
+        let mut j = 0;
+        while j + 1 < data.len() {
+            let lo = data[j];
+            let hi = data[j + 1];
+            if hi == 0 && (0x20..0x7f).contains(&lo) {
+                utf_buf.push(lo);
+            } else {
+                if utf_buf.len() >= MIN_STR_LEN {
+                    if let Ok(text) = std::str::from_utf8(&utf_buf) {
+                        Self::sub_tokenize_raw(text, out);
+                        if out.len() >= MAX_TOKENS {
+                            return;
+                        }
+                    }
+                }
+                utf_buf.clear();
+            }
+            j += 2;
+        }
+        if utf_buf.len() >= MIN_STR_LEN {
+            if let Ok(text) = std::str::from_utf8(&utf_buf) {
+                Self::sub_tokenize_raw(text, out);
             }
         }
     }
