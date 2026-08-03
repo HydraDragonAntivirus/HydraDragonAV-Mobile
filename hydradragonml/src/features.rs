@@ -443,7 +443,8 @@ mod integration_tests {
             let cursor = std::io::Cursor::new(&mut buf);
             let mut zip = zip::ZipWriter::new(cursor);
             for (name, data) in entries {
-                zip.start_file(*name, zip::write::FileOptions::default()).unwrap();
+                zip.start_file::<&str, ()>(*name, zip::write::FileOptions::default())
+                    .unwrap();
                 zip.write_all(data).unwrap();
             }
             zip.finish().unwrap();
