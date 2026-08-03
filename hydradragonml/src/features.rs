@@ -1,9 +1,11 @@
 use std::collections::{HashMap, HashSet};
-use std::io::{Cursor, Read};
 
-pub mod axml;
-pub mod dex;
-pub mod elf;
+use ripzip::extract::zip_reader::{parse_archive, parse_local_header_data_offset, ZipEntry};
+use ripzip::zip_format::{COMPRESSION_DEFLATED, COMPRESSION_STORED};
+
+use crate::dex;
+use crate::axml;
+use crate::elf;
 
 pub const VOCAB_SIZE: usize = 20000;
 pub const EMBED_DIM: usize = 64;
@@ -11,7 +13,9 @@ pub const MIN_STR_LEN: usize = 5;
 pub const MAX_TOKENS: usize = 4096;
 pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
-/// Number of real APK-content features fed to the MLP next to text embeddings.
+/// 5 DEX fields + 6 ELF fields + 7 manifest fields. Every one of these is
+/// computed from the APK's actual content (see `EngineFeatures::extract_from_apk`)
+/// — there are no placeholder/default-only fields left in this struct.
 pub const ENGINE_FEATURE_COUNT: usize = 18;
 
 #[derive(Clone, Debug, Default)]
@@ -63,24 +67,20 @@ impl EngineFeatures {
         ]
     }
 
-    /// Builds real, content-derived DEX/ELF/manifest features by scanning the
-    /// actual entries of an APK (a zip archive). This intentionally excludes
-    /// reputation, runtime, certificate and other external signals so the
-    /// model never learns fabricated placeholders.
+    /// Builds real, content-derived DEX/ELF/manifest features by scanning
+    /// the actual entries of an APK (a zip archive), using `ripzip` to parse
+    /// the archive directly out of an in-memory byte slice.
     pub fn extract_from_apk(apk: &[u8]) -> Option<Self> {
-        let reader = Cursor::new(apk);
-        let mut archive = zip::ZipArchive::new(reader).ok()?;
+        let archive = parse_archive(apk).ok()?;
 
         let mut feats = EngineFeatures::default();
         let mut saw_any_entry = false;
 
-        for i in 0..archive.len() {
-            let mut entry = match archive.by_index(i) {
-                Ok(e) => e,
-                Err(_) => continue,
-            };
-            let name = entry.name().to_string();
-            let lname = name.to_ascii_lowercase();
+        for entry in &archive.entries {
+            if entry.is_dir {
+                continue;
+            }
+            let lname = entry.file_name.to_ascii_lowercase();
 
             let is_dex = lname.ends_with(".dex");
             let is_manifest = lname == "androidmanifest.xml";
@@ -89,15 +89,10 @@ impl EngineFeatures {
                 continue;
             }
 
-            let mut buf = Vec::new();
-            if entry
-                .by_ref()
-                .take(MAX_ENTRY_SCAN as u64)
-                .read_to_end(&mut buf)
-                .is_err()
-            {
-                continue;
-            }
+            let buf = match read_entry_data(apk, entry) {
+                Some(b) => b,
+                None => continue,
+            };
 
             if is_dex {
                 if let Some(d) = dex::analyze(&buf) {
@@ -141,6 +136,64 @@ impl EngineFeatures {
     }
 }
 
+/// Reads and decompresses a single ZIP entry's data out of the full APK
+/// byte slice, using `ripzip` to locate the entry's actual data offset
+/// (skipping past the variable-length local file header) and `flate2` to
+/// inflate it if the entry uses DEFLATE (the near-universal compression
+/// method used inside real-world APKs; STORED entries are returned as-is).
+/// Any other/unsupported compression method returns `None` rather than
+/// guessing at decoded content.
+fn read_entry_data(apk: &[u8], entry: &ZipEntry) -> Option<Vec<u8>> {
+    let data_offset = parse_local_header_data_offset(apk, entry.local_header_offset).ok()? as usize;
+    let comp_len = entry.compressed_size as usize;
+    let compressed = apk.get(data_offset..data_offset.checked_add(comp_len)?)?;
+
+    match entry.compression_method {
+        m if m == COMPRESSION_STORED => Some(compressed.to_vec()),
+        m if m == COMPRESSION_DEFLATED => {
+            use flate2::read::DeflateDecoder;
+            use std::io::Read;
+            let cap = (entry.uncompressed_size as usize).min(MAX_ENTRY_SCAN);
+            let mut out = Vec::with_capacity(cap.min(1 << 20));
+            let mut decoder = DeflateDecoder::new(compressed);
+            decoder.by_ref().take(MAX_ENTRY_SCAN as u64).read_to_end(&mut out).ok()?;
+            Some(out)
+        }
+        _ => None, // unsupported compression method (e.g. AES-encrypted, LZMA) — skip rather than guess
+    }
+}
+
+/// Iterates every entry of `apk`, applying `f(name, decompressed_bytes)` to
+/// each non-directory entry. Used by the tokenizers below, which (unlike
+/// `EngineFeatures::extract_from_apk`) need to look at every entry name and
+/// the contents of a broader set of files (AndroidManifest.xml,
+/// resources.arsc, *.dex, META-INF/*).
+fn for_each_entry(apk: &[u8], mut f: impl FnMut(&str, &[u8])) -> Option<()> {
+    let archive = parse_archive(apk).ok()?;
+    for entry in &archive.entries {
+        if entry.is_dir {
+            continue;
+        }
+        let name = entry.file_name.clone();
+        let lname = name.to_ascii_lowercase();
+        let scan = lname == "androidmanifest.xml"
+            || lname == "resources.arsc"
+            || lname.ends_with(".dex")
+            || lname.starts_with("meta-inf/");
+
+        // Entry *names* are always cheap to look at; only decompress
+        // content for entries we actually want to harvest strings from.
+        if scan {
+            if let Some(buf) = read_entry_data(apk, entry) {
+                f(&name, &buf);
+                continue;
+            }
+        }
+        f(&name, &[]);
+    }
+    Some(())
+}
+
 // Tokenizer for the EmbeddingBag ML pipeline.
 
 pub struct Tokenizer {
@@ -157,46 +210,20 @@ impl Tokenizer {
         Some(Self::new(map))
     }
 
-    /// Extract the same lowercase, delimiter-split subword tokens used at
-    /// inference, without mapping them to vocabulary ids.
-    pub fn raw_tokens(apk: &[u8]) -> Option<Vec<String>> {
-        let mut tokens: Vec<String> = Vec::new();
-        let reader = Cursor::new(apk);
-        let mut archive = zip::ZipArchive::new(reader).ok()?;
+    pub fn tokenize(&self, apk: &[u8]) -> Option<Vec<i64>> {
+        let mut tokens: Vec<i64> = Vec::new();
         let mut has_content = false;
 
-        for i in 0..archive.len() {
+        for_each_entry(apk, |name, content| {
             if tokens.len() >= MAX_TOKENS {
-                break;
+                return;
             }
-            let mut entry = match archive.by_index(i) {
-                Ok(e) => e,
-                Err(_) => continue,
-            };
-            let name = entry.name().to_string();
-            Self::sub_tokenize_raw(name.as_str(), &mut tokens);
-
-            let lname = name.to_ascii_lowercase();
-            let scan = lname == "androidmanifest.xml"
-                || lname == "resources.arsc"
-                || lname.ends_with(".dex")
-                || lname.starts_with("meta-inf/");
-            if !scan {
-                continue;
+            self.sub_tokenize(name, &mut tokens);
+            if !content.is_empty() {
+                has_content = true;
+                self.harvest_strings(content, &mut tokens);
             }
-            has_content = true;
-
-            let mut buf = Vec::new();
-            if entry
-                .by_ref()
-                .take(MAX_ENTRY_SCAN as u64)
-                .read_to_end(&mut buf)
-                .is_err()
-            {
-                continue;
-            }
-            Self::harvest_strings_raw(&buf, &mut tokens);
-        }
+        })?;
 
         if !has_content || tokens.is_empty() {
             return None;
@@ -204,21 +231,14 @@ impl Tokenizer {
         Some(tokens)
     }
 
-    pub fn tokenize(&self, apk: &[u8]) -> Option<Vec<i64>> {
-        let raw = Self::raw_tokens(apk)?;
-        Some(
-            raw.iter()
-                .map(|token| self.vocab.get(token).copied().unwrap_or(0))
-                .collect(),
-        )
-    }
-
-    fn sub_tokenize_raw(text: &str, out: &mut Vec<String>) {
+    fn sub_tokenize(&self, text: &str, out: &mut Vec<i64>) {
         for part in text.split(|c: char| {
             c == '.' || c == '/' || c == ';' || c == ':' || c == '-' || c == '\\' || c == '_'
         }) {
             if part.len() >= 2 {
-                out.push(part.to_ascii_lowercase());
+                let key = part.to_ascii_lowercase();
+                let id = self.vocab.get(&key).copied().unwrap_or(0);
+                out.push(id);
                 if out.len() >= MAX_TOKENS {
                     return;
                 }
@@ -226,7 +246,8 @@ impl Tokenizer {
         }
     }
 
-    fn harvest_strings_raw(data: &[u8], out: &mut Vec<String>) {
+    fn harvest_strings(&self, data: &[u8], out: &mut Vec<i64>) {
+        // ASCII runs
         let mut start: Option<usize> = None;
         for (i, &b) in data.iter().enumerate() {
             let printable = (0x20..0x7f).contains(&b);
@@ -237,7 +258,7 @@ impl Tokenizer {
             } else if let Some(s) = start.take() {
                 if i - s >= MIN_STR_LEN {
                     if let Ok(text) = std::str::from_utf8(&data[s..i]) {
-                        Self::sub_tokenize_raw(text, out);
+                        self.sub_tokenize(text, out);
                         if out.len() >= MAX_TOKENS {
                             return;
                         }
@@ -248,11 +269,12 @@ impl Tokenizer {
         if let Some(s) = start {
             if data.len() - s >= MIN_STR_LEN {
                 if let Ok(text) = std::str::from_utf8(&data[s..]) {
-                    Self::sub_tokenize_raw(text, out);
+                    self.sub_tokenize(text, out);
                 }
             }
         }
 
+        // UTF-16LE runs
         let mut utf_buf: Vec<u8> = Vec::new();
         let mut j = 0;
         while j + 1 < data.len() {
@@ -263,7 +285,7 @@ impl Tokenizer {
             } else {
                 if utf_buf.len() >= MIN_STR_LEN {
                     if let Ok(text) = std::str::from_utf8(&utf_buf) {
-                        Self::sub_tokenize_raw(text, out);
+                        self.sub_tokenize(text, out);
                         if out.len() >= MAX_TOKENS {
                             return;
                         }
@@ -275,7 +297,7 @@ impl Tokenizer {
         }
         if utf_buf.len() >= MIN_STR_LEN {
             if let Ok(text) = std::str::from_utf8(&utf_buf) {
-                Self::sub_tokenize_raw(text, out);
+                self.sub_tokenize(text, out);
             }
         }
     }
@@ -311,41 +333,18 @@ fn token(prefix: &str, s: &[u8]) -> u64 {
 
 pub fn extract_minhash(apk: &[u8]) -> Option<ApkFeatures> {
     let mut tokens: HashSet<u64> = HashSet::new();
-    let reader = Cursor::new(apk);
-    let mut archive = zip::ZipArchive::new(reader).ok()?;
     let mut has_content_entry = false;
 
-    for i in 0..archive.len() {
+    for_each_entry(apk, |name, content| {
         if tokens.len() >= MAX_TOKENS {
-            break;
+            return;
         }
-        let mut entry = match archive.by_index(i) {
-            Ok(e) => e,
-            Err(_) => continue,
-        };
-        let name = entry.name().to_string();
         tokens.insert(token("name:", name.as_bytes()));
-
-        let lname = name.to_ascii_lowercase();
-        let scan_contents = lname == "androidmanifest.xml"
-            || lname == "resources.arsc"
-            || lname.ends_with(".dex")
-            || lname.starts_with("meta-inf/");
-        if !scan_contents {
-            continue;
+        if content.is_empty() {
+            return;
         }
         has_content_entry = true;
-
-        let mut buf = Vec::new();
-        if entry
-            .by_ref()
-            .take(MAX_ENTRY_SCAN as u64)
-            .read_to_end(&mut buf)
-            .is_err()
-        {
-            continue;
-        }
-
+        let lname = name.to_ascii_lowercase();
         let prefix = if lname.ends_with(".dex") {
             "dex:"
         } else if lname == "androidmanifest.xml" {
@@ -353,8 +352,8 @@ pub fn extract_minhash(apk: &[u8]) -> Option<ApkFeatures> {
         } else {
             "res:"
         };
-        harvest_minhash_strings(&buf, prefix, &mut tokens);
-    }
+        harvest_minhash_strings(content, prefix, &mut tokens);
+    })?;
 
     if !has_content_entry || tokens.is_empty() {
         return None;
@@ -441,11 +440,10 @@ mod integration_tests {
     fn make_test_apk(entries: &[(&str, Vec<u8>)]) -> Vec<u8> {
         let mut buf = Vec::new();
         {
-            let cursor = Cursor::new(&mut buf);
+            let cursor = std::io::Cursor::new(&mut buf);
             let mut zip = zip::ZipWriter::new(cursor);
             for (name, data) in entries {
-                zip.start_file::<_, ()>(*name, zip::write::FileOptions::default())
-                    .unwrap();
+                zip.start_file(*name, zip::write::FileOptions::default()).unwrap();
                 zip.write_all(data).unwrap();
             }
             zip.finish().unwrap();
@@ -457,5 +455,87 @@ mod integration_tests {
     fn extract_from_apk_returns_none_without_relevant_entries() {
         let apk = make_test_apk(&[("res/layout/main.xml", vec![1, 2, 3])]);
         assert!(EngineFeatures::extract_from_apk(&apk).is_none());
+    }
+
+    #[test]
+    fn tokenizer_and_minhash_work_through_ripzip() {
+        let mut vocab = std::collections::HashMap::new();
+        vocab.insert("classes".to_string(), 1);
+        let tok = Tokenizer::new(vocab);
+
+        // "hello world permission strings" repeated to be long enough to
+        // survive MIN_STR_LEN and get harvested from the manifest entry.
+        let manifest_bytes = b"android.permission.SEND_SMS androidmanifest test content".to_vec();
+        let apk = make_test_apk(&[
+            ("classes.dex", vec![b'd', b'e', b'x', b'\n', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+            ("AndroidManifest.xml", manifest_bytes),
+        ]);
+
+        let ids = tok.tokenize(&apk).expect("tokenizer should find content");
+        assert!(!ids.is_empty());
+
+        let feats = extract_minhash(&apk).expect("minhash should find content");
+        assert!(!feats.tokens.is_empty());
+    }
+
+    #[test]
+    fn extract_from_apk_reads_real_values_from_dex_manifest_and_elf() {
+        // --- real DEX with one critical-severity API call (Runtime.exec) ---
+        let dex_strings = ["Ljava/lang/Runtime;", "exec"];
+        let dex_bytes = dex::tests::build_minimal_dex(&dex_strings, &[0u32], &[(0u16, 1u32)]);
+
+        // --- real binary AndroidManifest.xml with one dangerous permission,
+        //     one activity, and explicit min/target SDK ---
+        let manifest_strings = axml::tests::build_string_pool_chunk(&[
+            "manifest",
+            "uses-permission",
+            "android.permission.READ_SMS",
+            "uses-sdk",
+            "activity",
+        ]);
+        let res_map = axml::tests::build_resource_map_chunk(&[
+            axml::ATTR_NAME,
+            axml::ATTR_MIN_SDK_VERSION,
+            axml::ATTR_TARGET_SDK_VERSION,
+        ]);
+        let perm_elem = axml::tests::build_start_element(1, &[(0, 2, axml::TYPE_STRING, 0)]);
+        let sdk_elem = axml::tests::build_start_element(3, &[(1, -1, 0x10, 24), (2, -1, 0x10, 34)]);
+        let activity_elem = axml::tests::build_start_element(4, &[]);
+        let mut manifest_body = Vec::new();
+        manifest_body.extend_from_slice(&manifest_strings);
+        manifest_body.extend_from_slice(&res_map);
+        manifest_body.extend_from_slice(&perm_elem);
+        manifest_body.extend_from_slice(&sdk_elem);
+        manifest_body.extend_from_slice(&activity_elem);
+        let mut manifest_bytes = Vec::new();
+        manifest_bytes.extend_from_slice(&3u16.to_le_bytes()); // RES_XML_TYPE
+        manifest_bytes.extend_from_slice(&8u16.to_le_bytes());
+        manifest_bytes.extend_from_slice(&((8 + manifest_body.len()) as u32).to_le_bytes());
+        manifest_bytes.extend_from_slice(&manifest_body);
+
+        // --- real ELF with a ptrace import (anti-debug) ---
+        let elf_bytes = elf::tests::build_minimal_elf64(&["ptrace", "connect"]);
+
+        let apk = make_test_apk(&[
+            ("classes.dex", dex_bytes),
+            ("AndroidManifest.xml", manifest_bytes),
+            ("lib/arm64-v8a/libnative.so", elf_bytes),
+        ]);
+
+        let feats = EngineFeatures::extract_from_apk(&apk).expect("should extract real features");
+        assert_eq!(feats.dex_class_count, 1.0);
+        assert_eq!(feats.dex_finding_critical, 1.0);
+        assert_eq!(feats.manifest_dangerous_permissions, 1.0);
+        assert_eq!(feats.manifest_activities, 1.0);
+        assert_eq!(feats.manifest_min_sdk, 24.0);
+        assert_eq!(feats.manifest_target_sdk, 34.0);
+        assert_eq!(feats.elf_count, 1.0);
+        assert_eq!(feats.elf_anti_debug, 1.0);
+        assert_eq!(feats.elf_network_calls, 1.0);
+
+        // Values are real and finite; to_vec() should still normalize cleanly.
+        let v = feats.to_vec();
+        assert_eq!(v.len(), ENGINE_FEATURE_COUNT);
+        assert!(v.iter().all(|&x| (0.0..=1.0).contains(&x)));
     }
 }

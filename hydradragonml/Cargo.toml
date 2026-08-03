@@ -6,7 +6,8 @@ description = "HydraDragon ML inference engine: Burn-based malware/benign binary
 license = "GPL-2.0-or-later"
 
 [dependencies]
-zip = { version = "2", default-features = false, features = ["deflate"] }
+ripzip = "0.1"
+flate2 = "1"
 walkdir = "2"
 serde_json = "1"
 burn = { version = "0.21", default-features = false, features = ["ndarray", "train", "autodiff"] }
@@ -14,6 +15,9 @@ burn-autodiff = "0.21"
 burn-train = "0.21"
 burn-dataset = "0.21"
 tempfile = "3"
+
+[dev-dependencies]
+zip = { version = "2", default-features = false, features = ["deflate"] }
 
 [lib]
 name = "hydradragonml"
@@ -24,17 +28,5 @@ name = "hydradragonml-scan"
 path = "src/main.rs"
 
 [[bin]]
-name = "debug-features"
-path = "src/bin/debug_features.rs"
-
-[[bin]]
 name = "hydradragonml-train"
 path = "src/bin/train.rs"
-
-[[bin]]
-name = "hydradragonml-vocab"
-path = "src/bin/build_vocab.rs"
-
-[[bin]]
-name = "dump-apk-features"
-path = "src/bin/dump_features.rs"

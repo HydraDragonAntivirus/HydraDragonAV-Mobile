@@ -8,52 +8,35 @@
 //! "justanapplication.wordpress.com" AXML series). We implement just enough
 //! of it to walk the XML tree and read attribute values.
 
-const RES_STRING_POOL_TYPE: u16 = 0x0001;
 const RES_XML_TYPE: u16 = 0x0003;
+const RES_STRING_POOL_TYPE: u16 = 0x0001;
 const RES_XML_START_ELEMENT_TYPE: u16 = 0x0102;
 const RES_XML_END_ELEMENT_TYPE: u16 = 0x0103;
 
 // Well-known android: attribute resource IDs (stable across AOSP versions,
 // published in android/R.attr / frameworks/base res-ids).
-const ATTR_NAME: u32 = 0x01010003; // android:name
-const ATTR_MIN_SDK_VERSION: u32 = 0x0101020c; // android:minSdkVersion
-const ATTR_TARGET_SDK_VERSION: u32 = 0x01010270; // android:targetSdkVersion
+pub(crate) const ATTR_NAME: u32 = 0x01010003; // android:name
+pub(crate) const ATTR_MIN_SDK_VERSION: u32 = 0x0101020c; // android:minSdkVersion
+pub(crate) const ATTR_TARGET_SDK_VERSION: u32 = 0x01010270; // android:targetSdkVersion
 
-const TYPE_STRING: u8 = 0x03;
+pub(crate) const TYPE_STRING: u8 = 0x03;
 
 /// Dangerous-protection-level permissions as published by Android
 /// (developer.android.com/guide/topics/permissions/overview#normal-dangerous,
 /// and the android.Manifest.permission reference, protectionLevel="dangerous").
 const DANGEROUS_PERMISSIONS: &[&str] = &[
-    "READ_CALENDAR",
-    "WRITE_CALENDAR",
+    "READ_CALENDAR", "WRITE_CALENDAR",
     "CAMERA",
-    "READ_CONTACTS",
-    "WRITE_CONTACTS",
-    "GET_ACCOUNTS",
-    "ACCESS_FINE_LOCATION",
-    "ACCESS_COARSE_LOCATION",
-    "ACCESS_BACKGROUND_LOCATION",
+    "READ_CONTACTS", "WRITE_CONTACTS", "GET_ACCOUNTS",
+    "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_BACKGROUND_LOCATION",
     "RECORD_AUDIO",
-    "READ_PHONE_STATE",
-    "READ_PHONE_NUMBERS",
-    "CALL_PHONE",
-    "ANSWER_PHONE_CALLS",
-    "READ_CALL_LOG",
-    "WRITE_CALL_LOG",
-    "ADD_VOICEMAIL",
-    "USE_SIP",
-    "PROCESS_OUTGOING_CALLS",
+    "READ_PHONE_STATE", "READ_PHONE_NUMBERS", "CALL_PHONE",
+    "ANSWER_PHONE_CALLS", "READ_CALL_LOG", "WRITE_CALL_LOG",
+    "ADD_VOICEMAIL", "USE_SIP", "PROCESS_OUTGOING_CALLS",
     "BODY_SENSORS",
-    "SEND_SMS",
-    "RECEIVE_SMS",
-    "READ_SMS",
-    "RECEIVE_WAP_PUSH",
-    "RECEIVE_MMS",
-    "READ_EXTERNAL_STORAGE",
-    "WRITE_EXTERNAL_STORAGE",
-    "ACCEPT_HANDOVER",
-    "ACTIVITY_RECOGNITION",
+    "SEND_SMS", "RECEIVE_SMS", "READ_SMS", "RECEIVE_WAP_PUSH", "RECEIVE_MMS",
+    "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE",
+    "ACCEPT_HANDOVER", "ACTIVITY_RECOGNITION",
 ];
 
 #[derive(Debug, Default, Clone)]
@@ -153,21 +136,7 @@ pub fn analyze_manifest(b: &[u8]) -> Option<ManifestFeatures> {
         UsesSdk,
     }
 
-    // AXML files start with a RES_XML_TYPE container header (type 0x0003,
-    // headerSize=8, chunkSize=whole file). It is not a walkable chunk itself;
-    // the string pool / resource map / element chunks follow it. Without
-    // skipping it the walk jumps straight past every element and we would
-    // never see the manifest contents. This is the root cause the on-device
-    // manifest features were historically 0.
     let mut off = 0usize;
-    if read_u16(b, 0)? == RES_XML_TYPE {
-        let header_size = read_u16(b, 2)? as usize;
-        if header_size < 8 || header_size > b.len() {
-            return None;
-        }
-        off = header_size;
-    }
-
     while off + 8 <= b.len() {
         let chunk_type = read_u16(b, off)?;
         let header_size = read_u16(b, off + 2)? as usize;
@@ -204,13 +173,7 @@ pub fn analyze_manifest(b: &[u8]) -> Option<ManifestFeatures> {
                 let attribute_start = read_u16(b, attr_start_off)? as usize;
                 let attribute_size = read_u16(b, attr_start_off + 2)? as usize;
                 let attribute_count = read_u16(b, attr_start_off + 4)? as usize;
-                // attributeStart is relative to the ResXMLTree_attrExt struct,
-                // which begins 8 bytes into the node (after lineNumber/comment).
-                // Reading it relative to `node_off` alone makes us start 8 bytes
-                // too early and we would mis-read the ns/name fields (e.g. the
-                // android namespace uri) as if they were attributes, zeroing
-                // every permission value.
-                let attrs_base = node_off + 8 + attribute_start;
+                let attrs_base = ns_name_off + attribute_start;
 
                 let mut ctx = Ctx::None;
                 match elem_name.as_str() {
@@ -271,7 +234,13 @@ pub fn analyze_manifest(b: &[u8]) -> Option<ManifestFeatures> {
             _ => {}
         }
 
-        off += chunk_size;
+        if chunk_type == RES_XML_TYPE {
+            // Pure wrapper: its contents are further chunks, not its own
+            // payload, so only skip its header and keep iterating.
+            off += header_size;
+        } else {
+            off += chunk_size;
+        }
     }
 
     if !seen_any_element {
@@ -281,11 +250,156 @@ pub fn analyze_manifest(b: &[u8]) -> Option<ManifestFeatures> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     #[test]
     fn rejects_garbage() {
         assert!(analyze_manifest(b"not axml").is_none());
+    }
+
+    /// Appends a UTF-8-encoded string in ResStringPool_item format:
+    /// a 1-byte utf16-length, a 1-byte utf8-length, the bytes, then NUL.
+    /// (All test strings here are < 128 bytes, so single-byte lengths.)
+    fn push_pool_string(data: &mut Vec<u8>, s: &str) {
+        data.push(s.len() as u8);
+        data.push(s.len() as u8);
+        data.extend_from_slice(s.as_bytes());
+        data.push(0);
+    }
+
+    pub(crate) fn build_string_pool_chunk(strings: &[&str]) -> Vec<u8> {
+        let header_size = 28usize;
+        let offsets_size = strings.len() * 4;
+        let strings_start = header_size + offsets_size;
+
+        let mut string_data = Vec::new();
+        let mut offsets = Vec::new();
+        for s in strings {
+            offsets.push(string_data.len() as u32);
+            push_pool_string(&mut string_data, s);
+        }
+
+        let total_size = strings_start + string_data.len();
+        let mut chunk = vec![0u8; total_size];
+        chunk[0..2].copy_from_slice(&RES_STRING_POOL_TYPE.to_le_bytes());
+        chunk[2..4].copy_from_slice(&(header_size as u16).to_le_bytes());
+        chunk[4..8].copy_from_slice(&(total_size as u32).to_le_bytes());
+        chunk[8..12].copy_from_slice(&(strings.len() as u32).to_le_bytes()); // stringCount
+        chunk[12..16].copy_from_slice(&0u32.to_le_bytes()); // styleCount
+        chunk[16..20].copy_from_slice(&0x100u32.to_le_bytes()); // UTF8_FLAG
+        chunk[20..24].copy_from_slice(&(strings_start as u32).to_le_bytes());
+        chunk[24..28].copy_from_slice(&0u32.to_le_bytes()); // stylesStart
+        for (i, off) in offsets.iter().enumerate() {
+            let o = header_size + i * 4;
+            chunk[o..o + 4].copy_from_slice(&off.to_le_bytes());
+        }
+        chunk[strings_start..].copy_from_slice(&string_data);
+        chunk
+    }
+
+    pub(crate) fn build_resource_map_chunk(ids: &[u32]) -> Vec<u8> {
+        let total_size = 8 + ids.len() * 4;
+        let mut chunk = vec![0u8; total_size];
+        chunk[0..2].copy_from_slice(&0x0180u16.to_le_bytes());
+        chunk[2..4].copy_from_slice(&8u16.to_le_bytes());
+        chunk[4..8].copy_from_slice(&(total_size as u32).to_le_bytes());
+        for (i, id) in ids.iter().enumerate() {
+            let o = 8 + i * 4;
+            chunk[o..o + 4].copy_from_slice(&id.to_le_bytes());
+        }
+        chunk
+    }
+
+    /// Builds a RES_XML_START_ELEMENT_TYPE chunk.
+    /// `attrs`: (attr_name_pool_or_map_idx, raw_value_string_idx (-1 if none), data_type, data)
+    pub(crate) fn build_start_element(
+        name_str_idx: i32,
+        attrs: &[(i32, i32, u8, u32)],
+    ) -> Vec<u8> {
+        let attribute_ext_start = 16usize; // offset of attrExt (namespaceURI) from node start (after lineNumber+comment)
+        let attr_ext_header_len = 20usize; // size of ResXMLTree_attrExt itself
+        let node_header_len = 8usize; // lineNumber + comment
+        let header_size = 8 + node_header_len + attr_ext_header_len; // chunk header + node + attrExt
+        let attribute_size = 20usize;
+        let total_size = header_size + attrs.len() * attribute_size;
+
+        let mut chunk = vec![0u8; total_size];
+        chunk[0..2].copy_from_slice(&RES_XML_START_ELEMENT_TYPE.to_le_bytes());
+        chunk[2..4].copy_from_slice(&(header_size as u16).to_le_bytes());
+        chunk[4..8].copy_from_slice(&(total_size as u32).to_le_bytes());
+        // lineNumber @8, comment @12 (both left 0)
+        // attrExt starts at offset 16: namespaceURI(-1) @16, name @20
+        chunk[16..20].copy_from_slice(&(-1i32).to_le_bytes());
+        chunk[20..24].copy_from_slice(&name_str_idx.to_le_bytes());
+        // attributeStart @24 (relative to attrExt start i.e. offset 16)
+        chunk[24..26].copy_from_slice(&(attr_ext_header_len as u16).to_le_bytes());
+        chunk[26..28].copy_from_slice(&(attribute_size as u16).to_le_bytes());
+        chunk[28..30].copy_from_slice(&(attrs.len() as u16).to_le_bytes());
+        // idIndex/classIndex/styleIndex @30,32,34 left 0
+
+        let _ = attribute_ext_start;
+        let attrs_base = header_size; // 16 (attrExt start) + 20 (attributeStart) == header_size
+        for (i, &(name_idx, raw_value_idx, data_type, data)) in attrs.iter().enumerate() {
+            let a = attrs_base + i * attribute_size;
+            chunk[a..a + 4].copy_from_slice(&0i32.to_le_bytes()); // ns
+            chunk[a + 4..a + 8].copy_from_slice(&name_idx.to_le_bytes());
+            chunk[a + 8..a + 12].copy_from_slice(&raw_value_idx.to_le_bytes());
+            // Res_value: size(2)=8, res0(1)=0, dataType(1), data(4)
+            chunk[a + 12..a + 14].copy_from_slice(&8u16.to_le_bytes());
+            chunk[a + 14] = 0;
+            chunk[a + 15] = data_type;
+            chunk[a + 16..a + 20].copy_from_slice(&data.to_le_bytes());
+        }
+        chunk
+    }
+
+    #[test]
+    fn parses_real_manifest_permissions_and_sdk_versions() {
+        // String pool indices:
+        // 0 "manifest" 1 "uses-permission" 2 "android.permission.CAMERA"
+        // 3 "uses-sdk" 4 "activity"
+        let strings = build_string_pool_chunk(&[
+            "manifest",
+            "uses-permission",
+            "android.permission.CAMERA",
+            "uses-sdk",
+            "activity",
+        ]);
+        // Resource map: index 0 -> android:name (0x01010003)
+        let res_map = build_resource_map_chunk(&[ATTR_NAME, ATTR_MIN_SDK_VERSION, ATTR_TARGET_SDK_VERSION]);
+
+        // <uses-permission android:name="android.permission.CAMERA"/>
+        // attr_name_idx = 0 -> resource_map[0] = ATTR_NAME
+        let perm_elem = build_start_element(1, &[(0, 2, TYPE_STRING, 0)]);
+
+        // <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33"/>
+        // attr_name_idx 1 -> resource_map[1] = ATTR_MIN_SDK_VERSION (TYPE_INT_DEC=0x10, data=21)
+        // attr_name_idx 2 -> resource_map[2] = ATTR_TARGET_SDK_VERSION (data=33)
+        let sdk_elem = build_start_element(3, &[(1, -1, 0x10, 21), (2, -1, 0x10, 33)]);
+
+        // <activity/>
+        let activity_elem = build_start_element(4, &[]);
+
+        let mut doc = Vec::new();
+        doc.extend_from_slice(&strings);
+        doc.extend_from_slice(&res_map);
+        doc.extend_from_slice(&perm_elem);
+        doc.extend_from_slice(&sdk_elem);
+        doc.extend_from_slice(&activity_elem);
+
+        let total_len = 8 + doc.len();
+        let mut full = Vec::with_capacity(total_len);
+        full.extend_from_slice(&RES_XML_TYPE.to_le_bytes());
+        full.extend_from_slice(&8u16.to_le_bytes());
+        full.extend_from_slice(&(total_len as u32).to_le_bytes());
+        full.extend_from_slice(&doc);
+
+        let feats = analyze_manifest(&full).expect("should parse real manifest");
+        assert_eq!(feats.total_permissions, 1);
+        assert_eq!(feats.dangerous_permissions, 1, "CAMERA is a dangerous permission");
+        assert_eq!(feats.activities, 1);
+        assert_eq!(feats.min_sdk, 21);
+        assert_eq!(feats.target_sdk, 33);
     }
 }

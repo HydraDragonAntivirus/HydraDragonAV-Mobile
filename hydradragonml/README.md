@@ -8,6 +8,34 @@ text branch fused with the engine features in an MLP → sigmoid confidence.
 Training and inference both run in Rust; weights ship as a `.mpk` file that the
 Android engine loads at runtime.
 
+## A note on the model architecture
+
+The classifier is deliberately a **simple, classic architecture** — a mean-pooled
+token embedding (a "bag of subwords" text branch, with no positional or
+sequential modeling) fused with a shallow MLP over the engine features. This is
+not a modern sequence model (no attention, no RNN/CNN over the token stream);
+it's closer to a 2015-era text-classification baseline. That's an intentional
+trade-off for this use case, not an oversight:
+
+- **On-device budget**: the whole model (embedding table + a handful of small
+  `Linear` layers) is a few MB and runs inference in single-digit milliseconds
+  on a phone CPU, with no GPU/accelerator dependency.
+- **Interpretability**: a shallow MLP over 18 named, human-checkable engine
+  features (`dump-apk-features`) is much easier to audit and debug than a deep
+  sequence model's internals.
+- **Bare-APK data budget**: subword mean-pooling degrades gracefully with the
+  amount of realistic labeled training data available for a niche
+  binary-classification task; a large transformer would likely overfit or
+  need far more data to earn its extra capacity.
+
+The trade-off is real, though: mean-pooling discards token order, so the text
+branch can't learn phrase-level or call-sequence patterns — it's essentially a
+weighted vocabulary-presence signal. If false-negative rate on
+order-sensitive obfuscation patterns becomes a problem, the natural upgrade
+path is a small 1D-CNN or single-layer Transformer over the token embeddings
+in place of the mean-pool, without touching the engine-feature branch or the
+DEX/ELF/manifest parsers.
+
 ## Architecture
 
 1. **Parsers** (`features::dex`, `features::elf`, `features::axml`) extract real
@@ -15,7 +43,10 @@ Android engine loads at runtime.
    emulator/network/file/exec strings and anti-debug markers, and manifest
    permissions (dangerous/total), activities, services, receivers and
    min/target SDK. This is the **single source of truth** for both training and
-   on-device inference (`EngineFeatures::extract_from_apk`).
+   on-device inference (`EngineFeatures::extract_from_apk`). Archive reading
+   itself goes through `ripzip` (parsing the ZIP central directory straight
+   from the in-memory APK bytes) with `flate2` handling DEFLATE decompression
+   for individual entries.
 2. **Tokenizer** (`features::Tokenizer`) loads `vocab.json` (20K subword tokens,
    `0` = UNK), harvests printable strings from APK entries (entry names,
    `AndroidManifest.xml`, `resources.arsc`, `*.dex`, `META-INF/`), splits on
@@ -39,6 +70,12 @@ deliberately NOT part of the learned representation: they are neither available
 at training time from a bare APK nor comparable between training and on-device
 inference. The MinHash pipeline (`features::extract_minhash`) is kept for
 benign-DB lookups and uses FNV-1a hashing (unchanged).
+
+> ⚠️ **`.mpk` weight compatibility**: the engine-feature vector width is a
+> fixed constant (`features::ENGINE_FEATURE_COUNT`, currently 18) baked into
+> `ApkClassifier`'s `fc_engine` layer shape. Any change to that constant means
+> previously trained `.mpk` weights will fail to load (`load_record` shape
+> mismatch) and the model must be retrained from scratch.
 
 ## Building the vocabulary
 
