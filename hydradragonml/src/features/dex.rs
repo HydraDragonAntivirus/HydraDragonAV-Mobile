@@ -37,7 +37,10 @@ const CRITICAL_APIS: &[(&str, &str)] = &[
     ("Landroid/telephony/SmsManager;", "sendTextMessage"),
     ("Landroid/telephony/SmsManager;", "sendMultipartTextMessage"),
     ("Landroid/content/pm/PackageInstaller;", "commit"),
-    ("Landroid/app/admin/DevicePolicyManager;", "setApplicationHidden"),
+    (
+        "Landroid/app/admin/DevicePolicyManager;",
+        "setApplicationHidden",
+    ),
     ("Landroid/app/admin/DevicePolicyManager;", "lockNow"),
     ("Ldalvik/system/DexClassLoader;", "<init>"),
     ("Ldalvik/system/PathClassLoader;", "<init>"),
@@ -53,7 +56,10 @@ const HIGH_APIS: &[(&str, &str)] = &[
     ("Landroid/content/ContentResolver;", "query"),
     ("Ljavax/crypto/Cipher;", "doFinal"),
     ("Ljava/io/File;", "delete"),
-    ("Landroid/content/pm/PackageManager;", "setComponentEnabledSetting"),
+    (
+        "Landroid/content/pm/PackageManager;",
+        "setComponentEnabledSetting",
+    ),
     ("Ljava/lang/System;", "loadLibrary"),
     ("Landroid/webkit/WebView;", "addJavascriptInterface"),
 ];
@@ -156,17 +162,27 @@ pub fn analyze(data: &[u8]) -> Option<DexFeatures> {
     let mut finding_critical = 0u32;
     for i in 0..h.method_ids_size {
         let entry_off = h.method_ids_off as usize + (i as usize) * 8;
-        let class_idx = u16::from_le_bytes(data.get(entry_off..entry_off + 2)?.try_into().ok()?) as usize;
+        let class_idx =
+            u16::from_le_bytes(data.get(entry_off..entry_off + 2)?.try_into().ok()?) as usize;
         let name_idx = read_u32(data, entry_off + 4)? as usize;
-        let class_desc = type_descriptors.get(class_idx).map(String::as_str).unwrap_or("");
+        let class_desc = type_descriptors
+            .get(class_idx)
+            .map(String::as_str)
+            .unwrap_or("");
         let method_name = strings.get(name_idx).map(String::as_str).unwrap_or("");
 
         if FRAMEWORK_PREFIXES.iter().any(|p| class_desc.starts_with(p)) {
             api_call_count += 1;
         }
-        if CRITICAL_APIS.iter().any(|(c, m)| *c == class_desc && *m == method_name) {
+        if CRITICAL_APIS
+            .iter()
+            .any(|(c, m)| *c == class_desc && *m == method_name)
+        {
             finding_critical += 1;
-        } else if HIGH_APIS.iter().any(|(c, m)| *c == class_desc && *m == method_name) {
+        } else if HIGH_APIS
+            .iter()
+            .any(|(c, m)| *c == class_desc && *m == method_name)
+        {
             finding_high += 1;
         }
     }
@@ -181,10 +197,14 @@ pub fn analyze(data: &[u8]) -> Option<DexFeatures> {
 }
 
 #[cfg(test)]
-pub(crate) mod tests {
+mod tests {
     use super::*;
 
-    pub(crate) fn build_minimal_dex(strings: &[&str], type_str_idx: &[u32], methods: &[(u16, u32)]) -> Vec<u8> {
+    fn build_minimal_dex(
+        strings: &[&str],
+        type_str_idx: &[u32],
+        methods: &[(u16, u32)],
+    ) -> Vec<u8> {
         // Build string_data section.
         let mut string_data = Vec::new();
         let mut string_offsets = Vec::new();
@@ -236,7 +256,12 @@ pub(crate) mod tests {
     #[test]
     fn detects_critical_and_high_apis() {
         // strings: 0="Ljava/lang/Runtime;" 1="exec" 2="Landroid/telephony/TelephonyManager;" 3="getDeviceId"
-        let strings = ["Ljava/lang/Runtime;", "exec", "Landroid/telephony/TelephonyManager;", "getDeviceId"];
+        let strings = [
+            "Ljava/lang/Runtime;",
+            "exec",
+            "Landroid/telephony/TelephonyManager;",
+            "getDeviceId",
+        ];
         let type_str_idx = [0u32, 2u32]; // type 0 -> Runtime, type 1 -> TelephonyManager
         let methods = [(0u16, 1u32), (1u16, 3u32)];
         let dex = build_minimal_dex(&strings, &type_str_idx, &methods);

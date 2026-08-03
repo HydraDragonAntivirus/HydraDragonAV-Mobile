@@ -51,7 +51,9 @@ impl Args {
 }
 
 fn collect_apks(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for ent in rd.flatten() {
         let p = ent.path();
         if p.to_string_lossy().to_ascii_lowercase().contains("invalid") {
@@ -92,14 +94,23 @@ fn main() {
     // behavior), then aggregate the per-APK sets across the corpus.
     let mut counter: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
     for (n, path) in apks.iter().enumerate() {
-        let Ok(bytes) = std::fs::read(path) else { continue };
-        let Some(tokens) = Tokenizer::raw_tokens(&bytes) else { continue };
+        let Ok(bytes) = std::fs::read(path) else {
+            continue;
+        };
+        let Some(tokens) = Tokenizer::raw_tokens(&bytes) else {
+            continue;
+        };
         let unique: HashSet<&String> = tokens.iter().collect();
         for t in unique {
             *counter.entry(t.clone()).or_insert(0) += 1;
         }
         if (n + 1) % 50 == 0 || n + 1 == apks.len() {
-            eprintln!("  ... tokenized {}/{} (unique tokens so far: {})", n + 1, apks.len(), counter.len());
+            eprintln!(
+                "  ... tokenized {}/{} (unique tokens so far: {})",
+                n + 1,
+                apks.len(),
+                counter.len()
+            );
         }
     }
 

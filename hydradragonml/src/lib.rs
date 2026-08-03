@@ -29,8 +29,8 @@ impl Model {
         vocab_bytes: &[u8],
         device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let tokenizer = features::Tokenizer::load_json(vocab_bytes)
-            .ok_or("failed to parse vocab.json")?;
+        let tokenizer =
+            features::Tokenizer::load_json(vocab_bytes).ok_or("failed to parse vocab.json")?;
         let tmp = tempfile::Builder::new().suffix(".mpk").tempfile()?;
         std::fs::write(tmp.path(), model_bytes)?;
         let classifier = model::ApkClassifier::load_weights(
@@ -50,8 +50,8 @@ impl Model {
         vocab_bytes: &[u8],
         device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let tokenizer = features::Tokenizer::load_json(vocab_bytes)
-            .ok_or("failed to parse vocab.json")?;
+        let tokenizer =
+            features::Tokenizer::load_json(vocab_bytes).ok_or("failed to parse vocab.json")?;
         let classifier = model::ApkClassifier::load_weights(model_path, &device)?;
         Ok(Model {
             classifier,
@@ -82,7 +82,11 @@ impl Model {
         let confidence = output.into_scalar().clamp(0.0, 1.0);
         let malicious = confidence >= self.confidence_threshold;
         let suspicious = !malicious && confidence >= SUSPICIOUS_THRESHOLD;
-        Some(ScanResult { malicious, suspicious, confidence })
+        Some(ScanResult {
+            malicious,
+            suspicious,
+            confidence,
+        })
     }
 }
 
@@ -92,8 +96,8 @@ mod tests {
 
     #[test]
     fn tokenize_test_apk() {
-        let bytes = std::fs::read("../com.ttech.android.onlineislem_base.apk")
-            .expect("APK not found");
+        let bytes =
+            std::fs::read("../com.ttech.android.onlineislem_base.apk").expect("APK not found");
         let mut vocab = std::collections::HashMap::new();
         vocab.insert("test".to_string(), 1);
         let tok = features::Tokenizer::new(vocab);

@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Read};
 
-pub mod dex;
 pub mod axml;
+pub mod dex;
 pub mod elf;
 
 pub const VOCAB_SIZE: usize = 20000;
@@ -11,33 +11,25 @@ pub const MIN_STR_LEN: usize = 5;
 pub const MAX_TOKENS: usize = 4096;
 pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
-/// Number of engine features fed to the MLP next to the text embeddings.
-///
-/// Only content-derived features that can be computed from the APK itself
-/// (DEX structure, native ELF libraries and AndroidManifest.xml) are used.
-/// External/repuation-style signals (URL/IP blocklists, certificate
-/// test-key flags, benign-DB similarity, media steganography, runtime HIPS
-/// findings) are intentionally NOT part of the learned representation — they
-/// are neither available at training time from a bare APK nor comparable
-/// between training and on-device inference.
+/// Number of real APK-content features fed to the MLP next to text embeddings.
 pub const ENGINE_FEATURE_COUNT: usize = 18;
 
 #[derive(Clone, Debug, Default)]
 pub struct EngineFeatures {
-    // DEX (real structure counts from classes*.dex)
+    // DEX
     pub dex_class_count: f32,
     pub dex_string_count: f32,
     pub dex_api_call_count: f32,
     pub dex_finding_high: f32,
     pub dex_finding_critical: f32,
-    // ELF (real dynamic-symbol/string analysis of lib/**/*.so)
+    // ELF
     pub elf_count: f32,
     pub elf_emulated_strings: f32,
     pub elf_network_calls: f32,
     pub elf_file_calls: f32,
     pub elf_exec_calls: f32,
     pub elf_anti_debug: f32,
-    // Manifest (real AndroidManifest.xml content)
+    // Manifest
     pub manifest_dangerous_permissions: f32,
     pub manifest_total_permissions: f32,
     pub manifest_activities: f32,
@@ -72,9 +64,9 @@ impl EngineFeatures {
     }
 
     /// Builds real, content-derived DEX/ELF/manifest features by scanning the
-    /// actual entries of an APK (a zip archive). This is the single source of
-    /// truth used both at training time and on-device so the learned weights
-    /// and the runtime inference tokenize/feature-ize identically.
+    /// actual entries of an APK (a zip archive). This intentionally excludes
+    /// reputation, runtime, certificate and other external signals so the
+    /// model never learns fabricated placeholders.
     pub fn extract_from_apk(apk: &[u8]) -> Option<Self> {
         let reader = Cursor::new(apk);
         let mut archive = zip::ZipArchive::new(reader).ok()?;
@@ -165,15 +157,8 @@ impl Tokenizer {
         Some(Self::new(map))
     }
 
-    pub fn tokenize(&self, apk: &[u8]) -> Option<Vec<i64>> {
-        let raw = Self::raw_tokens(apk)?;
-        Some(raw.iter().map(|t| self.vocab.get(t).copied().unwrap_or(0)).collect())
-    }
-
     /// Extract the same lowercase, delimiter-split subword tokens used at
-    /// inference, WITHOUT mapping to vocabulary ids. This is the token stream
-    /// a vocab builder must count over so training and inference tokenize
-    /// identically (mirrors the old `build_vocab` in the removed train_model.py).
+    /// inference, without mapping them to vocabulary ids.
     pub fn raw_tokens(apk: &[u8]) -> Option<Vec<String>> {
         let mut tokens: Vec<String> = Vec::new();
         let reader = Cursor::new(apk);
@@ -219,6 +204,15 @@ impl Tokenizer {
         Some(tokens)
     }
 
+    pub fn tokenize(&self, apk: &[u8]) -> Option<Vec<i64>> {
+        let raw = Self::raw_tokens(apk)?;
+        Some(
+            raw.iter()
+                .map(|token| self.vocab.get(token).copied().unwrap_or(0))
+                .collect(),
+        )
+    }
+
     fn sub_tokenize_raw(text: &str, out: &mut Vec<String>) {
         for part in text.split(|c: char| {
             c == '.' || c == '/' || c == ';' || c == ':' || c == '-' || c == '\\' || c == '_'
@@ -233,7 +227,6 @@ impl Tokenizer {
     }
 
     fn harvest_strings_raw(data: &[u8], out: &mut Vec<String>) {
-        // ASCII runs
         let mut start: Option<usize> = None;
         for (i, &b) in data.iter().enumerate() {
             let printable = (0x20..0x7f).contains(&b);
@@ -260,7 +253,6 @@ impl Tokenizer {
             }
         }
 
-        // UTF-16LE runs
         let mut utf_buf: Vec<u8> = Vec::new();
         let mut j = 0;
         while j + 1 < data.len() {
@@ -452,7 +444,8 @@ mod integration_tests {
             let cursor = Cursor::new(&mut buf);
             let mut zip = zip::ZipWriter::new(cursor);
             for (name, data) in entries {
-                zip.start_file::<_, ()>(*name, zip::write::FileOptions::default()).unwrap();
+                zip.start_file::<_, ()>(*name, zip::write::FileOptions::default())
+                    .unwrap();
                 zip.write_all(data).unwrap();
             }
             zip.finish().unwrap();

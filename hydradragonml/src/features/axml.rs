@@ -25,18 +25,35 @@ const TYPE_STRING: u8 = 0x03;
 /// (developer.android.com/guide/topics/permissions/overview#normal-dangerous,
 /// and the android.Manifest.permission reference, protectionLevel="dangerous").
 const DANGEROUS_PERMISSIONS: &[&str] = &[
-    "READ_CALENDAR", "WRITE_CALENDAR",
+    "READ_CALENDAR",
+    "WRITE_CALENDAR",
     "CAMERA",
-    "READ_CONTACTS", "WRITE_CONTACTS", "GET_ACCOUNTS",
-    "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_BACKGROUND_LOCATION",
+    "READ_CONTACTS",
+    "WRITE_CONTACTS",
+    "GET_ACCOUNTS",
+    "ACCESS_FINE_LOCATION",
+    "ACCESS_COARSE_LOCATION",
+    "ACCESS_BACKGROUND_LOCATION",
     "RECORD_AUDIO",
-    "READ_PHONE_STATE", "READ_PHONE_NUMBERS", "CALL_PHONE",
-    "ANSWER_PHONE_CALLS", "READ_CALL_LOG", "WRITE_CALL_LOG",
-    "ADD_VOICEMAIL", "USE_SIP", "PROCESS_OUTGOING_CALLS",
+    "READ_PHONE_STATE",
+    "READ_PHONE_NUMBERS",
+    "CALL_PHONE",
+    "ANSWER_PHONE_CALLS",
+    "READ_CALL_LOG",
+    "WRITE_CALL_LOG",
+    "ADD_VOICEMAIL",
+    "USE_SIP",
+    "PROCESS_OUTGOING_CALLS",
     "BODY_SENSORS",
-    "SEND_SMS", "RECEIVE_SMS", "READ_SMS", "RECEIVE_WAP_PUSH", "RECEIVE_MMS",
-    "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE",
-    "ACCEPT_HANDOVER", "ACTIVITY_RECOGNITION",
+    "SEND_SMS",
+    "RECEIVE_SMS",
+    "READ_SMS",
+    "RECEIVE_WAP_PUSH",
+    "RECEIVE_MMS",
+    "READ_EXTERNAL_STORAGE",
+    "WRITE_EXTERNAL_STORAGE",
+    "ACCEPT_HANDOVER",
+    "ACTIVITY_RECOGNITION",
 ];
 
 #[derive(Debug, Default, Clone)]
@@ -140,7 +157,8 @@ pub fn analyze_manifest(b: &[u8]) -> Option<ManifestFeatures> {
     // headerSize=8, chunkSize=whole file). It is not a walkable chunk itself;
     // the string pool / resource map / element chunks follow it. Without
     // skipping it the walk jumps straight past every element and we would
-    // never see the manifest contents.
+    // never see the manifest contents. This is the root cause the on-device
+    // manifest features were historically 0.
     let mut off = 0usize;
     if read_u16(b, 0)? == RES_XML_TYPE {
         let header_size = read_u16(b, 2)? as usize;

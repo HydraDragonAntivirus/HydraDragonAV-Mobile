@@ -14,11 +14,11 @@
 //! it must be built over the same corpus so training and inference tokenize
 //! identically.
 
+use burn::backend::NdArray;
 use burn::module::AutodiffModule;
 use burn::nn::loss::BinaryCrossEntropyLossConfig;
 use burn::optim::{AdamConfig, GradientsParams, Optimizer};
 use burn::tensor::{Float, Int, Tensor, TensorData};
-use burn::backend::NdArray;
 use burn_autodiff::Autodiff;
 use hydradragonml::features::{self, EngineFeatures, Tokenizer};
 use hydradragonml::model::ApkClassifier;
@@ -59,7 +59,9 @@ impl Args {
                 }
                 "--lr" => lr = val()?.parse().map_err(|_| "invalid --lr".to_string())?,
                 "--batch-size" => {
-                    batch_size = val()?.parse().map_err(|_| "invalid --batch-size".to_string())?
+                    batch_size = val()?
+                        .parse()
+                        .map_err(|_| "invalid --batch-size".to_string())?
                 }
                 other => return Err(format!("unknown argument: {other}")),
             }
@@ -151,7 +153,10 @@ fn main() {
     let mut optim = AdamConfig::new().init();
     let loss_fn = BinaryCrossEntropyLossConfig::new().init(&device);
 
-    eprintln!("Training for {} epochs (lr={}, batch_size={})", args.epochs, args.lr, args.batch_size);
+    eprintln!(
+        "Training for {} epochs (lr={}, batch_size={})",
+        args.epochs, args.lr, args.batch_size
+    );
     let start = std::time::Instant::now();
     let mut model = model;
 
@@ -175,7 +180,14 @@ fn main() {
             if batch_rows.len() >= args.batch_size
                 || batch_rows.iter().map(|r| r.len()).sum::<usize>() >= 16_000
             {
-                let loss = forward_loss(&model, &loss_fn, &device, &batch_rows, &batch_feats, &batch_labels);
+                let loss = forward_loss(
+                    &model,
+                    &loss_fn,
+                    &device,
+                    &batch_rows,
+                    &batch_feats,
+                    &batch_labels,
+                );
                 epoch_loss += loss.clone().into_scalar() as f64;
                 n_batches += 1;
 
@@ -189,7 +201,14 @@ fn main() {
             }
         }
         if !batch_rows.is_empty() {
-            let loss = forward_loss(&model, &loss_fn, &device, &batch_rows, &batch_feats, &batch_labels);
+            let loss = forward_loss(
+                &model,
+                &loss_fn,
+                &device,
+                &batch_rows,
+                &batch_feats,
+                &batch_labels,
+            );
             epoch_loss += loss.clone().into_scalar() as f64;
             n_batches += 1;
             let grads = loss.backward();
@@ -236,10 +255,18 @@ fn load_corpus(dir: &Path, tokenizer: &Tokenizer, label: i64) -> Vec<Sample> {
     entries.sort();
 
     for path in &entries {
-        let Ok(bytes) = std::fs::read(path) else { continue };
-        let Some(tokens) = tokenizer.tokenize(&bytes) else { continue };
+        let Ok(bytes) = std::fs::read(path) else {
+            continue;
+        };
+        let Some(tokens) = tokenizer.tokenize(&bytes) else {
+            continue;
+        };
         let engine_features = EngineFeatures::extract_from_apk(&bytes).unwrap_or_default();
-        out.push(Sample { tokens, engine_features, label });
+        out.push(Sample {
+            tokens,
+            engine_features,
+            label,
+        });
         if out.len() % 50 == 0 {
             eprintln!("  ... {}/{}", out.len(), entries.len());
         }
@@ -248,7 +275,9 @@ fn load_corpus(dir: &Path, tokenizer: &Tokenizer, label: i64) -> Vec<Sample> {
 }
 
 fn collect_apks(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for ent in rd.flatten() {
         let p = ent.path();
         if p.to_string_lossy().to_ascii_lowercase().contains("invalid") {
@@ -287,18 +316,14 @@ fn forward_loss(
         }
     }
 
-    let token_tensor = Tensor::<B, 2, Int>::from_data(
-        TensorData::new(padded, [n, max_len]),
-        device,
-    );
+    let token_tensor =
+        Tensor::<B, 2, Int>::from_data(TensorData::new(padded, [n, max_len]), device);
     let feat_tensor = Tensor::<B, 2, Float>::from_data(
         TensorData::new(feats.to_vec(), [n, features::ENGINE_FEATURE_COUNT]),
         device,
     );
-    let label_tensor = Tensor::<B, 1, Int>::from_data(
-        TensorData::new(labels.to_vec(), [n]),
-        device,
-    );
+    let label_tensor =
+        Tensor::<B, 1, Int>::from_data(TensorData::new(labels.to_vec(), [n]), device);
 
     let output = model.forward_batch(token_tensor, feat_tensor); // [batch, 1]
     loss_fn.forward(output.squeeze_dim::<1>(1), label_tensor)
@@ -337,7 +362,10 @@ fn evaluate(
                 padded[row * max_len + j] = *t;
             }
         }
-        let feats: Vec<f32> = chunk.iter().flat_map(|s| s.engine_features.to_vec()).collect();
+        let feats: Vec<f32> = chunk
+            .iter()
+            .flat_map(|s| s.engine_features.to_vec())
+            .collect();
         let labels: Vec<i64> = chunk.iter().map(|s| s.label).collect();
 
         // Evaluate on the plain (non-autodiff) backend in mini-batches.
@@ -349,13 +377,13 @@ fn evaluate(
             TensorData::new(feats, [n, features::ENGINE_FEATURE_COUNT]),
             device,
         );
-        let label_tensor = Tensor::<NdArray<f32>, 1, Int>::from_data(
-            TensorData::new(labels.clone(), [n]),
-            device,
-        );
+        let label_tensor =
+            Tensor::<NdArray<f32>, 1, Int>::from_data(TensorData::new(labels.clone(), [n]), device);
 
         let output = model.valid().forward_batch(token_tensor, feat_tensor);
-        let loss = loss_fn.valid().forward(output.clone().squeeze_dim::<1>(1), label_tensor);
+        let loss = loss_fn
+            .valid()
+            .forward(output.clone().squeeze_dim::<1>(1), label_tensor);
         total_loss += loss.into_scalar() as f64;
         n_chunks += 1;
 

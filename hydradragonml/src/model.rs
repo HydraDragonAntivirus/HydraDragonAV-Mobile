@@ -60,9 +60,12 @@ impl<B: Backend> ApkClassifier<B> {
         Ok(())
     }
 
-    pub fn load_weights(path: &str, device: &B::Device) -> Result<Self, Box<dyn std::error::Error>> {
-        let record = NamedMpkFileRecorder::<FullPrecisionSettings>::new()
-            .load(path.into(), device)?;
+    pub fn load_weights(
+        path: &str,
+        device: &B::Device,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let record =
+            NamedMpkFileRecorder::<FullPrecisionSettings>::new().load(path.into(), device)?;
         Ok(Self::new(device).load_record(record))
     }
 }

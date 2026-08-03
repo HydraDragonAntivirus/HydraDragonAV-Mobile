@@ -90,28 +90,40 @@ fn main() {
     let args = parse_args();
 
     if !args.dataset.exists() {
-        eprintln!("ERROR: dataset path does not exist: {}", args.dataset.display());
+        eprintln!(
+            "ERROR: dataset path does not exist: {}",
+            args.dataset.display()
+        );
         std::process::exit(1);
     }
     if !args.model.exists() {
-        eprintln!("ERROR: --model path does not exist: {}", args.model.display());
+        eprintln!(
+            "ERROR: --model path does not exist: {}",
+            args.model.display()
+        );
         std::process::exit(1);
     }
     if !args.vocab.exists() {
-        eprintln!("ERROR: --vocab path does not exist: {}", args.vocab.display());
+        eprintln!(
+            "ERROR: --vocab path does not exist: {}",
+            args.vocab.display()
+        );
         std::process::exit(1);
     }
 
     let model_bytes = std::fs::read(&args.model).expect("cannot read model file");
     let vocab_bytes = std::fs::read(&args.vocab).expect("cannot read vocab file");
     let device = burn::backend::ndarray::NdArrayDevice::default();
-    let mut model = Model::load(&model_bytes, &vocab_bytes, device)
-        .unwrap_or_else(|e| {
-            eprintln!("ERROR: failed to load model: {e}");
-            std::process::exit(1);
-        });
+    let mut model = Model::load(&model_bytes, &vocab_bytes, device).unwrap_or_else(|e| {
+        eprintln!("ERROR: failed to load model: {e}");
+        std::process::exit(1);
+    });
     model.set_threshold(args.threshold);
-    eprintln!("OK  model loaded: {} (threshold={})", args.model.display(), args.threshold);
+    eprintln!(
+        "OK  model loaded: {} (threshold={})",
+        args.model.display(),
+        args.threshold
+    );
 
     let apks = find_apks(&args.dataset);
     eprintln!("\nFound {} APK files. Scanning...\n", apks.len());
