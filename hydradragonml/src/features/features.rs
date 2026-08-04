@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use ripzip::extract::zip_reader::{parse_archive, parse_local_header_data_offset, ZipEntry};
 use ripzip::zip_format::{COMPRESSION_DEFLATED, COMPRESSION_STORED};
