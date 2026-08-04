@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
-use ripzip::extract::zip_reader::{parse_archive, parse_local_header_data_offset, ZipEntry};
+use ripzip::extract::zip_reader::{ZipEntry, parse_archive, parse_local_header_data_offset};
 use ripzip::zip_format::{COMPRESSION_DEFLATED, COMPRESSION_STORED};
 
-use crate::dex;
-use crate::axml;
-use crate::elf;
+use super::axml;
+use super::dex;
+use super::elf;
 
 pub const VOCAB_SIZE: usize = 20000;
 pub const EMBED_DIM: usize = 64;
@@ -156,7 +156,11 @@ fn read_entry_data(apk: &[u8], entry: &ZipEntry) -> Option<Vec<u8>> {
             let cap = (entry.uncompressed_size as usize).min(MAX_ENTRY_SCAN);
             let mut out = Vec::with_capacity(cap.min(1 << 20));
             let mut decoder = DeflateDecoder::new(compressed);
-            decoder.by_ref().take(MAX_ENTRY_SCAN as u64).read_to_end(&mut out).ok()?;
+            decoder
+                .by_ref()
+                .take(MAX_ENTRY_SCAN as u64)
+                .read_to_end(&mut out)
+                .ok()?;
             Some(out)
         }
         _ => None, // unsupported compression method (e.g. AES-encrypted, LZMA) — skip rather than guess
@@ -443,7 +447,8 @@ mod integration_tests {
             let cursor = std::io::Cursor::new(&mut buf);
             let mut zip = zip::ZipWriter::new(cursor);
             for (name, data) in entries {
-                zip.start_file(*name, zip::write::FileOptions::default()).unwrap();
+                zip.start_file(*name, zip::write::FileOptions::default())
+                    .unwrap();
                 zip.write_all(data).unwrap();
             }
             zip.finish().unwrap();
@@ -467,7 +472,10 @@ mod integration_tests {
         // survive MIN_STR_LEN and get harvested from the manifest entry.
         let manifest_bytes = b"android.permission.SEND_SMS androidmanifest test content".to_vec();
         let apk = make_test_apk(&[
-            ("classes.dex", vec![b'd', b'e', b'x', b'\n', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+            (
+                "classes.dex",
+                vec![b'd', b'e', b'x', b'\n', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ),
             ("AndroidManifest.xml", manifest_bytes),
         ]);
 

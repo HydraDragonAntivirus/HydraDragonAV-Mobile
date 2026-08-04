@@ -105,7 +105,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("scanning: {}\n", args.dataset.display());
 
-    for entry in WalkDir::new(&args.dataset).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(&args.dataset)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         if !entry.file_type().is_file() || !is_apk_file(entry.path()) {
             continue;
         }
@@ -135,7 +138,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             "BENIGN"
         };
-        println!("{verdict:>10}  {:.4}  {}", result.confidence, path.display());
+        println!(
+            "{verdict:>10}  {:.4}  {}",
+            result.confidence,
+            path.display()
+        );
 
         let Some(true_malware) = true_label_from_path(path) else {
             unlabeled += 1;
@@ -161,7 +168,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("\n== summary ==");
-    println!("labeled files scored: {total_labeled} (unlabeled: {unlabeled}, unparseable: {unparseable})");
+    println!(
+        "labeled files scored: {total_labeled} (unlabeled: {unlabeled}, unparseable: {unparseable})"
+    );
     println!("TP={tp} FP={fp} TN={tn} FN={fn_}");
     println!(
         "accuracy={accuracy:.4} precision={precision:.4} recall={recall:.4} f1={f1:.4} (threshold={:.2})",

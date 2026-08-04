@@ -26,4 +26,4 @@ path = "src/main.rs"
 
 [[bin]]
 name = "hydradragonml-train"
-path = "src/train.rs"
+path = "src/bin/train.rs"

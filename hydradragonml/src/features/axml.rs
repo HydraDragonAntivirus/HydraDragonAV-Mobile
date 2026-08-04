@@ -25,18 +25,35 @@ pub(crate) const TYPE_STRING: u8 = 0x03;
 /// (developer.android.com/guide/topics/permissions/overview#normal-dangerous,
 /// and the android.Manifest.permission reference, protectionLevel="dangerous").
 const DANGEROUS_PERMISSIONS: &[&str] = &[
-    "READ_CALENDAR", "WRITE_CALENDAR",
+    "READ_CALENDAR",
+    "WRITE_CALENDAR",
     "CAMERA",
-    "READ_CONTACTS", "WRITE_CONTACTS", "GET_ACCOUNTS",
-    "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_BACKGROUND_LOCATION",
+    "READ_CONTACTS",
+    "WRITE_CONTACTS",
+    "GET_ACCOUNTS",
+    "ACCESS_FINE_LOCATION",
+    "ACCESS_COARSE_LOCATION",
+    "ACCESS_BACKGROUND_LOCATION",
     "RECORD_AUDIO",
-    "READ_PHONE_STATE", "READ_PHONE_NUMBERS", "CALL_PHONE",
-    "ANSWER_PHONE_CALLS", "READ_CALL_LOG", "WRITE_CALL_LOG",
-    "ADD_VOICEMAIL", "USE_SIP", "PROCESS_OUTGOING_CALLS",
+    "READ_PHONE_STATE",
+    "READ_PHONE_NUMBERS",
+    "CALL_PHONE",
+    "ANSWER_PHONE_CALLS",
+    "READ_CALL_LOG",
+    "WRITE_CALL_LOG",
+    "ADD_VOICEMAIL",
+    "USE_SIP",
+    "PROCESS_OUTGOING_CALLS",
     "BODY_SENSORS",
-    "SEND_SMS", "RECEIVE_SMS", "READ_SMS", "RECEIVE_WAP_PUSH", "RECEIVE_MMS",
-    "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE",
-    "ACCEPT_HANDOVER", "ACTIVITY_RECOGNITION",
+    "SEND_SMS",
+    "RECEIVE_SMS",
+    "READ_SMS",
+    "RECEIVE_WAP_PUSH",
+    "RECEIVE_MMS",
+    "READ_EXTERNAL_STORAGE",
+    "WRITE_EXTERNAL_STORAGE",
+    "ACCEPT_HANDOVER",
+    "ACTIVITY_RECOGNITION",
 ];
 
 #[derive(Debug, Default, Clone)]
@@ -313,10 +330,7 @@ pub(crate) mod tests {
 
     /// Builds a RES_XML_START_ELEMENT_TYPE chunk.
     /// `attrs`: (attr_name_pool_or_map_idx, raw_value_string_idx (-1 if none), data_type, data)
-    pub(crate) fn build_start_element(
-        name_str_idx: i32,
-        attrs: &[(i32, i32, u8, u32)],
-    ) -> Vec<u8> {
+    pub(crate) fn build_start_element(name_str_idx: i32, attrs: &[(i32, i32, u8, u32)]) -> Vec<u8> {
         let attribute_ext_start = 16usize; // offset of attrExt (namespaceURI) from node start (after lineNumber+comment)
         let attr_ext_header_len = 20usize; // size of ResXMLTree_attrExt itself
         let node_header_len = 8usize; // lineNumber + comment
@@ -367,7 +381,8 @@ pub(crate) mod tests {
             "activity",
         ]);
         // Resource map: index 0 -> android:name (0x01010003)
-        let res_map = build_resource_map_chunk(&[ATTR_NAME, ATTR_MIN_SDK_VERSION, ATTR_TARGET_SDK_VERSION]);
+        let res_map =
+            build_resource_map_chunk(&[ATTR_NAME, ATTR_MIN_SDK_VERSION, ATTR_TARGET_SDK_VERSION]);
 
         // <uses-permission android:name="android.permission.CAMERA"/>
         // attr_name_idx = 0 -> resource_map[0] = ATTR_NAME
@@ -397,7 +412,10 @@ pub(crate) mod tests {
 
         let feats = analyze_manifest(&full).expect("should parse real manifest");
         assert_eq!(feats.total_permissions, 1);
-        assert_eq!(feats.dangerous_permissions, 1, "CAMERA is a dangerous permission");
+        assert_eq!(
+            feats.dangerous_permissions, 1,
+            "CAMERA is a dangerous permission"
+        );
         assert_eq!(feats.activities, 1);
         assert_eq!(feats.min_sdk, 21);
         assert_eq!(feats.target_sdk, 33);

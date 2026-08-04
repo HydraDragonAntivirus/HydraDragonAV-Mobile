@@ -1,23 +1,30 @@
 //! `hydradragonml-train` — trains `model::ApkClassifier` on a labeled
 //! benign/malware APK corpus.
 //!
-//! This uses a manual Burn training loop (see "Custom Training Loop" in the
-//! Burn Book) rather than the `burn-train`/`burn-dataset` `Learner`
-//! abstraction: the model here is small and the dataset is just two folders
-//! of files, so a plain loop over `Tensor`/`Optimizer` primitives keeps the
-//! moving parts (and therefore the ways this can break against a future
-//! Burn release) to a minimum.
+//! This uses the high-level `burn-train` / `burn-dataset` `Learner`
+//! abstraction (via `SupervisedTraining`) rather than a hand-written training
+//! loop: the `TrainStep` / `InferenceStep` traits describe a single step, the
+//! batcher turns `Sample`s into `ApkBatch`s, and the `Learner` owns the
+//! optimizer + LR scheduler and drives the epochs, validation and checkpointing.
 
 use burn::backend::{Autodiff, NdArray};
-use burn::module::AutodiffModule;
-use burn::optim::{AdamConfig, GradientsParams, Optimizer};
+use burn::data::dataloader::batcher::Batcher;
+use burn::data::dataloader::{DataLoader, DataLoaderBuilder};
+use burn::optim::AdamConfig;
+use burn::optim::lr_scheduler::exponential::ExponentialLrSchedulerConfig;
+use burn::record::CompactRecorder;
 use burn::tensor::backend::Backend;
-use burn::tensor::{Float, Int, Tensor, TensorData};
+use burn::tensor::{Device, Float, Int, Tensor, TensorData};
+use burn::train::metric::{AccuracyMetric, LossMetric};
+use burn::train::{Learner, SupervisedTraining};
+use burn_dataset::InMemDataset;
 
-use hydradragonml::features::{EngineFeatures, Tokenizer, ENGINE_FEATURE_COUNT};
-use hydradragonml::model::ApkClassifier;
+use hydradragonml::features::{ENGINE_FEATURE_COUNT, EngineFeatures, Tokenizer};
+use hydradragonml::model::{ApkBatch, ApkClassifier};
 
+use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use walkdir::WalkDir;
@@ -100,11 +107,74 @@ fn parse_args() -> Args {
     }
 }
 
+/// A single preprocessed training example: token indices, engine-feature
+/// vector and the ground-truth label (`1.0` = malware, `0.0` = benign).
+#[derive(Clone, Debug)]
 struct Sample {
     tokens: Vec<i64>,
     engine: Vec<f32>,
-    /// 1.0 = malware, 0.0 = benign.
     label: f32,
+}
+
+/// Batches [Sample]s into an [ApkBatch]. Short token sequences are
+/// zero-padded (vocab id `0`, i.e. `<UNK>`), matching the mean-pooling in
+/// `ApkClassifier::forward_batch`.
+#[derive(Clone)]
+struct ApkBatcher<B: Backend> {
+    _backend: PhantomData<B>,
+}
+
+impl<B: Backend> ApkBatcher<B> {
+    fn new() -> Self {
+        Self {
+            _backend: PhantomData,
+        }
+    }
+}
+
+impl<B: Backend> Batcher<B, Sample, ApkBatch<B>> for ApkBatcher<B> {
+    fn batch(&self, items: Vec<Sample>, device: &Device<B>) -> ApkBatch<B> {
+        let batch_size = items.len().max(1);
+        let max_len = items
+            .iter()
+            .map(|s| s.tokens.len())
+            .max()
+            .unwrap_or(1)
+            .max(1);
+
+        let mut token_flat = Vec::with_capacity(batch_size * max_len);
+        let mut engine_flat = Vec::with_capacity(batch_size * ENGINE_FEATURE_COUNT);
+        let mut labels_flat = Vec::with_capacity(batch_size);
+        let mut targets_flat = Vec::with_capacity(batch_size);
+
+        for s in &items {
+            for i in 0..max_len {
+                token_flat.push(*s.tokens.get(i).unwrap_or(&0));
+            }
+            engine_flat.extend_from_slice(&s.engine);
+            labels_flat.push(s.label);
+            targets_flat.push(s.label.round() as i64);
+        }
+
+        ApkBatch {
+            tokens: Tensor::<B, 2, Int>::from_data(
+                TensorData::new(token_flat, [batch_size, max_len]),
+                device,
+            ),
+            engine: Tensor::<B, 2, Float>::from_data(
+                TensorData::new(engine_flat, [batch_size, ENGINE_FEATURE_COUNT]),
+                device,
+            ),
+            labels: Tensor::<B, 2, Float>::from_data(
+                TensorData::new(labels_flat, [batch_size, 1]),
+                device,
+            ),
+            targets: Tensor::<B, 1, Int>::from_data(
+                TensorData::new(targets_flat, [batch_size]),
+                device,
+            ),
+        }
+    }
 }
 
 fn is_archive_file(path: &Path) -> bool {
@@ -158,10 +228,9 @@ fn collect_samples(dir: &Path, label: f32, tokenizer: &Tokenizer) -> Vec<Sample>
     out
 }
 
-/// Minimal xorshift64* PRNG, used only to shuffle sample order for the
-/// train/valid split and per-epoch batching. Not cryptographic — this is
-/// dataset bookkeeping, not a security-relevant use of randomness, so
-/// pulling in an external `rand` dependency isn't warranted.
+/// Minimal xorshift64* PRNG, used only to shuffle the train/valid split order.
+/// Not cryptographic — this is dataset bookkeeping, not a security-relevant use
+/// of randomness, so an external `rand` dependency isn't warranted.
 struct SimpleRng(u64);
 
 impl SimpleRng {
@@ -191,75 +260,6 @@ impl SimpleRng {
     }
 }
 
-/// Builds a padded batch: `tokens` is `[batch, max_len]` (short sequences
-/// zero-padded with vocab id `0`, i.e. `<UNK>`), `engine` is
-/// `[batch, ENGINE_FEATURE_COUNT]`, `labels` is `[batch, 1]`.
-///
-/// Note: `ApkClassifier::forward_batch` mean-pools the *entire* padded
-/// embedding row with no attention mask, so padding does slightly bias the
-/// pooled vector of short sequences toward the `<UNK>` embedding. This
-/// matches the (unmasked) pooling already implemented in `model.rs`; fixing
-/// it properly would mean adding mask support to `forward_batch` itself.
-fn make_batch<B: Backend>(
-    batch: &[&Sample],
-    device: &B::Device,
-) -> (Tensor<B, 2, Int>, Tensor<B, 2, Float>, Tensor<B, 2, Float>) {
-    let max_len = batch.iter().map(|s| s.tokens.len()).max().unwrap_or(1).max(1);
-
-    let mut token_flat = Vec::with_capacity(batch.len() * max_len);
-    for s in batch {
-        for i in 0..max_len {
-            token_flat.push(*s.tokens.get(i).unwrap_or(&0));
-        }
-    }
-    let tokens =
-        Tensor::<B, 2, Int>::from_data(TensorData::new(token_flat, [batch.len(), max_len]), device);
-
-    let mut engine_flat = Vec::with_capacity(batch.len() * ENGINE_FEATURE_COUNT);
-    for s in batch {
-        engine_flat.extend_from_slice(&s.engine);
-    }
-    let engine = Tensor::<B, 2, Float>::from_data(
-        TensorData::new(engine_flat, [batch.len(), ENGINE_FEATURE_COUNT]),
-        device,
-    );
-
-    let labels: Vec<f32> = batch.iter().map(|s| s.label).collect();
-    let labels_t =
-        Tensor::<B, 2, Float>::from_data(TensorData::new(labels, [batch.len(), 1]), device);
-
-    (tokens, engine, labels_t)
-}
-
-/// Binary cross-entropy over the model's own sigmoid output (the model
-/// already ends in `sigmoid`, so this operates on probabilities directly
-/// rather than logits).
-fn bce_loss<B: Backend>(pred: Tensor<B, 2, Float>, target: Tensor<B, 2, Float>) -> Tensor<B, 1> {
-    let eps = 1e-7;
-    let p = pred.clamp(eps, 1.0 - eps);
-    let ones = Tensor::ones_like(&p);
-    let one_minus_target = ones.clone() - target.clone();
-    let one_minus_p = ones - p.clone();
-    let per_example = target * p.log() + one_minus_target * one_minus_p.log();
-    -per_example.mean()
-}
-
-fn evaluate<B: Backend>(
-    model: &ApkClassifier<B>,
-    samples: &[Sample],
-    device: &B::Device,
-) -> (usize, usize) {
-    let mut correct = 0;
-    for s in samples {
-        let (tokens, engine, _labels) = make_batch::<B>(&[s], device);
-        let pred: f32 = model.forward_batch(tokens, engine).into_scalar();
-        if (pred >= 0.5) == (s.label >= 0.5) {
-            correct += 1;
-        }
-    }
-    (correct, samples.len())
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args();
 
@@ -287,56 +287,63 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut train_samples = all_samples;
     let valid_samples = train_samples.split_off(split);
 
+    let train_count = train_samples.len();
+    let valid_count = valid_samples.len();
+
     println!(
         "dataset: {} train / {} valid ({} total)",
-        train_samples.len(),
-        valid_samples.len(),
-        train_samples.len() + valid_samples.len()
+        train_count,
+        valid_count,
+        train_count + valid_count
     );
 
     let device = burn::backend::ndarray::NdArrayDevice::default();
-    let mut model: ApkClassifier<TrainBackend> = ApkClassifier::new(&device);
-    let mut optim = AdamConfig::new().init();
+    let batch_size = args.batch_size.max(1);
 
-    for epoch in 0..args.epochs {
-        let epoch_lr = args.lr / 2f64.powi(epoch as i32);
-        rng.shuffle(&mut train_samples);
+    let train_dataset = InMemDataset::new(train_samples);
+    let valid_dataset = InMemDataset::new(valid_samples);
 
-        let mut total_loss = 0.0f32;
-        let mut n_batches = 0usize;
+    let train_loader: Arc<dyn DataLoader<TrainBackend, ApkBatch<TrainBackend>>> =
+        DataLoaderBuilder::new(ApkBatcher::<TrainBackend>::new())
+            .batch_size(batch_size)
+            .shuffle(0x5EED)
+            .num_workers(2)
+            .set_device(device.clone())
+            .build(train_dataset);
 
-        for batch_slice in train_samples.chunks(args.batch_size.max(1)) {
-            let batch_refs: Vec<&Sample> = batch_slice.iter().collect();
-            let (tokens, engine, labels) = make_batch::<TrainBackend>(&batch_refs, &device);
+    let valid_loader: Arc<dyn DataLoader<InferBackend, ApkBatch<InferBackend>>> =
+        DataLoaderBuilder::new(ApkBatcher::<InferBackend>::new())
+            .batch_size(batch_size)
+            .num_workers(2)
+            .set_device(device.clone())
+            .build(valid_dataset);
 
-            let pred = model.forward_batch(tokens, engine);
-            let loss = bce_loss(pred, labels);
-            let loss_value: f32 = loss.clone().into_scalar();
-            total_loss += loss_value;
-            n_batches += 1;
+    // A single optimizer over the trainer so LR decays once per epoch: pick the
+    // exponent gamma so that gamma^(steps_per_epoch) == 0.5, i.e. the LR halves
+    // every ~epoch, faithfully reproducing the previous per-epoch LR schedule.
+    let steps_per_epoch = (train_count + batch_size - 1) / batch_size;
+    let gamma = 0.5f64.powf(1.0 / steps_per_epoch.max(1) as f64);
+    let model: ApkClassifier<TrainBackend> = ApkClassifier::new(&device);
+    let optim = AdamConfig::new().init();
+    let lr_scheduler = ExponentialLrSchedulerConfig::new(args.lr, gamma).init()?;
+    let learner = Learner::new(model, optim, lr_scheduler);
 
-            let grads = loss.backward();
-            let grads = GradientsParams::from_grads(grads, &model);
-            model = optim.step(epoch_lr, model, grads);
-        }
+    let dir = args
+        .output
+        .parent()
+        .map(|p| p.to_path_buf())
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| PathBuf::from("."));
 
-        let valid_model: ApkClassifier<InferBackend> = model.valid();
-        let (correct, total) = evaluate(&valid_model, &valid_samples, &device);
-        let avg_loss = total_loss / (n_batches.max(1) as f32);
-        let valid_acc = correct as f64 / (total.max(1) as f64);
-        println!(
-            "epoch {:>2}/{}: lr={:.6} loss={:.4} valid_acc={:.4} ({}/{})",
-            epoch + 1,
-            args.epochs,
-            epoch_lr,
-            avg_loss,
-            valid_acc,
-            correct,
-            total
-        );
-    }
+    let result = SupervisedTraining::new(dir, train_loader, valid_loader)
+        .with_file_checkpointer(CompactRecorder::new())
+        .metric_train_numeric(LossMetric::new())
+        .metric_valid_numeric(LossMetric::new())
+        .metric_valid_numeric(AccuracyMetric::new())
+        .num_epochs(args.epochs)
+        .launch(learner);
 
-    let final_model: ApkClassifier<InferBackend> = model.valid();
+    let final_model: ApkClassifier<InferBackend> = result.model;
     let output_str = args
         .output
         .to_str()

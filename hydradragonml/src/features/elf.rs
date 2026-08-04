@@ -11,18 +11,25 @@
 //! code.
 
 const NETWORK_SYMS: &[&str] = &[
-    "socket", "connect", "send", "sendto", "recv", "recvfrom",
-    "gethostbyname", "getaddrinfo", "inet_addr", "inet_aton",
+    "socket",
+    "connect",
+    "send",
+    "sendto",
+    "recv",
+    "recvfrom",
+    "gethostbyname",
+    "getaddrinfo",
+    "inet_addr",
+    "inet_aton",
 ];
 
 const FILE_SYMS: &[&str] = &[
-    "open", "open64", "fopen", "read", "write", "unlink", "remove",
-    "rename", "chmod", "mkdir", "creat",
+    "open", "open64", "fopen", "read", "write", "unlink", "remove", "rename", "chmod", "mkdir",
+    "creat",
 ];
 
 const EXEC_SYMS: &[&str] = &[
-    "system", "execve", "execl", "execlp", "execvp", "fork", "vfork",
-    "popen", "dlopen",
+    "system", "execve", "execl", "execlp", "execvp", "fork", "vfork", "popen", "dlopen",
 ];
 
 const ANTI_DEBUG_SYMS: &[&str] = &["ptrace", "kill", "signal", "sigaction"];
@@ -30,12 +37,23 @@ const ANTI_DEBUG_SYMS: &[&str] = &["ptrace", "kill", "signal", "sigaction"];
 /// Strings that, when found in a native library, indicate anti-analysis or
 /// emulator/sandbox-detection logic (publicly documented indicators).
 const ANTI_DEBUG_STRINGS: &[&str] = &[
-    "tracerpid", "/proc/self/status", "frida", "xposed", "gdbserver",
+    "tracerpid",
+    "/proc/self/status",
+    "frida",
+    "xposed",
+    "gdbserver",
     "/proc/self/maps",
 ];
 const EMULATOR_STRINGS: &[&str] = &[
-    "goldfish", "ranchu", "vbox86", "sdk_gphone", "generic_x86",
-    "genymotion", "google_sdk", "/dev/qemu_pipe", "andy",
+    "goldfish",
+    "ranchu",
+    "vbox86",
+    "sdk_gphone",
+    "generic_x86",
+    "genymotion",
+    "google_sdk",
+    "/dev/qemu_pipe",
+    "andy",
 ];
 
 const MIN_STR_LEN: usize = 5;
@@ -123,7 +141,11 @@ fn parse_sections(b: &[u8]) -> Option<Vec<SectionHeader>> {
 }
 
 fn c_str_at(b: &[u8], off: usize) -> String {
-    let end = b[off..].iter().position(|&c| c == 0).map(|p| off + p).unwrap_or(b.len());
+    let end = b[off..]
+        .iter()
+        .position(|&c| c == 0)
+        .map(|p| off + p)
+        .unwrap_or(b.len());
     String::from_utf8_lossy(&b[off..end]).into_owned()
 }
 
@@ -146,7 +168,11 @@ fn dynamic_symbol_names(b: &[u8], sections: &[SectionHeader]) -> Vec<String> {
         } else {
             16
         };
-        let count = if entsize > 0 { sec.size as usize / entsize } else { 0 };
+        let count = if entsize > 0 {
+            sec.size as usize / entsize
+        } else {
+            0
+        };
         for i in 0..count {
             let sym_off = sec.offset as usize + i * entsize;
             // st_name is a u32 at offset 0 in both Elf32_Sym and Elf64_Sym.
@@ -318,6 +344,9 @@ pub(crate) mod tests {
         // but harvest_strings itself should find known indicators.
         let data = b"junk....goldfish....more junk....ptrace_thing";
         let strs = harvest_strings(data);
-        assert!(strs.iter().any(|s| s.to_ascii_lowercase().contains("goldfish")));
+        assert!(
+            strs.iter()
+                .any(|s| s.to_ascii_lowercase().contains("goldfish"))
+        );
     }
 }
