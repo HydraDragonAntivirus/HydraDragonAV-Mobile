@@ -5,7 +5,8 @@
 ## Key Features
 
 - **Burn 0.21 Neural Network (`ApkClassifier`)**: Combines embedding bag mean-pooling over APK string tokens with 18 content-derived static analysis features (`EngineFeatures`).
-- **Zero-Copy Arhive Processing (`ripzip`)**: Reads APK ZIP entries (`classes*.dex`, `AndroidManifest.xml`, `lib/**/*.so`) directly out of in-memory byte slices without external zip dependencies.
+- **Zero-Copy Archive Processing (`ripzip`)**: Reads APK ZIP entries (`classes*.dex`, `AndroidManifest.xml`, `lib/**/*.so`) directly out of in-memory byte slices without external zip dependencies.
+- **Hashing Trick Tokenizer**: String tokens are mapped to IDs via deterministic FNV-1a hashing — no `vocab.json` required. Every token from any APK maps to `1..(VOCAB_SIZE-1)`, eliminating out-of-vocabulary fallback.
 - **Content-Derived Feature Extraction**:
   - **DEX Analysis**: Class counts, string counts, framework API call counts, high & critical severity API usage findings (dynamic code loading, reflection, shell execution, premium SMS).
   - **AXML Analysis**: Binary AndroidManifest parsing for dangerous permissions, total permissions, components (activities, services, receivers), and SDK version targets.
@@ -25,25 +26,19 @@ cargo build --release
 cargo test
 
 # Scan a single APK
-cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json target.apk
+cargo run --release --bin hydradragonml-scan -- --model model.mpk target.apk
 
 # Scan a directory (JSON output)
-cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json --json ../dataset/
-
-# Build vocab from corpus (run this first, before training)
-cargo run --release --bin hydradragonml-build-vocab -- --benign ../dataset/benign --malware ../dataset/malware --output vocab.json
-
-# Build vocab with custom size
-cargo run --release --bin hydradragonml-build-vocab -- --benign ../dataset/benign --malware ../dataset/malware --output vocab.json --vocab-size 20000
+cargo run --release --bin hydradragonml-scan -- --model model.mpk --json ../dataset/
 
 # Train a new model
-cargo run --release --bin hydradragonml-train -- --benign ../dataset/benign --malware ../dataset/malware --vocab vocab.json --output model.mpk
+cargo run --release --bin hydradragonml-train -- --benign ../dataset/benign --malware ../dataset/malware --output model.mpk
 
 # Train with custom hyperparameters
-cargo run --release --bin hydradragonml-train -- --benign ../dataset/benign --malware ../dataset/malware --vocab vocab.json --output model.mpk --epochs 10 --lr 0.0005 --batch-size 16
+cargo run --release --bin hydradragonml-train -- --benign ../dataset/benign --malware ../dataset/malware --output model.mpk --epochs 10 --lr 0.0005 --batch-size 16
 
 # Scan with custom confidence threshold
-cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json --threshold 0.90 target.apk
+cargo run --release --bin hydradragonml-scan -- --model model.mpk --threshold 0.90 target.apk
 ```
 
 > **Note on dataset paths:** If executing commands from inside `hydradragonml/`, use `../dataset/` (since `dataset/` is located at the root of the repository). If running from the root repository, add `--manifest-path hydradragonml/Cargo.toml` and use `./dataset/`.
@@ -63,7 +58,7 @@ hydradragonml/
 │   │   └── train.rs        # `hydradragonml-train` binary
 │   └── features/
 │       ├── mod.rs          # Re-exports feature extraction modules
-│       ├── features.rs     # EngineFeatures, Tokenizer & MinHash extraction
+│       ├── features.rs     # EngineFeatures, Tokenizer (Hashing Trick) & MinHash extraction
 │       ├── axml.rs         # Binary AndroidManifest.xml parser
 │       ├── dex.rs          # Dalvik Executable (DEX) parser
 │       └── elf.rs          # ELF32/64 native shared library parser
@@ -89,20 +84,21 @@ dataset/
     └── ...
 ```
 
-### 2. Vocabulary File (`vocab.json`)
+### 2. Hashing Trick Tokenizer
 
-The tokenizer uses a JSON vocabulary mapping string tokens to token IDs (0 reserved for `<UNK>`):
+The tokenizer uses the **FNV-1a Hashing Trick** — no `vocab.json` is needed.
 
-```json
-{
-  "<UNK>": 0,
-  "android": 1,
-  "permission": 2,
-  "classes": 3,
-  "telephony": 4,
-  "sms": 5
-}
+Every string token extracted from an APK (class names, permission strings, API calls, etc.) is mapped to an integer ID via:
+
 ```
+id = (fnv1a_64(token.to_lowercase()) % (VOCAB_SIZE - 1)) + 1
+```
+
+- ID `0` is reserved for padding.
+- IDs are always in `1..(VOCAB_SIZE - 1)`.
+- Tokens from unseen apps never fall back to `<UNK>` — every token gets a deterministic, collision-resistant bucket.
+
+This means **no vocabulary build step is needed before training**.
 
 ### 3. Training the Model (`hydradragonml-train`)
 
@@ -112,7 +108,6 @@ Run `hydradragonml-train` to train the classifier:
 cargo run --bin hydradragonml-train -- \
     --benign path/to/benign/ \
     --malware path/to/malware/ \
-    --vocab path/to/vocab.json \
     --output model.mpk \
     --epochs 10 \
     --lr 0.001 \
@@ -125,13 +120,12 @@ cargo run --bin hydradragonml-train -- \
 |---|---|---|
 | `--benign <dir>` | Directory containing clean/benign APKs (**Required**) | - |
 | `--malware <dir>` | Directory containing malware APKs (**Required**) | - |
-| `--vocab <path>` | Path to `vocab.json` (**Required**) | - |
 | `--output <path>` | Output weights file path | `model.mpk` |
 | `--epochs <n>` | Number of training epochs | `6` |
 | `--lr <float>` | Initial learning rate | `0.001` |
 | `--batch-size <n>` | Training batch size | `8` |
 
-The training process shuffles samples, splits into an 80/20 train/validation split, prints epoch loss & accuracy metrics, and saves the final weights (`model.mpk`) along with copying `vocab.json` to the output directory.
+The training process shuffles samples, splits into an 80/20 train/validation split, prints epoch loss & accuracy metrics, and saves the final weights (`model.mpk`).
 
 ---
 
@@ -142,7 +136,6 @@ Use `hydradragonml-scan` to evaluate APK files or entire directories against a t
 ```bash
 cargo run --bin hydradragonml-scan -- \
     --model model.mpk \
-    --vocab vocab.json \
     --threshold 0.95 \
     path/to/apk_or_directory
 ```
@@ -150,7 +143,6 @@ cargo run --bin hydradragonml-scan -- \
 ### Options
 
 - `--model <file>`: Path to model weights (default: `model.mpk`).
-- `--vocab <file>`: Path to vocabulary JSON (default: `vocab.json`).
 - `--threshold <f32>`: Confidence threshold for malicious verdicts (default: `0.95`).
 - `--json`: Output verdicts in JSON lines format.
 
@@ -181,9 +173,9 @@ use burn::backend::ndarray::NdArrayDevice;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let device = NdArrayDevice::default();
     let model_bytes = std::fs::read("model.mpk")?;
-    let vocab_bytes = std::fs::read("vocab.json")?;
 
-    let model = Model::load(&model_bytes, &vocab_bytes, device)?;
+    // No vocab.json needed — Hashing Trick tokenizer is stateless
+    let model = Model::load(&model_bytes, device)?;
 
     let apk_bytes = std::fs::read("target_sample.apk")?;
     if let Some(result) = model.scan(&apk_bytes) {

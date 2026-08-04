@@ -2,8 +2,10 @@
 
 JNI bridge that scans APKs on-device by combining:
 
-1. **`hydradragonml`** Burn-based malware/benign binary classifier (`model.mpk` + `vocab.json`)
-   runs on non-whitelisted buffers using static DEX, AXML, and ELF features alongside token embedding bag classification.
+1. **`hydradragonml`** Burn-based malware/benign binary classifier (`model.mpk`)
+   runs on non-whitelisted buffers using static DEX, AXML, and ELF features alongside
+   token embedding bag classification. Uses the **FNV-1a Hashing Trick** tokenizer —
+   no `vocab.json` required.
 2. **`hydradragonclamav`** YARA engine over compiled rulesets
    (`clean_rules_filtered_verified.yrc`, `valhalla-rules_filtered_verified.yrc`,
    `machine_learning_apk.yrc`) — scans buffers for known signature matches.
@@ -17,7 +19,7 @@ Bound to `com.hydradragon.antivirus.engine.NativeScanner`:
 
 | Java | Native |
 |------|--------|
-| `boolean nativeInit(String dir)` | load `.yrc` rulesets + `model.mpk` + `vocab.json` from `dir` |
+| `boolean nativeInit(String dir)` | load `.yrc` rulesets + `model.mpk` from `dir` |
 | `String nativeScanApk(String path)` | scan one APK → JSON verdict |
 
 Verdict JSON:
@@ -71,7 +73,7 @@ export PKG_CONFIG_ALLOW_CROSS=1
 cargo ndk -t arm64-v8a build --release
 ```
 
-Gradle bundles `jniLibs/` and `app/src/main/assets/*.yrc|model.mpk|vocab.json`
+Gradle bundles `jniLibs/` and `app/src/main/assets/*.yrc|model.mpk`
 automatically — no `build.gradle` changes needed.
 
 ## Use from the app
@@ -89,7 +91,6 @@ String verdict = NativeScanner.scanApk(apkFilePath);  // per APK
 1. Re-run `yara_filter.py` → regenerate `*_filtered_verified.yar`.
 2. Recompile to `.yrc` with `hydradragon_yara_x_compile`.
 3. Train a new Burn model using `cargo run --bin hydradragonml-train -- ...` in `hydradragonml`.
-4. Copy the `.yrc` + `model.mpk` + `vocab.json` into `app/src/main/assets/`.
+4. Copy the `.yrc` + `model.mpk` into `app/src/main/assets/`.
    (Bump a version so `NativeScanner.init` re-copies — currently it re-copies
    only when an asset is missing or zero-length.)
-

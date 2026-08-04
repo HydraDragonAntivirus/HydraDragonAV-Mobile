@@ -1,6 +1,6 @@
 //! Host reproduction of the on-device native scan.
 //!
-//! Loads the same clamav DB + .yrc rulesets + ONNX ML model the app bundles,
+//! Loads the same clamav DB + .yrc rulesets + Burn ML model the app bundles,
 //! then scans a directory of APKs exactly like `run_scan`, isolating each
 //! engine with catch_unwind. Rust's default panic hook prints
 //! "panicked at MSG, file:line" to stderr, so the offending APK + the exact
@@ -52,11 +52,9 @@ fn run() {
         }
     }
     eprintln!("STEP: load_model");
-    let model_bytes = std::fs::read(base.join("model.onnx")).ok();
-    let vocab_bytes = std::fs::read(base.join("vocab.json")).ok();
+    let model_bytes = std::fs::read(base.join("model.mpk")).ok();
     let model = model_bytes
-        .zip(vocab_bytes)
-        .and_then(|(m, v)| Model::load(&m, &v, burn::backend::ndarray::NdArrayDevice::default()).ok());
+        .and_then(|m| Model::load(&m, burn::backend::ndarray::NdArrayDevice::default()).ok());
     eprintln!("STEP: loaded ok");
     println!("loaded: clamav={} model={}", clamav.is_some(), model.is_some());
 
