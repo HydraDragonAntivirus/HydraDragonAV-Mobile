@@ -72,7 +72,7 @@ inference. The MinHash pipeline (`features::extract_minhash`) is kept for
 benign-DB lookups and uses FNV-1a hashing (unchanged).
 
 > ⚠️ **`.mpk` weight compatibility**: the engine-feature vector width is a
-> fixed constant (`features::ENGINE_FEATURE_COUNT`, currently 18) baked into
+> fixed constant (`features::ENGINE_FEATURE_COUNT`, currently 19) baked into
 > `ApkClassifier`'s `fc_engine` layer shape. Any change to that constant means
 > previously trained `.mpk` weights will fail to load (`load_record` shape
 > mismatch) and the model must be retrained from scratch.

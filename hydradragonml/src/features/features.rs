@@ -13,10 +13,13 @@ pub const MIN_STR_LEN: usize = 5;
 pub const MAX_TOKENS: usize = 4096;
 pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
-/// 5 DEX fields + 6 ELF fields + 7 manifest fields. Every one of these is
-/// computed from the APK's actual content (see `EngineFeatures::extract_from_apk`)
-/// — there are no placeholder/default-only fields left in this struct.
-pub const ENGINE_FEATURE_COUNT: usize = 18;
+/// 5 DEX fields + 6 ELF fields + 7 manifest fields + 1 content-entropy field.
+/// Every one of these is computed from the APK's actual content (see
+/// `EngineFeatures::extract_from_apk`) — there are no placeholder/default-only
+/// fields left in this struct. The final field carries the Shannon entropy
+/// (bits, 0..8) of the decompressed DEX/ELF/AndroidManifest.xml content, which
+/// catches packed/obfuscated payloads that otherwise hide behind normal counts.
+pub const ENGINE_FEATURE_COUNT: usize = 19;
 
 #[derive(Clone, Debug, Default)]
 pub struct EngineFeatures {
@@ -41,6 +44,8 @@ pub struct EngineFeatures {
     pub manifest_receivers: f32,
     pub manifest_min_sdk: f32,
     pub manifest_target_sdk: f32,
+    // Content entropy
+    pub entropy: f32,
 }
 
 impl EngineFeatures {
@@ -64,6 +69,7 @@ impl EngineFeatures {
             (self.manifest_receivers / 20.0).min(1.0),
             ((self.manifest_min_sdk - 1.0) / 34.0).clamp(0.0, 1.0),
             ((self.manifest_target_sdk - 1.0) / 34.0).clamp(0.0, 1.0),
+            (self.entropy / 8.0).min(1.0),
         ]
     }
 
@@ -75,6 +81,8 @@ impl EngineFeatures {
 
         let mut feats = EngineFeatures::default();
         let mut saw_any_entry = false;
+        let mut content_hist = [0u64; 256];
+        let mut content_total: u64 = 0;
 
         for entry in &archive.entries {
             if entry.is_dir {
@@ -93,6 +101,11 @@ impl EngineFeatures {
                 Some(b) => b,
                 None => continue,
             };
+
+            // Accumulate a byte histogram over the decompressed content of the
+            // code-bearing entries so we can derive a single Shannon-entropy
+            // feature covering DEX + ELF + manifest payloads.
+            update_entropy_histogram(&mut content_hist, &mut content_total, &buf);
 
             if is_dex {
                 if let Some(d) = dex::analyze(&buf) {
@@ -132,8 +145,38 @@ impl EngineFeatures {
         if !saw_any_entry {
             return None;
         }
+        feats.entropy = shannon_entropy(&content_hist, content_total);
         Some(feats)
     }
+}
+
+/// Accumulates a per-byte-value histogram of `data` into `hist`, bumping
+/// `total` by the number of bytes seen. Meant to be called once per
+/// decompressed code-bearing entry so the caller can later derive a single
+/// bytes-weighted Shannon-entropy feature across all of them.
+pub fn update_entropy_histogram(hist: &mut [u64; 256], total: &mut u64, data: &[u8]) {
+    for &b in data {
+        hist[b as usize] += 1;
+    }
+    *total += data.len() as u64;
+}
+
+/// Shannon entropy in bits (0.0..8.0) of the byte distribution described by
+/// `hist`/`total`: `-sum(p_i * log2(p_i))`. Returns 0.0 when there are no
+/// bytes (empty/zero-length input).
+pub fn shannon_entropy(hist: &[u64; 256], total: u64) -> f32 {
+    if total == 0 {
+        return 0.0;
+    }
+    let n = total as f64;
+    let mut e = 0.0f64;
+    for &c in hist {
+        if c > 0 {
+            let p = c as f64 / n;
+            e -= p * p.log2();
+        }
+    }
+    e as f32
 }
 
 /// Reads and decompresses a single ZIP entry's data out of the full APK

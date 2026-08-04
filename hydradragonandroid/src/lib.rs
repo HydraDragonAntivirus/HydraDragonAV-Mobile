@@ -19,7 +19,7 @@ use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
 
 use hydradragonclamav::{Engine as ClamavEngine, is_apk_zip, is_text_like, ScanOptions};
-use hydradragonml::features::EngineFeatures;
+use hydradragonml::features::{EngineFeatures, MAX_ENTRY_SCAN, shannon_entropy, update_entropy_histogram};
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 use base64::Engine as Base64Engine;
@@ -108,6 +108,9 @@ const MODULE_DEPENDENT_YRC: &[&str] = &[
 /// Parses emerging-all.rules at runtime and builds a daachorse double-array
 /// automaton for hex-pattern matching.
 const MODEL_MPK: &str = "model.mpk";
+/// Subword tokenizer vocabulary (JSON map of token -> id) that must ship
+/// alongside `model.mpk`; both are required to load the classifier.
+const VOCAB_JSON: &str = "vocab.json";
 /// NSRL known-good SHA-256 whitelist as a serialized Binary-Fuse (xor) filter
 /// (built offline by `xorfilter_writer`). Decoded once at init into an owned
 /// buffer on the native heap; binary-fuse encodings are far smaller than the
@@ -590,10 +593,10 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 let mut report = String::new();
                 let model_bytes = files.get(MODEL_MPK);
                 let device = burn::backend::ndarray::NdArrayDevice::default();
-                let model = match model_bytes {
-                    Some(m) => {
+                let model = match (model_bytes, files.get(VOCAB_JSON)) {
+                    (Some(m), Some(v)) => {
                         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            hydradragonml::Model::load(m, device)
+                            hydradragonml::Model::load(m, v, device)
                         }));
                         match result {
                             Ok(Ok(m)) => {
@@ -614,7 +617,12 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                             }
                         }
                     }
-                    None => {
+                    (Some(_), None) => {
+                        rust_timing_log!("init :: model=ERR: missing vocab.json");
+                        report.push_str(" model=ERR(no vocab)");
+                        None
+                    }
+                    (None, _) => {
                         report.push_str(" model=ERR(no assets)");
                         None
                     }
@@ -864,9 +872,20 @@ fn build_engine_features(
     use dex_analysis::Severity;
 
     let mut feats = EngineFeatures::default();
+    let mut content_hist = [0u64; 256];
+    let mut content_total: u64 = 0;
 
     // ── DEX static analysis ──────────────────────────────────────────────
-    for ds in dex_scans.iter().flatten() {
+    for (i, ds) in dex_scans.iter().enumerate() {
+        let Some(ds) = ds else { continue };
+        // Same per-buffer cap and content as training-time extract_from_apk.
+        if let Some(data) = buffers.get(i) {
+            update_entropy_histogram(
+                &mut content_hist,
+                &mut content_total,
+                &data.data[..data.data.len().min(MAX_ENTRY_SCAN)],
+            );
+        }
         feats.dex_string_count += ds.text.lines().count() as f32;
         feats.dex_api_call_count += ds.api_calls.len() as f32;
         let mut classes: std::collections::HashSet<&str> = std::collections::HashSet::new();
@@ -894,7 +913,13 @@ fn build_engine_features(
         }
         // Only ELF buffers get non-default EmulationResults (see the emulation
         // thread in run_full_apk_scan), so a populated result = one ELF.
-        let _ = buffers.get(i);
+        if let Some(data) = buffers.get(i) {
+            update_entropy_histogram(
+                &mut content_hist,
+                &mut content_total,
+                &data.data[..data.data.len().min(MAX_ENTRY_SCAN)],
+            );
+        }
         feats.elf_count += 1.0;
         feats.elf_emulated_strings += r.strings.len() as f32;
         for call in &r.api_calls {
@@ -924,15 +949,23 @@ fn build_engine_features(
 
     // ── Manifest ─────────────────────────────────────────────────────────
     feats.manifest_dangerous_permissions = perm_count as f32;
-    if let Some(manifest) = buffers.iter().find_map(|b| parse_manifest(&b.data)) {
-        feats.manifest_total_permissions = manifest.permissions.len() as f32;
-        feats.manifest_activities = manifest.activities.len() as f32;
-        feats.manifest_services = manifest.services.len() as f32;
-        feats.manifest_receivers = manifest.receivers.len() as f32;
-        feats.manifest_min_sdk = manifest.min_sdk.unwrap_or(0) as f32;
-        feats.manifest_target_sdk = manifest.target_sdk.unwrap_or(0) as f32;
+    if let Some(b) = buffers.iter().find(|b| parse_manifest(&b.data).is_some()) {
+        if let Some(manifest) = parse_manifest(&b.data) {
+            feats.manifest_total_permissions = manifest.permissions.len() as f32;
+            feats.manifest_activities = manifest.activities.len() as f32;
+            feats.manifest_services = manifest.services.len() as f32;
+            feats.manifest_receivers = manifest.receivers.len() as f32;
+            feats.manifest_min_sdk = manifest.min_sdk.unwrap_or(0) as f32;
+            feats.manifest_target_sdk = manifest.target_sdk.unwrap_or(0) as f32;
+        }
+        update_entropy_histogram(
+            &mut content_hist,
+            &mut content_total,
+            &b.data[..b.data.len().min(MAX_ENTRY_SCAN)],
+        );
     }
 
+    feats.entropy = shannon_entropy(&content_hist, content_total);
     feats
 }
 
@@ -1752,6 +1785,8 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 fn asset_category(name: &str) -> &'static str {
     if name == MODEL_MPK {
         "ml model"
+    } else if name == VOCAB_JSON {
+        "ml vocab"
     } else if name.ends_with(".yrc") {
         "yara rules"
     } else if name == WHITELIST_XF {
