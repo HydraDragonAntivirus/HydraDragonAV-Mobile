@@ -237,8 +237,9 @@ impl Tokenizer {
         }) {
             if part.len() >= 2 {
                 let key = part.to_ascii_lowercase();
-                let id = self.vocab.get(&key).copied().unwrap_or(0);
-                out.push(id);
+                let raw_id = self.vocab.get(&key).copied().unwrap_or(0);
+                let safe_id = if (0..VOCAB_SIZE as i64).contains(&raw_id) { raw_id } else { 0 };
+                out.push(safe_id);
                 if out.len() >= MAX_TOKENS {
                     return;
                 }

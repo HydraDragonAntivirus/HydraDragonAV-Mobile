@@ -39,7 +39,7 @@ impl<B: Backend> ApkClassifier<B> {
         engine: Tensor<B, 2, Float>,
     ) -> Tensor<B, 2, Float> {
         let tok_emb = self.embedding.forward(tokens); // [B, L, EMBED_DIM]
-        let tok_pooled = tok_emb.mean_dim(1).squeeze(); // [B, EMBED_DIM]
+        let tok_pooled = tok_emb.mean_dim(1).squeeze_dim(1); // [B, EMBED_DIM]
 
         let combined = Tensor::cat(vec![tok_pooled, engine], 1);
         let x = self.linear1.forward(combined);

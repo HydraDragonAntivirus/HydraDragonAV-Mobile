@@ -166,11 +166,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("no valid APKs found — check --benign / --malware paths".into());
     }
 
-    // Sort by frequency descending, take top vocab_size, assign IDs 1..=N
-    // (ID 0 is reserved for <UNK>).
+    // Sort by frequency descending, take top (vocab_size - 1), assign IDs 1..=N
+    // (ID 0 is reserved for <UNK>, so max ID is vocab_size - 1).
     let mut sorted: Vec<(String, u64)> = freq.into_iter().collect();
     sorted.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
-    sorted.truncate(args.vocab_size);
+    sorted.truncate(args.vocab_size.saturating_sub(1));
 
     let vocab: HashMap<String, i64> = sorted
         .into_iter()
