@@ -131,8 +131,19 @@ fn main() {
         targets.push(args.target_path.clone());
     } else if args.target_path.is_dir() {
         for entry in WalkDir::new(&args.target_path).into_iter().filter_map(|e| e.ok()) {
-            if entry.file_type().is_file() && is_apk_or_zip(entry.path()) {
-                targets.push(entry.path().to_path_buf());
+            let path = entry.path();
+            // Skip any path component containing "invalid"
+            let has_invalid = path.components().any(|c| {
+                c.as_os_str()
+                    .to_string_lossy()
+                    .to_ascii_lowercase()
+                    .contains("invalid")
+            });
+            if has_invalid {
+                continue;
+            }
+            if entry.file_type().is_file() && is_apk_or_zip(path) {
+                targets.push(path.to_path_buf());
             }
         }
     } else {

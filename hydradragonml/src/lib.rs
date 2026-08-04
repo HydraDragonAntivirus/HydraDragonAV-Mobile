@@ -4,6 +4,7 @@ pub mod model;
 pub use features::axml;
 pub use features::dex;
 pub use features::elf;
+pub use features::features::{for_each_entry, MIN_STR_LEN, VOCAB_SIZE};
 
 
 use burn::backend::NdArray;

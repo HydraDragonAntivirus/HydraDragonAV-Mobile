@@ -30,6 +30,12 @@ cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.
 # Scan a directory (JSON output)
 cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json --json ./dataset/
 
+# Build vocab from corpus (run this first, before training)
+cargo run --release --bin hydradragonml-build-vocab -- --benign ./dataset/benign --malware ./dataset/malware --output vocab.json
+
+# Build vocab with custom size
+cargo run --release --bin hydradragonml-build-vocab -- --benign ./dataset/benign --malware ./dataset/malware --output vocab.json --vocab-size 20000
+
 # Train a new model
 cargo run --release --bin hydradragonml-train -- --benign ./dataset/benign --malware ./dataset/malware --vocab vocab.json --output model.mpk
 

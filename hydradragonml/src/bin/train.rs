@@ -119,10 +119,17 @@ fn collect_samples(dir: &Path, label: f32, tokenizer: &Tokenizer) -> Vec<Sample>
     let mut skipped = 0usize;
 
     for entry in WalkDir::new(dir).into_iter().filter_map(|e| e.ok()) {
-        if !entry.file_type().is_file() || !is_archive_file(entry.path()) {
+        let path = entry.path();
+        // Skip any path component containing "invalid"
+        let has_invalid = path.components().any(|c| {
+            c.as_os_str()
+                .to_string_lossy()
+                .to_ascii_lowercase()
+                .contains("invalid")
+        });
+        if has_invalid || !entry.file_type().is_file() || !is_archive_file(path) {
             continue;
         }
-        let path = entry.path();
         let bytes = match std::fs::read(path) {
             Ok(b) => b,
             Err(e) => {

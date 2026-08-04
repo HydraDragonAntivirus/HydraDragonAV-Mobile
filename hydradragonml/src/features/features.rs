@@ -168,7 +168,7 @@ fn read_entry_data(apk: &[u8], entry: &ZipEntry) -> Option<Vec<u8>> {
 /// `EngineFeatures::extract_from_apk`) need to look at every entry name and
 /// the contents of a broader set of files (AndroidManifest.xml,
 /// resources.arsc, *.dex, META-INF/*).
-fn for_each_entry(apk: &[u8], mut f: impl FnMut(&str, &[u8])) -> Option<()> {
+pub fn for_each_entry(apk: &[u8], mut f: impl FnMut(&str, &[u8])) -> Option<()> {
     let archive = parse_archive(apk).ok()?;
     for entry in &archive.entries {
         if entry.is_dir {
