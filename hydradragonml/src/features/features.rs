@@ -435,19 +435,86 @@ fn insert_minhash_string(s: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use std::io::Write;
+    fn crc32_simple(data: &[u8]) -> u32 {
+        let mut crc = 0xffff_ffffu32;
+        for &b in data {
+            crc ^= b as u32;
+            for _ in 0..8 {
+                if crc & 1 != 0 {
+                    crc = (crc >> 1) ^ 0xedb8_8320;
+                } else {
+                    crc >>= 1;
+                }
+            }
+        }
+        !crc
+    }
 
     fn make_test_apk(entries: &[(&str, Vec<u8>)]) -> Vec<u8> {
         let mut buf = Vec::new();
-        {
-            let cursor = std::io::Cursor::new(&mut buf);
-            let mut zip = zip::ZipWriter::new(cursor);
-            for (name, data) in entries {
-                zip.start_file(*name, zip::write::FileOptions::default()).unwrap();
-                zip.write_all(data).unwrap();
-            }
-            zip.finish().unwrap();
+        let mut cd_records = Vec::new();
+
+        for (name, data) in entries {
+            let local_offset = buf.len() as u32;
+            let name_bytes = name.as_bytes();
+            let name_len = name_bytes.len() as u16;
+            let data_len = data.len() as u32;
+            let crc = crc32_simple(data);
+
+            buf.extend_from_slice(&0x04034b50u32.to_le_bytes());
+            buf.extend_from_slice(&20u16.to_le_bytes());
+            buf.extend_from_slice(&0u16.to_le_bytes());
+            buf.extend_from_slice(&0u16.to_le_bytes());
+            buf.extend_from_slice(&0u16.to_le_bytes());
+            buf.extend_from_slice(&0u16.to_le_bytes());
+            buf.extend_from_slice(&crc.to_le_bytes());
+            buf.extend_from_slice(&data_len.to_le_bytes());
+            buf.extend_from_slice(&data_len.to_le_bytes());
+            buf.extend_from_slice(&name_len.to_le_bytes());
+            buf.extend_from_slice(&0u16.to_le_bytes());
+            buf.extend_from_slice(name_bytes);
+            buf.extend_from_slice(data);
+
+            let mut cd = Vec::new();
+            cd.extend_from_slice(&0x02014b50u32.to_le_bytes());
+            cd.extend_from_slice(&20u16.to_le_bytes());
+            cd.extend_from_slice(&20u16.to_le_bytes());
+            cd.extend_from_slice(&0u16.to_le_bytes());
+            cd.extend_from_slice(&0u16.to_le_bytes());
+            cd.extend_from_slice(&0u16.to_le_bytes());
+            cd.extend_from_slice(&0u16.to_le_bytes());
+            cd.extend_from_slice(&crc.to_le_bytes());
+            cd.extend_from_slice(&data_len.to_le_bytes());
+            cd.extend_from_slice(&data_len.to_le_bytes());
+            cd.extend_from_slice(&name_len.to_le_bytes());
+            cd.extend_from_slice(&0u16.to_le_bytes());
+            cd.extend_from_slice(&0u16.to_le_bytes());
+            cd.extend_from_slice(&0u16.to_le_bytes());
+            cd.extend_from_slice(&0u16.to_le_bytes());
+            cd.extend_from_slice(&0u32.to_le_bytes());
+            cd.extend_from_slice(&local_offset.to_le_bytes());
+            cd.extend_from_slice(name_bytes);
+
+            cd_records.push(cd);
         }
+
+        let cd_offset = buf.len() as u32;
+        let mut cd_size = 0u32;
+        for cd in &cd_records {
+            buf.extend_from_slice(cd);
+            cd_size += cd.len() as u32;
+        }
+
+        let num_entries = entries.len() as u16;
+        buf.extend_from_slice(&0x06054b50u32.to_le_bytes());
+        buf.extend_from_slice(&0u16.to_le_bytes());
+        buf.extend_from_slice(&0u16.to_le_bytes());
+        buf.extend_from_slice(&num_entries.to_le_bytes());
+        buf.extend_from_slice(&num_entries.to_le_bytes());
+        buf.extend_from_slice(&cd_size.to_le_bytes());
+        buf.extend_from_slice(&cd_offset.to_le_bytes());
+        buf.extend_from_slice(&0u16.to_le_bytes());
+
         buf
     }
 

@@ -1,8 +1,10 @@
 pub mod features;
 pub mod model;
-pub mod dex;
-pub mod axml;
-pub mod elf;
+
+pub use features::axml;
+pub use features::dex;
+pub use features::elf;
+
 
 use burn::backend::NdArray;
 use burn::tensor::{Float, Int, Tensor};

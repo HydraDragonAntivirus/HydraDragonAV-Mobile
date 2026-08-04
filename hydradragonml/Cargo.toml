@@ -16,9 +16,6 @@ burn-train = "0.21"
 burn-dataset = "0.21"
 tempfile = "3"
 
-[dev-dependencies]
-zip = { version = "2", default-features = false, features = ["deflate"] }
-
 [lib]
 name = "hydradragonml"
 path = "src/lib.rs"
