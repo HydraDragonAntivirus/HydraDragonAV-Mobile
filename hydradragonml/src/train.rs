@@ -28,6 +28,7 @@ type InferBackend = NdArray<f32>;
 struct Args {
     benign: PathBuf,
     malware: PathBuf,
+    vocab: PathBuf,
     output: PathBuf,
     epochs: usize,
     lr: f64,
@@ -37,7 +38,7 @@ struct Args {
 fn print_usage_and_exit(msg: &str) -> ! {
     eprintln!("error: {msg}\n");
     eprintln!(
-        "usage: hydradragonml-train --benign <dir> --malware <dir> \\\n\
+        "usage: hydradragonml-train --benign <dir> --malware <dir> --vocab <vocab.json> \\\n\
          \x20      [--output model.mpk] [--epochs 6] [--lr 0.001] [--batch-size 8]"
     );
     std::process::exit(2);
@@ -46,6 +47,7 @@ fn print_usage_and_exit(msg: &str) -> ! {
 fn parse_args() -> Args {
     let mut benign: Option<PathBuf> = None;
     let mut malware: Option<PathBuf> = None;
+    let mut vocab: Option<PathBuf> = None;
     let mut output = PathBuf::from("model.mpk");
     let mut epochs = 6usize;
     let mut lr = 0.001f64;
@@ -62,6 +64,7 @@ fn parse_args() -> Args {
         match flag.as_str() {
             "--benign" => benign = Some(PathBuf::from(next_val!())),
             "--malware" => malware = Some(PathBuf::from(next_val!())),
+            "--vocab" => vocab = Some(PathBuf::from(next_val!())),
             "--output" => output = PathBuf::from(next_val!()),
             "--epochs" => {
                 let v = next_val!();
@@ -89,6 +92,7 @@ fn parse_args() -> Args {
     Args {
         benign: benign.unwrap_or_else(|| print_usage_and_exit("--benign <dir> is required")),
         malware: malware.unwrap_or_else(|| print_usage_and_exit("--malware <dir> is required")),
+        vocab: vocab.unwrap_or_else(|| print_usage_and_exit("--vocab <path> is required")),
         output,
         epochs,
         lr,
@@ -115,17 +119,10 @@ fn collect_samples(dir: &Path, label: f32, tokenizer: &Tokenizer) -> Vec<Sample>
     let mut skipped = 0usize;
 
     for entry in WalkDir::new(dir).into_iter().filter_map(|e| e.ok()) {
-        let path = entry.path();
-        // Skip any path component containing "invalid"
-        let has_invalid = path.components().any(|c| {
-            c.as_os_str()
-                .to_string_lossy()
-                .to_ascii_lowercase()
-                .contains("invalid")
-        });
-        if has_invalid || !entry.file_type().is_file() || !is_archive_file(path) {
+        if !entry.file_type().is_file() || !is_archive_file(entry.path()) {
             continue;
         }
+        let path = entry.path();
         let bytes = match std::fs::read(path) {
             Ok(b) => b,
             Err(e) => {
@@ -203,7 +200,7 @@ impl SimpleRng {
 /// pooled vector of short sequences toward the `<UNK>` embedding. This
 /// matches the (unmasked) pooling already implemented in `model.rs`; fixing
 /// it properly would mean adding mask support to `forward_batch` itself.
-fn make_batch<B: Backend<FloatElem = f32>>(
+fn make_batch<B: Backend>(
     batch: &[&Sample],
     device: &B::Device,
 ) -> (Tensor<B, 2, Int>, Tensor<B, 2, Float>, Tensor<B, 2, Float>) {
@@ -237,7 +234,7 @@ fn make_batch<B: Backend<FloatElem = f32>>(
 /// Binary cross-entropy over the model's own sigmoid output (the model
 /// already ends in `sigmoid`, so this operates on probabilities directly
 /// rather than logits).
-fn bce_loss<B: Backend<FloatElem = f32>>(pred: Tensor<B, 2, Float>, target: Tensor<B, 2, Float>) -> Tensor<B, 1> {
+fn bce_loss<B: Backend>(pred: Tensor<B, 2, Float>, target: Tensor<B, 2, Float>) -> Tensor<B, 1> {
     let eps = 1e-7;
     let p = pred.clamp(eps, 1.0 - eps);
     let ones = Tensor::ones_like(&p);
@@ -247,7 +244,7 @@ fn bce_loss<B: Backend<FloatElem = f32>>(pred: Tensor<B, 2, Float>, target: Tens
     -per_example.mean()
 }
 
-fn evaluate<B: Backend<FloatElem = f32>>(
+fn evaluate<B: Backend>(
     model: &ApkClassifier<B>,
     samples: &[Sample],
     device: &B::Device,
@@ -266,7 +263,9 @@ fn evaluate<B: Backend<FloatElem = f32>>(
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args();
 
-    let tokenizer = Tokenizer::new();
+    println!("loading vocabulary: {}", args.vocab.display());
+    let vocab_bytes = std::fs::read(&args.vocab)?;
+    let tokenizer = Tokenizer::load_json(&vocab_bytes).ok_or("failed to parse vocab.json")?;
 
     println!("scanning benign corpus: {}", args.benign.display());
     let benign_samples = collect_samples(&args.benign, 0.0, &tokenizer);
@@ -344,6 +343,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("--output path must be valid UTF-8")?;
     final_model.save_weights(output_str)?;
     println!("saved weights: {output_str}");
+
+    if let Some(parent) = args.output.parent().filter(|p| !p.as_os_str().is_empty()) {
+        let dest = parent.join("vocab.json");
+        if dest != args.vocab {
+            std::fs::copy(&args.vocab, &dest)?;
+            println!("copied vocab: {}", dest.display());
+        }
+    }
 
     Ok(())
 }

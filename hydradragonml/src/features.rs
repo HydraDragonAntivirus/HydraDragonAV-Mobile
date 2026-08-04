@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use ripzip::extract::zip_reader::{parse_archive, parse_local_header_data_offset, ZipEntry};
 use ripzip::zip_format::{COMPRESSION_DEFLATED, COMPRESSION_STORED};
@@ -168,7 +168,7 @@ fn read_entry_data(apk: &[u8], entry: &ZipEntry) -> Option<Vec<u8>> {
 /// `EngineFeatures::extract_from_apk`) need to look at every entry name and
 /// the contents of a broader set of files (AndroidManifest.xml,
 /// resources.arsc, *.dex, META-INF/*).
-pub fn for_each_entry(apk: &[u8], mut f: impl FnMut(&str, &[u8])) -> Option<()> {
+fn for_each_entry(apk: &[u8], mut f: impl FnMut(&str, &[u8])) -> Option<()> {
     let archive = parse_archive(apk).ok()?;
     for entry in &archive.entries {
         if entry.is_dir {
@@ -196,21 +196,18 @@ pub fn for_each_entry(apk: &[u8], mut f: impl FnMut(&str, &[u8])) -> Option<()> 
 
 // Tokenizer for the EmbeddingBag ML pipeline.
 
-pub struct Tokenizer;
+pub struct Tokenizer {
+    vocab: HashMap<String, i64>,
+}
 
 impl Tokenizer {
-    pub fn new() -> Self {
-        Self
+    pub fn new(vocab: HashMap<String, i64>) -> Self {
+        Self { vocab }
     }
 
-    /// FNV-1a hash of lowercased string mapped to 1..VOCAB_SIZE (0 reserved for UNK/padding).
-    pub fn hash_token(key: &str) -> i64 {
-        let mut hash: u64 = 0xcbf29ce484222325;
-        for byte in key.bytes() {
-            hash ^= byte as u64;
-            hash = hash.wrapping_mul(0x100000001b3);
-        }
-        ((hash % ((VOCAB_SIZE - 1) as u64)) + 1) as i64
+    pub fn load_json(bytes: &[u8]) -> Option<Self> {
+        let map: HashMap<String, i64> = serde_json::from_slice(bytes).ok()?;
+        Some(Self::new(map))
     }
 
     pub fn tokenize(&self, apk: &[u8]) -> Option<Vec<i64>> {
@@ -240,7 +237,7 @@ impl Tokenizer {
         }) {
             if part.len() >= 2 {
                 let key = part.to_ascii_lowercase();
-                let id = Self::hash_token(&key);
+                let id = self.vocab.get(&key).copied().unwrap_or(0);
                 out.push(id);
                 if out.len() >= MAX_TOKENS {
                     return;
@@ -438,86 +435,19 @@ fn insert_minhash_string(s: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    fn crc32_simple(data: &[u8]) -> u32 {
-        let mut crc = 0xffff_ffffu32;
-        for &b in data {
-            crc ^= b as u32;
-            for _ in 0..8 {
-                if crc & 1 != 0 {
-                    crc = (crc >> 1) ^ 0xedb8_8320;
-                } else {
-                    crc >>= 1;
-                }
-            }
-        }
-        !crc
-    }
+    use std::io::Write;
 
     fn make_test_apk(entries: &[(&str, Vec<u8>)]) -> Vec<u8> {
         let mut buf = Vec::new();
-        let mut cd_records = Vec::new();
-
-        for (name, data) in entries {
-            let local_offset = buf.len() as u32;
-            let name_bytes = name.as_bytes();
-            let name_len = name_bytes.len() as u16;
-            let data_len = data.len() as u32;
-            let crc = crc32_simple(data);
-
-            buf.extend_from_slice(&0x04034b50u32.to_le_bytes());
-            buf.extend_from_slice(&20u16.to_le_bytes());
-            buf.extend_from_slice(&0u16.to_le_bytes());
-            buf.extend_from_slice(&0u16.to_le_bytes());
-            buf.extend_from_slice(&0u16.to_le_bytes());
-            buf.extend_from_slice(&0u16.to_le_bytes());
-            buf.extend_from_slice(&crc.to_le_bytes());
-            buf.extend_from_slice(&data_len.to_le_bytes());
-            buf.extend_from_slice(&data_len.to_le_bytes());
-            buf.extend_from_slice(&name_len.to_le_bytes());
-            buf.extend_from_slice(&0u16.to_le_bytes());
-            buf.extend_from_slice(name_bytes);
-            buf.extend_from_slice(data);
-
-            let mut cd = Vec::new();
-            cd.extend_from_slice(&0x02014b50u32.to_le_bytes());
-            cd.extend_from_slice(&20u16.to_le_bytes());
-            cd.extend_from_slice(&20u16.to_le_bytes());
-            cd.extend_from_slice(&0u16.to_le_bytes());
-            cd.extend_from_slice(&0u16.to_le_bytes());
-            cd.extend_from_slice(&0u16.to_le_bytes());
-            cd.extend_from_slice(&0u16.to_le_bytes());
-            cd.extend_from_slice(&crc.to_le_bytes());
-            cd.extend_from_slice(&data_len.to_le_bytes());
-            cd.extend_from_slice(&data_len.to_le_bytes());
-            cd.extend_from_slice(&name_len.to_le_bytes());
-            cd.extend_from_slice(&0u16.to_le_bytes());
-            cd.extend_from_slice(&0u16.to_le_bytes());
-            cd.extend_from_slice(&0u16.to_le_bytes());
-            cd.extend_from_slice(&0u16.to_le_bytes());
-            cd.extend_from_slice(&0u32.to_le_bytes());
-            cd.extend_from_slice(&local_offset.to_le_bytes());
-            cd.extend_from_slice(name_bytes);
-
-            cd_records.push(cd);
+        {
+            let cursor = std::io::Cursor::new(&mut buf);
+            let mut zip = zip::ZipWriter::new(cursor);
+            for (name, data) in entries {
+                zip.start_file(*name, zip::write::FileOptions::default()).unwrap();
+                zip.write_all(data).unwrap();
+            }
+            zip.finish().unwrap();
         }
-
-        let cd_offset = buf.len() as u32;
-        let mut cd_size = 0u32;
-        for cd in &cd_records {
-            buf.extend_from_slice(cd);
-            cd_size += cd.len() as u32;
-        }
-
-        let num_entries = entries.len() as u16;
-        buf.extend_from_slice(&0x06054b50u32.to_le_bytes());
-        buf.extend_from_slice(&0u16.to_le_bytes());
-        buf.extend_from_slice(&0u16.to_le_bytes());
-        buf.extend_from_slice(&num_entries.to_le_bytes());
-        buf.extend_from_slice(&num_entries.to_le_bytes());
-        buf.extend_from_slice(&cd_size.to_le_bytes());
-        buf.extend_from_slice(&cd_offset.to_le_bytes());
-        buf.extend_from_slice(&0u16.to_le_bytes());
-
         buf
     }
 

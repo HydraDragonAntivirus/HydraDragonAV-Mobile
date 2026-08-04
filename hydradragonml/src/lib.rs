@@ -1,11 +1,8 @@
 pub mod features;
 pub mod model;
-
-pub use features::axml;
-pub use features::dex;
-pub use features::elf;
-pub use features::features::{for_each_entry, MIN_STR_LEN, VOCAB_SIZE};
-
+pub mod dex;
+pub mod axml;
+pub mod elf;
 
 use burn::backend::NdArray;
 use burn::tensor::{Float, Int, Tensor};
@@ -32,9 +29,11 @@ pub struct ScanResult {
 impl Model {
     pub fn load(
         model_bytes: &[u8],
+        vocab_bytes: &[u8],
         device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let tokenizer = features::Tokenizer::new();
+        let tokenizer = features::Tokenizer::load_json(vocab_bytes)
+            .ok_or("failed to parse vocab.json")?;
         let tmp = tempfile::Builder::new().suffix(".mpk").tempfile()?;
         std::fs::write(tmp.path(), model_bytes)?;
         let classifier = model::ApkClassifier::load_weights(
@@ -51,9 +50,11 @@ impl Model {
 
     pub fn load_from_path(
         model_path: &str,
+        vocab_bytes: &[u8],
         device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let tokenizer = features::Tokenizer::new();
+        let tokenizer = features::Tokenizer::load_json(vocab_bytes)
+            .ok_or("failed to parse vocab.json")?;
         let classifier = model::ApkClassifier::load_weights(model_path, &device)?;
         Ok(Model {
             classifier,
@@ -102,12 +103,11 @@ mod tests {
 
     #[test]
     fn tokenize_test_apk() {
-        let path = std::path::Path::new("../com.ttech.android.onlineislem_base.apk");
-        if !path.exists() {
-            return;
-        }
-        let bytes = std::fs::read(path).expect("APK read failed");
-        let tok = features::Tokenizer::new();
+        let bytes = std::fs::read("../com.ttech.android.onlineislem_base.apk")
+            .expect("APK not found");
+        let mut vocab = std::collections::HashMap::new();
+        vocab.insert("test".to_string(), 1);
+        let tok = features::Tokenizer::new(vocab);
         let result = tok.tokenize(&bytes);
         assert!(result.is_some());
         let ids = result.unwrap();
@@ -115,11 +115,11 @@ mod tests {
     }
 
     #[test]
-    fn hashing_trick_consistency() {
-        let id1 = features::Tokenizer::hash_token("android");
-        let id2 = features::Tokenizer::hash_token("android");
-        assert_eq!(id1, id2);
-        assert!((1..VOCAB_SIZE as i64).contains(&id1));
+    fn load_vocab_from_json() {
+        let json = br#"{"<UNK>": 0, "hello": 1, "world": 2}"#;
+        let tok = features::Tokenizer::load_json(json).expect("should parse");
+        let ids = tok.tokenize(b"hello world");
+        assert!(ids.is_none());
     }
 
     #[test]

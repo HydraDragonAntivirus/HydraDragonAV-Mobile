@@ -1,200 +1,172 @@
-//! `hydradragonml-scan` — CLI tool to scan APK binary file(s) or directory
-//! using the trained `hydradragonml` Burn model.
+//! `hydradragonml-scan` — scores every APK under `--dataset` with a trained
+//! model and reports classification metrics against the benign/malware
+//! folder labels.
 
-use burn::backend::ndarray::NdArrayDevice;
 use hydradragonml::Model;
+
 use std::path::{Path, PathBuf};
-use std::process::exit;
+
 use walkdir::WalkDir;
 
-struct ScanArgs {
-    model_path: PathBuf,
-    target_path: PathBuf,
-    threshold: Option<f32>,
-    json: bool,
+struct Args {
+    dataset: PathBuf,
+    model: PathBuf,
+    vocab: PathBuf,
+    threshold: f32,
 }
 
-fn print_usage_and_exit(msg: Option<&str>) -> ! {
-    if let Some(err) = msg {
-        eprintln!("error: {err}\n");
-    }
+fn print_usage_and_exit(msg: &str) -> ! {
+    eprintln!("error: {msg}\n");
     eprintln!(
-        "usage: hydradragonml-scan [--model model.mpk] \\\n\
-         \x20                        [--threshold 0.95] [--json] <apk_file_or_dir>"
+        "usage: hydradragonml-scan --dataset <dir> --model <model.mpk> --vocab <vocab.json> \\\n\
+         \x20      [--threshold 0.5]"
     );
-    exit(2);
+    std::process::exit(2);
 }
 
-fn parse_args() -> ScanArgs {
-    let mut model_path = PathBuf::from("model.mpk");
-    let mut target_path: Option<PathBuf> = None;
-    let mut threshold: Option<f32> = None;
-    let mut json = false;
+fn parse_args() -> Args {
+    let mut dataset: Option<PathBuf> = None;
+    let mut model: Option<PathBuf> = None;
+    let mut vocab: Option<PathBuf> = None;
+    let mut threshold = 0.5f32;
 
     let mut args = std::env::args().skip(1);
-    while let Some(arg) = args.next() {
+    while let Some(flag) = args.next() {
         macro_rules! next_val {
             () => {
                 args.next()
-                    .unwrap_or_else(|| print_usage_and_exit(Some(&format!("`{arg}` requires a value"))))
+                    .unwrap_or_else(|| print_usage_and_exit(&format!("`{flag}` needs a value")))
             };
         }
-        match arg.as_str() {
-            "--model" => model_path = PathBuf::from(next_val!()),
+        match flag.as_str() {
+            "--dataset" => dataset = Some(PathBuf::from(next_val!())),
+            "--model" => model = Some(PathBuf::from(next_val!())),
+            "--vocab" => vocab = Some(PathBuf::from(next_val!())),
             "--threshold" => {
                 let v = next_val!();
-                let t: f32 = v.parse().unwrap_or_else(|_| {
-                    print_usage_and_exit(Some(&format!("invalid threshold `{v}`")))
+                threshold = v.parse().unwrap_or_else(|_| {
+                    print_usage_and_exit(&format!("invalid --threshold `{v}`"))
                 });
-                threshold = Some(t);
             }
-            "--json" => json = true,
-            "-h" | "--help" => print_usage_and_exit(None),
-            flag if flag.starts_with('-') => {
-                print_usage_and_exit(Some(&format!("unknown option `{flag}`")))
-            }
-            path => {
-                if target_path.is_some() {
-                    print_usage_and_exit(Some("multiple target paths provided"));
-                }
-                target_path = Some(PathBuf::from(path));
-            }
+            "-h" | "--help" => print_usage_and_exit("help requested"),
+            other => print_usage_and_exit(&format!("unknown argument `{other}`")),
         }
     }
 
-    let target_path = target_path.unwrap_or_else(|| {
-        print_usage_and_exit(Some("target file or directory path is required"))
-    });
-
-    ScanArgs {
-        model_path,
-        target_path,
+    Args {
+        dataset: dataset.unwrap_or_else(|| print_usage_and_exit("--dataset <dir> is required")),
+        model: model.unwrap_or_else(|| print_usage_and_exit("--model <path> is required")),
+        vocab: vocab.unwrap_or_else(|| print_usage_and_exit("--vocab <path> is required")),
         threshold,
-        json,
     }
 }
 
-fn is_apk_or_zip(path: &Path) -> bool {
+/// Ground-truth label inferred from the containing directory path
+/// (looks for a `benign` or `malware` path component, case-insensitively).
+/// Returns `None` for files that aren't under either — those are scored
+/// but excluded from the metrics since we don't know their true label.
+fn true_label_from_path(path: &Path) -> Option<bool> {
+    let lower = path.to_string_lossy().to_ascii_lowercase();
+    let has = |needle: &str| {
+        lower
+            .split(|c| c == '/' || c == '\\')
+            .any(|part| part == needle)
+    };
+    if has("malware") {
+        Some(true)
+    } else if has("benign") {
+        Some(false)
+    } else {
+        None
+    }
+}
+
+fn is_apk_file(path: &Path) -> bool {
     path.extension()
         .and_then(|e| e.to_str())
-        .map(|e| e.eq_ignore_ascii_case("apk") || e.eq_ignore_ascii_case("zip"))
+        .map(|e| e.eq_ignore_ascii_case("apk"))
         .unwrap_or(false)
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args();
 
-    if !args.model_path.exists() {
-        eprintln!("error: model file not found at `{}`", args.model_path.display());
-        exit(2);
-    }
+    println!("loading model: {}", args.model.display());
+    let model_bytes = std::fs::read(&args.model)?;
+    let vocab_bytes = std::fs::read(&args.vocab)?;
+    let device = burn::backend::ndarray::NdArrayDevice::default();
+    let mut model = Model::load(&model_bytes, &vocab_bytes, device)?;
+    model.set_threshold(args.threshold);
 
-    let device = NdArrayDevice::default();
-    let model_path_str = match args.model_path.to_str() {
-        Some(s) => s,
-        None => {
-            eprintln!("error: model path is not valid UTF-8");
-            exit(2);
+    let (mut tp, mut fp, mut tn, mut fn_) = (0usize, 0usize, 0usize, 0usize);
+    let mut unlabeled = 0usize;
+    let mut unparseable = 0usize;
+    let mut total_labeled = 0usize;
+
+    println!("scanning: {}\n", args.dataset.display());
+
+    for entry in WalkDir::new(&args.dataset).into_iter().filter_map(|e| e.ok()) {
+        if !entry.file_type().is_file() || !is_apk_file(entry.path()) {
+            continue;
         }
-    };
+        let path = entry.path();
 
-    let mut model = match Model::load_from_path(model_path_str, device) {
-        Ok(m) => m,
-        Err(e) => {
-            eprintln!("error: failed to load model: {e}");
-            exit(2);
-        }
-    };
-
-    if let Some(t) = args.threshold {
-        model.set_threshold(t);
-    }
-
-    let mut targets = Vec::new();
-    if args.target_path.is_file() {
-        targets.push(args.target_path.clone());
-    } else if args.target_path.is_dir() {
-        for entry in WalkDir::new(&args.target_path).into_iter().filter_map(|e| e.ok()) {
-            let path = entry.path();
-            // Skip any path component containing "invalid"
-            let has_invalid = path.components().any(|c| {
-                c.as_os_str()
-                    .to_string_lossy()
-                    .to_ascii_lowercase()
-                    .contains("invalid")
-            });
-            if has_invalid {
-                continue;
-            }
-            if entry.file_type().is_file() && is_apk_or_zip(path) {
-                targets.push(path.to_path_buf());
-            }
-        }
-    } else {
-        eprintln!("error: target `{}` does not exist", args.target_path.display());
-        exit(2);
-    }
-
-    if targets.is_empty() {
-        eprintln!("no APK/ZIP files found at `{}`", args.target_path.display());
-        exit(0);
-    }
-
-    let mut found_malicious = false;
-
-    for path in &targets {
         let bytes = match std::fs::read(path) {
             Ok(b) => b,
             Err(e) => {
-                eprintln!("warning: skipped `{}`: {e}", path.display());
+                eprintln!("warning: could not read {}: {e}", path.display());
                 continue;
             }
         };
 
-        match model.scan(&bytes) {
-            Some(res) => {
-                if res.malicious || res.suspicious {
-                    found_malicious = true;
-                }
-
-                if args.json {
-                    println!(
-                        "{{\"file\":\"{}\",\"malicious\":{},\"suspicious\":{},\"confidence\":{:.4}}}",
-                        path.display().to_string().replace('\\', "/"),
-                        res.malicious,
-                        res.suspicious,
-                        res.confidence
-                    );
-                } else {
-                    let status = if res.malicious {
-                        "[MALICIOUS]"
-                    } else if res.suspicious {
-                        "[SUSPICIOUS]"
-                    } else {
-                        "[CLEAN]"
-                    };
-                    println!(
-                        "{:<13} {:<60} (confidence: {:.2}%)",
-                        status,
-                        path.display(),
-                        res.confidence * 100.0
-                    );
-                }
-            }
+        let result = match model.scan(&bytes) {
+            Some(r) => r,
             None => {
-                if args.json {
-                    println!(
-                        "{{\"file\":\"{}\",\"error\":\"unable to extract features or tokenize APK\"}}",
-                        path.display().to_string().replace('\\', "/")
-                    );
-                } else {
-                    println!("{:<13} {:<60} (unsupported format / no DEX)", "[SKIPPED]", path.display());
-                }
+                unparseable += 1;
+                eprintln!("skip (unparseable): {}", path.display());
+                continue;
             }
+        };
+
+        let verdict = if result.malicious {
+            "MALICIOUS"
+        } else if result.suspicious {
+            "SUSPICIOUS"
+        } else {
+            "BENIGN"
+        };
+        println!("{verdict:>10}  {:.4}  {}", result.confidence, path.display());
+
+        let Some(true_malware) = true_label_from_path(path) else {
+            unlabeled += 1;
+            continue;
+        };
+        let predicted_malware = result.confidence >= args.threshold;
+        total_labeled += 1;
+        match (predicted_malware, true_malware) {
+            (true, true) => tp += 1,
+            (true, false) => fp += 1,
+            (false, false) => tn += 1,
+            (false, true) => fn_ += 1,
         }
     }
 
-    if found_malicious {
-        exit(1);
-    }
+    let accuracy = (tp + tn) as f64 / (total_labeled.max(1) as f64);
+    let precision = tp as f64 / ((tp + fp).max(1) as f64);
+    let recall = tp as f64 / ((tp + fn_).max(1) as f64);
+    let f1 = if precision + recall > 0.0 {
+        2.0 * precision * recall / (precision + recall)
+    } else {
+        0.0
+    };
+
+    println!("\n== summary ==");
+    println!("labeled files scored: {total_labeled} (unlabeled: {unlabeled}, unparseable: {unparseable})");
+    println!("TP={tp} FP={fp} TN={tn} FN={fn_}");
+    println!(
+        "accuracy={accuracy:.4} precision={precision:.4} recall={recall:.4} f1={f1:.4} (threshold={:.2})",
+        args.threshold
+    );
+
+    Ok(())
 }

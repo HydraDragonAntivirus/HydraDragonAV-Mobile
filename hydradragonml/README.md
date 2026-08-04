@@ -1,189 +1,145 @@
-# HydraDragon ML Engine (`hydradragonml`)
+# hydradragonml
 
-`hydradragonml` is a high-performance, Rust-native malware and benign Android APK binary classifier powered by the [Burn](https://burn.dev) deep learning framework and `ripzip` for ultra-fast, zero-copy APK ZIP parsing.
+Pure-Rust [Burn](https://burn.dev) (NdArray) malware/benign APK binary
+classifier. Real, content-derived features are parsed straight from the APK
+(DEX structure, native ELF libraries and `AndroidManifest.xml`) with the same
+parsers used by the Android engine, then fed through an Embedding + mean-pool
+text branch fused with the engine features in an MLP → sigmoid confidence.
+Training and inference both run in Rust; weights ship as a `.mpk` file that the
+Android engine loads at runtime.
 
-## Key Features
+## A note on the model architecture
 
-- **Burn 0.21 Neural Network (`ApkClassifier`)**: Combines embedding bag mean-pooling over APK string tokens with 18 content-derived static analysis features (`EngineFeatures`).
-- **Zero-Copy Archive Processing (`ripzip`)**: Reads APK ZIP entries (`classes*.dex`, `AndroidManifest.xml`, `lib/**/*.so`) directly out of in-memory byte slices without external zip dependencies.
-- **Hashing Trick Tokenizer**: String tokens are mapped to IDs via deterministic FNV-1a hashing — no `vocab.json` required. Every token from any APK maps to `1..(VOCAB_SIZE-1)`, eliminating out-of-vocabulary fallback.
-- **Content-Derived Feature Extraction**:
-  - **DEX Analysis**: Class counts, string counts, framework API call counts, high & critical severity API usage findings (dynamic code loading, reflection, shell execution, premium SMS).
-  - **AXML Analysis**: Binary AndroidManifest parsing for dangerous permissions, total permissions, components (activities, services, receivers), and SDK version targets.
-  - **ELF Native Analysis**: Section header parsing for dynamic symbol import classification (network calls, file I/O, process execution, anti-debugging, emulator detection strings).
-- **Standalone Scanning CLI (`hydradragonml-scan`)**: Scan single APK files or directories recursively with human-readable or JSON output.
-- **Standalone Training Binary (`hydradragonml-train`)**: Train the model on labeled benign and malware APK corpora using a manual Burn training loop with Adam optimizer and binary cross-entropy loss.
+The classifier is deliberately a **simple, classic architecture** — a mean-pooled
+token embedding (a "bag of subwords" text branch, with no positional or
+sequential modeling) fused with a shallow MLP over the engine features. This is
+not a modern sequence model (no attention, no RNN/CNN over the token stream);
+it's closer to a 2015-era text-classification baseline. That's an intentional
+trade-off for this use case, not an oversight:
 
----
+- **On-device budget**: the whole model (embedding table + a handful of small
+  `Linear` layers) is a few MB and runs inference in single-digit milliseconds
+  on a phone CPU, with no GPU/accelerator dependency.
+- **Interpretability**: a shallow MLP over 18 named, human-checkable engine
+  features (`dump-apk-features`) is much easier to audit and debug than a deep
+  sequence model's internals.
+- **Bare-APK data budget**: subword mean-pooling degrades gracefully with the
+  amount of realistic labeled training data available for a niche
+  binary-classification task; a large transformer would likely overfit or
+  need far more data to earn its extra capacity.
 
-## ⚡ Quick Reference
+The trade-off is real, though: mean-pooling discards token order, so the text
+branch can't learn phrase-level or call-sequence patterns — it's essentially a
+weighted vocabulary-presence signal. If false-negative rate on
+order-sensitive obfuscation patterns becomes a problem, the natural upgrade
+path is a small 1D-CNN or single-layer Transformer over the token embeddings
+in place of the mean-pool, without touching the engine-feature branch or the
+DEX/ELF/manifest parsers.
 
-```bash
-# Build all binaries
-cargo build --release
+## Architecture
 
-# Run all tests
-cargo test
+1. **Parsers** (`features::dex`, `features::elf`, `features::axml`) extract real
+   content from APK entries: DEX class/string/API-call counts, ELF
+   emulator/network/file/exec strings and anti-debug markers, and manifest
+   permissions (dangerous/total), activities, services, receivers and
+   min/target SDK. This is the **single source of truth** for both training and
+   on-device inference (`EngineFeatures::extract_from_apk`). Archive reading
+   itself goes through `ripzip` (parsing the ZIP central directory straight
+   from the in-memory APK bytes) with `flate2` handling DEFLATE decompression
+   for individual entries.
+2. **Tokenizer** (`features::Tokenizer`) loads `vocab.json` (20K subword tokens,
+   `0` = UNK), harvests printable strings from APK entries (entry names,
+   `AndroidManifest.xml`, `resources.arsc`, `*.dex`, `META-INF/`), splits on
+   delimiters, and maps each fragment to a vocabulary index.
+3. **Model** (`model::ApkClassifier`) embeds the token indices and mean-pools
+   them, passes the pooled text vector and the 18 normalized engine features
+   through a small MLP, and outputs a sigmoid confidence:
+   - text branch: `Embedding(20K → 64) → mean-pool → Linear(64 → 32) → ReLU`
+   - engine branch: `Linear(18 → 32) → ReLU`
+   - fused: `concat → Linear(64 → 32) → ReLU → Linear(32 → 1) → Sigmoid`
+4. **Output**: confidence `0.0` (benign) to `1.0` (malware). `>= 0.95`
+   malicious, `>= 0.90` suspicious (see `DEFAULT_CONFIDENCE_THRESHOLD` /
+   `SUSPICIOUS_THRESHOLD` in `lib.rs`).
 
-# Scan a single APK
-cargo run --release --bin hydradragonml-scan -- --model model.mpk target.apk
+The engine features (`EngineFeatures`) are 18 content-derived values that the
+Android engine can compute from a bare APK: 5 DEX structure counts, 6 native
+ELF library signals and 7 manifest fields — all normalized to `[0, 1]`.
+External/reputation-style signals (URL/IP blocklists, certificate test-key
+flags, benign-DB similarity, media steganography, runtime HIPS findings) are
+deliberately NOT part of the learned representation: they are neither available
+at training time from a bare APK nor comparable between training and on-device
+inference. The MinHash pipeline (`features::extract_minhash`) is kept for
+benign-DB lookups and uses FNV-1a hashing (unchanged).
 
-# Scan a directory (JSON output)
-cargo run --release --bin hydradragonml-scan -- --model model.mpk --json ../dataset/
+> ⚠️ **`.mpk` weight compatibility**: the engine-feature vector width is a
+> fixed constant (`features::ENGINE_FEATURE_COUNT`, currently 18) baked into
+> `ApkClassifier`'s `fc_engine` layer shape. Any change to that constant means
+> previously trained `.mpk` weights will fail to load (`load_record` shape
+> mismatch) and the model must be retrained from scratch.
 
-# Train a new model
-cargo run --release --bin hydradragonml-train -- --benign ../dataset/benign --malware ../dataset/malware --output model.mpk
+## Building the vocabulary
 
-# Train with custom hyperparameters
-cargo run --release --bin hydradragonml-train -- --benign ../dataset/benign --malware ../dataset/malware --output model.mpk --epochs 10 --lr 0.0005 --batch-size 16
+The `vocab.json` token vocabulary is built over the same corpus that trains the
+model, so training and inference tokenize identically.
 
-# Scan with custom confidence threshold
-cargo run --release --bin hydradragonml-scan -- --model model.mpk --threshold 0.90 target.apk
+```powershell
+cargo build --release; .\target\release\hydradragonml-vocab.exe --corpus ..\dataset\benign,..\dataset\malware --output vocab.json
 ```
 
-> **Note on dataset paths:** If executing commands from inside `hydradragonml/`, use `../dataset/` (since `dataset/` is located at the root of the repository). If running from the root repository, add `--manifest-path hydradragonml/Cargo.toml` and use `./dataset/`.
+## Training the model
 
----
-
-## Workspace Architecture
-
-```
-hydradragonml/
-├── Cargo.toml
-├── src/
-│   ├── lib.rs              # High-level Model API & scanner entry points
-│   ├── main.rs             # `hydradragonml-scan` CLI tool
-│   ├── model.rs            # Burn 0.21 ApkClassifier network module
-│   ├── bin/
-│   │   └── train.rs        # `hydradragonml-train` binary
-│   └── features/
-│       ├── mod.rs          # Re-exports feature extraction modules
-│       ├── features.rs     # EngineFeatures, Tokenizer (Hashing Trick) & MinHash extraction
-│       ├── axml.rs         # Binary AndroidManifest.xml parser
-│       ├── dex.rs          # Dalvik Executable (DEX) parser
-│       └── elf.rs          # ELF32/64 native shared library parser
+```powershell
+cargo build --release; .\target\release\hydradragonml-train.exe --benign ..\dataset\benign --malware ..\dataset\malware --vocab vocab.json --output model.mpk --epochs 6 --lr 0.001 --batch-size 8
 ```
 
----
+This walks `--benign/` and `--malware/` recursively for `.apk`/`.zip` files,
+extracts each file's engine features (`EngineFeatures::extract_from_apk`) and
+tokenizes it, splits 80/20 into train/valid, trains `ApkClassifier` with Adam +
+binary cross-entropy (LR halves each epoch), and saves the weights as a Burn
+`.mpk` file (`model.mpk`), copying `vocab.json` next to it for deployment.
 
-## Dataset & Training Setup
+`--vocab` must be the same `vocab.json` shipped in the Android assets; it has to
+be built over the same corpus so training and inference tokenize identically.
 
-### 1. Dataset Directory Structure
+## Dataset scanner (CLI)
 
-Organize your dataset into two directories containing `.apk` or `.zip` files:
-
-```
-dataset/
-├── benign/
-│   ├── app1.apk
-│   ├── app2.apk
-│   └── ...
-└── malware/
-    ├── mal1.apk
-    ├── mal2.apk
-    └── ...
+```powershell
+cargo build --release; .\target\release\hydradragonml-scan.exe --dataset ..\dataset\ --model model.mpk --vocab vocab.json --threshold 0.5
 ```
 
-### 2. Hashing Trick Tokenizer
+Walks the dataset for `.apk` files, scores each with the model, prints per-file
+verdicts (MALICIOUS/BENIGN + confidence), and reports TP/FP/TN/FN,
+accuracy/precision/recall/F1 against the benign/malware folder labels. The scan
+binary builds the real engine features with `EngineFeatures::extract_from_apk`,
+so CLI metrics reflect actual on-device runtime behaviour.
 
-The tokenizer uses the **FNV-1a Hashing Trick** — no `vocab.json` is needed.
+## Inspecting extracted features
 
-Every string token extracted from an APK (class names, permission strings, API calls, etc.) is mapped to an integer ID via:
-
-```
-id = (fnv1a_64(token.to_lowercase()) % (VOCAB_SIZE - 1)) + 1
-```
-
-- ID `0` is reserved for padding.
-- IDs are always in `1..(VOCAB_SIZE - 1)`.
-- Tokens from unseen apps never fall back to `<UNK>` — every token gets a deterministic, collision-resistant bucket.
-
-This means **no vocabulary build step is needed before training**.
-
-### 3. Training the Model (`hydradragonml-train`)
-
-Run `hydradragonml-train` to train the classifier:
-
-```bash
-cargo run --bin hydradragonml-train -- \
-    --benign path/to/benign/ \
-    --malware path/to/malware/ \
-    --output model.mpk \
-    --epochs 10 \
-    --lr 0.001 \
-    --batch-size 16
+```powershell
+cargo build --release; .\target\release\dump-apk-features.exe ..\com.ttech.android.onlineislem_base.apk
 ```
 
-#### Training Arguments
+Prints the raw DEX/ELF/manifest feature values for a single APK — useful to
+verify the parsers and understand what a particular verdict is based on.
 
-| Argument | Description | Default |
-|---|---|---|
-| `--benign <dir>` | Directory containing clean/benign APKs (**Required**) | - |
-| `--malware <dir>` | Directory containing malware APKs (**Required**) | - |
-| `--output <path>` | Output weights file path | `model.mpk` |
-| `--epochs <n>` | Number of training epochs | `6` |
-| `--lr <float>` | Initial learning rate | `0.001` |
-| `--batch-size <n>` | Training batch size | `8` |
-
-The training process shuffles samples, splits into an 80/20 train/validation split, prints epoch loss & accuracy metrics, and saves the final weights (`model.mpk`).
-
----
-
-## Running Scans (`hydradragonml-scan`)
-
-Use `hydradragonml-scan` to evaluate APK files or entire directories against a trained model:
-
-```bash
-cargo run --bin hydradragonml-scan -- \
-    --model model.mpk \
-    --threshold 0.95 \
-    path/to/apk_or_directory
-```
-
-### Options
-
-- `--model <file>`: Path to model weights (default: `model.mpk`).
-- `--threshold <f32>`: Confidence threshold for malicious verdicts (default: `0.95`).
-- `--json`: Output verdicts in JSON lines format.
-
-### Example JSON Output
-
-```json
-{"file":"samples/suspicious_app.apk","malicious":true,"suspicious":false,"confidence":0.9874}
-```
-
----
-
-## Using `hydradragonml` as a Rust Library
-
-Add `hydradragonml` to your `Cargo.toml`:
-
-```toml
-[dependencies]
-hydradragonml = { path = "../hydradragonml" }
-burn = { version = "0.21", default-features = false, features = ["ndarray"] }
-```
-
-### Loading and Scanning in Code
+## Library
 
 ```rust
-use hydradragonml::{Model, DEFAULT_CONFIDENCE_THRESHOLD};
-use burn::backend::ndarray::NdArrayDevice;
+use hydradragonml::Model;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let device = NdArrayDevice::default();
-    let model_bytes = std::fs::read("model.mpk")?;
-
-    // No vocab.json needed — Hashing Trick tokenizer is stateless
-    let model = Model::load(&model_bytes, device)?;
-
-    let apk_bytes = std::fs::read("target_sample.apk")?;
-    if let Some(result) = model.scan(&apk_bytes) {
-        println!("Malicious: {}", result.malicious);
-        println!("Suspicious: {}", result.suspicious);
-        println!("Confidence: {:.2}%", result.confidence * 100.0);
-    }
-
-    Ok(())
-}
+let model_bytes = std::fs::read("model.mpk")?;
+let vocab_bytes = std::fs::read("vocab.json")?;
+let device = burn::backend::ndarray::NdArrayDevice::default();
+let model = Model::load(&model_bytes, &vocab_bytes, device)?;
+let apk = std::fs::read("sample.apk")?;
+let result = model.scan_with_features(&apk, &hydradragonml::features::EngineFeatures::extract_from_apk(&apk).unwrap_or_default());
+println!("malicious={} suspicious={} confidence={}",
+         result.malicious, result.suspicious, result.confidence);
 ```
+
+## On-device (Android)
+
+Ship `model.mpk` + `vocab.json` as app assets. The JNI bridge in
+`hydradragonandroid` loads both at init (`hydradragonml::Model::load`) and calls
+`Model::scan_with_features` per APK with the live engine features built by
+`hydradragonandroid::build_engine_features` (DEX/ELF/manifest content only).
