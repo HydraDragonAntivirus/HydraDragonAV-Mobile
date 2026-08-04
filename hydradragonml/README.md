@@ -28,23 +28,25 @@ cargo test
 cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json target.apk
 
 # Scan a directory (JSON output)
-cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json --json ./dataset/
+cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json --json ../dataset/
 
 # Build vocab from corpus (run this first, before training)
-cargo run --release --bin hydradragonml-build-vocab -- --benign ./dataset/benign --malware ./dataset/malware --output vocab.json
+cargo run --release --bin hydradragonml-build-vocab -- --benign ../dataset/benign --malware ../dataset/malware --output vocab.json
 
 # Build vocab with custom size
-cargo run --release --bin hydradragonml-build-vocab -- --benign ./dataset/benign --malware ./dataset/malware --output vocab.json --vocab-size 20000
+cargo run --release --bin hydradragonml-build-vocab -- --benign ../dataset/benign --malware ../dataset/malware --output vocab.json --vocab-size 20000
 
 # Train a new model
-cargo run --release --bin hydradragonml-train -- --benign ./dataset/benign --malware ./dataset/malware --vocab vocab.json --output model.mpk
+cargo run --release --bin hydradragonml-train -- --benign ../dataset/benign --malware ../dataset/malware --vocab vocab.json --output model.mpk
 
 # Train with custom hyperparameters
-cargo run --release --bin hydradragonml-train -- --benign ./benign --malware ./malware --vocab vocab.json --output model.mpk --epochs 10 --lr 0.0005 --batch-size 16
+cargo run --release --bin hydradragonml-train -- --benign ../dataset/benign --malware ../dataset/malware --vocab vocab.json --output model.mpk --epochs 10 --lr 0.0005 --batch-size 16
 
 # Scan with custom confidence threshold
 cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json --threshold 0.90 target.apk
 ```
+
+> **Note on dataset paths:** If executing commands from inside `hydradragonml/`, use `../dataset/` (since `dataset/` is located at the root of the repository). If running from the root repository, add `--manifest-path hydradragonml/Cargo.toml` and use `./dataset/`.
 
 ---
 
