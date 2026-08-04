@@ -200,7 +200,7 @@ impl SimpleRng {
 /// pooled vector of short sequences toward the `<UNK>` embedding. This
 /// matches the (unmasked) pooling already implemented in `model.rs`; fixing
 /// it properly would mean adding mask support to `forward_batch` itself.
-fn make_batch<B: Backend>(
+fn make_batch<B: Backend<FloatElem = f32>>(
     batch: &[&Sample],
     device: &B::Device,
 ) -> (Tensor<B, 2, Int>, Tensor<B, 2, Float>, Tensor<B, 2, Float>) {
@@ -234,7 +234,7 @@ fn make_batch<B: Backend>(
 /// Binary cross-entropy over the model's own sigmoid output (the model
 /// already ends in `sigmoid`, so this operates on probabilities directly
 /// rather than logits).
-fn bce_loss<B: Backend>(pred: Tensor<B, 2, Float>, target: Tensor<B, 2, Float>) -> Tensor<B, 1> {
+fn bce_loss<B: Backend<FloatElem = f32>>(pred: Tensor<B, 2, Float>, target: Tensor<B, 2, Float>) -> Tensor<B, 1> {
     let eps = 1e-7;
     let p = pred.clamp(eps, 1.0 - eps);
     let ones = Tensor::ones_like(&p);
@@ -244,7 +244,7 @@ fn bce_loss<B: Backend>(pred: Tensor<B, 2, Float>, target: Tensor<B, 2, Float>) 
     -per_example.mean()
 }
 
-fn evaluate<B: Backend>(
+fn evaluate<B: Backend<FloatElem = f32>>(
     model: &ApkClassifier<B>,
     samples: &[Sample],
     device: &B::Device,
