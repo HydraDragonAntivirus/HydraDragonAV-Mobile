@@ -108,7 +108,6 @@ const MODULE_DEPENDENT_YRC: &[&str] = &[
 /// Parses emerging-all.rules at runtime and builds a daachorse double-array
 /// automaton for hex-pattern matching.
 const MODEL_MPK: &str = "model.mpk";
-const VOCAB_JSON: &str = "vocab.json";
 /// NSRL known-good SHA-256 whitelist as a serialized Binary-Fuse (xor) filter
 /// (built offline by `xorfilter_writer`). Decoded once at init into an owned
 /// buffer on the native heap; binary-fuse encodings are far smaller than the
@@ -590,12 +589,11 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 let t_model = std::time::Instant::now();
                 let mut report = String::new();
                 let model_bytes = files.get(MODEL_MPK);
-                let vocab_bytes = files.get(VOCAB_JSON);
                 let device = burn::backend::ndarray::NdArrayDevice::default();
-                let model = match model_bytes.zip(vocab_bytes) {
-                    Some((m, v)) => {
+                let model = match model_bytes {
+                    Some(m) => {
                         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            hydradragonml::Model::load(m, v, device)
+                            hydradragonml::Model::load(m, device)
                         }));
                         match result {
                             Ok(Ok(m)) => {
@@ -1752,7 +1750,7 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 
 /// Attribute an asset filename to the engine component that consumes it.
 fn asset_category(name: &str) -> &'static str {
-    if name == MODEL_MPK || name == VOCAB_JSON {
+    if name == MODEL_MPK {
         "ml model"
     } else if name.ends_with(".yrc") {
         "yara rules"
