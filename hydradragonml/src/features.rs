@@ -136,103 +136,6 @@ impl EngineFeatures {
     }
 }
 
-/// One-pass result of scanning an APK's archive: the content-derived engine
-/// feature vector and the raw (pre-vocab) token strings, both produced from a
-/// single `parse_archive`/entry-decompression pass so an APK is never parsed
-/// or decompressed twice.
-///
-/// Returns `None` when the APK is unscannable: no parseable DEX/ELF/manifest
-/// entry (engine features) or no harvestable string content (tokens) — the
-/// caller must not feed an empty/all-zero sample to the model.
-pub struct ScanPayload {
-    pub engine_features: EngineFeatures,
-    pub raw_tokens: Vec<String>,
-}
-
-/// Single-pass feature + token extraction. Mirrors the union of
-/// `EngineFeatures::extract_from_apk` and `Tokenizer::raw_tokens` but loops
-/// over the archive once, decompressing each relevant entry at most once.
-pub fn scan_payload(apk: &[u8]) -> Option<ScanPayload> {
-    let archive = parse_archive(apk).ok()?;
-
-    let mut feats = EngineFeatures::default();
-    let mut tokens: Vec<String> = Vec::new();
-    let mut has_feature_entry = false;
-    let mut has_content = false;
-    let mut token_cap_reached = false;
-
-    for entry in &archive.entries {
-        if entry.is_dir {
-            continue;
-        }
-        let name = entry.file_name.clone();
-        let lname = name.to_ascii_lowercase();
-
-        let is_dex = lname.ends_with(".dex");
-        let is_manifest = lname == "androidmanifest.xml";
-        let is_native_lib = lname.starts_with("lib/") && lname.ends_with(".so");
-        let want_strings = is_manifest || lname == "resources.arsc" || is_dex || lname.starts_with("meta-inf/");
-        let need_data = is_dex || is_manifest || is_native_lib || want_strings;
-
-        // Entry names always contribute tokens (cheap, no decompress).
-        if !token_cap_reached {
-            Tokenizer::sub_tokenize_raw(&name, &mut tokens);
-        }
-
-        if need_data {
-            if let Some(buf) = read_entry_data(apk, entry) {
-                if want_strings && !token_cap_reached {
-                    has_content = true;
-                    Tokenizer::harvest_strings_raw(&buf, &mut tokens);
-                }
-                if is_dex {
-                    if let Some(d) = dex::analyze(&buf) {
-                        has_feature_entry = true;
-                        feats.dex_class_count += d.class_count as f32;
-                        feats.dex_string_count += d.string_count as f32;
-                        feats.dex_api_call_count += d.api_call_count as f32;
-                        feats.dex_finding_high += d.finding_high as f32;
-                        feats.dex_finding_critical += d.finding_critical as f32;
-                    }
-                } else if is_manifest {
-                    if let Some(m) = axml::analyze_manifest(&buf) {
-                        has_feature_entry = true;
-                        feats.manifest_dangerous_permissions = m.dangerous_permissions as f32;
-                        feats.manifest_total_permissions = m.total_permissions as f32;
-                        feats.manifest_activities = m.activities as f32;
-                        feats.manifest_services = m.services as f32;
-                        feats.manifest_receivers = m.receivers as f32;
-                        feats.manifest_min_sdk = m.min_sdk as f32;
-                        feats.manifest_target_sdk = m.target_sdk as f32;
-                    }
-                } else if is_native_lib {
-                    if let Some(e) = elf::analyze(&buf) {
-                        has_feature_entry = true;
-                        feats.elf_count += 1.0;
-                        feats.elf_emulated_strings += e.emulated_strings as f32;
-                        feats.elf_network_calls += e.network_calls as f32;
-                        feats.elf_file_calls += e.file_calls as f32;
-                        feats.elf_exec_calls += e.exec_calls as f32;
-                        feats.elf_anti_debug += e.anti_debug as f32;
-                    }
-                }
-            }
-        }
-
-        if tokens.len() >= MAX_TOKENS {
-            token_cap_reached = true;
-        }
-    }
-
-    if !has_feature_entry || !has_content || tokens.is_empty() {
-        return None;
-    }
-    Some(ScanPayload {
-        engine_features: feats,
-        raw_tokens: tokens,
-    })
-}
-
 /// Reads and decompresses a single ZIP entry's data out of the full APK
 /// byte slice, using `ripzip` to locate the entry's actual data offset
 /// (skipping past the variable-length local file header) and `flate2` to
@@ -308,39 +211,17 @@ impl Tokenizer {
     }
 
     pub fn tokenize(&self, apk: &[u8]) -> Option<Vec<i64>> {
-        let raw = Self::raw_tokens(apk)?;
-        Some(
-            raw.iter()
-                .map(|token| self.vocab.get(token).copied().unwrap_or(0))
-                .collect(),
-        )
-    }
-
-    /// Map a pre-extracted raw token list to vocab ids. Used after a single
-    /// `scan_payload` pass so the ST tokenization (which already walked the
-    /// archive) is not repeated just to resolve vocabulary indices.
-    pub fn map_ids(&self, raw_tokens: &[String]) -> Vec<i64> {
-        raw_tokens
-            .iter()
-            .map(|token| self.vocab.get(token).copied().unwrap_or(0))
-            .collect()
-    }
-
-    /// Extract the same lowercase, delimiter-split subword tokens used at
-    /// inference, without mapping them to vocabulary ids. Used by the
-    /// vocabulary builder to count token frequencies over a corpus.
-    pub fn raw_tokens(apk: &[u8]) -> Option<Vec<String>> {
-        let mut tokens: Vec<String> = Vec::new();
+        let mut tokens: Vec<i64> = Vec::new();
         let mut has_content = false;
 
         for_each_entry(apk, |name, content| {
             if tokens.len() >= MAX_TOKENS {
                 return;
             }
-            Self::sub_tokenize_raw(name, &mut tokens);
+            self.sub_tokenize(name, &mut tokens);
             if !content.is_empty() {
                 has_content = true;
-                Self::harvest_strings_raw(content, &mut tokens);
+                self.harvest_strings(content, &mut tokens);
             }
         })?;
 
@@ -361,75 +242,6 @@ impl Tokenizer {
                 if out.len() >= MAX_TOKENS {
                     return;
                 }
-            }
-        }
-    }
-
-    fn sub_tokenize_raw(text: &str, out: &mut Vec<String>) {
-        for part in text.split(|c: char| {
-            c == '.' || c == '/' || c == ';' || c == ':' || c == '-' || c == '\\' || c == '_'
-        }) {
-            if part.len() >= 2 {
-                out.push(part.to_ascii_lowercase());
-                if out.len() >= MAX_TOKENS {
-                    return;
-                }
-            }
-        }
-    }
-
-    fn harvest_strings_raw(data: &[u8], out: &mut Vec<String>) {
-        // ASCII runs
-        let mut start: Option<usize> = None;
-        for (i, &b) in data.iter().enumerate() {
-            let printable = (0x20..0x7f).contains(&b);
-            if printable {
-                if start.is_none() {
-                    start = Some(i);
-                }
-            } else if let Some(s) = start.take() {
-                if i - s >= MIN_STR_LEN {
-                    if let Ok(text) = std::str::from_utf8(&data[s..i]) {
-                        Self::sub_tokenize_raw(text, out);
-                        if out.len() >= MAX_TOKENS {
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-        if let Some(s) = start {
-            if data.len() - s >= MIN_STR_LEN {
-                if let Ok(text) = std::str::from_utf8(&data[s..]) {
-                    Self::sub_tokenize_raw(text, out);
-                }
-            }
-        }
-
-        // UTF-16LE runs
-        let mut utf_buf: Vec<u8> = Vec::new();
-        let mut j = 0;
-        while j + 1 < data.len() {
-            let lo = data[j];
-            let hi = data[j + 1];
-            if hi == 0 && (0x20..0x7f).contains(&lo) {
-                utf_buf.push(lo);
-            } else {
-                if utf_buf.len() >= MIN_STR_LEN {
-                    if let Ok(text) = std::str::from_utf8(&utf_buf) {
-                        Self::sub_tokenize_raw(text, out);
-                        if out.len() >= MAX_TOKENS {
-                            return;
-                        }
-                    }
-                }
-                utf_buf.clear();
-            }
-            j += 2;
-        }
-        if utf_buf.len() >= MIN_STR_LEN {
-            if let Ok(text) = std::str::from_utf8(&utf_buf) {
-                Self::sub_tokenize_raw(text, out);
             }
         }
     }
@@ -631,8 +443,7 @@ mod integration_tests {
             let cursor = std::io::Cursor::new(&mut buf);
             let mut zip = zip::ZipWriter::new(cursor);
             for (name, data) in entries {
-                zip.start_file::<&str, ()>(*name, zip::write::FileOptions::default())
-                    .unwrap();
+                zip.start_file(*name, zip::write::FileOptions::default()).unwrap();
                 zip.write_all(data).unwrap();
             }
             zip.finish().unwrap();

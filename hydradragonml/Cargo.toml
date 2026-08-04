@@ -30,7 +30,3 @@ path = "src/main.rs"
 [[bin]]
 name = "hydradragonml-train"
 path = "src/bin/train.rs"
-
-[[bin]]
-name = "hydradragonml-vocab"
-path = "src/bin/build_vocab.rs"

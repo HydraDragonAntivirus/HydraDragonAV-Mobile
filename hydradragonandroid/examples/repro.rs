@@ -56,7 +56,7 @@ fn run() {
     let vocab_bytes = std::fs::read(base.join("vocab.json")).ok();
     let model = model_bytes
         .zip(vocab_bytes)
-        .and_then(|(m, v)| Model::load(&m, &v).ok());
+        .and_then(|(m, v)| Model::load(&m, &v, burn::backend::ndarray::NdArrayDevice::default()).ok());
     eprintln!("STEP: loaded ok");
     println!("loaded: clamav={} model={}", clamav.is_some(), model.is_some());
 
@@ -81,7 +81,7 @@ fn run() {
             eprintln!("[{i}] clamav scanning {name}");
             let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let opts = ScanOptions::default();
-                c.scan_bytes_named(&bytes, &name, opts).len()
+                c.scan_bytes_named(&bytes, &name, opts, &[]).len()
             }));
             if r.is_err() {
                 clamav_panics += 1;
