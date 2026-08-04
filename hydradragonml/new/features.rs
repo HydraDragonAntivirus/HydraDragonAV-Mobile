@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
-use ripzip::extract::zip_reader::{ZipEntry, parse_archive, parse_local_header_data_offset};
+use ripzip::extract::zip_reader::{parse_archive, parse_local_header_data_offset, ZipEntry};
 use ripzip::zip_format::{COMPRESSION_DEFLATED, COMPRESSION_STORED};
 
-use super::axml;
-use super::dex;
-use super::elf;
+use crate::dex;
+use crate::axml;
+use crate::elf;
 
 pub const VOCAB_SIZE: usize = 20000;
 pub const EMBED_DIM: usize = 64;
@@ -13,13 +13,10 @@ pub const MIN_STR_LEN: usize = 5;
 pub const MAX_TOKENS: usize = 4096;
 pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
-/// 5 DEX fields + 6 ELF fields + 7 manifest fields + 1 content-entropy field.
-/// Every one of these is computed from the APK's actual content (see
-/// `EngineFeatures::extract_from_apk`) — there are no placeholder/default-only
-/// fields left in this struct. The final field carries the Shannon entropy
-/// (bits, 0..8) of the decompressed DEX/ELF/AndroidManifest.xml content, which
-/// catches packed/obfuscated payloads that otherwise hide behind normal counts.
-pub const ENGINE_FEATURE_COUNT: usize = 19;
+/// 5 DEX fields + 6 ELF fields + 7 manifest fields. Every one of these is
+/// computed from the APK's actual content (see `EngineFeatures::extract_from_apk`)
+/// — there are no placeholder/default-only fields left in this struct.
+pub const ENGINE_FEATURE_COUNT: usize = 18;
 
 #[derive(Clone, Debug, Default)]
 pub struct EngineFeatures {
@@ -44,37 +41,29 @@ pub struct EngineFeatures {
     pub manifest_receivers: f32,
     pub manifest_min_sdk: f32,
     pub manifest_target_sdk: f32,
-    // Content entropy
-    pub entropy: f32,
 }
 
 impl EngineFeatures {
     pub fn to_vec(&self) -> Vec<f32> {
-        // Count features use log-scale normalization with high caps so that
-        // genuinely huge (but legitimate) apps don't saturate at 1.0 and get
-        // mistaken for the most extreme malware. `log2(x+1)/log2(cap+1)` keeps
-        // small values spread out while letting multi-thousand/multi-hundred
-        // magnitudes stay distinguishable instead of clamping.
         vec![
-            log_norm(self.dex_class_count, 200_000.0),
-            log_norm(self.dex_string_count, 2_000_000.0),
-            log_norm(self.dex_api_call_count, 100_000.0),
-            log_norm(self.dex_finding_high, 200.0),
-            log_norm(self.dex_finding_critical, 100.0),
-            log_norm(self.elf_count, 200.0),
-            log_norm(self.elf_emulated_strings, 1_000.0),
-            log_norm(self.elf_network_calls, 500.0),
-            log_norm(self.elf_file_calls, 500.0),
-            log_norm(self.elf_exec_calls, 200.0),
-            log_norm(self.elf_anti_debug, 200.0),
-            log_norm(self.manifest_dangerous_permissions, 100.0),
-            log_norm(self.manifest_total_permissions, 200.0),
-            log_norm(self.manifest_activities, 500.0),
-            log_norm(self.manifest_services, 200.0),
-            log_norm(self.manifest_receivers, 200.0),
+            self.dex_class_count.min(5000.0) / 5000.0,
+            self.dex_string_count.min(50000.0) / 50000.0,
+            self.dex_api_call_count.min(5000.0) / 5000.0,
+            (self.dex_finding_high / 20.0).min(1.0),
+            (self.dex_finding_critical / 10.0).min(1.0),
+            (self.elf_count / 20.0).min(1.0),
+            (self.elf_emulated_strings / 100.0).min(1.0),
+            (self.elf_network_calls / 50.0).min(1.0),
+            (self.elf_file_calls / 50.0).min(1.0),
+            (self.elf_exec_calls / 20.0).min(1.0),
+            (self.elf_anti_debug / 20.0).min(1.0),
+            (self.manifest_dangerous_permissions / 30.0).min(1.0),
+            (self.manifest_total_permissions / 50.0).min(1.0),
+            (self.manifest_activities / 50.0).min(1.0),
+            (self.manifest_services / 20.0).min(1.0),
+            (self.manifest_receivers / 20.0).min(1.0),
             ((self.manifest_min_sdk - 1.0) / 34.0).clamp(0.0, 1.0),
             ((self.manifest_target_sdk - 1.0) / 34.0).clamp(0.0, 1.0),
-            (self.entropy / 8.0).min(1.0),
         ]
     }
 
@@ -86,8 +75,6 @@ impl EngineFeatures {
 
         let mut feats = EngineFeatures::default();
         let mut saw_any_entry = false;
-        let mut content_hist = [0u64; 256];
-        let mut content_total: u64 = 0;
 
         for entry in &archive.entries {
             if entry.is_dir {
@@ -106,11 +93,6 @@ impl EngineFeatures {
                 Some(b) => b,
                 None => continue,
             };
-
-            // Accumulate a byte histogram over the decompressed content of the
-            // code-bearing entries so we can derive a single Shannon-entropy
-            // feature covering DEX + ELF + manifest payloads.
-            update_entropy_histogram(&mut content_hist, &mut content_total, &buf);
 
             if is_dex {
                 if let Some(d) = dex::analyze(&buf) {
@@ -150,49 +132,8 @@ impl EngineFeatures {
         if !saw_any_entry {
             return None;
         }
-        feats.entropy = shannon_entropy(&content_hist, content_total);
         Some(feats)
     }
-}
-
-/// Accumulates a per-byte-value histogram of `data` into `hist`, bumping
-/// `total` by the number of bytes seen. Meant to be called once per
-/// decompressed code-bearing entry so the caller can later derive a single
-/// bytes-weighted Shannon-entropy feature across all of them.
-pub fn update_entropy_histogram(hist: &mut [u64; 256], total: &mut u64, data: &[u8]) {
-    for &b in data {
-        hist[b as usize] += 1;
-    }
-    *total += data.len() as u64;
-}
-
-/// Log-scale normalization for count-based engine features: `log2(x+1)` /
-/// `log2(cap+1)`, clamped to `[0, 1]`. Counts well above `cap` (huge but
-/// legitimate apps) no longer saturate — they stay below 1.0 and keep their
-/// relative magnitude, while tiny counts still resolve near zero.
-fn log_norm(x: f32, cap: f32) -> f32 {
-    if x <= 0.0 {
-        return 0.0;
-    }
-    ((x + 1.0).log2() / (cap + 1.0).log2()).clamp(0.0, 1.0)
-}
-
-/// Shannon entropy in bits (0.0..8.0) of the byte distribution described by
-/// `hist`/`total`: `-sum(p_i * log2(p_i))`. Returns 0.0 when there are no
-/// bytes (empty/zero-length input).
-pub fn shannon_entropy(hist: &[u64; 256], total: u64) -> f32 {
-    if total == 0 {
-        return 0.0;
-    }
-    let n = total as f64;
-    let mut e = 0.0f64;
-    for &c in hist {
-        if c > 0 {
-            let p = c as f64 / n;
-            e -= p * p.log2();
-        }
-    }
-    e as f32
 }
 
 /// Reads and decompresses a single ZIP entry's data out of the full APK
@@ -215,11 +156,7 @@ fn read_entry_data(apk: &[u8], entry: &ZipEntry) -> Option<Vec<u8>> {
             let cap = (entry.uncompressed_size as usize).min(MAX_ENTRY_SCAN);
             let mut out = Vec::with_capacity(cap.min(1 << 20));
             let mut decoder = DeflateDecoder::new(compressed);
-            decoder
-                .by_ref()
-                .take(MAX_ENTRY_SCAN as u64)
-                .read_to_end(&mut out)
-                .ok()?;
+            decoder.by_ref().take(MAX_ENTRY_SCAN as u64).read_to_end(&mut out).ok()?;
             Some(out)
         }
         _ => None, // unsupported compression method (e.g. AES-encrypted, LZMA) — skip rather than guess
@@ -506,8 +443,7 @@ mod integration_tests {
             let cursor = std::io::Cursor::new(&mut buf);
             let mut zip = zip::ZipWriter::new(cursor);
             for (name, data) in entries {
-                zip.start_file(*name, zip::write::FileOptions::default())
-                    .unwrap();
+                zip.start_file(*name, zip::write::FileOptions::default()).unwrap();
                 zip.write_all(data).unwrap();
             }
             zip.finish().unwrap();
@@ -531,10 +467,7 @@ mod integration_tests {
         // survive MIN_STR_LEN and get harvested from the manifest entry.
         let manifest_bytes = b"android.permission.SEND_SMS androidmanifest test content".to_vec();
         let apk = make_test_apk(&[
-            (
-                "classes.dex",
-                vec![b'd', b'e', b'x', b'\n', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            ),
+            ("classes.dex", vec![b'd', b'e', b'x', b'\n', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
             ("AndroidManifest.xml", manifest_bytes),
         ]);
 

@@ -19,7 +19,7 @@ use burn::train::metric::{AccuracyMetric, LossMetric};
 use burn::train::{Learner, SupervisedTraining};
 use burn_dataset::InMemDataset;
 
-use hydradragonml::features::{ENGINE_FEATURE_COUNT, EngineFeatures, Tokenizer};
+use hydradragonml::features::{ENGINE_FEATURE_COUNT, EngineFeatures};
 use hydradragonml::model::{ApkBatch, ApkClassifier};
 
 use std::marker::PhantomData;
@@ -35,7 +35,6 @@ type InferBackend = NdArray<f32>;
 struct Args {
     benign: PathBuf,
     malware: PathBuf,
-    vocab: PathBuf,
     output: PathBuf,
     epochs: usize,
     lr: f64,
@@ -45,7 +44,7 @@ struct Args {
 fn print_usage_and_exit(msg: &str) -> ! {
     eprintln!("error: {msg}\n");
     eprintln!(
-        "usage: hydradragonml-train --benign <dir> --malware <dir> --vocab <vocab.json> \\\n\
+        "usage: hydradragonml-train --benign <dir> --malware <dir> \\\n\
          \x20      [--output model.mpk] [--epochs 6] [--lr 0.001] [--batch-size 8]"
     );
     std::process::exit(2);
@@ -54,7 +53,6 @@ fn print_usage_and_exit(msg: &str) -> ! {
 fn parse_args() -> Args {
     let mut benign: Option<PathBuf> = None;
     let mut malware: Option<PathBuf> = None;
-    let mut vocab: Option<PathBuf> = None;
     let mut output = PathBuf::from("model.mpk");
     let mut epochs = 6usize;
     let mut lr = 0.001f64;
@@ -71,7 +69,6 @@ fn parse_args() -> Args {
         match flag.as_str() {
             "--benign" => benign = Some(PathBuf::from(next_val!())),
             "--malware" => malware = Some(PathBuf::from(next_val!())),
-            "--vocab" => vocab = Some(PathBuf::from(next_val!())),
             "--output" => output = PathBuf::from(next_val!()),
             "--epochs" => {
                 let v = next_val!();
@@ -99,7 +96,6 @@ fn parse_args() -> Args {
     Args {
         benign: benign.unwrap_or_else(|| print_usage_and_exit("--benign <dir> is required")),
         malware: malware.unwrap_or_else(|| print_usage_and_exit("--malware <dir> is required")),
-        vocab: vocab.unwrap_or_else(|| print_usage_and_exit("--vocab <path> is required")),
         output,
         epochs,
         lr,
@@ -107,18 +103,15 @@ fn parse_args() -> Args {
     }
 }
 
-/// A single preprocessed training example: token indices, engine-feature
-/// vector and the ground-truth label (`1.0` = malware, `0.0` = benign).
+/// A single preprocessed training example: the engine-feature vector and the
+/// ground-truth label (`1.0` = malware, `0.0` = benign).
 #[derive(Clone, Debug)]
 struct Sample {
-    tokens: Vec<i64>,
     engine: Vec<f32>,
     label: f32,
 }
 
-/// Batches [Sample]s into an [ApkBatch]. Short token sequences are
-/// zero-padded (vocab id `0`, i.e. `<UNK>`), matching the mean-pooling in
-/// `ApkClassifier::forward_batch`.
+/// Batches [Sample]s into an [ApkBatch].
 #[derive(Clone)]
 struct ApkBatcher<B: Backend> {
     _backend: PhantomData<B>,
@@ -135,38 +128,18 @@ impl<B: Backend> ApkBatcher<B> {
 impl<B: Backend> Batcher<B, Sample, ApkBatch<B>> for ApkBatcher<B> {
     fn batch(&self, items: Vec<Sample>, device: &Device<B>) -> ApkBatch<B> {
         let batch_size = items.len().max(1);
-        let max_len = items
-            .iter()
-            .map(|s| s.tokens.len())
-            .max()
-            .unwrap_or(1)
-            .max(1);
 
-        let mut token_flat = Vec::with_capacity(batch_size * max_len);
         let mut engine_flat = Vec::with_capacity(batch_size * ENGINE_FEATURE_COUNT);
-        let mut labels_flat = Vec::with_capacity(batch_size);
         let mut targets_flat = Vec::with_capacity(batch_size);
 
         for s in &items {
-            for i in 0..max_len {
-                token_flat.push(*s.tokens.get(i).unwrap_or(&0));
-            }
             engine_flat.extend_from_slice(&s.engine);
-            labels_flat.push(s.label);
             targets_flat.push(s.label.round() as i64);
         }
 
         ApkBatch {
-            tokens: Tensor::<B, 2, Int>::from_data(
-                TensorData::new(token_flat, [batch_size, max_len]),
-                device,
-            ),
             engine: Tensor::<B, 2, Float>::from_data(
                 TensorData::new(engine_flat, [batch_size, ENGINE_FEATURE_COUNT]),
-                device,
-            ),
-            labels: Tensor::<B, 2, Float>::from_data(
-                TensorData::new(labels_flat, [batch_size, 1]),
                 device,
             ),
             targets: Tensor::<B, 1, Int>::from_data(
@@ -184,7 +157,7 @@ fn is_archive_file(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-fn collect_samples(dir: &Path, label: f32, tokenizer: &Tokenizer) -> Vec<Sample> {
+fn collect_samples(dir: &Path, label: f32) -> Vec<Sample> {
     let mut out = Vec::new();
     let mut skipped = 0usize;
 
@@ -201,22 +174,15 @@ fn collect_samples(dir: &Path, label: f32, tokenizer: &Tokenizer) -> Vec<Sample>
                 continue;
             }
         };
-        let tokens = match tokenizer.tokenize(&bytes) {
-            Some(t) => t,
+        let engine = match EngineFeatures::extract_from_apk(&bytes) {
+            Some(f) => f.to_vec(),
             None => {
                 skipped += 1;
                 continue;
             }
         };
-        let engine = EngineFeatures::extract_from_apk(&bytes)
-            .unwrap_or_default()
-            .to_vec();
 
-        out.push(Sample {
-            tokens,
-            engine,
-            label,
-        });
+        out.push(Sample { engine, label });
     }
 
     println!(
@@ -263,14 +229,10 @@ impl SimpleRng {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args();
 
-    println!("loading vocabulary: {}", args.vocab.display());
-    let vocab_bytes = std::fs::read(&args.vocab)?;
-    let tokenizer = Tokenizer::load_json(&vocab_bytes).ok_or("failed to parse vocab.json")?;
-
     println!("scanning benign corpus: {}", args.benign.display());
-    let benign_samples = collect_samples(&args.benign, 0.0, &tokenizer);
+    let benign_samples = collect_samples(&args.benign, 0.0);
     println!("scanning malware corpus: {}", args.malware.display());
-    let malware_samples = collect_samples(&args.malware, 1.0, &tokenizer);
+    let malware_samples = collect_samples(&args.malware, 1.0);
 
     if benign_samples.is_empty() || malware_samples.is_empty() {
         return Err("need at least one usable sample in both --benign and --malware".into());
@@ -318,11 +280,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .set_device(device.clone())
             .build(valid_dataset);
 
-    // A single optimizer over the trainer so LR decays once per epoch: pick the
-    // exponent gamma so that gamma^(steps_per_epoch) == 0.5, i.e. the LR halves
-    // every ~epoch, faithfully reproducing the previous per-epoch LR schedule.
-    let steps_per_epoch = (train_count + batch_size - 1) / batch_size;
-    let gamma = 0.5f64.powf(1.0 / steps_per_epoch.max(1) as f64);
+    // The original HydraDragon trainer used a constant Adam learning rate with
+    // no LR schedule; gamma = 1.0 makes the exponential scheduler a no-op so
+    // this reproduces that behaviour exactly.
+    let gamma = 1.0;
     let model: ApkClassifier<TrainBackend> = ApkClassifier::new(&device);
     let optim = AdamConfig::new().init();
     let lr_scheduler = ExponentialLrSchedulerConfig::new(args.lr, gamma).init()?;
@@ -350,14 +311,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("--output path must be valid UTF-8")?;
     final_model.save_weights(output_str)?;
     println!("saved weights: {output_str}");
-
-    if let Some(parent) = args.output.parent().filter(|p| !p.as_os_str().is_empty()) {
-        let dest = parent.join("vocab.json");
-        if dest != args.vocab {
-            std::fs::copy(&args.vocab, &dest)?;
-            println!("copied vocab: {}", dest.display());
-        }
-    }
 
     Ok(())
 }

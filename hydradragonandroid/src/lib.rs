@@ -108,9 +108,6 @@ const MODULE_DEPENDENT_YRC: &[&str] = &[
 /// Parses emerging-all.rules at runtime and builds a daachorse double-array
 /// automaton for hex-pattern matching.
 const MODEL_MPK: &str = "model.mpk";
-/// Subword tokenizer vocabulary (JSON map of token -> id) that must ship
-/// alongside `model.mpk`; both are required to load the classifier.
-const VOCAB_JSON: &str = "vocab.json";
 /// NSRL known-good SHA-256 whitelist as a serialized Binary-Fuse (xor) filter
 /// (built offline by `xorfilter_writer`). Decoded once at init into an owned
 /// buffer on the native heap; binary-fuse encodings are far smaller than the
@@ -593,10 +590,10 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 let mut report = String::new();
                 let model_bytes = files.get(MODEL_MPK);
                 let device = burn::backend::ndarray::NdArrayDevice::default();
-                let model = match (model_bytes, files.get(VOCAB_JSON)) {
-                    (Some(m), Some(v)) => {
+                let model = match model_bytes {
+                    Some(m) => {
                         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            hydradragonml::Model::load(m, v, device)
+                            hydradragonml::Model::load(m, device)
                         }));
                         match result {
                             Ok(Ok(m)) => {
@@ -617,12 +614,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                             }
                         }
                     }
-                    (Some(_), None) => {
-                        rust_timing_log!("init :: model=ERR: missing vocab.json");
-                        report.push_str(" model=ERR(no vocab)");
-                        None
-                    }
-                    (None, _) => {
+                    None => {
                         report.push_str(" model=ERR(no assets)");
                         None
                     }
@@ -841,7 +833,7 @@ fn run_ml_on_mmap(
     if !is_apk_zip(data) {
         return (false, 0.0, Vec::new());
     }
-    match model.scan_with_features(data, engine_features) {
+    match model.scan_with_features(engine_features) {
         Some(r) => {
             let lineages = if r.malicious {
                 vec![(path.to_string(), Vec::new())]
@@ -1785,8 +1777,6 @@ pub extern "system" fn Java_com_hydradragon_antivirus_engine_NativeScanner_nativ
 fn asset_category(name: &str) -> &'static str {
     if name == MODEL_MPK {
         "ml model"
-    } else if name == VOCAB_JSON {
-        "ml vocab"
     } else if name.ends_with(".yrc") {
         "yara rules"
     } else if name == WHITELIST_XF {

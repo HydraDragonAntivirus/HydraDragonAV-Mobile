@@ -11,13 +11,14 @@ use walkdir::WalkDir;
 struct Args {
     dataset: PathBuf,
     model: PathBuf,
+    vocab: PathBuf,
     threshold: f32,
 }
 
 fn print_usage_and_exit(msg: &str) -> ! {
     eprintln!("error: {msg}\n");
     eprintln!(
-        "usage: hydradragonml-scan --dataset <dir> --model <model.mpk> \\\n\
+        "usage: hydradragonml-scan --dataset <dir> --model <model.mpk> --vocab <vocab.json> \\\n\
          \x20      [--threshold 0.5]"
     );
     std::process::exit(2);
@@ -26,6 +27,7 @@ fn print_usage_and_exit(msg: &str) -> ! {
 fn parse_args() -> Args {
     let mut dataset: Option<PathBuf> = None;
     let mut model: Option<PathBuf> = None;
+    let mut vocab: Option<PathBuf> = None;
     let mut threshold = 0.5f32;
 
     let mut args = std::env::args().skip(1);
@@ -39,6 +41,7 @@ fn parse_args() -> Args {
         match flag.as_str() {
             "--dataset" => dataset = Some(PathBuf::from(next_val!())),
             "--model" => model = Some(PathBuf::from(next_val!())),
+            "--vocab" => vocab = Some(PathBuf::from(next_val!())),
             "--threshold" => {
                 let v = next_val!();
                 threshold = v.parse().unwrap_or_else(|_| {
@@ -53,6 +56,7 @@ fn parse_args() -> Args {
     Args {
         dataset: dataset.unwrap_or_else(|| print_usage_and_exit("--dataset <dir> is required")),
         model: model.unwrap_or_else(|| print_usage_and_exit("--model <path> is required")),
+        vocab: vocab.unwrap_or_else(|| print_usage_and_exit("--vocab <path> is required")),
         threshold,
     }
 }
@@ -89,8 +93,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("loading model: {}", args.model.display());
     let model_bytes = std::fs::read(&args.model)?;
+    let vocab_bytes = std::fs::read(&args.vocab)?;
     let device = burn::backend::ndarray::NdArrayDevice::default();
-    let mut model = Model::load(&model_bytes, device)?;
+    let mut model = Model::load(&model_bytes, &vocab_bytes, device)?;
     model.set_threshold(args.threshold);
 
     let (mut tp, mut fp, mut tn, mut fn_) = (0usize, 0usize, 0usize, 0usize);
@@ -100,10 +105,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("scanning: {}\n", args.dataset.display());
 
-    for entry in WalkDir::new(&args.dataset)
-        .into_iter()
-        .filter_map(|e| e.ok())
-    {
+    for entry in WalkDir::new(&args.dataset).into_iter().filter_map(|e| e.ok()) {
         if !entry.file_type().is_file() || !is_apk_file(entry.path()) {
             continue;
         }
@@ -133,11 +135,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             "BENIGN"
         };
-        println!(
-            "{verdict:>10}  {:.4}  {}",
-            result.confidence,
-            path.display()
-        );
+        println!("{verdict:>10}  {:.4}  {}", result.confidence, path.display());
 
         let Some(true_malware) = true_label_from_path(path) else {
             unlabeled += 1;
@@ -163,9 +161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("\n== summary ==");
-    println!(
-        "labeled files scored: {total_labeled} (unlabeled: {unlabeled}, unparseable: {unparseable})"
-    );
+    println!("labeled files scored: {total_labeled} (unlabeled: {unlabeled}, unparseable: {unparseable})");
     println!("TP={tp} FP={fp} TN={tn} FN={fn_}");
     println!(
         "accuracy={accuracy:.4} precision={precision:.4} recall={recall:.4} f1={f1:.4} (threshold={:.2})",
