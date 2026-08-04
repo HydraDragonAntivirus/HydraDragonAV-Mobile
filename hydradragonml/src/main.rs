@@ -157,10 +157,11 @@ fn main() {
 
         // Same real content-derived features the on-device engine and
         // training use — so the test-set metrics reflect actual runtime
-        // behaviour.
-        let engine_features = hydradragonml::features::EngineFeatures::extract_from_apk(&apk_bytes)
-            .unwrap_or_default();
-        let result = model.scan_with_features(&apk_bytes, &engine_features);
+        // behaviour. Scannable = the APK yields a verdict. APKs the model
+        // cannot parse (no DEX/ELF/manifest features, or no tokenizable
+        // content) return `None` and are never fed to the model as a
+        // zero-feature vector.
+        let result = model.scan(&apk_bytes);
         let extraction_ok = result.is_some();
 
         let elapsed = t0.elapsed().as_millis();

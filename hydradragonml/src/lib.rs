@@ -69,15 +69,22 @@ impl Model {
     }
 
     pub fn scan(&self, apk: &[u8]) -> Option<ScanResult> {
-        // Derives real, content-based DEX/ELF/manifest features from the
-        // APK itself. `EngineFeatures` no longer carries placeholder fields
-        // for data this crate can't independently verify (URL/IP
-        // reputation, benign-sample similarity, certificate checks,
-        // media/HIPS findings) — every remaining field is genuinely
-        // computed here.
-        let engine_feats = features::EngineFeatures::extract_from_apk(apk)
-            .unwrap_or_default();
-        self.scan_with_features(apk, &engine_feats)
+        // Single-pass: derives real DEX/ELF/manifest engine features AND the
+        // raw token strings from ONE archive parse/decompress cycle, so an APK
+        // is never parsed twice. `scan_payload` returns None for an
+        // unscannable APK (no parseable DEX/ELF/manifest content or no
+        // harvestable string content) — such APKs must NOT be fed to the model
+        // as an all-zero vector (that would invite false positives).
+        let payload = features::scan_payload(apk)?;
+        let indices = self.tokenizer.map_ids(&payload.raw_tokens);
+        let token_tensor = Tensor::<B, 1, Int>::from_data(indices.as_slice(), &self.device);
+        let feat_vec = payload.engine_features.to_vec();
+        let feat_tensor = Tensor::<B, 1, Float>::from_data(feat_vec.as_slice(), &self.device);
+        let output = self.classifier.forward(token_tensor, feat_tensor);
+        let confidence = output.into_scalar().clamp(0.0, 1.0);
+        let malicious = confidence >= self.confidence_threshold;
+        let suspicious = !malicious && confidence >= SUSPICIOUS_THRESHOLD;
+        Some(ScanResult { malicious, suspicious, confidence })
     }
 
     pub fn scan_with_features(

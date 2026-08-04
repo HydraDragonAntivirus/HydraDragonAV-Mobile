@@ -216,7 +216,9 @@ fn main() {
 }
 
 /// Recursively collect all `.apk`/`.zip` files in `dir`, tokenizing each and
-/// extracting its engine features. Files that fail to tokenize are skipped.
+/// extracting its engine features. Files that fail to tokenize, or whose
+/// DEX/ELF/manifest features can't be parsed (unscannable), are skipped so the
+/// model never learns on an all-zero feature vector.
 fn load_corpus(dir: &Path, tokenizer: &Tokenizer, label: i64) -> Vec<Sample> {
     let mut out = Vec::new();
     let mut entries: Vec<PathBuf> = Vec::new();
@@ -230,7 +232,9 @@ fn load_corpus(dir: &Path, tokenizer: &Tokenizer, label: i64) -> Vec<Sample> {
         let Some(tokens) = tokenizer.tokenize(&bytes) else {
             continue;
         };
-        let engine_features = EngineFeatures::extract_from_apk(&bytes).unwrap_or_default();
+        let Some(engine_features) = EngineFeatures::extract_from_apk(&bytes) else {
+            continue;
+        };
         out.push(Sample {
             tokens,
             engine_features,
