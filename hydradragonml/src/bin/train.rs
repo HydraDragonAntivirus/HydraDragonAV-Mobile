@@ -28,7 +28,6 @@ type InferBackend = NdArray<f32>;
 struct Args {
     benign: PathBuf,
     malware: PathBuf,
-    vocab: PathBuf,
     output: PathBuf,
     epochs: usize,
     lr: f64,
@@ -38,7 +37,7 @@ struct Args {
 fn print_usage_and_exit(msg: &str) -> ! {
     eprintln!("error: {msg}\n");
     eprintln!(
-        "usage: hydradragonml-train --benign <dir> --malware <dir> --vocab <vocab.json> \\\n\
+        "usage: hydradragonml-train --benign <dir> --malware <dir> \\\n\
          \x20      [--output model.mpk] [--epochs 6] [--lr 0.001] [--batch-size 8]"
     );
     std::process::exit(2);
@@ -47,7 +46,6 @@ fn print_usage_and_exit(msg: &str) -> ! {
 fn parse_args() -> Args {
     let mut benign: Option<PathBuf> = None;
     let mut malware: Option<PathBuf> = None;
-    let mut vocab: Option<PathBuf> = None;
     let mut output = PathBuf::from("model.mpk");
     let mut epochs = 6usize;
     let mut lr = 0.001f64;
@@ -64,7 +62,6 @@ fn parse_args() -> Args {
         match flag.as_str() {
             "--benign" => benign = Some(PathBuf::from(next_val!())),
             "--malware" => malware = Some(PathBuf::from(next_val!())),
-            "--vocab" => vocab = Some(PathBuf::from(next_val!())),
             "--output" => output = PathBuf::from(next_val!()),
             "--epochs" => {
                 let v = next_val!();
@@ -92,7 +89,6 @@ fn parse_args() -> Args {
     Args {
         benign: benign.unwrap_or_else(|| print_usage_and_exit("--benign <dir> is required")),
         malware: malware.unwrap_or_else(|| print_usage_and_exit("--malware <dir> is required")),
-        vocab: vocab.unwrap_or_else(|| print_usage_and_exit("--vocab <path> is required")),
         output,
         epochs,
         lr,
@@ -270,9 +266,7 @@ fn evaluate<B: Backend<FloatElem = f32>>(
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args();
 
-    println!("loading vocabulary: {}", args.vocab.display());
-    let vocab_bytes = std::fs::read(&args.vocab)?;
-    let tokenizer = Tokenizer::load_json(&vocab_bytes).ok_or("failed to parse vocab.json")?;
+    let tokenizer = Tokenizer::new();
 
     println!("scanning benign corpus: {}", args.benign.display());
     let benign_samples = collect_samples(&args.benign, 0.0, &tokenizer);
@@ -350,14 +344,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("--output path must be valid UTF-8")?;
     final_model.save_weights(output_str)?;
     println!("saved weights: {output_str}");
-
-    if let Some(parent) = args.output.parent().filter(|p| !p.as_os_str().is_empty()) {
-        let dest = parent.join("vocab.json");
-        if dest != args.vocab {
-            std::fs::copy(&args.vocab, &dest)?;
-            println!("copied vocab: {}", dest.display());
-        }
-    }
 
     Ok(())
 }

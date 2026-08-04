@@ -73,7 +73,7 @@
     <string name="app_title">안티바이러스 v%1$s</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="developers_header">개발자</string>
-    <string name="donation_link">기부: https://boosty.to/yusif_musayev/single-payment/donation/817954</string>
+    <string name="donation_link">기부: https://boosty.to/yusif_musayev</string>
     <string name="nav_dashboard">대시보드</string>
     <string name="nav_scan">스캔</string>
     <string name="nav_network">네트워크</string>

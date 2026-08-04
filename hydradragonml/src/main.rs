@@ -9,7 +9,6 @@ use walkdir::WalkDir;
 
 struct ScanArgs {
     model_path: PathBuf,
-    vocab_path: PathBuf,
     target_path: PathBuf,
     threshold: Option<f32>,
     json: bool,
@@ -20,7 +19,7 @@ fn print_usage_and_exit(msg: Option<&str>) -> ! {
         eprintln!("error: {err}\n");
     }
     eprintln!(
-        "usage: hydradragonml-scan [--model model.mpk] [--vocab vocab.json] \\\n\
+        "usage: hydradragonml-scan [--model model.mpk] \\\n\
          \x20                        [--threshold 0.95] [--json] <apk_file_or_dir>"
     );
     exit(2);
@@ -28,7 +27,6 @@ fn print_usage_and_exit(msg: Option<&str>) -> ! {
 
 fn parse_args() -> ScanArgs {
     let mut model_path = PathBuf::from("model.mpk");
-    let mut vocab_path = PathBuf::from("vocab.json");
     let mut target_path: Option<PathBuf> = None;
     let mut threshold: Option<f32> = None;
     let mut json = false;
@@ -43,7 +41,6 @@ fn parse_args() -> ScanArgs {
         }
         match arg.as_str() {
             "--model" => model_path = PathBuf::from(next_val!()),
-            "--vocab" => vocab_path = PathBuf::from(next_val!()),
             "--threshold" => {
                 let v = next_val!();
                 let t: f32 = v.parse().unwrap_or_else(|_| {
@@ -71,7 +68,6 @@ fn parse_args() -> ScanArgs {
 
     ScanArgs {
         model_path,
-        vocab_path,
         target_path,
         threshold,
         json,
@@ -92,18 +88,6 @@ fn main() {
         eprintln!("error: model file not found at `{}`", args.model_path.display());
         exit(2);
     }
-    if !args.vocab_path.exists() {
-        eprintln!("error: vocab file not found at `{}`", args.vocab_path.display());
-        exit(2);
-    }
-
-    let vocab_bytes = match std::fs::read(&args.vocab_path) {
-        Ok(b) => b,
-        Err(e) => {
-            eprintln!("error: failed to read vocab file: {e}");
-            exit(2);
-        }
-    };
 
     let device = NdArrayDevice::default();
     let model_path_str = match args.model_path.to_str() {
@@ -114,7 +98,7 @@ fn main() {
         }
     };
 
-    let mut model = match Model::load_from_path(model_path_str, &vocab_bytes, device) {
+    let mut model = match Model::load_from_path(model_path_str, device) {
         Ok(m) => m,
         Err(e) => {
             eprintln!("error: failed to load model: {e}");

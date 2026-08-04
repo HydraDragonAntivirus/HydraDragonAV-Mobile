@@ -73,7 +73,7 @@
     <string name="app_title">杀毒软件 v%1$s</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="developers_header">开发者</string>
-    <string name="donation_link">捐赠: https://boosty.to/yusif_musayev/single-payment/donation/817954</string>
+    <string name="donation_link">捐赠: https://boosty.to/yusif_musayev</string>
     <string name="nav_dashboard">仪表盘</string>
     <string name="nav_scan">扫描</string>
     <string name="nav_network">网络</string>

@@ -196,18 +196,21 @@ pub fn for_each_entry(apk: &[u8], mut f: impl FnMut(&str, &[u8])) -> Option<()> 
 
 // Tokenizer for the EmbeddingBag ML pipeline.
 
-pub struct Tokenizer {
-    vocab: HashMap<String, i64>,
-}
+pub struct Tokenizer;
 
 impl Tokenizer {
-    pub fn new(vocab: HashMap<String, i64>) -> Self {
-        Self { vocab }
+    pub fn new() -> Self {
+        Self
     }
 
-    pub fn load_json(bytes: &[u8]) -> Option<Self> {
-        let map: HashMap<String, i64> = serde_json::from_slice(bytes).ok()?;
-        Some(Self::new(map))
+    /// FNV-1a hash of lowercased string mapped to 1..VOCAB_SIZE (0 reserved for UNK/padding).
+    pub fn hash_token(key: &str) -> i64 {
+        let mut hash: u64 = 0xcbf29ce484222325;
+        for byte in key.bytes() {
+            hash ^= byte as u64;
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+        ((hash % ((VOCAB_SIZE - 1) as u64)) + 1) as i64
     }
 
     pub fn tokenize(&self, apk: &[u8]) -> Option<Vec<i64>> {
@@ -237,9 +240,8 @@ impl Tokenizer {
         }) {
             if part.len() >= 2 {
                 let key = part.to_ascii_lowercase();
-                let raw_id = self.vocab.get(&key).copied().unwrap_or(0);
-                let safe_id = if (0..VOCAB_SIZE as i64).contains(&raw_id) { raw_id } else { 0 };
-                out.push(safe_id);
+                let id = Self::hash_token(&key);
+                out.push(id);
                 if out.len() >= MAX_TOKENS {
                     return;
                 }

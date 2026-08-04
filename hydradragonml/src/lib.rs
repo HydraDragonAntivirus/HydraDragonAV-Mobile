@@ -32,11 +32,9 @@ pub struct ScanResult {
 impl Model {
     pub fn load(
         model_bytes: &[u8],
-        vocab_bytes: &[u8],
         device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let tokenizer = features::Tokenizer::load_json(vocab_bytes)
-            .ok_or("failed to parse vocab.json")?;
+        let tokenizer = features::Tokenizer::new();
         let tmp = tempfile::Builder::new().suffix(".mpk").tempfile()?;
         std::fs::write(tmp.path(), model_bytes)?;
         let classifier = model::ApkClassifier::load_weights(
@@ -53,11 +51,9 @@ impl Model {
 
     pub fn load_from_path(
         model_path: &str,
-        vocab_bytes: &[u8],
         device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let tokenizer = features::Tokenizer::load_json(vocab_bytes)
-            .ok_or("failed to parse vocab.json")?;
+        let tokenizer = features::Tokenizer::new();
         let classifier = model::ApkClassifier::load_weights(model_path, &device)?;
         Ok(Model {
             classifier,
@@ -111,9 +107,7 @@ mod tests {
             return;
         }
         let bytes = std::fs::read(path).expect("APK read failed");
-        let mut vocab = std::collections::HashMap::new();
-        vocab.insert("test".to_string(), 1);
-        let tok = features::Tokenizer::new(vocab);
+        let tok = features::Tokenizer::new();
         let result = tok.tokenize(&bytes);
         assert!(result.is_some());
         let ids = result.unwrap();
@@ -121,11 +115,11 @@ mod tests {
     }
 
     #[test]
-    fn load_vocab_from_json() {
-        let json = br#"{"<UNK>": 0, "hello": 1, "world": 2}"#;
-        let tok = features::Tokenizer::load_json(json).expect("should parse");
-        let ids = tok.tokenize(b"hello world");
-        assert!(ids.is_none());
+    fn hashing_trick_consistency() {
+        let id1 = features::Tokenizer::hash_token("android");
+        let id2 = features::Tokenizer::hash_token("android");
+        assert_eq!(id1, id2);
+        assert!((1..VOCAB_SIZE as i64).contains(&id1));
     }
 
     #[test]

@@ -73,7 +73,7 @@
     <string name="app_title">ANTIVIRUS v%1$s</string>
     <string name="developers">Musayev Yusif และ Emirhan Uçan</string>
     <string name="developers_header">ผู้พัฒนา</string>
-    <string name="donation_link">การบริจาค: https://boosty.to/yusif_musayev/single-payment/donation/817954</string>
+    <string name="donation_link">การบริจาค: https://boosty.to/yusif_musayev</string>
     <string name="nav_dashboard">แดชบอร์ด</string>
     <string name="nav_scan">สแกน</string>
     <string name="nav_network">เครือข่าย</string>
