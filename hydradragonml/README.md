@@ -15,6 +15,33 @@
 
 ---
 
+## ⚡ Quick Reference
+
+```bash
+# Build all binaries
+cargo build --release
+
+# Run all tests
+cargo test
+
+# Scan a single APK
+cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json target.apk
+
+# Scan a directory (JSON output)
+cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json --json ./dataset/
+
+# Train a new model
+cargo run --release --bin hydradragonml-train -- --benign ./dataset/benign --malware ./dataset/malware --vocab vocab.json --output model.mpk
+
+# Train with custom hyperparameters
+cargo run --release --bin hydradragonml-train -- --benign ./benign --malware ./malware --vocab vocab.json --output model.mpk --epochs 10 --lr 0.0005 --batch-size 16
+
+# Scan with custom confidence threshold
+cargo run --release --bin hydradragonml-scan -- --model model.mpk --vocab vocab.json --threshold 0.90 target.apk
+```
+
+---
+
 ## Workspace Architecture
 
 ```
