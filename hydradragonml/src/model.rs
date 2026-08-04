@@ -38,8 +38,21 @@ impl<B: Backend> ApkClassifier<B> {
         tokens: Tensor<B, 2, Int>,
         engine: Tensor<B, 2, Float>,
     ) -> Tensor<B, 2, Float> {
-        let tok_emb = self.embedding.forward(tokens); // [B, L, EMBED_DIM]
-        let tok_pooled = tok_emb.mean_dim(1).squeeze_dim(1); // [B, EMBED_DIM]
+        let [batch, seq_len] = tokens.dims();
+        let tok_emb = self.embedding.forward(tokens.clone()); // [B, L, EMBED_DIM]
+
+        // Masked mean-pool: average only over non-padding positions (token id != 0).
+        // mask: [B, L, 1] — 1.0 where token != 0, 0.0 for padding.
+        let zero = Tensor::<B, 2, Int>::zeros([batch, seq_len], &tok_emb.device());
+        let mask = tokens.not_equal(zero) // [B, L] bool
+            .float()                       // [B, L] f32
+            .unsqueeze_dim(2);             // [B, L, 1]
+
+        let masked = tok_emb * mask.clone();         // zero out padding rows
+        let sum = masked.sum_dim(1).squeeze_dim(1);  // [B, EMBED_DIM]
+        // clamp denominator to 1 to avoid div-by-zero on all-padding sequences
+        let counts = mask.sum_dim(1).squeeze_dim(1).clamp(1.0, f32::MAX); // [B, 1]
+        let tok_pooled = sum / counts;               // [B, EMBED_DIM]
 
         let combined = Tensor::cat(vec![tok_pooled, engine], 1);
         let x = self.linear1.forward(combined);
