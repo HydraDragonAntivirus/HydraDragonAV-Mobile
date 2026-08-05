@@ -350,13 +350,22 @@ public class GuardService extends Service {
         public void onReceive(android.content.Context ctx, android.content.Intent intent) {
             try {
                 if (intent == null || intent.getAction() == null) return;
-                if (!android.content.Intent.ACTION_PACKAGE_CHANGED.equals(intent.getAction())) return;
+                String action = intent.getAction();
                 android.net.Uri data = intent.getData();
                 if (data == null) return;
                 String pkg = data.getSchemeSpecificPart();
                 if (pkg == null || pkg.isEmpty()) return;
                 if (com.hydradragon.antivirus.engine.HipsMonitor.isSelfPackage(pkg)) return;
-                checkPackageForHiddenIcon(pkg);
+
+                if (android.content.Intent.ACTION_PACKAGE_ADDED.equals(action) 
+                        || android.content.Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
+                    // New install or update -> scan immediately
+                    Log.i(TAG, "Package installed/updated, scanning: " + pkg);
+                    ScanEngine.invalidateCache(pkg);
+                    scanInstalledPackage(ctx, pkg);
+                } else if (android.content.Intent.ACTION_PACKAGE_CHANGED.equals(action)) {
+                    checkPackageForHiddenIcon(pkg);
+                }
             } catch (Throwable t) {
                 Log.e(TAG, "packageChangeReceiver failed", t);
             }
@@ -483,9 +492,10 @@ public class GuardService extends Service {
     private void registerPackageChangeReceiver() {
         try {
             android.content.IntentFilter filter = new android.content.IntentFilter();
+            filter.addAction(android.content.Intent.ACTION_PACKAGE_ADDED);
+            filter.addAction(android.content.Intent.ACTION_PACKAGE_REPLACED);
             filter.addAction(android.content.Intent.ACTION_PACKAGE_CHANGED);
             filter.addAction(android.content.Intent.ACTION_PACKAGE_REMOVED);
-            filter.addAction(android.content.Intent.ACTION_PACKAGE_ADDED);
             filter.addDataScheme("package");
             registerReceiver(packageChangeReceiver, filter);
         } catch (Throwable t) {
@@ -1489,6 +1499,79 @@ public class GuardService extends Service {
             if (p.pid == pid && p.pkgList != null && p.pkgList.length > 0) return p.pkgList[0];
         }
         return null;
+    }
+
+    /** Scan a single installed package (triggered by ACTION_PACKAGE_ADDED/REPLACED). */
+    private void scanInstalledPackage(android.content.Context ctx, String packageName) {
+        ScanEngine.runOrchestrated(() -> {
+            try {
+                android.content.pm.PackageManager pm = ctx.getPackageManager();
+                android.content.pm.ApplicationInfo appInfo = null;
+                int attempt = 0;
+                while (appInfo == null && attempt < 5) {
+                    try {
+                        appInfo = pm.getApplicationInfo(packageName, android.content.pm.PackageManager.GET_META_DATA);
+                    } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+                        attempt++;
+                        if (attempt >= 5) {
+                            for (android.content.pm.ApplicationInfo ai : pm.getInstalledApplications(android.content.pm.PackageManager.GET_META_DATA)) {
+                                if (packageName.equals(ai.packageName)) {
+                                    appInfo = ai;
+                                    break;
+                                }
+                            }
+                            if (appInfo == null) {
+                                Log.e(TAG, "Package not found after retries: " + packageName);
+                                return;
+                            }
+                        } else {
+                            try { Thread.sleep(500L * attempt); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return; }
+                        }
+                    }
+                }
+
+                ThreatResult result = scanEngine.analyzeSingleApp(appInfo, pm, false);
+                
+                if (result != null && result.isThreat()) {
+                    Log.e(TAG, "ON-INSTALL THREAT DETECTED: " + packageName);
+                    String ownerPkg = com.hydradragon.antivirus.engine.HipsMonitor.getDownloadOwner(packageName);
+                    if (ownerPkg != null
+                            && com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(ownerPkg, "DOWNLOAD_MALWARE")) {
+                        com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(ownerPkg, "DROPPER:installed=" + packageName);
+                        com.hydradragon.antivirus.service.ThreatLogger.logThreat(
+                            ctx, ownerPkg, packageName,
+                            "Andr.Dropper.Susp: downloaded and installed malicious package " + packageName);
+                    }
+                    if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(ctx)) {
+                        if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(ctx)) {
+                            com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(ctx, result);
+                        } else {
+                            com.hydradragon.antivirus.engine.BehaviorResponse.killAndPromptUninstall(ctx, result);
+                        }
+                    }
+                    android.app.NotificationManager nm = (android.app.NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+                    android.content.Intent del = new android.content.Intent(android.content.Intent.ACTION_DELETE,
+                            android.net.Uri.parse("package:" + packageName));
+                    del.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                    android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
+                            ctx, packageName.hashCode(), del,
+                            android.app.PendingIntent.FLAG_IMMUTABLE | android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+
+                    androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(ctx, "hydradragon_dynamic_alert")
+                            .setSmallIcon(R.drawable.ic_threat)
+                            .setContentTitle(getString(R.string.notif_critical_threat_blocked))
+                            .setContentText(getString(R.string.notif_threat_detected_text, result.getThreatType(), packageName))
+                            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MAX)
+                            .setAutoCancel(true)
+                            .setColor(0xFF0000)
+                            .setContentIntent(pi)
+                            .addAction(R.drawable.ic_threat, getString(R.string.notif_action_remove), pi);
+                    if (nm != null) nm.notify((int)System.currentTimeMillis(), builder.build());
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "scanInstalledPackage Error", e);
+            }
+        });
     }
 
     @Override
