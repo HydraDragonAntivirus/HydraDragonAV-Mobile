@@ -801,3 +801,126 @@ private rule HIPS_FileCopy_WithNetwork
       hydradragon.behavior_flagged(/NETWORK/) >= 1
     )
 }
+
+
+// ── rootkit behavior detection ──────────────────────────────────────────────
+//
+// Leverages the hydradragon.rootkit_behavior() function, which returns 1 when
+// an APK declares no MAIN/LAUNCHER activity (hidden from the app drawer) AND
+// requests at least one high-privilege / persistence permission (device admin,
+// accessibility service, overlay, boot-completed, etc.).  Alone each signal is
+// common in legitimate apps; together they are the classic "install silently,
+// hide the icon, persist" rootkit pattern.
+
+rule hidden_icon_rootkit : android rootkit
+{
+	meta:
+		author = "Emirhan Ucan"
+		description = "App has no launcher icon and requests suspicious permissions — stealth-rootkit pattern"
+		reference = "hydradragon.rootkit_behavior()"
+
+	condition:
+		hydradragon.rootkit_behavior() == 1
+}
+
+// ── high-entropy packed rootkit (APK scan) ───────────────────────────────────
+//
+// Combines three static signals that together strongly indicate a packed,
+// stealthy, device-admin-abusing payload:
+//   1. math.entropy(0, filesize) > 7.0  — APK is packed/encrypted
+//   2. hydradragon.device_admin_permission() == 1  — requests device admin
+//   3. hydradragon.rootkit_behavior() == 1  — no launcher icon + suspicious perms
+//
+// math.entropy is available because this rule runs in the APK scan path where
+// YARA-X scans the actual file bytes (not just HIPS metadata).
+
+rule packed_device_admin_rootkit : android rootkit trojan
+{
+	meta:
+		author = "Emirhan Ucan"
+		description = "High-entropy (packed) APK that requests device admin and hides its launcher icon — stealth-rootkit pattern"
+		reference = "math.entropy() + hydradragon.device_admin_permission() + hydradragon.rootkit_behavior()"
+
+	condition:
+		math.entropy(0, filesize) > 7.0 and
+		hydradragon.device_admin_permission() == 1 and
+		hydradragon.rootkit_behavior() == 1
+}
+
+rule expired_certificate : certificate suspicious android
+{
+	meta:
+		author = "HydraDragonAV"
+		description = "APK signed with a certificate that is expired or not yet valid at scan time — stale throwaway signing key, common in repacked trojans"
+		reference = "hydradragon.certificate.expired()"
+
+	condition:
+		hydradragon.certificate.expired() == 1
+}
+
+rule certificate_validity_too_old : certificate suspicious android
+{
+	meta:
+		author = "HydraDragonAV"
+		description = "APK whose signing certificate's notAfter date predates 2015 — an abnormally old validity window for an active app"
+		reference = "hydradragon.certificate.not_after()"
+
+	condition:
+		hydradragon.certificate.not_after(/^(19[0-9]{2}|200[0-9]|201[0-4]) /)
+}
+
+rule certificate_not_yet_valid : certificate suspicious android
+{
+	meta:
+		author = "HydraDragonAV"
+		description = "APK whose signing certificate becomes valid in the future (clock-skewed or freshly minted for a future campaign)"
+		reference = "hydradragon.certificate.not_before()"
+
+	condition:
+		hydradragon.certificate.not_before(/^20[3-9][0-9] /)
+}
+
+rule audio_volume_spike : scareware suspicious android
+{
+	meta:
+		author = "HydraDragonAV"
+		description = "Media volume was slammed from near-silence to max while this app was foreground — scareware attention tactic"
+		reference = "hydradragon.audio_spike()"
+
+	condition:
+		hydradragon.audio_spike(/.*/) >= 3
+}
+
+rule audio_alarm_usage : scareware suspicious android
+{
+	meta:
+		author = "HydraDragonAV"
+		description = "App plays audio with USAGE_ALARM/USAGE_EMERGENCY — scareware blasts sound outside the media stream (setStreamVolume is blocked on Android 10+)"
+		reference = "hydradragon.audio_abuse()"
+
+	condition:
+		hydradragon.audio_abuse(/.*/) >= 2
+}
+
+rule clipboard_sensitive_read : info_stealer suspicious android
+{
+	meta:
+		author = "HydraDragonAV"
+		description = "Sensitive clipboard content (crypto address/token/seed phrase) was readable while this app took the foreground — data-theft/info stealer pattern"
+		reference = "hydradragon.clipboard_read()"
+
+	condition:
+		hydradragon.clipboard_read(/.*/) >= 3
+}
+
+rule scareware_synergy : scareware suspicious android
+{
+	meta:
+		author = "HydraDragonAV"
+		description = "Scareware/ransomware combo: wallpaper replaced AND media volume slammed to max while the app was foreground"
+		reference = "hydradragon.wallpaper_change() + hydradragon.audio_spike()"
+
+	condition:
+		hydradragon.wallpaper_change(/.*/) >= 1 and
+		hydradragon.audio_spike(/.*/) >= 1
+}
