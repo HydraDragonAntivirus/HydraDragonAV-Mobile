@@ -3685,14 +3685,14 @@ fn merge_dex_findings(
 // (set_module_metadata("hydradragon", ...)). Mirrors the keys the original
 // Koodous module read: package_name, app_name, activities, services, receivers,
 // permissions, urls, min/max/target_sdk_version, certificate{subjectDN,
-// IssuerDN, sha1}. Parsed straight from the binary AndroidManifest.xml plus a
-// URL sweep of the decompressed buffers — no androguard dependency.
+// IssuerDN, sha1, notBefore, notAfter, expired}. Parsed straight from the
+// binary AndroidManifest.xml plus a URL sweep of the decompressed buffers —
+// no androguard dependency.
 //
-// NOTE: `certificate.*` requires parsing the PKCS#7 signature block (X.509),
-// which isn't available here yet, so it is emitted empty (rules using
-// certificate.sha1/issuer/subject simply won't match). Everything else
-// (permission, package_name, activity, service, receiver, url,
-// permissions_number, sdk) is populated.
+// NOTE: `certificate.*` was previously limited to parsing the PKCS#7
+// signature block (X.509) for subjectDN/IssuerDN/sha1 only. The validity
+// window (notBefore/notAfter) and `expired` flag are now also extracted so
+// YARA rules can flag stale/expired signing certificates.
 
 /// Read a string-typed AXML attribute value (raw string-pool ref, or a typed
 /// TYPE_STRING). Returns None for non-string attributes.
@@ -3965,7 +3965,8 @@ fn build_hydradragon_json(buffers: &[Buf], urls: &[String]) -> Option<String> {
             "\"activities\":[{}],\"services\":[{}],\"receivers\":[{}],",
             "\"permissions\":[{}],\"new_permissions\":[{}],\"urls\":[{}],",
             "\"min_sdk_version\":{},\"max_sdk_version\":{},\"target_sdk_version\":{},",
-            "\"certificate\":{{\"subjectDN\":{},\"IssuerDN\":{},\"sha1\":{}}},",
+            "\"certificate\":{{\"subjectDN\":{},\"IssuerDN\":{},\"sha1\":{},",
+            "\"notBefore\":{},\"notAfter\":{},\"expired\":{}}},",
             "\"meta_data\":[{}]}}"
         ),
         opt_str(&manifest.package),
@@ -3983,6 +3984,9 @@ fn build_hydradragon_json(buffers: &[Buf], urls: &[String]) -> Option<String> {
         opt_str(&cert.as_ref().map(|c| c.subject.clone())),
         opt_str(&cert.as_ref().map(|c| c.issuer.clone())),
         opt_str(&cert.as_ref().map(|c| c.sha1.clone())),
+        opt_str(&cert.as_ref().and_then(|c| c.not_before.clone())),
+        opt_str(&cert.as_ref().and_then(|c| c.not_after.clone())),
+        cert.as_ref().and_then(|c| c.expired).map(|v| v.to_string()).unwrap_or_else(|| "null".to_string()),
         meta_data_json,
     ))
 }
@@ -3991,6 +3995,9 @@ struct CertInfo {
     subject: String,
     issuer: String,
     sha1: String,
+    not_before: Option<String>,
+    not_after: Option<String>,
+    expired: Option<i64>,
 }
 
 fn extract_certificate(buffers: &[Buf]) -> Option<CertInfo> {
@@ -4072,11 +4079,110 @@ fn extract_certificate(buffers: &[Buf]) -> Option<CertInfo> {
 
     let issuer = parse_dn(sig_data, &mut off)?; // issuer
 
-    der_skip(sig_data, &mut off)?; // validity SEQUENCE (notBefore, notAfter)
+    // validity SEQUENCE { notBefore Time, notAfter Time }
+    // Time = UTCTime (0x17, YYMMDDHHMMSSZ) or GeneralizedTime (0x18).
+    let (not_before, not_after) = parse_validity(sig_data, &mut off)
+        .unwrap_or((None, None));
 
     let subject = parse_dn(sig_data, &mut off)?; // subject
 
-    Some(CertInfo { subject, issuer, sha1 })
+    let expired = cert_expired(not_before.as_deref(), not_after.as_deref());
+
+    Some(CertInfo { subject, issuer, sha1, not_before, not_after, expired })
+}
+
+/// Parse the TBSCertificate `validity` SEQUENCE into (notBefore, notAfter)
+/// ISO-8601 strings, or (None, None) if malformed.
+fn parse_validity(data: &[u8], off: &mut usize) -> Option<(Option<String>, Option<String>)> {
+    der_expect_tag(data, off, 0x30)?; // validity SEQUENCE
+    let v_len = der_len(data, off)?;
+    let v_end = off.checked_add(v_len)?;
+
+    let nb = der_read_time(data, off);
+    let na = der_read_time(data, off);
+    // Clamp to the declared SEQUENCE bounds (defensive).
+    if *off > v_end {
+        *off = v_end;
+    }
+    Some((nb, na))
+}
+
+/// Read one DER Time (UTCTime 0x17 / GeneralizedTime 0x18) as ISO-8601
+/// "YYYY-MM-DD HH:MM:SS" (UTC). Returns None if not a Time or unparsable.
+fn der_read_time(data: &[u8], off: &mut usize) -> Option<String> {
+    let tag = *data.get(*off)?;
+    let is_utc = tag == 0x17;
+    let is_gen = tag == 0x18;
+    if !is_utc && !is_gen {
+        return None;
+    }
+    *off += 1;
+    let len = der_len(data, off)?;
+    let start = *off;
+    let end = start.checked_add(len)?;
+    let bytes = data.get(start..end)?;
+    *off = end;
+    let s = std::str::from_utf8(bytes).ok()?;
+    let s = s.trim_end_matches('Z');
+    if is_utc {
+        // YYMMDDHHMMSS — YY 00-49 => 20YY, 50-99 => 19YY.
+        if s.len() != 12 { return None; }
+        let yy: i32 = s[0..2].parse().ok()?;
+        let year = if yy >= 50 { 1900 + yy } else { 2000 + yy };
+        Some(format!("{year:04}-{}-{} {}:{}:{}",
+            &s[2..4], &s[4..6], &s[6..8], &s[8..10], &s[10..12]))
+    } else {
+        // GeneralizedTime: YYYYMMDDHHMMSS[.fraction][Z]
+        if s.len() < 14 { return None; }
+        Some(format!("{}-{}-{} {}:{}:{}",
+            &s[0..4], &s[4..6], &s[6..8], &s[8..10], &s[10..12], &s[12..14]))
+    }
+}
+
+/// 1 if the certificate is expired (now > notAfter) or not yet valid
+/// (now < notBefore); 0 if within the validity window or dates unknown.
+/// Uses a simple ordinal timestamp derived from ISO-8601 "YYYY-MM-DD HH:MM:SS".
+fn cert_expired(not_before: Option<&str>, not_after: Option<&str>) -> Option<i64> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()?
+        .as_secs() as i64;
+    let nb = not_before.and_then(iso_to_epoch);
+    let na = not_after.and_then(iso_to_epoch);
+    let expired = match (nb, na) {
+        (Some(b), Some(a)) => now < b || now > a,
+        (Some(b), None) => now < b,
+        (None, Some(a)) => now > a,
+        (None, None) => return None,
+    };
+    Some(if expired { 1 } else { 0 })
+}
+
+/// "YYYY-MM-DD HH:MM:SS" (UTC) -> unix seconds. Days since epoch computed
+/// with civil-from-days math (Howard Hinnant algorithm).
+fn iso_to_epoch(s: &str) -> Option<i64> {
+    let d: Vec<&str> = s.split(' ').collect();
+    if d.len() != 2 { return None; }
+    let mut date = d[0].split('-');
+    let y: i64 = date.next()?.parse().ok()?;
+    let m: i64 = date.next()?.parse().ok()?;
+    let day: i64 = date.next()?.parse().ok()?;
+    let mut time = d[1].split(':');
+    let hh: i64 = time.next()?.parse().ok()?;
+    let mm: i64 = time.next()?.parse().ok()?;
+    let ss: i64 = time.next()?.parse().ok()?;
+    let days = days_from_civil(y, m, day);
+    Some(days * 86400 + hh * 3600 + mm * 60 + ss)
+}
+
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = if y >= 0 { y } else { y - 399 } / 400;
+    let yoe = y - era * 400;                       // [0, 399]
+    let mp = (m + 9) % 12;                         // [0, 11]
+    let doy = (153 * mp + 2) / 5 + d - 1;          // [0, 365]
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy; // [0, 146096]
+    era * 146097 + doe - 719468
 }
 
 // ── DER helpers ────────────────────────────────────────────────────────────

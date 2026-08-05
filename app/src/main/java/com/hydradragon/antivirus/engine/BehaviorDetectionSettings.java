@@ -40,6 +40,10 @@ public final class BehaviorDetectionSettings {
     /** Ransomware/scareware UI abuse: wallpaper replacement, launcher-icon
      *  suppression (T1628.001) and loud-audio spam (GuardService). */
     public static final String SCAREWARE = "scareware";
+    /** Info-stealer behaviors: reading sensitive clipboard content (crypto
+     *  address, token, seed phrase) while a foreground app can observe it
+     *  (GuardService#checkClipboardStealer). */
+    public static final String STEALER = "stealer";
 
     private BehaviorDetectionSettings() {}
 

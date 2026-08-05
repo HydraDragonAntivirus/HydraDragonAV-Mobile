@@ -1,5 +1,8 @@
 package com.hydradragon.antivirus.engine;
 
+import android.app.admin.DeviceAdminInfo;
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -56,6 +59,23 @@ public class ScanEngine {
         "android.permission.PACKAGE_USAGE_STATS"
     );
 
+    // Persistence-permission combo that makes a BOOT_COMPLETED receiver
+    // genuinely dangerous: reboot-survival alone is benign (many apps use it
+    // legitimately), but a boot receiver PLUS any of these gives the app
+    // re-arm/attack/stealth capabilities after every reboot.
+    private static final List<String> BOOT_PERSISTENCE_SUSPICIOUS_PERMS = Arrays.asList(
+        "android.permission.BIND_DEVICE_ADMIN",
+        "android.permission.BIND_ACCESSIBILITY_SERVICE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.WRITE_SECURE_SETTINGS",
+        "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE",
+        "android.permission.PACKAGE_USAGE_STATS",
+        "android.permission.READ_SMS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+    );
+
     /** True iff the package declares no currently-enabled launcher (home-screen
      *  icon) activity — i.e. it can't be opened from the app drawer at all. A
      *  freshly-installed app with zero launcher entry points is unusual: most
@@ -69,6 +89,39 @@ public class ScanEngine {
             launchIntent.setPackage(packageName);
             List<ResolveInfo> launchables = pm.queryIntentActivities(launchIntent, 0);
             return launchables.isEmpty();
+        } catch (Exception e) {
+            return false; // can't determine — don't guess
+        }
+    }
+
+    /** True iff the package declares a receiver for android.intent.action.BOOT_COMPLETED.
+     *  Used only as half of the boot-persistence pattern — the other half (a
+     *  suspicious runtime permission) must also match before anything is flagged. */
+    private boolean hasBootPersistenceReceiver(PackageManager pm, String packageName) {
+        try {
+            PackageInfo pi = runPkgInfoInterruptible(() ->
+                pm.getPackageInfo(packageName,
+                    PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES));
+            if (pi == null || pi.receivers == null) return false;
+            for (android.content.pm.ActivityInfo r : pi.receivers) {
+                if (r.permission != null && r.permission.equals("android.permission.BIND_DEVICE_ADMIN")) continue;
+                try {
+                    Intent bootIntent = new Intent(Intent.ACTION_BOOT_COMPLETED);
+                    bootIntent.setPackage(packageName);
+                    List<android.content.pm.ResolveInfo> matched =
+                        pm.queryBroadcastReceivers(bootIntent, 0);
+                    for (android.content.pm.ResolveInfo ri : matched) {
+                        if (ri.activityInfo != null
+                                && ri.activityInfo.packageName.equals(packageName)
+                                && ri.activityInfo.name.equals(r.name)) {
+                            return true;
+                        }
+                    }
+                } catch (Exception e) {
+                    // individual receiver resolution failure — keep scanning others
+                }
+            }
+            return false;
         } catch (Exception e) {
             return false; // can't determine — don't guess
         }
@@ -1566,8 +1619,10 @@ public class ScanEngine {
             ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
         PackageInfo pkgInfo = runPkgInfoInterruptible(() -> {
             if (isApkFile)
-                return pm.getPackageArchiveInfo(app.sourceDir, PackageManager.GET_PERMISSIONS | sigFlag);
-            return pm.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS | sigFlag);
+                return pm.getPackageArchiveInfo(app.sourceDir,
+                    PackageManager.GET_PERMISSIONS | sigFlag | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES);
+            return pm.getPackageInfo(app.packageName,
+                PackageManager.GET_PERMISSIONS | sigFlag | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES);
         });
 
         try {
@@ -1635,6 +1690,71 @@ public class ScanEngine {
                 builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                 reasons.add("🕵️ Rootkit-like behavior: hidden from launcher + suspicious permissions ("
                     + String.join(", ", matchedRootkitPerms) + ")");
+            }
+        }
+
+        // Boot-persistence pattern: a boot-completed receiver that relaunches
+        // the app AND suspicious runtime permissions. Legit apps can have boot
+        // receivers (and many do), but a boot receiver combined with
+        // accessibility/overlay/device-admin/install-packages — the exact combo
+        // scareware & trojans use to survive reboot and re-arm their attacks —
+        // is a strong persistence signal on top of the dynamic checks.
+        if (!isWhitelisted && !isApkFile && app.packageName != null
+                && DetectionCategories.isEnabled(context, DetectionCategories.ROOTKIT)
+                && hasBootPersistenceReceiver(pm, app.packageName)) {
+            List<String> matchedPersistPerms = new ArrayList<>();
+            for (String suspicious : BOOT_PERSISTENCE_SUSPICIOUS_PERMS) {
+                if (requestedPermissions.contains(suspicious)) matchedPersistPerms.add(suspicious);
+            }
+            if (!matchedPersistPerms.isEmpty()) {
+                riskScore = Math.max(riskScore, 65);
+                builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                reasons.add("♻️ Boot persistence: auto-start receiver + suspicious permissions ("
+                    + String.join(", ", matchedPersistPerms) + ")");
+            }
+        }
+
+        // Device/Profile-owner abuse: a third-party app that becomes Device
+        // Owner (provisioned via adb / QR / DPC) gains near-system powers —
+        // it can lock the screen, wipe the device, block uninstalls and ignore
+        // user lockscreen credentials. This is the classic signature of
+        // Android "device-locker" ransomware and of scareware "security" apps
+        // that demand payment. An active device admin that can force-lock or
+        // wipe is the milder, still-dangerous variant.
+        if (!isWhitelisted && !isApkFile && app.packageName != null
+                && DetectionCategories.isEnabled(context, DetectionCategories.ROOTKIT)) {
+            try {
+                DevicePolicyManager dpm = (DevicePolicyManager)
+                    context.getSystemService(Context.DEVICE_POLICY_SERVICE);
+                if (dpm != null) {
+                    if (dpm.isDeviceOwnerApp(app.packageName)) {
+                        riskScore = Math.max(riskScore, 95);
+                        builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                        reasons.add("🔒 Device Owner: app can lock/wipe/block-uninstall and survives factory reset — device-locker ransomware signature");
+                    } else if (dpm.isProfileOwnerApp(app.packageName)) {
+                        riskScore = Math.max(riskScore, 80);
+                        builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                        reasons.add("🔒 Profile Owner: app can enforce work-profile policies and restrict the user");
+                    } else {
+                        List<ComponentName> admins = dpm.getActiveAdmins();
+                        if (admins != null) {
+                            for (ComponentName admin : admins) {
+                                if (admin.getPackageName().equals(app.packageName)) {
+                                    DeviceAdminInfo dai = new DeviceAdminInfo(pm, admin);
+                                    boolean forceLock = dai.usesPolicy(DeviceAdminInfo.USES_POLICY_FORCE_LOCK)
+                                        || dai.usesPolicy(DeviceAdminInfo.USES_POLICY_WIPE_DATA);
+                                    if (forceLock) {
+                                        riskScore = Math.max(riskScore, 75);
+                                        builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
+                                        reasons.add("🔒 Active device admin with force-lock/wipe policy: can lock the screen or factory-wipe the device");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                Log.d(TAG, "DEVICE-OWNER check failed for " + app.packageName, t);
             }
         }
 

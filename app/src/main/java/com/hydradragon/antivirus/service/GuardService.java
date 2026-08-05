@@ -366,6 +366,24 @@ public class GuardService extends Service {
      *  refuses to launch on an already-rooted device (see RootCheck), so any
      *  transition to true observed here happened WHILE this app was running. */
     private volatile boolean wasRooted = false;
+    /** Audio-scareware detector state: last music-stream volume level and the
+     *  time it was sampled, so a sudden low→max jump (scareware tactic) can be
+     *  caught even though Android 10+ blocks 3rd-party setStreamVolume. */
+    private volatile int lastVolumeLevel = -1;
+    private volatile long lastVolumeSampleMs = 0L;
+    /** Tracks which package starts playback with alarm/emergency audio usage —
+     *  the strongest audio-abuse signal on Android 10+ (setStreamVolume blocked).
+     *  Nulled in onDestroy (unregistered) — API 26+, our minSdk. */
+    private android.media.AudioManager.AudioPlaybackCallback audioPlaybackCallback;
+
+    /** Clipboard-read monitoring: the last sensitive-looking primary-clip text
+     *  and which package was foreground when it changed, so a switch into a
+     *  suspicious app while sensitive data is still on the clipboard can be
+     *  attributed as a read. Android 10+ only lets the foreground app read the
+     *  clipboard, so a new foreground package seeing it is meaningful. */
+    private volatile String lastSensitiveClipboardText = null;
+    private volatile String lastSensitiveClipboardPkg = null;
+    private volatile long lastSensitiveClipboardMs = 0L;
 
     private final IBinder binder = new GuardBinder();
     private GuardCallback callback;
@@ -472,6 +490,93 @@ public class GuardService extends Service {
             registerReceiver(packageChangeReceiver, filter);
         } catch (Throwable t) {
             Log.e(TAG, "register packageChangeReceiver failed", t);
+        }
+    }
+
+    private void registerAudioCallback() {
+        try {
+            android.media.AudioManager am =
+                (android.media.AudioManager) getSystemService(android.media.AudioManager.class);
+            if (am == null) return;
+            audioPlaybackCallback = new android.media.AudioManager.AudioPlaybackCallback() {
+                @Override
+                public void onPlaybackConfigChanged(
+                        java.util.List<android.media.AudioPlaybackConfiguration> configs) {
+                    if (configs == null) return;
+                    for (android.media.AudioPlaybackConfiguration cfg : configs) {
+                        if (cfg == null || !cfg.isActive()) continue;
+                        try {
+                            android.media.AudioAttributes attrs = cfg.getAudioAttributes();
+                            int usage = attrs != null ? attrs.getUsage()
+                                : android.media.AudioAttributes.USAGE_UNKNOWN;
+                            boolean abusive = usage == android.media.AudioAttributes.USAGE_ALARM
+                                || usage == android.media.AudioAttributes.USAGE_EMERGENCY
+                                || usage == android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
+                            if (!abusive) continue;
+                            String pkg = null;
+                            try {
+                                pkg = cfg.getClientPid() > 0
+                                    ? android.app.ActivityManager.getRunningAppProcesses() == null
+                                        ? null : null // resolved below via getPackageNameFromPid
+                                    : cfg.getClientPackageName();
+                            } catch (Throwable ignored) {}
+                            if (pkg == null || pkg.isEmpty()) {
+                                pkg = getPackageNameFromPid(cfg.getClientPid());
+                            }
+                            if (pkg == null || pkg.isEmpty()) continue;
+                            if (com.hydradragon.antivirus.engine.HipsMonitor.isSelfPackage(pkg)) continue;
+                            if (com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(GuardService.this, pkg)) continue;
+                            if (com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(GuardService.this, pkg)) continue;
+                            String usageName = usageName(usage);
+                            com.hydradragon.antivirus.engine.HipsMonitor.reportAudioAbuse(
+                                pkg, usage, usageName,
+                                attrs != null ? attrs.getContentType()
+                                    : android.media.AudioAttributes.CONTENT_TYPE_UNKNOWN,
+                                true);
+                            Log.e(TAG, "AUDIO ABUSE: " + pkg + " playing with usage " + usageName
+                                + " — scareware/ransomware signature");
+                            ThreatLogger.logThreat(GuardService.this, pkg, "Audio Abuse",
+                                "App is playing audio with " + usageName + " usage — scareware attention tactic");
+                        } catch (Throwable t) {
+                            Log.e(TAG, "onPlaybackConfigChanged entry failed", t);
+                        }
+                    }
+                }
+            };
+            am.registerAudioPlaybackCallback(audioPlaybackCallback, null);
+            Log.i(TAG, "AudioPlaybackCallback registered (USAGE_ALARM/EMERGENCY monitoring)");
+        } catch (Throwable t) {
+            Log.e(TAG, "registerAudioCallback failed", t);
+        }
+    }
+
+    /** Best-effort package-name lookup for a client PID — falls back to the
+     *  running-process list when AudioPlaybackConfiguration#getClientPackageName
+     *  isn't populated (rare on OEM builds). */
+    private String getPackageNameFromPid(int pid) {
+        if (pid <= 0) return null;
+        try {
+            java.util.List<android.app.ActivityManager.RunningAppProcessInfo> procs =
+                ((android.app.ActivityManager) getSystemService(ACTIVITY_SERVICE))
+                    .getRunningAppProcesses();
+            if (procs == null) return null;
+            for (android.app.ActivityManager.RunningAppProcessInfo p : procs) {
+                if (p.pid == pid && p.pkgList != null && p.pkgList.length > 0) {
+                    return p.pkgList[0];
+                }
+            }
+        } catch (Throwable ignored) {}
+        return null;
+    }
+
+    private static String usageName(int usage) {
+        switch (usage) {
+            case android.media.AudioAttributes.USAGE_ALARM: return "USAGE_ALARM";
+            case android.media.AudioAttributes.USAGE_EMERGENCY: return "USAGE_EMERGENCY";
+            case android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE: return "USAGE_NOTIFICATION_RINGTONE";
+            case android.media.AudioAttributes.USAGE_MEDIA: return "USAGE_MEDIA";
+            case android.media.AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE: return "USAGE_NAVIGATION_GUIDANCE";
+            default: return "USAGE_" + usage;
         }
     }
 
@@ -877,6 +982,7 @@ public class GuardService extends Service {
     private void startServiceMonitors() {
         scheduler = Executors.newScheduledThreadPool(4);
         registerPackageChangeReceiver();
+        registerAudioCallback();
 
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();
@@ -895,6 +1001,16 @@ public class GuardService extends Service {
             try { checkWallpaperChange(); }
             catch (Throwable t) { Log.e(TAG, "Wallpaper monitor failed", t); }
         }, 3, 5, TimeUnit.SECONDS);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            try { checkAudioScareware(); }
+            catch (Throwable t) { Log.e(TAG, "Audio-scareware monitor failed", t); }
+        }, 3, 2, TimeUnit.SECONDS);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            try { checkClipboardStealer(); }
+            catch (Throwable t) { Log.e(TAG, "Clipboard stealer monitor failed", t); }
+        }, 3, 2, TimeUnit.SECONDS);
 
         scheduler.scheduleAtFixedRate(() -> {
             try { checkHiddenApps(); }
@@ -947,6 +1063,155 @@ public class GuardService extends Service {
                 wasRooted = false;
             }
         } catch (Throwable ignore) { }
+    }
+
+    /** Detects the scareware audio tactic: an app slamming media volume to max
+     *  within a short window (usually from near-silence). Works even on
+     *  Android 10+ where 3rd-party setStreamVolume is blocked, because we
+     *  observe the RESULTING volume delta and attribute it to whichever app is
+     *  foreground — the same attribution used for wallpaper changes. */
+    private void checkAudioScareware() {
+        if (!com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+                com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCAREWARE)) return;        try {
+            android.media.AudioManager am =
+                (android.media.AudioManager) getSystemService(android.media.AudioManager.class);
+            if (am == null) return;
+            int max = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+            int level = am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+            if (max <= 0) return;
+            long now = System.currentTimeMillis();
+            if (lastVolumeLevel == -1) {
+                lastVolumeLevel = level;
+                lastVolumeSampleMs = now;
+                return;
+            }
+            boolean jumped = level >= (int) Math.ceil(max * 0.9)
+                && lastVolumeLevel <= (int) Math.floor(max * 0.25)
+                && (now - lastVolumeSampleMs) < 4000;
+            int from = lastVolumeLevel;
+            lastVolumeLevel = level;
+            lastVolumeSampleMs = now;
+            if (!jumped) return;
+
+            // USER-initiated volume rise (physical rocker): the user pressing
+            // the volume key is captured by the AccessibilityService, so a rise
+            // that coincides with a key press is the user's own doing, not
+            // scareware. Only attribute programmatic slams to the foreground app.
+            long nowRealtime = android.os.SystemClock.elapsedRealtime();
+            if (com.hydradragon.antivirus.service.DynamicAnalysisService
+                    .userPressedVolumeKeyWithin(nowRealtime, 4000)) {
+                Log.d(TAG, "Volume rise coincides with a physical volume key — user-initiated, not scareware");
+                return;
+            }
+
+            String suspect = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+            if (suspect == null || suspect.isEmpty()) return;
+            if (com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, suspect)) return;
+            com.hydradragon.antivirus.engine.HipsMonitor.reportAudioSpike(
+                suspect, from, level, max, true);
+            Log.e(TAG, "AUDIO SPIKE: media volume " + from + "→" + level
+                + "/" + max + " by foreground app: " + suspect);
+            ThreatLogger.logThreat(this, suspect, "Volume Spike",
+                "Media volume jumped from " + from + " to " + level + " of " + max
+                    + " while this app was foreground — scareware signature");
+        } catch (Throwable ignore) { }
+    }
+
+    /** Info-stealer clipboard watch. Android 10+ restricts clipboard reads to the
+     *  foreground app, so a sensitive item placed on the clipboard (crypto
+     *  address, token, seed phrase) that is still there when a DIFFERENT app
+     *  comes to the foreground is a read that app can make. We can't see the
+     *  actual getPrimaryClip() call, so we attribute conservatively: only flag
+     *  when a suspicious/unknown app takes the foreground while the sensitive
+     *  clipboard item is still present. */
+    private void checkClipboardStealer() {
+        if (!com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+                com.hydradragon.antivirus.engine.BehaviorDetectionSettings.STEALER)) return;
+        try {
+            android.content.ClipboardManager cm =
+                (android.content.ClipboardManager) getSystemService(android.content.ClipboardManager.class);
+            if (cm == null) return;
+            android.content.ClipData clip = cm.getPrimaryClip();
+            String text = null;
+            if (clip != null && clip.getItemCount() > 0) {
+                CharSequence cs = clip.getItemAt(0).coerceToText(this);
+                if (cs != null) text = cs.toString();
+            }
+            if (text == null || text.isEmpty()) {
+                lastSensitiveClipboardText = null;
+                lastSensitiveClipboardPkg = null;
+                return;
+            }
+
+            String current = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+            boolean sensitive = isSensitiveClipboard(text);
+            if (sensitive) {
+                if (lastSensitiveClipboardText == null
+                        || !lastSensitiveClipboardText.equals(text)) {
+                    lastSensitiveClipboardText = text;
+                    lastSensitiveClipboardPkg = current;
+                    lastSensitiveClipboardMs = System.currentTimeMillis();
+                    Log.d(TAG, "Sensitive clipboard item seen; placed-by=" + current);
+                    return;
+                }
+                // Same item still on the clipboard but a new app is foreground.
+                if (current != null && lastSensitiveClipboardPkg != null
+                        && !current.equals(lastSensitiveClipboardPkg)) {
+                    if (com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, current)) {
+                        return;
+                    }
+                    com.hydradragon.antivirus.engine.HipsMonitor.reportClipboardRead(
+                        current, true, clipboardHint(text), true);
+                    Log.e(TAG, "CLIPBOARD STEAL: sensitive item on clipboard, foreground switched to " + current);
+                    ThreatLogger.logThreat(this, current, "Clipboard Stealer",
+                        "Sensitive data on the clipboard was readable while " + current
+                            + " took the foreground (info-stealer pattern)");
+                    lastSensitiveClipboardPkg = current; // don't re-fire for this app
+                }
+            } else {
+                lastSensitiveClipboardText = null;
+                lastSensitiveClipboardPkg = null;
+            }
+        } catch (Throwable ignore) { }
+    }
+
+    /** Heuristic: is this clipboard text worth guarding? We only mark strings
+     *  that clearly look like credentials/secrets — long random-ish strings,
+     *  crypto addresses, JWT-like tokens, key-like hex — to keep false alarms
+     *  near zero on ordinary copied text. */
+    private static boolean isSensitiveClipboard(String text) {
+        if (text == null) return false;
+        String t = text.trim();
+        int len = t.length();
+        if (len < 20) return false;
+        // Crypto addresses: BTC/ETH/TRON/other.
+        if (t.matches("(?i)^(1|3|bc1|0x)[A-Za-z0-9]{25,}$")) return true;
+        // Long tokens / keys / seed phrases.
+        if (len >= 32 && t.matches("(?i)^[A-Za-z0-9+/=_.-]{32,}$") && containsDigitsAndLetters(t)) return true;
+        // Multi-word seed phrase (>=6 words).
+        if (t.matches("(?i)^([a-z]+\\s+){5,}[a-z]+$")) return true;
+        return false;
+    }
+
+    private static boolean containsDigitsAndLetters(String s) {
+        boolean d = false, l = false;
+        for (char c : s.toCharArray()) {
+            if (Character.isDigit(c)) d = true;
+            else if (Character.isLetter(c)) l = true;
+            if (d && l) return true;
+        }
+        return false;
+    }
+
+    private static String clipboardHint(String text) {
+        if (text == null) return "unknown";
+        String t = text.trim();
+        if (t.matches("(?i)^0x[0-9a-f]{40}$")) return "eth_address";
+        if (t.matches("(?i)^(1|3)[1-9A-HJ-NP-Za-km-z]{25,34}$")) return "btc_address";
+        if (t.matches("(?i)^T[1-9A-HJ-NP-Za-km-z]{25,34}$")) return "tron_address";
+        if (t.matches("(?i)^[A-Za-z0-9+/=_-]{32,}$") && t.split("[.-]").length > 1) return "token_or_key";
+        if (t.matches("(?i)^([a-z]+\\s+){5,}[a-z]+$")) return "seed_phrase";
+        return "credential_like";
     }
 
     /** Polls WallpaperManager.getWallpaperId() — on Android 10+ the
@@ -1250,6 +1515,14 @@ public class GuardService extends Service {
         super.onDestroy();
         if (scheduler != null) scheduler.shutdown();
         try { unregisterReceiver(packageChangeReceiver); } catch (Throwable t) { Log.e(TAG, "unregister packageChangeReceiver failed", t); }
+        if (audioPlaybackCallback != null) {
+            try {
+                android.media.AudioManager am =
+                    (android.media.AudioManager) getSystemService(android.media.AudioManager.class);
+                if (am != null) am.unregisterAudioPlaybackCallback(audioPlaybackCallback);
+            } catch (Throwable t) { Log.e(TAG, "unregister audio callback failed", t); }
+            audioPlaybackCallback = null;
+        }
         if (networkMonitor != null) networkMonitor.stopMonitoring();
         if (aiEngine != null) aiEngine.close();
         if (downloadObserver != null) {

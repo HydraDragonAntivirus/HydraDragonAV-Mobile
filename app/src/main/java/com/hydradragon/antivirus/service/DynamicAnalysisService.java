@@ -97,6 +97,36 @@ public class DynamicAnalysisService extends AccessibilityService {
         createNotificationChannel();
     }
 
+    /** Last time (elapsedRealtime ms) the user pressed a physical volume key,
+     *  or -1 if none yet. GuardService#checkAudioScareware uses this to tell a
+     *  USER-initiated volume rise (finger on the rocker → not malware) apart
+     *  from an app slamming the volume programmatically. Written from this
+     *  service's main thread; read from GuardService's scheduler thread —
+     *  volatile is enough since the value is a single monotonic timestamp. */
+    public static volatile long lastUserVolumeKeyMs = -1L;
+
+    @Override
+    public boolean onKeyEvent(android.view.KeyEvent event) {
+        if (event != null) {
+            int code = event.getKeyCode();
+            if (code == android.view.KeyEvent.KEYCODE_VOLUME_UP
+                || code == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) {
+                if (event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
+                    lastUserVolumeKeyMs = android.os.SystemClock.elapsedRealtime();
+                }
+                // Never consume the event — let the system adjust volume as normal.
+            }
+        }
+        return super.onKeyEvent(event);
+    }
+
+    /** Convenience: true if the user pressed a physical volume key within
+     *  {@code windowMs} before {@code now} (elapsedRealtime). */
+    public static boolean userPressedVolumeKeyWithin(long now, long windowMs) {
+        long last = lastUserVolumeKeyMs;
+        return last != -1L && (now - last) <= windowMs;
+    }
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null) return;

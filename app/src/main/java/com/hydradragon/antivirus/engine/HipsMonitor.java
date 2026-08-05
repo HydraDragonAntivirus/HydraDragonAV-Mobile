@@ -130,6 +130,32 @@ public final class HipsMonitor {
         boolean hidden;
     }
 
+    private static final class AudioSpikeEvent {
+        String packageName;
+        int volumeFrom;
+        int volumeTo;
+        int maxVolume;
+        long timestamp;
+        boolean malicious;
+    }
+
+    private static final class AudioAbuseEvent {
+        String packageName;
+        int usage;
+        String usageName;
+        int contentType;
+        long timestamp;
+        boolean malicious;
+    }
+
+    private static final class ClipboardReadEvent {
+        String packageName;
+        long timestamp;
+        boolean sensitive;
+        String hint;
+        boolean malicious;
+    }
+
     private static final class BehaviorFlagEntry {
         String packageName;
         final List<String> flags = new ArrayList<>();
@@ -146,6 +172,9 @@ public final class HipsMonitor {
     private static final List<LauncherChangeEvent> launcherChangeEvents = new ArrayList<>();
     private static final List<WallpaperChangeEvent> wallpaperChangeEvents = new ArrayList<>();
     private static final List<HiddenAppEvent> hiddenAppEvents = new ArrayList<>();
+    private static final List<AudioSpikeEvent> audioSpikeEvents = new ArrayList<>();
+    private static final List<AudioAbuseEvent> audioAbuseEvents = new ArrayList<>();
+    private static final List<ClipboardReadEvent> clipboardReadEvents = new ArrayList<>();
 
     private static final class MinerEvent {
         String packageName;
@@ -331,6 +360,51 @@ public final class HipsMonitor {
         hiddenAppEvents.add(e);
         if (hiddenAppEvents.size() > MAX_EVENTS_PER_TYPE) hiddenAppEvents.remove(0);
         addBehaviorFlag(pkg, "ICON_HIDDEN");
+        observePackage(pkg);
+    }
+
+    /** Records a media-volume spike attributed to an app being foreground at
+     *  that moment — scareware/ransomware tactic where the app slams the
+     *  volume to max (often from a quiet state) to grab the victim's attention
+     *  or drown out system warnings. Android 10+ blocks third-party apps from
+     *  calling setStreamVolume directly, but scareware still does it on older
+     *  APIs or as a system app (see the com.user.ad sample: USAGE_ALARM /
+     *  CAPTURE_AUDIO_OUTPUT), and a volume delta is observable regardless. */
+    public static synchronized void reportAudioSpike(String pkg, int from, int to, int maxVolume, boolean malicious) {
+        if (isSelfPackage(pkg)) return;
+        AudioSpikeEvent e = new AudioSpikeEvent();
+        e.packageName = pkg; e.volumeFrom = from; e.volumeTo = to;
+        e.maxVolume = maxVolume; e.timestamp = System.currentTimeMillis(); e.malicious = malicious;
+        audioSpikeEvents.add(e);
+        if (audioSpikeEvents.size() > MAX_EVENTS_PER_TYPE) audioSpikeEvents.remove(0);
+        addBehaviorFlag(pkg, "AUDIO_SPIKE");
+        observePackage(pkg);
+    }
+
+    /** Records that a package started playing audio with a high-priority usage
+     *  (USAGE_ALARM / USAGE_EMERGENCY / USAGE_NOTIFICATION_RINGTONE) — the
+     *  audio attributes scareware uses to blast sound that isn't tied to the
+     *  media stream. On Android 10+ this is the strongest audio-abuse signal
+     *  because setStreamVolume is blocked for 3rd-party apps. */
+    public static synchronized void reportAudioAbuse(String pkg, int usage, String usageName, int contentType, boolean malicious) {
+        if (isSelfPackage(pkg)) return;
+        AudioAbuseEvent e = new AudioAbuseEvent();
+        e.packageName = pkg; e.usage = usage; e.usageName = usageName;
+        e.contentType = contentType; e.timestamp = System.currentTimeMillis(); e.malicious = malicious;
+        audioAbuseEvents.add(e);
+        if (audioAbuseEvents.size() > MAX_EVENTS_PER_TYPE) audioAbuseEvents.remove(0);
+        addBehaviorFlag(pkg, "AUDIO_ABUSE");
+        observePackage(pkg);
+    }
+
+    public static synchronized void reportClipboardRead(String pkg, boolean sensitive, String hint, boolean malicious) {
+        if (isSelfPackage(pkg)) return;
+        ClipboardReadEvent e = new ClipboardReadEvent();
+        e.packageName = pkg; e.timestamp = System.currentTimeMillis();
+        e.sensitive = sensitive; e.hint = hint != null ? hint : ""; e.malicious = malicious;
+        clipboardReadEvents.add(e);
+        if (clipboardReadEvents.size() > MAX_EVENTS_PER_TYPE) clipboardReadEvents.remove(0);
+        addBehaviorFlag(pkg, "CLIPBOARD_READ");
         observePackage(pkg);
     }
 
@@ -730,6 +804,47 @@ public final class HipsMonitor {
                 haEvtArr.put(o);
             }
             root.put("hidden_app_events", haEvtArr);
+
+            // Audio volume-spike events (scareware/ransomware attention tactic)
+            JSONArray asArr = new JSONArray();
+            for (AudioSpikeEvent e : audioSpikeEvents) {
+                JSONObject o = new JSONObject();
+                o.put("package_name", e.packageName);
+                o.put("volume_from", e.volumeFrom);
+                o.put("volume_to", e.volumeTo);
+                o.put("max_volume", e.maxVolume);
+                o.put("timestamp", e.timestamp);
+                o.put("is_malicious", e.malicious);
+                asArr.put(o);
+            }
+            root.put("audio_spike_events", asArr);
+
+            // Audio-abuse events (USAGE_ALARM/USAGE_EMERGENCY playback)
+            JSONArray aaArr = new JSONArray();
+            for (AudioAbuseEvent e : audioAbuseEvents) {
+                JSONObject o = new JSONObject();
+                o.put("package_name", e.packageName);
+                o.put("usage", e.usage);
+                o.put("usage_name", e.usageName != null ? e.usageName : "");
+                o.put("content_type", e.contentType);
+                o.put("timestamp", e.timestamp);
+                o.put("is_malicious", e.malicious);
+                aaArr.put(o);
+            }
+            root.put("audio_abuse_events", aaArr);
+
+            // Clipboard reads
+            JSONArray crArr = new JSONArray();
+            for (ClipboardReadEvent e : clipboardReadEvents) {
+                JSONObject o = new JSONObject();
+                o.put("package_name", e.packageName);
+                o.put("timestamp", e.timestamp);
+                o.put("sensitive", e.sensitive);
+                o.put("hint", e.hint);
+                o.put("is_malicious", e.malicious);
+                crArr.put(o);
+            }
+            root.put("clipboard_read_events", crArr);
 
             // System state
             JSONObject sys = new JSONObject();
