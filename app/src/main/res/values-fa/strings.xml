@@ -249,6 +249,8 @@
     <string name="danger_download_title">⚠ خطر: ویروس شناسایی شد!</string>
     <string name="danger_download_desc">این برنامه به احتمال زیاد یک ویروس است، آن را دانلود نکنید!</string>
     <string name="no_threat_logs">هنوز هیچ گزارش تهدیدی ثبت نشده است.</string>
+    <string name="no_threat_logs_title">تهدیدی یافت نشد</string>
+    <string name="threat_logs_subtitle">تمام تاریخچه تهدیدهای ثبت‌شده توسط سیستم و اسکن‌ها</string>
     <string name="untrusted_cert">گواهی غیرقابل اعتماد (کلید آزمایشی)</string>
     <string name="critical_no_signature">بحرانی: امضای دیجیتال یافت نشد!</string>
     <string name="suspicious_apk_file">APK مشکوک در سیستم فایل!</string>

@@ -249,6 +249,8 @@
     <string name="danger_download_title">⚠ ОПАСНОСТЬ: ОБНАРУЖЕН ВИРУС!</string>
     <string name="danger_download_desc">Это приложение с высокой вероятностью является вирусом, не загружайте его!</string>
     <string name="no_threat_logs">Записей об угрозах пока нет.</string>
+    <string name="no_threat_logs_title">Угрозы не обнаружены</string>
+    <string name="threat_logs_subtitle">Вся история угроз, записанная системой и сканированием</string>
     <string name="untrusted_cert">НЕДОВЕРЕННЫЙ СЕРТИФИКАТ (тестовый ключ)</string>
     <string name="critical_no_signature">КРИТИЧНО: цифровая подпись не найдена!</string>
     <string name="suspicious_apk_file">Подозрительный APK в файловой системе!</string>

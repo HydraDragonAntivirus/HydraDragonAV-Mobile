@@ -249,6 +249,8 @@ Du kannst dies später in den Einstellungen aktivieren.</string>
     <string name="danger_download_title">⚠ GEFAHR: VIRUS ERKANNT!</string>
     <string name="danger_download_desc">Diese Anwendung ist höchstwahrscheinlich ein Virus, nicht herunterladen!</string>
     <string name="no_threat_logs">Noch keine Bedrohungsprotokolle vorhanden.</string>
+    <string name="no_threat_logs_title">Keine Bedrohungen gefunden</string>
+    <string name="threat_logs_subtitle">Gesamter Bedrohungsverlauf, der vom System und den Scans aufgezeichnet wurde</string>
     <string name="untrusted_cert">NICHT VERTRAUENSWÜRDIGES ZERTIFIKAT (Testschlüssel)</string>
     <string name="critical_no_signature">KRITISCH: Digitale Signatur nicht gefunden!</string>
     <string name="suspicious_apk_file">Verdächtige APK im Dateisystem!</string>

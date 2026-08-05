@@ -131,7 +131,7 @@ public class ThreatLogFragment extends Fragment {
         emptyCard.addView(shieldIcon, iconParams);
 
         TextView title = new TextView(getContext());
-        title.setText("Hiçbir Tehdit Bulunmuyor");
+        title.setText(R.string.no_threat_logs_title);
         title.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
         title.setTextSize(16);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));

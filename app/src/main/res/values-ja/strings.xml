@@ -249,6 +249,8 @@
     <string name="danger_download_title">⚠ 危険：ウイルスを検出しました！</string>
     <string name="danger_download_desc">このアプリケーションはウイルスである可能性が非常に高いため、ダウンロードしないでください！</string>
     <string name="no_threat_logs">脅威ログはまだ記録されていません。</string>
+    <string name="no_threat_logs_title">脅威は見つかりませんでした</string>
+    <string name="threat_logs_subtitle">システムとスキャンによって記録されたすべての脅威履歴</string>
     <string name="untrusted_cert">信頼できない証明書（テストキー）</string>
     <string name="critical_no_signature">重大：デジタル署名が見つかりません！</string>
     <string name="suspicious_apk_file">ファイルシステム内に不審なAPKがあります！</string>

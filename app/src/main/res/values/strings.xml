@@ -263,6 +263,8 @@ Do you want to completely remove this malicious file/app?</string>
     <string name="danger_download_title">⚠ DANGER: VIRUS DETECTED!</string>
     <string name="danger_download_desc">This application is highly likely a virus, do not download!</string>
     <string name="no_threat_logs">No threat logs recorded yet.</string>
+    <string name="no_threat_logs_title">No Threats Found</string>
+    <string name="threat_logs_subtitle">All threat history recorded by the system and scans</string>
     <string name="untrusted_cert">UNTRUSTED CERTIFICATE (Test Key)</string>
     <string name="critical_no_signature">CRITICAL: Digital signature not found!</string>
     <string name="suspicious_apk_file">Suspicious APK in File System!</string>

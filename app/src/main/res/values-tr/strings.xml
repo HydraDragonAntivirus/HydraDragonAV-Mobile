@@ -270,6 +270,8 @@ Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.</string>
     <string name="danger_download_title">⚠ DİKKAT: VİRÜS TESPİT EDİLDİ!</string>
     <string name="danger_download_desc">Bu uygulama yüksek ihtimalle virüstür, indirmeyin!</string>
     <string name="no_threat_logs">Henüz kaydedilmiş bir tehdit günlüğü yok.</string>
+    <string name="no_threat_logs_title">Hiçbir Tehdit Bulunmuyor</string>
+    <string name="threat_logs_subtitle">Sistem ve tarama tarafından kaydedilen tüm tehdit geçmişi</string>
     <string name="untrusted_cert">GÜVENSİZ SERTİFİKA (Test Anahtarı)</string>
     <string name="critical_no_signature">KRİTİK: Dijital imza bulunamadı!</string>
     <string name="suspicious_apk_file">Dosya Sistemindeki Şüpheli APK!</string>

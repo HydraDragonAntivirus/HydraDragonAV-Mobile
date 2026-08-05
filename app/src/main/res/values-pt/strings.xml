@@ -249,6 +249,8 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="danger_download_title">⚠ PERIGO: VÍRUS DETECTADO!</string>
     <string name="danger_download_desc">É altamente provável que este aplicativo seja um vírus, não baixe!</string>
     <string name="no_threat_logs">Nenhum registro de ameaça encontrado ainda.</string>
+    <string name="no_threat_logs_title">Nenhuma ameaça encontrada</string>
+    <string name="threat_logs_subtitle">Todo o histórico de ameaças registrado pelo sistema e pelas varreduras</string>
     <string name="untrusted_cert">CERTIFICADO NÃO CONFIÁVEL (Chave de Teste)</string>
     <string name="critical_no_signature">CRÍTICO: Assinatura digital não encontrada!</string>
     <string name="suspicious_apk_file">APK suspeito no sistema de arquivos!</string>

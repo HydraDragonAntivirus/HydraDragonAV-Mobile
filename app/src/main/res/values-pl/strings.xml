@@ -249,6 +249,8 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="danger_download_title">⚠ NIEBEZPIECZEŃSTWO: WYKRYTO WIRUSA!</string>
     <string name="danger_download_desc">Ta aplikacja jest prawdopodobnie wirusem, nie pobieraj jej!</string>
     <string name="no_threat_logs">Nie zarejestrowano jeszcze żadnych dzienników zagrożeń.</string>
+    <string name="no_threat_logs_title">Nie znaleziono zagrożeń</string>
+    <string name="threat_logs_subtitle">Cała historia zagrożeń zarejestrowana przez system i skanowanie</string>
     <string name="untrusted_cert">NIEZAUFANY CERTYFIKAT (Klucz testowy)</string>
     <string name="critical_no_signature">KRYTYCZNE: nie znaleziono podpisu cyfrowego!</string>
     <string name="suspicious_apk_file">Podejrzany plik APK w systemie plików!</string>

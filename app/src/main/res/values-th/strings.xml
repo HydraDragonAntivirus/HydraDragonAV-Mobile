@@ -249,6 +249,8 @@
     <string name="danger_download_title">⚠ อันตราย: ตรวจพบไวรัส!</string>
     <string name="danger_download_desc">แอปพลิเคชันนี้มีแนวโน้มสูงที่จะเป็นไวรัส อย่าดาวน์โหลด!</string>
     <string name="no_threat_logs">ยังไม่มีการบันทึกภัยคุกคาม</string>
+    <string name="no_threat_logs_title">ไม่พบภัยคุกคาม</string>
+    <string name="threat_logs_subtitle">ประวัติภัยคุกคามทั้งหมดที่บันทึกโดยระบบและการสแกน</string>
     <string name="untrusted_cert">ใบรับรองที่ไม่น่าเชื่อถือ (คีย์ทดสอบ)</string>
     <string name="critical_no_signature">วิกฤต: ไม่พบลายเซ็นดิจิทัล!</string>
     <string name="suspicious_apk_file">พบ APK ที่น่าสงสัยในระบบไฟล์!</string>

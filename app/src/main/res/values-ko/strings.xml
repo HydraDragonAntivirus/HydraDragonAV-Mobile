@@ -249,6 +249,8 @@
     <string name="danger_download_title">⚠ 위험: 바이러스 감지됨!</string>
     <string name="danger_download_desc">이 애플리케이션은 바이러스일 가능성이 매우 높으므로 다운로드하지 마세요!</string>
     <string name="no_threat_logs">아직 기록된 위협 로그가 없습니다.</string>
+    <string name="no_threat_logs_title">위협이 발견되지 않았습니다</string>
+    <string name="threat_logs_subtitle">시스템 및 검사로 기록된 모든 위협 기록</string>
     <string name="untrusted_cert">신뢰할 수 없는 인증서 (테스트 키)</string>
     <string name="critical_no_signature">심각: 디지털 서명을 찾을 수 없습니다!</string>
     <string name="suspicious_apk_file">파일 시스템에 의심스러운 APK가 있습니다!</string>

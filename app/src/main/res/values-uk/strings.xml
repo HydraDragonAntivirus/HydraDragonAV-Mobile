@@ -249,6 +249,8 @@
     <string name="danger_download_title">⚠ НЕБЕЗПЕКА: ВИЯВЛЕНО ВІРУС!</string>
     <string name="danger_download_desc">Цей додаток дуже ймовірно є вірусом, не завантажуйте його!</string>
     <string name="no_threat_logs">Записів журналу загроз ще немає.</string>
+    <string name="no_threat_logs_title">Загроз не знайдено</string>
+    <string name="threat_logs_subtitle">Уся історія загроз, записана системою та скануванням</string>
     <string name="untrusted_cert">НЕДОВІРЕНИЙ СЕРТИФІКАТ (Тестовий ключ)</string>
     <string name="critical_no_signature">КРИТИЧНО: Цифровий підпис не знайдено!</string>
     <string name="suspicious_apk_file">Підозрілий APK-файл у файловій системі!</string>

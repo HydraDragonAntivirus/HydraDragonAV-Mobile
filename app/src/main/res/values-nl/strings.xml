@@ -249,6 +249,8 @@ Je kunt dit later inschakelen via Instellingen.</string>
     <string name="danger_download_title">⚠ GEVAAR: VIRUS GEDETECTEERD!</string>
     <string name="danger_download_desc">Deze applicatie is hoogstwaarschijnlijk een virus, niet downloaden!</string>
     <string name="no_threat_logs">Nog geen dreigingslogboeken geregistreerd.</string>
+    <string name="no_threat_logs_title">Geen bedreigingen gevonden</string>
+    <string name="threat_logs_subtitle">Alle bedreigingsgeschiedenis vastgelegd door het systeem en scans</string>
     <string name="untrusted_cert">NIET-VERTROUWD CERTIFICAAT (Testsleutel)</string>
     <string name="critical_no_signature">KRITIEK: digitale handtekening niet gevonden!</string>
     <string name="suspicious_apk_file">Verdacht APK-bestand in bestandssysteem!</string>

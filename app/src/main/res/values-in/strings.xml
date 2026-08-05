@@ -249,6 +249,8 @@ Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
     <string name="danger_download_title">⚠ BAHAYA: VIRUS TERDETEKSI!</string>
     <string name="danger_download_desc">Aplikasi ini sangat mungkin merupakan virus, jangan unduh!</string>
     <string name="no_threat_logs">Belum ada log ancaman yang tercatat.</string>
+    <string name="no_threat_logs_title">Tidak Ada Ancaman Ditemukan</string>
+    <string name="threat_logs_subtitle">Semua riwayat ancaman yang dicatat oleh sistem dan pemindaian</string>
     <string name="untrusted_cert">SERTIFIKAT TIDAK TEPERCAYA (Kunci Uji)</string>
     <string name="critical_no_signature">KRITIS: Tanda tangan digital tidak ditemukan!</string>
     <string name="suspicious_apk_file">APK mencurigakan di sistem file!</string>

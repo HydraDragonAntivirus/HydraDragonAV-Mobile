@@ -249,6 +249,8 @@ Puoi abilitarlo in seguito dalle Impostazioni.</string>
     <string name="danger_download_title">⚠ PERICOLO: VIRUS RILEVATO!</string>
     <string name="danger_download_desc">Questa applicazione è molto probabilmente un virus, non scaricarla!</string>
     <string name="no_threat_logs">Nessun registro minacce ancora registrato.</string>
+    <string name="no_threat_logs_title">Nessuna minaccia trovata</string>
+    <string name="threat_logs_subtitle">Tutta la cronologia delle minacce registrata dal sistema e dalle scansioni</string>
     <string name="untrusted_cert">CERTIFICATO NON ATTENDIBILE (Chiave di test)</string>
     <string name="critical_no_signature">CRITICO: firma digitale non trovata!</string>
     <string name="suspicious_apk_file">APK sospetto nel file system!</string>

@@ -249,6 +249,8 @@
     <string name="danger_download_title">⚠ खतरा: वायरस मिला!</string>
     <string name="danger_download_desc">यह एप्लिकेशन बहुत संभावना है कि एक वायरस है, इसे डाउनलोड न करें!</string>
     <string name="no_threat_logs">अभी तक कोई खतरा लॉग दर्ज नहीं हुआ है।</string>
+    <string name="no_threat_logs_title">कोई खतरा नहीं मिला</string>
+    <string name="threat_logs_subtitle">सिस्टम और स्कैन द्वारा दर्ज किया गया सभी खतरे का इतिहास</string>
     <string name="untrusted_cert">अविश्वसनीय प्रमाणपत्र (टेस्ट की)</string>
     <string name="critical_no_signature">गंभीर: डिजिटल हस्ताक्षर नहीं मिला!</string>
     <string name="suspicious_apk_file">फ़ाइल सिस्टम में संदिग्ध APK!</string>

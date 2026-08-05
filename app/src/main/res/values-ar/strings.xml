@@ -249,6 +249,8 @@
     <string name="danger_download_title">⚠ خطر: تم اكتشاف فيروس!</string>
     <string name="danger_download_desc">من المحتمل جداً أن يكون هذا التطبيق فيروساً، لا تقم بتنزيله!</string>
     <string name="no_threat_logs">لا توجد سجلات تهديدات مسجلة بعد.</string>
+    <string name="no_threat_logs_title">لا توجد تهديدات</string>
+    <string name="threat_logs_subtitle">جميع سجل التهديدات المسجل بواسطة النظام والفحص</string>
     <string name="untrusted_cert">شهادة غير موثوقة (مفتاح اختبار)</string>
     <string name="critical_no_signature">حرج: لم يتم العثور على توقيع رقمي!</string>
     <string name="suspicious_apk_file">ملف APK مشبوه في نظام الملفات!</string>

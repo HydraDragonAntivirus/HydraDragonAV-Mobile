@@ -249,6 +249,8 @@ Bạn có thể bật tính năng này sau từ Cài đặt.</string>
     <string name="danger_download_title">⚠ NGUY HIỂM: PHÁT HIỆN VIRUS!</string>
     <string name="danger_download_desc">Ứng dụng này rất có thể là virus, đừng tải xuống!</string>
     <string name="no_threat_logs">Chưa có nhật ký mối đe dọa nào được ghi lại.</string>
+    <string name="no_threat_logs_title">Không tìm thấy mối đe dọa nào</string>
+    <string name="threat_logs_subtitle">Tất cả lịch sử mối đe dọa được hệ thống và các lần quét ghi lại</string>
     <string name="untrusted_cert">CHỨNG CHỈ KHÔNG ĐÁNG TIN CẬY (Khóa Kiểm tra)</string>
     <string name="critical_no_signature">NGHIÊM TRỌNG: Không tìm thấy chữ ký số!</string>
     <string name="suspicious_apk_file">APK đáng ngờ trong hệ thống tệp!</string>

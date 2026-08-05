@@ -45,7 +45,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Sistem ve tarama tarafından kaydedilen tüm tehdit geçmişi"
+            android:text="@string/threat_logs_subtitle"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
             android:fontFamily="sans-serif"/>

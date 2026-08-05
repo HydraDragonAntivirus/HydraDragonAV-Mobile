@@ -249,6 +249,8 @@
     <string name="danger_download_title">⚠ 危险：检测到病毒！</string>
     <string name="danger_download_desc">此应用极有可能是病毒，请勿下载！</string>
     <string name="no_threat_logs">尚无威胁日志记录。</string>
+    <string name="no_threat_logs_title">未发现威胁</string>
+    <string name="threat_logs_subtitle">系统和扫描记录的所有威胁历史</string>
     <string name="untrusted_cert">不受信任的证书（测试密钥）</string>
     <string name="critical_no_signature">严重：未找到数字签名！</string>
     <string name="suspicious_apk_file">文件系统中存在可疑APK！</string>
