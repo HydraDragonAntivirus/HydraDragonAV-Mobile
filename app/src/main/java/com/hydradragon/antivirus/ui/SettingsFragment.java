@@ -1042,8 +1042,9 @@ public class SettingsFragment extends Fragment {
         v.setText("HydraDragon Antivirus v" + com.hydradragon.antivirus.BuildConfig.VERSION_NAME
             + "\n━━━━━━━━━━━━━━━━━━━━━━\n\n" +
             "[ " + getString(R.string.developers_header) + " ]\n\n  ◈ Musayev Yusif\n  ◈ Emirhan Uçan\n\n" +
-            "━━━━━━━━━━━━━━━━━━━━━━\n" +
-            "https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile\n" +
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+            getString(R.string.source_code_label) + "\n" +
+            "https://github.com/HydraDragonAntivirus/HydraDragonAV-Mobile\n\n" +
             getString(R.string.donation_link));
         v.setTextColor(color(R.color.text_secondary));
         v.setTypeface(Typeface.SANS_SERIF);

@@ -73,6 +73,7 @@
     <string name="app_title">ANTYWIRUS v%1$s</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="developers_header">DEWELOPERZY</string>
+    <string name="source_code_label">Źródło:</string>
     <string name="donation_link">Darowizna: https://boosty.to/yusif_musayev</string>
     <string name="nav_dashboard">Panel</string>
     <string name="nav_scan">Skanuj</string>

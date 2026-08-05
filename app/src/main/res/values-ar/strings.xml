@@ -73,6 +73,7 @@
     <string name="app_title">مضاد فيروسات v%1$s</string>
     <string name="developers">Musayev Yusif &amp; Emirhan Uçan</string>
     <string name="developers_header">المطورون</string>
+    <string name="source_code_label">المصدر:</string>
     <string name="donation_link">تبرع: https://boosty.to/yusif_musayev</string>
     <string name="nav_dashboard">لوحة التحكم</string>
     <string name="nav_scan">فحص</string>
