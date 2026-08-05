@@ -498,6 +498,8 @@ public class SettingsFragment extends Fragment {
                 com.hydradragon.antivirus.engine.WebsiteWhitelist::remove));
         addBtn("📜  " + getString(R.string.auto_rules_manager_btn), color(R.color.bg_secondary),
             v -> showAutoRulesManagerDialog());
+        addBtn("➕  " + getString(R.string.custom_rule_add_btn), color(R.color.neon_cyan),
+            v -> showCustomRuleAddDialog());
         addBtn("🗑  " + getString(R.string.clear_scan_cache_btn), color(R.color.bg_secondary),
             v -> showClearCacheDialog());
 
@@ -1341,10 +1343,6 @@ public class SettingsFragment extends Fragment {
      *  NEXT init/restart, not retroactively for the current session). */
     private void showAutoRulesManagerDialog() {
         java.io.File dir = new java.io.File(new java.io.File(requireContext().getFilesDir(), "hydra-scan"), "generated_rules");
-        java.io.File[] files = dir.exists() ? dir.listFiles((d, name) -> name.endsWith(".yar")) : null;
-        java.util.List<java.io.File> rules = new java.util.ArrayList<>();
-        if (files != null) rules.addAll(java.util.Arrays.asList(files));
-        rules.sort((a, b) -> b.lastModified() > a.lastModified() ? 1 : -1);
 
         LinearLayout listBox = new LinearLayout(requireContext());
         listBox.setOrientation(LinearLayout.VERTICAL);
@@ -1358,11 +1356,27 @@ public class SettingsFragment extends Fragment {
         Runnable[] refresh = new Runnable[1];
         refresh[0] = () -> {
             listBox.removeAllViews();
+
+            // "+" row: paste + validate + add a custom YARA rule into the same
+            // generated_rules directory the native engine loads at init.
+            TextView addRow = new TextView(requireContext());
+            addRow.setText("＋  " + getString(R.string.custom_rule_add_btn));
+            addRow.setTextColor(color(R.color.neon_cyan));
+            addRow.setTextSize(16);
+            addRow.setPadding(20, 16, 20, 16);
+            addRow.setOnClickListener(v -> showCustomRuleAddDialog(() -> refresh[0].run()));
+            listBox.addView(addRow);
+
+            java.io.File[] files = dir.exists() ? dir.listFiles((d, name) -> name.endsWith(".yar")) : null;
+            java.util.List<java.io.File> rules = new java.util.ArrayList<>();
+            if (files != null) rules.addAll(java.util.Arrays.asList(files));
+            rules.sort((a, b) -> b.lastModified() > a.lastModified() ? 1 : -1);
+
             if (rules.isEmpty()) {
                 TextView empty = new TextView(requireContext());
                 empty.setText(getString(R.string.auto_rules_empty));
                 empty.setTextColor(color(R.color.text_secondary));
-                empty.setPadding(0, 16, 0, 16);
+                empty.setPadding(20, 16, 20, 16);
                 listBox.addView(empty);
             }
             for (java.io.File f : rules) {
@@ -1396,7 +1410,6 @@ public class SettingsFragment extends Fragment {
                 deleteBtn.setPadding(0, 0, 8, 0);
                 deleteBtn.setOnClickListener(v -> {
                     if (f.delete()) {
-                        rules.remove(f);
                         refresh[0].run();
                     } else {
                         Toast.makeText(getContext(), getString(R.string.auto_rule_delete_failed), Toast.LENGTH_SHORT).show();
@@ -1408,6 +1421,92 @@ public class SettingsFragment extends Fragment {
         };
         refresh[0].run();
         dlg.show();
+    }
+
+    /** Paste a user-written YARA rule into a dialog; on "Save" it is compiled
+     *  by the live native engine (NativeScanner.learnRule). A broken rule is
+     *  rejected on the spot and NOT persisted; a valid one is written into the
+     *  generated_rules directory (picked up by the next native init) and
+     *  activated for the current session immediately. */
+    private void showCustomRuleAddDialog(Runnable onAdded) {
+        LinearLayout box = new LinearLayout(requireContext());
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(48, 8, 48, 0);
+
+        TextView hint = new TextView(requireContext());
+        hint.setText(getString(R.string.custom_rule_hint));
+        hint.setTextColor(color(R.color.text_secondary));
+        hint.setTextSize(12);
+        hint.setPadding(0, 0, 0, 12);
+        box.addView(hint);
+
+        final android.widget.EditText input = new android.widget.EditText(requireContext());
+        input.setTypeface(Typeface.MONOSPACE);
+        input.setTextSize(12);
+        input.setGravity(Gravity.TOP | Gravity.START);
+        input.setHint("rule MyRule { condition: true }");
+        android.widget.ScrollView scroll = new android.widget.ScrollView(requireContext());
+        scroll.addView(input);
+        box.addView(scroll);
+
+        AlertDialog dlg = new AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.custom_rule_add_btn))
+            .setView(box)
+            .setPositiveButton(getString(R.string.lock_save), (d, w) -> {})
+            .setNegativeButton(getString(R.string.btn_close), null)
+            .create();
+        dlg.show();
+        dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String ruleText = input.getText() == null ? "" : input.getText().toString().trim();
+            if (ruleText.isEmpty()) {
+                Toast.makeText(getContext(), getString(R.string.custom_rule_empty), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+            new Thread(() -> {
+                String result;
+                final boolean saved = saveCustomRule(ruleText);
+                result = getString(saved ? R.string.custom_rule_saved : R.string.custom_rule_invalid);
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), result, Toast.LENGTH_LONG).show();
+                    if (saved) {
+                        dlg.dismiss();
+                        if (onAdded != null) onAdded.run();
+                    } else {
+                        dlg.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                    }
+                });
+            }).start();
+        });
+    }
+
+    /** Validate + persist a custom rule. Compiles it via the live engine; on
+     *  compile failure returns false without writing anything. */
+    private boolean saveCustomRule(String ruleText) {
+        java.io.File temp = new java.io.File(requireContext().getCacheDir(), "custom_rule_validate.yar");
+        try {
+            java.nio.file.Files.write(temp.toPath(), ruleText.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            return false;
+        }
+        if (!com.hydradragon.antivirus.engine.NativeScanner.isReady()) {
+            // Engine not loaded yet -> cannot validate; fall back to a syntax
+            // sanity check by compiling into a fresh dir? Keep it simple: reject.
+            Toast.makeText(getContext(), getString(R.string.custom_rule_engine_loading), Toast.LENGTH_LONG).show();
+            return false;
+        }
+        if (!com.hydradragon.antivirus.engine.NativeScanner.learnRule(temp.getAbsolutePath())) {
+            return false;
+        }
+        try {
+            java.io.File dir = new java.io.File(new java.io.File(requireContext().getFilesDir(), "hydra-scan"), "generated_rules");
+            if (!dir.exists() && !dir.mkdirs()) return false;
+            java.io.File dest = new java.io.File(dir, "custom_" + System.currentTimeMillis() + ".yar");
+            java.nio.file.Files.write(dest.toPath(), ruleText.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /** Read-only view of one .yar file's raw source — tapped from the Auto

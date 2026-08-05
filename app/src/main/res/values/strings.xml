@@ -57,6 +57,12 @@
     <string name="auto_rule_export_failed">Failed to export the rule</string>
     <string name="auto_rule_delete_failed">Failed to delete the rule</string>
     <string name="auto_rule_read_failed">Could not read this rule file</string>
+    <string name="custom_rule_add_btn">Add Custom Rule</string>
+    <string name="custom_rule_hint">Paste a YARA rule below. It is compiled immediately: broken rules are rejected and not saved, valid ones are enabled right away and loaded on every startup.</string>
+    <string name="custom_rule_empty">Rule is empty — paste a YARA rule first</string>
+    <string name="custom_rule_invalid">Rule rejected — it could not be compiled (check the YARA syntax)</string>
+    <string name="custom_rule_saved">Custom rule added and enabled</string>
+    <string name="custom_rule_engine_loading">Scan engine is still loading — try again in a moment</string>
     <string name="lock_confirm_pin">Confirm New PIN</string>
     <string name="security_flag_lost">Security check failed — closing for your protection</string>
     <string name="obscured_touch_warning">Tap ignored — something is overlaying the screen</string>
