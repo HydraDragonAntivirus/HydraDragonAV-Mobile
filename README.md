@@ -91,7 +91,7 @@ The features that actually earn their place — YARA-X + ClamAV signatures, the 
 
 *Designed with 💻 by @elnureisayeva1-cloud (creator) & @Siradankullanici (backend development)*
 
-**Note: the maximum file size the engine will scan is user-configurable from Settings (10–2048 MB, default 500 MB) — files above the limit are skipped entirely rather than partially scanned.**
+**Note: the maximum file size the engine will scan is user-configurable from Settings (10–2048 MB, default 650 MB) — files above the limit are skipped entirely rather than partially scanned.**
 
 ## ⚙️ How to Build & Install
 
