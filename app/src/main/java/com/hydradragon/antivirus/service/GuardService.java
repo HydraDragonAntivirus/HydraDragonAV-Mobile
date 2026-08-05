@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
@@ -336,6 +337,31 @@ public class GuardService extends Service {
     private volatile boolean engineLoading = true;
     private ScheduledExecutorService scheduler;
     private int alertNotificationId = ALERT_NOTIFICATION_BASE;
+    /** Last seen wallpaper ID — when it changes, some app called setWallpaper. */
+    private volatile int lastWallpaperId = -1;
+    /** Installed packages previously seen WITH a launcher icon, so we can tell
+     *  when one suppresses its own icon (T1628.001). */
+    private final java.util.Set<String> pkgsSeenWithLauncher = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    /** Event-driven icon-suppression detector: fires on ACTION_PACKAGE_CHANGED
+     *  (an app disabling its own launcher activity delivers exactly this), so
+     *  detection is instant instead of waiting for the periodic poll. */
+    private final BroadcastReceiver packageChangeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(android.content.Context ctx, android.content.Intent intent) {
+            try {
+                if (intent == null || intent.getAction() == null) return;
+                if (!android.content.Intent.ACTION_PACKAGE_CHANGED.equals(intent.getAction())) return;
+                android.net.Uri data = intent.getData();
+                if (data == null) return;
+                String pkg = data.getSchemeSpecificPart();
+                if (pkg == null || pkg.isEmpty()) return;
+                if (com.hydradragon.antivirus.engine.HipsMonitor.isSelfPackage(pkg)) return;
+                checkPackageForHiddenIcon(pkg);
+            } catch (Throwable t) {
+                Log.e(TAG, "packageChangeReceiver failed", t);
+            }
+        }
+    };
     /** Root state as of the LAST check — starts false since MainActivity already
      *  refuses to launch on an already-rooted device (see RootCheck), so any
      *  transition to true observed here happened WHILE this app was running. */
@@ -434,6 +460,19 @@ public class GuardService extends Service {
             startFullStorageMonitor();
             Log.i(TAG, "Guard Service active");
         }, "guard-init").start();
+    }
+
+    private void registerPackageChangeReceiver() {
+        try {
+            android.content.IntentFilter filter = new android.content.IntentFilter();
+            filter.addAction(android.content.Intent.ACTION_PACKAGE_CHANGED);
+            filter.addAction(android.content.Intent.ACTION_PACKAGE_REMOVED);
+            filter.addAction(android.content.Intent.ACTION_PACKAGE_ADDED);
+            filter.addDataScheme("package");
+            registerReceiver(packageChangeReceiver, filter);
+        } catch (Throwable t) {
+            Log.e(TAG, "register packageChangeReceiver failed", t);
+        }
     }
 
     private void initializeEngines() {
@@ -837,6 +876,7 @@ public class GuardService extends Service {
 
     private void startServiceMonitors() {
         scheduler = Executors.newScheduledThreadPool(4);
+        registerPackageChangeReceiver();
 
         scheduler.scheduleAtFixedRate(() -> {
             processDetector.scanRunningProcesses();
@@ -850,6 +890,16 @@ public class GuardService extends Service {
             try { com.hydradragon.antivirus.engine.LaunchMonitor.poll(GuardService.this); }
             catch (Throwable t) { Log.e(TAG, "LaunchMonitor poll failed", t); }
         }, 0, 5, TimeUnit.SECONDS);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            try { checkWallpaperChange(); }
+            catch (Throwable t) { Log.e(TAG, "Wallpaper monitor failed", t); }
+        }, 3, 5, TimeUnit.SECONDS);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            try { checkHiddenApps(); }
+            catch (Throwable t) { Log.e(TAG, "Hidden-app monitor failed", t); }
+        }, 10, 60, TimeUnit.SECONDS);
 
         scheduler.scheduleAtFixedRate(this::checkRootTransition, 15, 60, TimeUnit.SECONDS);
 
@@ -896,6 +946,145 @@ public class GuardService extends Service {
                 // revoked, and we want the NEXT genuine transition to fire again.
                 wasRooted = false;
             }
+        } catch (Throwable ignore) { }
+    }
+
+    /** Polls WallpaperManager.getWallpaperId() — on Android 10+ the
+     *  ACTION_WALLPAPER_CHANGED broadcast is no longer delivered to 3rd-party
+     *  apps, so a wallpaper-ID delta is the only reliable way to catch
+     *  ransomware/scareware silently calling setWallpaper(). The change is
+     *  attributed to the foreground app (see the com.user.ad sample:
+     *  IWallpaperManager.setWallpaper). */
+    private void checkWallpaperChange() {
+        if (!com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+                com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCAREWARE)) return;
+        try {
+            android.app.WallpaperManager wm =
+                (android.app.WallpaperManager) getSystemService(android.app.WallpaperManager.class);
+            if (wm == null) return;
+            int id;
+            try {
+                id = wm.getWallpaperId(android.app.WallpaperManager.FLAG_SYSTEM);
+            } catch (Throwable t) {
+                return;
+            }
+            if (lastWallpaperId == -1) {
+                lastWallpaperId = id;
+                return;
+            }
+            if (id != lastWallpaperId) {
+                lastWallpaperId = id;
+                String suspect = com.hydradragon.antivirus.service.DynamicAnalysisService.getForegroundPackage();
+                if (suspect == null || suspect.isEmpty()) return;
+                if (com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, suspect)) return;
+                com.hydradragon.antivirus.engine.HipsMonitor.reportWallpaperChange(suspect, id);
+                Log.e(TAG, "WALLPAPER CHANGED by foreground app: " + suspect + " (id=" + id + ")");
+                ThreatLogger.logThreat(this, suspect, "Wallpaper Change",
+                    "Wallpaper was replaced while this app was foreground — ransomware/scareware signature");
+            }
+        } catch (Throwable ignore) { }
+    }
+
+    /** Smart hidden-app monitor.
+     *  <p>Fast path: {@link #packageChangeReceiver} catches the exact moment an
+     *  app disables its own launcher activity (ACTION_PACKAGE_CHANGED) and calls
+     *  {@link #checkPackageForHiddenIcon(String)} instantly — no polling latency.
+     *  <p>Slow path: this periodic sweep exists only as a safety net for cases
+     *  that don't deliver PACKAGE_CHANGED (e.g. icon hidden via a device-admin
+     *  component or OEM launcher quirk). It also re-learns newly-installed apps
+     *  into {@link #pkgsSeenWithLauncher} so a future suppression is caught.
+     *  Because of the event-driven fast path, the sweep runs rarely. */
+    private void checkHiddenApps() {
+        if (!com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+                com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCAREWARE)) return;
+        try {
+            android.content.pm.PackageManager pm = getPackageManager();
+            java.util.List<android.content.pm.ApplicationInfo> installed =
+                pm.getInstalledApplications(0);
+            if (installed == null) return;
+            java.util.Set<String> currentlyVisible = new java.util.HashSet<>();
+            for (android.content.pm.ApplicationInfo ai : installed) {
+                if (com.hydradragon.antivirus.engine.HipsMonitor.isSelfPackage(ai.packageName)) continue;
+                boolean hasIcon = hasLauncherIcon(pm, ai);
+                if (hasIcon) {
+                    currentlyVisible.add(ai.packageName);
+                    pkgsSeenWithLauncher.add(ai.packageName);
+                }
+            }
+            if (pkgsSeenWithLauncher.isEmpty()) {
+                pkgsSeenWithLauncher.addAll(currentlyVisible);
+                return;
+            }
+            for (String pkg : new java.util.ArrayList<>(pkgsSeenWithLauncher)) {
+                if (currentlyVisible.contains(pkg)) continue;
+                // Re-verify the icon truly vanished (not a stale first-sweep
+                // baseline race) before flagging.
+                android.content.pm.ApplicationInfo ai;
+                try {
+                    ai = pm.getApplicationInfo(pkg, 0);
+                } catch (Throwable t) {
+                    // Package uninstalled — drop from the watch set, not a threat.
+                    pkgsSeenWithLauncher.remove(pkg);
+                    continue;
+                }
+                if (hasLauncherIcon(pm, ai)) {
+                    currentlyVisible.add(pkg);
+                    continue;
+                }
+                if (com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, pkg)) continue;
+                if (com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg)) continue;
+                com.hydradragon.antivirus.engine.HipsMonitor.reportHiddenApp(pkg, true);
+                Log.e(TAG, "HIDDEN APP: launcher icon suppressed for " + pkg);
+                ThreatLogger.logThreat(this, pkg, "Hidden App",
+                    "App is no longer visible in the launcher — stealth/rootkit signature (T1628.001)");
+            }
+        } catch (Throwable ignore) { }
+    }
+
+    private boolean hasLauncherIcon(android.content.pm.PackageManager pm,
+                                    android.content.pm.ApplicationInfo ai) {
+        try {
+            return pm.getLaunchIntentForPackage(ai.packageName) != null
+                || (ai.enabled
+                    && (ai.flags & android.content.pm.ApplicationInfo.FLAG_SUSPENDED) == 0
+                    && pm.getApplicationEnabledSetting(ai.packageName)
+                        != android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Event-driven check triggered the instant an app reports a package
+     *  change (typically disabling its own launcher activity). Cheaper and
+     *  faster than the periodic sweep because it inspects ONE package. */
+    private void checkPackageForHiddenIcon(String pkg) {
+        if (!com.hydradragon.antivirus.engine.BehaviorDetectionSettings.isEnabled(this,
+                com.hydradragon.antivirus.engine.BehaviorDetectionSettings.SCAREWARE)) return;
+        try {
+            android.content.pm.PackageManager pm = getPackageManager();
+            android.content.pm.ApplicationInfo ai;
+            try {
+                ai = pm.getApplicationInfo(pkg, 0);
+            } catch (Throwable t) {
+                pkgsSeenWithLauncher.remove(pkg);
+                return;
+            }
+            if (hasLauncherIcon(pm, ai)) {
+                pkgsSeenWithLauncher.add(pkg);
+                return;
+            }
+            // Icon is gone. Only flag if we previously saw this app WITH an
+            // icon (otherwise it was simply installed icon-less — legitimate).
+            if (!pkgsSeenWithLauncher.contains(pkg)) {
+                pkgsSeenWithLauncher.add(pkg);
+                return;
+            }
+            if (com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, pkg)) return;
+            if (com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg)) return;
+            com.hydradragon.antivirus.engine.HipsMonitor.reportHiddenApp(pkg, true);
+            Log.e(TAG, "HIDDEN APP (instant): launcher icon suppressed for " + pkg);
+            ThreatLogger.logThreat(this, pkg, "Hidden App",
+                "App disabled its own launcher icon — stealth/rootkit signature (T1628.001)");
         } catch (Throwable ignore) { }
     }
 
@@ -1060,6 +1249,7 @@ public class GuardService extends Service {
     public void onDestroy() {
         super.onDestroy();
         if (scheduler != null) scheduler.shutdown();
+        try { unregisterReceiver(packageChangeReceiver); } catch (Throwable t) { Log.e(TAG, "unregister packageChangeReceiver failed", t); }
         if (networkMonitor != null) networkMonitor.stopMonitoring();
         if (aiEngine != null) aiEngine.close();
         if (downloadObserver != null) {

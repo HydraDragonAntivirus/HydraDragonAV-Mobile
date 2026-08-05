@@ -119,6 +119,17 @@ public final class HipsMonitor {
         boolean suspicious;
     }
 
+    private static final class WallpaperChangeEvent {
+        String packageName;
+        long timestamp;
+        int wallpaperId;
+    }
+
+    private static final class HiddenAppEvent {
+        String packageName;
+        boolean hidden;
+    }
+
     private static final class BehaviorFlagEntry {
         String packageName;
         final List<String> flags = new ArrayList<>();
@@ -133,6 +144,8 @@ public final class HipsMonitor {
     private static final List<StrandHoggEvent> strandhoggEvents = new ArrayList<>();
     private static final List<RemovalResistanceEvent> removalResistanceEvents = new ArrayList<>();
     private static final List<LauncherChangeEvent> launcherChangeEvents = new ArrayList<>();
+    private static final List<WallpaperChangeEvent> wallpaperChangeEvents = new ArrayList<>();
+    private static final List<HiddenAppEvent> hiddenAppEvents = new ArrayList<>();
 
     private static final class MinerEvent {
         String packageName;
@@ -198,7 +211,7 @@ public final class HipsMonitor {
         return arr;
     }
 
-    private static boolean isSelfPackage(String pkg) {
+    public static boolean isSelfPackage(String pkg) {
         return pkg == null || pkg.isEmpty() || pkg.startsWith("com.hydradragon.antivirus");
     }
 
@@ -292,6 +305,32 @@ public final class HipsMonitor {
         launcherChangeEvents.add(e);
         if (launcherChangeEvents.size() > MAX_EVENTS_PER_TYPE) launcherChangeEvents.remove(0);
         addBehaviorFlag(pkg, "LAUNCHER_CHANGE");
+        observePackage(pkg);
+    }
+
+    /** Records that the device wallpaper was changed at a moment when an
+     *  untrusted app was the foreground/active package — a classic
+     *  ransomware/scareware behaviour (see IWallpaperManager.setWallpaper). */
+    public static synchronized void reportWallpaperChange(String pkg, int wallpaperId) {
+        if (isSelfPackage(pkg)) return;
+        WallpaperChangeEvent e = new WallpaperChangeEvent();
+        e.packageName = pkg; e.wallpaperId = wallpaperId; e.timestamp = System.currentTimeMillis();
+        wallpaperChangeEvents.add(e);
+        if (wallpaperChangeEvents.size() > MAX_EVENTS_PER_TYPE) wallpaperChangeEvents.remove(0);
+        addBehaviorFlag(pkg, "WALLPAPER_CHANGE");
+        observePackage(pkg);
+    }
+
+    /** Records that a package has hidden itself from the launcher (its
+     *  MAIN/LAUNCHER activity disabled or no launch intent) — T1628.001
+     *  "Suppress Application Icon", common stealth behaviour. */
+    public static synchronized void reportHiddenApp(String pkg, boolean hidden) {
+        if (isSelfPackage(pkg)) return;
+        HiddenAppEvent e = new HiddenAppEvent();
+        e.packageName = pkg; e.hidden = hidden;
+        hiddenAppEvents.add(e);
+        if (hiddenAppEvents.size() > MAX_EVENTS_PER_TYPE) hiddenAppEvents.remove(0);
+        addBehaviorFlag(pkg, "ICON_HIDDEN");
         observePackage(pkg);
     }
 
@@ -670,6 +709,27 @@ public final class HipsMonitor {
                 minArr.put(o);
             }
             root.put("miner_events", minArr);
+
+            // Wallpaper-change events (ransomware/scareware signature)
+            JSONArray wpArr = new JSONArray();
+            for (WallpaperChangeEvent e : wallpaperChangeEvents) {
+                JSONObject o = new JSONObject();
+                o.put("package_name", e.packageName);
+                o.put("wallpaper_id", e.wallpaperId);
+                o.put("timestamp", e.timestamp);
+                wpArr.put(o);
+            }
+            root.put("wallpaper_events", wpArr);
+
+            // Hidden-app (launcher icon suppressed) events
+            JSONArray haEvtArr = new JSONArray();
+            for (HiddenAppEvent e : hiddenAppEvents) {
+                JSONObject o = new JSONObject();
+                o.put("package_name", e.packageName);
+                o.put("hidden", e.hidden);
+                haEvtArr.put(o);
+            }
+            root.put("hidden_app_events", haEvtArr);
 
             // System state
             JSONObject sys = new JSONObject();

@@ -37,6 +37,9 @@ public final class BehaviorDetectionSettings {
     public static final String FILE_READ_ESTIMATOR = "file_read_estimator";
     /** Wiper detection via rapid file deletion + memory profiling. */
     public static final String WIPER = "wiper";
+    /** Ransomware/scareware UI abuse: wallpaper replacement, launcher-icon
+     *  suppression (T1628.001) and loud-audio spam (GuardService). */
+    public static final String SCAREWARE = "scareware";
 
     private BehaviorDetectionSettings() {}
 

@@ -250,7 +250,7 @@ Vous pouvez activer cela plus tard depuis Paramètres.</string>
     <string name="danger_download_desc">Cette application est très probablement un virus, ne la téléchargez pas !</string>
     <string name="no_threat_logs">Aucun journal de menace enregistré pour le moment.</string>
     <string name="no_threat_logs_title">Aucune menace détectée</string>
-    <string name="threat_logs_subtitle">Tout l'historique des menaces enregistré par le système et les analyses</string>
+    <string name="threat_logs_subtitle">Tout l\'historique des menaces enregistré par le système et les analyses</string>
     <string name="untrusted_cert">CERTIFICAT NON FIABLE (Clé de Test)</string>
     <string name="critical_no_signature">CRITIQUE : Signature numérique introuvable !</string>
     <string name="suspicious_apk_file">APK suspect dans le système de fichiers !</string>
