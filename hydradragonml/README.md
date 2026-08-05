@@ -1,136 +1,125 @@
 # hydradragonml
 
-Pure-Rust [Burn](https://burn.dev) (NdArray) malware/benign APK binary
-classifier. Real, content-derived features are parsed straight from the APK
-(DEX structure, native ELF libraries and `AndroidManifest.xml`) with the same
-parsers used by the Android engine, then fed through an Embedding + mean-pool
-text branch fused with the engine features in an MLP → sigmoid confidence.
-Training and inference both run in Rust; weights ship as a `.mpk` file that the
-Android engine loads at runtime.
-
-## A note on the model architecture
-
-The classifier is deliberately a **simple, classic architecture** — a mean-pooled
-token embedding (a "bag of subwords" text branch, with no positional or
-sequential modeling) fused with a shallow MLP over the engine features. This is
-not a modern sequence model (no attention, no RNN/CNN over the token stream);
-it's closer to a 2015-era text-classification baseline. That's an intentional
-trade-off for this use case, not an oversight:
-
-- **On-device budget**: the whole model (embedding table + a handful of small
-  `Linear` layers) is a few MB and runs inference in single-digit milliseconds
-  on a phone CPU, with no GPU/accelerator dependency.
-- **Interpretability**: a shallow MLP over 18 named, human-checkable engine
-  features (`dump-apk-features`) is much easier to audit and debug than a deep
-  sequence model's internals.
-- **Bare-APK data budget**: subword mean-pooling degrades gracefully with the
-  amount of realistic labeled training data available for a niche
-  binary-classification task; a large transformer would likely overfit or
-  need far more data to earn its extra capacity.
-
-The trade-off is real, though: mean-pooling discards token order, so the text
-branch can't learn phrase-level or call-sequence patterns — it's essentially a
-weighted vocabulary-presence signal. If false-negative rate on
-order-sensitive obfuscation patterns becomes a problem, the natural upgrade
-path is a small 1D-CNN or single-layer Transformer over the token embeddings
-in place of the mean-pool, without touching the engine-feature branch or the
-DEX/ELF/manifest parsers.
+Pure-Rust [Burn](https://burn.dev) (NdArray) malware/benign APK binary classifier.
+Real, content-derived features are parsed straight from the APK — DEX structure,
+native ELF libraries and `AndroidManifest.xml` — with the same parsers the
+Android engine uses. Tokenized APK text and the engine features are fused in a
+small MLP that outputs a `[0, 1]` sigmoid confidence. Training and inference
+both run in Rust; weights ship as a `.mpk` file the Android engine loads at
+runtime.
 
 ## Architecture
 
 1. **Parsers** (`features::dex`, `features::elf`, `features::axml`) extract real
-   content from APK entries: DEX class/string/API-call counts, ELF
-   emulator/network/file/exec strings and anti-debug markers, and manifest
-   permissions (dangerous/total), activities, services, receivers and
-   min/target SDK. This is the **single source of truth** for both training and
-   on-device inference (`EngineFeatures::extract_from_apk`). Archive reading
-   itself goes through `ripzip` (parsing the ZIP central directory straight
-   from the in-memory APK bytes) with `flate2` handling DEFLATE decompression
-   for individual entries.
-2. **Tokenizer** (`features::Tokenizer`) loads `vocab.json` (20K subword tokens,
-   `0` = UNK), harvests printable strings from APK entries (entry names,
-   `AndroidManifest.xml`, `resources.arsc`, `*.dex`, `META-INF/`), splits on
-   delimiters, and maps each fragment to a vocabulary index.
-3. **Model** (`model::ApkClassifier`) embeds the token indices and mean-pools
-   them, passes the pooled text vector and the 18 normalized engine features
-   through a small MLP, and outputs a sigmoid confidence:
-   - text branch: `Embedding(20K → 64) → mean-pool → Linear(64 → 32) → ReLU`
-   - engine branch: `Linear(18 → 32) → ReLU`
-   - fused: `concat → Linear(64 → 32) → ReLU → Linear(32 → 1) → Sigmoid`
-4. **Output**: confidence `0.0` (benign) to `1.0` (malware). `>= 0.95`
-   malicious, `>= 0.90` suspicious (see `DEFAULT_CONFIDENCE_THRESHOLD` /
+   content from APK entries:
+   - DEX: class count, string count, method reference count (raw `method_ids`
+     table size — no framework-prefix filter, no curated API lists).
+   - ELF: number of structurally valid native libraries (`lib/**/*.so`).
+   - AXML: manifest total permissions, activities, services, receivers,
+     min/target SDK.
+   Plus one Shannon-entropy feature over the decompressed code-bearing entries
+   (DEX/ELF/manifest content). There are **no hardcoded lists or caps** anywhere
+   in this crate — every feature is a plain count/size derived from the file.
+   This is the **single source of truth** for both training and on-device
+   inference (`EngineFeatures::extract_from_apk`). Archive reading goes through
+   `ripzip` (ZIP central directory parsed straight from the in-memory APK bytes)
+   with `flate2` for DEFLATE decompression.
+2. **Tokenizer** (`features::Tokenizer`) loads a `vocab.json` subword vocabulary
+   (`0` = UNK), harvests printable ASCII / UTF-16LE strings from APK entry names
+   and the contents of `AndroidManifest.xml`, `resources.arsc`, `*.dex` and
+   `META-INF/*`, splits on delimiters and maps fragments to vocabulary ids
+   (capped at `MAX_TOKENS`).
+3. **Normalization** (`features::FeaturePercentiles`) is corpus-derived, never
+   hardcoded: at train time the raw per-feature values over the whole corpus are
+   sorted column-wise and persisted to `features.json`; each value is mapped to
+   its interpolated rank percentile in `[0, 1]`. Inference loads the same
+   `features.json`, so an out-of-distribution giant APK lands *at the top of the
+   training distribution* instead of being clipped by an arbitrary cap.
+4. **Model** (`model::ApkClassifier`):
+   - text branch: `Embedding(20K -> 64) -> mean-pool over sequence ->
+     Linear(64 -> 32) -> ReLU`
+   - engine branch: `Linear(11 -> 32) -> ReLU`
+   - fused head: `cat([text, engine]) -> Linear(64 -> 32) -> ReLU ->
+     Linear(32 -> 1) -> Sigmoid`
+   The output is a single malware probability; `forward_batch(tokens, engine)`
+   serves training/validation and `forward(tokens, engine)` serves the
+   single-sample scan path. Both operate on token id tensors and the 11
+   percentile-normalized engine features.
+5. **Output**: confidence `0.0` (benign) to `1.0` (malware). `>= 0.95`
+   malicious, `>= 0.90` suspicious (`DEFAULT_CONFIDENCE_THRESHOLD` /
    `SUSPICIOUS_THRESHOLD` in `lib.rs`).
 
-The engine features (`EngineFeatures`) are 18 content-derived values that the
-Android engine can compute from a bare APK: 5 DEX structure counts, 6 native
-ELF library signals and 7 manifest fields — all normalized to `[0, 1]`.
-External/reputation-style signals (URL/IP blocklists, certificate test-key
-flags, benign-DB similarity, media steganography, runtime HIPS findings) are
-deliberately NOT part of the learned representation: they are neither available
-at training time from a bare APK nor comparable between training and on-device
-inference. The MinHash pipeline (`features::extract_minhash`) is kept for
-benign-DB lookups and uses FNV-1a hashing (unchanged).
+The 11 `EngineFeatures` are content-derived values the Android engine can
+compute from a bare APK: 3 DEX structure counts, 1 native ELF count, 6 manifest
+fields and 1 content-entropy value — all raw, normalized only by the
+corpus-derived percentile stats (`features::FeaturePercentiles`).
+External/reputation-style signals (URL blocklists, certificate flags,
+benign-DB similarity, HIPS findings) are not part of the learned
+representation: they are neither available at training time from a bare APK nor
+comparable between training and on-device inference.
 
-> ⚠️ **`.mpk` weight compatibility**: the engine-feature vector width is a
-> fixed constant (`features::ENGINE_FEATURE_COUNT`, currently 19) baked into
-> `ApkClassifier`'s `fc_engine` layer shape. Any change to that constant means
-> previously trained `.mpk` weights will fail to load (`load_record` shape
-> mismatch) and the model must be retrained from scratch.
+> ⚠️ **`.mpk` weight compatibility**: the engine-feature vector width
+> (`features::ENGINE_FEATURE_COUNT`, 11) and vocabulary size
+> (`features::VOCAB_SIZE`) are baked into `ApkClassifier` layer shapes. Changing
+> either invalidates previously trained `.mpk` weights (`load_record` shape
+> mismatch) and requires retraining from scratch. The `features.json` percentile
+> stats must also come from the same training run that produced the `.mpk`.
 
 ## Building the vocabulary
 
-The `vocab.json` token vocabulary is built over the same corpus that trains the
-model, so training and inference tokenize identically.
+If no `vocab.json` exists, build one over the same corpus that trains the
+model (same tokenization rules as `features::Tokenizer`, so training and
+inference tokenize identically):
 
 ```powershell
-cargo build --release; .\target\release\hydradragonml-vocab.exe --corpus ..\dataset\benign,..\dataset\malware --output vocab.json
+cargo run --release --bin hydradragonml-build-vocab -- --benign ..\dataset\benign --malware ..\dataset\malware --output vocab.json --size 20000 --min-count 2
 ```
 
-## Training the model
+Tokens are ranked by corpus frequency; id `0` is `<UNK>`, and `--size` is
+capped at `VOCAB_SIZE` (20000).
+
+## Training
 
 ```powershell
 cargo build --release; .\target\release\hydradragonml-train.exe --benign ..\dataset\benign --malware ..\dataset\malware --vocab vocab.json --output model.mpk --epochs 6 --lr 0.001 --batch-size 8
 ```
 
-This walks `--benign/` and `--malware/` recursively for `.apk`/`.zip` files,
-extracts each file's engine features (`EngineFeatures::extract_from_apk`) and
-tokenizes it, splits 80/20 into train/valid, trains `ApkClassifier` with Adam +
-binary cross-entropy (LR halves each epoch), and saves the weights as a Burn
-`.mpk` file (`model.mpk`), copying `vocab.json` next to it for deployment.
+Walks `--benign/` and `--malware/` recursively for `.apk`/`.zip` files, extracts
+each file's engine features and token ids, derives the corpus percentile stats,
+normalizes every sample, splits 80/20 into train/valid, trains
+`ApkClassifier` with Adam + binary cross-entropy (LR halves every epoch via a
+step scheduler), prints mean normalized engine features per class for a quick
+corpus audit, and saves weights as a Burn `.mpk`, writing `features.json`
+(percentile stats) and copying `vocab.json` next to it for deployment.
 
-`--vocab` must be the same `vocab.json` shipped in the Android assets; it has to
-be built over the same corpus so training and inference tokenize identically.
+`--vocab` must be the same `vocab.json` shipped in the Android assets, and the
+produced `features.json` must ship alongside the `.mpk`.
 
 ## Dataset scanner (CLI)
 
 ```powershell
-cargo build --release; .\target\release\hydradragonml-scan.exe --dataset ..\dataset\ --model model.mpk --vocab vocab.json --threshold 0.5
+cargo build --release; .\target\release\hydradragonml-scan.exe --dataset ..\dataset\ --model model.mpk --vocab vocab.json --features features.json --threshold 0.5
 ```
 
 Walks the dataset for `.apk` files, scores each with the model, prints per-file
-verdicts (MALICIOUS/BENIGN + confidence), and reports TP/FP/TN/FN,
-accuracy/precision/recall/F1 against the benign/malware folder labels. The scan
-binary builds the real engine features with `EngineFeatures::extract_from_apk`,
-so CLI metrics reflect actual on-device runtime behaviour.
-
-## Inspecting extracted features
-
-```powershell
-cargo build --release; .\target\release\dump-apk-features.exe ..\com.ttech.android.onlineislem_base.apk
-```
-
-Prints the raw DEX/ELF/manifest feature values for a single APK — useful to
-verify the parsers and understand what a particular verdict is based on.
+verdicts (MALICIOUS / SUSPICIOUS / BENIGN + confidence) and reports
+TP/FP/TN/FN, accuracy/precision/recall/F1 against the benign/malware folder
+labels. The scan binary builds the real engine features with
+`EngineFeatures::extract_from_apk` and normalizes them with the shipped
+`features.json`, so CLI metrics reflect actual on-device runtime behaviour.
 
 ## Library
 
 ```rust
+use hydradragonml::features::FeaturePercentiles;
 use hydradragonml::Model;
 
 let model_bytes = std::fs::read("model.mpk")?;
 let vocab_bytes = std::fs::read("vocab.json")?;
+let features_bytes = std::fs::read("features.json")?;
+let feature_stats = FeaturePercentiles::from_json_bytes(&features_bytes)?;
 let device = burn::backend::ndarray::NdArrayDevice::default();
-let model = Model::load(&model_bytes, &vocab_bytes, device)?;
+let model = Model::load(&model_bytes, &vocab_bytes, feature_stats, device)?;
 let apk = std::fs::read("sample.apk")?;
 let result = model.scan_with_features(&apk, &hydradragonml::features::EngineFeatures::extract_from_apk(&apk).unwrap_or_default());
 println!("malicious={} suspicious={} confidence={}",
@@ -139,7 +128,7 @@ println!("malicious={} suspicious={} confidence={}",
 
 ## On-device (Android)
 
-Ship `model.mpk` + `vocab.json` as app assets. The JNI bridge in
-`hydradragonandroid` loads both at init (`hydradragonml::Model::load`) and calls
-`Model::scan_with_features` per APK with the live engine features built by
-`hydradragonandroid::build_engine_features` (DEX/ELF/manifest content only).
+Ship `model.mpk` + `vocab.json` + `features.json` as app assets. The JNI bridge
+loads all three at init (`Model::load`) and calls `Model::scan_with_features`
+per APK with live engine features built by the Android side (DEX/ELF/manifest
+content only).

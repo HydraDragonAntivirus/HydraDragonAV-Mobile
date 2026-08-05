@@ -13,10 +13,19 @@ pub const MIN_STR_LEN: usize = 5;
 pub const MAX_TOKENS: usize = 4096;
 pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
-/// 5 DEX fields + 6 ELF fields + 7 manifest fields. Every one of these is
-/// computed from the APK's actual content (see `EngineFeatures::extract_from_apk`)
-/// — there are no placeholder/default-only fields left in this struct.
-pub const ENGINE_FEATURE_COUNT: usize = 18;
+/// 3 DEX fields + 1 ELF field + 6 manifest fields + 1 content-entropy field.
+/// Every one of these is computed from the APK's actual content (see
+/// `EngineFeatures::extract_from_apk`) — there are no placeholder/default-only
+/// fields left in this struct. The final field carries the Shannon entropy
+/// (bits, 0..8) of the decompressed DEX/ELF/AndroidManifest.xml content, which
+/// catches packed/obfuscated payloads that otherwise hide behind normal counts.
+///
+/// No hardcoded normalization caps or behavior/indicator lists exist anywhere
+/// in this crate: features are plain counts/sizes, and raw values are
+/// normalized against the training corpus via `FeaturePercentiles` (see
+/// below), which is persisted next to the model so inference normalizes with
+/// the exact same distribution.
+pub const ENGINE_FEATURE_COUNT: usize = 11;
 
 #[derive(Clone, Debug, Default)]
 pub struct EngineFeatures {
@@ -24,46 +33,36 @@ pub struct EngineFeatures {
     pub dex_class_count: f32,
     pub dex_string_count: f32,
     pub dex_api_call_count: f32,
-    pub dex_finding_high: f32,
-    pub dex_finding_critical: f32,
     // ELF
     pub elf_count: f32,
-    pub elf_emulated_strings: f32,
-    pub elf_network_calls: f32,
-    pub elf_file_calls: f32,
-    pub elf_exec_calls: f32,
-    pub elf_anti_debug: f32,
     // Manifest
-    pub manifest_dangerous_permissions: f32,
     pub manifest_total_permissions: f32,
     pub manifest_activities: f32,
     pub manifest_services: f32,
     pub manifest_receivers: f32,
     pub manifest_min_sdk: f32,
     pub manifest_target_sdk: f32,
+    // Content entropy
+    pub entropy: f32,
 }
 
 impl EngineFeatures {
+    /// Raw, un-normalized feature values in a fixed order (matched by
+    /// `FeaturePercentiles` and the model's engine branch). All normalization
+    /// is corpus-derived at train time — no hardcoded caps or scales.
     pub fn to_vec(&self) -> Vec<f32> {
         vec![
-            self.dex_class_count.min(5000.0) / 5000.0,
-            self.dex_string_count.min(50000.0) / 50000.0,
-            self.dex_api_call_count.min(5000.0) / 5000.0,
-            (self.dex_finding_high / 20.0).min(1.0),
-            (self.dex_finding_critical / 10.0).min(1.0),
-            (self.elf_count / 20.0).min(1.0),
-            (self.elf_emulated_strings / 100.0).min(1.0),
-            (self.elf_network_calls / 50.0).min(1.0),
-            (self.elf_file_calls / 50.0).min(1.0),
-            (self.elf_exec_calls / 20.0).min(1.0),
-            (self.elf_anti_debug / 20.0).min(1.0),
-            (self.manifest_dangerous_permissions / 30.0).min(1.0),
-            (self.manifest_total_permissions / 50.0).min(1.0),
-            (self.manifest_activities / 50.0).min(1.0),
-            (self.manifest_services / 20.0).min(1.0),
-            (self.manifest_receivers / 20.0).min(1.0),
-            ((self.manifest_min_sdk - 1.0) / 34.0).clamp(0.0, 1.0),
-            ((self.manifest_target_sdk - 1.0) / 34.0).clamp(0.0, 1.0),
+            self.dex_class_count,
+            self.dex_string_count,
+            self.dex_api_call_count,
+            self.elf_count,
+            self.manifest_total_permissions,
+            self.manifest_activities,
+            self.manifest_services,
+            self.manifest_receivers,
+            self.manifest_min_sdk,
+            self.manifest_target_sdk,
+            self.entropy,
         ]
     }
 
@@ -75,6 +74,8 @@ impl EngineFeatures {
 
         let mut feats = EngineFeatures::default();
         let mut saw_any_entry = false;
+        let mut content_hist = [0u64; 256];
+        let mut content_total = 0u64;
 
         for entry in &archive.entries {
             if entry.is_dir {
@@ -94,6 +95,11 @@ impl EngineFeatures {
                 None => continue,
             };
 
+            // Accumulate a byte histogram over the decompressed content of the
+            // code-bearing entries so we can derive a single Shannon-entropy
+            // feature covering DEX + ELF + manifest payloads.
+            update_entropy_histogram(&mut content_hist, &mut content_total, &buf);
+
             if is_dex {
                 if let Some(d) = dex::analyze(&buf) {
                     saw_any_entry = true;
@@ -102,13 +108,10 @@ impl EngineFeatures {
                     feats.dex_class_count += d.class_count as f32;
                     feats.dex_string_count += d.string_count as f32;
                     feats.dex_api_call_count += d.api_call_count as f32;
-                    feats.dex_finding_high += d.finding_high as f32;
-                    feats.dex_finding_critical += d.finding_critical as f32;
                 }
             } else if is_manifest {
                 if let Some(m) = axml::analyze_manifest(&buf) {
                     saw_any_entry = true;
-                    feats.manifest_dangerous_permissions = m.dangerous_permissions as f32;
                     feats.manifest_total_permissions = m.total_permissions as f32;
                     feats.manifest_activities = m.activities as f32;
                     feats.manifest_services = m.services as f32;
@@ -117,14 +120,9 @@ impl EngineFeatures {
                     feats.manifest_target_sdk = m.target_sdk as f32;
                 }
             } else if is_native_lib {
-                if let Some(e) = elf::analyze(&buf) {
+                if elf::analyze(&buf).is_some() {
                     saw_any_entry = true;
                     feats.elf_count += 1.0;
-                    feats.elf_emulated_strings += e.emulated_strings as f32;
-                    feats.elf_network_calls += e.network_calls as f32;
-                    feats.elf_file_calls += e.file_calls as f32;
-                    feats.elf_exec_calls += e.exec_calls as f32;
-                    feats.elf_anti_debug += e.anti_debug as f32;
                 }
             }
         }
@@ -132,8 +130,115 @@ impl EngineFeatures {
         if !saw_any_entry {
             return None;
         }
+        feats.entropy = shannon_entropy(&content_hist, content_total);
         Some(feats)
     }
+}
+
+/// Corpus-derived, zero-hardcoded normalization for engine features.
+///
+/// At train time `from_samples` collects every sample's raw feature values
+/// per dimension, sorts each column, and persists those sorted arrays to JSON
+/// (`features.json`). At inference `normalize` maps a raw value to its
+/// interpolated rank percentile in the training distribution, producing
+/// values in `[0, 1]`. Because the mapping is the corpus rank rather than a
+/// fixed cap, an out-of-distribution giant like TTech lands *at the top of
+/// the benign cluster* instead of being clipped to an arbitrary 1.0 cap.
+#[derive(Clone, Debug)]
+pub struct FeaturePercentiles {
+    /// Per-feature sorted raw values, in the same order as `to_vec()`.
+    pub per_feature: Vec<Vec<f32>>,
+}
+
+impl FeaturePercentiles {
+    pub fn from_samples(feature_count: usize, samples: &[Vec<f32>]) -> Self {
+        let mut per_feature: Vec<Vec<f32>> = vec![Vec::with_capacity(samples.len()); feature_count];
+        for sample in samples {
+            for (i, v) in sample.iter().enumerate().take(feature_count) {
+                per_feature[i].push(*v);
+            }
+        }
+        for column in per_feature.iter_mut() {
+            column.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        }
+        Self { per_feature }
+    }
+
+    pub fn normalize(&self, raw: &[f32]) -> Vec<f32> {
+        raw.iter()
+            .zip(self.per_feature.iter())
+            .map(|(x, sorted)| percentile_value(sorted, *x))
+            .collect()
+    }
+
+    pub fn to_json_bytes(&self) -> Vec<u8> {
+        serde_json::to_vec(&self.per_feature).unwrap_or_default()
+    }
+
+    pub fn from_json_bytes(bytes: &[u8]) -> Option<Self> {
+        let per_feature: Vec<Vec<f32>> = serde_json::from_slice(bytes).ok()?;
+        Some(Self { per_feature })
+    }
+}
+
+/// Linear-interpolated rank percentile of `x` within `sorted`. Returns 0.0
+/// at/below the minimum, 1.0 at/above the maximum.
+pub fn percentile_value(sorted: &[f32], x: f32) -> f32 {
+    let n = sorted.len();
+    if n == 0 {
+        return 0.0;
+    }
+    if x <= sorted[0] {
+        return 0.0;
+    }
+    if x >= sorted[n - 1] {
+        return 1.0;
+    }
+    // First index with sorted[i] > x (upper bound); i in 1..=n-1.
+    let mut lo = 0usize;
+    let mut hi = n;
+    while lo < hi {
+        let mid = lo + (hi - lo) / 2;
+        if sorted[mid] <= x {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    let i = lo;
+    let a = sorted[i - 1];
+    let b = sorted[i];
+    let t = if b > a { (x - a) / (b - a) } else { 0.0 };
+    ((i - 1) as f32 + t) / ((n - 1) as f32)
+}
+
+/// Accumulates a per-byte-value histogram of `data` into `hist`, bumping
+/// `total` by the number of bytes seen. Meant to be called once per
+/// decompressed code-bearing entry so the caller can later derive a single
+/// bytes-weighted Shannon-entropy feature across all of them.
+pub fn update_entropy_histogram(hist: &mut [u64; 256], total: &mut u64, data: &[u8]) {
+    for &b in data {
+        hist[b as usize] += 1;
+    }
+    *total += data.len() as u64;
+}
+
+/// Shannon entropy in bits (0.0..8.0) of the byte distribution described by
+/// `hist`/`total`: `-sum(p_i * log2(p_i))`. Returns 0.0 when there are no
+/// bytes (empty/zero-length input).
+pub fn shannon_entropy(hist: &[u64; 256], total: u64) -> f32 {
+    if total == 0 {
+        return 0.0;
+    }
+    let n = total as f64;
+    let mut e = 0.0f64;
+    for &c in hist {
+        if c > 0 {
+            let p = c as f64 / n;
+            e -= p * p.log2();
+        }
+    }
+    e as f32
 }
 
 /// Reads and decompresses a single ZIP entry's data out of the full APK
@@ -303,6 +408,100 @@ impl Tokenizer {
     }
 }
 
+/// Collects the raw (still un-id-mapped) sub-tokens that
+/// `Tokenizer::tokenize` would produce for `apk`, using exactly the same
+/// entry-name splitting and ASCII/UTF-16LE string-harvesting rules. This is
+/// the vocabulary builder's counterpart to `Tokenizer::tokenize`: given a
+/// corpus it yields the token *strings* needed to build a `vocab.json`
+/// before any ids exist.
+pub fn harvest_raw_tokens(apk: &[u8]) -> Option<Vec<String>> {
+    let mut tokens: Vec<String> = Vec::new();
+    let mut has_content = false;
+
+    for_each_entry(apk, |name, content| {
+        if tokens.len() >= MAX_TOKENS {
+            return;
+        }
+        push_token_parts(name, &mut tokens);
+        if !content.is_empty() {
+            has_content = true;
+            harvest_raw_strings(content, &mut tokens);
+        }
+    })?;
+
+    if !has_content || tokens.is_empty() {
+        return None;
+    }
+    Some(tokens)
+}
+
+fn push_token_parts(text: &str, out: &mut Vec<String>) {
+    for part in text.split(|c: char| {
+        c == '.' || c == '/' || c == ';' || c == ':' || c == '-' || c == '\\' || c == '_'
+    }) {
+        if part.len() >= 2 {
+            out.push(part.to_ascii_lowercase());
+            if out.len() >= MAX_TOKENS {
+                return;
+            }
+        }
+    }
+}
+
+fn harvest_raw_strings(data: &[u8], out: &mut Vec<String>) {
+    let mut start: Option<usize> = None;
+    for (i, &b) in data.iter().enumerate() {
+        let printable = (0x20..0x7f).contains(&b);
+        if printable {
+            if start.is_none() {
+                start = Some(i);
+            }
+        } else if let Some(s) = start.take() {
+            if i - s >= MIN_STR_LEN {
+                if let Ok(text) = std::str::from_utf8(&data[s..i]) {
+                    push_token_parts(text, out);
+                    if out.len() >= MAX_TOKENS {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    if let Some(s) = start {
+        if data.len() - s >= MIN_STR_LEN {
+            if let Ok(text) = std::str::from_utf8(&data[s..]) {
+                push_token_parts(text, out);
+            }
+        }
+    }
+
+    let mut utf_buf: Vec<u8> = Vec::new();
+    let mut j = 0;
+    while j + 1 < data.len() {
+        let lo = data[j];
+        let hi = data[j + 1];
+        if hi == 0 && (0x20..0x7f).contains(&lo) {
+            utf_buf.push(lo);
+        } else {
+            if utf_buf.len() >= MIN_STR_LEN {
+                if let Ok(text) = std::str::from_utf8(&utf_buf) {
+                    push_token_parts(text, out);
+                    if out.len() >= MAX_TOKENS {
+                        return;
+                    }
+                }
+            }
+            utf_buf.clear();
+        }
+        j += 2;
+    }
+    if utf_buf.len() >= MIN_STR_LEN {
+        if let Ok(text) = std::str::from_utf8(&utf_buf) {
+            push_token_parts(text, out);
+        }
+    }
+}
+
 // MinHash token extraction (FNV-1a hashed string tokens, used for benign DB lookup).
 
 pub struct ApkFeatures {
@@ -435,20 +634,45 @@ fn insert_minhash_string(s: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use std::io::Write;
 
+    /// Builds an in-memory APK (ZIP) from the given `(name, data)` entries
+    /// using ripzip's own writer so tests never depend on the `zip` crate:
+    /// entries are STORED (uncompressed) and round-trip through
+    /// `write_zip`/`parse_archive` like real on-disk archives do.
     fn make_test_apk(entries: &[(&str, Vec<u8>)]) -> Vec<u8> {
-        let mut buf = Vec::new();
-        {
-            let cursor = std::io::Cursor::new(&mut buf);
-            let mut zip = zip::ZipWriter::new(cursor);
-            for (name, data) in entries {
-                zip.start_file(*name, zip::write::FileOptions::default()).unwrap();
-                zip.write_all(data).unwrap();
-            }
-            zip.finish().unwrap();
-        }
-        buf
+        use ripzip::compress::parallel::{CompressedData, CompressedEntry};
+        use ripzip::compress::zip_writer::write_zip;
+        use ripzip::zip_format::crc::crc32;
+        use ripzip::zip_format::COMPRESSION_STORED;
+
+        let zip_entries: Vec<CompressedEntry> = entries
+            .iter()
+            .map(|(name, data)| CompressedEntry {
+                archive_name: name.to_string(),
+                compression_method: COMPRESSION_STORED,
+                crc32: crc32(data),
+                compressed_size: data.len() as u64,
+                uncompressed_size: data.len() as u64,
+                is_dir: false,
+                last_mod_time: 0,
+                last_mod_date: 0,
+                data: CompressedData::InMemory(data.clone()),
+            })
+            .collect();
+
+        let unique = format!(
+            "hd_test_{}_{:?}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0),
+            std::thread::current().id()
+        );
+        let path = std::env::temp_dir().join(unique);
+        write_zip(zip_entries, &path).unwrap();
+        let bytes = std::fs::read(&path).unwrap();
+        let _ = std::fs::remove_file(&path);
+        bytes
     }
 
     #[test]
@@ -484,8 +708,8 @@ mod integration_tests {
         let dex_strings = ["Ljava/lang/Runtime;", "exec"];
         let dex_bytes = dex::tests::build_minimal_dex(&dex_strings, &[0u32], &[(0u16, 1u32)]);
 
-        // --- real binary AndroidManifest.xml with one dangerous permission,
-        //     one activity, and explicit min/target SDK ---
+        // --- real binary AndroidManifest.xml with one permission, one
+        //     activity, and explicit min/target SDK ---
         let manifest_strings = axml::tests::build_string_pool_chunk(&[
             "manifest",
             "uses-permission",
@@ -494,12 +718,11 @@ mod integration_tests {
             "activity",
         ]);
         let res_map = axml::tests::build_resource_map_chunk(&[
-            axml::ATTR_NAME,
             axml::ATTR_MIN_SDK_VERSION,
             axml::ATTR_TARGET_SDK_VERSION,
         ]);
-        let perm_elem = axml::tests::build_start_element(1, &[(0, 2, axml::TYPE_STRING, 0)]);
-        let sdk_elem = axml::tests::build_start_element(3, &[(1, -1, 0x10, 24), (2, -1, 0x10, 34)]);
+        let perm_elem = axml::tests::build_start_element(1, &[]);
+        let sdk_elem = axml::tests::build_start_element(3, &[(0, -1, 0x10, 24), (1, -1, 0x10, 34)]);
         let activity_elem = axml::tests::build_start_element(4, &[]);
         let mut manifest_body = Vec::new();
         manifest_body.extend_from_slice(&manifest_strings);
@@ -524,18 +747,25 @@ mod integration_tests {
 
         let feats = EngineFeatures::extract_from_apk(&apk).expect("should extract real features");
         assert_eq!(feats.dex_class_count, 1.0);
-        assert_eq!(feats.dex_finding_critical, 1.0);
-        assert_eq!(feats.manifest_dangerous_permissions, 1.0);
         assert_eq!(feats.manifest_activities, 1.0);
         assert_eq!(feats.manifest_min_sdk, 24.0);
         assert_eq!(feats.manifest_target_sdk, 34.0);
         assert_eq!(feats.elf_count, 1.0);
-        assert_eq!(feats.elf_anti_debug, 1.0);
-        assert_eq!(feats.elf_network_calls, 1.0);
 
-        // Values are real and finite; to_vec() should still normalize cleanly.
+        // Values are real and finite; to_vec() returns them raw.
         let v = feats.to_vec();
         assert_eq!(v.len(), ENGINE_FEATURE_COUNT);
-        assert!(v.iter().all(|&x| (0.0..=1.0).contains(&x)));
+        assert!(v.iter().all(|x| x.is_finite()));
+    }
+
+    #[test]
+    fn percentile_normalization_maps_min_to_zero_max_to_one() {
+        let sorted = vec![0.0f32, 1.0, 2.0, 3.0, 4.0];
+        assert_eq!(percentile_value(&sorted, 0.0), 0.0);
+        assert_eq!(percentile_value(&sorted, 4.0), 1.0);
+        assert_eq!(percentile_value(&sorted, -5.0), 0.0);
+        assert_eq!(percentile_value(&sorted, 99.0), 1.0);
+        // 2.0 is exactly the midpoint of the range -> 0.5.
+        assert!((percentile_value(&sorted, 2.0) - 0.5).abs() < 1e-6);
     }
 }

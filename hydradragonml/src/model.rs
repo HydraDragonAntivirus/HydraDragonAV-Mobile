@@ -1,61 +1,86 @@
-use burn::backend::Autodiff;
 use burn::module::Module;
-use burn::nn::loss::CrossEntropyLoss;
-use burn::nn::{Dropout, DropoutConfig, Linear, LinearConfig, Relu};
+use burn::nn::{Embedding, EmbeddingConfig, Linear, LinearConfig, Relu};
 use burn::record::{FullPrecisionSettings, NamedMpkFileRecorder, Recorder};
+use burn::tensor::activation::sigmoid;
 use burn::tensor::backend::Backend;
 use burn::tensor::{Float, Int, Tensor};
-use burn::train::{ClassificationOutput, InferenceStep, TrainOutput, TrainStep};
 
-use crate::features::ENGINE_FEATURE_COUNT;
+use crate::features::{EMBED_DIM, ENGINE_FEATURE_COUNT, VOCAB_SIZE};
 
-/// Two-class output (benign / malware), matching the original HydraDragon
-/// `MalwareNet`: the classifier emits logits and training uses
-/// CrossEntropyLoss; inference applies softmax and reads class 1 (malware).
-const NUM_CLASSES: usize = 2;
-/// Dropout probability applied after each ReLU during training (0.3 — same as
-/// the original HydraDragon trainer). It is a no-op at inference because the
-/// scan backend (`NdArray`) has autodiff disabled.
-const DROPOUT_PROB: f64 = 0.3;
-/// Hidden-layer width, identical to the original HydraDragon `MalwareNet`
-/// PE configuration (`input_dim -> 512 -> 256 -> num_classes`).
-const HIDDEN_DIM: usize = 512;
+/// Text-branch hidden width: mean-pooled embedding vector is projected down
+/// to this size before being concatenated with the engine branch.
+const TEXT_HIDDEN: usize = 32;
+/// Engine-branch hidden width (over the 11 corpus-normalized engine
+/// features).
+const ENGINE_HIDDEN: usize = 32;
+/// Hidden width of the fused head (over the concatenated text+engine vector).
+const FUSED_HIDDEN: usize = 32;
 
-/// Pure engine-feature MLP mirroring the original HydraDragon `MalwareNet`
-/// architecture: `features -> fc1(512) -> relu -> dropout(0.3) -> fc2(256) ->
-/// relu -> dropout(0.3) -> fc3(2)`. No tokenizer/embedding — the classifier
-/// only ever sees the content-derived DEX/ELF/manifest feature vector, exactly
-/// like the PE/JS trainer.
+/// Mean-pooled-token-embedding + engine-feature MLP classifier described in
+/// the crate README:
+///
+/// - text branch: `Embedding(VOCAB_SIZE -> EMBED_DIM) -> mean-pool over
+///   sequence -> Linear(EMBED_DIM -> 32) -> ReLU`
+/// - engine branch: `Linear(ENGINE_FEATURE_COUNT -> 32) -> ReLU`
+/// - fused head: `cat([text, engine]) -> Linear(64 -> 32) -> ReLU ->
+///   Linear(32 -> 1) -> Sigmoid`
+///
+/// The output is a single probability `p(malware)` in `[0, 1]`; the
+/// `training.rs` glue computes binary cross-entropy directly on this sigmoid
+/// output, so no logits-to-probability conversion is done here.
 #[derive(Module, Debug)]
 pub struct ApkClassifier<B: Backend> {
-    fc1: Linear<B>,
-    fc2: Linear<B>,
-    fc3: Linear<B>,
+    embedding: Embedding<B>,
+    fc_text: Linear<B>,
+    fc_engine: Linear<B>,
+    fc_fused: Linear<B>,
+    fc_out: Linear<B>,
     activation: Relu,
-    dropout: Dropout,
 }
 
 impl<B: Backend> ApkClassifier<B> {
     pub fn new(device: &B::Device) -> Self {
-        let fc1 = LinearConfig::new(ENGINE_FEATURE_COUNT, HIDDEN_DIM).init(device);
-        let fc2 = LinearConfig::new(HIDDEN_DIM, HIDDEN_DIM / 2).init(device);
-        let fc3 = LinearConfig::new(HIDDEN_DIM / 2, NUM_CLASSES).init(device);
-
         Self {
-            fc1,
-            fc2,
-            fc3,
+            embedding: EmbeddingConfig::new(VOCAB_SIZE, EMBED_DIM).init(device),
+            fc_text: LinearConfig::new(EMBED_DIM, TEXT_HIDDEN).init(device),
+            fc_engine: LinearConfig::new(ENGINE_FEATURE_COUNT, ENGINE_HIDDEN).init(device),
+            fc_fused: LinearConfig::new(TEXT_HIDDEN + ENGINE_HIDDEN, FUSED_HIDDEN).init(device),
+            fc_out: LinearConfig::new(FUSED_HIDDEN, 1).init(device),
             activation: Relu::new(),
-            dropout: DropoutConfig::new(DROPOUT_PROB).init(),
         }
     }
 
-    pub fn forward_batch(&self, engine: Tensor<B, 2, Float>) -> Tensor<B, 2, Float> {
-        let x = self.activation.forward(self.fc1.forward(engine));
-        let x = self.dropout.forward(x);
-        let x = self.activation.forward(self.fc2.forward(x));
-        let x = self.dropout.forward(x);
-        self.fc3.forward(x) // [B, 2] logits
+    /// Batch forward used by training/validation and by the single-sample
+    /// path below. `tokens` is the padded `[B, seq]` id tensor, `engine` the
+    /// stacked `[B, 11]` percentile-normalized feature tensor; returns
+    /// `[B, 1]` sigmoid probabilities.
+    pub fn forward_batch(
+        &self,
+        tokens: Tensor<B, 2, Int>,
+        engine: Tensor<B, 2, Float>,
+    ) -> Tensor<B, 2, Float> {
+        let pooled = self
+            .embedding
+            .forward(tokens)
+            .mean_dim(1)
+            .squeeze_dim::<2>(1); // [B, EMBED_DIM]
+        let text = self.activation.forward(self.fc_text.forward(pooled)); // [B, 32]
+        let eng = self.activation.forward(self.fc_engine.forward(engine)); // [B, 32]
+        let fused = Tensor::cat(vec![text, eng], 1); // [B, 64]
+        let out = self.fc_out.forward(self.activation.forward(self.fc_fused.forward(fused)));
+        sigmoid(out) // [B, 1]
+    }
+
+    /// Single-sample inference used by `Model::scan_with_features`: expects a
+    /// rank-1 token sequence and a rank-1 feature vector and returns a
+    /// rank-1 tensor of one probability.
+    pub fn forward(
+        &self,
+        tokens: Tensor<B, 1, Int>,
+        engine: Tensor<B, 1, Float>,
+    ) -> Tensor<B, 1, Float> {
+        let out = self.forward_batch(tokens.unsqueeze::<2>(), engine.unsqueeze::<2>());
+        out.squeeze_dim::<1>(0)
     }
 
     pub fn save_weights(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -72,44 +97,5 @@ impl<B: Backend> ApkClassifier<B> {
         let recorder = NamedMpkFileRecorder::<FullPrecisionSettings>::new();
         let record = recorder.load(path.into(), device)?;
         Ok(Self::new(device).load_record(record))
-    }
-}
-
-/// A padded mini-batch fed to one training/validation step: the engine-feature
-/// vectors and integer class targets (0 = benign, 1 = malware) consumed by
-/// CrossEntropyLoss + the accuracy metric. Produced by the batcher in
-/// `hydradragonml-train`.
-#[derive(Clone, Debug)]
-pub struct ApkBatch<B: Backend> {
-    pub engine: Tensor<B, 2, Float>,
-    pub targets: Tensor<B, 1, Int>,
-}
-
-impl<B: Backend> TrainStep for ApkClassifier<Autodiff<B>> {
-    type Input = ApkBatch<Autodiff<B>>;
-    type Output = ClassificationOutput<Autodiff<B>>;
-
-    fn step(&self, item: Self::Input) -> TrainOutput<Self::Output> {
-        let output = self.forward_batch(item.engine); // [B, 2] logits
-        let loss_fn = CrossEntropyLoss::new(None, &output.device());
-        let loss = loss_fn.forward(output.clone(), item.targets.clone());
-        let grads = loss.clone().backward();
-        TrainOutput::new(
-            self,
-            grads,
-            ClassificationOutput::new(loss, output, item.targets),
-        )
-    }
-}
-
-impl<B: Backend> InferenceStep for ApkClassifier<B> {
-    type Input = ApkBatch<B>;
-    type Output = ClassificationOutput<B>;
-
-    fn step(&self, item: Self::Input) -> Self::Output {
-        let output = self.forward_batch(item.engine); // [B, 2] logits
-        let loss_fn = CrossEntropyLoss::new(None, &output.device());
-        let loss = loss_fn.forward(output.clone(), item.targets.clone());
-        ClassificationOutput::new(loss, output, item.targets)
     }
 }

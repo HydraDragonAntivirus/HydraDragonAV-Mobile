@@ -15,33 +15,11 @@ const RES_XML_END_ELEMENT_TYPE: u16 = 0x0103;
 
 // Well-known android: attribute resource IDs (stable across AOSP versions,
 // published in android/R.attr / frameworks/base res-ids).
-pub(crate) const ATTR_NAME: u32 = 0x01010003; // android:name
 pub(crate) const ATTR_MIN_SDK_VERSION: u32 = 0x0101020c; // android:minSdkVersion
 pub(crate) const ATTR_TARGET_SDK_VERSION: u32 = 0x01010270; // android:targetSdkVersion
 
-pub(crate) const TYPE_STRING: u8 = 0x03;
-
-/// Dangerous-protection-level permissions as published by Android
-/// (developer.android.com/guide/topics/permissions/overview#normal-dangerous,
-/// and the android.Manifest.permission reference, protectionLevel="dangerous").
-const DANGEROUS_PERMISSIONS: &[&str] = &[
-    "READ_CALENDAR", "WRITE_CALENDAR",
-    "CAMERA",
-    "READ_CONTACTS", "WRITE_CONTACTS", "GET_ACCOUNTS",
-    "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_BACKGROUND_LOCATION",
-    "RECORD_AUDIO",
-    "READ_PHONE_STATE", "READ_PHONE_NUMBERS", "CALL_PHONE",
-    "ANSWER_PHONE_CALLS", "READ_CALL_LOG", "WRITE_CALL_LOG",
-    "ADD_VOICEMAIL", "USE_SIP", "PROCESS_OUTGOING_CALLS",
-    "BODY_SENSORS",
-    "SEND_SMS", "RECEIVE_SMS", "READ_SMS", "RECEIVE_WAP_PUSH", "RECEIVE_MMS",
-    "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE",
-    "ACCEPT_HANDOVER", "ACTIVITY_RECOGNITION",
-];
-
 #[derive(Debug, Default, Clone)]
 pub struct ManifestFeatures {
-    pub dangerous_permissions: u32,
     pub total_permissions: u32,
     pub activities: u32,
     pub services: u32,
@@ -127,12 +105,11 @@ pub fn analyze_manifest(b: &[u8]) -> Option<ManifestFeatures> {
     let mut feats = ManifestFeatures::default();
     let mut seen_any_element = false;
 
-    // Track the currently open <uses-permission>/<permission> element so we
-    // can read its android:name attribute value.
+    // Track the currently open <uses-sdk> element so we can read its
+    // min/target SDK attributes.
     #[derive(PartialEq)]
     enum Ctx {
         None,
-        UsesPermission,
         UsesSdk,
     }
 
@@ -182,7 +159,6 @@ pub fn analyze_manifest(b: &[u8]) -> Option<ManifestFeatures> {
                     "receiver" => feats.receivers += 1,
                     "uses-permission" | "uses-permission-sdk-23" | "permission" => {
                         feats.total_permissions += 1;
-                        ctx = Ctx::UsesPermission;
                     }
                     "uses-sdk" => ctx = Ctx::UsesSdk,
                     _ => {}
@@ -195,8 +171,6 @@ pub fn analyze_manifest(b: &[u8]) -> Option<ManifestFeatures> {
                             break;
                         }
                         let attr_name_idx = read_i32(b, a_off + 4)?;
-                        let raw_value_idx = read_i32(b, a_off + 8)?;
-                        let data_type = *b.get(a_off + 15)?;
                         let data = read_u32(b, a_off + 16)?;
 
                         let attr_res_id = resource_map
@@ -205,20 +179,6 @@ pub fn analyze_manifest(b: &[u8]) -> Option<ManifestFeatures> {
                             .unwrap_or(0);
 
                         match ctx {
-                            Ctx::UsesPermission if attr_res_id == ATTR_NAME => {
-                                let name = if data_type == TYPE_STRING && raw_value_idx >= 0 {
-                                    pool.as_ref()
-                                        .and_then(|p| p.strings.get(raw_value_idx as usize))
-                                        .cloned()
-                                        .unwrap_or_default()
-                                } else {
-                                    String::new()
-                                };
-                                let short = name.rsplit('.').next().unwrap_or(&name);
-                                if DANGEROUS_PERMISSIONS.contains(&short) {
-                                    feats.dangerous_permissions += 1;
-                                }
-                            }
                             Ctx::UsesSdk if attr_res_id == ATTR_MIN_SDK_VERSION => {
                                 feats.min_sdk = data;
                             }
@@ -366,17 +326,16 @@ pub(crate) mod tests {
             "uses-sdk",
             "activity",
         ]);
-        // Resource map: index 0 -> android:name (0x01010003)
-        let res_map = build_resource_map_chunk(&[ATTR_NAME, ATTR_MIN_SDK_VERSION, ATTR_TARGET_SDK_VERSION]);
+        // Resource map: index 0 -> minSdk, 1 -> targetSdk.
+        let res_map = build_resource_map_chunk(&[ATTR_MIN_SDK_VERSION, ATTR_TARGET_SDK_VERSION]);
 
-        // <uses-permission android:name="android.permission.CAMERA"/>
-        // attr_name_idx = 0 -> resource_map[0] = ATTR_NAME
-        let perm_elem = build_start_element(1, &[(0, 2, TYPE_STRING, 0)]);
+        // <uses-permission/>
+        let perm_elem = build_start_element(1, &[]);
 
         // <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33"/>
-        // attr_name_idx 1 -> resource_map[1] = ATTR_MIN_SDK_VERSION (TYPE_INT_DEC=0x10, data=21)
-        // attr_name_idx 2 -> resource_map[2] = ATTR_TARGET_SDK_VERSION (data=33)
-        let sdk_elem = build_start_element(3, &[(1, -1, 0x10, 21), (2, -1, 0x10, 33)]);
+        // attr_name_idx 0 -> resource_map[0] = ATTR_MIN_SDK_VERSION (data=21)
+        // attr_name_idx 1 -> resource_map[1] = ATTR_TARGET_SDK_VERSION (data=33)
+        let sdk_elem = build_start_element(3, &[(0, -1, 0x10, 21), (1, -1, 0x10, 33)]);
 
         // <activity/>
         let activity_elem = build_start_element(4, &[]);
@@ -397,7 +356,6 @@ pub(crate) mod tests {
 
         let feats = analyze_manifest(&full).expect("should parse real manifest");
         assert_eq!(feats.total_permissions, 1);
-        assert_eq!(feats.dangerous_permissions, 1, "CAMERA is a dangerous permission");
         assert_eq!(feats.activities, 1);
         assert_eq!(feats.min_sdk, 21);
         assert_eq!(feats.target_sdk, 33);

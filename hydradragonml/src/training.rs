@@ -18,9 +18,9 @@ use burn::tensor::backend::{AutodiffBackend, Backend};
 use burn::tensor::{Float, Int, Tensor, TensorData};
 use burn::train::{InferenceStep, RegressionOutput, TrainOutput, TrainStep};
 
-/// One training example: tokenized APK content, the 18 real
-/// `EngineFeatures::to_vec()` values, and a `1.0` (malware) / `0.0`
-/// (benign) label.
+/// One training example: tokenized APK content, the 11 raw
+/// `EngineFeatures::to_vec()` values (percentile-normalized against the
+/// corpus before training), and a `1.0` (malware) / `0.0` (benign) label.
 #[derive(Clone, Debug)]
 pub struct ApkItem {
     pub tokens: Vec<i64>,

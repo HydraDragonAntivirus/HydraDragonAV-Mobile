@@ -10,7 +10,7 @@ ripzip = "0.1"
 flate2 = "1"
 walkdir = "2"
 serde_json = "1"
-burn = { version = "0.21", default-features = false, features = ["ndarray", "train", "autodiff"] }
+burn = { version = "0.21", default-features = false, features = ["ndarray", "train", "autodiff", "std"] }
 burn-autodiff = "0.21"
 burn-train = "0.21"
 burn-dataset = "0.21"
@@ -27,3 +27,7 @@ path = "src/main.rs"
 [[bin]]
 name = "hydradragonml-train"
 path = "src/bin/train.rs"
+
+[[bin]]
+name = "hydradragonml-build-vocab"
+path = "src/bin/build_vocab.rs"

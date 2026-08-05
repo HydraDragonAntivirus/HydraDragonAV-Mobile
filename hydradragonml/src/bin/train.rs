@@ -1,28 +1,22 @@
 //! `hydradragonml-train` — trains `model::ApkClassifier` on a labeled
-//! benign/malware APK corpus.
-//!
-//! This uses the high-level `burn-train` / `burn-dataset` `Learner`
-//! abstraction (via `SupervisedTraining`) rather than a hand-written training
-//! loop: the `TrainStep` / `InferenceStep` traits describe a single step, the
-//! batcher turns `Sample`s into `ApkBatch`s, and the `Learner` owns the
-//! optimizer + LR scheduler and drives the epochs, validation and checkpointing.
+//! benign/malware APK corpus using Burn's `burn-train` / `burn-dataset`
+//! machinery (`SupervisedTraining` + `Learner`), rather than a hand-rolled
+//! loop. The `TrainStep`/`InferenceStep` glue lives in
+//! `hydradragonml::training` (see that module's doc comment for why).
 
 use burn::backend::{Autodiff, NdArray};
-use burn::data::dataloader::batcher::Batcher;
-use burn::data::dataloader::{DataLoader, DataLoaderBuilder};
+use burn::data::dataloader::DataLoader;
+use burn::data::dataloader::DataLoaderBuilder;
+use burn::data::dataset::{Dataset, InMemDataset};
+use burn::lr_scheduler::step::StepLrSchedulerConfig;
 use burn::optim::AdamConfig;
-use burn::optim::lr_scheduler::exponential::ExponentialLrSchedulerConfig;
-use burn::record::CompactRecorder;
-use burn::tensor::backend::Backend;
-use burn::tensor::{Device, Float, Int, Tensor, TensorData};
-use burn::train::metric::{AccuracyMetric, LossMetric};
+use burn::train::metric::LossMetric;
 use burn::train::{Learner, SupervisedTraining};
-use burn_dataset::InMemDataset;
 
-use hydradragonml::features::{ENGINE_FEATURE_COUNT, EngineFeatures};
-use hydradragonml::model::{ApkBatch, ApkClassifier};
+use hydradragonml::features::{EngineFeatures, FeaturePercentiles, Tokenizer, ENGINE_FEATURE_COUNT};
+use hydradragonml::model::ApkClassifier;
+use hydradragonml::training::{ApkBatch, ApkBatcher, ApkItem};
 
-use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -35,6 +29,7 @@ type InferBackend = NdArray<f32>;
 struct Args {
     benign: PathBuf,
     malware: PathBuf,
+    vocab: PathBuf,
     output: PathBuf,
     epochs: usize,
     lr: f64,
@@ -44,7 +39,7 @@ struct Args {
 fn print_usage_and_exit(msg: &str) -> ! {
     eprintln!("error: {msg}\n");
     eprintln!(
-        "usage: hydradragonml-train --benign <dir> --malware <dir> \\\n\
+        "usage: hydradragonml-train --benign <dir> --malware <dir> --vocab <vocab.json> \\\n\
          \x20      [--output model.mpk] [--epochs 6] [--lr 0.001] [--batch-size 8]"
     );
     std::process::exit(2);
@@ -53,6 +48,7 @@ fn print_usage_and_exit(msg: &str) -> ! {
 fn parse_args() -> Args {
     let mut benign: Option<PathBuf> = None;
     let mut malware: Option<PathBuf> = None;
+    let mut vocab: Option<PathBuf> = None;
     let mut output = PathBuf::from("model.mpk");
     let mut epochs = 6usize;
     let mut lr = 0.001f64;
@@ -69,6 +65,7 @@ fn parse_args() -> Args {
         match flag.as_str() {
             "--benign" => benign = Some(PathBuf::from(next_val!())),
             "--malware" => malware = Some(PathBuf::from(next_val!())),
+            "--vocab" => vocab = Some(PathBuf::from(next_val!())),
             "--output" => output = PathBuf::from(next_val!()),
             "--epochs" => {
                 let v = next_val!();
@@ -96,57 +93,11 @@ fn parse_args() -> Args {
     Args {
         benign: benign.unwrap_or_else(|| print_usage_and_exit("--benign <dir> is required")),
         malware: malware.unwrap_or_else(|| print_usage_and_exit("--malware <dir> is required")),
+        vocab: vocab.unwrap_or_else(|| print_usage_and_exit("--vocab <path> is required")),
         output,
         epochs,
         lr,
         batch_size,
-    }
-}
-
-/// A single preprocessed training example: the engine-feature vector and the
-/// ground-truth label (`1.0` = malware, `0.0` = benign).
-#[derive(Clone, Debug)]
-struct Sample {
-    engine: Vec<f32>,
-    label: f32,
-}
-
-/// Batches [Sample]s into an [ApkBatch].
-#[derive(Clone)]
-struct ApkBatcher<B: Backend> {
-    _backend: PhantomData<B>,
-}
-
-impl<B: Backend> ApkBatcher<B> {
-    fn new() -> Self {
-        Self {
-            _backend: PhantomData,
-        }
-    }
-}
-
-impl<B: Backend> Batcher<B, Sample, ApkBatch<B>> for ApkBatcher<B> {
-    fn batch(&self, items: Vec<Sample>, device: &Device<B>) -> ApkBatch<B> {
-        let batch_size = items.len().max(1);
-
-        let mut engine_flat = Vec::with_capacity(batch_size * ENGINE_FEATURE_COUNT);
-        let mut targets_flat = Vec::with_capacity(batch_size);
-
-        for s in &items {
-            engine_flat.extend_from_slice(&s.engine);
-            targets_flat.push(s.label.round() as i64);
-        }
-
-        ApkBatch {
-            engine: Tensor::<B, 2, Float>::from_data(
-                TensorData::new(engine_flat, [batch_size, ENGINE_FEATURE_COUNT]),
-                device,
-            ),
-            targets: Tensor::<B, 1, Int>::from_data(
-                TensorData::new(targets_flat, [batch_size]),
-                device,
-            ),
-        }
     }
 }
 
@@ -157,7 +108,9 @@ fn is_archive_file(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-fn collect_samples(dir: &Path, label: f32) -> Vec<Sample> {
+/// Walks `dir` recursively for `.apk`/`.zip` files and builds one `ApkItem`
+/// per file that the tokenizer can actually find content in.
+fn collect_samples(dir: &Path, label: f32, tokenizer: &Tokenizer) -> Vec<ApkItem> {
     let mut out = Vec::new();
     let mut skipped = 0usize;
 
@@ -174,15 +127,22 @@ fn collect_samples(dir: &Path, label: f32) -> Vec<Sample> {
                 continue;
             }
         };
-        let engine = match EngineFeatures::extract_from_apk(&bytes) {
-            Some(f) => f.to_vec(),
+        let tokens = match tokenizer.tokenize(&bytes) {
+            Some(t) => t,
             None => {
                 skipped += 1;
                 continue;
             }
         };
+        let engine = EngineFeatures::extract_from_apk(&bytes)
+            .unwrap_or_default()
+            .to_vec();
 
-        out.push(Sample { engine, label });
+        out.push(ApkItem {
+            tokens,
+            engine,
+            label,
+        });
     }
 
     println!(
@@ -194,9 +154,47 @@ fn collect_samples(dir: &Path, label: f32) -> Vec<Sample> {
     out
 }
 
-/// Minimal xorshift64* PRNG, used only to shuffle the train/valid split order.
-/// Not cryptographic — this is dataset bookkeeping, not a security-relevant use
-/// of randomness, so an external `rand` dependency isn't warranted.
+/// Prints the mean of each of the 11 percentile-normalized engine features
+/// per class — a quick way to see whether benign vs. malware differ mostly
+/// on "complexity" features (dex/manifest/elf counts) rather than on
+/// anything actually malicious. If they do, a feature-rich *benign* app will
+/// score close to the malware centroid on those dimensions no matter how well
+/// training goes; that's a corpus-composition problem, not something a
+/// loss function or architecture change fixes on its own.
+fn print_feature_means(label: &str, items: &[&ApkItem]) {
+    if items.is_empty() {
+        return;
+    }
+    let n = items.len() as f32;
+    let mut sums = vec![0f32; items[0].engine.len()];
+    for item in items {
+        for (s, v) in sums.iter_mut().zip(item.engine.iter()) {
+            *s += v;
+        }
+    }
+    let names = [
+        "dex_class_count",
+        "dex_string_count",
+        "dex_api_call_count",
+        "elf_count",
+        "manifest_total_permissions",
+        "manifest_activities",
+        "manifest_services",
+        "manifest_receivers",
+        "manifest_min_sdk",
+        "manifest_target_sdk",
+        "entropy",
+    ];
+    println!("  mean normalized engine features ({label}, n={}):", items.len());
+    for (name, sum) in names.iter().zip(sums.iter()) {
+        println!("    {name:<32} {:.4}", sum / n);
+    }
+}
+
+/// Minimal xorshift64* PRNG, used only to shuffle sample order for the
+/// train/valid split. Not cryptographic — this is dataset bookkeeping, not
+/// a security-relevant use of randomness, so pulling in an external `rand`
+/// dependency isn't warranted.
 struct SimpleRng(u64);
 
 impl SimpleRng {
@@ -229,88 +227,120 @@ impl SimpleRng {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args();
 
+    println!("loading vocabulary: {}", args.vocab.display());
+    let vocab_bytes = std::fs::read(&args.vocab)?;
+    let tokenizer = Tokenizer::load_json(&vocab_bytes).ok_or("failed to parse vocab.json")?;
+
     println!("scanning benign corpus: {}", args.benign.display());
-    let benign_samples = collect_samples(&args.benign, 0.0);
+    let benign_samples = collect_samples(&args.benign, 0.0, &tokenizer);
     println!("scanning malware corpus: {}", args.malware.display());
-    let malware_samples = collect_samples(&args.malware, 1.0);
+    let malware_samples = collect_samples(&args.malware, 1.0, &tokenizer);
 
     if benign_samples.is_empty() || malware_samples.is_empty() {
         return Err("need at least one usable sample in both --benign and --malware".into());
     }
 
-    let mut all_samples: Vec<Sample> = benign_samples;
+    let mut all_samples: Vec<ApkItem> = benign_samples;
     all_samples.extend(malware_samples);
+
+    // Derive per-feature percentile ranks over the whole corpus, normalize
+    // every sample's engine vector against them, and persist the stats next
+    // to the model so `hydradragonml-scan` normalizes identically. This is
+    // the only normalization in the crate — no hardcoded caps or scales.
+    let all_raw: Vec<Vec<f32>> = all_samples.iter().map(|s| s.engine.clone()).collect();
+    let feature_stats = FeaturePercentiles::from_samples(ENGINE_FEATURE_COUNT, &all_raw);
+    for sample in all_samples.iter_mut() {
+        sample.engine = feature_stats.normalize(&sample.engine);
+    }
+    if let Some(parent) = args.output.parent().filter(|p| !p.as_os_str().is_empty()) {
+        let dest = parent.join("features.json");
+        std::fs::write(&dest, feature_stats.to_json_bytes())?;
+        println!("wrote feature percentiles: {}", dest.display());
+    } else {
+        std::fs::write("features.json", feature_stats.to_json_bytes())?;
+        println!("wrote feature percentiles: features.json");
+    }
+
+    println!();
+    let benign_items: Vec<&ApkItem> = all_samples.iter().filter(|s| s.label == 0.0).collect();
+    let malware_items: Vec<&ApkItem> = all_samples.iter().filter(|s| s.label == 1.0).collect();
+    print_feature_means("benign", &benign_items);
+    print_feature_means("malware", &malware_items);
+    println!();
 
     let mut rng = SimpleRng::seeded();
     rng.shuffle(&mut all_samples);
 
     let split = ((all_samples.len() as f64) * 0.8) as usize;
     let split = split.clamp(1, all_samples.len().saturating_sub(1).max(1));
-    let mut train_samples = all_samples;
-    let valid_samples = train_samples.split_off(split);
-
-    let train_count = train_samples.len();
-    let valid_count = valid_samples.len();
+    let mut train_items = all_samples;
+    let valid_items = train_items.split_off(split);
 
     println!(
         "dataset: {} train / {} valid ({} total)",
-        train_count,
-        valid_count,
-        train_count + valid_count
+        train_items.len(),
+        valid_items.len(),
+        train_items.len() + valid_items.len()
     );
 
     let device = burn::backend::ndarray::NdArrayDevice::default();
-    let batch_size = args.batch_size.max(1);
-
-    let train_dataset = InMemDataset::new(train_samples);
-    let valid_dataset = InMemDataset::new(valid_samples);
-
-    let train_loader: Arc<dyn DataLoader<TrainBackend, ApkBatch<TrainBackend>>> =
-        DataLoaderBuilder::new(ApkBatcher::<TrainBackend>::new())
-            .batch_size(batch_size)
-            .shuffle(0x5EED)
-            .num_workers(2)
-            .set_device(device.clone())
-            .build(train_dataset);
-
-    let valid_loader: Arc<dyn DataLoader<InferBackend, ApkBatch<InferBackend>>> =
-        DataLoaderBuilder::new(ApkBatcher::<InferBackend>::new())
-            .batch_size(batch_size)
-            .num_workers(2)
-            .set_device(device.clone())
-            .build(valid_dataset);
-
-    // The original HydraDragon trainer used a constant Adam learning rate with
-    // no LR schedule; gamma = 1.0 makes the exponential scheduler a no-op so
-    // this reproduces that behaviour exactly.
-    let gamma = 1.0;
     let model: ApkClassifier<TrainBackend> = ApkClassifier::new(&device);
     let optim = AdamConfig::new().init();
-    let lr_scheduler = ExponentialLrSchedulerConfig::new(args.lr, gamma).init()?;
-    let learner = Learner::new(model, optim, lr_scheduler);
 
-    let dir = args
-        .output
-        .parent()
-        .map(|p| p.to_path_buf())
-        .filter(|p| !p.as_os_str().is_empty())
-        .unwrap_or_else(|| PathBuf::from("."));
+    let steps_per_epoch = train_items.len().div_ceil(args.batch_size.max(1)).max(1);
+    let lr_scheduler = StepLrSchedulerConfig::new(args.lr, steps_per_epoch)
+        .with_gamma(0.5) // halve the learning rate every epoch
+        .init()
+        .map_err(|e| format!("invalid learning rate schedule: {e}"))?;
 
-    let result = SupervisedTraining::new(dir, train_loader, valid_loader)
-        .with_file_checkpointer(CompactRecorder::new())
+    let train_dataset = InMemDataset::new(train_items);
+    let valid_dataset = InMemDataset::new(valid_items);
+    println!(
+        "train dataset size: {}, valid dataset size: {}",
+        train_dataset.len(),
+        valid_dataset.len()
+    );
+
+    let dataloader_train: Arc<dyn DataLoader<TrainBackend, ApkBatch<TrainBackend>>> =
+        DataLoaderBuilder::new(ApkBatcher)
+            .batch_size(args.batch_size.max(1))
+            .shuffle(42)
+            .num_workers(2)
+            .build(train_dataset);
+
+    let dataloader_valid: Arc<dyn DataLoader<InferBackend, ApkBatch<InferBackend>>> =
+        DataLoaderBuilder::new(ApkBatcher)
+            .batch_size(args.batch_size.max(1))
+            .num_workers(2)
+            .build(valid_dataset);
+
+    // Checkpoints/metrics/logs go to a throwaway temp dir; only the final
+    // .mpk (written explicitly below via `save_weights`, matching the
+    // format `Model::load`/`load_weights` already expect) is kept.
+    let artifact_dir = tempfile::tempdir()?;
+
+    let training = SupervisedTraining::new(artifact_dir.path(), dataloader_train, dataloader_valid)
         .metric_train_numeric(LossMetric::new())
         .metric_valid_numeric(LossMetric::new())
-        .metric_valid_numeric(AccuracyMetric::new())
         .num_epochs(args.epochs)
-        .launch(learner);
+        .summary();
 
-    let final_model: ApkClassifier<InferBackend> = result.model;
+    let result = training.launch(Learner::new(model, optim, lr_scheduler));
+
     let output_str = args
         .output
         .to_str()
         .ok_or("--output path must be valid UTF-8")?;
-    final_model.save_weights(output_str)?;
+    result.model.save_weights(output_str)?;
     println!("saved weights: {output_str}");
+
+    if let Some(parent) = args.output.parent().filter(|p| !p.as_os_str().is_empty()) {
+        let dest = parent.join("vocab.json");
+        if dest != args.vocab {
+            std::fs::copy(&args.vocab, &dest)?;
+            println!("copied vocab: {}", dest.display());
+        }
+    }
 
     Ok(())
 }

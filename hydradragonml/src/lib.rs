@@ -1,8 +1,12 @@
 pub mod features;
 pub mod model;
+pub mod training;
+pub mod dex;
+pub mod axml;
+pub mod elf;
 
 use burn::backend::NdArray;
-use burn::tensor::{Float, Tensor};
+use burn::tensor::{Float, Int, Tensor};
 
 pub const DEFAULT_CONFIDENCE_THRESHOLD: f32 = 0.95;
 pub const SUSPICIOUS_THRESHOLD: f32 = 0.90;
@@ -11,6 +15,8 @@ type B = NdArray<f32>;
 
 pub struct Model {
     classifier: model::ApkClassifier<B>,
+    tokenizer: features::Tokenizer,
+    feature_stats: features::FeaturePercentiles,
     confidence_threshold: f32,
     device: burn::backend::ndarray::NdArrayDevice,
 }
@@ -25,8 +31,12 @@ pub struct ScanResult {
 impl Model {
     pub fn load(
         model_bytes: &[u8],
+        vocab_bytes: &[u8],
+        feature_stats: features::FeaturePercentiles,
         device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        let tokenizer = features::Tokenizer::load_json(vocab_bytes)
+            .ok_or("failed to parse vocab.json")?;
         let tmp = tempfile::Builder::new().suffix(".mpk").tempfile()?;
         std::fs::write(tmp.path(), model_bytes)?;
         let classifier = model::ApkClassifier::load_weights(
@@ -35,6 +45,8 @@ impl Model {
         )?;
         Ok(Model {
             classifier,
+            tokenizer,
+            feature_stats,
             confidence_threshold: DEFAULT_CONFIDENCE_THRESHOLD,
             device,
         })
@@ -42,11 +54,17 @@ impl Model {
 
     pub fn load_from_path(
         model_path: &str,
+        vocab_bytes: &[u8],
+        feature_stats: features::FeaturePercentiles,
         device: burn::backend::ndarray::NdArrayDevice,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        let tokenizer = features::Tokenizer::load_json(vocab_bytes)
+            .ok_or("failed to parse vocab.json")?;
         let classifier = model::ApkClassifier::load_weights(model_path, &device)?;
         Ok(Model {
             classifier,
+            tokenizer,
+            feature_stats,
             confidence_threshold: DEFAULT_CONFIDENCE_THRESHOLD,
             device,
         })
@@ -57,29 +75,31 @@ impl Model {
     }
 
     pub fn scan(&self, apk: &[u8]) -> Option<ScanResult> {
-        let engine_feats = features::EngineFeatures::extract_from_apk(apk).unwrap_or_default();
-        self.scan_with_features(&engine_feats)
+        // Derives real, content-based DEX/ELF/manifest features from the
+        // APK itself. `EngineFeatures` no longer carries placeholder fields
+        // for data this crate can't independently verify (URL/IP
+        // reputation, benign-sample similarity, certificate checks,
+        // media/HIPS findings) — every remaining field is genuinely
+        // computed here.
+        let engine_feats = features::EngineFeatures::extract_from_apk(apk)
+            .unwrap_or_default();
+        self.scan_with_features(apk, &engine_feats)
     }
 
-    pub fn scan_with_features(&self, engine_feats: &features::EngineFeatures) -> Option<ScanResult> {
-        let feat_vec = engine_feats.to_vec();
-        let feat_len = feat_vec.len();
-        let feat_tensor = Tensor::<B, 2, Float>::from_data(
-            burn::tensor::TensorData::new(feat_vec, [1, feat_len]),
-            &self.device,
-        );
-        // Two-class logits -> softmax -> probability that the sample is malware
-        // (class 1), exactly like the original HydraDragon inference.
-        let logits = self.classifier.forward_batch(feat_tensor);
-        let probs = burn::tensor::activation::softmax(logits, 1);
-        let confidence = probs.slice([0..1, 1..2]).into_scalar().clamp(0.0, 1.0);
+    pub fn scan_with_features(
+        &self,
+        apk: &[u8],
+        engine_feats: &features::EngineFeatures,
+    ) -> Option<ScanResult> {
+        let indices = self.tokenizer.tokenize(apk)?;
+        let token_tensor = Tensor::<B, 1, Int>::from_data(indices.as_slice(), &self.device);
+        let feat_vec = self.feature_stats.normalize(&engine_feats.to_vec());
+        let feat_tensor = Tensor::<B, 1, Float>::from_data(feat_vec.as_slice(), &self.device);
+        let output = self.classifier.forward(token_tensor, feat_tensor);
+        let confidence = output.into_scalar().clamp(0.0, 1.0);
         let malicious = confidence >= self.confidence_threshold;
         let suspicious = !malicious && confidence >= SUSPICIOUS_THRESHOLD;
-        Some(ScanResult {
-            malicious,
-            suspicious,
-            confidence,
-        })
+        Some(ScanResult { malicious, suspicious, confidence })
     }
 }
 
@@ -89,8 +109,8 @@ mod tests {
 
     #[test]
     fn tokenize_test_apk() {
-        let bytes =
-            std::fs::read("../com.ttech.android.onlineislem_base.apk").expect("APK not found");
+        let bytes = std::fs::read("../com.ttech.android.onlineislem_base.apk")
+            .expect("APK not found");
         let mut vocab = std::collections::HashMap::new();
         vocab.insert("test".to_string(), 1);
         let tok = features::Tokenizer::new(vocab);
@@ -109,27 +129,25 @@ mod tests {
     }
 
     #[test]
-    fn engine_features_normalized() {
+    fn engine_features_raw_values() {
         let feats = features::EngineFeatures {
             dex_class_count: 1000.0,
             dex_api_call_count: 3000.0,
-            manifest_dangerous_permissions: 15.0,
             manifest_target_sdk: 33.0,
             ..Default::default()
         };
         let v = feats.to_vec();
         assert_eq!(v.len(), features::ENGINE_FEATURE_COUNT);
-        assert!(v.iter().all(|&x| (0.0..=1.0).contains(&x)));
-        // log2(1001)/log2(200_001) and log2(3001)/log2(100_001)
-        assert!((v[0] - 0.5660).abs() < 0.01);
-        assert!((v[2] - 0.6955).abs() < 0.01);
+        assert_eq!(v[0], 1000.0);
+        assert_eq!(v[2], 3000.0);
+        assert_eq!(v[9], 33.0);
     }
 
     #[test]
-    fn all_features_normalized() {
+    fn all_features_raw_and_finite() {
         let feats = features::EngineFeatures::default();
         let v = feats.to_vec();
         assert_eq!(v.len(), features::ENGINE_FEATURE_COUNT);
-        assert!(v.iter().all(|&x| (0.0..=1.0).contains(&x)));
+        assert!(v.iter().all(|x| x.is_finite()));
     }
 }
