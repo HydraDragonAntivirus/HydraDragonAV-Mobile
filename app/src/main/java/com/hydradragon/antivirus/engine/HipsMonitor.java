@@ -146,6 +146,11 @@ public final class HipsMonitor {
 
     private static final Map<String, BehaviorFlagEntry> behaviorFlags = new HashMap<>();
 
+    /** Downloaded-malicious-APK package -> the untrusted app that downloaded
+     *  it (MediaStore owner). Lets the install step attribute the DROPPER. */
+    private static final Map<String, String> downloadOwners = new HashMap<>();
+    private static final int MAX_DOWNLOAD_OWNERS = 256;
+
     private static boolean isRooted = false;
     private static boolean isDebugMode = false;
     private static boolean selfProtectionTriggered = false;
@@ -494,6 +499,29 @@ public final class HipsMonitor {
         return entry != null && entry.flags.contains(flag);
     }
 
+    public static synchronized boolean hasAnyBehaviorFlag(String pkg) {
+        BehaviorFlagEntry entry = behaviorFlags.get(pkg);
+        return entry != null && !entry.flags.isEmpty();
+    }
+
+    /** Remember which (untrusted) app downloaded a flagged-malicious APK
+     *  package, so a later install of that package can be attributed to a
+     *  dropper. */
+    public static synchronized void recordDownloadedApk(String apkPackage, String ownerPkg) {
+        if (apkPackage == null || apkPackage.isEmpty()) return;
+        if (ownerPkg == null || ownerPkg.isEmpty()) return;
+        if (isSelfPackage(ownerPkg)) return;
+        downloadOwners.put(apkPackage, ownerPkg);
+        if (downloadOwners.size() > MAX_DOWNLOAD_OWNERS) {
+            String oldest = downloadOwners.keySet().iterator().next();
+            if (oldest != null) downloadOwners.remove(oldest);
+        }
+    }
+
+    public static synchronized String getDownloadOwner(String apkPackage) {
+        return apkPackage == null ? null : downloadOwners.get(apkPackage);
+    }
+
     private static void observePackage(String pkg) {
         if (pkg == null || pkg.isEmpty()) return;
         if (!observedPackages.contains(pkg)) {
@@ -669,6 +697,8 @@ public final class HipsMonitor {
             JSONArray obsArr = new JSONArray();
             for (String p : observedPackages) obsArr.put(p);
             state.put("observed_packages", obsArr);
+            JSONArray launchArr = LaunchMonitor.buildLaunchesJson();
+            if (launchArr.length() > 0) state.put("app_launches", launchArr);
             root.put("behavior_state", state);
 
             JSONArray daArr = buildDeviceAdminJson(ctx);

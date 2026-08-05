@@ -69,6 +69,18 @@ public class InstallReceiver extends BroadcastReceiver {
                     
                     if (result != null && result.isThreat()) {
                         Log.e(TAG, "ON-INSTALL THREAT DETECTED: " + packageName);
+                        // Dropper attribution: if this package was a previously
+                        // downloaded malicious APK whose downloader was an
+                        // untrusted app, that downloader just INSTALLED its own
+                        // payload -> it is a dropper (Andr.Dropper.Susp).
+                        String ownerPkg = com.hydradragon.antivirus.engine.HipsMonitor.getDownloadOwner(packageName);
+                        if (ownerPkg != null
+                                && com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(ownerPkg, "DOWNLOAD_MALWARE")) {
+                            com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(ownerPkg, "DROPPER:installed=" + packageName);
+                            com.hydradragon.antivirus.service.ThreatLogger.logThreat(
+                                context, ownerPkg, packageName,
+                                "Andr.Dropper.Susp: downloaded and installed malicious package " + packageName);
+                        }
                         if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(context)) {
                             if (com.hydradragon.antivirus.engine.AutoDeleteMalware.isEnabled(context)) {
                                 com.hydradragon.antivirus.engine.BehaviorResponse.autoDeleteThreat(context, result);

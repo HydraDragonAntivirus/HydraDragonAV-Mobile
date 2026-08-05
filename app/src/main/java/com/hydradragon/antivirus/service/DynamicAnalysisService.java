@@ -179,6 +179,11 @@ public class DynamicAnalysisService extends AccessibilityService {
                     this, pkg, fgPackage, isInstaller || isSettings);
 
                 sForegroundPackage = pkg;
+                // fgPackage is STILL the previous foreground here: if that
+                // previous app is already behavior-flagged, it brought this
+                // new app (and its activity class) on screen — "malware opened
+                // Chrome". See checkLaunchTransition.
+                checkLaunchTransition(fgPackage, pkg, event.getClassName());
                 boolean behFlagged = BehaviorFlags.isFlagged(this, pkg)
                     && !com.hydradragon.antivirus.engine.UserDecisions.isThreatAllowed(this, pkg);
                 boolean scanFlagged = com.hydradragon.antivirus.engine.HipsMonitor.hasBehaviorFlag(pkg, "SCAN_MALWARE")
@@ -357,6 +362,30 @@ public class DynamicAnalysisService extends AccessibilityService {
                 checkNodesForSuspiciousKeywords(child, budget);
                 child.recycle();
             }
+        }
+    }
+
+    /**
+     * A window switch where the PREVIOUS foreground package is already
+     * behavior-flagged means that app brought the new app on screen. Record
+     * the exact activity class (AccessibilityEvent.getClassName, e.g.
+     * {@code org.chromium.chrome.browser.ChromeLauncherActivity}) as an
+     * APP_LAUNCH flag so the YARA-X {@code hydradragon.behavior_flagged} check
+     * can match "malware opened Chrome" without shipping static rules.
+     */
+    private void checkLaunchTransition(String fromPkg, String toPkg, CharSequence className) {
+        try {
+            if (fromPkg == null || fromPkg.isEmpty() || fromPkg.equals(toPkg)) return;
+            if (toPkg == null || toPkg.isEmpty() || toPkg.startsWith("com.hydradragon.antivirus")) return;
+            if (!com.hydradragon.antivirus.engine.HipsMonitor.hasAnyBehaviorFlag(fromPkg)) return;
+
+            String flag = "APP_LAUNCH:from=" + fromPkg + ":to=" + toPkg;
+            if (className != null && className.length() > 0) {
+                flag += ":class=" + className;
+            }
+            com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(fromPkg, flag);
+        } catch (Throwable t) {
+            Log.w(TAG, "checkLaunchTransition failed", t);
         }
     }
 

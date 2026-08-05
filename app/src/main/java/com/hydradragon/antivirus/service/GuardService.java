@@ -222,6 +222,16 @@ public class GuardService extends Service {
                 String dlPkg = threat.getPackageName();
                 if (dlPkg != null && !dlPkg.isEmpty()) {
                     com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(dlPkg, "DOWNLOAD_MALWARE");
+                    // Dropper attribution: MediaStore records which app actually
+                    // downloaded the file (Android 10+). If that owner is an
+                    // untrusted app (not Chrome/system), remember it so the later
+                    // install of this APK is credited to the dropper.
+                    String ownerPkg = queryDownloadOwner(file);
+                    if (ownerPkg != null && !ownerPkg.isEmpty()
+                            && !com.hydradragon.antivirus.engine.TrustedPackages.isTrusted(this, ownerPkg)) {
+                        com.hydradragon.antivirus.engine.HipsMonitor.addBehaviorFlag(ownerPkg, "DOWNLOAD_MALWARE");
+                        com.hydradragon.antivirus.engine.HipsMonitor.recordDownloadedApk(dlPkg, ownerPkg);
+                    }
                 }
 
                 if (com.hydradragon.antivirus.engine.ProtectionState.isEnabled(this)) {
@@ -273,6 +283,28 @@ public class GuardService extends Service {
             }
             nm.notify(notifId, builder.build());
         });
+    }
+
+    /** MediaStore records which app initiated a download (Android 10+); null on
+     *  older platforms, for files outside MediaStore, or when unavailable. */
+    private String queryDownloadOwner(java.io.File file) {
+        try {
+            if (Build.VERSION.SDK_INT < 29 || file == null) return null;
+            android.net.Uri u = android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+            String[] proj = { android.provider.MediaStore.Downloads.DATA,
+                android.provider.MediaStore.Downloads.OWNER_PACKAGE_NAME };
+            try (android.database.Cursor c = getContentResolver().query(u, proj,
+                    android.provider.MediaStore.Downloads.DATA + "=?",
+                    new String[]{ file.getAbsolutePath() }, null)) {
+                if (c != null && c.moveToFirst()) {
+                    int idx = c.getColumnIndex(android.provider.MediaStore.Downloads.OWNER_PACKAGE_NAME);
+                    if (idx >= 0) return c.getString(idx);
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "queryDownloadOwner failed", t);
+        }
+        return null;
     }
 
 
@@ -699,6 +731,7 @@ public class GuardService extends Service {
                 }
             }
             if (fgPkg == null || fgPkg.isEmpty()) return;
+            com.hydradragon.antivirus.engine.HipsMonitor.setForegroundPackage(fgPkg);
             if (fgPkg.equals(getPackageName())
                 || fgPkg.equals("com.hydradragon.antivirus")
                 || fgPkg.equals("com.hydradragon.antivirus.debug")) return;
@@ -812,6 +845,11 @@ public class GuardService extends Service {
         scheduler.scheduleAtFixedRate(() -> {
             checkForegroundViaUsageStats();
         }, 0, 1, TimeUnit.SECONDS);
+
+        scheduler.scheduleAtFixedRate(() -> {
+            try { com.hydradragon.antivirus.engine.LaunchMonitor.poll(GuardService.this); }
+            catch (Throwable t) { Log.e(TAG, "LaunchMonitor poll failed", t); }
+        }, 0, 5, TimeUnit.SECONDS);
 
         scheduler.scheduleAtFixedRate(this::checkRootTransition, 15, 60, TimeUnit.SECONDS);
 
