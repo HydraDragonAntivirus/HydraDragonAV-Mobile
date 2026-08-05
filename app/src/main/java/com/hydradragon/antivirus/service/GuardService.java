@@ -497,7 +497,11 @@ public class GuardService extends Service {
             filter.addAction(android.content.Intent.ACTION_PACKAGE_CHANGED);
             filter.addAction(android.content.Intent.ACTION_PACKAGE_REMOVED);
             filter.addDataScheme("package");
-            registerReceiver(packageChangeReceiver, filter);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(packageChangeReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                registerReceiver(packageChangeReceiver, filter);
+            }
         } catch (Throwable t) {
             Log.e(TAG, "register packageChangeReceiver failed", t);
         }
