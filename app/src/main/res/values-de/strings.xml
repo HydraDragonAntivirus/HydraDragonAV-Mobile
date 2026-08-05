@@ -381,6 +381,12 @@ Du kannst dies später in den Einstellungen aktivieren.</string>
     <string name="auto_rule_export_failed">Regel konnte nicht exportiert werden</string>
     <string name="auto_rule_delete_failed">Regel konnte nicht gelöscht werden</string>
     <string name="auto_rule_read_failed">Diese Regeldatei konnte nicht gelesen werden</string>
+    <string name="custom_rule_add_btn">Benutzerdefinierte Regel hinzufügen</string>
+    <string name="custom_rule_hint">Füge unten eine YARA-Regel ein. Sie wird sofort kompiliert: defekte Regeln werden abgelehnt und nicht gespeichert, gültige werden sofort aktiviert und bei jedem Start geladen.</string>
+    <string name="custom_rule_empty">Regel ist leer — füge zuerst eine YARA-Regel ein</string>
+    <string name="custom_rule_invalid">Regel abgelehnt — sie konnte nicht kompiliert werden (prüfe die YARA-Syntax)</string>
+    <string name="custom_rule_saved">Benutzerdefinierte Regel hinzugefügt und aktiviert</string>
+    <string name="custom_rule_engine_loading">Die Scan-Engine wird noch geladen — versuche es gleich erneut</string>
     <string name="lock_confirm_pin">Neue PIN bestätigen</string>
     <string name="security_flag_lost">Sicherheitsprüfung fehlgeschlagen — wird zu deinem Schutz geschlossen</string>
     <string name="obscured_touch_warning">Tippen ignoriert — etwas überlagert den Bildschirm</string>

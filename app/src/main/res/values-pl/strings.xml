@@ -381,6 +381,12 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="auto_rule_export_failed">Nie udało się wyeksportować reguły</string>
     <string name="auto_rule_delete_failed">Nie udało się usunąć reguły</string>
     <string name="auto_rule_read_failed">Nie można odczytać tego pliku reguły</string>
+    <string name="custom_rule_add_btn">Dodaj niestandardową regułę</string>
+    <string name="custom_rule_hint">Wklej regułę YARA poniżej. Jest kompilowana natychmiast: wadliwe reguły są odrzucane i nie zapisywane, a prawidłowe są od razu włączane i ładowane przy każdym uruchomieniu.</string>
+    <string name="custom_rule_empty">Reguła jest pusta — najpierw wklej regułę YARA</string>
+    <string name="custom_rule_invalid">Reguła odrzucona — nie można było jej skompilować (sprawdź składnię YARA)</string>
+    <string name="custom_rule_saved">Niestandardowa reguła dodana i włączona</string>
+    <string name="custom_rule_engine_loading">Silnik skanowania wciąż się ładuje — spróbuj ponownie za chwilę</string>
     <string name="lock_confirm_pin">Potwierdź nowy PIN</string>
     <string name="security_flag_lost">Kontrola bezpieczeństwa nie powiodła się — zamykanie w celu ochrony</string>
     <string name="obscured_touch_warning">Zignorowano dotknięcie — coś zasłania ekran</string>

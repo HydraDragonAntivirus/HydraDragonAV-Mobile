@@ -381,6 +381,12 @@ Vous pouvez activer cela plus tard depuis Paramètres.</string>
     <string name="auto_rule_export_failed">Échec de l\'exportation de la règle</string>
     <string name="auto_rule_delete_failed">Échec de la suppression de la règle</string>
     <string name="auto_rule_read_failed">Impossible de lire ce fichier de règle</string>
+    <string name="custom_rule_add_btn">Ajouter une règle personnalisée</string>
+    <string name="custom_rule_hint">Collez une règle YARA ci-dessous. Elle est compilée immédiatement : les règles incorrectes sont rejetées et non enregistrées, les règles valides sont activées tout de suite et chargées à chaque démarrage.</string>
+    <string name="custom_rule_empty">La règle est vide — collez d\'abord une règle YARA</string>
+    <string name="custom_rule_invalid">Règle rejetée — elle n\'a pas pu être compilée (vérifiez la syntaxe YARA)</string>
+    <string name="custom_rule_saved">Règle personnalisée ajoutée et activée</string>
+    <string name="custom_rule_engine_loading">Le moteur d\'analyse est encore en cours de chargement — réessayez dans un instant</string>
     <string name="lock_confirm_pin">Confirmer le Nouveau PIN</string>
     <string name="security_flag_lost">Échec du contrôle de sécurité — fermeture pour votre protection</string>
     <string name="obscured_touch_warning">Appui ignoré — quelque chose recouvre l\'écran</string>

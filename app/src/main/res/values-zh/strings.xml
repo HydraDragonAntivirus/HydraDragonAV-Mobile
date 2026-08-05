@@ -381,6 +381,12 @@
     <string name="auto_rule_export_failed">导出规则失败</string>
     <string name="auto_rule_delete_failed">删除规则失败</string>
     <string name="auto_rule_read_failed">无法读取此规则文件</string>
+    <string name="custom_rule_add_btn">添加自定义规则</string>
+    <string name="custom_rule_hint">在下方粘贴一条 YARA 规则。它会立即被编译：损坏的规则会被拒绝且不会保存，有效的规则会立即启用，并在每次启动时加载。</string>
+    <string name="custom_rule_empty">规则为空 — 请先粘贴一条 YARA 规则</string>
+    <string name="custom_rule_invalid">规则被拒绝 — 无法编译（请检查 YARA 语法）</string>
+    <string name="custom_rule_saved">自定义规则已添加并启用</string>
+    <string name="custom_rule_engine_loading">扫描引擎仍在加载 — 请稍后重试</string>
     <string name="lock_confirm_pin">确认新PIN码</string>
     <string name="security_flag_lost">安全检查失败 — 为保护您的安全正在关闭</string>
     <string name="obscured_touch_warning">已忽略点击 — 屏幕上有内容遮挡</string>

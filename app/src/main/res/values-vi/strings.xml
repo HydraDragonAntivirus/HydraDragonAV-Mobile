@@ -381,6 +381,12 @@ Bạn có thể bật tính năng này sau từ Cài đặt.</string>
     <string name="auto_rule_export_failed">Không thể xuất quy tắc</string>
     <string name="auto_rule_delete_failed">Không thể xóa quy tắc</string>
     <string name="auto_rule_read_failed">Không thể đọc tệp quy tắc này</string>
+    <string name="custom_rule_add_btn">Thêm Quy tắc Tùy chỉnh</string>
+    <string name="custom_rule_hint">Dán quy tắc YARA vào bên dưới. Quy tắc được biên dịch ngay lập tức: quy tắc bị lỗi sẽ bị từ chối và không được lưu, quy tắc hợp lệ được bật ngay và tải trong mỗi lần khởi động.</string>
+    <string name="custom_rule_empty">Quy tắc trống — hãy dán quy tắc YARA trước</string>
+    <string name="custom_rule_invalid">Quy tắc bị từ chối — không thể biên dịch (hãy kiểm tra cú pháp YARA)</string>
+    <string name="custom_rule_saved">Đã thêm và bật quy tắc tùy chỉnh</string>
+    <string name="custom_rule_engine_loading">Công cụ quét vẫn đang tải — hãy thử lại sau một chút</string>
     <string name="lock_confirm_pin">Xác Nhận PIN Mới</string>
     <string name="security_flag_lost">Kiểm tra bảo mật thất bại — đang đóng để bảo vệ bạn</string>
     <string name="obscured_touch_warning">Đã bỏ qua thao tác chạm — có thứ gì đó đang che phủ màn hình</string>

@@ -499,7 +499,7 @@ public class SettingsFragment extends Fragment {
         addBtn("📜  " + getString(R.string.auto_rules_manager_btn), color(R.color.bg_secondary),
             v -> showAutoRulesManagerDialog());
         addBtn("➕  " + getString(R.string.custom_rule_add_btn), color(R.color.neon_cyan),
-            v -> showCustomRuleAddDialog());
+            v -> showCustomRuleAddDialog(null));
         addBtn("🗑  " + getString(R.string.clear_scan_cache_btn), color(R.color.bg_secondary),
             v -> showClearCacheDialog());
 
@@ -1464,9 +1464,15 @@ public class SettingsFragment extends Fragment {
             }
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
             new Thread(() -> {
-                String result;
+                if (!com.hydradragon.antivirus.engine.NativeScanner.isReady()) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), getString(R.string.custom_rule_engine_loading), Toast.LENGTH_LONG).show();
+                        dlg.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                    });
+                    return;
+                }
                 final boolean saved = saveCustomRule(ruleText);
-                result = getString(saved ? R.string.custom_rule_saved : R.string.custom_rule_invalid);
+                final String result = getString(saved ? R.string.custom_rule_saved : R.string.custom_rule_invalid);
                 requireActivity().runOnUiThread(() -> {
                     Toast.makeText(getContext(), result, Toast.LENGTH_LONG).show();
                     if (saved) {
@@ -1487,12 +1493,6 @@ public class SettingsFragment extends Fragment {
         try {
             java.nio.file.Files.write(temp.toPath(), ruleText.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         } catch (Exception e) {
-            return false;
-        }
-        if (!com.hydradragon.antivirus.engine.NativeScanner.isReady()) {
-            // Engine not loaded yet -> cannot validate; fall back to a syntax
-            // sanity check by compiling into a fresh dir? Keep it simple: reject.
-            Toast.makeText(getContext(), getString(R.string.custom_rule_engine_loading), Toast.LENGTH_LONG).show();
             return false;
         }
         if (!com.hydradragon.antivirus.engine.NativeScanner.learnRule(temp.getAbsolutePath())) {

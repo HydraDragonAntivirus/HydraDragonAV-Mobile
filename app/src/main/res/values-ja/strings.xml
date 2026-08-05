@@ -381,6 +381,12 @@
     <string name="auto_rule_export_failed">ルールのエクスポートに失敗しました</string>
     <string name="auto_rule_delete_failed">ルールの削除に失敗しました</string>
     <string name="auto_rule_read_failed">このルールファイルを読み取れませんでした</string>
+    <string name="custom_rule_add_btn">カスタムルールを追加</string>
+    <string name="custom_rule_hint">下にYARAルールを貼り付けてください。すぐにコンパイルされます：不正なルールは拒否されて保存されず、有効なルールはすぐに有効化され、起動のたびに読み込まれます。</string>
+    <string name="custom_rule_empty">ルールが空です — 先にYARAルールを貼り付けてください</string>
+    <string name="custom_rule_invalid">ルールが拒否されました — コンパイルできませんでした（YARA構文を確認してください）</string>
+    <string name="custom_rule_saved">カスタムルールが追加され、有効になりました</string>
+    <string name="custom_rule_engine_loading">スキャンエンジンはまだ読み込み中です — 少ししてからもう一度お試しください</string>
     <string name="lock_confirm_pin">新しいPINを確認</string>
     <string name="security_flag_lost">セキュリティチェックに失敗しました — 保護のため終了します</string>
     <string name="obscured_touch_warning">タップを無視しました — 画面上に何かが重なっています</string>

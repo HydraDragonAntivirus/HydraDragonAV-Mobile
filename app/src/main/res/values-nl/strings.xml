@@ -381,6 +381,12 @@ Je kunt dit later inschakelen via Instellingen.</string>
     <string name="auto_rule_export_failed">Regel exporteren mislukt</string>
     <string name="auto_rule_delete_failed">Regel verwijderen mislukt</string>
     <string name="auto_rule_read_failed">Kon dit regelbestand niet lezen</string>
+    <string name="custom_rule_add_btn">Aangepaste regel toevoegen</string>
+    <string name="custom_rule_hint">Plak hieronder een YARA-regel. Deze wordt onmiddellijk gecompileerd: ongeldige regels worden afgewezen en niet opgeslagen, geldige regels worden direct ingeschakeld en bij elke start geladen.</string>
+    <string name="custom_rule_empty">Regel is leeg — plak eerst een YARA-regel</string>
+    <string name="custom_rule_invalid">Regel afgewezen — deze kon niet worden gecompileerd (controleer de YARA-syntax)</string>
+    <string name="custom_rule_saved">Aangepaste regel toegevoegd en ingeschakeld</string>
+    <string name="custom_rule_engine_loading">De scanengine wordt nog geladen — probeer het over een moment opnieuw</string>
     <string name="lock_confirm_pin">Bevestig nieuwe pincode</string>
     <string name="security_flag_lost">Beveiligingscontrole mislukt — wordt gesloten ter bescherming</string>
     <string name="obscured_touch_warning">Tik genegeerd — er ligt iets over het scherm</string>

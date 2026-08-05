@@ -381,6 +381,12 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="auto_rule_export_failed">Falha ao exportar a regra</string>
     <string name="auto_rule_delete_failed">Falha ao excluir a regra</string>
     <string name="auto_rule_read_failed">Não foi possível ler este arquivo de regra</string>
+    <string name="custom_rule_add_btn">Adicionar Regra Personalizada</string>
+    <string name="custom_rule_hint">Cole uma regra YARA abaixo. Ela é compilada imediatamente: regras quebradas são rejeitadas e não são salvas, regras válidas são ativadas na hora e carregadas a cada inicialização.</string>
+    <string name="custom_rule_empty">A regra está vazia — cole uma regra YARA primeiro</string>
+    <string name="custom_rule_invalid">Regra rejeitada — não foi possível compilá-la (verifique a sintaxe YARA)</string>
+    <string name="custom_rule_saved">Regra personalizada adicionada e ativada</string>
+    <string name="custom_rule_engine_loading">O mecanismo de varredura ainda está carregando — tente novamente em um momento</string>
     <string name="lock_confirm_pin">Confirmar Novo PIN</string>
     <string name="security_flag_lost">Falha na verificação de segurança — fechando para sua proteção</string>
     <string name="obscured_touch_warning">Toque ignorado — algo está sobrepondo a tela</string>

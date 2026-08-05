@@ -381,6 +381,12 @@ Puedes habilitar esto más tarde desde Ajustes.</string>
     <string name="auto_rule_export_failed">No se pudo exportar la regla</string>
     <string name="auto_rule_delete_failed">No se pudo eliminar la regla</string>
     <string name="auto_rule_read_failed">No se pudo leer este archivo de regla</string>
+    <string name="custom_rule_add_btn">Agregar regla personalizada</string>
+    <string name="custom_rule_hint">Pega una regla YARA abajo. Se compila de inmediato: las reglas rotas se rechazan y no se guardan; las válidas se activan de inmediato y se cargan en cada inicio.</string>
+    <string name="custom_rule_empty">La regla está vacía — pega una regla YARA primero</string>
+    <string name="custom_rule_invalid">Regla rechazada — no se pudo compilar (revisa la sintaxis de YARA)</string>
+    <string name="custom_rule_saved">Regla personalizada agregada y habilitada</string>
+    <string name="custom_rule_engine_loading">El motor de escaneo todavía se está cargando — inténtalo de nuevo en un momento</string>
     <string name="lock_confirm_pin">Confirmar Nuevo PIN</string>
     <string name="security_flag_lost">Fallo en la comprobación de seguridad — cerrando para tu protección</string>
     <string name="obscured_touch_warning">Toque ignorado — algo está superpuesto sobre la pantalla</string>

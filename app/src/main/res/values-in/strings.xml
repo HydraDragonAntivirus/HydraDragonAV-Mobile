@@ -381,6 +381,12 @@ Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
     <string name="auto_rule_export_failed">Gagal mengekspor aturan</string>
     <string name="auto_rule_delete_failed">Gagal menghapus aturan</string>
     <string name="auto_rule_read_failed">Tidak dapat membaca file aturan ini</string>
+    <string name="custom_rule_add_btn">Tambahkan Aturan Khusus</string>
+    <string name="custom_rule_hint">Tempel aturan YARA di bawah. Aturan langsung dikompilasi: aturan yang rusak ditolak dan tidak disimpan, aturan yang valid langsung diaktifkan dan dimuat pada setiap kali startup.</string>
+    <string name="custom_rule_empty">Aturan kosong — tempel aturan YARA terlebih dahulu</string>
+    <string name="custom_rule_invalid">Aturan ditolak — tidak dapat dikompilasi (periksa sintaks YARA)</string>
+    <string name="custom_rule_saved">Aturan khusus ditambahkan dan diaktifkan</string>
+    <string name="custom_rule_engine_loading">Mesin pemindaian masih dimuat — coba lagi sebentar lagi</string>
     <string name="lock_confirm_pin">Konfirmasi PIN Baru</string>
     <string name="security_flag_lost">Pemeriksaan keamanan gagal — ditutup demi perlindungan Anda</string>
     <string name="obscured_touch_warning">Ketukan diabaikan — ada sesuatu yang menutupi layar</string>

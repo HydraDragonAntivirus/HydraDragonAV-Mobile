@@ -381,6 +381,12 @@
     <string name="auto_rule_export_failed">नियम निर्यात करने में विफल</string>
     <string name="auto_rule_delete_failed">नियम हटाने में विफल</string>
     <string name="auto_rule_read_failed">यह नियम फ़ाइल पढ़ी नहीं जा सकी</string>
+    <string name="custom_rule_add_btn">कस्टम नियम जोड़ें</string>
+    <string name="custom_rule_hint">नीचे एक YARA नियम पेस्ट करें। इसे तुरंत कंपाइल किया जाता है: टूटे हुए नियम अस्वीकार कर दिए जाते हैं और सहेजे नहीं जाते, मान्य नियम तुरंत सक्षम हो जाते हैं और हर स्टार्टअप पर लोड होते हैं।</string>
+    <string name="custom_rule_empty">नियम खाली है — पहले एक YARA नियम पेस्ट करें</string>
+    <string name="custom_rule_invalid">नियम अस्वीकृत — इसे कंपाइल नहीं किया जा सका (YARA सिंटैक्स जांचें)</string>
+    <string name="custom_rule_saved">कस्टम नियम जोड़ा गया और सक्षम किया गया</string>
+    <string name="custom_rule_engine_loading">स्कैन इंजन अभी भी लोड हो रहा है — थोड़ी देर बाद फिर से कोशिश करें</string>
     <string name="lock_confirm_pin">नया पिन पुष्टि करें</string>
     <string name="security_flag_lost">सुरक्षा जांच विफल — आपकी सुरक्षा के लिए बंद किया जा रहा है</string>
     <string name="obscured_touch_warning">टैप को अनदेखा किया गया — स्क्रीन पर कुछ ओवरले है</string>

@@ -61,6 +61,12 @@
     <string name="auto_rule_export_failed">Kural dışa aktarılamadı</string>
     <string name="auto_rule_delete_failed">Kural silinemedi</string>
     <string name="auto_rule_read_failed">Bu kural dosyası okunamadı</string>
+    <string name="custom_rule_add_btn">Özel Kural Ekle</string>
+    <string name="custom_rule_hint">Aşağıya bir YARA kuralı yapıştırın. Kural anında derlenir: bozuk kurallar reddedilir ve kaydedilmez, geçerli olanlar hemen etkinleştirilir ve her başlatmada yüklenir.</string>
+    <string name="custom_rule_empty">Kural boş — önce bir YARA kuralı yapıştırın</string>
+    <string name="custom_rule_invalid">Kural reddedildi — derlenemedi (YARA sözdizimini kontrol edin)</string>
+    <string name="custom_rule_saved">Özel kural eklendi ve etkinleştirildi</string>
+    <string name="custom_rule_engine_loading">Tarama motoru hâlâ yükleniyor — bir an sonra tekrar deneyin</string>
     <string name="lock_confirm_pin">Yeni PIN\'i Onayla</string>
     <string name="security_flag_lost">Güvenlik kontrolü başarısız — korumanız için kapatılıyor</string>
     <string name="obscured_touch_warning">Dokunma yok sayıldı — ekranın üzerinde bir şey var</string>

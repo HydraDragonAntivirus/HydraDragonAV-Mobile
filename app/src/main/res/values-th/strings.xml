@@ -381,6 +381,12 @@
     <string name="auto_rule_export_failed">ส่งออกกฎล้มเหลว</string>
     <string name="auto_rule_delete_failed">ลบกฎล้มเหลว</string>
     <string name="auto_rule_read_failed">ไม่สามารถอ่านไฟล์กฎนี้ได้</string>
+    <string name="custom_rule_add_btn">เพิ่มกฎแบบกำหนดเอง</string>
+    <string name="custom_rule_hint">วางกฎ YARA ด้านล่าง กฎจะถูกคอมไพล์ทันที: กฎที่เสียหายจะถูกปฏิเสธและไม่ถูกบันทึก กฎที่ถูกต้องจะถูกเปิดใช้งานทันทีและโหลดทุกครั้งที่เริ่มระบบ</string>
+    <string name="custom_rule_empty">กฎว่างเปล่า — กรุณาวางกฎ YARA ก่อน</string>
+    <string name="custom_rule_invalid">กฎถูกปฏิเสธ — ไม่สามารถคอมไพล์ได้ (ตรวจสอบไวยากรณ์ YARA)</string>
+    <string name="custom_rule_saved">เพิ่มกฎแบบกำหนดเองและเปิดใช้งานแล้ว</string>
+    <string name="custom_rule_engine_loading">เอนจิ้นการสแกนยังกำลังโหลดอยู่ — กรุณาลองใหม่อีกครั้งในอีกสักครู่</string>
     <string name="lock_confirm_pin">ยืนยัน PIN ใหม่</string>
     <string name="security_flag_lost">การตรวจสอบความปลอดภัยล้มเหลว — กำลังปิดเพื่อความปลอดภัยของคุณ</string>
     <string name="obscured_touch_warning">ละเว้นการแตะ — มีบางอย่างบดบังหน้าจออยู่</string>

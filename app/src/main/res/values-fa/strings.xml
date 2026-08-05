@@ -381,6 +381,12 @@
     <string name="auto_rule_export_failed">صدور قانون ناموفق بود</string>
     <string name="auto_rule_delete_failed">حذف قانون ناموفق بود</string>
     <string name="auto_rule_read_failed">این فایل قانون قابل خواندن نبود</string>
+    <string name="custom_rule_add_btn">افزودن قانون سفارشی</string>
+    <string name="custom_rule_hint">یک قانون YARA را در زیر بچسبانید. بلافاصله کامپایل می‌شود: قوانین خراب رد می‌شوند و ذخیره نمی‌شوند، قوانین معتبر بلافاصله فعال و در هر راه‌اندازی بارگذاری می‌شوند.</string>
+    <string name="custom_rule_empty">قانون خالی است — ابتدا یک قانون YARA بچسبانید</string>
+    <string name="custom_rule_invalid">قانون رد شد — نمی‌توان آن را کامپایل کرد (نحو YARA را بررسی کنید)</string>
+    <string name="custom_rule_saved">قانون سفارشی اضافه و فعال شد</string>
+    <string name="custom_rule_engine_loading">موتور اسکن هنوز در حال بارگذاری است — لحظه‌ای دیگر دوباره تلاش کنید</string>
     <string name="lock_confirm_pin">تأیید پین جدید</string>
     <string name="security_flag_lost">بررسی امنیتی ناموفق بود — برای محافظت از شما بسته می‌شود</string>
     <string name="obscured_touch_warning">لمس نادیده گرفته شد — چیزی روی صفحه را پوشانده است</string>

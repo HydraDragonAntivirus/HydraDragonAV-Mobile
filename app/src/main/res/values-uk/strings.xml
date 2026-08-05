@@ -381,6 +381,12 @@
     <string name="auto_rule_export_failed">Не вдалося експортувати правило</string>
     <string name="auto_rule_delete_failed">Не вдалося видалити правило</string>
     <string name="auto_rule_read_failed">Не вдалося прочитати цей файл правила</string>
+    <string name="custom_rule_add_btn">Додати користувацьке правило</string>
+    <string name="custom_rule_hint">Вставте правило YARA нижче. Воно компілюється негайно: несправні правила відхиляються і не зберігаються, а дійсні одразу вмикаються та завантажуються під час кожного запуску.</string>
+    <string name="custom_rule_empty">Правило порожнє — спершу вставте правило YARA</string>
+    <string name="custom_rule_invalid">Правило відхилено — його не вдалося скомпілювати (перевірте синтаксис YARA)</string>
+    <string name="custom_rule_saved">Користувацьке правило додано та ввімкнено</string>
+    <string name="custom_rule_engine_loading">Рушій сканування ще завантажується — спробуйте ще раз за мить</string>
     <string name="lock_confirm_pin">Підтвердіть новий PIN-код</string>
     <string name="security_flag_lost">Перевірку безпеки не пройдено — закривається для вашого захисту</string>
     <string name="obscured_touch_warning">Дотик проігноровано — щось перекриває екран</string>

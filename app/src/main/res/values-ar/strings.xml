@@ -381,6 +381,12 @@
     <string name="auto_rule_export_failed">فشل تصدير القاعدة</string>
     <string name="auto_rule_delete_failed">فشل حذف القاعدة</string>
     <string name="auto_rule_read_failed">تعذّرت قراءة ملف القاعدة هذا</string>
+    <string name="custom_rule_add_btn">أضف قاعدة مخصصة</string>
+    <string name="custom_rule_hint">ألصق قاعدة YARA أدناه. تُجمَّع فورًا: القواعد المعطوبة تُرفض ولا تُحفظ، والقواعد الصالحة تُفعَّل فورًا وتُحمَّل عند كل تشغيل.</string>
+    <string name="custom_rule_empty">القاعدة فارغة — ألصق قاعدة YARA أولًا</string>
+    <string name="custom_rule_invalid">رُفضت القاعدة — تعذّر تجميعها (تحقق من صيغة YARA)</string>
+    <string name="custom_rule_saved">تمت إضافة القاعدة المخصصة وتفعيلها</string>
+    <string name="custom_rule_engine_loading">محرك الفحص لا يزال قيد التحميل — حاول مجددًا بعد لحظة</string>
     <string name="lock_confirm_pin">تأكيد رمز PIN الجديد</string>
     <string name="security_flag_lost">فشل فحص الأمان — يتم الإغلاق لحمايتك</string>
     <string name="obscured_touch_warning">تم تجاهل اللمس — هناك شيء يغطي الشاشة</string>

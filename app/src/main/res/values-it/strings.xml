@@ -381,6 +381,12 @@ Puoi abilitarlo in seguito dalle Impostazioni.</string>
     <string name="auto_rule_export_failed">Esportazione della regola non riuscita</string>
     <string name="auto_rule_delete_failed">Eliminazione della regola non riuscita</string>
     <string name="auto_rule_read_failed">Impossibile leggere questo file di regola</string>
+    <string name="custom_rule_add_btn">Aggiungi regola personalizzata</string>
+    <string name="custom_rule_hint">Incolla una regola YARA qui sotto. Viene compilata immediatamente: le regole non valide vengono rifiutate e non salvate, quelle valide vengono attivate subito e caricate a ogni avvio.</string>
+    <string name="custom_rule_empty">La regola è vuota — incolla prima una regola YARA</string>
+    <string name="custom_rule_invalid">Regola rifiutata — non è stato possibile compilarla (controlla la sintassi YARA)</string>
+    <string name="custom_rule_saved">Regola personalizzata aggiunta e attivata</string>
+    <string name="custom_rule_engine_loading">Il motore di scansione sta ancora caricando — riprova tra un momento</string>
     <string name="lock_confirm_pin">Conferma nuovo PIN</string>
     <string name="security_flag_lost">Controllo di sicurezza non riuscito — chiusura per la tua protezione</string>
     <string name="obscured_touch_warning">Tocco ignorato — qualcosa sta coprendo lo schermo</string>
