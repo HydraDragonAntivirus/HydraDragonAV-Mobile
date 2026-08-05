@@ -27,6 +27,21 @@ pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 /// the exact same distribution.
 pub const ENGINE_FEATURE_COUNT: usize = 11;
 
+/// Display names for the engine features, in the same order as `to_vec()`.
+pub const ENGINE_FEATURE_NAMES: [&str; ENGINE_FEATURE_COUNT] = [
+    "dex_class_count",
+    "dex_string_count",
+    "dex_api_call_count",
+    "elf_count",
+    "manifest_total_permissions",
+    "manifest_activities",
+    "manifest_services",
+    "manifest_receivers",
+    "manifest_min_sdk",
+    "manifest_target_sdk",
+    "entropy",
+];
+
 #[derive(Clone, Debug, Default)]
 pub struct EngineFeatures {
     // DEX

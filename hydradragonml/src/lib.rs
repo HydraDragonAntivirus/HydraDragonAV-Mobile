@@ -74,6 +74,13 @@ impl Model {
         self.confidence_threshold = t.clamp(0.0, 1.0);
     }
 
+    /// Normalized engine-feature vector for an APK (percentile-mapped to
+    /// `[0, 1]` against the training corpus), for diagnostics.
+    pub fn normalized_features(&self, apk: &[u8]) -> Option<Vec<f32>> {
+        let engine_feats = features::EngineFeatures::extract_from_apk(apk)?;
+        Some(self.feature_stats.normalize(&engine_feats.to_vec()))
+    }
+
     pub fn scan(&self, apk: &[u8]) -> Option<ScanResult> {
         // Derives real, content-based DEX/ELF/manifest features from the
         // APK itself. `EngineFeatures` no longer carries placeholder fields

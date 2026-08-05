@@ -2,7 +2,7 @@
 //! model and reports classification metrics against the benign/malware
 //! folder labels.
 
-use hydradragonml::features::FeaturePercentiles;
+use hydradragonml::features::{FeaturePercentiles, ENGINE_FEATURE_NAMES};
 use hydradragonml::Model;
 
 use std::path::{Path, PathBuf};
@@ -15,13 +15,14 @@ struct Args {
     vocab: PathBuf,
     features: PathBuf,
     threshold: f32,
+    dump_features: bool,
 }
 
 fn print_usage_and_exit(msg: &str) -> ! {
     eprintln!("error: {msg}\n");
     eprintln!(
         "usage: hydradragonml-scan --dataset <dir> --model <model.mpk> --vocab <vocab.json> \\\n\
-         \x20      --features <features.json> [--threshold 0.5]"
+         \x20      --features <features.json> [--threshold 0.5] [--dump-features]"
     );
     std::process::exit(2);
 }
@@ -32,6 +33,7 @@ fn parse_args() -> Args {
     let mut vocab: Option<PathBuf> = None;
     let mut features: Option<PathBuf> = None;
     let mut threshold = 0.5f32;
+    let mut dump_features = false;
 
     let mut args = std::env::args().skip(1);
     while let Some(flag) = args.next() {
@@ -52,6 +54,7 @@ fn parse_args() -> Args {
                     print_usage_and_exit(&format!("invalid --threshold `{v}`"))
                 });
             }
+            "--dump-features" => dump_features = true,
             "-h" | "--help" => print_usage_and_exit("help requested"),
             other => print_usage_and_exit(&format!("unknown argument `{other}`")),
         }
@@ -63,6 +66,7 @@ fn parse_args() -> Args {
         vocab: vocab.unwrap_or_else(|| print_usage_and_exit("--vocab <path> is required")),
         features: features.unwrap_or_else(|| print_usage_and_exit("--features <path> is required")),
         threshold,
+        dump_features,
     }
 }
 
