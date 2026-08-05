@@ -2513,11 +2513,11 @@ rule audio_alarm_usage : scareware suspicious android
 		hydradragon.audio_abuse(/.*/) >= 2
 }
 
-rule clipboard_sensitive_read : spyware suspicious android
+rule clipboard_sensitive_read : info_stealer suspicious android
 {
 	meta:
 		author = "HydraDragonAV"
-		description = "Sensitive clipboard content (crypto address/token/seed phrase) was readable while this app took the foreground — data-theft/spyware pattern"
+		description = "Sensitive clipboard content (crypto address/token/seed phrase) was readable while this app took the foreground — data-theft/info stealer pattern"
 		reference = "hydradragon.clipboard_read()"
 
 	condition:
