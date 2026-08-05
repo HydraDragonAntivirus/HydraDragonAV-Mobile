@@ -24,11 +24,13 @@ import java.util.Locale;
 public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatViewHolder> {
 
     private final List<ThreatResult> threats;
+    private final java.util.Set<Integer> selectedPositions = new java.util.HashSet<>();
     private OnThreatClickListener listener;
 
     public interface OnThreatClickListener {
         void onThreatClick(ThreatResult threat);
         default void onThreatDeleteClick(ThreatResult threat) {}
+        default void onThreatSelectionChanged(int selectedCount) {}
     }
 
     public ThreatAdapter(List<ThreatResult> threats) {
@@ -126,6 +128,12 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
                 listener.onThreatDeleteClick(threat);
             }
         });
+
+        // Selection checkbox (bulk delete)
+        int pos = holder.getBindingAdapterPosition();
+        holder.cbSelect.setChecked(pos >= 0 && isSelected(pos));
+        holder.cbSelect.setOnClickListener(v -> setSelected(holder.getBindingAdapterPosition(),
+            holder.cbSelect.isChecked()));
     }
 
     @Override
@@ -133,10 +141,43 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
         return threats.size();
     }
 
+    public boolean isSelected(int position) {
+        return selectedPositions.contains(position);
+    }
+
+    public void setSelected(int position, boolean selected) {
+        if (position < 0 || position >= threats.size()) return;
+        if (selected) selectedPositions.add(position);
+        else selectedPositions.remove(position);
+        notifyItemChanged(position);
+        if (listener != null) listener.onThreatSelectionChanged(selectedPositions.size());
+    }
+
+    public void setSelectAll(boolean selectAll) {
+        selectedPositions.clear();
+        if (selectAll) {
+            for (int i = 0; i < threats.size(); i++) selectedPositions.add(i);
+        }
+        notifyDataSetChanged();
+        if (listener != null) listener.onThreatSelectionChanged(selectedPositions.size());
+    }
+
+    public void clearSelection() {
+        if (selectedPositions.isEmpty()) return;
+        selectedPositions.clear();
+        notifyDataSetChanged();
+        if (listener != null) listener.onThreatSelectionChanged(0);
+    }
+
+    public int getSelectedCount() {
+        return selectedPositions.size();
+    }
+
     static class ThreatViewHolder extends RecyclerView.ViewHolder {
         TextView tvAppName, tvThreatLevel, tvPackage, tvReason, tvRiskScore, tvTime;
         ImageView ivAppIcon; // Icon object
         ImageButton btnDelete;
+        android.widget.CheckBox cbSelect;
 
         public ThreatViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -148,6 +189,7 @@ public class ThreatAdapter extends RecyclerView.Adapter<ThreatAdapter.ThreatView
             tvRiskScore = itemView.findViewById(R.id.tv_risk_score);
             tvTime = itemView.findViewById(R.id.tv_time);
             btnDelete = itemView.findViewById(R.id.btn_delete_threat);
+            cbSelect = itemView.findViewById(R.id.cb_select_threat);
         }
     }
 }

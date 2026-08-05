@@ -143,6 +143,12 @@
     <string name="btn_full_scan">🔍 فحص كامل</string>
     <string name="btn_quick_scan">🚀 فحص سريع</string>
     <string name="btn_cancel">إلغاء</string>
+    <string name="select_all">☑ تحديد الكل</string>
+    <string name="delete_selected">حذف المحدد</string>
+    <string name="delete_selected_count">حذف المحدد (%1$d)</string>
+    <string name="bulk_delete_title">حذف المحدد</string>
+    <string name="bulk_delete_msg">حذف العناصر المحددة البالغ عددها %1$d؟\n\nسيتم إلغاء تثبيت التطبيقات المثبتة واحدًا تلو الآخر عبر نافذة النظام.</string>
+    <string name="bulk_delete_done">تم حذف العناصر المحددة</string>
     <string name="system_clean">النظام نظيف وفقًا لآخر فحص</string>
     <string name="risk_critical">حرج</string>
     <string name="risk_high">خطر مرتفع (%1$d)</string>

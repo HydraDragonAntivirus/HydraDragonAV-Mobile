@@ -143,6 +143,12 @@ Czy chcesz całkowicie usunąć ten szkodliwy plik/aplikację?</string>
     <string name="btn_full_scan">🔍 PEŁNE SKANOWANIE</string>
     <string name="btn_quick_scan">🚀 SZYBKIE SKANOWANIE</string>
     <string name="btn_cancel">Anuluj</string>
+    <string name="select_all">☑ Zaznacz wszystko</string>
+    <string name="delete_selected">USUŃ ZAZNACZONE</string>
+    <string name="delete_selected_count">USUŃ ZAZNACZONE (%1$d)</string>
+    <string name="bulk_delete_title">Usuń zaznaczone</string>
+    <string name="bulk_delete_msg">Usunąć wszystkie %1$d zaznaczone elementy?\n\nZainstalowane aplikacje zostaną odinstalowane pojedynczo przez okno systemowe.</string>
+    <string name="bulk_delete_done">Usunięto zaznaczone elementy</string>
     <string name="system_clean">System czysty według ostatniego skanowania</string>
     <string name="risk_critical">KRYTYCZNE</string>
     <string name="risk_high">WYSOKIE RYZYKO (%1$d)</string>

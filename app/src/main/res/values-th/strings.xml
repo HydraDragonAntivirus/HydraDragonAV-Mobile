@@ -143,6 +143,12 @@
     <string name="btn_full_scan">🔍 สแกนแบบเต็ม</string>
     <string name="btn_quick_scan">🚀 สแกนด่วน</string>
     <string name="btn_cancel">ยกเลิก</string>
+    <string name="select_all">☑ เลือกทั้งหมด</string>
+    <string name="delete_selected">ลบที่เลือก</string>
+    <string name="delete_selected_count">ลบที่เลือก (%1$d)</string>
+    <string name="bulk_delete_title">ลบรายการที่เลือก</string>
+    <string name="bulk_delete_msg">ลบรายการที่เลือกทั้งหมด %1$d รายการหรือไม่\n\nแอปที่ติดตั้งจะถูกถอนการติดตั้งทีละรายการผ่านกล่องโต้ตอบของระบบ</string>
+    <string name="bulk_delete_done">ลบรายการที่เลือกแล้ว</string>
     <string name="system_clean">ระบบสะอาดตามการสแกนล่าสุด</string>
     <string name="risk_critical">วิกฤต</string>
     <string name="risk_high">ความเสี่ยงสูง (%1$d)</string>

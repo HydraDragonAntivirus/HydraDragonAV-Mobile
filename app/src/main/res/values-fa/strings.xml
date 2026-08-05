@@ -143,6 +143,12 @@
     <string name="btn_full_scan">🔍 اسکن کامل</string>
     <string name="btn_quick_scan">🚀 اسکن سریع</string>
     <string name="btn_cancel">لغو</string>
+    <string name="select_all">☑ انتخاب همه</string>
+    <string name="delete_selected">حذف موارد انتخاب‌شده</string>
+    <string name="delete_selected_count">حذف موارد انتخاب‌شده (%1$d)</string>
+    <string name="bulk_delete_title">حذف موارد انتخاب‌شده</string>
+    <string name="bulk_delete_msg">همه %1$d مورد انتخاب‌شده حذف شوند؟\n\nبرنامه‌های نصب‌شده یکی‌یکی از طریق گفتگوی سیستم حذف می‌شوند.</string>
+    <string name="bulk_delete_done">موارد انتخاب‌شده حذف شد</string>
     <string name="system_clean">طبق آخرین اسکن، سیستم پاک است</string>
     <string name="risk_critical">بحرانی</string>
     <string name="risk_high">ریسک بالا (%1$d)</string>

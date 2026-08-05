@@ -143,6 +143,12 @@
     <string name="btn_full_scan">🔍 完整扫描</string>
     <string name="btn_quick_scan">🚀 快速扫描</string>
     <string name="btn_cancel">取消</string>
+    <string name="select_all">☑ 全选</string>
+    <string name="delete_selected">删除所选</string>
+    <string name="delete_selected_count">删除所选 (%1$d)</string>
+    <string name="bulk_delete_title">删除所选</string>
+    <string name="bulk_delete_msg">删除所有 %1$d 个所选项目？\n\n已安装的应用将通过系统对话框逐个卸载。</string>
+    <string name="bulk_delete_done">所选项目已删除</string>
     <string name="system_clean">根据上次扫描，系统清洁</string>
     <string name="risk_critical">严重</string>
     <string name="risk_high">高风险（%1$d）</string>

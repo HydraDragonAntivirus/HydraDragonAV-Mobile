@@ -143,6 +143,12 @@ Wil je dit schadelijke bestand/deze app volledig verwijderen?</string>
     <string name="btn_full_scan">🔍 VOLLEDIGE SCAN</string>
     <string name="btn_quick_scan">🚀 SNELLE SCAN</string>
     <string name="btn_cancel">Annuleren</string>
+    <string name="select_all">☑ Alles selecteren</string>
+    <string name="delete_selected">SELECTIE VERWIJDEREN</string>
+    <string name="delete_selected_count">SELECTIE VERWIJDEREN (%1$d)</string>
+    <string name="bulk_delete_title">Selectie verwijderen</string>
+    <string name="bulk_delete_msg">Alle %1$d geselecteerde items verwijderen?\n\nGeïnstalleerde apps worden één voor één via het systeemvenster verwijderd.</string>
+    <string name="bulk_delete_done">Geselecteerde items verwijderd</string>
     <string name="system_clean">Systeem schoon volgens laatste scan</string>
     <string name="risk_critical">KRITIEK</string>
     <string name="risk_high">HOOG RISICO (%1$d)</string>

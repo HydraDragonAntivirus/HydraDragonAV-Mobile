@@ -143,6 +143,12 @@
     <string name="btn_full_scan">🔍 पूर्ण स्कैन</string>
     <string name="btn_quick_scan">🚀 त्वरित स्कैन</string>
     <string name="btn_cancel">रद्द करें</string>
+    <string name="select_all">☑ सभी चुनें</string>
+    <string name="delete_selected">चयनित हटाएँ</string>
+    <string name="delete_selected_count">चयनित हटाएँ (%1$d)</string>
+    <string name="bulk_delete_title">चयनित हटाएँ</string>
+    <string name="bulk_delete_msg">क्या %1$d चयनित आइटम हटाएँ?\n\nइंस्टॉल किए गए ऐप्स सिस्टम डायलॉग के ज़रिए एक-एक करके अनइंस्टॉल होंगे।</string>
+    <string name="bulk_delete_done">चयनित आइटम हटाए गए</string>
     <string name="system_clean">पिछले स्कैन के अनुसार सिस्टम स्वच्छ है</string>
     <string name="risk_critical">गंभीर</string>
     <string name="risk_high">उच्च जोखिम (%1$d)</string>

@@ -143,6 +143,12 @@ Voulez-vous supprimer complètement ce fichier/application malveillant ?</string
     <string name="btn_full_scan">🔍 ANALYSE COMPLÈTE</string>
     <string name="btn_quick_scan">🚀 ANALYSE RAPIDE</string>
     <string name="btn_cancel">Annuler</string>
+    <string name="select_all">☑ Tout sélectionner</string>
+    <string name="delete_selected">SUPPRIMER LA SÉLECTION</string>
+    <string name="delete_selected_count">SUPPRIMER LA SÉLECTION (%1$d)</string>
+    <string name="bulk_delete_title">Supprimer la sélection</string>
+    <string name="bulk_delete_msg">Supprimer les %1$d éléments sélectionnés ?\n\nLes applications installées seront désinstallées une par une via la boîte de dialogue système.</string>
+    <string name="bulk_delete_done">Éléments sélectionnés supprimés</string>
     <string name="system_clean">Système Propre Selon la Dernière Analyse</string>
     <string name="risk_critical">CRITIQUE</string>
     <string name="risk_high">RISQUE ÉLEVÉ (%1$d)</string>

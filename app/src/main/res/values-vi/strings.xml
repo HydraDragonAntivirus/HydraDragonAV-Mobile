@@ -143,6 +143,12 @@ Bạn có muốn xóa hoàn toàn tệp/ứng dụng độc hại này không?</
     <string name="btn_full_scan">🔍 QUÉT ĐẦY ĐỦ</string>
     <string name="btn_quick_scan">🚀 QUÉT NHANH</string>
     <string name="btn_cancel">Hủy</string>
+    <string name="select_all">☑ Chọn tất cả</string>
+    <string name="delete_selected">XÓA MỤC ĐÃ CHỌN</string>
+    <string name="delete_selected_count">XÓA MỤC ĐÃ CHỌN (%1$d)</string>
+    <string name="bulk_delete_title">Xóa mục đã chọn</string>
+    <string name="bulk_delete_msg">Xóa tất cả %1$d mục đã chọn?\n\nCác ứng dụng đã cài sẽ được gỡ lần lượt qua hộp thoại hệ thống.</string>
+    <string name="bulk_delete_done">Đã xóa mục đã chọn</string>
     <string name="system_clean">Hệ thống Sạch Theo Lần Quét Gần Nhất</string>
     <string name="risk_critical">NGHIÊM TRỌNG</string>
     <string name="risk_high">RỦI RO CAO (%1$d)</string>

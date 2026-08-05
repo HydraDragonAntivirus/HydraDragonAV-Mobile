@@ -143,6 +143,12 @@
     <string name="btn_full_scan">🔍 전체 스캔</string>
     <string name="btn_quick_scan">🚀 빠른 스캔</string>
     <string name="btn_cancel">취소</string>
+    <string name="select_all">☑ 모두 선택</string>
+    <string name="delete_selected">선택 삭제</string>
+    <string name="delete_selected_count">선택 삭제 (%1$d)</string>
+    <string name="bulk_delete_title">선택 항목 삭제</string>
+    <string name="bulk_delete_msg">선택한 %1$d개 항목을 모두 삭제할까요?\n\n설치된 앱은 시스템 대화상자에서 하나씩 제거됩니다.</string>
+    <string name="bulk_delete_done">선택한 항목이 삭제되었습니다</string>
     <string name="system_clean">마지막 검사 기준 시스템 깨끗함</string>
     <string name="risk_critical">심각</string>
     <string name="risk_high">높은 위험 (%1$d)</string>

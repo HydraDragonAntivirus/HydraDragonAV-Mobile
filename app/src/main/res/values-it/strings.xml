@@ -143,6 +143,12 @@ Vuoi rimuovere completamente questo file/app dannoso?</string>
     <string name="btn_full_scan">🔍 SCANSIONE COMPLETA</string>
     <string name="btn_quick_scan">🚀 SCANSIONE RAPIDA</string>
     <string name="btn_cancel">Annulla</string>
+    <string name="select_all">☑ Seleziona tutto</string>
+    <string name="delete_selected">ELIMINA SELEZIONATI</string>
+    <string name="delete_selected_count">ELIMINA SELEZIONATI (%1$d)</string>
+    <string name="bulk_delete_title">Elimina selezionati</string>
+    <string name="bulk_delete_msg">Eliminare tutti gli %1$d elementi selezionati?\n\nLe app installate verranno disinstallate una per una tramite la finestra di dialogo di sistema.</string>
+    <string name="bulk_delete_done">Elementi selezionati eliminati</string>
     <string name="system_clean">Sistema pulito secondo l\'ultima scansione</string>
     <string name="risk_critical">CRITICO</string>
     <string name="risk_high">RISCHIO ALTO (%1$d)</string>

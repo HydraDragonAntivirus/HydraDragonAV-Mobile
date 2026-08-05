@@ -143,6 +143,12 @@ Deseja remover completamente este arquivo/aplicativo malicioso?</string>
     <string name="btn_full_scan">🔍 VERIFICAÇÃO COMPLETA</string>
     <string name="btn_quick_scan">🚀 VERIFICAÇÃO RÁPIDA</string>
     <string name="btn_cancel">Cancelar</string>
+    <string name="select_all">☑ Selecionar tudo</string>
+    <string name="delete_selected">EXCLUIR SELECIONADOS</string>
+    <string name="delete_selected_count">EXCLUIR SELECIONADOS (%1$d)</string>
+    <string name="bulk_delete_title">Excluir selecionados</string>
+    <string name="bulk_delete_msg">Excluir todos os %1$d itens selecionados?\n\nOs apps instalados serão desinstalados um por um pela caixa de diálogo do sistema.</string>
+    <string name="bulk_delete_done">Itens selecionados excluídos</string>
     <string name="system_clean">Sistema Limpo Segundo a Última Verificação</string>
     <string name="risk_critical">CRÍTICO</string>
     <string name="risk_high">RISCO ALTO (%1$d)</string>

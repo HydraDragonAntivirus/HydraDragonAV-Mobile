@@ -47,12 +47,21 @@ public class ScanFragment extends Fragment {
     private TextView tvProgress, tvCurrentApp, tvScanStatus, tvScanned, tvThreats, tvActiveThreats, tvThreatLabel, tvEngineWarning;
     private ImageView ivScannerIcon;
     private RecyclerView rvThreats;
+    private android.widget.CheckBox cbSelectAll;
+    private Button btnDeleteSelected;
+    private android.widget.LinearLayout bulkActionsBar;
 
     private GuardService guardService;
     private boolean serviceBound = false;
     private android.net.Uri pendingCustomScanUri = null;
     private String pendingUninstallPkg = null;
     private File pendingCustomScanDir = null;
+    // Sequential uninstall queue for bulk "delete selected" — Android only
+    // permits ONE system uninstall dialog at a time, so installed apps are
+    // uninstalled one-by-one: each confirmation is verified in onResume()
+    // before the next package is fired.
+    private final java.util.List<ThreatResult> bulkUninstallQueue = new ArrayList<>();
+    private boolean bulkDeleteInProgress = false;
 
     // STATIC MEMORY: survives switching between tabs — this data stays put.
     private static boolean isScanning = false;
@@ -126,6 +135,7 @@ public class ScanFragment extends Fragment {
                         tvActiveThreats.setText(String.valueOf(total));
                         tvThreats.setTextColor(0xFFFF0040);
                         tvThreatLabel.setVisibility(View.VISIBLE);
+                        syncBulkBar();
                     }
                 } else {
                     startScanTimer();
@@ -148,6 +158,7 @@ public class ScanFragment extends Fragment {
                         tvActiveThreats.setText(String.valueOf(total));
                         tvThreats.setTextColor(0xFFFF0040);
                         tvThreatLabel.setVisibility(View.VISIBLE);
+                        syncBulkBar();
                     }
                     // Sync pause button with engine state — view is recreated
                     // fresh after rotation, static fields don't cover pause.
@@ -202,9 +213,15 @@ public class ScanFragment extends Fragment {
         tvEngineWarning = view.findViewById(R.id.tv_engine_warning);
         ivScannerIcon = view.findViewById(R.id.iv_scanner_icon);
         rvThreats = view.findViewById(R.id.rv_threats);
+        bulkActionsBar = view.findViewById(R.id.bulk_actions_bar);
+        cbSelectAll = view.findViewById(R.id.cb_select_all);
+        btnDeleteSelected = view.findViewById(R.id.btn_delete_selected);
         threatAdapter = new ThreatAdapter(foundThreats);
         rvThreats.setLayoutManager(new LinearLayoutManager(getContext()));
         rvThreats.setAdapter(threatAdapter);
+
+        cbSelectAll.setOnCheckedChangeListener((b, checked) -> threatAdapter.setSelectAll(checked));
+        btnDeleteSelected.setOnClickListener(v -> showBulkDeleteDialog());
 
         // Switched tabs and came back — restore the last known state on screen
         if (hasScanned) {
@@ -217,6 +234,7 @@ public class ScanFragment extends Fragment {
             if (foundThreats.size() > 0) {
                 tvThreats.setTextColor(0xFFFF0040);
                 tvThreatLabel.setVisibility(View.VISIBLE);
+                syncBulkBar();
             }
         }
 
@@ -343,10 +361,22 @@ public class ScanFragment extends Fragment {
                         tvThreats.setText(String.valueOf(foundThreats.size()));
                         tvActiveThreats.setText(String.valueOf(foundThreats.size()));
                         if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
+                        syncBulkBar();
                     })
                     .setNeutralButton(getString(R.string.btn_ignore_signature), (dialog, which) ->
                         showIgnoreSignatureDialog(threat))
                     .show();
+            }
+
+            @Override
+            public void onThreatSelectionChanged(int selectedCount) {
+                if (getView() == null) return;
+                btnDeleteSelected.setEnabled(selectedCount > 0);
+                btnDeleteSelected.setText(getString(R.string.delete_selected_count, selectedCount));
+                boolean allSelected = selectedCount > 0 && selectedCount == foundThreats.size();
+                cbSelectAll.setOnCheckedChangeListener(null);
+                cbSelectAll.setChecked(allSelected);
+                cbSelectAll.setOnCheckedChangeListener((b, checked) -> threatAdapter.setSelectAll(checked));
             }
         });
 
@@ -394,6 +424,7 @@ public class ScanFragment extends Fragment {
                 tvThreats.setText(String.valueOf(foundThreats.size()));
                     tvActiveThreats.setText(String.valueOf(foundThreats.size()));
                 if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
+                        syncBulkBar();
             } else {
                 Toast.makeText(getContext(), getString(R.string.file_delete_failed), Toast.LENGTH_SHORT).show();
             }
@@ -421,6 +452,61 @@ public class ScanFragment extends Fragment {
                 uninstallInstalledThreat(threat);
             }
         }
+    }
+
+    /** Bulk "delete selected": standalone files are removed immediately, and
+     *  installed apps are queued for sequential uninstall (one system dialog
+     *  at a time, verified in onResume before firing the next). */
+    private void showBulkDeleteDialog() {
+        int count = threatAdapter.getSelectedCount();
+        if (count == 0) return;
+
+        new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(getString(R.string.bulk_delete_title))
+            .setMessage(getString(R.string.bulk_delete_msg, count))
+            .setPositiveButton(getString(R.string.btn_destroy), (dialog, which) -> startBulkDelete())
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show();
+    }
+
+    private void startBulkDelete() {
+        bulkUninstallQueue.clear();
+        java.util.List<ThreatResult> copy = new ArrayList<>(foundThreats);
+        for (int i = copy.size() - 1; i >= 0; i--) {
+            ThreatResult t = copy.get(i);
+            if (!threatAdapter.isSelected(i)) continue;
+            if (t.isStandaloneFile() && t.getApkPath() != null) {
+                File file = new File(t.getApkPath());
+                if (file.exists() && file.delete()) {
+                    ThreatLogger.logThreat(getContext(), t, getString(R.string.file_deleted_safe));
+                    foundThreats.remove(t);
+                }
+            } else {
+                bulkUninstallQueue.add(t);
+            }
+        }
+        threatAdapter.clearSelection();
+        refreshThreatListAfterBulk();
+        bulkDeleteInProgress = !bulkUninstallQueue.isEmpty();
+        if (bulkDeleteInProgress) {
+            uninstallNextBulk();
+        } else {
+            Toast.makeText(getContext(), getString(R.string.bulk_delete_done), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void uninstallNextBulk() {
+        if (bulkUninstallQueue.isEmpty()) return;
+        ThreatResult t = bulkUninstallQueue.remove(0);
+        uninstallInstalledThreat(t);
+    }
+
+    private void refreshThreatListAfterBulk() {
+        threatAdapter.notifyDataSetChanged();
+        tvThreats.setText(String.valueOf(foundThreats.size()));
+        tvActiveThreats.setText(String.valueOf(foundThreats.size()));
+        if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
+        syncBulkBar();
     }
 
     /** Lets the user pick which of THIS threat's specific detection/signature
@@ -550,6 +636,7 @@ public class ScanFragment extends Fragment {
                         tvThreats.setText(String.valueOf(foundThreats.size()));
                     tvActiveThreats.setText(String.valueOf(foundThreats.size()));
                         if (foundThreats.isEmpty()) tvThreatLabel.setVisibility(View.GONE);
+                        syncBulkBar();
                         break;
                     }
                 }
@@ -566,6 +653,17 @@ public class ScanFragment extends Fragment {
             // Still installed but no longer running (e.g. user cancelled the
             // system dialog) — leave it in the list untouched, no dialog.
             pendingUninstallPkg = null;
+
+            // Bulk delete continues: the previous uninstall round-trip is over
+            // (regardless of outcome), so fire the next queued app if any.
+            if (bulkDeleteInProgress) {
+                if (!bulkUninstallQueue.isEmpty()) {
+                    uninstallNextBulk();
+                } else {
+                    bulkDeleteInProgress = false;
+                    Toast.makeText(getContext(), getString(R.string.bulk_delete_done), Toast.LENGTH_SHORT).show();
+                }
+            }
         }
     }
 
@@ -736,6 +834,7 @@ public class ScanFragment extends Fragment {
                     tvActiveThreats.setText(String.valueOf(total));
                     tvThreats.setTextColor(0xFFFF0040);
                     tvThreatLabel.setVisibility(View.VISIBLE);
+                    syncBulkBar();
                 });
             }
 
@@ -867,19 +966,29 @@ public class ScanFragment extends Fragment {
                 tvScanStatus.setTextColor(0xFFFFAA00);
                 tvCurrentApp.setText(lastScanStatus);
                 tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
+                syncBulkBar();
             } else if (result.isClean()) {
                 tvScanStatus.setTextColor(0xFF00FF88);
                 tvThreatLabel.setVisibility(View.GONE);
+                syncBulkBar();
             } else {
                 tvScanStatus.setTextColor(0xFFFF0040);
                 tvThreatLabel.setVisibility(foundThreats.isEmpty() ? View.GONE : View.VISIBLE);
+                syncBulkBar();
             }
         });
     }
 
+    /** Shows/hides the bulk-delete bar in lockstep with the threat list. */
+    private void syncBulkBar() {
+        if (bulkActionsBar == null) return;
+        boolean hasThreats = !foundThreats.isEmpty();
+        bulkActionsBar.setVisibility(hasThreats ? View.VISIBLE : View.GONE);
+        if (!hasThreats && cbSelectAll != null) cbSelectAll.setChecked(false);
+    }
+
     /** Clears all scan result UI so a new scan starts from a blank state. */
-    private void resetScanUI() {
-        isScanning = true;
+    private void resetScanUI() {        isScanning = true;
         hasScanned = true;
         foundThreats.clear();
         hiddenThreatCount = 0;
@@ -903,6 +1012,7 @@ public class ScanFragment extends Fragment {
         tvThreats.setText("0");
         tvActiveThreats.setText("0");
         tvThreatLabel.setVisibility(View.GONE);
+        syncBulkBar();
         tvScanned.setText("0");
         tvProgress.setText("0/0");
         tvCurrentApp.setText("");
@@ -1217,6 +1327,7 @@ private void scanCustomFile(android.net.Uri uri) {
                             tvScanStatus.setText(getString(R.string.threats_found_count, 1));
                             tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.threat_red));
                             tvThreatLabel.setVisibility(View.VISIBLE);
+                            syncBulkBar();
                         } else {
                             tvScanStatus.setText(getString(R.string.system_clean));
                             tvScanStatus.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.neon_green));

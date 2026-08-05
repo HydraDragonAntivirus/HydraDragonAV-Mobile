@@ -16,6 +16,14 @@
         android:gravity="center_vertical"
         android:layout_marginBottom="4dp">
 
+        <!-- Toplu silme için seçim kutusu -->
+        <CheckBox
+            android:id="@+id/cb_select_threat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:buttonTint="@color/neon_cyan"/>
+
         <!-- Uygulama İkonu -->
         <ImageView
             android:id="@+id/iv_app_icon"

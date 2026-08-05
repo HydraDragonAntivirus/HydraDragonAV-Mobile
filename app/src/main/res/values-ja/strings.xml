@@ -143,6 +143,12 @@
     <string name="btn_full_scan">🔍 フルスキャン</string>
     <string name="btn_quick_scan">🚀 クイックスキャン</string>
     <string name="btn_cancel">キャンセル</string>
+    <string name="select_all">☑ すべて選択</string>
+    <string name="delete_selected">選択項目を削除</string>
+    <string name="delete_selected_count">選択項目を削除 (%1$d)</string>
+    <string name="bulk_delete_title">選択項目を削除</string>
+    <string name="bulk_delete_msg">%1$d 件の選択項目をすべて削除しますか?\n\nインストール済みアプリはシステムダイアログから順にアンインストールされます。</string>
+    <string name="bulk_delete_done">選択項目を削除しました</string>
     <string name="system_clean">前回のスキャンによるとシステムはクリーンです</string>
     <string name="risk_critical">重大</string>
     <string name="risk_high">高リスク（%1$d）</string>
