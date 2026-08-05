@@ -149,6 +149,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
         println!("{verdict:>10}  {:.4}  {}", result.confidence, path.display());
 
+        if args.dump_features {
+            if let Some(norm) = model.normalized_features(&bytes) {
+                let vals: Vec<String> = norm.iter().map(|v| format!("{v:.3}")).collect();
+                println!(
+                    "      features {}",
+                    ENGINE_FEATURE_NAMES
+                        .iter()
+                        .zip(vals.iter())
+                        .map(|(n, v)| format!("{n}={v}"))
+                        .collect::<Vec<_>>()
+                        .join("  ")
+                );
+            }
+        }
+
         let Some(true_malware) = true_label_from_path(path) else {
             unlabeled += 1;
             continue;
