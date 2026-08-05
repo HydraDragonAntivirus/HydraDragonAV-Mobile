@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 public class GuardService extends Service {
 
-    /** Opt-in (Settings > "Real-time full storage monitoring", off by default —
+    /** Opt-in (Settings > "Real-time full storage monitoring", ON by default —
      *  see startFullStorageMonitor). Downloads is always watched regardless. */
     public static final String KEY_REALTIME_STORAGE_WATCH = "realtime_storage_watch";
 
@@ -118,7 +118,7 @@ public class GuardService extends Service {
      *  root-only FileObserver approach which was not recursive). On any
      *  content change, queries MediaStore for recently modified files outside
      *  the Downloads folder (already covered by startDownloadMonitor) and
-     *  scans them. Off by default (Settings toggle — battery/query cost). */
+     *  scans them. ON by default (Settings toggle — aggressive real-time protection). */
     private void startFullStorageMonitor() {
         if (!getSharedPreferences("hydra_prefs", MODE_PRIVATE)
                 .getBoolean(KEY_REALTIME_STORAGE_WATCH, true)) {

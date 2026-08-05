@@ -213,9 +213,10 @@ public class SettingsFragment extends Fragment {
                 : getString(R.string.scan_wakelock_off_toast), Toast.LENGTH_SHORT).show();
         });
 
-        // Off by default: one FileObserver thread per storage root, plus files
-        // dropped outside Downloads are also already caught (just not instantly)
-        // by GuardService's periodic Full Scan. See GuardService.KEY_REALTIME_STORAGE_WATCH.
+        // ON by default: aggressive real-time protection — one FileObserver thread per storage root,
+        // plus instant scanning of any file dropped anywhere on the device.
+        // GuardService's periodic Full Scan provides backup coverage if this is disabled.
+        // See GuardService.KEY_REALTIME_STORAGE_WATCH.
         boolean storageWatch = prefs().getBoolean(
             com.hydradragon.antivirus.service.GuardService.KEY_REALTIME_STORAGE_WATCH, true);
         addToggle(cardProt, getString(R.string.storage_watch_toggle), storageWatch, (btn, on) -> {
