@@ -19,7 +19,9 @@ use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
 
 use hydradragonclamav::{Engine as ClamavEngine, is_apk_zip, is_text_like, ScanOptions};
-use hydradragonml::features::{EngineFeatures, MAX_ENTRY_SCAN, shannon_entropy, update_entropy_histogram};
+use hydradragonml::features::{
+    EngineFeatures, FeaturePercentiles, MAX_ENTRY_SCAN, shannon_entropy, update_entropy_histogram,
+};
 use hydradragonml::Model;
 use hydradragonxorfilter::XorFilter;
 use base64::Engine as Base64Engine;
@@ -108,6 +110,8 @@ const MODULE_DEPENDENT_YRC: &[&str] = &[
 /// Parses emerging-all.rules at runtime and builds a daachorse double-array
 /// automaton for hex-pattern matching.
 const MODEL_MPK: &str = "model.mpk";
+const VOCAB_JSON: &str = "vocab.json";
+const FEATURES_JSON: &str = "features.json";
 /// NSRL known-good SHA-256 whitelist as a serialized Binary-Fuse (xor) filter
 /// (built offline by `xorfilter_writer`). Decoded once at init into an owned
 /// buffer on the native heap; binary-fuse encodings are far smaller than the
@@ -589,11 +593,17 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 let t_model = std::time::Instant::now();
                 let mut report = String::new();
                 let model_bytes = files.get(MODEL_MPK);
+                let vocab_bytes = files.get(VOCAB_JSON);
+                let features_bytes = files.get(FEATURES_JSON);
                 let device = burn::backend::ndarray::NdArrayDevice::default();
-                let model = match model_bytes {
-                    Some(m) => {
+                let model = match (model_bytes, vocab_bytes, features_bytes) {
+                    (Some(m), Some(v), Some(f)) => {
+                        let feature_stats = FeaturePercentiles::from_json_bytes(f);
                         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            hydradragonml::Model::load(m, device)
+                            match feature_stats {
+                                Some(stats) => hydradragonml::Model::load(m, v, stats, device),
+                                None => Err("failed to parse features.json".into()),
+                            }
                         }));
                         match result {
                             Ok(Ok(m)) => {
@@ -833,7 +843,7 @@ fn run_ml_on_mmap(
     if !is_apk_zip(data) {
         return (false, 0.0, Vec::new());
     }
-    match model.scan_with_features(engine_features) {
+    match model.scan_with_features(data, engine_features) {
         Some(r) => {
             let lineages = if r.malicious {
                 vec![(path.to_string(), Vec::new())]
@@ -859,10 +869,7 @@ fn build_engine_features(
     buffers: &[Buf],
     dex_scans: &[Option<dex_scan::DexScan>],
     emulated: &[emulate::EmulationResult],
-    perm_count: usize,
 ) -> EngineFeatures {
-    use dex_analysis::Severity;
-
     let mut feats = EngineFeatures::default();
     let mut content_hist = [0u64; 256];
     let mut content_total: u64 = 0;
@@ -889,13 +896,6 @@ fn build_engine_features(
             }
         }
         feats.dex_class_count += classes.len() as f32;
-        for f in &ds.findings {
-            match f.severity {
-                Severity::High => feats.dex_finding_high += 1.0,
-                Severity::Critical => feats.dex_finding_critical += 1.0,
-                _ => {}
-            }
-        }
     }
 
     // ── Native code emulation (ELF) ──────────────────────────────────────
@@ -913,34 +913,9 @@ fn build_engine_features(
             );
         }
         feats.elf_count += 1.0;
-        feats.elf_emulated_strings += r.strings.len() as f32;
-        for call in &r.api_calls {
-            let name = call.name.as_str();
-            if matches!(
-                name,
-                "socket" | "connect" | "send" | "sendto" | "recv" | "recvfrom"
-                    | "gethostbyname" | "getaddrinfo" | "inet_addr" | "inet_pton"
-            ) {
-                feats.elf_network_calls += 1.0;
-            } else if matches!(
-                name,
-                "open" | "open64" | "fopen" | "creat" | "unlink" | "remove" | "rename"
-            ) {
-                feats.elf_file_calls += 1.0;
-            } else if matches!(
-                name,
-                "system" | "popen" | "execve" | "execl" | "execvp" | "fork" | "vfork"
-                    | "dlopen" | "dlsym"
-            ) {
-                feats.elf_exec_calls += 1.0;
-            } else if matches!(name, "ptrace" | "kill") {
-                feats.elf_anti_debug += 1.0;
-            }
-        }
     }
 
     // ── Manifest ─────────────────────────────────────────────────────────
-    feats.manifest_dangerous_permissions = perm_count as f32;
     if let Some(b) = buffers.iter().find(|b| parse_manifest(&b.data).is_some()) {
         if let Some(manifest) = parse_manifest(&b.data) {
             feats.manifest_total_permissions = manifest.permissions.len() as f32;
@@ -2808,7 +2783,7 @@ fn run_scan(
             let _ = emu_ms_slot.lock().map(|mut e| *e = emulate_ms);
             // Aggregate DEX/emulation/manifest results into the feature vector
             // the ML thread consumes (overlaps the rest of this thread).
-            let engine_features = build_engine_features(engine_ref, buffers_ref, &dex_scans, &emulated, perm_count);
+            let engine_features = build_engine_features(engine_ref, buffers_ref, &dex_scans, &emulated);
             let _ = feat_tx.send(engine_features);
 
             // Build the merged hydradragon module metadata (manifest + URL
