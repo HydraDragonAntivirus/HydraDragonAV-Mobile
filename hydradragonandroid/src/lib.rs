@@ -624,7 +624,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                             }
                         }
                     }
-                    None => {
+                    _ => {
                         report.push_str(" model=ERR(no assets)");
                         None
                     }
