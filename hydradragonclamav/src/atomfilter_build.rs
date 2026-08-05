@@ -263,7 +263,7 @@ impl AtomFilterBuilder {
             .chain(&reg.nocase)
             .map(|(bytes, _, _)| bytes.clone())
             .collect();
-        let prefilter = daachorse::ClamavMultilevelPrefilter::from_patterns(&all_atoms);
+        let prefilter = daachorse::ClamavPrefilter::from_patterns(&all_atoms);
 
         // ── Identify which specific targets are present in the DB ────────
         let mut specific_targets: Vec<u32> = slots

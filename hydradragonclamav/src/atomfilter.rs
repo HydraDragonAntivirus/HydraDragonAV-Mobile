@@ -1,5 +1,5 @@
 use daachorse::clamav_fast::ClamavFastScanner;
-use daachorse::{ClamavMultilevelPrefilter, ClamavPrefilter};
+use daachorse::ClamavPrefilter;
 
 pub type SlotId = u32;
 
@@ -63,7 +63,7 @@ pub struct AtomFilterDb {
     pub slots: Vec<SlotDef>,
     pub ext_slot: Vec<ExtSlot>,
     pub log_subsig_slots: Vec<Box<[SubsigSlot]>>,
-    pub prefilter: ClamavMultilevelPrefilter,
+    pub prefilter: ClamavPrefilter,
 }
 
 impl std::fmt::Debug for AtomFilterDb {
@@ -84,15 +84,15 @@ impl AtomFilterDb {
             slots: Vec::new(),
             ext_slot: Vec::new(),
             log_subsig_slots: Vec::new(),
-            prefilter: ClamavMultilevelPrefilter::from_patterns(&[]),
+            prefilter: ClamavPrefilter::empty(),
         }
     }
 
     /// Serialise the entire atomfilter into a byte vector.
     ///
     /// Format (all integers little-endian):
-    ///   1. version (u8) = 2
-    ///   2. prefilter: 6 × [`ClamavPrefilter`], each 2 × 65536 bytes = 786432 bytes
+    ///   1. version (u8) = 3
+    ///   2. prefilter: 1 × [`ClamavPrefilter`], 2 × 65536 bytes = 131072 bytes
     ///   3. per_target count (u32)
     ///   4. for each per_target:
     ///        target (u32)
@@ -124,13 +124,11 @@ impl AtomFilterDb {
         let mut buf = Vec::new();
 
         // 1. version
-        buf.push(2u8);
+        buf.push(3u8);
 
-        // 2. prefilter (6 filters × 65536 bytes per b + 65536 bytes per end)
-        for f in self.prefilter.filters().iter() {
-            buf.extend_from_slice(&f.raw_b()[..]);
-            buf.extend_from_slice(&f.raw_end()[..]);
-        }
+        // 2. prefilter (b + end tables, 2 × 65536 bytes)
+        buf.extend_from_slice(&self.prefilter.raw_b()[..]);
+        buf.extend_from_slice(&self.prefilter.raw_end()[..]);
 
         // 3+4. per_target
         buf.extend_from_slice(&(self.per_target.len() as u32).to_le_bytes());
@@ -217,14 +215,14 @@ impl AtomFilterDb {
         let mut pos = 0usize;
 
         // 1. version
-        if bytes.get(pos).copied()? != 2 {
+        if bytes.get(pos).copied()? != 3 {
             return None;
         }
         pos += 1;
 
         // 2. prefilter
-        let pf_bytes = bytes.get(pos..pos + 786432)?;
-        pos += 786432;
+        let pf_bytes = bytes.get(pos..pos + 131072)?;
+        pos += 131072;
         let prefilter = read_prefilter(pf_bytes)?;
 
         // 3. per_target count
@@ -391,26 +389,12 @@ fn read_u64(bytes: &[u8], pos: &mut usize) -> Option<u64> {
     ]))
 }
 
-fn read_prefilter(bytes: &[u8]) -> Option<ClamavMultilevelPrefilter> {
-    let mut pos = 0usize;
-    let empty = ClamavPrefilter::empty();
-    let mut filters = [
-        empty.clone(),
-        empty.clone(),
-        empty.clone(),
-        empty.clone(),
-        empty.clone(),
-        empty,
-    ];
-    for f in &mut filters {
-        let b_slice = bytes.get(pos..pos + 65536)?;
-        let end_slice = bytes.get(pos + 65536..pos + 131072)?;
-        let mut b = [0u8; 65536];
-        let mut end = [0u8; 65536];
-        b.copy_from_slice(b_slice);
-        end.copy_from_slice(end_slice);
-        *f = ClamavPrefilter::from_raw(b, end);
-        pos += 131072;
-    }
-    Some(ClamavMultilevelPrefilter::from_filters(filters))
+fn read_prefilter(bytes: &[u8]) -> Option<ClamavPrefilter> {
+    let b_slice = bytes.get(0..65536)?;
+    let end_slice = bytes.get(65536..131072)?;
+    let mut b = [0u8; 65536];
+    let mut end = [0u8; 65536];
+    b.copy_from_slice(b_slice);
+    end.copy_from_slice(end_slice);
+    Some(ClamavPrefilter::from_raw(b, end))
 }

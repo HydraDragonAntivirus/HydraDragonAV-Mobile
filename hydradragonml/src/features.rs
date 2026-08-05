@@ -10,7 +10,7 @@ use crate::elf;
 pub const VOCAB_SIZE: usize = 20000;
 pub const EMBED_DIM: usize = 64;
 pub const MIN_STR_LEN: usize = 5;
-pub const MAX_TOKENS: usize = 4096;
+pub const MAX_TOKENS: usize = 8192;
 pub const MAX_ENTRY_SCAN: usize = 16 * 1024 * 1024;
 
 /// 3 DEX fields + 1 ELF field + 6 manifest fields + 1 content-entropy field.
