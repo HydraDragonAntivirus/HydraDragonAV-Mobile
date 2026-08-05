@@ -5,6 +5,7 @@ import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -1740,7 +1741,10 @@ public class ScanEngine {
                         if (admins != null) {
                             for (ComponentName admin : admins) {
                                 if (admin.getPackageName().equals(app.packageName)) {
-                                    DeviceAdminInfo dai = new DeviceAdminInfo(pm, admin);
+                                    ActivityInfo receiverInfo = pm.getReceiverInfo(admin, PackageManager.GET_META_DATA);
+                                    ResolveInfo resolveInfo = new ResolveInfo();
+                                    resolveInfo.activityInfo = receiverInfo;
+                                    DeviceAdminInfo dai = new DeviceAdminInfo(context, resolveInfo);
                                     boolean forceLock = dai.usesPolicy(DeviceAdminInfo.USES_POLICY_FORCE_LOCK)
                                         || dai.usesPolicy(DeviceAdminInfo.USES_POLICY_WIPE_DATA);
                                     if (forceLock) {

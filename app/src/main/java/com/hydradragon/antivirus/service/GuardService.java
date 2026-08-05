@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
@@ -518,24 +519,17 @@ public class GuardService extends Service {
                         java.util.List<android.media.AudioPlaybackConfiguration> configs) {
                     if (configs == null) return;
                     for (android.media.AudioPlaybackConfiguration cfg : configs) {
-                        if (cfg == null || !cfg.isActive()) continue;
+                        if (cfg == null || !isConfigActive(cfg)) continue;
                         try {
                             android.media.AudioAttributes attrs = cfg.getAudioAttributes();
                             int usage = attrs != null ? attrs.getUsage()
                                 : android.media.AudioAttributes.USAGE_UNKNOWN;
                             boolean abusive = usage == android.media.AudioAttributes.USAGE_ALARM
-                                || usage == android.media.AudioAttributes.USAGE_EMERGENCY
                                 || usage == android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
                             if (!abusive) continue;
-                            String pkg = null;
-                            try {
-                                pkg = cfg.getClientPid() > 0
-                                    ? android.app.ActivityManager.getRunningAppProcesses() == null
-                                        ? null : null // resolved below via getPackageNameFromPid
-                                    : cfg.getClientPackageName();
-                            } catch (Throwable ignored) {}
+                            String pkg = getClientPackageName(cfg);
                             if (pkg == null || pkg.isEmpty()) {
-                                pkg = getPackageNameFromPid(cfg.getClientPid());
+                                pkg = getPackageNameFromPid(getClientPid(cfg));
                             }
                             if (pkg == null || pkg.isEmpty()) continue;
                             if (com.hydradragon.antivirus.engine.HipsMonitor.isSelfPackage(pkg)) continue;
@@ -564,6 +558,42 @@ public class GuardService extends Service {
         }
     }
 
+    /** isActive(), getClientPackageName(), and getClientPid() on
+     *  AudioPlaybackConfiguration are @SystemApi-hidden — not present in the
+     *  public SDK javac compiles against, so they must be called via
+     *  reflection. They exist on the framework at runtime on most devices,
+     *  but hidden-API enforcement may still block them on some OEMs/versions;
+     *  callers must tolerate a null/true-ish fallback. */
+    private static boolean isConfigActive(android.media.AudioPlaybackConfiguration cfg) {
+        try {
+            java.lang.reflect.Method m = android.media.AudioPlaybackConfiguration.class.getMethod("isActive");
+            Object result = m.invoke(cfg);
+            return !(result instanceof Boolean) || (Boolean) result;
+        } catch (Throwable t) {
+            return true; // can't determine — don't silently drop a potential threat
+        }
+    }
+
+    private static String getClientPackageName(android.media.AudioPlaybackConfiguration cfg) {
+        try {
+            java.lang.reflect.Method m = android.media.AudioPlaybackConfiguration.class.getMethod("getClientPackageName");
+            Object result = m.invoke(cfg);
+            return result instanceof String ? (String) result : null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static int getClientPid(android.media.AudioPlaybackConfiguration cfg) {
+        try {
+            java.lang.reflect.Method m = android.media.AudioPlaybackConfiguration.class.getMethod("getClientPid");
+            Object result = m.invoke(cfg);
+            return result instanceof Integer ? (Integer) result : -1;
+        } catch (Throwable t) {
+            return -1;
+        }
+    }
+
     /** Best-effort package-name lookup for a client PID — falls back to the
      *  running-process list when AudioPlaybackConfiguration#getClientPackageName
      *  isn't populated (rare on OEM builds). */
@@ -586,7 +616,6 @@ public class GuardService extends Service {
     private static String usageName(int usage) {
         switch (usage) {
             case android.media.AudioAttributes.USAGE_ALARM: return "USAGE_ALARM";
-            case android.media.AudioAttributes.USAGE_EMERGENCY: return "USAGE_EMERGENCY";
             case android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE: return "USAGE_NOTIFICATION_RINGTONE";
             case android.media.AudioAttributes.USAGE_MEDIA: return "USAGE_MEDIA";
             case android.media.AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE: return "USAGE_NAVIGATION_GUIDANCE";
