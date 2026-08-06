@@ -44,7 +44,6 @@ mod ip_scan;
 mod media_scan;
 mod suricata_scan;
 mod url_scan;
-mod benign_db;
 mod riskware;
 
 use jni::errors::LogErrorAndDefault;
@@ -126,7 +125,6 @@ const WHITELIST_XF: &str = "whitelist.xf";
 /// skipped, and only that one buffer: a sibling non-whitelisted file/APK
 /// inside the same archive is scanned normally.
 const WHITELIST_PACKAGES_DB: &str = "whitelist_packages.csv";
-const BENIGN_SIGNATURES: &str = "benign_signatures.bin";
 
 struct Engine {
     /// ClamAV engine: loaded from the bundled signature DB with the compiled
@@ -140,8 +138,6 @@ struct Engine {
     /// NSRL known-good package -> md5 map, read from whitelist_packages.db.
     /// See WHITELIST_PACKAGES_DB.
     package_whitelist: std::collections::HashMap<String, String>,
-    /// Content-based MinHash benign signatures whitelist.
-    benign_db: Option<benign_db::BenignDb>,
     /// Malicious domain/URL xor filters + public-suffix list.
     url_scanner: Option<url_scan::UrlScanner>,
     /// Malicious-IP xor filters (per category).
@@ -480,7 +476,7 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
         })
     }).flatten();
 
-    let (clamav_out, model_out, whitelist_out, pkg_out, url_out, ip_out, benign_out) =
+    let (clamav_out, model_out, whitelist_out, pkg_out, url_out, ip_out) =
         std::thread::scope(|s| {
             let clamav_handle = s.spawn(move || {
                 let t_db = std::time::Instant::now();
@@ -674,18 +670,6 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 (ip_scanner, format!(" ip={ip_ms}ms"))
             });
 
-            let benign_handle = s.spawn(move || {
-                let t_benign = std::time::Instant::now();
-                let benign_db = match files.get(BENIGN_SIGNATURES) {
-                    Some(bytes) => benign_db::BenignDb::load(bytes),
-                    None => None,
-                };
-                let benign_ms = t_benign.elapsed().as_millis();
-                let pkg_count = benign_db.as_ref().map(|db| db.package_count()).unwrap_or(0);
-                let sig_count = benign_db.as_ref().map(|db| db.signature_count()).unwrap_or(0);
-                (benign_db, format!(" benign_wl={benign_ms}ms(pkg={pkg_count} sig={sig_count})"))
-            });
-
             (
                 clamav_handle.join().unwrap_or_else(|_| {
                     (None, format!("clamav=PANIC({})", last_panic()))
@@ -705,9 +689,6 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
                 ip_handle.join().unwrap_or_else(|_| {
                     (None, format!(" ip=PANIC({})", last_panic()))
                 }),
-                benign_handle.join().unwrap_or_else(|_| {
-                    (None, format!(" benign_wl=PANIC({})", last_panic()))
-                }),
             )
         });
 
@@ -717,10 +698,9 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
     let (package_whitelist, pkg_report) = pkg_out;
     let (url_scanner, url_report) = url_out;
     let (ip_scanner, ip_report) = ip_out;
-    let (benign_db, benign_report) = benign_out;
 
     let report = format!(
-        "{clamav_report}{model_report}{whitelist_report}{pkg_report}{url_report}{ip_report}{benign_report}"
+        "{clamav_report}{model_report}{whitelist_report}{pkg_report}{url_report}{ip_report}"
     );
 
     let total_ms = t0.elapsed().as_millis();
@@ -731,7 +711,6 @@ fn do_init_from_assets(files: &std::collections::HashMap<String, Vec<u8>>, load_
         model,
         whitelist,
         package_whitelist,
-        benign_db,
         url_scanner,
         ip_scanner,
     }
@@ -1758,8 +1737,6 @@ fn asset_category(name: &str) -> &'static str {
         "nsrl whitelist"
     } else if name == WHITELIST_PACKAGES_DB {
         "pkg whitelist db"
-    } else if name == BENIGN_SIGNATURES {
-        "benign db"
     } else if name == "emerging-all.rules" {
         "vpn suricata rules"
     } else if name == "public_suffixes.txt" {
@@ -1845,9 +1822,7 @@ fn native_memory_report() -> String {
             .iter()
             .map(|(k, v)| k.len() + 1 + v.len() + 32)
             .sum();
-        let benign = engine.benign_db.as_ref().map(|b| b.heap_bytes()).unwrap_or(0);
         let _ = writeln!(out, "PARSED  pkg_whitelist_entries={} {}", engine.package_whitelist.len(), human(pkg_wl));
-        let _ = writeln!(out, "PARSED  benign_db {}", human(benign));
         let _ = writeln!(out, "PARSED  clamav_engine_struct {}", human(std::mem::size_of_val(&engine.clamav)));
         let _ = writeln!(out, "PARSED  model_struct {}", human(std::mem::size_of_val(&engine.model)));
         let _ = writeln!(out, "PARSED  whitelist_filter_struct {}", human(std::mem::size_of_val(&engine.whitelist)));
@@ -2521,19 +2496,7 @@ fn run_scan(
                     }
                 }
 
-                // 2. Check if the buffer matches the content-based MinHash benign signatures whitelist
-                if let Some(pkg) = axml_package(&b.data) {
-                    if let Some(bdb) = &engine.benign_db {
-                        if let Some(feats) = hydradragonml::features::extract_minhash(&b.data) {
-                            if bdb.is_known_benign(&pkg, &feats.tokens) {
-                                rust_timing_log!("whitelist :: MinHash match for package '{}'", pkg);
-                                return true;
-                            }
-                        }
-                    }
-                }
-
-                // 3. Check if any ancestor APK in its lineage is whitelisted
+                // 2. Check if any ancestor APK in its lineage is whitelisted
                 let mut check_hashes = b.apk_lineage.clone();
                 if is_seed {
                     check_hashes.push(file_hash.clone());
@@ -2567,7 +2530,7 @@ fn run_scan(
     let phase2_ms = t_phase2.elapsed().as_millis();
     rust_timing_log!("{path} :: phase2_ms={phase2_ms}ms (whitelist/hashes/skip_heavy)");
 
-    // When every buffer is whitelisted (MinHash/NSRL), skip all Phase 3
+    // When every buffer is whitelisted (NSRL), skip all Phase 3
     // (ML, ClamAV, YARA) and return immediately.
     if skip_heavy.iter().all(|&s| s) {
         if !bomb_dets.is_empty() {

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use ripzip::extract::zip_reader::{parse_archive, parse_local_header_data_offset, ZipEntry};
 use ripzip::zip_format::{COMPRESSION_DEFLATED, COMPRESSION_STORED};
@@ -517,135 +517,6 @@ fn harvest_raw_strings(data: &[u8], out: &mut Vec<String>) {
     }
 }
 
-// MinHash token extraction (FNV-1a hashed string tokens, used for benign DB lookup).
-
-pub struct ApkFeatures {
-    pub tokens: HashSet<u64>,
-}
-
-pub fn fnv1a(bytes: &[u8]) -> u64 {
-    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
-    for &b in bytes {
-        h ^= b as u64;
-        h = h.wrapping_mul(0x0000_0100_0000_01b3);
-    }
-    h
-}
-
-fn token(prefix: &str, s: &[u8]) -> u64 {
-    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
-    for &b in prefix.as_bytes() {
-        h ^= b as u64;
-        h = h.wrapping_mul(0x0000_0100_0000_01b3);
-    }
-    for &b in s {
-        h ^= b as u64;
-        h = h.wrapping_mul(0x0000_0100_0000_01b3);
-    }
-    h
-}
-
-pub fn extract_minhash(apk: &[u8]) -> Option<ApkFeatures> {
-    let mut tokens: HashSet<u64> = HashSet::new();
-    let mut has_content_entry = false;
-
-    for_each_entry(apk, |name, content| {
-        if tokens.len() >= MAX_TOKENS {
-            return;
-        }
-        tokens.insert(token("name:", name.as_bytes()));
-        if content.is_empty() {
-            return;
-        }
-        has_content_entry = true;
-        let lname = name.to_ascii_lowercase();
-        let prefix = if lname.ends_with(".dex") {
-            "dex:"
-        } else if lname == "androidmanifest.xml" {
-            "manifest:"
-        } else {
-            "res:"
-        };
-        harvest_minhash_strings(content, prefix, &mut tokens);
-    })?;
-
-    if !has_content_entry || tokens.is_empty() {
-        return None;
-    }
-    Some(ApkFeatures { tokens })
-}
-
-fn harvest_minhash_strings(data: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
-    let mut start: Option<usize> = None;
-    for (i, &b) in data.iter().enumerate() {
-        let printable = (0x20..0x7f).contains(&b);
-        if printable {
-            if start.is_none() {
-                start = Some(i);
-            }
-        } else if let Some(s) = start.take() {
-            if i - s >= MIN_STR_LEN {
-                insert_minhash_string(&data[s..i], prefix, tokens);
-                if tokens.len() >= MAX_TOKENS {
-                    return;
-                }
-            }
-        }
-    }
-    if let Some(s) = start {
-        if data.len() - s >= MIN_STR_LEN {
-            insert_minhash_string(&data[s..], prefix, tokens);
-        }
-    }
-
-    let mut buf: Vec<u8> = Vec::new();
-    let mut j = 0;
-    while j + 1 < data.len() {
-        let lo = data[j];
-        let hi = data[j + 1];
-        if hi == 0 && (0x20..0x7f).contains(&lo) {
-            buf.push(lo);
-        } else {
-            if buf.len() >= MIN_STR_LEN {
-                insert_minhash_string(&buf, prefix, tokens);
-                if tokens.len() >= MAX_TOKENS {
-                    return;
-                }
-            }
-            buf.clear();
-        }
-        j += 2;
-    }
-    if buf.len() >= MIN_STR_LEN {
-        insert_minhash_string(&buf, prefix, tokens);
-    }
-}
-
-fn insert_minhash_string(s: &[u8], prefix: &str, tokens: &mut HashSet<u64>) {
-    tokens.insert(token(prefix, s));
-
-    if let Ok(text) = std::str::from_utf8(s) {
-        let lower = text.to_ascii_lowercase();
-        if lower.contains("permission.") {
-            if let Some(p) = lower.split("permission.").nth(1) {
-                let perm: String = p
-                    .chars()
-                    .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
-                    .collect();
-                if !perm.is_empty() {
-                    tokens.insert(token("perm:", perm.as_bytes()));
-                }
-            }
-        }
-        if text.starts_with('L') && text.contains('/') {
-            tokens.insert(token("api:", text.as_bytes()));
-        }
-        if lower.starts_with("http://") || lower.starts_with("https://") || lower.contains("://") {
-            tokens.insert(token("url:", lower.as_bytes()));
-        }
-    }
-}
-
 #[cfg(test)]
 mod integration_tests {
     use super::*;
@@ -697,7 +568,7 @@ mod integration_tests {
     }
 
     #[test]
-    fn tokenizer_and_minhash_work_through_ripzip() {
+    fn tokenizer_works_through_ripzip() {
         let mut vocab = std::collections::HashMap::new();
         vocab.insert("classes".to_string(), 1);
         let tok = Tokenizer::new(vocab);
@@ -712,9 +583,6 @@ mod integration_tests {
 
         let ids = tok.tokenize(&apk).expect("tokenizer should find content");
         assert!(!ids.is_empty());
-
-        let feats = extract_minhash(&apk).expect("minhash should find content");
-        assert!(!feats.tokens.is_empty());
     }
 
     #[test]

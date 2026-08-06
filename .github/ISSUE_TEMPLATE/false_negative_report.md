@@ -22,7 +22,7 @@ Before reporting a false negative, **please verify if the file was actually miss
 **Which component should have detected it?**
 - [ ] YARA-X Signature Scan (native Rust engine)
 - [ ] ClamAV Signature Scan
-- [ ] ML Anomaly Detection (MinHash/LSH + Isolation Forest)
+- [ ] ML Anomaly Detection (Burn binary classifier)
 - [ ] AIEngine (DEX-level behavioral scoring)
 - [ ] Network Security Scanner (malicious IP/C2 / MITM / ARP)
 - [ ] Web Shield / DNS Filtering (malicious domain)
