@@ -197,8 +197,8 @@
     <string name="scan_initial_status">Натисніть СКАНУВАТИ для початку</string>
     <string name="scan_scanning_btn">СКАНУВАННЯ...</string>
     <string name="scan_already_running">Фонове сканування вже виконується — зачекайте на його завершення</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Завантаження двигуна… Сканування недоступне</string>
+    <string name="engine_loading_status">Завантаження двигуна…</string>
     <string name="detection_categories_header">Категорії виявлення</string>
     <string name="detect_cat_signatures">На основі сигнатур (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Виявлення аномалій ML</string>

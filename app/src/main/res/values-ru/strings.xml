@@ -197,8 +197,8 @@
     <string name="scan_initial_status">Нажмите СКАНИРОВАТЬ, чтобы начать</string>
     <string name="scan_scanning_btn">СКАНИРОВАНИЕ...</string>
     <string name="scan_already_running">Фоновое сканирование уже выполняется — дождитесь его завершения</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Загрузка движка… Сканирование недоступно</string>
+    <string name="engine_loading_status">Загрузка движка…</string>
     <string name="detection_categories_header">Категории обнаружения</string>
     <string name="detect_cat_signatures">На основе сигнатур (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Обнаружение аномалий ML</string>

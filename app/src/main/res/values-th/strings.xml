@@ -197,8 +197,8 @@
     <string name="scan_initial_status">กดสแกนเพื่อเริ่มต้น</string>
     <string name="scan_scanning_btn">กำลังสแกน...</string>
     <string name="scan_already_running">มีการสแกนเบื้องหลังทำงานอยู่แล้ว — โปรดรอจนกว่าจะเสร็จสิ้น</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ กำลังโหลดเอนจิน… ไม่สามารถสแกนได้</string>
+    <string name="engine_loading_status">กำลังโหลดเอนจิน…</string>
     <string name="detection_categories_header">หมวดหมู่การตรวจจับ</string>
     <string name="detect_cat_signatures">ใช้ลายเซ็น (YARA/ClamAV)</string>
     <string name="detect_cat_ml">การตรวจจับความผิดปกติด้วย ML</string>

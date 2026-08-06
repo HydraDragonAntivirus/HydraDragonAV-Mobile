@@ -197,8 +197,8 @@
     <string name="scan_initial_status">按下扫描开始</string>
     <string name="scan_scanning_btn">扫描中...</string>
     <string name="scan_already_running">后台已经在进行扫描 — 请等待其完成</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ 引擎加载中… 扫描不可用</string>
+    <string name="engine_loading_status">引擎加载中…</string>
     <string name="detection_categories_header">检测类别</string>
     <string name="detect_cat_signatures">基于签名（YARA/ClamAV）</string>
     <string name="detect_cat_ml">机器学习异常检测</string>

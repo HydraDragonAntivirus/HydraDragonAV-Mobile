@@ -197,8 +197,8 @@ Puedes habilitar esto más tarde desde Ajustes.</string>
     <string name="scan_initial_status">Presiona ESCANEAR para comenzar</string>
     <string name="scan_scanning_btn">ESCANEANDO...</string>
     <string name="scan_already_running">Ya hay un análisis en segundo plano en curso — espera a que termine</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Motor cargando… Escaneo no disponible</string>
+    <string name="engine_loading_status">Motor cargando…</string>
     <string name="detection_categories_header">Categorías de Detección</string>
     <string name="detect_cat_signatures">Basado en firmas (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Detección de anomalías por ML</string>

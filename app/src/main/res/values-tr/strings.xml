@@ -363,8 +363,8 @@ Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.</string>
     <string name="dashboard_system_secure">Sistem Güvende</string>
     <string name="dashboard_status_secure_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n• %1$s</string>
     <string name="dashboard_status_alert_desc">• İzleme aktif\n• Ağ kuralları uygulanıyor\n%1$s</string>
-    <string name="dashboard_engine_loading">Engine Loading</string>
-    <string name="dashboard_status_loading_desc">• Monitoring loading\n• Network rules loading</string>
+    <string name="dashboard_engine_loading">Motor Yükleniyor</string>
+    <string name="dashboard_status_loading_desc">• İzleme yükleniyor\n• Ağ kuralları yükleniyor</string>
     <string name="wifi_network_secure">Wi-Fi Ağı Güvende.</string>
     <string name="mobile_data_secure">Mobil Veri Güvende</string>
     <string name="no_network_connection">Ağ Bağlantısı Yok</string>

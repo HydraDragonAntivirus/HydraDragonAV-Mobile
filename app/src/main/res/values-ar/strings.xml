@@ -197,8 +197,8 @@
     <string name="scan_initial_status">اضغط فحص للبدء</string>
     <string name="scan_scanning_btn">جارٍ الفحص...</string>
     <string name="scan_already_running">هناك فحص يعمل بالفعل في الخلفية — يرجى الانتظار حتى ينتهي</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ جارٍ تحميل المحرك… الفحص غير متاح</string>
+    <string name="engine_loading_status">جارٍ تحميل المحرك…</string>
     <string name="detection_categories_header">فئات الاكتشاف</string>
     <string name="detect_cat_signatures">قائم على التوقيعات (YARA/ClamAV)</string>
     <string name="detect_cat_ml">اكتشاف الشذوذ بالتعلم الآلي</string>

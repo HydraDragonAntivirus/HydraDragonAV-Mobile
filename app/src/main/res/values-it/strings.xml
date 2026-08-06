@@ -197,8 +197,8 @@ Puoi abilitarlo in seguito dalle Impostazioni.</string>
     <string name="scan_initial_status">Premi SCAN per iniziare</string>
     <string name="scan_scanning_btn">SCANSIONE IN CORSO...</string>
     <string name="scan_already_running">Una scansione in background è già in corso — attendi che finisca</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Caricamento motore… Scansione non disponibile</string>
+    <string name="engine_loading_status">Caricamento motore…</string>
     <string name="detection_categories_header">Categorie di Rilevamento</string>
     <string name="detect_cat_signatures">Basato su firme (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Rilevamento anomalie ML</string>

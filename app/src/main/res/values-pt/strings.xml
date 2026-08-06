@@ -197,8 +197,8 @@ Você pode ativar isso mais tarde nas Configurações.</string>
     <string name="scan_initial_status">Pressione VERIFICAR para iniciar</string>
     <string name="scan_scanning_btn">VERIFICANDO...</string>
     <string name="scan_already_running">Já há uma verificação em segundo plano em andamento — aguarde até terminar</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Motor carregando… Verificação indisponível</string>
+    <string name="engine_loading_status">Motor carregando…</string>
     <string name="detection_categories_header">Categorias de Detecção</string>
     <string name="detect_cat_signatures">Baseado em assinaturas (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Detecção de anomalias por ML</string>

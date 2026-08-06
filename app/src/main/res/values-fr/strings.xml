@@ -197,8 +197,8 @@ Vous pouvez activer cela plus tard depuis Paramètres.</string>
     <string name="scan_initial_status">Appuyez sur ANALYSER pour commencer</string>
     <string name="scan_scanning_btn">ANALYSE EN COURS...</string>
     <string name="scan_already_running">Une analyse en arrière-plan est déjà en cours — veuillez attendre qu\'elle se termine</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Chargement du moteur… Analyse indisponible</string>
+    <string name="engine_loading_status">Chargement du moteur…</string>
     <string name="detection_categories_header">Catégories de Détection</string>
     <string name="detect_cat_signatures">Basé sur des signatures (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Détection d\'anomalies par ML</string>

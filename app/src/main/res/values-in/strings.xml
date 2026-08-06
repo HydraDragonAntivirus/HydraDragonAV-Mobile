@@ -197,8 +197,8 @@ Anda dapat mengaktifkannya nanti dari Pengaturan.</string>
     <string name="scan_initial_status">Tekan PINDAI untuk mulai</string>
     <string name="scan_scanning_btn">MEMINDAI...</string>
     <string name="scan_already_running">Pemindaian latar belakang sudah berjalan — harap tunggu hingga selesai</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Memuat Mesin… Pemindaian tidak tersedia</string>
+    <string name="engine_loading_status">Memuat Mesin…</string>
     <string name="detection_categories_header">Kategori Deteksi</string>
     <string name="detect_cat_signatures">Berbasis tanda tangan (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Deteksi anomali ML</string>

@@ -197,8 +197,8 @@ Je kunt dit later inschakelen via Instellingen.</string>
     <string name="scan_initial_status">Druk op SCAN om te beginnen</string>
     <string name="scan_scanning_btn">BEZIG MET SCANNEN...</string>
     <string name="scan_already_running">Er wordt al een achtergrondscan uitgevoerd — wacht tot deze is voltooid</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Motor laden… Scannen niet beschikbaar</string>
+    <string name="engine_loading_status">Motor laden…</string>
     <string name="detection_categories_header">Detectiecategorieën</string>
     <string name="detect_cat_signatures">Op handtekeningen gebaseerd (YARA/ClamAV)</string>
     <string name="detect_cat_ml">ML-anomaliedetectie</string>

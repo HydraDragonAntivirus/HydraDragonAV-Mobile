@@ -197,8 +197,8 @@ Możesz włączyć to później w Ustawieniach.</string>
     <string name="scan_initial_status">Naciśnij SKANUJ, aby rozpocząć</string>
     <string name="scan_scanning_btn">SKANOWANIE...</string>
     <string name="scan_already_running">Skanowanie w tle jest już w toku — poczekaj, aż się zakończy</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Ładowanie silnika… Skanowanie niedostępne</string>
+    <string name="engine_loading_status">Ładowanie silnika…</string>
     <string name="detection_categories_header">Kategorie wykrywania</string>
     <string name="detect_cat_signatures">Na podstawie sygnatur (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Wykrywanie anomalii ML</string>

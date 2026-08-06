@@ -197,8 +197,8 @@ Bạn có thể bật tính năng này sau từ Cài đặt.</string>
     <string name="scan_initial_status">Nhấn QUÉT để bắt đầu</string>
     <string name="scan_scanning_btn">ĐANG QUÉT...</string>
     <string name="scan_already_running">Đã có một lượt quét nền đang chạy — vui lòng đợi cho đến khi hoàn tất</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ Đang tải công cụ… Không thể quét</string>
+    <string name="engine_loading_status">Đang tải công cụ…</string>
     <string name="detection_categories_header">Danh mục Phát hiện</string>
     <string name="detect_cat_signatures">Dựa trên chữ ký (YARA/ClamAV)</string>
     <string name="detect_cat_ml">Phát hiện bất thường bằng ML</string>

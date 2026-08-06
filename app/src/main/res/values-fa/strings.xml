@@ -197,8 +197,8 @@
     <string name="scan_initial_status">برای شروع دکمه اسکن را فشار دهید</string>
     <string name="scan_scanning_btn">در حال اسکن...</string>
     <string name="scan_already_running">یک اسکن در پس‌زمینه در حال اجراست — لطفاً منتظر پایان آن بمانید</string>
-    <string name="engine_loading_warning">⚠ Engine loading… Scan unavailable</string>
-    <string name="engine_loading_status">Engine loading…</string>
+    <string name="engine_loading_warning">⚠ در حال بارگذاری موتور… اسکن در دسترس نیست</string>
+    <string name="engine_loading_status">در حال بارگذاری موتور…</string>
     <string name="detection_categories_header">دسته‌های تشخیص</string>
     <string name="detect_cat_signatures">مبتنی بر امضا (YARA/ClamAV)</string>
     <string name="detect_cat_ml">تشخیص ناهنجاری با یادگیری ماشین</string>
