@@ -845,7 +845,7 @@ fn run_ml_on_mmap(
     }
     match model.scan_with_features(data, engine_features) {
         Some(r) => {
-            let lineages = if r.malicious {
+            let lineages = if r.malicious || r.suspicious {
                 vec![(path.to_string(), Vec::new())]
             } else {
                 Vec::new()

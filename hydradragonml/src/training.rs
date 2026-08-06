@@ -89,18 +89,33 @@ impl<B: Backend> Batcher<B, ApkItem, ApkBatch<B>> for ApkBatcher {
     }
 }
 
+/// Positive-class (malware) weight for the binary cross-entropy loss.
+///
+/// The corpus is heavily imbalanced (~73% benign / ~27% malware), so a plain
+/// unweighted BCE lets the model get away with predicting "benign" for most
+/// samples and still achieve a low loss — which is exactly the failure mode
+/// that previously let known-malware samples score as benign. Weighting the
+/// malware term by the benign:malware ratio makes misclassifying a malicious
+/// APK as benign roughly `POS_WEIGHT`× more expensive than the reverse, and
+/// forces the network to actually separate the classes instead of collapsing
+/// onto the majority. Should be kept roughly in sync with the corpus ratio
+/// (see `hydradragonml-train`).
+const MALWARE_POS_WEIGHT: f32 = 3.0;
+
 /// Binary cross-entropy computed directly on the model's own sigmoid
 /// output (the model already ends in `sigmoid`, so this operates on
 /// probabilities rather than logits — unlike `MseLoss`/`CrossEntropyLoss`,
 /// Burn has no built-in "BCE on probabilities" loss, so this is written by
-/// hand).
+/// hand). The malware (positive) term is weighted by `MALWARE_POS_WEIGHT`
+/// to counter the benign-heavy corpus imbalance.
 fn bce_loss<B: Backend>(pred: Tensor<B, 2, Float>, target: Tensor<B, 2, Float>) -> Tensor<B, 1> {
     let eps = 1e-7;
     let p = pred.clamp(eps, 1.0 - eps);
     let ones = p.ones_like();
     let one_minus_target = ones.clone() - target.clone();
     let one_minus_p = ones - p.clone();
-    let per_example = target * p.log() + one_minus_target * one_minus_p.log();
+    let per_example =
+        MALWARE_POS_WEIGHT * target * p.log() + one_minus_target * one_minus_p.log();
     -per_example.mean()
 }
 

@@ -65,6 +65,24 @@ comparable between training and on-device inference.
 > mismatch) and requires retraining from scratch. The `features.json` percentile
 > stats must also come from the same training run that produced the `.mpk`.
 
+### Generalization, not memorization
+
+The classifier learns a decision boundary over *patterns*; it is **not** a
+lookup table of the training samples. A direct consequence:
+
+- It can score a malware APK **below the malicious threshold even when that
+  sample came from its own training corpus** — the model never stores a copy of
+  any APK, so it can fail to re-flag samples it was literally trained on.
+- Conversely, it can flag an *unseen* sample that shares malware-like structure.
+
+That trade-off is intentional: a model that merely memorized its corpus would be
+useless against novel, mutated or packed malware — it would only ever re-flag
+exactly what it had already seen, which is not detection. Treat the ML confidence
+as one corroborating signal alongside the YARA-X/ClamAV signatures and the other
+engines, never as an exact-match database. The thresholds are deliberately
+conservative (`>= 0.95` malicious, `>= 0.90` suspicious), and the ML layer is
+designed to generalize rather than recite.
+
 ## Building the vocabulary
 
 If no `vocab.json` exists, build one over the same corpus that trains the

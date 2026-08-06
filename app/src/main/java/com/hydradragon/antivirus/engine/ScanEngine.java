@@ -1401,8 +1401,14 @@ public class ScanEngine {
                 boolean mlOnly = false;
                 for (NativeScanner.Verdict.Detection d : live) {
                     if ("ML".equals(d.name)) {
-                        if (DetectionCategories.isEnabled(context, DetectionCategories.ML)
-                                && v.probability >= 0.90) mlOnly = true;
+                        if (DetectionCategories.isEnabled(context, DetectionCategories.ML)) {
+                            if (v.probability >= 0.95) {
+                                real = true;
+                            } else if (v.probability >= 0.90) {
+                                mlOnly = true;
+                            }
+                            reasons.add(String.format(java.util.Locale.US, "🤖 [ML] probability=%.2f%s", v.probability, subFileSuffix(app.sourceDir, d.objectPath)));
+                        }
                         continue;
                     }
                     if (isEicarName(d.name)) {
