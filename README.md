@@ -134,4 +134,4 @@ The on-device detection assets are generated offline from public threat-intel an
 - Note: yarGen contains data2 = PE benign dataset javascript = javascript benign dataset android = andorid benign dataset
 
 ## Donate: 
-- **For donate HydraDragonAV-Mobile creator go to here: https://boosty.to/yusif_musayev (Yusif Musayev HydraDragonAV-Mobile creator)**
+- **For donate HydraDragonAV-Mobile creator go to here:https://boosty.to/yusif_musayev/single-payment/donation/817954/target?share=target_link  (Yusif Musayev HydraDragonAV-Mobile creator)**
