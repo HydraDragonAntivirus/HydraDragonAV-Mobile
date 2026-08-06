@@ -1,6 +1,10 @@
 # 🐉 HydraDragonAV Mobile
 **Advanced Android Antivirus With Threat Protection**
 
+> **⚠️ Project on hold.** This project did not get enough interest, so I have
+> paused it for a while. Development has moved to
+> **[HydraDragonAntivirus](https://github.com/HydraDragonAntivirus/HydraDragonAntivirus)**.
+
 ## Discord Community Server: https://discord.gg/7XMCuj5mbP
 
 ![HydraDragonAndroid](assets/image.png) (Logo made by discord user called: 1tophbeifong) 
