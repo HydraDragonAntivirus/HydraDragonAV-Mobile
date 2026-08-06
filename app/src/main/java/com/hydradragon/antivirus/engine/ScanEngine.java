@@ -1707,7 +1707,7 @@ public class ScanEngine {
             for (String suspicious : BOOT_PERSISTENCE_SUSPICIOUS_PERMS) {
                 if (requestedPermissions.contains(suspicious)) matchedPersistPerms.add(suspicious);
             }
-            if (!matchedPersistPerms.isEmpty()) {
+            if (matchedPersistPerms.size() >= 5) {
                 riskScore = Math.max(riskScore, 65);
                 builder.setThreatType(com.hydradragon.antivirus.model.ThreatResult.ThreatType.MALWARE);
                 reasons.add("♻️ Boot persistence: auto-start receiver + suspicious permissions ("
