@@ -129,8 +129,8 @@ dependencies {
     // is the Rust apk_model.bin — nothing referenced org.tensorflow. Dropping it
     // also removes the unaligned TFLite native libs that tripped the Android 15
     // 16 KB page-size check, and shrinks the APK.
-    implementation 'com.squareup.okhttp3:okhttp:5.4.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:5.4.0'
+    implementation 'com.squareup.okhttp3:okhttp:5.5.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.5.0'
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
     implementation 'androidx.core:core-splashscreen:1.2.0'
     // On-device OCR for Zero Trust screen-capture scanning (ScreenCaptureService):
